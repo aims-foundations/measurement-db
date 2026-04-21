@@ -1,0 +1,446 @@
+version: 1
+datasets:
+  aegis:
+    status: audited
+    domain: ''
+  afrieval:
+    status: private-only
+    domain: ''
+  afrimedqa:
+    status: audited
+    domain: ''
+  agent_safetybench:
+    status: private-only
+    domain: ''
+  agentbench:
+    status: private-only
+    domain: ''
+  agentdojo:
+    status: private-only
+    domain: ''
+  agentharm:
+    status: private-only
+    domain: ''
+  agentic_misalignment:
+    status: private-only
+    domain: ''
+  agreval:
+    status: private-only
+    domain: ''
+  ai2d_test:
+    status: private-only
+    domain: ''
+  ai_safety_index:
+    status: private-only
+    domain: ''
+  aider:
+    status: private-only
+    domain: ''
+  aiid:
+    status: private-only
+    domain: ''
+  alignment_faking:
+    status: private-only
+    domain: ''
+  alpacaeval:
+    status: audited
+    domain: ''
+  androidworld:
+    status: audited
+    domain: ''
+  apollo_deception:
+    status: private-only
+    domain: ''
+  appworld:
+    status: private-only
+    domain: ''
+  arcagi:
+    status: private-only
+    domain: ''
+  arena_140k:
+    status: private-only
+    domain: ''
+  arena_hard:
+    status: private-only
+    domain: ''
+  asiaeval:
+    status: private-only
+    domain: ''
+  atbench:
+    status: private-only
+    domain: ''
+  bbq:
+    status: private-only
+    domain: ''
+  beavertails:
+    status: private-only
+    domain: ''
+  bells:
+    status: private-only
+    domain: ''
+  benchmark_papers:
+    status: private-only
+    domain: ''
+  bfcl:
+    status: private-only
+    domain: ''
+  bigcodebench:
+    status: private-only
+    domain: ''
+  biggen:
+    status: private-only
+    domain: ''
+  bridging_gap:
+    status: private-only
+    domain: ''
+  browsergym:
+    status: private-only
+    domain: ''
+  ca_dmv_disengagement:
+    status: private-only
+    domain: ''
+  ceval:
+    status: private-only
+    domain: ''
+  chatgpt_drift:
+    status: private-only
+    domain: ''
+  clinebench:
+    status: private-only
+    domain: ''
+  cmb:
+    status: private-only
+    domain: ''
+  cmexam:
+    status: private-only
+    domain: ''
+  cmmlu:
+    status: private-only
+    domain: ''
+  collab_cxr:
+    status: private-only
+    domain: ''
+  corebench:
+    status: private-only
+    domain: ''
+  cot_safety_behaviors:
+    status: private-only
+    domain: ''
+  cot_unfaithfulness:
+    status: private-only
+    domain: ''
+  cruxeval:
+    status: private-only
+    domain: ''
+  culturaleval:
+    status: private-only
+    domain: ''
+  cybench:
+    status: audited
+    domain: ''
+  dpai:
+    status: private-only
+    domain: ''
+  editbench:
+    status: private-only
+    domain: ''
+  evalplus:
+    status: private-only
+    domain: ''
+  faithcot:
+    status: private-only
+    domain: ''
+  financebench:
+    status: private-only
+    domain: ''
+  fineval:
+    status: private-only
+    domain: ''
+  flask:
+    status: private-only
+    domain: ''
+  frenchmedmcqa:
+    status: private-only
+    domain: ''
+  gaia:
+    status: private-only
+    domain: ''
+  gandalf:
+    status: private-only
+    domain: ''
+  genai_learning:
+    status: private-only
+    domain: ''
+  haiid:
+    status: private-only
+    domain: ''
+  hallusionbench:
+    status: private-only
+    domain: ''
+  helm_afr:
+    status: private-only
+    domain: ''
+  helm_cleva:
+    status: private-only
+    domain: ''
+  helm_thaiexam:
+    status: private-only
+    domain: ''
+  helpsteer2:
+    status: private-only
+    domain: ''
+  hh_rlhf:
+    status: private-only
+    domain: ''
+  hle:
+    status: private-only
+    domain: ''
+  iberbench:
+    status: private-only
+    domain: ''
+  igakuqa:
+    status: private-only
+    domain: ''
+  igakuqa119:
+    status: private-only
+    domain: ''
+  indeterminacy:
+    status: private-only
+    domain: ''
+  jailbreakbench:
+    status: private-only
+    domain: ''
+  judgebench:
+    status: private-only
+    domain: ''
+  kmmlu:
+    status: private-only
+    domain: ''
+  ko_leaderboard:
+    status: private-only
+    domain: ''
+  kormedmcqa:
+    status: private-only
+    domain: ''
+  la_leaderboard:
+    status: private-only
+    domain: ''
+  lawbench:
+    status: private-only
+    domain: ''
+  legaleval:
+    status: private-only
+    domain: ''
+  livebench:
+    status: private-only
+    domain: ''
+  livecodebench:
+    status: private-only
+    domain: ''
+  llmail_inject:
+    status: private-only
+    domain: ''
+  lmsys_toxicchat:
+    status: private-only
+    domain: ''
+  machiavelli:
+    status: private-only
+    domain: ''
+  matharena:
+    status: audited
+    domain: ''
+  mathvista_mini:
+    status: private-only
+    domain: ''
+  medarabiq:
+    status: private-only
+    domain: ''
+  medexpqa:
+    status: private-only
+    domain: ''
+  medqa_chinese:
+    status: private-only
+    domain: ''
+  metr_early2025:
+    status: private-only
+    domain: ''
+  metr_late2025:
+    status: private-only
+    domain: ''
+  mit_airisk:
+    status: private-only
+    domain: ''
+  mlebench:
+    status: private-only
+    domain: ''
+  mmbench_v11:
+    status: private-only
+    domain: ''
+  mme:
+    status: private-only
+    domain: ''
+  mmedbench:
+    status: private-only
+    domain: ''
+  mmlupro:
+    status: private-only
+    domain: ''
+  mmmu_dev_val:
+    status: private-only
+    domain: ''
+  mtbench:
+    status: audited
+    domain: ''
+  nectar:
+    status: private-only
+    domain: ''
+  nhtsa_sgo:
+    status: private-only
+    domain: ''
+  oasst:
+    status: private-only
+    domain: ''
+  odcv_bench:
+    status: private-only
+    domain: ''
+  oecd_aim:
+    status: private-only
+    domain: ''
+  osworld:
+    status: private-only
+    domain: ''
+  paperbench:
+    status: private-only
+    domain: ''
+  permedcqa:
+    status: private-only
+    domain: ''
+  personalllm:
+    status: private-only
+    domain: ''
+  pickapic:
+    status: private-only
+    domain: ''
+  pku_saferlhf:
+    status: audited
+    domain: ''
+  preference_dissection:
+    status: private-only
+    domain: ''
+  prism:
+    status: private-only
+    domain: ''
+  prm800k:
+    status: private-only
+    domain: ''
+  prometheus:
+    status: private-only
+    domain: ''
+  pt_leaderboard:
+    status: private-only
+    domain: ''
+  rakuda:
+    status: private-only
+    domain: ''
+  responsible_ai_measures:
+    status: private-only
+    domain: ''
+  reward_hacks:
+    status: private-only
+    domain: ''
+  rewardbench:
+    status: private-only
+    domain: ''
+  rewardbench2:
+    status: private-only
+    domain: ''
+  safeagentbench:
+    status: private-only
+    domain: ''
+  scale_mrt:
+    status: private-only
+    domain: ''
+  scienceagentbench:
+    status: private-only
+    domain: ''
+  scripts:
+    status: private-only
+    domain: ''
+  shp2:
+    status: private-only
+    domain: ''
+  sib200:
+    status: private-only
+    domain: ''
+  summeval:
+    status: private-only
+    domain: ''
+  swebench:
+    status: private-only
+    domain: ''
+  swebench_full:
+    status: private-only
+    domain: ''
+  swebench_java:
+    status: private-only
+    domain: ''
+  swebench_multilingual:
+    status: private-only
+    domain: ''
+  swepolybench:
+    status: private-only
+    domain: ''
+  sycophancy_subterfuge:
+    status: private-only
+    domain: ''
+  taubench:
+    status: private-only
+    domain: ''
+  tengu:
+    status: private-only
+    domain: ''
+  tensortrust:
+    status: private-only
+    domain: ''
+  terminal_bench:
+    status: private-only
+    domain: ''
+  thai_leaderboard:
+    status: private-only
+    domain: ''
+  theagentcompany:
+    status: private-only
+    domain: ''
+  toolbench:
+    status: private-only
+    domain: ''
+  trail:
+    status: private-only
+    domain: ''
+  tumlu:
+    status: private-only
+    domain: ''
+  ultrafeedback:
+    status: audited
+    domain: ''
+  visualwebarena:
+    status: private-only
+    domain: ''
+  vl_rewardbench:
+    status: private-only
+    domain: ''
+  webarena:
+    status: private-only
+    domain: ''
+  wildbench:
+    status: private-only
+    domain: ''
+  wildchat:
+    status: private-only
+    domain: ''
+  wmt_mqm:
+    status: private-only
+    domain: ''
+  workarena:
+    status: private-only
+    domain: ''
