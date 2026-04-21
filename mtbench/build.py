@@ -52,6 +52,12 @@ PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
 os.makedirs(RAW_DIR, exist_ok=True)
 os.makedirs(PROCESSED_DIR, exist_ok=True)
 
+# Make the repo-level _registry package importable regardless of CWD.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from _registry import (  # noqa: E402
+    get_benchmark_id, register_item, resolve_subject, save as registry_save,
+)
+
 # Data URL
 JUDGMENT_URL = (
     "https://huggingface.co/spaces/lmsys/mt-bench/resolve/main/"
@@ -135,9 +141,51 @@ def parse_judgments(jsonl_path):
     return pd.DataFrame(records)
 
 
+def build_long_form(judgments_df):
+    """Primary output — one row per (model, question, turn) in responses.parquet.
+
+    Preserves per-turn resolution that the wide form averages away.  Each turn
+    is treated as a distinct item (different prompt: turn 2 is a follow-up),
+    tagged with ``test_condition="turn=N"`` in the items registry.
+    """
+    print("\nBuilding long-form responses...")
+
+    bench_id = get_benchmark_id(
+        "mtbench",
+        name="MT-Bench",
+        license=INFO.get("license"),
+        source_url=INFO.get("data_source_url"),
+        description=INFO.get("description"),
+    )
+
+    rows = []
+    for rec in judgments_df.itertuples(index=False):
+        subj = resolve_subject(rec.model)
+        item = register_item(
+            benchmark_id=bench_id,
+            raw_item_id=f"{rec.question_id}_turn{int(rec.turn)}",
+            content=None,  # per-question prompts not fetched yet
+            test_condition=f"turn={int(rec.turn)}",
+        )
+        rows.append({
+            "subject_id": subj,
+            "item_id": item,
+            "trial": 1,
+            "response": float(rec.score),
+            "trace": None,
+        })
+
+    long_df = pd.DataFrame(rows)
+    out = os.path.join(PROCESSED_DIR, "responses.parquet")
+    long_df.to_parquet(out, index=False)
+    registry_save()
+    print(f"  Saved: {out} ({len(long_df):,} rows)")
+    return long_df
+
+
 def build_response_matrix(judgments_df):
-    """Build response matrix from parsed judgments."""
-    print("\nBuilding response matrix...")
+    """Derived output — wide-form CSV averaged across turns, for back-compat."""
+    print("\nBuilding response matrix (wide-form view)...")
 
     # MT-Bench has 2 turns per question; average across turns for each model-question pair
     avg_scores = (
@@ -271,13 +319,18 @@ def main():
     print("-" * 60)
     judgments_df = parse_judgments(jsonl_path)
 
-    # Step 3: Build matrix
-    print("\nSTEP 3: Building response matrix")
+    # Step 3: Build long-form parquet (primary output)
+    print("\nSTEP 3: Building long-form responses")
+    print("-" * 60)
+    build_long_form(judgments_df)
+
+    # Step 4: Build wide-form CSV (derived, for back-compat)
+    print("\nSTEP 4: Building response matrix")
     print("-" * 60)
     matrix_df = build_response_matrix(judgments_df)
 
-    # Step 4: Statistics
-    print("\nSTEP 4: Detailed statistics")
+    # Step 5: Statistics
+    print("\nSTEP 5: Detailed statistics")
     print("-" * 60)
     print_statistics(judgments_df, matrix_df)
 
