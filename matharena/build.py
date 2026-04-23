@@ -1,5 +1,5 @@
 """
-Build MathArena response matrices from HuggingFace per-model per-problem output data.
+Build MathArena long-form responses from per-model per-problem output data.
 
 Data sources:
   MathArena HuggingFace datasets (https://huggingface.co/MathArena):
@@ -9,70 +9,65 @@ Data sources:
   - Final-answer competitions have a `correct` boolean field
   - Proof-based competitions have `points_judge_1/2` fields (0-7 scale)
 
-Outputs:
-  For each final-answer competition:
-    - response_matrix_{comp}.csv:       Average correctness across 4 attempts
-    - response_matrix_{comp}_binary.csv: Majority-vote binary (>=2/4 correct)
-    - response_matrix_{comp}_raw.csv:    All attempts (model_attempt x problem)
-  For proof-based competitions:
-    - response_matrix_{comp}_points.csv: Average points (normalized 0-1)
-  Combined:
-    - response_matrix_aime_combined.csv:     AIME 2025+2026 combined
-    - response_matrix_all_final_answer.csv:  All final-answer competitions merged
-    - model_summary.csv:                     Per-model statistics across all comps
+Items are scoped per-competition. Each problem within a competition becomes a
+distinct item_id (disambiguated by the competition name prefix in the
+`raw_item_id`); multiple attempts on the same (model, item) are encoded as
+distinct `trial` values via `ensure_unique_trials`.
 
 GitHub: https://github.com/eth-sri/matharena
-Website: https://matharena.ai
 Paper: "MathArena: Evaluating LLMs on Uncontaminated Math Competitions" (NeurIPS D&B 2025)
+
+Outputs:
+  - responses.parquet  # long-form
+  - _contrib/{subjects,items,benchmarks}.parquet
 """
 
 INFO = {
-    'description': """Build MathArena response matrices from HuggingFace per-model per-problem output data""",
-    'testing_condition': '',
+    'description': 'MathArena: uncontaminated math competitions (27 datasets); final-answer accuracy + proof-judge scores across multiple attempts per problem.',
+    'testing_condition': 'test_condition encodes the competition (e.g. "competition=aime_2025"). Multiple attempts per (model, problem) become distinct trials.',
     'paper_url': 'https://arxiv.org/abs/2505.23281',
     'data_source_url': 'https://github.com/eth-sri/matharena',
     'subject_type': 'model',
     'item_type': 'task',
     'license': 'unknown',
     'citation': """@misc{balunović2026matharenaevaluatingllmsuncontaminated,
-      title={MathArena: Evaluating LLMs on Uncontaminated Math Competitions}, 
+      title={MathArena: Evaluating LLMs on Uncontaminated Math Competitions},
       author={Mislav Balunović and Jasper Dekoninck and Ivo Petrov and Nikola Jovanović and Martin Vechev},
       year={2026},
       eprint={2505.23281},
       archivePrefix={arXiv},
       primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2505.23281}, 
+      url={https://arxiv.org/abs/2505.23281},
 }""",
     'tags': ['reasoning'],
 }
 
 
-from pathlib import Path
 import os
 import sys
-import json
 import warnings
-from collections import defaultdict
+from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
-# ---------------------------------------------------------------------------
-# Paths
-# ---------------------------------------------------------------------------
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RAW_DIR = os.path.join(BASE_DIR, "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
-os.makedirs(RAW_DIR, exist_ok=True)
-os.makedirs(PROCESSED_DIR, exist_ok=True)
+_BENCHMARK_DIR = Path(__file__).resolve().parent
+RAW_DIR = _BENCHMARK_DIR / "raw"
+CONTRIB_DIR = _BENCHMARK_DIR / "_contrib"
+RESPONSES_PATH = _BENCHMARK_DIR / "responses.parquet"
+RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+sys.path.insert(0, str(_BENCHMARK_DIR.parent))
+from _registry import (  # noqa: E402
+    get_benchmark_id, register_item, resolve_subject, save as registry_save,
+    ensure_unique_trials,
+)
 
 # ---------------------------------------------------------------------------
 # Dataset registry
 # ---------------------------------------------------------------------------
 
-# Final-answer competitions (have `correct` boolean column)
 FINAL_ANSWER_DATASETS = {
     "aime_2025": "MathArena/aime_2025_outputs",
     "aime_2025_I": "MathArena/aime_2025_I_outputs",
@@ -98,7 +93,6 @@ FINAL_ANSWER_DATASETS = {
     "kangaroo_2025_11_12": "MathArena/kangaroo_2025_11-12_outputs",
 }
 
-# Proof-based competitions (have points_judge_1/2 columns, no `correct`)
 PROOF_DATASETS = {
     "usamo_2025": "MathArena/usamo_2025_outputs",
     "imo_2025": "MathArena/imo_2025_outputs",
@@ -107,20 +101,11 @@ PROOF_DATASETS = {
     "miklos_2025": "MathArena/miklos_2025_outputs",
 }
 
-# Primary datasets for combined matrices (avoid overlap with split versions)
-AIME_PRIMARY = ["aime_2025", "aime_2026"]
-PRIMARY_FINAL_ANSWER = [
-    "aime_2025", "aime_2026",
-    "hmmt_feb_2025", "hmmt_feb_2026", "hmmt_nov_2025",
-    "brumo_2025", "cmimc_2025", "smt_2025",
-    "apex_2025", "apex_shortlist",
-]
-
 
 def download_dataset(dataset_id, comp_name):
     """Download a HuggingFace dataset and cache as parquet in raw/."""
-    cache_path = os.path.join(RAW_DIR, f"{comp_name}.parquet")
-    if os.path.exists(cache_path):
+    cache_path = RAW_DIR / f"{comp_name}.parquet"
+    if cache_path.exists():
         print(f"  [cached] {cache_path}")
         return pd.read_parquet(cache_path)
 
@@ -128,12 +113,10 @@ def download_dataset(dataset_id, comp_name):
     try:
         from datasets import load_dataset
         ds = load_dataset(dataset_id, split="train")
-        # Select only columns we need to keep file sizes manageable
         keep_cols = [
             "problem_idx", "model_name", "idx_answer", "correct",
-            "gold_answer", "parsed_answer", "cost",
-            "input_tokens", "output_tokens",
-            # proof-based columns
+            "gold_answer", "parsed_answer", "problem", "problem_statement",
+            "cost", "input_tokens", "output_tokens",
             "points_judge_1", "max_points_judge_1",
             "points_judge_2", "max_points_judge_2",
         ]
@@ -149,430 +132,189 @@ def download_dataset(dataset_id, comp_name):
         return None
 
 
-def build_final_answer_matrices(df, comp_name, comp_label):
-    """Build response matrices for a final-answer competition.
+def _problem_content(row) -> str | None:
+    """Best-effort problem text."""
+    for key in ("problem", "problem_statement", "gold_answer"):
+        v = row.get(key)
+        if v is not None and not (isinstance(v, float) and pd.isna(v)):
+            s = str(v).strip()
+            if s:
+                return s[:4000]
+    return None
 
-    Each model is evaluated 4 times per problem (idx_answer 0-3).
-    We produce:
-      1. Average accuracy matrix (float): mean of correct across attempts
-      2. Binary majority-vote matrix: 1 if >=2/4 attempts correct
-      3. Raw matrix: all attempts as separate rows
-    """
+
+def _build_rows_final_answer(df: pd.DataFrame, comp_name: str, bench_id: str) -> list[dict]:
+    """Emit one row per (model, problem, attempt) with binary correctness."""
     if df is None or "correct" not in df.columns:
-        print(f"  SKIP {comp_label}: no 'correct' column")
-        return None
+        print(f"  SKIP {comp_name}: no 'correct' column")
+        return []
 
-    # Ensure correct is boolean/int
-    df["correct"] = df["correct"].astype(int)
+    df = df.copy()
+    df["correct"] = pd.to_numeric(df["correct"], errors="coerce")
 
-    # Basic stats
-    models = sorted(df["model_name"].unique())
-    problems = sorted(df["problem_idx"].unique(), key=lambda x: int(x) if str(x).isdigit() else x)
-    n_models = len(models)
-    n_problems = len(problems)
-    attempts_per = df.groupby(["model_name", "problem_idx"])["idx_answer"].nunique()
+    # Register items once per (comp, problem_idx)
+    item_ids: dict = {}
+    item_gold: dict = {}
+    # Pick a representative row per problem for content/gold_answer
+    problem_keys = df["problem_idx"].drop_duplicates().tolist()
+    for pid in problem_keys:
+        sample_row = df[df["problem_idx"] == pid].iloc[0].to_dict()
+        content = _problem_content(sample_row)
+        gold = sample_row.get("gold_answer")
+        gold_str = None if gold is None or (isinstance(gold, float) and pd.isna(gold)) else str(gold)
+        iid = register_item(
+            benchmark_id=bench_id,
+            raw_item_id=f"{comp_name}::{pid}",
+            content=content,
+            correct_answer=gold_str,
+        )
+        item_ids[pid] = iid
+        item_gold[pid] = gold_str
 
-    print(f"\n{'='*65}")
-    print(f"  {comp_label}")
-    print(f"{'='*65}")
-    print(f"  Models:            {n_models}")
-    print(f"  Problems:          {n_problems}")
-    print(f"  Total rows:        {len(df):,}")
-    print(f"  Attempts/model/prob: {attempts_per.min()}-{attempts_per.max()} "
-          f"(median {attempts_per.median():.0f})")
-
-    # --- 1) Average accuracy matrix ---
-    avg_df = (
-        df.groupby(["model_name", "problem_idx"])["correct"]
-        .mean()
-        .reset_index()
-        .pivot(index="model_name", columns="problem_idx", values="correct")
-    )
-    avg_df = avg_df[problems]  # ensure column order
-    avg_df = avg_df.loc[models]  # ensure row order
-
-    matrix = avg_df.values
-    total_cells = n_models * n_problems
-    fill_rate = 1.0 - np.isnan(matrix).sum() / total_cells
-    mean_acc = np.nanmean(matrix)
-
-    print(f"  Matrix dims:       {n_models} x {n_problems}")
-    print(f"  Fill rate:         {fill_rate*100:.1f}%")
-    print(f"  Mean accuracy:     {mean_acc*100:.1f}%")
-
-    # Per-model stats
-    per_model = np.nanmean(matrix, axis=1)
-    best_idx = np.nanargmax(per_model)
-    worst_idx = np.nanargmin(per_model)
-    print(f"\n  Per-model accuracy:")
-    print(f"    Best:   {per_model[best_idx]*100:.1f}% ({models[best_idx]})")
-    print(f"    Worst:  {per_model[worst_idx]*100:.1f}% ({models[worst_idx]})")
-    print(f"    Median: {np.nanmedian(per_model)*100:.1f}%")
-    print(f"    Std:    {np.nanstd(per_model)*100:.1f}%")
-
-    # Per-problem stats
-    per_prob = np.nanmean(matrix, axis=0)
-    print(f"\n  Per-problem solve rate:")
-    print(f"    Min:    {np.nanmin(per_prob)*100:.1f}%")
-    print(f"    Max:    {np.nanmax(per_prob)*100:.1f}%")
-    print(f"    Median: {np.nanmedian(per_prob)*100:.1f}%")
-    print(f"    Std:    {np.nanstd(per_prob)*100:.1f}%")
-
-    # Difficulty distribution
-    unsolved = np.sum(per_prob == 0)
-    hard = np.sum(per_prob < 0.1)
-    easy = np.sum(per_prob > 0.9)
-    print(f"\n  Problem difficulty distribution:")
-    print(f"    Unsolved (0%):   {unsolved}")
-    print(f"    Hard (<10%):     {hard}")
-    print(f"    Easy (>90%):     {easy}")
-
-    # Skip matrices with fewer than 2 models or 2 problems (IRT-invalid)
-    if avg_df.shape[0] < 2 or avg_df.shape[1] < 2:
-        print(f"\n  Skipping {comp_name}: only {avg_df.shape[0]} models x "
-              f"{avg_df.shape[1]} problems (too small for IRT)")
-        return None
-
-    # Save average accuracy matrix
-    out_avg = os.path.join(PROCESSED_DIR, f"response_matrix_{comp_name}.csv")
-    avg_df.to_csv(out_avg)
-    print(f"\n  Saved: {out_avg}")
-
-    # --- 2) Binary majority-vote matrix ---
-    binary_df = (avg_df >= 0.5).astype(int)
-    out_bin = os.path.join(PROCESSED_DIR, f"response_matrix_{comp_name}_binary.csv")
-    binary_df.to_csv(out_bin)
-    print(f"  Saved: {out_bin}")
-
-    binary_matrix = binary_df.values
-    print(f"\n  Majority-vote binary matrix:")
-    print(f"    Pass cells:  {int(binary_matrix.sum()):,} "
-          f"({binary_matrix.sum()/total_cells*100:.1f}%)")
-    print(f"    Fail cells:  {total_cells - int(binary_matrix.sum()):,} "
-          f"({(1 - binary_matrix.sum()/total_cells)*100:.1f}%)")
-
-    # --- 3) Raw attempts matrix ---
-    raw_df = df.copy()
-    raw_df["model_attempt"] = (
-        raw_df["model_name"] + "_attempt" + raw_df["idx_answer"].astype(str)
-    )
-    raw_pivot = (
-        raw_df.pivot(index="model_attempt", columns="problem_idx", values="correct")
-    )
-    raw_pivot = raw_pivot[problems]
-    out_raw = os.path.join(PROCESSED_DIR, f"response_matrix_{comp_name}_raw.csv")
-    raw_pivot.to_csv(out_raw)
-    print(f"  Saved: {out_raw}")
-
-    return {
-        "comp_name": comp_name,
-        "comp_label": comp_label,
-        "n_models": n_models,
-        "n_problems": n_problems,
-        "mean_accuracy": mean_acc,
-        "fill_rate": fill_rate,
-        "models": models,
-        "per_model_acc": per_model,
-        "avg_df": avg_df,
-        "binary_df": binary_df,
-    }
+    rows = []
+    for rec in df.itertuples(index=False):
+        corr = getattr(rec, "correct", None)
+        if corr is None or (isinstance(corr, float) and pd.isna(corr)):
+            continue
+        subj = resolve_subject(str(rec.model_name))
+        pid = rec.problem_idx
+        iid = item_ids.get(pid)
+        if iid is None:
+            continue
+        rows.append({
+            "subject_id": subj,
+            "item_id": iid,
+            "benchmark_id": bench_id,
+            "trial": 1,  # overwritten by ensure_unique_trials
+            "test_condition": f"competition={comp_name}",
+            "response": float(corr),
+            "correct_answer": item_gold.get(pid),
+            "trace": None,
+        })
+    print(f"  {comp_name}: {len(rows):,} rows (final-answer)")
+    return rows
 
 
-def build_proof_matrices(df, comp_name, comp_label):
-    """Build response matrices for proof-based competitions.
-
-    These have points_judge_1/2 instead of correct. We normalize to 0-1.
-    """
+def _build_rows_proof(df: pd.DataFrame, comp_name: str, bench_id: str) -> list[dict]:
+    """Emit one row per (model, problem, attempt) with normalized judge score."""
     if df is None:
-        print(f"  SKIP {comp_label}: no data")
-        return None
+        return []
 
     has_j1 = "points_judge_1" in df.columns
     has_j2 = "points_judge_2" in df.columns
-
     if not has_j1 and not has_j2:
-        print(f"  SKIP {comp_label}: no points columns")
-        return None
+        print(f"  SKIP {comp_name}: no points columns")
+        return []
 
-    # Compute normalized points (average of two judges, normalized by max)
+    df = df.copy()
     if has_j1 and has_j2:
-        max_pts_1 = df.get("max_points_judge_1", pd.Series([7]*len(df)))
-        max_pts_2 = df.get("max_points_judge_2", pd.Series([7]*len(df)))
-        # Handle None/NaN in points
         p1 = pd.to_numeric(df["points_judge_1"], errors="coerce").fillna(0)
         p2 = pd.to_numeric(df["points_judge_2"], errors="coerce").fillna(0)
-        m1 = pd.to_numeric(max_pts_1, errors="coerce").fillna(7)
-        m2 = pd.to_numeric(max_pts_2, errors="coerce").fillna(7)
+        m1 = pd.to_numeric(df.get("max_points_judge_1", pd.Series([7] * len(df))),
+                           errors="coerce").fillna(7)
+        m2 = pd.to_numeric(df.get("max_points_judge_2", pd.Series([7] * len(df))),
+                           errors="coerce").fillna(7)
         df["norm_points"] = ((p1 / m1) + (p2 / m2)) / 2.0
     elif has_j1:
         p1 = pd.to_numeric(df["points_judge_1"], errors="coerce").fillna(0)
-        m1 = pd.to_numeric(df.get("max_points_judge_1",
-                                   pd.Series([7]*len(df))), errors="coerce").fillna(7)
+        m1 = pd.to_numeric(df.get("max_points_judge_1", pd.Series([7] * len(df))),
+                           errors="coerce").fillna(7)
         df["norm_points"] = p1 / m1
     else:
         p2 = pd.to_numeric(df["points_judge_2"], errors="coerce").fillna(0)
-        m2 = pd.to_numeric(df.get("max_points_judge_2",
-                                   pd.Series([7]*len(df))), errors="coerce").fillna(7)
+        m2 = pd.to_numeric(df.get("max_points_judge_2", pd.Series([7] * len(df))),
+                           errors="coerce").fillna(7)
         df["norm_points"] = p2 / m2
-
     df["norm_points"] = df["norm_points"].clip(0, 1)
 
-    models = sorted(df["model_name"].unique())
-    problems = sorted(df["problem_idx"].unique(),
-                      key=lambda x: int(x) if str(x).isdigit() else x)
-    n_models = len(models)
-    n_problems = len(problems)
-
-    print(f"\n{'='*65}")
-    print(f"  {comp_label} (proof-based)")
-    print(f"{'='*65}")
-    print(f"  Models:       {n_models}")
-    print(f"  Problems:     {n_problems}")
-    print(f"  Total rows:   {len(df):,}")
-
-    pts_df = (
-        df.groupby(["model_name", "problem_idx"])["norm_points"]
-        .mean()
-        .reset_index()
-        .pivot(index="model_name", columns="problem_idx", values="norm_points")
-    )
-    pts_df = pts_df.reindex(columns=problems, index=models)
-
-    matrix = pts_df.values
-    fill_rate = 1.0 - np.isnan(matrix).sum() / (n_models * n_problems)
-    mean_pts = np.nanmean(matrix)
-
-    print(f"  Matrix dims:  {n_models} x {n_problems}")
-    print(f"  Fill rate:    {fill_rate*100:.1f}%")
-    print(f"  Mean score:   {mean_pts*100:.1f}%")
-
-    per_model = np.nanmean(matrix, axis=1)
-    best_idx = np.nanargmax(per_model)
-    print(f"\n  Per-model score:")
-    print(f"    Best:   {per_model[best_idx]*100:.1f}% ({models[best_idx]})")
-    print(f"    Median: {np.nanmedian(per_model)*100:.1f}%")
-
-    out_pts = os.path.join(PROCESSED_DIR, f"response_matrix_{comp_name}_points.csv")
-    pts_df.to_csv(out_pts)
-    print(f"\n  Saved: {out_pts}")
-
-    return {
-        "comp_name": comp_name,
-        "comp_label": comp_label,
-        "n_models": n_models,
-        "n_problems": n_problems,
-        "mean_accuracy": mean_pts,
-        "fill_rate": fill_rate,
-        "models": models,
-        "per_model_acc": per_model,
-        "avg_df": pts_df,
-    }
-
-
-def build_combined_matrices(all_stats):
-    """Build combined response matrices from multiple competitions."""
-
-    # --- AIME combined (2025 + 2026) ---
-    aime_stats = [s for s in all_stats if s and s["comp_name"] in AIME_PRIMARY]
-    if len(aime_stats) >= 2:
-        print(f"\n{'='*65}")
-        print(f"  COMBINED: AIME (2025 + 2026)")
-        print(f"{'='*65}")
-        frames = []
-        for s in aime_stats:
-            df = s["avg_df"].copy()
-            df.columns = [f"{s['comp_name']}_p{c}" for c in df.columns]
-            frames.append(df)
-        combined = pd.concat(frames, axis=1)
-        # Only keep models present in all
-        combined = combined.dropna(how="any")
-        n_models = len(combined)
-        n_problems = len(combined.columns)
-        mean_acc = combined.values.mean()
-        print(f"  Models (intersection): {n_models}")
-        print(f"  Total problems:        {n_problems}")
-        print(f"  Mean accuracy:         {mean_acc*100:.1f}%")
-        out = os.path.join(PROCESSED_DIR, "response_matrix_aime_combined.csv")
-        combined.to_csv(out)
-        print(f"  Saved: {out}")
-
-    # --- All primary final-answer competitions combined ---
-    primary_stats = [s for s in all_stats
-                     if s and s["comp_name"] in PRIMARY_FINAL_ANSWER]
-    if len(primary_stats) >= 2:
-        print(f"\n{'='*65}")
-        print(f"  COMBINED: All Primary Final-Answer Competitions")
-        print(f"{'='*65}")
-        frames = []
-        for s in primary_stats:
-            df = s["avg_df"].copy()
-            df.columns = [f"{s['comp_name']}_p{c}" for c in df.columns]
-            frames.append(df)
-        combined = pd.concat(frames, axis=1)
-        # Keep all models (allow NaN for competitions they weren't evaluated on)
-        n_models = len(combined)
-        n_problems = len(combined.columns)
-        fill = 1.0 - combined.isna().sum().sum() / (n_models * n_problems)
-        mean_acc = combined.values[~np.isnan(combined.values)].mean()
-        print(f"  Models (union):  {n_models}")
-        print(f"  Total problems:  {n_problems}")
-        print(f"  Fill rate:       {fill*100:.1f}%")
-        print(f"  Mean accuracy:   {mean_acc*100:.1f}%")
-        out = os.path.join(PROCESSED_DIR, "response_matrix_all_final_answer.csv")
-        combined.to_csv(out)
-        print(f"  Saved: {out}")
-
-
-def build_model_summary(all_stats):
-    """Build a comprehensive model summary CSV."""
-    # Collect all unique models
-    model_data = defaultdict(dict)
-    for s in all_stats:
-        if s is None:
-            continue
-        for i, model in enumerate(s["models"]):
-            model_data[model][s["comp_name"]] = s["per_model_acc"][i]
+    item_ids: dict = {}
+    item_gold: dict = {}
+    for pid in df["problem_idx"].drop_duplicates().tolist():
+        sample_row = df[df["problem_idx"] == pid].iloc[0].to_dict()
+        content = _problem_content(sample_row)
+        gold = sample_row.get("gold_answer")
+        gold_str = None if gold is None or (isinstance(gold, float) and pd.isna(gold)) else str(gold)
+        iid = register_item(
+            benchmark_id=bench_id,
+            raw_item_id=f"{comp_name}::{pid}",
+            content=content,
+            correct_answer=gold_str,
+        )
+        item_ids[pid] = iid
+        item_gold[pid] = gold_str
 
     rows = []
-    for model in sorted(model_data.keys()):
-        row = {"model": model}
-        comps = model_data[model]
-        row["n_competitions"] = len(comps)
-
-        # Individual competition scores
-        for comp_name in comps:
-            row[f"acc_{comp_name}"] = comps[comp_name]
-
-        # Overall mean across competitions
-        scores = list(comps.values())
-        row["mean_acc_all"] = np.mean(scores) if scores else None
-
-        # AIME-specific scores
-        aime_scores = [v for k, v in comps.items() if k.startswith("aime")]
-        if aime_scores:
-            row["mean_acc_aime"] = np.mean(aime_scores)
-
-        rows.append(row)
-
-    summary_df = pd.DataFrame(rows)
-    summary_df = summary_df.sort_values("mean_acc_all", ascending=False, na_position="last")
-
-    out = os.path.join(PROCESSED_DIR, "model_summary.csv")
-    summary_df.to_csv(out, index=False)
-
-    print(f"\n{'='*65}")
-    print(f"  MODEL SUMMARY")
-    print(f"{'='*65}")
-    print(f"  Total unique models: {len(summary_df)}")
-
-    # Competition coverage
-    acc_cols = [c for c in summary_df.columns if c.startswith("acc_")]
-    for col in sorted(acc_cols):
-        n = summary_df[col].notna().sum()
-        comp = col.replace("acc_", "")
-        print(f"    {comp:30s}: {n} models")
-
-    # Top 15 models overall
-    print(f"\n  Top 15 models (by mean accuracy across all competitions):")
-    top = summary_df.dropna(subset=["mean_acc_all"]).head(15)
-    for _, r in top.iterrows():
-        acc = r["mean_acc_all"] * 100
-        nc = r["n_competitions"]
-        aime = r.get("mean_acc_aime")
-        aime_str = f"{aime*100:.1f}%" if pd.notna(aime) else "N/A"
-        print(f"    {r['model']:45s}  overall={acc:.1f}%  "
-              f"aime={aime_str}  comps={int(nc)}")
-
-    print(f"\n  Saved: {out}")
-    return summary_df
+    for rec in df.itertuples(index=False):
+        pts = getattr(rec, "norm_points", None)
+        if pts is None or (isinstance(pts, float) and pd.isna(pts)):
+            continue
+        subj = resolve_subject(str(rec.model_name))
+        pid = rec.problem_idx
+        iid = item_ids.get(pid)
+        if iid is None:
+            continue
+        rows.append({
+            "subject_id": subj,
+            "item_id": iid,
+            "benchmark_id": bench_id,
+            "trial": 1,
+            "test_condition": f"competition={comp_name}",
+            "response": float(pts),
+            "correct_answer": item_gold.get(pid),
+            "trace": None,
+        })
+    print(f"  {comp_name}: {len(rows):,} rows (proof)")
+    return rows
 
 
 def main():
-    print("=" * 65)
-    print("  MathArena Response Matrix Builder")
-    print("  Data: https://huggingface.co/MathArena")
+    print("MathArena long-form builder")
     print("=" * 65)
 
-    all_stats = []
+    bench_id = get_benchmark_id(
+        "matharena",
+        name="MathArena",
+        license=INFO.get("license"),
+        source_url=INFO.get("data_source_url"),
+        description=INFO.get("description"),
+    )
 
-    # -----------------------------------------------------------------------
-    # Process final-answer competitions
-    # -----------------------------------------------------------------------
+    all_rows: list[dict] = []
+
     print(f"\n  Processing {len(FINAL_ANSWER_DATASETS)} final-answer competitions...")
     for comp_name, dataset_id in sorted(FINAL_ANSWER_DATASETS.items()):
         df = download_dataset(dataset_id, comp_name)
-        if df is not None:
-            label = comp_name.replace("_", " ").title()
-            stats = build_final_answer_matrices(df, comp_name, label)
-            if stats:
-                all_stats.append(stats)
+        if df is None:
+            continue
+        all_rows.extend(_build_rows_final_answer(df, comp_name, bench_id))
 
-    # -----------------------------------------------------------------------
-    # Process proof-based competitions
-    # -----------------------------------------------------------------------
     print(f"\n  Processing {len(PROOF_DATASETS)} proof-based competitions...")
     for comp_name, dataset_id in sorted(PROOF_DATASETS.items()):
         df = download_dataset(dataset_id, comp_name)
-        if df is not None:
-            label = comp_name.replace("_", " ").title()
-            stats = build_proof_matrices(df, comp_name, label)
-            if stats:
-                all_stats.append(stats)
+        if df is None:
+            continue
+        all_rows.extend(_build_rows_proof(df, comp_name, bench_id))
 
-    # -----------------------------------------------------------------------
-    # Combined matrices
-    # -----------------------------------------------------------------------
-    build_combined_matrices(all_stats)
+    cols = [
+        "subject_id", "item_id", "benchmark_id", "trial",
+        "test_condition", "response", "correct_answer", "trace",
+    ]
+    out_df = pd.DataFrame(all_rows, columns=cols)
+    out_df = ensure_unique_trials(out_df)
+    out_df.to_parquet(RESPONSES_PATH, index=False)
+    registry_save(CONTRIB_DIR)
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(out_df):,} rows)")
+    print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
 
-    # -----------------------------------------------------------------------
-    # Model summary
-    # -----------------------------------------------------------------------
-    build_model_summary(all_stats)
+    if out_df.empty:
+        print("  WARNING: no rows produced")
+        return
 
-    # -----------------------------------------------------------------------
-    # Final summary
-    # -----------------------------------------------------------------------
-    print(f"\n{'='*65}")
-    print(f"  FINAL SUMMARY")
-    print(f"{'='*65}")
-    print(f"\n  Competitions processed: {len(all_stats)}")
-    total_models = len(set(m for s in all_stats if s for m in s["models"]))
-    total_problems = sum(s["n_problems"] for s in all_stats if s)
-    print(f"  Total unique models:   {total_models}")
-    print(f"  Total problems:        {total_problems}")
-
-    # AIME 2025 as primary
-    aime25 = [s for s in all_stats if s and s["comp_name"] == "aime_2025"]
-    if aime25:
-        s = aime25[0]
-        print(f"\n  PRIMARY response matrix (AIME 2025):")
-        print(f"    Dimensions: {s['n_models']} models x {s['n_problems']} problems")
-        print(f"    Fill rate:  {s['fill_rate']*100:.1f}%")
-        print(f"    Mean acc:   {s['mean_accuracy']*100:.1f}%")
-
-    print(f"\n  All output files:")
-    for f in sorted(os.listdir(PROCESSED_DIR)):
-        fpath = os.path.join(PROCESSED_DIR, f)
-        size_kb = os.path.getsize(fpath) / 1024
-        print(f"    {f:55s}  {size_kb:.1f} KB")
-
-    print(f"\n  Raw cache files:")
-    for f in sorted(os.listdir(RAW_DIR)):
-        fpath = os.path.join(RAW_DIR, f)
-        size_kb = os.path.getsize(fpath) / 1024
-        print(f"    {f:55s}  {size_kb:.1f} KB")
+    print(f"\n  subjects: {out_df['subject_id'].nunique()}")
+    print(f"  items:    {out_df['item_id'].nunique()}")
+    print(f"  rows:     {len(out_df):,}")
+    print(f"  max trial: {int(out_df['trial'].max())}")
 
 
 if __name__ == "__main__":
     main()
-
-    # Generate visualizations, then convert to .pt and upload to HuggingFace Hub
-    # (set NO_UPLOAD=1 to skip the upload; .pt file is still generated)
-    import os, subprocess
-    _scripts = Path(__file__).resolve().parent.parent / "scripts"
-    _bench = Path(__file__).resolve().parent.name
-    subprocess.run([sys.executable, str(_scripts / "visualize_response_matrix.py"), _bench], check=False)
-    _cmd = [sys.executable, str(_scripts / "upload_to_hf.py"), _bench]
-    if os.environ.get("NO_UPLOAD") == "1":
-        _cmd.append("--no-upload")
-    subprocess.run(_cmd, check=False)

@@ -1,5 +1,5 @@
 """
-Build AfriMed-QA response matrix from per-model per-item evaluation results.
+Build AfriMed-QA long-form responses from per-model per-item evaluation results.
 
 Data source:
   - GitHub: intron-innovation/AfriMed-QA, results/ directory
@@ -10,102 +10,90 @@ Data source:
 AfriMed-QA overview:
   - Medical QA benchmark for African healthcare contexts
   - Multiple dataset versions: v1 (3000 MCQs), v2 (3910 MCQs), v2.5 (289 MCQs)
-  - Also includes MedQA-USMLE (1273 MCQs) for comparison
-  - Questions span 20+ medical specialties
-  - Contributors from 16 African countries
+  - Questions span 20+ medical specialties; contributors from 16 African countries
 
 Strategy:
-  - Primary matrix: afrimed-qa-v2 (base-prompt, 0-shot) — largest item set (3910)
-    with 19 models
-  - We also incorporate additional models that were only evaluated on other
-    dataset versions (v1, v2.5, medqa) by mapping via sample_id overlap
-  - For models with multiple dataset versions, we prefer v2 > v1 > v2.5
+  - Select best eval per model: base-prompt > instruct, v2 > v1 > v2.5
+  - Observation `test_condition` captures `source=<dataset>|prompt=<base|instruct>`
+  - Items are shared across models by sample_id; their content/ground-truth come
+    from the richest available CSV (or the phase_2 raw file, when present).
 
 Outputs:
-  - response_matrix.csv: Binary correct/incorrect (rows=items, cols=models)
-  - task_metadata.csv: Per-item metadata (question, answer, specialty, country)
-  - model_summary.csv: Per-model accuracy and coverage statistics
+  - responses.parquet  # long-form
+  - _contrib/{subjects,items,benchmarks}.parquet
 """
 
 INFO = {
-    'description': 'Build AfriMed-QA response matrix from per-model per-item evaluation results',
-    'testing_condition': '',
+    'description': 'AfriMed-QA: medical QA for African healthcare contexts; binary correctness on MCQ items.',
+    'testing_condition': 'test_condition captures evaluation source dataset + prompt (e.g. "source=afrimedqa-v2|prompt=base").',
     'paper_url': 'https://arxiv.org/abs/2411.15640',
     'data_source_url': 'https://github.com/intron-innovation/AfriMed-QA',
     'subject_type': 'model',
     'item_type': 'task',
     'license': 'CC-BY-NC-SA-4.0',
     'citation': """@misc{olatunji2025afrimedqapanafricanmultispecialtymedical,
-      title={AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering Benchmark Dataset}, 
+      title={AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering Benchmark Dataset},
       author={Tobi Olatunji and Charles Nimo and Abraham Owodunni and Tassallah Abdullahi and Emmanuel Ayodele and Mardhiyah Sanni and Chinemelu Aka and Folafunmi Omofoye and Foutse Yuehgoh and Timothy Faniran and Bonaventure F. P. Dossou and Moshood Yekini and Jonas Kemp and Katherine Heller and Jude Chidubem Omeke and Chidi Asuzu MD and Naome A. Etori and Aimérou Ndiaye and Ifeoma Okoh and Evans Doe Ocansey and Wendy Kinara and Michael Best and Irfan Essa and Stephen Edward Moore and Chris Fourie and Mercy Nyamewaa Asiedu},
       year={2025},
       eprint={2411.15640},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
       doi={https://doi.org/10.18653/v1/2025.acl-long.96},
-      url={https://arxiv.org/abs/2411.15640}, 
+      url={https://arxiv.org/abs/2411.15640},
 }""",
     'tags': ['multilingual'],
 }
 
 
-from pathlib import Path
-import os
-import sys
-import subprocess
-import re
 import csv
+import os
+import re
+import subprocess
+import sys
+from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
-# ---- Paths ----
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RAW_DIR = os.path.join(BASE_DIR, "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
-os.makedirs(RAW_DIR, exist_ok=True)
-os.makedirs(PROCESSED_DIR, exist_ok=True)
+_BENCHMARK_DIR = Path(__file__).resolve().parent
+RAW_DIR = _BENCHMARK_DIR / "raw"
+CONTRIB_DIR = _BENCHMARK_DIR / "_contrib"
+RESPONSES_PATH = _BENCHMARK_DIR / "responses.parquet"
+RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+sys.path.insert(0, str(_BENCHMARK_DIR.parent))
+from _registry import (  # noqa: E402
+    get_benchmark_id, register_item, resolve_subject, save as registry_save,
+    ensure_unique_trials,
+)
 
 REPO_URL = "https://github.com/intron-innovation/AfriMed-QA.git"
-REPO_DIR = os.path.join(RAW_DIR, "AfriMed-QA")
-RESULTS_DIR = os.path.join(REPO_DIR, "results")
-DATA_DIR = os.path.join(REPO_DIR, "data")
+REPO_DIR = RAW_DIR / "AfriMed-QA"
+RESULTS_DIR = REPO_DIR / "results"
+DATA_DIR = REPO_DIR / "data"
 
 
 def clone_repo():
-    """Clone the AfriMed-QA repo into raw/ if not already present."""
-    print("STEP 1: Cloning AfriMed-QA repository")
-    print("-" * 60)
-
-    if os.path.isdir(REPO_DIR) and os.path.isdir(RESULTS_DIR):
+    if REPO_DIR.is_dir() and RESULTS_DIR.is_dir():
         print(f"  Already cloned: {REPO_DIR}")
         return
-
     print(f"  Cloning {REPO_URL} ...")
     result = subprocess.run(
-        ["git", "clone", "--depth", "1", REPO_URL, REPO_DIR],
+        ["git", "clone", "--depth", "1", REPO_URL, str(REPO_DIR)],
         capture_output=True, text=True, timeout=300,
     )
     if result.returncode != 0:
         print(f"  ERROR: git clone failed:\n{result.stderr}")
         sys.exit(1)
-
     print(f"  Cloned to: {REPO_DIR}")
 
 
-def classify_csv(model_dir_name, filename):
-    """Classify a CSV file by dataset, prompt type, and shot setting.
-
-    Returns:
-        dict with keys: dataset, prompt, shots, or None if not an MCQ file
-    """
+def classify_csv(filename):
     fname = filename.lower()
     if not fname.endswith(".csv"):
         return None
     if "mcq" not in fname:
         return None
 
-    # Determine dataset version
     if "afrimed-qa-v2.5" in fname or "afrimed-qa-v2-5" in fname:
         dataset = "afrimedqa-v2.5"
     elif "afrimed-qa-v2" in fname:
@@ -117,98 +105,58 @@ def classify_csv(model_dir_name, filename):
     else:
         dataset = "unknown"
 
-    # Determine prompt type
     if "instruct-prompt" in fname or "instruct_prompt" in fname or "instruct_0shot" in fname:
         prompt = "instruct"
     else:
         prompt = "base"
 
-    # Determine shot count
     shot_match = re.search(r"(\d+)[_-]?shot", fname)
     shots = int(shot_match.group(1)) if shot_match else 0
-
     return {"dataset": dataset, "prompt": prompt, "shots": shots}
 
 
 def read_mcq_csv(filepath):
-    """Read an MCQ CSV and extract sample_id + correct column.
-
-    Returns:
-        DataFrame with columns [sample_id, correct], or None on failure.
-    """
     try:
         df = pd.read_csv(filepath, low_memory=False)
     except Exception as e:
         print(f"    WARNING: Could not read {filepath}: {e}")
         return None
-
-    # Normalize column names (some files have unnamed index column)
     if "" in df.columns or "Unnamed: 0" in df.columns:
         idx_col = "" if "" in df.columns else "Unnamed: 0"
         df = df.drop(columns=[idx_col], errors="ignore")
-
-    if "sample_id" not in df.columns:
+    if "sample_id" not in df.columns or "correct" not in df.columns:
         return None
-    if "correct" not in df.columns:
-        return None
-
-    # Extract just what we need
     result = df[["sample_id"]].copy()
     result["correct"] = pd.to_numeric(df["correct"], errors="coerce")
-
-    # Drop rows with no sample_id
     result = result.dropna(subset=["sample_id"])
-
     return result
 
 
 def read_mcq_csv_full(filepath):
-    """Read an MCQ CSV and extract full metadata.
-
-    Returns:
-        DataFrame with all available columns, or None on failure.
-    """
     try:
         df = pd.read_csv(filepath, low_memory=False)
     except Exception:
         return None
-
     if "" in df.columns or "Unnamed: 0" in df.columns:
         idx_col = "" if "" in df.columns else "Unnamed: 0"
         df = df.drop(columns=[idx_col], errors="ignore")
-
     if "sample_id" not in df.columns:
         return None
-
     return df
 
 
 def discover_evaluations():
-    """Walk the results/ directory and discover all MCQ evaluation files.
-
-    Returns:
-        list of dicts: {model, dataset, prompt, shots, filepath, n_items}
-    """
-    print("\nSTEP 2: Discovering evaluation files")
-    print("-" * 60)
-
     evaluations = []
-    model_dirs = sorted(os.listdir(RESULTS_DIR))
-
-    for model_dir_name in model_dirs:
-        model_path = os.path.join(RESULTS_DIR, model_dir_name)
-        if not os.path.isdir(model_path):
+    for model_dir_name in sorted(os.listdir(RESULTS_DIR)):
+        model_path = RESULTS_DIR / model_dir_name
+        if not model_path.is_dir():
             continue
-
-        csv_files = sorted(os.listdir(model_path))
-        for csv_file in csv_files:
-            info = classify_csv(model_dir_name, csv_file)
+        for csv_file in sorted(os.listdir(model_path)):
+            info = classify_csv(csv_file)
             if info is None:
                 continue
-
-            filepath = os.path.join(model_path, csv_file)
-
-            # Check if this CSV has a 'correct' column
+            filepath = model_path / csv_file
+            # Check header
             try:
                 with open(filepath, "r") as f:
                     reader = csv.reader(f)
@@ -217,270 +165,76 @@ def discover_evaluations():
                         continue
             except (StopIteration, Exception):
                 continue
-
-            # Count rows (use csv reader to handle multi-line fields)
             try:
                 with open(filepath, "r") as fcount:
                     count_reader = csv.reader(fcount)
-                    next(count_reader)  # skip header
+                    next(count_reader)
                     n_items = sum(1 for _ in count_reader)
             except Exception:
                 n_items = 0
-
             evaluations.append({
                 "model_dir": model_dir_name,
                 "dataset": info["dataset"],
                 "prompt": info["prompt"],
                 "shots": info["shots"],
-                "filepath": filepath,
+                "filepath": str(filepath),
                 "filename": csv_file,
                 "n_items": n_items,
             })
-
-    print(f"  Found {len(evaluations)} MCQ evaluation files across "
-          f"{len(model_dirs)} model directories")
-
-    # Summarize by dataset
-    from collections import Counter
-    ds_counts = Counter(e["dataset"] for e in evaluations)
-    for ds, count in sorted(ds_counts.items()):
-        print(f"    {ds:20s}: {count} files")
-
+    print(f"  Found {len(evaluations)} MCQ evaluation files")
     return evaluations
 
 
 def select_primary_evaluations(evaluations):
-    """Select the best evaluation file for each model.
-
-    Priority: base-prompt > instruct-prompt, 0-shot > few-shot
-    For dataset: afrimedqa-v2 > afrimedqa-v1 > afrimedqa-v2.5 > unknown
-    We exclude medqa (different benchmark) from the primary matrix.
-
-    Returns:
-        list of selected evaluation dicts
-    """
-    print("\nSTEP 3: Selecting primary evaluation per model")
-    print("-" * 60)
-
-    # Filter to base-prompt, 0-shot, AfriMed-QA datasets only
+    """Select the best evaluation file for each model."""
     candidates = [
         e for e in evaluations
-        if e["prompt"] == "base"
-        and e["shots"] == 0
-        and e["dataset"].startswith("afrimedqa")
+        if e["prompt"] == "base" and e["shots"] == 0 and e["dataset"].startswith("afrimedqa")
     ]
 
-    # Group by model directory
-    model_candidates = {}
+    model_candidates: dict = {}
     for e in candidates:
-        model = e["model_dir"]
-        if model not in model_candidates:
-            model_candidates[model] = []
-        model_candidates[model].append(e)
+        model_candidates.setdefault(e["model_dir"], []).append(e)
 
-    # For each model, pick the best dataset version
     dataset_priority = {"afrimedqa-v2": 0, "afrimedqa-v1": 1, "afrimedqa-v2.5": 2}
     selected = []
-
     for model, cands in sorted(model_candidates.items()):
-        # Sort by priority (lower = better), then by n_items (more = better)
-        cands.sort(key=lambda e: (
-            dataset_priority.get(e["dataset"], 99),
-            -e["n_items"],
-        ))
-        best = cands[0]
-        selected.append(best)
-        if len(cands) > 1:
-            alt_datasets = [c["dataset"] for c in cands[1:]]
-            print(f"  {model:40s} -> {best['dataset']} ({best['n_items']} items)"
-                  f"  [also available: {', '.join(alt_datasets)}]")
-        else:
-            print(f"  {model:40s} -> {best['dataset']} ({best['n_items']} items)")
+        cands.sort(key=lambda e: (dataset_priority.get(e["dataset"], 99), -e["n_items"]))
+        selected.append(cands[0])
 
-    # Also add models that only have instruct-prompt or non-zero-shot but
-    # are not yet covered. Check for gemini_pro, gemini_ultra, medlm, medpalm2.
-    covered_models = {e["model_dir"] for e in selected}
-    instruct_candidates = [
+    covered = {e["model_dir"] for e in selected}
+    instruct = [
         e for e in evaluations
-        if e["model_dir"] not in covered_models
+        if e["model_dir"] not in covered
         and e["dataset"].startswith("afrimedqa")
         and e["shots"] == 0
     ]
-    # Group by model
-    instruct_by_model = {}
-    for e in instruct_candidates:
-        model = e["model_dir"]
-        if model not in instruct_by_model:
-            instruct_by_model[model] = []
-        instruct_by_model[model].append(e)
-
+    instruct_by_model: dict = {}
+    for e in instruct:
+        instruct_by_model.setdefault(e["model_dir"], []).append(e)
     for model, cands in sorted(instruct_by_model.items()):
-        cands.sort(key=lambda e: (
-            dataset_priority.get(e["dataset"], 99),
-            -e["n_items"],
-        ))
-        best = cands[0]
-        selected.append(best)
-        print(f"  {model:40s} -> {best['dataset']} ({best['n_items']} items)"
-              f"  [instruct-prompt]")
+        cands.sort(key=lambda e: (dataset_priority.get(e["dataset"], 99), -e["n_items"]))
+        selected.append(cands[0])
+        covered.add(model)
 
-    # Check for models with unknown dataset that might be afrimedqa
-    unknown_models = set()
+    # Models whose only afrimedqa eval is under an "unknown" dataset tag
+    unknown_candidates: dict = {}
     for e in evaluations:
-        if (e["model_dir"] not in covered_models
-                and e["model_dir"] not in instruct_by_model
+        if (e["model_dir"] not in covered
                 and e["dataset"] == "unknown"
                 and e["prompt"] == "base"
-                and e["shots"] == 0):
-            unknown_models.add(e["model_dir"])
-
-    # For unknown-dataset models, include them if they have 3000+ items
-    # (likely afrimedqa-v1 without the version in the filename)
-    for model in sorted(unknown_models):
-        cands = [
-            e for e in evaluations
-            if e["model_dir"] == model
-            and e["dataset"] == "unknown"
-            and e["prompt"] == "base"
-            and e["shots"] == 0
-        ]
-        # Pick the one closest to 3000 or 3910 items
+                and e["shots"] == 0
+                and e["n_items"] >= 2800):
+            unknown_candidates.setdefault(e["model_dir"], []).append(e)
+    for model, cands in sorted(unknown_candidates.items()):
         cands.sort(key=lambda e: -e["n_items"])
-        for c in cands:
-            # Include files with roughly 3000 or 3910 items (afrimedqa-v1 or v2)
-            if c["n_items"] >= 2800:
-                selected.append(c)
-                print(f"  {model:40s} -> unknown ({c['n_items']} items)"
-                      f"  [likely afrimedqa-v1]")
-                break
+        selected.append(cands[0])
 
-    print(f"\n  Selected {len(selected)} model evaluations total")
+    print(f"  Selected {len(selected)} model evaluations total")
     return selected
 
 
-def build_response_matrix(selected_evals):
-    """Build the items x models response matrix.
-
-    Returns:
-        response_df: DataFrame (items x models), values are 0/1/NaN
-        metadata_df: DataFrame with per-item metadata
-    """
-    print("\nSTEP 4: Building response matrix")
-    print("-" * 60)
-
-    # Collect all sample_ids and their correctness per model
-    model_data = {}
-    all_sample_ids = set()
-    metadata_source = None  # We'll pick the richest metadata file
-
-    for ev in selected_evals:
-        model_name = clean_model_name(ev["model_dir"])
-        filepath = ev["filepath"]
-
-        df = read_mcq_csv(filepath)
-        if df is None:
-            print(f"  WARNING: Could not read {filepath}")
-            continue
-
-        # Build sample_id -> correct mapping
-        correctness = dict(zip(df["sample_id"], df["correct"]))
-        model_data[model_name] = correctness
-        all_sample_ids.update(correctness.keys())
-
-        # Try to get metadata from the richest file
-        if metadata_source is None or ev["n_items"] > 3800:
-            full_df = read_mcq_csv_full(filepath)
-            if full_df is not None and "specialty" in full_df.columns:
-                metadata_source = full_df
-            elif full_df is not None and metadata_source is None:
-                metadata_source = full_df
-
-    # Sort sample_ids for stable ordering
-    sample_ids = sorted(all_sample_ids)
-    model_names = sorted(model_data.keys())
-
-    print(f"  Total unique items (sample_ids): {len(sample_ids)}")
-    print(f"  Total models: {len(model_names)}")
-
-    # Build the response matrix: rows = items, columns = models
-    matrix = {}
-    for model_name in model_names:
-        correctness = model_data[model_name]
-        matrix[model_name] = [
-            correctness.get(sid, np.nan) for sid in sample_ids
-        ]
-
-    response_df = pd.DataFrame(matrix, index=sample_ids)
-    response_df.index.name = "sample_id"
-
-    # Ensure values are numeric 0/1 (not boolean True/False)
-    for col in response_df.columns:
-        response_df[col] = pd.to_numeric(response_df[col], errors="coerce")
-    # Coerce to integer where not NaN
-    response_df = response_df.astype("Int64")
-
-    # Build metadata
-    metadata_rows = []
-    # Load the main dataset file for additional metadata
-    main_data_path = os.path.join(DATA_DIR, "afri_med_qa_15k_v2.5_phase_2_15275.csv")
-    main_meta = None
-    if os.path.exists(main_data_path):
-        main_meta = pd.read_csv(main_data_path, low_memory=False)
-        main_meta = main_meta.set_index("sample_id")
-
-    # Also build metadata from the richest results CSV
-    results_meta = {}
-    if metadata_source is not None:
-        for _, row in metadata_source.iterrows():
-            sid = row.get("sample_id")
-            if sid is not None:
-                results_meta[sid] = row
-
-    for sid in sample_ids:
-        row_data = {"item_id": sid}
-
-        # Try main dataset first
-        if main_meta is not None and sid in main_meta.index:
-            mrow = main_meta.loc[sid]
-            if isinstance(mrow, pd.DataFrame):
-                mrow = mrow.iloc[0]
-            question = str(mrow.get("question", mrow.get("question_clean", "")))
-            row_data["question"] = question[:200] if question else ""
-            row_data["answer"] = str(mrow.get("correct_answer", ""))
-            row_data["specialty"] = str(mrow.get("specialty", ""))
-            row_data["country"] = str(mrow.get("country", ""))
-            row_data["region_specific"] = str(mrow.get("region_specific", ""))
-            row_data["question_type"] = str(mrow.get("question_type", ""))
-        elif sid in results_meta:
-            rrow = results_meta[sid]
-            # Use question from results CSV
-            question = str(rrow.get("question", rrow.get("question_y", rrow.get("question_x", ""))))
-            row_data["question"] = question[:200] if question else ""
-            row_data["answer"] = str(rrow.get("answer", rrow.get("correct_answer", "")))
-            row_data["specialty"] = str(rrow.get("specialty", ""))
-            row_data["country"] = str(rrow.get("country", ""))
-            row_data["region_specific"] = ""
-            row_data["question_type"] = "mcq"
-        else:
-            row_data["question"] = ""
-            row_data["answer"] = ""
-            row_data["specialty"] = ""
-            row_data["country"] = ""
-            row_data["region_specific"] = ""
-            row_data["question_type"] = "mcq"
-
-        metadata_rows.append(row_data)
-
-    metadata_df = pd.DataFrame(metadata_rows)
-
-    return response_df, metadata_df
-
-
 def clean_model_name(model_dir_name):
-    """Clean/standardize model directory name to a readable model name."""
-    name = model_dir_name
-
-    # Specific mappings for known directories
     name_map = {
         "jsl-med-llama-8b": "JSL-MedLlama-3-8B-v2.0",
         "mistral-7b": "Mistral-7B-Instruct-v0.2",
@@ -490,246 +244,172 @@ def clean_model_name(model_dir_name):
         "Meditron-7B-FT": "Meditron-7B",
         "PMC-LLAMA-7B-FT": "PMC-LLaMA-7B",
     }
-    if name in name_map:
-        return name_map[name]
-
-    return name
+    return name_map.get(model_dir_name, model_dir_name)
 
 
-def print_matrix_statistics(response_df, metadata_df):
-    """Print comprehensive statistics about the response matrix."""
-    n_items, n_models = response_df.shape
-    total_cells = n_items * n_models
+def _load_item_registry(bench_id: str, selected_evals):
+    """Register each distinct sample_id exactly once.
 
-    print(f"\n{'=' * 60}")
-    print("  RESPONSE MATRIX STATISTICS")
-    print(f"{'=' * 60}")
-    print(f"  Items:           {n_items}")
-    print(f"  Models:          {n_models}")
-    print(f"  Matrix dims:     {n_items} items x {n_models} models")
-    print(f"  Total cells:     {total_cells:,}")
+    Content preference (richest first):
+      1. phase_2 raw CSV (question_clean + answer_options)
+      2. Any results CSV row carrying a question/specialty etc.
+    """
+    # Collect all sample_ids + pick the richest results CSV for fallback content.
+    all_ids: set = set()
+    richest_results = None
+    richest_n = -1
+    for ev in selected_evals:
+        fdf = read_mcq_csv_full(ev["filepath"])
+        if fdf is None:
+            continue
+        all_ids.update(fdf["sample_id"].dropna().astype(str).tolist())
+        # prefer files with 'specialty' column, else largest
+        has_spec = "specialty" in fdf.columns
+        score = ev["n_items"] + (10 ** 6 if has_spec else 0)
+        if score > richest_n:
+            richest_results = fdf
+            richest_n = score
 
-    # Fill rate
-    n_valid = response_df.notna().sum().sum()
-    n_missing = total_cells - n_valid
-    print(f"  Valid cells:     {n_valid:,} ({n_valid / total_cells * 100:.1f}%)")
-    print(f"  Missing cells:   {n_missing:,} ({n_missing / total_cells * 100:.1f}%)")
+    phase2_path = REPO_DIR / "data" / "afri_med_qa_15k_v2.5_phase_2_15275.csv"
+    phase2 = None
+    if phase2_path.exists():
+        try:
+            phase2 = pd.read_csv(phase2_path, low_memory=False)
+            phase2 = phase2.set_index("sample_id")
+        except Exception:
+            phase2 = None
 
-    # Correctness distribution
-    n_correct = int((response_df == 1).sum().sum())
-    n_incorrect = int((response_df == 0).sum().sum())
-    print(f"\n  Correct (1):     {n_correct:,} ({n_correct / n_valid * 100:.1f}% of valid)")
-    print(f"  Incorrect (0):   {n_incorrect:,} ({n_incorrect / n_valid * 100:.1f}% of valid)")
+    results_by_id: dict = {}
+    if richest_results is not None:
+        for _, row in richest_results.iterrows():
+            sid = row.get("sample_id")
+            if sid is None or (isinstance(sid, float) and pd.isna(sid)):
+                continue
+            results_by_id[str(sid)] = row
 
-    # Per-model statistics
-    per_model_acc = response_df.mean(axis=0)
-    per_model_coverage = response_df.notna().sum(axis=0)
-    print(f"\n  Per-model accuracy:")
-    print(f"    Best:   {per_model_acc.max() * 100:.1f}% ({per_model_acc.idxmax()})")
-    print(f"    Worst:  {per_model_acc.min() * 100:.1f}% ({per_model_acc.idxmin()})")
-    print(f"    Median: {per_model_acc.median() * 100:.1f}%")
-    print(f"    Mean:   {per_model_acc.mean() * 100:.1f}%")
-    print(f"    Std:    {per_model_acc.std() * 100:.1f}%")
-
-    # Per-item statistics
-    per_item_acc = response_df.mean(axis=1)
-    print(f"\n  Per-item accuracy (across models):")
-    print(f"    Min:    {per_item_acc.min() * 100:.1f}%")
-    print(f"    Max:    {per_item_acc.max() * 100:.1f}%")
-    print(f"    Median: {per_item_acc.median() * 100:.1f}%")
-    print(f"    Std:    {per_item_acc.std() * 100:.1f}%")
-
-    # Items solved by no model / all models
-    unsolved = (per_item_acc == 0).sum()
-    all_solved = (per_item_acc == 1).sum()
-    hard = (per_item_acc < 0.1).sum()
-    easy = (per_item_acc > 0.9).sum()
-    print(f"\n  Item difficulty distribution:")
-    print(f"    No model correct (0%):     {unsolved}")
-    print(f"    Hard (<10% correct):       {hard}")
-    print(f"    Easy (>90% correct):       {easy}")
-    print(f"    All models correct (100%): {all_solved}")
-
-    # Specialty breakdown
-    if "specialty" in metadata_df.columns:
-        spec = metadata_df["specialty"]
-        valid_spec = spec[spec.notna() & (spec != "") & (spec != "nan")]
-        if len(valid_spec) > 0:
-            print(f"\n  Specialty breakdown:")
-            spec_counts = valid_spec.value_counts()
-            for s, count in spec_counts.head(15).items():
-                # Get accuracy for items in this specialty
-                mask = metadata_df["specialty"] == s
-                spec_items = response_df.loc[metadata_df.loc[mask, "item_id"].values]
-                spec_acc = spec_items.mean().mean() * 100
-                print(f"    {s:35s}  n={count:4d}  mean_acc={spec_acc:.1f}%")
-
-    # Country breakdown
-    if "country" in metadata_df.columns:
-        country = metadata_df["country"]
-        valid_country = country[country.notna() & (country != "") & (country != "nan")]
-        if len(valid_country) > 0:
-            print(f"\n  Country breakdown:")
-            country_counts = valid_country.value_counts()
-            for c, count in country_counts.head(10).items():
-                print(f"    {c:10s}  n={count}")
-
-    # Top/bottom models
-    ranked = per_model_acc.sort_values(ascending=False)
-    print(f"\n  All models ranked by accuracy:")
-    for i, (model, acc) in enumerate(ranked.items()):
-        cov = int(per_model_coverage[model])
-        print(f"    {i + 1:3d}. {model:45s}  {acc * 100:5.1f}%  ({cov} items)")
-
-
-def build_model_summary(response_df, selected_evals):
-    """Build model_summary.csv with per-model statistics."""
-    print(f"\nSTEP 5: Building model summary")
-    print("-" * 60)
-
-    rows = []
-    for model_name in sorted(response_df.columns):
-        col = response_df[model_name]
-        n_items = int(col.notna().sum())
-        n_correct = int((col == 1).sum())
-        n_incorrect = int((col == 0).sum())
-        accuracy = float(col.mean()) if n_items > 0 else np.nan
-
-        # Find the evaluation info
-        ev_info = None
-        for ev in selected_evals:
-            if clean_model_name(ev["model_dir"]) == model_name:
-                ev_info = ev
-                break
-
-        dataset = ev_info["dataset"] if ev_info else ""
-        prompt_type = ev_info["prompt"] if ev_info else ""
-
-        rows.append({
-            "model": model_name,
-            "accuracy": round(accuracy, 4),
-            "n_items_evaluated": n_items,
-            "n_correct": n_correct,
-            "n_incorrect": n_incorrect,
-            "coverage": round(n_items / len(response_df), 4),
-            "source_dataset": dataset,
-            "prompt_type": prompt_type,
-        })
-
-    summary_df = pd.DataFrame(rows)
-    summary_df = summary_df.sort_values("accuracy", ascending=False)
-    return summary_df
-
-
-def _extract_item_content():
-    """Extract item_content.csv: question + answer options from raw phase_2 CSV."""
-    csv_path = os.path.join(
-        RAW_DIR, "AfriMed-QA", "data", "afri_med_qa_15k_v2.5_phase_2_15275.csv"
-    )
-    if not os.path.exists(csv_path):
-        print("  No phase_2 raw CSV found; skipping item_content extraction")
-        return
-    df = pd.read_csv(csv_path)
-    items = []
-    for _, row in df.iterrows():
-        parts = []
-        if pd.notna(row.get("question_clean")):
-            parts.append(str(row["question_clean"]))
-        elif pd.notna(row.get("question")):
-            parts.append(str(row["question"]))
-        if pd.notna(row.get("answer_options")):
-            parts.append(str(row["answer_options"])[:500])
-        if parts:
-            items.append({
-                "item_id": str(row.get("sample_id", "")),
-                "content": "\n".join(parts)[:2000],
-            })
-    out_path = os.path.join(PROCESSED_DIR, "item_content.csv")
-    pd.DataFrame(items).to_csv(out_path, index=False)
-    print(f"  Extracted {len(items)} items to {out_path}")
+    item_ids: dict = {}
+    item_gold: dict = {}
+    for sid in sorted(all_ids):
+        content = None
+        gold = None
+        if phase2 is not None and sid in phase2.index:
+            prow = phase2.loc[sid]
+            if isinstance(prow, pd.DataFrame):
+                prow = prow.iloc[0]
+            parts = []
+            q = prow.get("question_clean") if "question_clean" in prow else prow.get("question")
+            if q is not None and not (isinstance(q, float) and pd.isna(q)):
+                parts.append(str(q))
+            opts = prow.get("answer_options")
+            if opts is not None and not (isinstance(opts, float) and pd.isna(opts)):
+                parts.append(str(opts)[:1500])
+            if parts:
+                content = "\n\n".join(parts)[:4000]
+            ca = prow.get("correct_answer")
+            if ca is not None and not (isinstance(ca, float) and pd.isna(ca)):
+                gold = str(ca)
+        if content is None and sid in results_by_id:
+            rrow = results_by_id[sid]
+            q = rrow.get("question")
+            if q is None or (isinstance(q, float) and pd.isna(q)):
+                q = rrow.get("question_x") or rrow.get("question_y")
+            if q is not None and not (isinstance(q, float) and pd.isna(q)):
+                content = str(q)[:4000]
+            if gold is None:
+                ca = rrow.get("answer") or rrow.get("correct_answer")
+                if ca is not None and not (isinstance(ca, float) and pd.isna(ca)):
+                    gold = str(ca)
+        iid = register_item(
+            benchmark_id=bench_id,
+            raw_item_id=str(sid),
+            content=content,
+            correct_answer=gold,
+        )
+        item_ids[str(sid)] = iid
+        item_gold[str(sid)] = gold
+    return item_ids, item_gold
 
 
 def main():
-    print("AfriMed-QA Response Matrix Builder")
+    print("AfriMed-QA long-form builder")
     print("=" * 60)
-    print(f"  Raw data dir:       {RAW_DIR}")
-    print(f"  Processed data dir: {PROCESSED_DIR}")
-    print(f"  Task type:          MCQ (multiple choice questions)")
-    print(f"  Focus:              AfriMed-QA benchmark (African medical QA)")
-    print()
 
-    # Step 1: Clone repo
     clone_repo()
 
-    # Step 2: Discover evaluation files
-    evaluations = discover_evaluations()
+    bench_id = get_benchmark_id(
+        "afrimedqa",
+        name="AfriMed-QA",
+        license=INFO.get("license"),
+        source_url=INFO.get("data_source_url"),
+        description=INFO.get("description"),
+    )
 
-    # Step 3: Select primary evaluation per model
+    evaluations = discover_evaluations()
     selected_evals = select_primary_evaluations(evaluations)
 
-    # Step 4: Build response matrix
-    response_df, metadata_df = build_response_matrix(selected_evals)
+    cols = [
+        "subject_id", "item_id", "benchmark_id", "trial",
+        "test_condition", "response", "correct_answer", "trace",
+    ]
 
-    # Print statistics
-    print_matrix_statistics(response_df, metadata_df)
+    if not selected_evals:
+        print("  No evaluations selected — writing empty responses.parquet")
+        df = pd.DataFrame(columns=cols)
+        df.to_parquet(RESPONSES_PATH, index=False)
+        registry_save(CONTRIB_DIR)
+        return
 
-    # Step 5: Build model summary
-    summary_df = build_model_summary(response_df, selected_evals)
+    item_ids, item_gold = _load_item_registry(bench_id, selected_evals)
+    print(f"  Registered {len(item_ids):,} items")
 
-    # ---- Save all outputs ----
-    print(f"\nSTEP 6: Saving outputs")
-    print("-" * 60)
+    rows = []
+    for ev in selected_evals:
+        df = read_mcq_csv(ev["filepath"])
+        if df is None:
+            continue
+        model_name = clean_model_name(ev["model_dir"])
+        subj = resolve_subject(model_name)
+        cond = f"source={ev['dataset']}|prompt={ev['prompt']}"
+        for _, r in df.iterrows():
+            sid = str(r["sample_id"])
+            score = r["correct"]
+            if pd.isna(score):
+                continue
+            iid = item_ids.get(sid)
+            if iid is None:
+                # Item wasn't registered (missing from any full CSV); register lazily
+                iid = register_item(
+                    benchmark_id=bench_id,
+                    raw_item_id=sid,
+                    content=None,
+                )
+                item_ids[sid] = iid
+            rows.append({
+                "subject_id": subj,
+                "item_id": iid,
+                "benchmark_id": bench_id,
+                "trial": 1,
+                "test_condition": cond,
+                "response": float(score),
+                "correct_answer": item_gold.get(sid),
+                "trace": None,
+            })
 
-    # 1. Response matrix (rows=items, columns=models)
-    response_path = os.path.join(PROCESSED_DIR, "response_matrix.csv")
-    response_df.to_csv(response_path)
-    print(f"  Saved: {response_path}")
-    print(f"    Shape: {response_df.shape[0]} items x {response_df.shape[1]} models")
+    out_df = pd.DataFrame(rows, columns=cols)
+    out_df = ensure_unique_trials(out_df)
+    out_df.to_parquet(RESPONSES_PATH, index=False)
+    registry_save(CONTRIB_DIR)
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(out_df):,} rows)")
+    print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
 
-    # 2. Task metadata
-    meta_path = os.path.join(PROCESSED_DIR, "task_metadata.csv")
-    metadata_df.to_csv(meta_path, index=False)
-    print(f"  Saved: {meta_path}")
+    if out_df.empty:
+        print("  WARNING: no rows produced")
+        return
 
-    # 3. Model summary
-    summary_path = os.path.join(PROCESSED_DIR, "model_summary.csv")
-    summary_df.to_csv(summary_path, index=False)
-    print(f"  Saved: {summary_path}")
-
-    # Final summary
-    print(f"\n{'=' * 60}")
-    print("  FINAL SUMMARY")
-    print(f"{'=' * 60}")
-    print(f"  Response matrix: {response_df.shape[0]} items x {response_df.shape[1]} models")
-    n_valid = response_df.notna().sum().sum()
-    total = response_df.shape[0] * response_df.shape[1]
-    print(f"  Fill rate:       {n_valid / total * 100:.1f}%")
-    print(f"  Score type:      Binary (1=correct, 0=incorrect)")
-    print(f"  Task type:       MCQ (multiple choice, base-prompt, 0-shot)")
-    print(f"  Benchmark:       AfriMed-QA (African medical QA)")
-
-    print(f"\n  Output files:")
-    for f in sorted(os.listdir(PROCESSED_DIR)):
-        fpath = os.path.join(PROCESSED_DIR, f)
-        size_kb = os.path.getsize(fpath) / 1024
-        print(f"    {f:40s}  {size_kb:.1f} KB")
-
-    # Step 7: Extract item content
-    print(f"\nSTEP 7: Extracting item content")
-    print("-" * 60)
-    _extract_item_content()
+    print(f"\n  subjects: {out_df['subject_id'].nunique()}")
+    print(f"  items:    {out_df['item_id'].nunique()}")
+    print(f"  rows:     {len(out_df):,}")
 
 
 if __name__ == "__main__":
     main()
-
-    # Generate visualizations, then convert to .pt and upload to HuggingFace Hub
-    # (set NO_UPLOAD=1 to skip the upload; .pt file is still generated)
-    import os, subprocess
-    _scripts = Path(__file__).resolve().parent.parent / "scripts"
-    _bench = Path(__file__).resolve().parent.name
-    subprocess.run([sys.executable, str(_scripts / "visualize_response_matrix.py"), _bench], check=False)
-    _cmd = [sys.executable, str(_scripts / "upload_to_hf.py"), _bench]
-    if os.environ.get("NO_UPLOAD") == "1":
-        _cmd.append("--no-upload")
-    subprocess.run(_cmd, check=False)

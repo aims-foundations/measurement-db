@@ -1,68 +1,90 @@
-"""
-Build UltraFeedback response matrix from GPT-4 multi-aspect ratings.
+"""Build UltraFeedback long-form responses from GPT-4 multi-aspect ratings.
 
 Data source:
-  - openbmb/UltraFeedback on HuggingFace
-  - 17 models x ~64K prompts, GPT-4 multi-aspect ratings (1-5)
-  - Each model response is rated on: instruction_following, honesty,
-    truthfulness, helpfulness (each 1-5)
+  - openbmb/UltraFeedback on HuggingFace: 17 models x ~64K prompts, GPT-4
+    multi-aspect ratings (1-5) on four aspects: helpfulness, honesty,
+    truthfulness, instruction_following.
 
-Processing:
-  1. Stream dataset from HuggingFace (large: ~3.5GB)
-  2. Extract per-model per-prompt mean scores across aspects
-  3. Build response_matrix.csv (models x prompts)
+Each (model, prompt, aspect) yields one long-form row with
+``test_condition = f"aspect={aspect}"``, so a single prompt registers as
+one item shared across the four aspect conditions.
 
-Outputs:
-  - raw/ultrafeedback_raw.parquet: Cached raw data (optional)
-  - processed/response_matrix.csv: Models (rows) x prompts (columns), mean aspect scores 1-5
+Output:
+  - raw/extracted_scores_per_aspect.csv  # cached per-aspect extraction
+  - responses.parquet                     # long-form responses
+  - _contrib/{subjects,items,benchmarks}.parquet
 """
 
 INFO = {
-    'description': 'Build UltraFeedback response matrix from GPT-4 multi-aspect ratings',
-    'testing_condition': '',
+    'description': 'UltraFeedback GPT-4 multi-aspect ratings (1-5) from 17 models on ~64K prompts.',
+    'testing_condition': 'Four aspects (helpfulness/honesty/truthfulness/instruction_following); aspect encoded in test_condition.',
     'paper_url': 'https://arxiv.org/abs/2310.01377',
     'data_source_url': 'https://huggingface.co/datasets/openbmb/UltraFeedback',
     'subject_type': 'model',
     'item_type': 'task',
     'license': 'MIT',
     'citation': """@misc{cui2024ultrafeedbackboostinglanguagemodels,
-      title={UltraFeedback: Boosting Language Models with Scaled AI Feedback}, 
+      title={UltraFeedback: Boosting Language Models with Scaled AI Feedback},
       author={Ganqu Cui and Lifan Yuan and Ning Ding and Guanming Yao and Bingxiang He and Wei Zhu and Yuan Ni and Guotong Xie and Ruobing Xie and Yankai Lin and Zhiyuan Liu and Maosong Sun},
       year={2024},
       eprint={2310.01377},
       archivePrefix={arXiv},
       primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2310.01377}, 
+      url={https://arxiv.org/abs/2310.01377},
 }""",
-    'tags': ['reasoning'],
+    'tags': ['reward-model', 'preference'],
 }
 
 
-from pathlib import Path
 import os
 import sys
-from collections import defaultdict
+from pathlib import Path
 
 import pandas as pd
-import numpy as np
 
-# Paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-RAW_DIR = os.path.join(BASE_DIR, "raw")
-PROCESSED_DIR = os.path.join(BASE_DIR, "processed")
-os.makedirs(RAW_DIR, exist_ok=True)
-os.makedirs(PROCESSED_DIR, exist_ok=True)
+_BENCHMARK_DIR = Path(__file__).resolve().parent
+RAW_DIR = _BENCHMARK_DIR / "raw"
+CONTRIB_DIR = _BENCHMARK_DIR / "_contrib"
+RESPONSES_PATH = _BENCHMARK_DIR / "responses.parquet"
+RAW_DIR.mkdir(parents=True, exist_ok=True)
+
+sys.path.insert(0, str(_BENCHMARK_DIR.parent))
+from _registry import (  # noqa: E402
+    get_benchmark_id, register_item, resolve_subject, save as registry_save,
+    ensure_unique_trials,
+)
+
+# Canonical aspect names in UltraFeedback's annotations.
+ASPECTS = ("helpfulness", "honesty", "truthfulness", "instruction_following")
 
 
-def stream_and_extract():
-    """Stream UltraFeedback dataset and extract per-model per-prompt scores."""
-    cache_path = os.path.join(RAW_DIR, "extracted_scores.csv")
+def _rating_from(aspect_data) -> float | None:
+    if isinstance(aspect_data, dict):
+        val = aspect_data.get("Rating", aspect_data.get("rating"))
+    elif isinstance(aspect_data, (int, float)):
+        val = aspect_data
+    else:
+        return None
+    if val is None:
+        return None
+    try:
+        val = float(val)
+    except (ValueError, TypeError):
+        return None
+    if 1.0 <= val <= 5.0:
+        return val
+    return None
 
-    if os.path.exists(cache_path) and os.path.getsize(cache_path) > 1000:
-        print(f"  Using cached extraction: {cache_path}")
+
+def stream_per_aspect() -> pd.DataFrame:
+    """Stream UltraFeedback and extract (model, prompt_id, aspect, rating) rows."""
+    cache_path = RAW_DIR / "extracted_scores_per_aspect.csv"
+
+    if cache_path.exists() and cache_path.stat().st_size > 1000:
+        print(f"  using cached extraction: {cache_path}")
         return pd.read_csv(cache_path)
 
-    print("  Streaming openbmb/UltraFeedback from HuggingFace...")
+    print("  streaming openbmb/UltraFeedback from HuggingFace ...")
     from datasets import load_dataset
 
     ds = load_dataset(
@@ -73,206 +95,134 @@ def stream_and_extract():
     )
 
     records = []
-    n_processed = 0
-    n_skipped = 0
+    n_processed = n_skipped = 0
 
     for item in ds:
-        prompt_id = item.get("source", "") + "_" + str(n_processed)
-        # Use a stable prompt ID if available
-        if "id" in item:
+        prompt_text = item.get("instruction") or item.get("prompt") or ""
+        if "id" in item and item["id"]:
             prompt_id = str(item["id"])
+        else:
+            prompt_id = (item.get("source", "") + "_" + str(n_processed))
 
-        completions = item.get("completions", [])
+        completions = item.get("completions", []) or []
         if not completions:
             n_skipped += 1
             continue
 
-        for completion in completions:
-            model = completion.get("model", "")
+        for comp in completions:
+            model = comp.get("model", "")
             if not model:
                 continue
-
-            # Extract annotations (GPT-4 ratings)
-            annotations = completion.get("annotations", {})
-            if not annotations:
-                # Try alternative field names
-                annotations = completion.get("ratings", {})
-
-            aspect_scores = []
-            for aspect_name, aspect_data in annotations.items():
-                if isinstance(aspect_data, dict):
-                    rating = aspect_data.get("Rating", aspect_data.get("rating", None))
-                elif isinstance(aspect_data, (int, float)):
-                    rating = aspect_data
-                else:
+            annotations = comp.get("annotations", {}) or comp.get("ratings", {}) or {}
+            for aspect, aspect_data in annotations.items():
+                canonical = aspect.strip().lower().replace("-", "_").replace(" ", "_")
+                if canonical not in ASPECTS:
                     continue
-
-                if rating is not None:
-                    try:
-                        rating = float(rating)
-                        if 1 <= rating <= 5:
-                            aspect_scores.append(rating)
-                    except (ValueError, TypeError):
-                        pass
-
-            if aspect_scores:
-                mean_score = np.mean(aspect_scores)
+                rating = _rating_from(aspect_data)
+                if rating is None:
+                    continue
                 records.append({
                     "model": model,
                     "prompt_id": prompt_id,
-                    "mean_score": mean_score,
-                    "n_aspects": len(aspect_scores),
+                    "prompt_text": prompt_text,
+                    "aspect": canonical,
+                    "rating": rating,
                 })
 
         n_processed += 1
         if n_processed % 10000 == 0:
-            print(f"    Processed {n_processed:,} prompts, {len(records):,} scores extracted...")
+            print(f"    processed {n_processed:,} prompts, {len(records):,} rows")
 
-    print(f"  Total prompts processed: {n_processed:,}")
-    print(f"  Prompts skipped (no completions): {n_skipped:,}")
-    print(f"  Total score records: {len(records):,}")
+    print(f"  total prompts: {n_processed:,}; skipped: {n_skipped:,}; rows: {len(records):,}")
 
-    scores_df = pd.DataFrame(records)
-    scores_df.to_csv(cache_path, index=False)
-    print(f"  Cached extraction: {cache_path}")
+    df = pd.DataFrame(records)
+    # Truncate prompt_text in the cache to keep it manageable.
+    if "prompt_text" in df.columns:
+        df["prompt_text"] = df["prompt_text"].astype(str).str.slice(0, 4000)
+    df.to_csv(cache_path, index=False)
+    print(f"  cached: {cache_path}")
+    return df
 
-    return scores_df
 
-
-def build_response_matrix(scores_df):
-    """Build response matrix from extracted scores."""
-    print("\nBuilding response matrix...")
-
-    # Pivot to matrix
-    matrix_df = scores_df.pivot_table(
-        index="model",
-        columns="prompt_id",
-        values="mean_score",
-        aggfunc="mean",
+def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
+    bench_id = get_benchmark_id(
+        "ultrafeedback",
+        name="UltraFeedback",
+        license=INFO.get("license"),
+        source_url=INFO.get("data_source_url"),
+        description=INFO.get("description"),
     )
-    matrix_df.index.name = "Model"
 
-    n_models, n_prompts = matrix_df.shape
-    print(f"  Raw matrix: {n_models} models x {n_prompts} prompts")
+    if scores_df.empty:
+        df = pd.DataFrame()
+        df.to_parquet(RESPONSES_PATH, index=False)
+        registry_save(CONTRIB_DIR)
+        return df
 
-    # Save
-    output_path = os.path.join(PROCESSED_DIR, "response_matrix.csv")
-    matrix_df.to_csv(output_path)
-    print(f"  Saved: {output_path}")
+    # Build a prompt_id -> content map so we register each item once.
+    content_map: dict[str, str | None] = {}
+    for pid, text in scores_df[["prompt_id", "prompt_text"]].itertuples(index=False):
+        if pid in content_map:
+            continue
+        t = (str(text).strip() if pd.notna(text) else "")
+        content_map[pid] = t if t else None
 
-    return matrix_df
+    rows = []
+    subject_cache: dict[str, str] = {}
+    item_cache: dict[str, str] = {}
+    for rec in scores_df.itertuples(index=False):
+        model = rec.model
+        if model not in subject_cache:
+            subject_cache[model] = resolve_subject(model)
+        subj = subject_cache[model]
 
-
-def print_statistics(scores_df, matrix_df):
-    """Print detailed statistics."""
-    print(f"\n{'='*60}")
-    print(f"  ULTRAFEEDBACK STATISTICS")
-    print(f"{'='*60}")
-
-    n_models, n_prompts = matrix_df.shape
-    total_cells = n_models * n_prompts
-    n_valid = matrix_df.notna().sum().sum()
-    n_missing = total_cells - n_valid
-    fill_rate = n_valid / total_cells if total_cells > 0 else 0
-
-    print(f"\n  Matrix dimensions:")
-    print(f"    Models:        {n_models}")
-    print(f"    Prompts:       {n_prompts:,}")
-    print(f"    Total cells:   {total_cells:,}")
-    print(f"    Valid cells:   {n_valid:,} ({n_valid/total_cells*100:.1f}%)")
-    print(f"    Missing cells: {n_missing:,} ({n_missing/total_cells*100:.1f}%)")
-    print(f"    Fill rate:     {fill_rate*100:.1f}%")
-
-    # Score distribution
-    all_scores = matrix_df.values.flatten()
-    valid_scores = all_scores[~np.isnan(all_scores)]
-    if len(valid_scores) > 0:
-        print(f"\n  Score distribution (mean aspect score, 1-5):")
-        print(f"    Mean:   {np.mean(valid_scores):.3f}")
-        print(f"    Median: {np.median(valid_scores):.3f}")
-        print(f"    Std:    {np.std(valid_scores):.3f}")
-        print(f"    Min:    {np.min(valid_scores):.3f}")
-        print(f"    Max:    {np.max(valid_scores):.3f}")
-
-        # Histogram by integer bins
-        print(f"\n  Score histogram (rounded to integer):")
-        for score_val in range(1, 6):
-            count = np.sum(
-                (valid_scores >= score_val - 0.5) & (valid_scores < score_val + 0.5)
+        pid = rec.prompt_id
+        if pid not in item_cache:
+            item_cache[pid] = register_item(
+                benchmark_id=bench_id,
+                raw_item_id=str(pid),
+                content=content_map.get(pid),
             )
-            pct = count / len(valid_scores) * 100
-            bar = "#" * int(pct)
-            print(f"    {score_val}: {count:8,} ({pct:5.1f}%) {bar}")
+        item = item_cache[pid]
 
-    # Per-model stats
-    per_model_mean = matrix_df.mean(axis=1).sort_values(ascending=False)
-    per_model_coverage = matrix_df.notna().sum(axis=1)
+        rows.append({
+            "subject_id": subj,
+            "item_id": item,
+            "benchmark_id": bench_id,
+            "trial": 1,
+            "test_condition": f"aspect={rec.aspect}",
+            "response": float(rec.rating),
+            "correct_answer": None,
+            "trace": None,
+        })
 
-    print(f"\n  Per-model statistics:")
-    print(f"    Mean scores range: [{per_model_mean.min():.3f}, {per_model_mean.max():.3f}]")
-    print(f"    Coverage range:    [{per_model_coverage.min():,}, {per_model_coverage.max():,}]")
+    df = pd.DataFrame(rows)
+    df = ensure_unique_trials(df)
+    df.to_parquet(RESPONSES_PATH, index=False)
+    registry_save(CONTRIB_DIR)
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(df):,} rows)")
+    print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
+    return df
 
-    print(f"\n  All models ranked by mean score:")
-    for model in per_model_mean.index:
-        score = per_model_mean[model]
-        coverage = per_model_coverage[model]
-        print(f"    {model:45s}  mean={score:.3f}  coverage={coverage:,}")
 
-    # Per-prompt difficulty
-    per_prompt_mean = matrix_df.mean(axis=0)
-    print(f"\n  Per-prompt difficulty:")
-    print(f"    Easiest: {per_prompt_mean.max():.3f}")
-    print(f"    Hardest: {per_prompt_mean.min():.3f}")
-    print(f"    Median:  {per_prompt_mean.median():.3f}")
-    print(f"    Std:     {per_prompt_mean.std():.3f}")
-
-    # Aspect count distribution
-    if "n_aspects" in scores_df.columns:
-        print(f"\n  Aspect count distribution:")
-        for n, count in scores_df["n_aspects"].value_counts().sort_index().items():
-            print(f"    {n} aspects: {count:,}")
-
-    # Output files
-    print(f"\n  Output files:")
-    for f in sorted(os.listdir(PROCESSED_DIR)):
-        fpath = os.path.join(PROCESSED_DIR, f)
-        size_kb = os.path.getsize(fpath) / 1024
-        print(f"    {f:45s}  {size_kb:.1f} KB")
+def print_stats(df: pd.DataFrame) -> None:
+    if df.empty:
+        print("  (empty)")
+        return
+    print(f"\n  subjects: {df['subject_id'].nunique()}")
+    print(f"  items:    {df['item_id'].nunique()}")
+    print(f"  rows:     {len(df):,}")
+    for cond, g in df.groupby("test_condition"):
+        print(f"    {cond}: {len(g):,} rows, mean={g['response'].mean():.3f}")
 
 
 def main():
-    print("UltraFeedback Response Matrix Builder")
+    print("UltraFeedback long-form builder")
     print("=" * 60)
-    print(f"  Raw data dir:       {RAW_DIR}")
-    print(f"  Processed data dir: {PROCESSED_DIR}")
-    print()
-
-    # Step 1: Stream and extract
-    print("STEP 1: Streaming UltraFeedback dataset and extracting scores")
-    print("-" * 60)
-    scores_df = stream_and_extract()
-
-    # Step 2: Build matrix
-    print("\nSTEP 2: Building response matrix")
-    print("-" * 60)
-    matrix_df = build_response_matrix(scores_df)
-
-    # Step 3: Statistics
-    print("\nSTEP 3: Detailed statistics")
-    print("-" * 60)
-    print_statistics(scores_df, matrix_df)
+    scores_df = stream_per_aspect()
+    df = build_long_form(scores_df)
+    print_stats(df)
 
 
 if __name__ == "__main__":
     main()
-
-    # Generate visualizations, then convert to .pt and upload to HuggingFace Hub
-    # (set NO_UPLOAD=1 to skip the upload; .pt file is still generated)
-    import os, subprocess
-    _scripts = Path(__file__).resolve().parent.parent / "scripts"
-    _bench = Path(__file__).resolve().parent.name
-    subprocess.run([sys.executable, str(_scripts / "visualize_response_matrix.py"), _bench], check=False)
-    _cmd = [sys.executable, str(_scripts / "upload_to_hf.py"), _bench]
-    if os.environ.get("NO_UPLOAD") == "1":
-        _cmd.append("--no-upload")
-    subprocess.run(_cmd, check=False)

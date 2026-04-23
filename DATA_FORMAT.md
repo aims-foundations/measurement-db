@@ -1,6 +1,6 @@
 # measurement-db data format
 
-Long-form, registry-backed schema for storing evaluation data (models × items × responses).
+Long-form, registry-backed schema for storing evaluation data.
 
 ## Directory layout
 
@@ -15,17 +15,13 @@ measurement-db-private/
 │   ├── build.py            # ingests raw data, writes responses.parquet
 │   ├── audit.py            # optional; gating criterion for public release
 │   ├── raw/                # gitignored; reproducible via build.py
-│   ├── processed/
-│   │   ├── responses.parquet        # the canonical long-form table
-│   │   ├── response_matrix.csv      # wide form, regenerated for convenience
-│   │   └── response_matrix*.png     # heatmaps
-│   └── (intermediate artifacts)
+│   └── responses.parquet   # the canonical long-form table
 ├── manifest.yaml            # dataset → {status, domain}
 ├── sync_to_public.py        # manifest-gated sync
 └── README.md
 ```
 
-Wide-form CSVs and heatmap PNGs are **secondary artifacts** regenerated from `responses.parquet` during `build.py`. The long-form table is the source of truth.
+The `build.py` file should generate the long form. We should let go the generation of wide form and the heatmap. 
 
 ---
 
@@ -62,6 +58,9 @@ Registry of every model (AI test-taker) that has ever appeared in any benchmark.
 
 ### `_registry/items.parquet`
 
+Pure item registry — one row per distinct prompt/question, benchmark-scoped.
+Holds what the item *is*, not under what conditions it was evaluated.
+
 | column | type | nullable | description |
 |---|---|---|---|
 | `item_id` | string | no | Primary key. `sha256(benchmark_id + "::" + normalized_content)[:16]`. |
@@ -69,23 +68,28 @@ Registry of every model (AI test-taker) that has ever appeared in any benchmark.
 | `raw_item_id` | string | no | Original ID in upstream data (for traceability). |
 | `content` | string | yes | Prompt / question text. Null for benchmarks that don't expose per-item content. |
 | `correct_answer` | string | yes | Ground truth, if one exists. Null for preference / judge benchmarks. |
-| `test_condition` | string | yes | e.g. `turn=1`, `few-shot=0`, `temperature=0.7`. Use when a single raw item appears under multiple conditions. |
 | `content_hash` | string | yes | `sha256(normalized_content)[:16]` — makes cross-benchmark duplicate detection a simple equality query. |
 
-### `{dataset}/processed/responses.parquet`
+### `{dataset}/responses.parquet`
 
-The long-form data. M×N rows per dataset (M subjects × N items × k trials).
+The long-form data. One row per (subject, item, trial, test_condition). Lives
+at the benchmark root, not inside `processed/`.
 
 | column | type | nullable | description |
 |---|---|---|---|
 | `subject_id` | string | no | FK → `subjects.subject_id`. |
 | `item_id` | string | no | FK → `items.item_id`. |
-| `trial` | int32 | no | 1-indexed. Use `1` for single-trial benchmarks. |
+| `benchmark_id` | string | no | Denormalized FK → `benchmarks.benchmark_id`. Constant within a single responses file; included so cross-dataset unions are self-describing. |
+| `trial` | int32 | no | 1-indexed. Use `1` for single-trial observations; increment for repeated measurements (reruns, additional annotators of the same (subject, item, condition) cell). |
+| `test_condition` | string | yes | Observation-level condition, e.g. `few-shot=0`, `temperature=0.7`, `skill=coherence`, `variant=chosen`. Use when the *same item* (same content, same `item_id`) is scored under multiple conditions. Item-level variants (follow-up turns with different prompt text, different task framings) should instead produce distinct `item_id`s via distinct content — not be encoded as `test_condition`. |
 | `response` | float64 | no | The scalar outcome. For binary tasks: 0/1. For scored tasks: the score. |
+| `correct_answer` | string | yes | Denormalized from `items.correct_answer` — lets simple scoring queries skip the items join. Null if no ground truth exists. |
 | `trace` | string | yes | Raw model output text (if available). Null when not collected. |
 | `metadata` | struct | yes | Optional nested struct for per-response metadata (latency, tokens, etc.). |
 
-Storage: Parquet with snappy compression. For large datasets with traces, split traces into `traces.parquet` with `(subject_id, item_id, trial, trace)` so the main responses table stays small.
+**Primary key:** `(subject_id, item_id, trial, test_condition)`, with `test_condition` `NULL` treated as a single condition value. Every dataset must satisfy this uniqueness invariant.
+
+Storage: Parquet with snappy compression. For large datasets with traces, split traces into `traces.parquet` with `(subject_id, item_id, trial, test_condition, trace)` so the main responses table stays small.
 
 ---
 
@@ -117,19 +121,19 @@ IDs are **deterministic from inputs** — rerunning build.py produces identical 
 
 Each `build.py` MUST:
 
-1. Call `resolve_subject(raw_label)` for every raw model label. With `auto_register=True`, this creates a new subject entry if none matches; with `auto_register=False`, it raises `UnknownSubject`.
-2. Call `register_item(benchmark_id, raw_item_id, content)` for every item. Idempotent — returns the same `item_id` on re-registration.
-3. Call `get_benchmark_id(name, ...)` to register the benchmark once.
-4. Write the final `responses.parquet` referencing only resolved `subject_id` and `item_id` values.
-5. Also regenerate `response_matrix.csv` and `response_matrix.png` from the long form, as secondary artifacts.
+1. **Subjects are AI systems.** Every row's `subject_id` must resolve to a model, agent, judge, or classifier. Datasets whose "subjects" are prompts, samples, or human annotators do not fit this schema — they belong in the items registry only (or in `BENCHMARKS_PENDING` until a real AI-subject data source exists).
+2. Call `resolve_subject(raw_label)` for every raw AI-system label. With `auto_register=True`, this creates a new subject entry if none matches; with `auto_register=False`, it raises `UnknownSubject`.
+3. Call `register_item(benchmark_id, raw_item_id, content)` for every item. Idempotent — returns the same `item_id` on re-registration. Note: `register_item` does NOT take `test_condition` — conditions live on responses.
+4. Call `get_benchmark_id(name, ...)` to register the benchmark once.
+5. Write the final `responses.parquet` referencing only resolved `subject_id`, `item_id`, and `benchmark_id`.
+6. The table must satisfy the primary-key invariant: every `(subject_id, item_id, trial, test_condition)` tuple appears at most once. If upstream has multiple observations of the same (subject, item) cell — repeat runs, multiple annotators — encode them as separate `trial` values (1, 2, 3, ...), not duplicate rows.
 
 ---
 
 ## Migration plan
 
-- **Phase 1 (current):** long-form alongside wide-form. Both produced by `build.py`. Tools read from whichever they prefer.
+- **Phase 1 (current):** cleaning the build.py for each dataset to generate the long-form `responses.parquet` and the registries, while start to deprecate the wide-form CSV and the heatmap PNG. The package is early enough that this won't impact downstrem consumers. 
 - **Phase 2:** downstream consumers (torch_measure loaders, analytics) switched to read `responses.parquet`.
-- **Phase 3:** wide-form CSV dropped; PNGs remain as visualization-only artifacts.
 
 ---
 
@@ -141,7 +145,7 @@ Each `build.py` MUST:
 import duckdb
 duckdb.sql("""
     SELECT AVG(r.response)
-    FROM 'mtbench/processed/responses.parquet' r
+    FROM 'mtbench/responses.parquet' r
     JOIN '_registry/subjects.parquet' s USING (subject_id)
     WHERE s.display_name = 'Llama-2-70B-Chat'
 """).df()
@@ -152,7 +156,7 @@ duckdb.sql("""
 ```python
 duckdb.sql("""
     SELECT s.display_name, r.benchmark, AVG(r.response) AS mean_score
-    FROM '{mtbench,alpacaeval,aegis}/processed/responses.parquet' r
+    FROM '{mtbench,alpacaeval}/responses.parquet' r
     JOIN '_registry/subjects.parquet' s USING (subject_id)
     GROUP BY 1, 2
     ORDER BY 1, 2
