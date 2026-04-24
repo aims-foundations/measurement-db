@@ -186,12 +186,13 @@ python scripts/audit_benchmarks.py --out /tmp/inventory.md
 
 Columns in the **registry** table come from `_registry/benchmarks.parquet`
 (populated by each build's `INFO` dict). Columns in the **inventory** table
-come from the current `responses.parquet` on disk:
+come from the current `responses.parquet` on disk plus `_registry/items.parquet`:
 
 - `rows` — number of observations
 - `subjects` / `items` — distinct `subject_id` / `item_id` counts
 - `PK-dup` — duplicate `(subject_id, item_id, trial, test_condition)` tuples; must be **0**
 - `binary%` — fraction of responses in `{0.0, 1.0}`; rest are continuous
+- `content%` — fraction of this benchmark's registered items (in `_registry/items.parquet`) with non-null `content`
 - `range` — observed `[min, max]` of the response
 - `max trial` — highest `trial` value seen (> 1 = repeated measurements / multi-annotator)
 - `test_condition` — ✓ if any row uses a non-null test_condition
@@ -276,74 +277,74 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 
 _Snapshot: 69 datasets in BENCHMARKS • 66 ready • 3 empty (upstream gap) • 0 missing • 16,906,973 total response rows._
 
-| dataset | rows | subjects | items | PK-dup | binary% | range | max trial | test_condition | modality | domain |
-|---|---:|---:|---:|---:|---:|---|---:|:---:|---|---|
-| afrieval | 219,289 | 12 | 32,518 | 0 | 100% | [0.00, 1.00] | 42 | — | text | ner, multilingual |
-| afrimedqa | 110,930 | 30 | 6,910 | 0 | 100% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
-| agentdojo | 69,796 | 29 | 1,081 | 0 | 100% | [0.00, 1.00] | 14 | ✓ | text | tool_use, safety |
-| ai2d_test | 770,916 | 254 | 3,088 | 0 | 100% | [0.00, 1.00] | 1 | — | text, image | science |
-| androidworld | 348 | 3 | 116 | 0 | 100% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
-| appworld | 288 | 18 | 16 | 0 | 15% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent, tool_use |
-| arena_hard | 35,990 | 72 | 500 | 0 | 14% | [0.00, 1.00] | 1 | — | text | preference |
-| bbq | 409,444 | 7 | 56,578 | 0 | 100% | [0.00, 1.00] | 5 | ✓ | text | safety |
-| bfcl | 441,086 | 93 | 4,133 | 0 | 100% | [0.00, 1.00] | 14 | — | text | tool_use |
-| biggen | 305,935 | 103 | 764 | 0 | 14% | [-1.00, 5.00] | 2 | ✓ | text | general |
-| bridging_gap | 190,836 | 3 | 21,134 | 0 | 100% | [0.00, 1.00] | 6 | — | text | multilingual, cultural |
-| chatgpt_drift | 0 | — | — | — | — | — | — | — | text | general |
-| clinebench | 26 | 3 | 12 | 0 | 81% | [0.00, 1.00] | 1 | — | text | software_engineering |
-| corebench | 1,956 | 15 | 270 | 0 | 93% | [0.00, 1.00] | 3 | — | text | science |
-| cruxeval | 16,000 | 1 | 1,600 | 0 | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
-| cybench | 960 | 8 | 40 | 0 | 81% | [0.00, 1.00] | 1 | ✓ | text | cybersecurity |
-| editbench | 23,328 | 44 | 533 | 0 | 70% | [0.00, 1.00] | 2 | — | text | software_engineering |
-| faithcot | 2,519 | 4 | 340 | 0 | 100% | [0.00, 1.00] | 2 | ✓ | text | reasoning, safety |
-| financebench | 2,400 | 16 | 150 | 0 | 100% | [0.00, 1.00] | 1 | — | text | finance |
-| flask | 76,009 | 15 | 1,696 | 0 | 14% | [-1.00, 5.00] | 2 | ✓ | text | general |
-| gaia | 18,060 | 3191 | 173 | 0 | 42% | [0.00, 1.00] | 2 | ✓ | text, image | general |
-| hallusionbench | 0 | — | — | — | — | — | — | — | text, image | safety |
-| helm_afr | 747,560 | 23 | 32,741 | 0 | 100% | [0.00, 1.00] | 6 | — | text | multilingual |
-| helm_cleva | 23,312 | 4 | 5,822 | 0 | 100% | [0.00, 1.00] | 3 | — | text | multilingual |
-| helm_thaiexam | 23,730 | 42 | 561 | 0 | 100% | [0.00, 1.00] | 2 | — | text | multilingual |
-| hle | 13,339 | 19 | 1,792 | 0 | 100% | [0.00, 1.00] | 1 | — | text | general, reasoning |
-| igakuqa | 7,355 | 5 | 1,471 | 0 | 100% | [0.00, 1.00] | 1 | — | text | medicine |
-| indeterminacy | 65,012 | 9 | 200 | 0 | 100% | [0.00, 1.00] | 10 | ✓ | text | summarization |
-| jailbreakbench | 1,800 | 4 | 100 | 0 | 100% | [0.00, 1.00] | 1 | ✓ | text | safety |
-| judgebench | 2,897 | 19 | 350 | 0 | 100% | [0.00, 1.00] | 1 | ✓ | text | reward_modeling, preference |
-| kmmlu | 875,750 | 25 | 35,015 | 0 | 100% | [0.00, 1.00] | 2 | ✓ | text | general, multilingual |
-| kormedmcqa | 18,002 | 7 | 3,009 | 0 | 100% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
-| livebench | 60,372 | 166 | 494 | 0 | 75% | [0.00, 1.00] | 3 | ✓ | text | general |
-| livecodebench | 326,530 | 72 | 1,055 | 0 | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
-| machiavelli | 9,274 | 12 | 30 | 0 | 4% | [-917.89, 1001.00] | 1 | ✓ | text | safety |
-| matharena | 86,206 | 97 | 448 | 0 | 100% | [0.00, 1.00] | 216 | ✓ | text | mathematics |
-| mathvista_mini | 263,000 | 263 | 874 | 0 | 100% | [0.00, 1.00] | 44 | — | text, image | mathematics |
-| mlebench | 14,241 | 33 | 75 | 0 | 72% | [0.00, 3.00] | 45 | — | text | ml_engineering |
-| mmbench_v11 | 1,180,617 | 251 | 3,579 | 0 | 100% | [0.00, 1.00] | 34 | ✓ | text, image | general |
-| mme | 535,810 | 232 | 1,983 | 0 | 100% | [0.00, 1.00] | 43 | ✓ | text, image | general |
-| mmlupro | 564,750 | 48 | 13,542 | 0 | 100% | [0.00, 1.00] | 2 | — | text | general, reasoning |
-| mmmu_dev_val | 204,632 | 253 | 896 | 0 | 100% | [0.00, 1.00] | 4 | — | text, image | general |
-| mtbench | 5,436 | 34 | 160 | 0 | 20% | [1.00, 10.00] | 1 | — | text | preference |
-| osworld | 27,766 | 77 | 369 | 0 | 97% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
-| paperbench | 539 | 9 | 20 | 0 | 14% | [0.00, 0.68] | 3 | — | text | science |
-| personalllm | 832,160 | 8 | 10,174 | 0 | 0% | [-18.00, 18.25] | 3 | ✓ | text | preference |
-| preference_dissection | 167,680 | 32 | 4,890 | 0 | 100% | [0.00, 1.00] | 12 | — | text | preference |
-| prm800k | 561,715 | 11 | 11,268 | 0 | 100% | [0.00, 1.00] | 442 | ✓ | text | mathematics, reward_modeling |
-| rakuda | 53,488 | 551 | 40 | 0 | 19% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
-| rewardbench | 450,735 | 118 | 2,733 | 0 | 99% | [0.00, 1.00] | 4 | ✓ | text | reward_modeling |
-| rewardbench2 | 349,192 | 188 | 1,824 | 0 | 98% | [0.00, 1.00] | 2 | ✓ | text | reward_modeling |
-| sib200 | 52,836 | 2 | 31,640 | 0 | 100% | [0.00, 1.00] | 1 | — | text | multilingual |
-| summeval | 51,200 | 16 | 100 | 0 | 2% | [1.00, 5.00] | 5 | ✓ | text | summarization |
-| swebench | 67,000 | 134 | 500 | 0 | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
-| swebench_full | 55,056 | 24 | 2,275 | 0 | 100% | [0.00, 1.00] | 2 | — | text | software_engineering |
-| swebench_java | 5,464 | 54 | 170 | 0 | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
-| swebench_multilingual | 74,694 | 94 | 2,414 | 0 | 100% | [0.00, 1.00] | 2 | — | text | software_engineering, multilingual |
-| taubench | 12,812 | 12 | 214 | 0 | 100% | [0.00, 1.00] | 392 | — | text | tool_use |
-| tengu | 180,837 | 551 | 120 | 0 | 45% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
-| terminal_bench | 68,797 | 148 | 89 | 0 | 100% | [0.00, 1.00] | 11 | — | text | software_engineering |
-| theagentcompany | 9,700 | 19 | 554 | 0 | 99% | [0.00, 1.00] | 1 | — | text, gui_screenshot | tool_use |
-| toolbench | 7,924 | 39 | 774 | 0 | 97% | [0.00, 1.00] | 2 | ✓ | text | tool_use |
-| tumlu | 143,316 | 16 | 7,486 | 0 | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
-| ultrafeedback | 1,009,730 | 17 | 63,932 | 0 | 10% | [1.00, 5.00] | 2 | ✓ | text | preference |
-| visualwebarena | 600 | 3 | 98 | 0 | 100% | [0.00, 1.00] | 2 | ✓ | text, gui_screenshot | gui_agent |
-| vl_rewardbench | 0 | — | — | — | — | — | — | — | text, image | reward_modeling |
-| wildbench | 113,566 | 71 | 1,024 | 0 | 1% | [1.00, 10.00] | 1 | ✓ | text | preference |
-| wmt_mqm | 4,883,886 | 80 | 9,124 | 0 | 100% | [0.00, 1.00] | 33 | ✓ | text | translation, multilingual |
-| workarena | 539 | 22 | 129 | 0 | 90% | [0.00, 1.00] | 1 | ✓ | text, gui_screenshot | gui_agent |
+| dataset | rows | subjects | items | PK-dup | binary% | content% | range | max trial | test_condition | modality | domain |
+|---|---:|---:|---:|---:|---:|---:|---|---:|:---:|---|---|
+| afrieval | 219,289 | 12 | 32,518 | 0 | 100% | 100% | [0.00, 1.00] | 42 | — | text | ner, multilingual |
+| afrimedqa | 110,930 | 30 | 6,910 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
+| agentdojo | 69,796 | 29 | 1,081 | 0 | 100% | 100% | [0.00, 1.00] | 14 | ✓ | text | tool_use, safety |
+| ai2d_test | 770,916 | 254 | 3,088 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text, image | science |
+| androidworld | 348 | 3 | 116 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
+| appworld | 288 | 18 | 16 | 0 | 15% | 100% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent, tool_use |
+| arena_hard | 35,990 | 72 | 500 | 0 | 14% | 100% | [0.00, 1.00] | 1 | — | text | preference |
+| bbq | 409,444 | 7 | 56,578 | 0 | 100% | 100% | [0.00, 1.00] | 5 | ✓ | text | safety |
+| bfcl | 441,086 | 93 | 4,133 | 0 | 100% | 100% | [0.00, 1.00] | 14 | — | text | tool_use |
+| biggen | 305,935 | 103 | 764 | 0 | 14% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
+| bridging_gap | 190,836 | 3 | 21,134 | 0 | 100% | 100% | [0.00, 1.00] | 6 | — | text | multilingual, cultural |
+| chatgpt_drift | 0 | — | — | — | — | 100% | — | — | — | text | general |
+| clinebench | 26 | 3 | 12 | 0 | 81% | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
+| corebench | 1,956 | 15 | 270 | 0 | 93% | 100% | [0.00, 1.00] | 3 | — | text | science |
+| cruxeval | 16,000 | 1 | 1,600 | 0 | 100% | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
+| cybench | 960 | 8 | 40 | 0 | 81% | 100% | [0.00, 1.00] | 1 | ✓ | text | cybersecurity |
+| editbench | 23,328 | 44 | 533 | 0 | 70% | 100% | [0.00, 1.00] | 2 | — | text | software_engineering |
+| faithcot | 2,519 | 4 | 340 | 0 | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text | reasoning, safety |
+| financebench | 2,400 | 16 | 150 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | finance |
+| flask | 76,009 | 15 | 1,696 | 0 | 14% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
+| gaia | 18,060 | 3191 | 173 | 0 | 42% | 100% | [0.00, 1.00] | 2 | ✓ | text, image | general |
+| hallusionbench | 0 | — | — | — | — | — | — | — | — | text, image | safety |
+| helm_afr | 747,560 | 23 | 32,741 | 0 | 100% | 100% | [0.00, 1.00] | 6 | — | text | multilingual |
+| helm_cleva | 23,312 | 4 | 5,822 | 0 | 100% | 100% | [0.00, 1.00] | 3 | — | text | multilingual |
+| helm_thaiexam | 23,730 | 42 | 561 | 0 | 100% | 100% | [0.00, 1.00] | 2 | — | text | multilingual |
+| hle | 13,339 | 19 | 1,792 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | general, reasoning |
+| igakuqa | 7,355 | 5 | 1,471 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | medicine |
+| indeterminacy | 65,012 | 9 | 200 | 0 | 100% | 100% | [0.00, 1.00] | 10 | ✓ | text | summarization |
+| jailbreakbench | 1,800 | 4 | 100 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | safety |
+| judgebench | 2,897 | 19 | 350 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | reward_modeling, preference |
+| kmmlu | 875,750 | 25 | 35,015 | 0 | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text | general, multilingual |
+| kormedmcqa | 18,002 | 7 | 3,009 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
+| livebench | 60,372 | 166 | 494 | 0 | 75% | 80% | [0.00, 1.00] | 3 | ✓ | text | general |
+| livecodebench | 326,530 | 72 | 1,055 | 0 | 100% | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
+| machiavelli | 9,274 | 12 | 30 | 0 | 4% | 100% | [-917.89, 1001.00] | 1 | ✓ | text | safety |
+| matharena | 86,206 | 97 | 448 | 0 | 100% | 100% | [0.00, 1.00] | 216 | ✓ | text | mathematics |
+| mathvista_mini | 263,000 | 263 | 874 | 0 | 100% | 100% | [0.00, 1.00] | 44 | — | text, image | mathematics |
+| mlebench | 14,241 | 33 | 75 | 0 | 72% | 100% | [0.00, 3.00] | 45 | — | text | ml_engineering |
+| mmbench_v11 | 1,180,617 | 251 | 3,579 | 0 | 100% | 100% | [0.00, 1.00] | 34 | ✓ | text, image | general |
+| mme | 535,810 | 232 | 1,983 | 0 | 100% | 100% | [0.00, 1.00] | 43 | ✓ | text, image | general |
+| mmlupro | 564,750 | 48 | 13,542 | 0 | 100% | 100% | [0.00, 1.00] | 2 | — | text | general, reasoning |
+| mmmu_dev_val | 204,632 | 253 | 896 | 0 | 100% | 100% | [0.00, 1.00] | 4 | — | text, image | general |
+| mtbench | 5,436 | 34 | 160 | 0 | 20% | 100% | [1.00, 10.00] | 1 | — | text | preference |
+| osworld | 27,766 | 77 | 369 | 0 | 97% | 100% | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
+| paperbench | 539 | 9 | 20 | 0 | 14% | 100% | [0.00, 0.68] | 3 | — | text | science |
+| personalllm | 832,160 | 8 | 10,174 | 0 | 0% | 100% | [-18.00, 18.25] | 3 | ✓ | text | preference |
+| preference_dissection | 167,680 | 32 | 4,890 | 0 | 100% | 100% | [0.00, 1.00] | 12 | — | text | preference |
+| prm800k | 561,715 | 11 | 11,268 | 0 | 100% | 100% | [0.00, 1.00] | 442 | ✓ | text | mathematics, reward_modeling |
+| rakuda | 53,488 | 551 | 40 | 0 | 19% | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| rewardbench | 450,735 | 118 | 2,733 | 0 | 99% | 100% | [0.00, 1.00] | 4 | ✓ | text | reward_modeling |
+| rewardbench2 | 349,192 | 188 | 1,824 | 0 | 98% | 100% | [0.00, 1.00] | 2 | ✓ | text | reward_modeling |
+| sib200 | 52,836 | 2 | 31,640 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | multilingual |
+| summeval | 51,200 | 16 | 100 | 0 | 2% | 100% | [1.00, 5.00] | 5 | ✓ | text | summarization |
+| swebench | 67,000 | 134 | 500 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
+| swebench_full | 55,056 | 24 | 2,275 | 0 | 100% | 100% | [0.00, 1.00] | 2 | — | text | software_engineering |
+| swebench_java | 5,464 | 54 | 170 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
+| swebench_multilingual | 74,694 | 94 | 2,414 | 0 | 100% | 100% | [0.00, 1.00] | 2 | — | text | software_engineering, multilingual |
+| taubench | 12,812 | 12 | 214 | 0 | 100% | 100% | [0.00, 1.00] | 392 | — | text | tool_use |
+| tengu | 180,837 | 551 | 120 | 0 | 45% | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| terminal_bench | 68,797 | 148 | 89 | 0 | 100% | 100% | [0.00, 1.00] | 11 | — | text | software_engineering |
+| theagentcompany | 9,700 | 19 | 554 | 0 | 99% | 100% | [0.00, 1.00] | 1 | — | text, gui_screenshot | tool_use |
+| toolbench | 7,924 | 39 | 774 | 0 | 97% | 100% | [0.00, 1.00] | 2 | ✓ | text | tool_use |
+| tumlu | 143,316 | 16 | 7,486 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| ultrafeedback | 1,009,730 | 17 | 63,932 | 0 | 10% | 100% | [1.00, 5.00] | 2 | ✓ | text | preference |
+| visualwebarena | 600 | 3 | 98 | 0 | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text, gui_screenshot | gui_agent |
+| vl_rewardbench | 0 | — | — | — | — | 100% | — | — | — | text, image | reward_modeling |
+| wildbench | 113,566 | 71 | 1,024 | 0 | 1% | 100% | [1.00, 10.00] | 1 | ✓ | text | preference |
+| wmt_mqm | 4,883,886 | 80 | 9,124 | 0 | 100% | 100% | [0.00, 1.00] | 33 | ✓ | text | translation, multilingual |
+| workarena | 539 | 22 | 129 | 0 | 90% | 100% | [0.00, 1.00] | 1 | ✓ | text, gui_screenshot | gui_agent |
