@@ -46,6 +46,7 @@ INFO = {
     'response_type': 'fraction',
     'response_scale': 'per-task k/N for subtask_fractional mode; binary for unguided/subtask_guided',
     'categorical': False,
+    'release_date': '2024-08',
 }
 
 
@@ -371,6 +372,8 @@ def build_long_form(unguided, guided, subtask):
         response_type=INFO.get("response_type"),
         response_scale=INFO.get("response_scale"),
         categorical=INFO.get("categorical"),
+        paper_url=INFO.get("paper_url"),
+        release_date=INFO.get("release_date"),
     )
 
     content_map = _task_content_map()

@@ -38,6 +38,7 @@ INFO = {
     'response_type': 'likert_5',
     'response_scale': '{1, 2, 3, 4, 5}',
     'categorical': True,
+    'release_date': '2023-10',
 }
 
 
@@ -161,6 +162,8 @@ def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
         response_type=INFO.get("response_type"),
         response_scale=INFO.get("response_scale"),
         categorical=INFO.get("categorical"),
+        paper_url=INFO.get("paper_url"),
+        release_date=INFO.get("release_date"),
     )
 
     if scores_df.empty:

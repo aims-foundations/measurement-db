@@ -49,6 +49,7 @@ _BENCHMARKS_COLS = [
     "benchmark_id", "name", "version", "license", "source_url", "description",
     "modality", "domain",
     "response_type", "response_scale", "categorical",
+    "paper_url", "release_date",
 ]
 
 _lock = threading.Lock()
@@ -215,6 +216,8 @@ def get_benchmark_id(
     response_type: str | None = None,
     response_scale: str | None = None,
     categorical: bool | None = None,
+    paper_url: str | None = None,
+    release_date: str | None = None,
 ) -> str:
     """Register a benchmark once, or return its id if already registered.
 
@@ -263,6 +266,8 @@ def get_benchmark_id(
             "response_type": response_type or "binary",
             "response_scale": response_scale or "{0, 1}",
             "categorical": bool(categorical) if categorical is not None else True,
+            "paper_url": paper_url,
+            "release_date": release_date,
         }
         _benchmarks = pd.concat(
             [_benchmarks, pd.DataFrame([new_row])], ignore_index=True

@@ -47,6 +47,7 @@ INFO = {
     'response_type': 'binary',
     'response_scale': '{0, 1}',
     'categorical': True,
+    'release_date': '2024-11',
 }
 
 
@@ -411,6 +412,8 @@ def main():
         response_type=INFO.get("response_type"),
         response_scale=INFO.get("response_scale"),
         categorical=INFO.get("categorical"),
+        paper_url=INFO.get("paper_url"),
+        release_date=INFO.get("release_date"),
     )
 
     evaluations = discover_evaluations()

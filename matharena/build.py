@@ -45,6 +45,7 @@ INFO = {
     'response_type': 'mixed',
     'response_scale': 'binary for AIME family (per-attempt correct); continuous fraction points/max for rubric comps (USAMO/IMO/IMC/Putnam/Miklos, per-criterion)',
     'categorical': False,
+    'release_date': '2025-05',
 }
 
 
@@ -412,6 +413,8 @@ def main():
         response_type=INFO.get("response_type"),
         response_scale=INFO.get("response_scale"),
         categorical=INFO.get("categorical"),
+        paper_url=INFO.get("paper_url"),
+        release_date=INFO.get("release_date"),
     )
 
     all_rows: list[dict] = []
