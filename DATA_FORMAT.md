@@ -214,7 +214,6 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | bfcl | BFCL | Apache-2.0 | text | tool_use | binary | {0, 1} | ✓ |
 | biggen | BiGGen-Bench | CC-BY-SA-4.0 | text | general | likert_5 | {-1, 1, 2, 3, 4, 5} (-1 = N/A) | ✓ |
 | bridging_gap | Bridging-the-Gap African Languages | Apache-2.0 | text | multilingual, cultural | binary | {0, 1} | ✓ |
-| chatgpt_drift | ChatGPT Drift (LLMDrift) | Apache-2.0 | text | general | binary | {0, 1} | ✓ |
 | clinebench | ClineBench | unknown | text | software_engineering | fraction | hardcoded pass rates from READMEs | — |
 | corebench | CORE-Bench | MIT | text | science | fraction | k/N per paper (questions correct / total) | — |
 | cruxeval | CRUXEval | MIT | text | software_engineering | binary | {0, 1} | ✓ |
@@ -224,7 +223,6 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | financebench | FinanceBench | CC-BY-NC-4.0 | text | finance | binary | {0, 1} | ✓ |
 | flask | FLASK | MIT | text | general | likert_5 | {-1, 1, 2, 3, 4, 5} (-1 = N/A) | ✓ |
 | gaia | GAIA | CC-BY-4.0 | text, image | general | fraction | k/N HAL runs per task | — |
-| hallusionbench | HallusionBench | BSD-3-Clause | text, image | safety | binary | {0, 1} | ✓ |
 | helm_afr | HELM African MMLU + Winogrande | Apache-2.0 | text | multilingual | binary | {0, 1} | ✓ |
 | helm_cleva | HELM CLEVA (Chinese) | Apache-2.0 | text | multilingual | binary | {0, 1} | ✓ |
 | helm_thaiexam | HELM Thai Exam | Apache-2.0 | text | multilingual | binary | {0, 1} | ✓ |
@@ -268,14 +266,13 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | tumlu | TUMLU | unknown | text | multilingual | binary | {0, 1} | ✓ |
 | ultrafeedback | UltraFeedback | MIT | text | preference | likert_5 | {1, 2, 3, 4, 5} | ✓ |
 | visualwebarena | VisualWebArena | MIT | text, gui_screenshot | gui_agent | binary | {0, 1} | ✓ |
-| vl_rewardbench | VL-RewardBench | MIT | text, image | reward_modeling | binary | {0, 1} | ✓ |
 | wildbench | WildBench | CC-BY-4.0 | text | preference | likert_10 | {1, 2, ..., 10} | ✓ |
 | wmt_mqm | WMT MQM | Apache-2.0 | text | translation, multilingual | error_presence | {0, 1} per (category, severity) bucket | ✓ |
 | workarena | WorkArena | Apache-2.0 | text, gui_screenshot | gui_agent | fraction | binary for AgentRewardBench, aggregate rates for leaderboard+paper sources | — |
 
 ### Benchmark inventory
 
-_Snapshot: 69 datasets in BENCHMARKS • 66 ready • 3 empty (upstream gap) • 0 missing • 16,906,973 total response rows._
+_Snapshot: 66 datasets in BENCHMARKS • 66 ready • 0 empty (upstream gap) • 0 missing • 16,906,973 total response rows._
 
 | dataset | rows | subjects | items | PK-dup | binary% | content% | range | max trial | test_condition | modality | domain |
 |---|---:|---:|---:|---:|---:|---:|---|---:|:---:|---|---|
@@ -290,7 +287,6 @@ _Snapshot: 69 datasets in BENCHMARKS • 66 ready • 3 empty (upstream gap) •
 | bfcl | 441,086 | 93 | 4,133 | 0 | 100% | 100% | [0.00, 1.00] | 14 | — | text | tool_use |
 | biggen | 305,935 | 103 | 764 | 0 | 14% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
 | bridging_gap | 190,836 | 3 | 21,134 | 0 | 100% | 100% | [0.00, 1.00] | 6 | — | text | multilingual, cultural |
-| chatgpt_drift | 0 | — | — | — | — | 100% | — | — | — | text | general |
 | clinebench | 26 | 3 | 12 | 0 | 81% | 100% | [0.00, 1.00] | 1 | — | text | software_engineering |
 | corebench | 1,956 | 15 | 270 | 0 | 93% | 100% | [0.00, 1.00] | 3 | — | text | science |
 | cruxeval | 16,000 | 1 | 1,600 | 0 | 100% | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
@@ -300,7 +296,6 @@ _Snapshot: 69 datasets in BENCHMARKS • 66 ready • 3 empty (upstream gap) •
 | financebench | 2,400 | 16 | 150 | 0 | 100% | 100% | [0.00, 1.00] | 1 | — | text | finance |
 | flask | 76,009 | 15 | 1,696 | 0 | 14% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
 | gaia | 18,060 | 3191 | 173 | 0 | 42% | 100% | [0.00, 1.00] | 2 | ✓ | text, image | general |
-| hallusionbench | 0 | — | — | — | — | — | — | — | — | text, image | safety |
 | helm_afr | 747,560 | 23 | 32,741 | 0 | 100% | 100% | [0.00, 1.00] | 6 | — | text | multilingual |
 | helm_cleva | 23,312 | 4 | 5,822 | 0 | 100% | 100% | [0.00, 1.00] | 3 | — | text | multilingual |
 | helm_thaiexam | 23,730 | 42 | 561 | 0 | 100% | 100% | [0.00, 1.00] | 2 | — | text | multilingual |
@@ -344,7 +339,6 @@ _Snapshot: 69 datasets in BENCHMARKS • 66 ready • 3 empty (upstream gap) •
 | tumlu | 143,316 | 16 | 7,486 | 0 | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
 | ultrafeedback | 1,009,730 | 17 | 63,932 | 0 | 10% | 100% | [1.00, 5.00] | 2 | ✓ | text | preference |
 | visualwebarena | 600 | 3 | 98 | 0 | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text, gui_screenshot | gui_agent |
-| vl_rewardbench | 0 | — | — | — | — | 100% | — | — | — | text, image | reward_modeling |
 | wildbench | 113,566 | 71 | 1,024 | 0 | 1% | 100% | [1.00, 10.00] | 1 | ✓ | text | preference |
 | wmt_mqm | 4,883,886 | 80 | 9,124 | 0 | 100% | 100% | [0.00, 1.00] | 33 | ✓ | text | translation, multilingual |
 | workarena | 539 | 22 | 129 | 0 | 90% | 100% | [0.00, 1.00] | 1 | ✓ | text, gui_screenshot | gui_agent |
