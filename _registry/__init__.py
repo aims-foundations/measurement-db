@@ -47,6 +47,8 @@ _ITEMS_COLS = [
 ]
 _BENCHMARKS_COLS = [
     "benchmark_id", "name", "version", "license", "source_url", "description",
+    "modality", "domain",
+    "response_type", "response_scale", "categorical",
 ]
 
 _lock = threading.Lock()
@@ -208,12 +210,38 @@ def get_benchmark_id(
     license: str | None = None,
     source_url: str | None = None,
     description: str | None = None,
+    modality: list[str] | None = None,
+    domain: list[str] | None = None,
+    response_type: str | None = None,
+    response_scale: str | None = None,
+    categorical: bool | None = None,
 ) -> str:
     """Register a benchmark once, or return its id if already registered.
 
     ``benchmark_id`` is the canonical short key (typically the folder name).
     Kwargs populate the row on first registration; subsequent calls in the
     same process return the id without updating fields.
+
+    ``modality`` is the list of input modalities required to solve items in
+    this benchmark: ``"text"``, ``"image"``, ``"grid"``, ``"gui_screenshot"``,
+    ``"audio"``, etc.  Defaults to ``["text"]``.  Use a list so multimodal
+    benchmarks (e.g. vision-language QA) can declare multiple.
+
+    ``domain`` is the list of subject areas: ``"software_engineering"``,
+    ``"mathematics"``, ``"medicine"``, ``"law"``, ``"finance"``, ``"safety"``,
+    ``"preference"``, ``"tool_use"``, ``"gui_agent"``, ``"cybersecurity"``,
+    ``"general"``, ``"translation"``, ``"summarization"``, ``"ner"``,
+    ``"cultural"``, etc.  Defaults to ``["general"]``.
+
+    ``response_type`` names how the grader emits the response:
+    ``"binary"``, ``"likert_5"``, ``"likert_10"``, ``"win_rate"``,
+    ``"ordinal"``, ``"fraction"``, ``"continuous_bounded"``,
+    ``"continuous_unbounded"``, ``"error_presence"``, ``"mixed"``.  Defaults
+    to ``"binary"``.  ``response_scale`` is a free-form string naming the
+    value set (``"{0, 1}"``, ``"{1, 2, 3, 4, 5}"``, ``"k/N, N varies per
+    item"``, ``"[-18, 18] continuous"``).  ``categorical`` flags whether the
+    response set is finitely enumerable — downstream IRT code can filter on
+    this for polytomous-vs-continuous model selection.
     """
     global _benchmarks
     with _lock:
@@ -230,6 +258,11 @@ def get_benchmark_id(
             "license": license,
             "source_url": source_url,
             "description": description,
+            "modality": list(modality) if modality else ["text"],
+            "domain": list(domain) if domain else ["general"],
+            "response_type": response_type or "binary",
+            "response_scale": response_scale or "{0, 1}",
+            "categorical": bool(categorical) if categorical is not None else True,
         }
         _benchmarks = pd.concat(
             [_benchmarks, pd.DataFrame([new_row])], ignore_index=True

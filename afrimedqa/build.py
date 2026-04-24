@@ -42,6 +42,11 @@ INFO = {
       url={https://arxiv.org/abs/2411.15640},
 }""",
     'tags': ['multilingual'],
+    'modality': ['text'],
+    'domain': ['medicine', 'multilingual'],
+    'response_type': 'binary',
+    'response_scale': '{0, 1}',
+    'categorical': True,
 }
 
 
@@ -251,24 +256,19 @@ def _load_item_registry(bench_id: str, selected_evals):
     """Register each distinct sample_id exactly once.
 
     Content preference (richest first):
-      1. phase_2 raw CSV (question_clean + answer_options)
-      2. Any results CSV row carrying a question/specialty etc.
+      1. phase_2 raw CSV (question_clean + answer_options + correct_answer)
+      2. Any results CSV that exposes per-item ``question``/``answer``
+         columns (scanned across *all* result CSVs, not just the richest).
+         v1 sample_ids are absent from phase_2 and are only recoverable via
+         these result CSVs.
     """
-    # Collect all sample_ids + pick the richest results CSV for fallback content.
+    # Collect all sample_ids
     all_ids: set = set()
-    richest_results = None
-    richest_n = -1
     for ev in selected_evals:
         fdf = read_mcq_csv_full(ev["filepath"])
         if fdf is None:
             continue
         all_ids.update(fdf["sample_id"].dropna().astype(str).tolist())
-        # prefer files with 'specialty' column, else largest
-        has_spec = "specialty" in fdf.columns
-        score = ev["n_items"] + (10 ** 6 if has_spec else 0)
-        if score > richest_n:
-            richest_results = fdf
-            richest_n = score
 
     phase2_path = REPO_DIR / "data" / "afri_med_qa_15k_v2.5_phase_2_15275.csv"
     phase2 = None
@@ -279,13 +279,84 @@ def _load_item_registry(bench_id: str, selected_evals):
         except Exception:
             phase2 = None
 
-    results_by_id: dict = {}
-    if richest_results is not None:
-        for _, row in richest_results.iterrows():
+    # Aggregate content across ALL result CSVs so v1-only sample_ids are covered.
+    # For each sample_id, pick the first non-empty (question, options, answer)
+    # we encounter. We scan every result CSV in the AfriMed-QA repo (not just
+    # the evaluations promoted to ``selected_evals``) for breadth.
+    results_content: dict[str, dict] = {}
+    scanned_files: set = set()
+    candidate_files: list[str] = []
+    import os as _os
+    for model_dir in sorted(_os.listdir(RESULTS_DIR)):
+        model_path = RESULTS_DIR / model_dir
+        if not model_path.is_dir():
+            continue
+        for f in sorted(_os.listdir(model_path)):
+            if f.endswith(".csv") and "mcq" in f.lower():
+                candidate_files.append(str(model_path / f))
+
+    option_cols = ("A", "B", "C", "D", "E")
+
+    def _first_non_null(row, keys):
+        for k in keys:
+            if k not in row:
+                continue
+            v = row[k]
+            if v is None or (isinstance(v, float) and pd.isna(v)):
+                continue
+            s = str(v).strip()
+            if s and s.lower() != "nan":
+                return s
+        return None
+
+    for fp in candidate_files:
+        if fp in scanned_files:
+            continue
+        scanned_files.add(fp)
+        try:
+            fdf = pd.read_csv(fp, low_memory=False)
+        except Exception:
+            continue
+        if "sample_id" not in fdf.columns:
+            continue
+        # Skip if all needed sample_ids already covered
+        new_ids_here = set(fdf["sample_id"].dropna().astype(str)) & all_ids
+        pending = new_ids_here - set(results_content)
+        if not pending:
+            continue
+        for _, row in fdf.iterrows():
             sid = row.get("sample_id")
             if sid is None or (isinstance(sid, float) and pd.isna(sid)):
                 continue
-            results_by_id[str(sid)] = row
+            sid = str(sid)
+            if sid in results_content:
+                continue
+            entry: dict = {}
+            q = _first_non_null(row, ("question", "question_x", "question_y"))
+            if q is not None:
+                entry["question"] = q
+            opts_parts = []
+            for c in option_cols:
+                v = _first_non_null(row, (c,))
+                if v is not None:
+                    opts_parts.append(f"{c}) {v}")
+            if opts_parts:
+                entry["options"] = "\n".join(opts_parts)
+            ans = _first_non_null(row, ("answer", "correct_answer"))
+            if ans is not None:
+                entry["answer"] = ans
+            if entry:
+                results_content[sid] = entry
+
+    def _format_results_content(entry: dict) -> str | None:
+        parts = []
+        if entry.get("question"):
+            parts.append(entry["question"])
+        if entry.get("options"):
+            parts.append(entry["options"])
+        if not parts:
+            return None
+        return "\n\n".join(parts)[:4000]
 
     item_ids: dict = {}
     item_gold: dict = {}
@@ -308,17 +379,10 @@ def _load_item_registry(bench_id: str, selected_evals):
             ca = prow.get("correct_answer")
             if ca is not None and not (isinstance(ca, float) and pd.isna(ca)):
                 gold = str(ca)
-        if content is None and sid in results_by_id:
-            rrow = results_by_id[sid]
-            q = rrow.get("question")
-            if q is None or (isinstance(q, float) and pd.isna(q)):
-                q = rrow.get("question_x") or rrow.get("question_y")
-            if q is not None and not (isinstance(q, float) and pd.isna(q)):
-                content = str(q)[:4000]
+        if content is None and sid in results_content:
+            content = _format_results_content(results_content[sid])
             if gold is None:
-                ca = rrow.get("answer") or rrow.get("correct_answer")
-                if ca is not None and not (isinstance(ca, float) and pd.isna(ca)):
-                    gold = str(ca)
+                gold = results_content[sid].get("answer")
         iid = register_item(
             benchmark_id=bench_id,
             raw_item_id=str(sid),
@@ -342,6 +406,11 @@ def main():
         license=INFO.get("license"),
         source_url=INFO.get("data_source_url"),
         description=INFO.get("description"),
+        modality=INFO.get("modality"),
+        domain=INFO.get("domain"),
+        response_type=INFO.get("response_type"),
+        response_scale=INFO.get("response_scale"),
+        categorical=INFO.get("categorical"),
     )
 
     evaluations = discover_evaluations()

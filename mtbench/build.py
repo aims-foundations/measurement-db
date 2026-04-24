@@ -30,6 +30,11 @@ INFO = {
       url={https://arxiv.org/abs/2306.05685},
 }""",
     'tags': ['preference', 'pairwise'],
+    'modality': ['text'],
+    'domain': ['preference'],
+    'response_type': 'likert_10',
+    'response_scale': '{1, 2, ..., 10}',
+    'categorical': True,
 }
 
 
@@ -137,6 +142,11 @@ def build_long_form(judgments: pd.DataFrame, questions: dict[tuple[str, int], st
         license=INFO.get("license"),
         source_url=INFO.get("data_source_url"),
         description=INFO.get("description"),
+        modality=INFO.get("modality"),
+        domain=INFO.get("domain"),
+        response_type=INFO.get("response_type"),
+        response_scale=INFO.get("response_scale"),
+        categorical=INFO.get("categorical"),
     )
 
     rows = []

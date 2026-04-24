@@ -33,6 +33,11 @@ INFO = {
       url={https://arxiv.org/abs/2310.01377},
 }""",
     'tags': ['reward-model', 'preference'],
+    'modality': ['text'],
+    'domain': ['preference'],
+    'response_type': 'likert_5',
+    'response_scale': '{1, 2, 3, 4, 5}',
+    'categorical': True,
 }
 
 
@@ -151,6 +156,11 @@ def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
         license=INFO.get("license"),
         source_url=INFO.get("data_source_url"),
         description=INFO.get("description"),
+        modality=INFO.get("modality"),
+        domain=INFO.get("domain"),
+        response_type=INFO.get("response_type"),
+        response_scale=INFO.get("response_scale"),
+        categorical=INFO.get("categorical"),
     )
 
     if scores_df.empty:

@@ -38,6 +38,11 @@ INFO = {
       url={https://arxiv.org/abs/2405.14573},
 }""",
     'tags': ['agent'],
+    'modality': ['text', 'gui_screenshot'],
+    'domain': ['gui_agent'],
+    'response_type': 'binary',
+    'response_scale': '{0, 1}',
+    'categorical': True,
 }
 
 
@@ -164,6 +169,11 @@ def build_long_form():
         license=INFO.get("license"),
         source_url=INFO.get("data_source_url"),
         description=INFO.get("description"),
+        modality=INFO.get("modality"),
+        domain=INFO.get("domain"),
+        response_type=INFO.get("response_type"),
+        response_scale=INFO.get("response_scale"),
+        categorical=INFO.get("categorical"),
     )
 
     rows = []

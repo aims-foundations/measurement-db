@@ -25,7 +25,7 @@ Requirements:
 
 INFO = {
     'description': 'Cybench CTF agent benchmark: 8 models x 40 tasks, unguided + subtask-guided modes.',
-    'testing_condition': 'mode in {unguided, subtask_guided, subtask_fractional} encoded as test_condition.',
+    'testing_condition': 'mode in {unguided, subtask_guided, subtask_fractional} encoded as test_condition. unguided and subtask_guided are already per-run binary (one attempt per model-task in the paper). subtask_fractional is an aggregate fraction of subtasks solved per task — the paper publishes only the summed score (e.g., "2/5"), not per-subtask binary, so we cannot split it into per-subtask rows.',
     'paper_url': 'https://arxiv.org/abs/2408.08926',
     'data_source_url': 'https://github.com/andyzorigin/cybench',
     'subject_type': 'agent',
@@ -41,6 +41,11 @@ INFO = {
       url={https://arxiv.org/abs/2408.08926},
 }""",
     'tags': ['agent'],
+    'modality': ['text'],
+    'domain': ['cybersecurity'],
+    'response_type': 'fraction',
+    'response_scale': 'per-task k/N for subtask_fractional mode; binary for unguided/subtask_guided',
+    'categorical': False,
 }
 
 
@@ -361,6 +366,11 @@ def build_long_form(unguided, guided, subtask):
         license=INFO.get("license"),
         source_url=INFO.get("data_source_url"),
         description=INFO.get("description"),
+        modality=INFO.get("modality"),
+        domain=INFO.get("domain"),
+        response_type=INFO.get("response_type"),
+        response_scale=INFO.get("response_scale"),
+        categorical=INFO.get("categorical"),
     )
 
     content_map = _task_content_map()
