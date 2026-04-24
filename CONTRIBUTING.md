@@ -231,18 +231,18 @@ This repo is maintained as two GitHub repositories that share a manifest:
   — every benchmark, including datasets used for competitions and
   incentive-aligned evaluations.
 * [`aims-foundations/measurement-db`](https://github.com/aims-foundations/measurement-db)
-  — the subset of benchmarks marked `status: audited` in `manifest.yaml`.
+  — the subset of benchmarks marked `release: public` in `manifest.yaml`.
 
-`sync_to_public.py` copies tracked code files for audited benchmarks from the
-private repo into the public one. **If you are an external contributor**,
-you'll work against the public repo — adding or improving any benchmark there
-is equivalent to adding it in both (we'll sync privately-visible changes
-back).
+`sync_to_public.py` copies tracked code files for release=public benchmarks
+from the private repo into the public one. **If you are an external
+contributor**, you'll work against the public repo — adding or improving any
+benchmark there is equivalent to adding it in both (we'll sync privately-visible
+changes back).
 
-Per-benchmark audit status is set in `manifest.yaml` (`status: audited`
-vs. `private-only`). Promotion from `private-only` to `audited` is a
-separate curatorial decision — open an issue if you'd like a benchmark
-considered for public release.
+Per-benchmark release visibility is set in `manifest.yaml` (`release: public`
+vs. `release: private`). Every benchmark in the repo has been audited; the
+`release` field is a separate publish-to-public decision made by the
+maintainers — open an issue if you'd like a benchmark promoted to public.
 
 ## Submitting a Pull Request
 

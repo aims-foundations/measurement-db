@@ -1,446 +1,446 @@
 datasets:
   aegis:
     domain: ''
-    status: private-only
+    release: private
   afrieval:
     domain: ''
-    status: private-only
+    release: private
   afrimedqa:
     domain: ''
-    status: audited
+    release: public
   agent_safetybench:
     domain: ''
-    status: private-only
+    release: private
   agentbench:
     domain: ''
-    status: private-only
+    release: private
   agentdojo:
     domain: ''
-    status: private-only
+    release: public
   agentharm:
     domain: ''
-    status: private-only
+    release: private
   agentic_misalignment:
     domain: ''
-    status: private-only
+    release: private
   agreval:
     domain: ''
-    status: private-only
+    release: private
   ai2d_test:
     domain: ''
-    status: private-only
+    release: public
   ai_safety_index:
     domain: ''
-    status: private-only
+    release: private
   aider:
     domain: ''
-    status: private-only
+    release: private
   aiid:
     domain: ''
-    status: private-only
+    release: private
   alignment_faking:
     domain: ''
-    status: private-only
+    release: private
   alpacaeval:
     domain: ''
-    status: private-only
+    release: private
   androidworld:
     domain: ''
-    status: audited
+    release: public
   apollo_deception:
     domain: ''
-    status: private-only
+    release: private
   appworld:
     domain: ''
-    status: private-only
+    release: private
   arcagi:
     domain: ''
-    status: private-only
+    release: private
   arena_140k:
     domain: ''
-    status: private-only
+    release: private
   arena_hard:
     domain: ''
-    status: private-only
+    release: private
   asiaeval:
     domain: ''
-    status: private-only
+    release: private
   atbench:
     domain: ''
-    status: private-only
+    release: private
   bbq:
     domain: ''
-    status: private-only
+    release: private
   beavertails:
     domain: ''
-    status: private-only
+    release: private
   bells:
     domain: ''
-    status: private-only
+    release: private
   benchmark_papers:
     domain: ''
-    status: private-only
+    release: private
   bfcl:
     domain: ''
-    status: private-only
+    release: public
   bigcodebench:
     domain: ''
-    status: private-only
+    release: private
   biggen:
     domain: ''
-    status: private-only
+    release: private
   bridging_gap:
     domain: ''
-    status: private-only
+    release: private
   browsergym:
     domain: ''
-    status: private-only
+    release: private
   ca_dmv_disengagement:
     domain: ''
-    status: private-only
+    release: private
   ceval:
     domain: ''
-    status: private-only
+    release: private
   chatgpt_drift:
     domain: ''
-    status: private-only
+    release: private
   clinebench:
     domain: ''
-    status: private-only
+    release: private
   cmb:
     domain: ''
-    status: private-only
+    release: private
   cmexam:
     domain: ''
-    status: private-only
+    release: private
   cmmlu:
     domain: ''
-    status: private-only
+    release: private
   collab_cxr:
     domain: ''
-    status: private-only
+    release: private
   corebench:
     domain: ''
-    status: private-only
+    release: private
   cot_safety_behaviors:
     domain: ''
-    status: private-only
+    release: private
   cot_unfaithfulness:
     domain: ''
-    status: private-only
+    release: private
   cruxeval:
     domain: ''
-    status: private-only
+    release: private
   culturaleval:
     domain: ''
-    status: private-only
+    release: private
   cybench:
     domain: ''
-    status: audited
+    release: public
   dpai:
     domain: ''
-    status: private-only
+    release: private
   editbench:
     domain: ''
-    status: private-only
+    release: private
   evalplus:
     domain: ''
-    status: private-only
+    release: private
   faithcot:
     domain: ''
-    status: private-only
+    release: private
   financebench:
     domain: ''
-    status: private-only
+    release: private
   fineval:
     domain: ''
-    status: private-only
+    release: private
   flask:
     domain: ''
-    status: private-only
+    release: private
   frenchmedmcqa:
     domain: ''
-    status: private-only
+    release: private
   gaia:
     domain: ''
-    status: private-only
+    release: private
   gandalf:
     domain: ''
-    status: private-only
+    release: private
   genai_learning:
     domain: ''
-    status: private-only
+    release: private
   haiid:
     domain: ''
-    status: private-only
+    release: private
   hallusionbench:
     domain: ''
-    status: private-only
+    release: private
   helm_afr:
     domain: ''
-    status: private-only
+    release: private
   helm_cleva:
     domain: ''
-    status: private-only
+    release: private
   helm_thaiexam:
     domain: ''
-    status: private-only
+    release: private
   helpsteer2:
     domain: ''
-    status: private-only
+    release: private
   hh_rlhf:
     domain: ''
-    status: private-only
+    release: private
   hle:
     domain: ''
-    status: private-only
+    release: public
   iberbench:
     domain: ''
-    status: private-only
+    release: private
   igakuqa:
     domain: ''
-    status: private-only
+    release: private
   igakuqa119:
     domain: ''
-    status: private-only
+    release: private
   indeterminacy:
     domain: ''
-    status: private-only
+    release: private
   jailbreakbench:
     domain: ''
-    status: private-only
+    release: private
   judgebench:
     domain: ''
-    status: private-only
+    release: private
   kmmlu:
     domain: ''
-    status: private-only
+    release: private
   ko_leaderboard:
     domain: ''
-    status: private-only
+    release: private
   kormedmcqa:
     domain: ''
-    status: private-only
+    release: private
   la_leaderboard:
     domain: ''
-    status: private-only
+    release: private
   lawbench:
     domain: ''
-    status: private-only
+    release: private
   legaleval:
     domain: ''
-    status: private-only
+    release: private
   livebench:
     domain: ''
-    status: private-only
+    release: private
   livecodebench:
     domain: ''
-    status: private-only
+    release: public
   llmail_inject:
     domain: ''
-    status: private-only
+    release: private
   lmsys_toxicchat:
     domain: ''
-    status: private-only
+    release: private
   machiavelli:
     domain: ''
-    status: private-only
+    release: private
   matharena:
     domain: ''
-    status: audited
+    release: public
   mathvista_mini:
     domain: ''
-    status: private-only
+    release: public
   medarabiq:
     domain: ''
-    status: private-only
+    release: private
   medexpqa:
     domain: ''
-    status: private-only
+    release: private
   medqa_chinese:
     domain: ''
-    status: private-only
+    release: private
   metr_early2025:
     domain: ''
-    status: private-only
+    release: private
   metr_late2025:
     domain: ''
-    status: private-only
+    release: private
   mit_airisk:
     domain: ''
-    status: private-only
+    release: private
   mlebench:
     domain: ''
-    status: private-only
+    release: private
   mmbench_v11:
     domain: ''
-    status: private-only
+    release: public
   mme:
     domain: ''
-    status: private-only
+    release: private
   mmedbench:
     domain: ''
-    status: private-only
+    release: private
   mmlupro:
     domain: ''
-    status: private-only
+    release: public
   mmmu_dev_val:
     domain: ''
-    status: private-only
+    release: private
   mtbench:
     domain: ''
-    status: audited
+    release: public
   nectar:
     domain: ''
-    status: private-only
+    release: private
   nhtsa_sgo:
     domain: ''
-    status: private-only
+    release: private
   oasst:
     domain: ''
-    status: private-only
+    release: private
   odcv_bench:
     domain: ''
-    status: private-only
+    release: private
   oecd_aim:
     domain: ''
-    status: private-only
+    release: private
   osworld:
     domain: ''
-    status: private-only
+    release: private
   paperbench:
     domain: ''
-    status: private-only
+    release: private
   permedcqa:
     domain: ''
-    status: private-only
+    release: private
   personalllm:
     domain: ''
-    status: private-only
+    release: private
   pickapic:
     domain: ''
-    status: private-only
+    release: private
   pku_saferlhf:
     domain: ''
-    status: private-only
+    release: private
   preference_dissection:
     domain: ''
-    status: private-only
+    release: private
   prism:
     domain: ''
-    status: private-only
+    release: private
   prm800k:
     domain: ''
-    status: private-only
+    release: private
   prometheus:
     domain: ''
-    status: private-only
+    release: private
   pt_leaderboard:
     domain: ''
-    status: private-only
+    release: private
   rakuda:
     domain: ''
-    status: private-only
+    release: private
   responsible_ai_measures:
     domain: ''
-    status: private-only
+    release: private
   reward_hacks:
     domain: ''
-    status: private-only
+    release: private
   rewardbench:
     domain: ''
-    status: private-only
+    release: public
   rewardbench2:
     domain: ''
-    status: private-only
+    release: private
   safeagentbench:
     domain: ''
-    status: private-only
+    release: private
   scale_mrt:
     domain: ''
-    status: private-only
+    release: private
   scienceagentbench:
     domain: ''
-    status: private-only
+    release: private
   scripts:
     domain: ''
-    status: private-only
+    release: private
   shp2:
     domain: ''
-    status: private-only
+    release: private
   sib200:
     domain: ''
-    status: private-only
+    release: private
   summeval:
     domain: ''
-    status: private-only
+    release: private
   swebench:
     domain: ''
-    status: private-only
+    release: public
   swebench_full:
     domain: ''
-    status: private-only
+    release: private
   swebench_java:
     domain: ''
-    status: private-only
+    release: private
   swebench_multilingual:
     domain: ''
-    status: private-only
+    release: private
   swepolybench:
     domain: ''
-    status: private-only
+    release: private
   sycophancy_subterfuge:
     domain: ''
-    status: private-only
+    release: private
   taubench:
     domain: ''
-    status: private-only
+    release: private
   tengu:
     domain: ''
-    status: private-only
+    release: private
   tensortrust:
     domain: ''
-    status: private-only
+    release: private
   terminal_bench:
     domain: ''
-    status: private-only
+    release: private
   thai_leaderboard:
     domain: ''
-    status: private-only
+    release: private
   theagentcompany:
     domain: ''
-    status: private-only
+    release: private
   toolbench:
     domain: ''
-    status: private-only
+    release: private
   trail:
     domain: ''
-    status: private-only
+    release: private
   tumlu:
     domain: ''
-    status: private-only
+    release: private
   ultrafeedback:
     domain: ''
-    status: audited
+    release: public
   visualwebarena:
     domain: ''
-    status: private-only
+    release: private
   vl_rewardbench:
     domain: ''
-    status: private-only
+    release: private
   webarena:
     domain: ''
-    status: private-only
+    release: private
   wildbench:
     domain: ''
-    status: private-only
+    release: private
   wildchat:
     domain: ''
-    status: private-only
+    release: private
   wmt_mqm:
     domain: ''
-    status: private-only
+    release: private
   workarena:
     domain: ''
-    status: private-only
+    release: private
 version: 1
