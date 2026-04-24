@@ -52,6 +52,7 @@ _BENCHMARK_DIR = Path(__file__).resolve().parent
 RAW_DIR = _BENCHMARK_DIR / "raw"
 CONTRIB_DIR = _BENCHMARK_DIR / "_contrib"
 RESPONSES_PATH = _BENCHMARK_DIR / "responses.parquet"
+TRACES_PATH = _BENCHMARK_DIR / "traces.parquet"
 RAW_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(_BENCHMARK_DIR.parent))
@@ -87,8 +88,13 @@ def stream_per_aspect() -> pd.DataFrame:
     cache_path = RAW_DIR / "extracted_scores_per_aspect.csv"
 
     if cache_path.exists() and cache_path.stat().st_size > 1000:
-        print(f"  using cached extraction: {cache_path}")
-        return pd.read_csv(cache_path)
+        cached = pd.read_csv(cache_path)
+        # Honor cache only if the trace column was captured; older caches
+        # pre-date trace extraction and must be rebuilt.
+        if "response_text" in cached.columns:
+            print(f"  using cached extraction: {cache_path}")
+            return cached
+        print("  cached extraction lacks response_text; re-extracting...")
 
     print("  streaming openbmb/UltraFeedback from HuggingFace ...")
     from datasets import load_dataset
@@ -119,6 +125,9 @@ def stream_per_aspect() -> pd.DataFrame:
             model = comp.get("model", "")
             if not model:
                 continue
+            resp_text = comp.get("response")
+            if not isinstance(resp_text, str):
+                resp_text = None
             annotations = comp.get("annotations", {}) or comp.get("ratings", {}) or {}
             for aspect, aspect_data in annotations.items():
                 canonical = aspect.strip().lower().replace("-", "_").replace(" ", "_")
@@ -133,6 +142,7 @@ def stream_per_aspect() -> pd.DataFrame:
                     "prompt_text": prompt_text,
                     "aspect": canonical,
                     "rating": rating,
+                    "response_text": resp_text,
                 })
 
         n_processed += 1
@@ -145,6 +155,8 @@ def stream_per_aspect() -> pd.DataFrame:
     # Truncate prompt_text in the cache to keep it manageable.
     if "prompt_text" in df.columns:
         df["prompt_text"] = df["prompt_text"].astype(str).str.slice(0, 4000)
+    if "response_text" in df.columns:
+        df["response_text"] = df["response_text"].astype(str).str.slice(0, 8000)
     df.to_csv(cache_path, index=False)
     print(f"  cached: {cache_path}")
     return df
@@ -180,6 +192,8 @@ def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
         t = (str(text).strip() if pd.notna(text) else "")
         content_map[pid] = t if t else None
 
+    has_resp = "response_text" in scores_df.columns
+
     rows = []
     subject_cache: dict[str, str] = {}
     item_cache: dict[str, str] = {}
@@ -198,6 +212,12 @@ def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
             )
         item = item_cache[pid]
 
+        raw_trace = getattr(rec, "response_text", None) if has_resp else None
+        if isinstance(raw_trace, float) and pd.isna(raw_trace):
+            raw_trace = None
+        elif isinstance(raw_trace, str) and not raw_trace.strip():
+            raw_trace = None
+
         rows.append({
             "subject_id": subj,
             "item_id": item,
@@ -206,15 +226,24 @@ def build_long_form(scores_df: pd.DataFrame) -> pd.DataFrame:
             "test_condition": f"aspect={rec.aspect}",
             "response": float(rec.rating),
             "correct_answer": None,
-            "trace": None,
+            "trace": raw_trace,
         })
 
     df = pd.DataFrame(rows)
     df = ensure_unique_trials(df)
-    df.to_parquet(RESPONSES_PATH, index=False)
+
+    trace_cols = ["subject_id", "item_id", "benchmark_id", "trial", "test_condition", "trace"]
+    traces = df.loc[df["trace"].notna(), trace_cols].copy()
+
+    resp = df.copy()
+    resp["trace"] = None
+    resp.to_parquet(RESPONSES_PATH, index=False)
     registry_save(CONTRIB_DIR)
-    print(f"\n  wrote {RESPONSES_PATH.name} ({len(df):,} rows)")
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(resp):,} rows)")
     print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
+    if len(traces) > 0:
+        traces.to_parquet(TRACES_PATH, index=False)
+        print(f"  wrote {TRACES_PATH.name} ({len(traces):,} rows)")
     return df
 
 

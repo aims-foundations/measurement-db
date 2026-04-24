@@ -47,7 +47,9 @@ INFO = {
 }
 
 
+import json
 import sys
+import urllib.request
 from pathlib import Path
 
 import pandas as pd
@@ -163,6 +165,46 @@ PERTASK_AGENTS = {
 }
 
 
+TASK_METADATA_URL = (
+    "https://raw.githubusercontent.com/google-research/android_world/main"
+    "/android_world/task_metadata.json"
+)
+
+
+def load_task_goals() -> dict[str, str]:
+    """Return {task_name: task_template_goal_text} from the upstream task registry.
+
+    ``task_metadata.json`` in google-research/android_world publishes the
+    canonical per-task goal template string (parameterized placeholders like
+    ``{file_name}`` preserved verbatim). Used to populate ``correct_answer``
+    (the task goal) on each item in the items registry.
+    """
+    cache = RAW_DIR / "task_metadata.json"
+    if not cache.exists() or cache.stat().st_size < 100:
+        try:
+            print(f"  downloading task_metadata.json from {TASK_METADATA_URL}")
+            req = urllib.request.Request(
+                TASK_METADATA_URL, headers={"User-Agent": "androidworld-builder"}
+            )
+            with urllib.request.urlopen(req, timeout=60) as resp:
+                cache.write_bytes(resp.read())
+        except Exception as e:
+            print(f"  WARN: failed to download task_metadata.json: {e!r}")
+            return {}
+    try:
+        data = json.loads(cache.read_text())
+    except Exception as e:
+        print(f"  WARN: failed to parse task_metadata.json: {e!r}")
+        return {}
+    goals: dict[str, str] = {}
+    for rec in data:
+        name = rec.get("task_name")
+        goal = rec.get("task_template")
+        if isinstance(name, str) and isinstance(goal, str) and goal.strip():
+            goals[name] = goal.strip()[:4000]
+    return goals
+
+
 def build_long_form():
     bench_id = get_benchmark_id(
         "androidworld",
@@ -179,15 +221,20 @@ def build_long_form():
         release_date=INFO.get("release_date"),
     )
 
+    task_goals = load_task_goals()
+    print(f"  resolved goals for {len(task_goals)}/{len(CANONICAL_TASKS)} tasks")
+
     rows = []
     for agent, info in PERTASK_AGENTS.items():
         subj = resolve_subject(agent)
         failed = info["failed"]
         for task in CANONICAL_TASKS:
+            correct = task_goals.get(task)
             item = register_item(
                 benchmark_id=bench_id,
                 raw_item_id=task,
                 content=f"AndroidWorld task: {task}",
+                correct_answer=correct,
             )
             rows.append({
                 "subject_id": subj,
@@ -196,7 +243,7 @@ def build_long_form():
                 "trial": 1,
                 "test_condition": None,
                 "response": 0.0 if task in failed else 1.0,
-                "correct_answer": None,
+                "correct_answer": correct,
                 "trace": None,
             })
 

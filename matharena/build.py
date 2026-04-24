@@ -29,7 +29,7 @@ INFO = {
     'data_source_url': 'https://github.com/eth-sri/matharena',
     'subject_type': 'model',
     'item_type': 'task',
-    'license': 'unknown',
+    'license': 'MIT',
     'citation': """@misc{balunović2026matharenaevaluatingllmsuncontaminated,
       title={MathArena: Evaluating LLMs on Uncontaminated Math Competitions},
       author={Mislav Balunović and Jasper Dekoninck and Ivo Petrov and Nikola Jovanović and Martin Vechev},
@@ -129,7 +129,8 @@ def download_dataset(dataset_id, comp_name):
         ds = load_dataset(dataset_id, split="train")
         keep_cols = [
             "problem_idx", "model_name", "idx_answer", "correct",
-            "gold_answer", "parsed_answer", "problem", "problem_statement",
+            "gold_answer", "parsed_answer", "answer",
+            "problem", "problem_statement",
             "cost", "input_tokens", "output_tokens",
             "points_judge_1", "max_points_judge_1",
             "points_judge_2", "max_points_judge_2",
@@ -163,7 +164,7 @@ def download_outputs_dataset(dataset_id, comp_name):
         from datasets import load_dataset
         ds = load_dataset(dataset_id, split="train")
         keep_cols = [
-            "problem_idx", "model_name", "idx_answer",
+            "problem_idx", "model_name", "idx_answer", "answer",
             "problem", "problem_statement",
             "points_judge_1", "max_points_judge_1", "grading_details_judge_1",
             "points_judge_2", "max_points_judge_2", "grading_details_judge_2",
@@ -229,6 +230,31 @@ def _problem_content(row) -> str | None:
     return None
 
 
+def _model_trace(rec) -> str | None:
+    """Pull the model's raw answer text from a record.
+
+    Matharena's ``_outputs`` datasets expose ``answer`` (full solution text);
+    the final-answer datasets expose ``parsed_answer`` (extracted short form)
+    when the full text is unavailable.
+    """
+    for key in ("answer", "parsed_answer"):
+        try:
+            v = getattr(rec, key, None)
+        except AttributeError:
+            v = None
+        if v is None:
+            continue
+        if isinstance(v, float) and pd.isna(v):
+            continue
+        s = str(v).strip()
+        if not s:
+            continue
+        if len(s) > 8000:
+            s = s[:8000]
+        return s
+    return None
+
+
 def _register_items_for_comp(df: pd.DataFrame, comp_name: str, bench_id: str):
     """Register one item per (comp, problem_idx). Returns (item_ids, item_gold)."""
     item_ids: dict = {}
@@ -287,7 +313,7 @@ def _build_rows_final_answer(df: pd.DataFrame, comp_name: str, bench_id: str) ->
             "test_condition": None,
             "response": float(corr),
             "correct_answer": item_gold.get(pid),
-            "trace": None,
+            "trace": _model_trace(rec),
         })
     print(f"  {comp_name}: {len(rows):,} rows (final-answer, per-attempt)")
     return rows
@@ -349,6 +375,12 @@ def _build_rows_proof(df: pd.DataFrame, comp_name: str, bench_id: str) -> list[d
             trial = int(idx_answer) + 1
         except (TypeError, ValueError):
             trial = 1
+        # The same ``answer`` text is graded against every criterion; emit it
+        # once per (model, problem, attempt) pair (first criterion), leaving
+        # the rest of the criterion rows with trace=None to avoid blowing up
+        # storage.
+        trace_once = _model_trace(rec)
+        trace_emitted_for_rec = False
         for k in judge_keys:
             details = getattr(rec, f"grading_details_judge_{k}", None)
             if details is None:
@@ -381,6 +413,9 @@ def _build_rows_proof(df: pd.DataFrame, comp_name: str, bench_id: str) -> list[d
                 elif r > 1.0:
                     r = 1.0
                 title_str = "" if title is None else str(title)
+                this_trace = trace_once if not trace_emitted_for_rec else None
+                if this_trace is not None:
+                    trace_emitted_for_rec = True
                 rows.append({
                     "subject_id": subj,
                     "item_id": iid,
@@ -389,7 +424,7 @@ def _build_rows_proof(df: pd.DataFrame, comp_name: str, bench_id: str) -> list[d
                     "test_condition": f"judge={k};criterion={title_str}",
                     "response": float(r),
                     "correct_answer": item_gold.get(pid),
-                    "trace": None,
+                    "trace": this_trace,
                 })
     extra = ""
     if n_empty_details or n_skipped_criteria:
@@ -443,9 +478,22 @@ def main():
     ]
     out_df = pd.DataFrame(all_rows, columns=cols)
     out_df = ensure_unique_trials(out_df)
-    out_df.to_parquet(RESPONSES_PATH, index=False)
+
+    traces = out_df.loc[out_df["trace"].notna(), [
+        "subject_id", "item_id", "benchmark_id", "trial", "test_condition", "trace",
+    ]].copy()
+
+    resp = out_df.copy()
+    resp["trace"] = None
+    resp.to_parquet(RESPONSES_PATH, index=False)
+
+    if len(traces) > 0:
+        traces.to_parquet(_BENCHMARK_DIR / "traces.parquet", index=False)
+
     registry_save(CONTRIB_DIR)
-    print(f"\n  wrote {RESPONSES_PATH.name} ({len(out_df):,} rows)")
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(resp):,} rows)")
+    if len(traces) > 0:
+        print(f"  wrote traces.parquet ({len(traces):,} rows)")
     print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
 
     if out_df.empty:

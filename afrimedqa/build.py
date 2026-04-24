@@ -134,6 +134,10 @@ def read_mcq_csv(filepath):
         return None
     result = df[["sample_id"]].copy()
     result["correct"] = pd.to_numeric(df["correct"], errors="coerce")
+    # Upstream MCQ result CSVs carry a ``preds`` column with the model's raw
+    # answer text (often just a letter, sometimes the full option). Forward it
+    # as a candidate trace; read_mcq_csv is used by the response-row builder.
+    result["preds"] = df["preds"] if "preds" in df.columns else None
     result = result.dropna(subset=["sample_id"])
     return result
 
@@ -442,6 +446,7 @@ def main():
         model_name = clean_model_name(ev["model_dir"])
         subj = resolve_subject(model_name)
         cond = f"source={ev['dataset']}|prompt={ev['prompt']}"
+        has_preds = "preds" in df.columns
         for _, r in df.iterrows():
             sid = str(r["sample_id"])
             score = r["correct"]
@@ -456,6 +461,13 @@ def main():
                     content=None,
                 )
                 item_ids[sid] = iid
+            trace_text = None
+            if has_preds:
+                p = r.get("preds")
+                if p is not None and not (isinstance(p, float) and pd.isna(p)):
+                    ps = str(p).strip()
+                    if ps:
+                        trace_text = ps[:4000]
             rows.append({
                 "subject_id": subj,
                 "item_id": iid,
@@ -464,14 +476,27 @@ def main():
                 "test_condition": cond,
                 "response": float(score),
                 "correct_answer": item_gold.get(sid),
-                "trace": None,
+                "trace": trace_text,
             })
 
     out_df = pd.DataFrame(rows, columns=cols)
     out_df = ensure_unique_trials(out_df)
-    out_df.to_parquet(RESPONSES_PATH, index=False)
+
+    traces = out_df.loc[out_df["trace"].notna(), [
+        "subject_id", "item_id", "benchmark_id", "trial", "test_condition", "trace",
+    ]].copy()
+
+    resp = out_df.copy()
+    resp["trace"] = None
+    resp.to_parquet(RESPONSES_PATH, index=False)
+
+    if len(traces) > 0:
+        traces.to_parquet(_BENCHMARK_DIR / "traces.parquet", index=False)
+
     registry_save(CONTRIB_DIR)
-    print(f"\n  wrote {RESPONSES_PATH.name} ({len(out_df):,} rows)")
+    print(f"\n  wrote {RESPONSES_PATH.name} ({len(resp):,} rows)")
+    if len(traces) > 0:
+        print(f"  wrote traces.parquet ({len(traces):,} rows)")
     print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
 
     if out_df.empty:

@@ -194,10 +194,10 @@ come from the current `responses.parquet` on disk plus `_registry/items.parquet`
 - `subjects` / `items` — distinct `subject_id` / `item_id` counts
 - `PK-dup` — duplicate `(subject_id, item_id, trial, test_condition)` tuples; must be **0**
 - `binary%` — fraction of responses in `{0.0, 1.0}`; rest are continuous
-- `content%` — fraction of this benchmark's registered items (in `_registry/items.parquet`) with non-null `content`
-- `trace%` — fraction of response rows with a non-null `trace` (raw model output text); most benchmarks don't collect traces and show `—`
+- `content%` — fraction of this benchmark's registered items with non-null `content`
+- `trace%` — fraction of response rows with a non-null `trace` (inline column OR `traces.parquet` sidecar)
 - `range` — observed `[min, max]` of the response
-- `max trial` — highest `trial` value seen (> 1 = repeated measurements / multi-annotator)
+- `max trial` — highest `trial` value seen
 - `test_condition` — ✓ if any row uses a non-null test_condition
 
 ### Benchmark registry
@@ -221,7 +221,7 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | corebench | CORE-Bench | MIT | text | science | fraction | k/N per paper (questions correct / total) | — | 2024-09 | https://arxiv.org/abs/2409.11363 |
 | cruxeval | CRUXEval | MIT | text | software_engineering | binary | {0, 1} | ✓ | 2024-01 | https://arxiv.org/abs/2401.03065 |
 | cybench | Cybench | Apache-2.0 | text | cybersecurity | fraction | per-task k/N for subtask_fractional mode; binary for unguided/subtask_guided | — | 2024-08 | https://arxiv.org/abs/2408.08926 |
-| editbench | EDIT-Bench | unknown | text | software_engineering | fraction | k/N from pytest (tests passed / total) | — | 2022-12 | https://arxiv.org/abs/2212.06909 |
+| editbench | EDIT-Bench | Apache-2.0 | text | software_engineering | fraction | k/N from pytest (tests passed / total) | — | 2022-12 | https://arxiv.org/abs/2212.06909 |
 | faithcot | FaithCoT-BENCH | nan | text | reasoning, safety | binary | {0, 1} | ✓ | 2025-10 | https://arxiv.org/abs/2510.04040 |
 | financebench | FinanceBench | CC-BY-NC-4.0 | text | finance | binary | {0, 1} | ✓ | 2023-11 | https://arxiv.org/abs/2311.11944 |
 | flask | FLASK | MIT | text | general | likert_5 | {-1, 1, 2, 3, 4, 5} (-1 = N/A) | ✓ | 2023-07 | https://arxiv.org/abs/2307.10928 |
@@ -239,9 +239,9 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | livebench | LiveBench | Apache-2.0 | text | general | fraction | k/N per category (questions correct / total) | — | 2024-06 | https://arxiv.org/abs/2406.19314 |
 | livecodebench | LiveCodeBench | CC-BY-4.0 | text | software_engineering | binary | {0, 1} | ✓ | 2024-03 | https://arxiv.org/abs/2403.07974 |
 | machiavelli | MACHIAVELLI | MIT | text | safety | continuous_unbounded | raw metric points per dimension, scale varies (e.g. power [-917, 1001]) | — | 2023-04 | https://arxiv.org/abs/2304.03279 |
-| matharena | MathArena | unknown | text | mathematics | mixed | binary for AIME family (per-attempt correct); continuous fraction points/max for rubric comps (USAMO/IMO/IMC/Putnam/Miklos, per-criterion) | — | 2025-05 | https://arxiv.org/abs/2505.23281 |
+| matharena | MathArena | MIT | text | mathematics | mixed | binary for AIME family (per-attempt correct); continuous fraction points/max for rubric comps (USAMO/IMO/IMC/Putnam/Miklos, per-criterion) | — | 2025-05 | https://arxiv.org/abs/2505.23281 |
 | mathvista_mini | MathVista MINI | CC-BY-SA-4.0 | text, image | mathematics | binary | {0, 1} | ✓ | 2023-10 | https://arxiv.org/abs/2310.02255 |
-| mlebench | MLE-bench | unknown | text | ml_engineering | ordinal | {0.5, 2, 3} complexity tiers | ✓ | 2024-10 | https://arxiv.org/abs/2410.07095 |
+| mlebench | MLE-bench | MIT | text | ml_engineering | ordinal | {0.5, 2, 3} complexity tiers | ✓ | 2024-10 | https://arxiv.org/abs/2410.07095 |
 | mmbench_v11 | MMBench V1.1 | Apache-2.0 | text, image | general | binary | {0, 1} | ✓ | 2023-07 | https://arxiv.org/abs/2307.06281 |
 | mme | MME | unknown | text, image | general | binary | {0, 1} | ✓ | 2023-06 | https://arxiv.org/abs/2306.13394 |
 | mmlupro | MMLU-Pro | MIT | text | general, reasoning | binary | {0, 1} | ✓ | 2024-06 | https://arxiv.org/abs/2406.01574 |
@@ -249,7 +249,7 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 | osworld | OSWorld | Apache-2.0 | text, gui_screenshot | gui_agent | fraction | [0, 1] per-task rubric scorer output | — | 2024-04 | https://arxiv.org/abs/2404.07972 |
 | paperbench | PaperBench | MIT | text | science | continuous_bounded | [0, 1] weighted rubric score (leaf binaries not published) | — | 2025-04 | https://arxiv.org/abs/2504.01848v3 |
 | personalllm | PersonalLLM | MIT | text | preference | continuous_unbounded | [-18, 18] reward-model score | — | 2024-09 | https://arxiv.org/abs/2409.20296 |
-| preference_dissection | Preference Dissection | unknown | text | preference | binary | {0, 1} | ✓ | 2023-10 | https://arxiv.org/abs/2310.11523 |
+| preference_dissection | Preference Dissection | CC-BY-NC-4.0 | text | preference | binary | {0, 1} | ✓ | 2023-10 | https://arxiv.org/abs/2310.11523 |
 | prm800k | PRM800K | MIT | text | mathematics, reward_modeling | binary | {0, 1} | ✓ | 2023-05 | https://arxiv.org/abs/2305.20050 |
 | rakuda | Rakuda | CC-BY-SA-4.0 | text | multilingual | ordinal | {0, 0.1, 0.2, ..., 0.9, 1} (judge score / 10) | ✓ | 2023-07 | https://www.passaglia.jp/llm-ranking/ |
 | rewardbench | RewardBench | ODC-BY | text | reward_modeling | binary | {0, 0.5, 1} (0.5 = judge tie, <1% of rows) | ✓ | 2024-03 | https://arxiv.org/abs/2403.13787 |
@@ -274,73 +274,73 @@ Registry-level metadata per benchmark (from `_registry/benchmarks.parquet`). Eve
 
 ### Benchmark inventory
 
-_Snapshot: 66 datasets in BENCHMARKS • 66 ready • 0 empty (upstream gap) • 0 missing • 16,637,798 total response rows._
+_Snapshot: 66 datasets in BENCHMARKS • 65 ready • 0 empty (upstream gap) • 1 missing • 16,430,759 total response rows._
 
 | dataset | rows | subjects | items | PK-dup | binary% | content% | trace% | range | max trial | test_condition | modality | domain |
 |---|---:|---:|---:|---:|---:|---:|---:|---|---:|:---:|---|---|
-| afrieval | 219,289 | 12 | 32,518 | 0 | 100% | 100% | — | [0.00, 1.00] | 42 | — | text | ner, multilingual |
-| afrimedqa | 110,930 | 30 | 6,910 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
-| agentdojo | 69,796 | 29 | 1,081 | 0 | 100% | 100% | — | [0.00, 1.00] | 14 | ✓ | text | tool_use, safety |
-| ai2d_test | 770,916 | 254 | 3,088 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text, image | science |
+| afrieval | 219,289 | 12 | 32,518 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 42 | — | text | ner, multilingual |
+| afrimedqa | 110,930 | 30 | 6,910 | 0 | 100% | 100% | 99% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
+| agentdojo | 69,796 | 29 | 1,081 | 0 | 100% | 100% | 99% | [0.00, 1.00] | 14 | ✓ | text | tool_use, safety |
+| ai2d_test | 770,916 | 254 | 3,088 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | — | text, image | science |
 | androidworld | 348 | 3 | 116 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
 | appworld | 288 | 18 | 16 | 0 | 15% | 100% | — | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent, tool_use |
-| arena_hard | 35,990 | 72 | 500 | 0 | 14% | 100% | — | [0.00, 1.00] | 1 | — | text | preference |
-| bbq | 409,444 | 7 | 56,578 | 0 | 100% | 100% | — | [0.00, 1.00] | 5 | ✓ | text | safety |
-| bfcl | 441,086 | 93 | 4,133 | 0 | 100% | 100% | — | [0.00, 1.00] | 14 | — | text | tool_use |
-| biggen | 305,935 | 103 | 764 | 0 | 14% | 100% | — | [-1.00, 5.00] | 2 | ✓ | text | general |
+| arena_hard | 35,990 | 72 | 500 | 0 | 14% | 100% | 100% | [0.00, 1.00] | 1 | — | text | preference |
+| bbq | 409,444 | 7 | 56,578 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 5 | ✓ | text | safety |
+| bfcl | 441,086 | 93 | 4,133 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 14 | — | text | tool_use |
+| biggen | 305,935 | 103 | 764 | 0 | 14% | 100% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
 | bridging_gap | 190,836 | 3 | 21,134 | 0 | 100% | 100% | — | [0.00, 1.00] | 6 | — | text | multilingual, cultural |
 | clinebench | 26 | 3 | 12 | 0 | 81% | 100% | — | [0.00, 1.00] | 1 | — | text | software_engineering |
-| corebench | 1,956 | 15 | 270 | 0 | 93% | 100% | — | [0.00, 1.00] | 3 | — | text | science |
-| cruxeval | 16,000 | 1 | 1,600 | 0 | 100% | 100% | — | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
+| corebench | 1,956 | 15 | 270 | 0 | 93% | 100% | 74% | [0.00, 1.00] | 3 | — | text | science |
+| cruxeval | 16,000 | 1 | 1,600 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
 | cybench | 960 | 8 | 40 | 0 | 81% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | cybersecurity |
-| editbench | 23,328 | 44 | 533 | 0 | 70% | 100% | — | [0.00, 1.00] | 2 | — | text | software_engineering |
-| faithcot | 2,519 | 4 | 340 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | ✓ | text | reasoning, safety |
-| financebench | 2,400 | 16 | 150 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | finance |
-| flask | 76,009 | 15 | 1,696 | 0 | 14% | 100% | — | [-1.00, 5.00] | 2 | ✓ | text | general |
+| editbench | 23,328 | 44 | 533 | 0 | 70% | 100% | 2% | [0.00, 1.00] | 2 | — | text | software_engineering |
+| faithcot | 2,519 | 4 | 340 | 0 | 100% | 100% | 48% | [0.00, 1.00] | 2 | ✓ | text | reasoning, safety |
+| financebench | 2,400 | 16 | 150 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | — | text | finance |
+| flask | 76,009 | 15 | 1,696 | 0 | 14% | 100% | 100% | [-1.00, 5.00] | 2 | ✓ | text | general |
 | gaia | 18,060 | 3191 | 173 | 0 | 42% | 100% | — | [0.00, 1.00] | 2 | ✓ | text, image | general |
-| helm_afr | 747,560 | 23 | 32,741 | 0 | 100% | 100% | — | [0.00, 1.00] | 6 | — | text | multilingual |
-| helm_cleva | 23,312 | 4 | 5,822 | 0 | 100% | 100% | — | [0.00, 1.00] | 3 | — | text | multilingual |
-| helm_thaiexam | 23,730 | 42 | 561 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | — | text | multilingual |
-| hle | 13,339 | 19 | 1,792 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | general, reasoning |
-| igakuqa | 7,355 | 5 | 1,471 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | medicine |
+| helm_afr | 747,560 | 23 | 32,741 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 6 | — | text | multilingual |
+| helm_cleva | 23,312 | 4 | 5,822 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 3 | — | text | multilingual |
+| helm_thaiexam | 23,730 | 42 | 561 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 2 | — | text | multilingual |
+| hle | 13,339 | 19 | 1,792 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | — | text | general, reasoning |
+| igakuqa | 7,355 | 5 | 1,471 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | — | text | medicine |
 | indeterminacy | 65,012 | 9 | 200 | 0 | 100% | 100% | — | [0.00, 1.00] | 10 | ✓ | text | summarization |
-| jailbreakbench | 1,800 | 4 | 100 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | safety |
-| judgebench | 2,897 | 19 | 350 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | reward_modeling, preference |
-| kmmlu | 875,750 | 25 | 35,015 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | ✓ | text | general, multilingual |
-| kormedmcqa | 18,002 | 7 | 3,009 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
+| jailbreakbench | 1,800 | 4 | 100 | 0 | 100% | 100% | 91% | [0.00, 1.00] | 1 | ✓ | text | safety |
+| judgebench | 2,897 | 19 | 350 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | reward_modeling, preference |
+| kmmlu | 875,750 | 25 | 35,015 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text | general, multilingual |
+| kormedmcqa | 18,002 | 7 | 3,009 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | medicine, multilingual |
 | livebench | 60,372 | 166 | 494 | 0 | 75% | 80% | — | [0.00, 1.00] | 3 | ✓ | text | general |
-| livecodebench | 326,530 | 72 | 1,055 | 0 | 100% | 100% | — | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
+| livecodebench | 326,530 | 72 | 1,055 | 0 | 100% | 100% | 99% | [0.00, 1.00] | 10 | ✓ | text | software_engineering |
 | machiavelli | 9,274 | 12 | 30 | 0 | 4% | 100% | — | [-917.89, 1001.00] | 1 | ✓ | text | safety |
-| matharena | 86,206 | 97 | 448 | 0 | 100% | 100% | — | [0.00, 1.00] | 216 | ✓ | text | mathematics |
-| mathvista_mini | 263,000 | 263 | 874 | 0 | 100% | 100% | — | [0.00, 1.00] | 44 | — | text, image | mathematics |
+| matharena | 86,206 | 97 | 448 | 0 | 100% | 100% | 96% | [0.00, 1.00] | 216 | ✓ | text | mathematics |
+| mathvista_mini | 263,000 | 263 | 874 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 44 | — | text, image | mathematics |
 | mlebench | 14,241 | 33 | 75 | 0 | 72% | 100% | — | [0.00, 3.00] | 45 | — | text | ml_engineering |
-| mmbench_v11 | 1,180,617 | 251 | 3,579 | 0 | 100% | 100% | — | [0.00, 1.00] | 34 | ✓ | text, image | general |
-| mme | 266,635 | 115 | 1,983 | 0 | 100% | 100% | — | [0.00, 1.00] | 43 | ✓ | text, image | general |
-| mmlupro | 564,750 | 48 | 13,542 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | — | text | general, reasoning |
-| mmmu_dev_val | 204,632 | 253 | 896 | 0 | 100% | — | — | [0.00, 1.00] | 4 | — | — | — |
-| mtbench | 5,436 | 34 | 160 | 0 | 20% | 100% | — | [1.00, 10.00] | 1 | — | text | preference |
+| mmbench_v11 | 1,180,617 | 251 | 3,579 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 34 | ✓ | text, image | general |
+| mme | 264,228 | 114 | 1,983 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 43 | ✓ | text, image | general |
+| mmlupro | 564,750 | 48 | 13,542 | 0 | 100% | 100% | 93% | [0.00, 1.00] | 2 | — | text | general, reasoning |
+| mmmu_dev_val | — | — | — | — | — | — | — | — | — | — | — | — |
+| mtbench | 5,436 | 34 | 160 | 0 | 20% | 100% | 100% | [1.00, 10.00] | 1 | — | text | preference |
 | osworld | 27,766 | 77 | 369 | 0 | 97% | 100% | — | [0.00, 1.00] | 1 | — | text, gui_screenshot | gui_agent |
 | paperbench | 539 | 9 | 20 | 0 | 14% | 100% | — | [0.00, 0.68] | 3 | — | text | science |
 | personalllm | 832,160 | 8 | 10,174 | 0 | 0% | 100% | 100% | [-18.00, 18.25] | 3 | ✓ | text | preference |
-| preference_dissection | 167,680 | 32 | 4,890 | 0 | 100% | 100% | — | [0.00, 1.00] | 12 | — | text | preference |
-| prm800k | 561,715 | 11 | 11,268 | 0 | 100% | 100% | — | [0.00, 1.00] | 442 | ✓ | text | mathematics, reward_modeling |
-| rakuda | 53,488 | 551 | 40 | 0 | 19% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | multilingual |
-| rewardbench | 450,735 | 118 | 2,733 | 0 | 99% | 100% | — | [0.00, 1.00] | 4 | ✓ | text | reward_modeling |
-| rewardbench2 | 349,192 | 188 | 1,824 | 0 | 98% | 100% | — | [0.00, 1.00] | 2 | ✓ | text | reward_modeling |
-| sib200 | 52,836 | 2 | 31,640 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | multilingual |
-| summeval | 51,200 | 16 | 100 | 0 | 2% | 100% | — | [1.00, 5.00] | 5 | ✓ | text | summarization |
+| preference_dissection | 167,680 | 32 | 4,890 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 12 | — | text | preference |
+| prm800k | 561,715 | 11 | 11,268 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 442 | ✓ | text | mathematics, reward_modeling |
+| rakuda | 53,488 | 551 | 40 | 0 | 19% | 100% | 41% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| rewardbench | 450,735 | 118 | 2,733 | 0 | 99% | 100% | 100% | [0.00, 1.00] | 4 | ✓ | text | reward_modeling |
+| rewardbench2 | 349,192 | 188 | 1,824 | 0 | 98% | 100% | 100% | [0.00, 1.00] | 2 | ✓ | text | reward_modeling |
+| sib200 | 52,836 | 2 | 31,640 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | — | text | multilingual |
+| summeval | 51,200 | 16 | 100 | 0 | 2% | 100% | 100% | [1.00, 5.00] | 5 | ✓ | text | summarization |
 | swebench | 67,000 | 134 | 500 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | software_engineering |
 | swebench_full | 55,056 | 24 | 2,275 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | — | text | software_engineering |
 | swebench_java | 5,464 | 54 | 170 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | — | text | software_engineering |
 | swebench_multilingual | 74,694 | 94 | 2,414 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | — | text | software_engineering, multilingual |
-| taubench | 12,812 | 12 | 214 | 0 | 100% | 100% | — | [0.00, 1.00] | 392 | — | text | tool_use |
-| tengu | 180,837 | 551 | 120 | 0 | 45% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| taubench | 12,812 | 12 | 214 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 392 | — | text | tool_use |
+| tengu | 180,837 | 551 | 120 | 0 | 45% | 100% | 36% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
 | terminal_bench | 68,797 | 148 | 89 | 0 | 100% | 100% | — | [0.00, 1.00] | 11 | — | text | software_engineering |
-| theagentcompany | 9,700 | 19 | 554 | 0 | 99% | 100% | — | [0.00, 1.00] | 1 | — | text, gui_screenshot | tool_use |
-| toolbench | 7,924 | 39 | 774 | 0 | 97% | 100% | — | [0.00, 1.00] | 2 | ✓ | text | tool_use |
-| tumlu | 143,316 | 16 | 7,486 | 0 | 100% | 100% | — | [0.00, 1.00] | 1 | ✓ | text | multilingual |
-| ultrafeedback | 1,009,730 | 17 | 63,932 | 0 | 10% | 100% | — | [1.00, 5.00] | 2 | ✓ | text | preference |
+| theagentcompany | 9,700 | 19 | 554 | 0 | 99% | 100% | 25% | [0.00, 1.00] | 1 | — | text, gui_screenshot | tool_use |
+| toolbench | 7,924 | 39 | 774 | 0 | 97% | 100% | 78% | [0.00, 1.00] | 2 | ✓ | text | tool_use |
+| tumlu | 143,316 | 16 | 7,486 | 0 | 100% | 100% | 100% | [0.00, 1.00] | 1 | ✓ | text | multilingual |
+| ultrafeedback | 1,009,730 | 17 | 63,932 | 0 | 10% | 100% | 100% | [1.00, 5.00] | 2 | ✓ | text | preference |
 | visualwebarena | 600 | 3 | 98 | 0 | 100% | 100% | — | [0.00, 1.00] | 2 | ✓ | text, gui_screenshot | gui_agent |
 | wildbench | 113,566 | 71 | 1,024 | 0 | 1% | 100% | 100% | [1.00, 10.00] | 1 | ✓ | text | preference |
-| wmt_mqm | 4,883,886 | 80 | 9,124 | 0 | 100% | 100% | — | [0.00, 1.00] | 33 | ✓ | text | translation, multilingual |
+| wmt_mqm | 4,883,886 | 80 | 9,124 | 0 | 100% | 100% | 6% | [0.00, 1.00] | 33 | ✓ | text | translation, multilingual |
 | workarena | 539 | 22 | 129 | 0 | 90% | 100% | — | [0.00, 1.00] | 1 | ✓ | text, gui_screenshot | gui_agent |

@@ -52,6 +52,7 @@ _BENCHMARK_DIR = Path(__file__).resolve().parent
 RAW_DIR = _BENCHMARK_DIR / "raw"
 CONTRIB_DIR = _BENCHMARK_DIR / "_contrib"
 RESPONSES_PATH = _BENCHMARK_DIR / "responses.parquet"
+TRACES_PATH = _BENCHMARK_DIR / "traces.parquet"
 
 RAW_DIR.mkdir(exist_ok=True)
 
@@ -99,7 +100,7 @@ def load_questions(path: Path) -> dict[tuple[str, int], str]:
 
 
 def parse_judgments(jsonl_path: Path) -> pd.DataFrame:
-    """Extract (model, question_id, turn, score) from the judgment JSONL."""
+    """Extract (model, question_id, turn, score, judgment_trace) from the judgment JSONL."""
     records = []
     for line in jsonl_path.read_text().splitlines():
         line = line.strip()
@@ -114,9 +115,10 @@ def parse_judgments(jsonl_path: Path) -> pd.DataFrame:
         qid = rec.get("question_id", "")
         turn = rec.get("turn", 1)
         score = rec.get("score", rec.get("rating"))
+        judgment_text = rec.get("judgment") or ""
 
         if score is None or score == -1:
-            m = re.search(r"\[\[(\d+(?:\.\d+)?)\]\]", rec.get("judgment", ""))
+            m = re.search(r"\[\[(\d+(?:\.\d+)?)\]\]", judgment_text)
             if m:
                 score = float(m.group(1))
 
@@ -127,6 +129,7 @@ def parse_judgments(jsonl_path: Path) -> pd.DataFrame:
                     "question_id": str(qid),
                     "turn": int(turn),
                     "score": float(score),
+                    "judgment": judgment_text if isinstance(judgment_text, str) and judgment_text.strip() else None,
                 })
             except (ValueError, TypeError):
                 continue
@@ -172,7 +175,7 @@ def build_long_form(judgments: pd.DataFrame, questions: dict[tuple[str, int], st
             "test_condition": None,
             "response": rec.score,
             "correct_answer": None,
-            "trace": None,
+            "trace": rec.judgment,
         })
 
     if missing_content:
@@ -180,10 +183,20 @@ def build_long_form(judgments: pd.DataFrame, questions: dict[tuple[str, int], st
 
     df = pd.DataFrame(rows)
     df = ensure_unique_trials(df)
-    df.to_parquet(RESPONSES_PATH, index=False)
+
+    # Split traces into its own file; keep main responses trace-less.
+    trace_cols = ["subject_id", "item_id", "benchmark_id", "trial", "test_condition", "trace"]
+    traces = df.loc[df["trace"].notna(), trace_cols].copy()
+
+    resp = df.copy()
+    resp["trace"] = None
+    resp.to_parquet(RESPONSES_PATH, index=False)
     registry_save(CONTRIB_DIR)
-    print(f"  wrote {RESPONSES_PATH.name} ({len(df):,} rows)")
+    print(f"  wrote {RESPONSES_PATH.name} ({len(resp):,} rows)")
     print(f"  wrote {CONTRIB_DIR.name}/{{subjects,items,benchmarks}}.parquet")
+    if len(traces) > 0:
+        traces.to_parquet(TRACES_PATH, index=False)
+        print(f"  wrote {TRACES_PATH.name} ({len(traces):,} rows)")
     return df
 
 
