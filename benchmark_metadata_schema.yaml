@@ -1,0 +1,279 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: https://aimslab.stanford.edu/measurement-db/benchmark_metadata_schema.yaml
+title: Measurement-DB benchmark metadata
+description: >-
+  Authoring contract for benchmarks/<slug>/metadata.yaml. Canonical benchmark
+  and build fields are strict; provider-specific build data remains open.
+type: object
+additionalProperties: false
+required:
+  - benchmark
+  - build
+properties:
+  benchmark:
+    type: object
+    additionalProperties: false
+    required:
+      - name
+      - description
+      - paper_url
+      - data_source_url
+      - license
+      - modality
+      - domain
+      - response_type
+      - response_scale
+      - categorical
+      - release_date
+      - multi_single_turn
+    properties:
+      name:
+        $ref: "#/$defs/nonempty_string"
+      one_line_description:
+        $ref: "#/$defs/one_line_description"
+      description:
+        $ref: "#/$defs/nonempty_string"
+      paper_url:
+        type:
+          - string
+          - "null"
+      data_source_url:
+        $ref: "#/$defs/nonempty_string"
+      license:
+        $ref: "#/$defs/nonempty_string"
+      modality:
+        $ref: "#/$defs/nonempty_string_list"
+      domain:
+        $ref: "#/$defs/nonempty_string_list"
+      response_type:
+        enum:
+          - binary
+          - likert_5
+          - likert_10
+          - win_rate
+          - ordinal
+          - fraction
+          - continuous_bounded
+          - continuous_unbounded
+          - continuous
+          - error_presence
+          - mixed
+      response_scale:
+        $ref: "#/$defs/nonempty_string"
+      categorical:
+        type: boolean
+      release_date:
+        $ref: "#/$defs/nonempty_string"
+      multi_single_turn:
+        enum:
+          - single_turn
+          - multi_turn
+          - multi_turn, single_turn
+      granularity:
+        enum:
+          - item
+          - aggregate
+          - not_released
+      release:
+        enum:
+          - public
+          - private
+      benchmark_features:
+        type:
+          - object
+          - string
+          - "null"
+      testing_condition:
+        type:
+          - string
+          - "null"
+      subject_type:
+        type:
+          - string
+          - "null"
+      item_type:
+        type:
+          - string
+          - "null"
+      citation:
+        type:
+          - string
+          - "null"
+      tags:
+        $ref: "#/$defs/nonempty_string_list"
+
+  build:
+    type: object
+    additionalProperties: false
+    required:
+      - contract_version
+    properties:
+      contract_version:
+        const: 1
+
+  sources:
+    $ref: "#/$defs/sources_mapping"
+  archive_layout:
+    $ref: "#/$defs/open_mapping"
+  expectations:
+    $ref: "#/$defs/open_mapping"
+  validation:
+    $ref: "#/$defs/validation_mapping"
+
+$defs:
+  nonempty_string:
+    type: string
+    pattern: "\\S"
+  one_line_description:
+    description: >-
+      Optional migration-era display summary: one verb-led logical line, at
+      most 160 characters. The benchmark name is omitted by authoring
+      convention rather than structural validation.
+    type: string
+    maxLength: 160
+    pattern: "^(?:Measures|Evaluates|Tests|Assesses)\\b"
+    not:
+      pattern: "[\\r\\n]"
+  nonempty_string_list:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/nonempty_string"
+  open_mapping:
+    type: object
+    additionalProperties: true
+  sources_mapping:
+    type: object
+    properties:
+      downloads:
+        $ref: "#/$defs/http_downloads"
+    additionalProperties: true
+  http_downloads:
+    type: object
+    minProperties: 1
+    propertyNames:
+      type: string
+      pattern: "^\\S+$"
+    additionalProperties:
+      $ref: "#/$defs/http_download"
+  http_download:
+    type: object
+    additionalProperties: false
+    required:
+      - url
+      - file
+      - size
+      - sha256
+    properties:
+      url:
+        type: string
+        pattern: "^https?://\\S+$"
+      file:
+        type: string
+        pattern: >-
+          ^(?!/)(?!.*//)(?!.*(?:^|/)\.\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$
+      size:
+        type: integer
+        minimum: 0
+      sha256:
+        type: string
+        pattern: "^[0-9a-f]{64}$"
+      timeout:
+        type: integer
+        minimum: 1
+  validation_mapping:
+    type: object
+    additionalProperties: false
+    required:
+      - source_claims
+    properties:
+      source_claims:
+        $ref: "#/$defs/source_claims_mapping"
+  source_claims_mapping:
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    properties:
+      counts:
+        $ref: "#/$defs/count_claims"
+      aggregate_tables:
+        $ref: "#/$defs/aggregate_table_claims"
+    anyOf:
+      - required:
+          - counts
+      - required:
+          - aggregate_tables
+  count_claims:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: "^[a-z][a-z0-9_]*$"
+    additionalProperties:
+      $ref: "#/$defs/count_claim"
+  count_claim:
+    type: object
+    additionalProperties: false
+    required:
+      - entity
+      - expected
+      - source_ref
+      - locator
+      - scope
+    properties:
+      entity:
+        enum:
+          - items
+          - assets
+          - subject_configurations
+          - responses
+          - traces
+      expected:
+        type: integer
+        minimum: 0
+      source_ref:
+        $ref: "#/$defs/nonempty_string"
+      locator:
+        $ref: "#/$defs/nonempty_string"
+      scope:
+        $ref: "#/$defs/nonempty_string"
+  aggregate_table_claims:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: "^[a-z][a-z0-9_]*$"
+    additionalProperties:
+      $ref: "#/$defs/aggregate_table_claim"
+  aggregate_table_claim:
+    type: object
+    additionalProperties: false
+    required:
+      - metric
+      - grouping
+      - expected_groups
+      - reported_scale
+      - aggregation
+      - absolute_tolerance
+      - source_ref
+      - locator
+      - scope
+    properties:
+      metric:
+        $ref: "#/$defs/nonempty_string"
+      grouping:
+        $ref: "#/$defs/nonempty_string"
+      expected_groups:
+        type: integer
+        minimum: 1
+      reported_scale:
+        $ref: "#/$defs/nonempty_string"
+      aggregation:
+        $ref: "#/$defs/nonempty_string"
+      absolute_tolerance:
+        type: number
+        minimum: 0
+      source_ref:
+        $ref: "#/$defs/nonempty_string"
+      locator:
+        $ref: "#/$defs/nonempty_string"
+      scope:
+        $ref: "#/$defs/nonempty_string"
