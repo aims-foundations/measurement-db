@@ -1,7 +1,7 @@
 """Shared lifecycle and validation for benchmark builders.
 
-For the curation workflow and authoring instructions, see
-``docs/curate_benchmark_data.md`` and start from ``benchmarks/_template/``.
+For the curation workflow and authoring instructions, follow the maintained
+guide linked from ``README.md`` and start from ``benchmarks/_template/``.
 Canonical metadata and table contracts live in
 ``benchmark_metadata_schema.yaml`` and ``parquet_schemas.yaml``.
 

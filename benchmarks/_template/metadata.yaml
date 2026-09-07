@@ -1,0 +1,80 @@
+# Structure: ../../benchmark_metadata_schema.yaml
+# Replace every example value with evidence from the provider's own release.
+# The benchmark slug is the containing folder name; do not repeat it here.
+benchmark:
+  name: Example Benchmark
+  one_line_description: >-
+    Evaluates whether subjects can solve the released item bank, with each
+    response recording the benchmark's scoring outcome.
+  description: >-
+    Example description of the evaluated subjects, item bank, and meaning of
+    one response value.
+  paper_url: https://arxiv.org/abs/YYMM.NNNNN
+  data_source_url: https://example.invalid/provider/example-benchmark
+  license: unknown
+  modality:
+    - text
+  domain:
+    - reasoning
+  response_type: binary
+  response_scale: "{0, 1}"
+  categorical: true
+  release_date: "YYYY-MM"
+  multi_single_turn: single_turn
+  testing_condition: >-
+    Describe fixed prompting, sampling, harness, environment, grader, and
+    metric details. Put each released variation in the appropriate add_* call.
+  subject_type: model
+  item_type: question
+  citation: |-
+    @article{replace_me,
+      title = {Replace with the provider's citation}
+    }
+  tags:
+    - example
+  release: private
+
+build:
+  contract_version: 1
+
+sources:
+  downloads:
+    results:
+      url: https://example.invalid/provider/example-benchmark/per_item_results.json
+      file: per_item_results.json
+      size: 0  # replace with the exact byte count
+      sha256: "0000000000000000000000000000000000000000000000000000000000000000"  # replace
+  revisions:
+    provider: REPLACE_WITH_IMMUTABLE_REVISION
+
+# Optional build-only sections belong here rather than in build.py. Add only
+# the fields the benchmark actually needs, and remove these comments afterward.
+# archive_layout:
+#   prompt_member: path/inside/provider-archive.txt
+# expectations:
+#   items: REPLACE_WITH_REVIEWED_COUNT
+#   subjects: REPLACE_WITH_REVIEWED_COUNT
+
+# Optional source claims are externally reported facts, not values copied from
+# a completed build or its characterization.json. Keep the executable
+# reconciliation in test.py and point source_ref at a pinned metadata source.
+# validation:
+#   source_claims:
+#     counts:
+#       released_items:
+#         entity: items
+#         expected: REPLACE_WITH_SOURCE_REPORTED_COUNT
+#         source_ref: sources.downloads.results
+#         locator: "dataset card, test-split row count"
+#         scope: "exact provider release and split"
+#     aggregate_tables:
+#       published_scores:
+#         metric: "provider metric name"
+#         grouping: "provider subject configuration"
+#         expected_groups: REPLACE_WITH_SOURCE_ROW_COUNT
+#         reported_scale: "proportion rounded to four decimal places"
+#         aggregation: "exact provider aggregation rule"
+#         absolute_tolerance: 0.00005
+#         source_ref: sources.downloads.results
+#         locator: "table and column names"
+#         scope: "exact release, split, condition, and trial policy"
