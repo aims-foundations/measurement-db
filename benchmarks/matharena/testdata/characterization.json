@@ -1,0 +1,408 @@
+{
+  "format_version": 1,
+  "review": {
+    "date": "2026-09-12",
+    "scope": "User-authorized migration and documented legacy corrections; see curation_record.md.",
+    "runtime_revision": "measurement_db@6d583f2 with nullable normalized_name/provider; model registry unchanged."
+  },
+  "legacy_baseline": {
+    "origin": ".hf-cache/matharena, inspected before replacing the legacy builder",
+    "tables": {
+      "items": {
+        "rows": 448,
+        "columns": [
+          "item_id",
+          "benchmark_id",
+          "raw_item_id",
+          "content",
+          "reference_answer",
+          "content_hash"
+        ],
+        "null_counts": {
+          "item_id": 0,
+          "benchmark_id": 0,
+          "raw_item_id": 0,
+          "content": 0,
+          "reference_answer": 43,
+          "content_hash": 0
+        },
+        "logical_sha256": "9eb6082d42052e45fac266bcc79fa23df6ada38a26740d6d8dd315796da1121a"
+      },
+      "subjects": {
+        "rows": 104,
+        "columns": [
+          "subject_id",
+          "display_name",
+          "normalized_name",
+          "provider",
+          "hub_repo",
+          "revision",
+          "params",
+          "release_date",
+          "raw_labels_seen",
+          "notes"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "display_name": 0,
+          "normalized_name": 53,
+          "provider": 53,
+          "hub_repo": 104,
+          "revision": 104,
+          "params": 104,
+          "release_date": 53,
+          "raw_labels_seen": 0,
+          "notes": 104
+        },
+        "logical_sha256": "188bdcbec298dbea221786b240069ccefa0c1c11f412075242f2def939c45022"
+      },
+      "benchmarks": {
+        "rows": 1,
+        "columns": [
+          "benchmark_id",
+          "name",
+          "version",
+          "license",
+          "source_url",
+          "description",
+          "dataset_source",
+          "modality",
+          "domain",
+          "response_type",
+          "response_scale",
+          "categorical",
+          "paper_url",
+          "release_date",
+          "granularity",
+          "release",
+          "n_unique_responses",
+          "ai_subjects",
+          "n_subjects",
+          "n_items",
+          "n_responses",
+          "n_trials",
+          "coverage",
+          "has_ground_truth",
+          "n_test_conditions",
+          "test_conditions",
+          "saturation"
+        ],
+        "null_counts": {
+          "benchmark_id": 0,
+          "name": 0,
+          "version": 1,
+          "license": 0,
+          "source_url": 0,
+          "description": 0,
+          "dataset_source": 0,
+          "modality": 0,
+          "domain": 0,
+          "response_type": 0,
+          "response_scale": 0,
+          "categorical": 0,
+          "paper_url": 0,
+          "release_date": 0,
+          "granularity": 0,
+          "release": 0,
+          "n_unique_responses": 0,
+          "ai_subjects": 0,
+          "n_subjects": 0,
+          "n_items": 0,
+          "n_responses": 0,
+          "n_trials": 0,
+          "coverage": 0,
+          "has_ground_truth": 0,
+          "n_test_conditions": 0,
+          "test_conditions": 0,
+          "saturation": 1
+        },
+        "logical_sha256": "9dc1ddd0c3a645781c3b42cdd9610d27a74a5548939165f91734d11e1da2aa47"
+      },
+      "responses": {
+        "rows": 89567,
+        "columns": [
+          "subject_id",
+          "item_id",
+          "benchmark_id",
+          "trial",
+          "test_condition",
+          "response",
+          "reference_answer",
+          "trace"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "item_id": 0,
+          "benchmark_id": 0,
+          "trial": 0,
+          "test_condition": 89482,
+          "response": 0,
+          "reference_answer": 85,
+          "trace": 89567
+        },
+        "logical_sha256": "30b3ed5473ca18c1a39dbed74ccd0b31d935a867195699eb79f3fbccc237b6bd"
+      },
+      "traces": {
+        "rows": 89567,
+        "columns": [
+          "subject_id",
+          "item_id",
+          "benchmark_id",
+          "trial",
+          "test_condition",
+          "trace"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "item_id": 0,
+          "benchmark_id": 0,
+          "trial": 0,
+          "test_condition": 89482,
+          "trace": 0
+        },
+        "logical_sha256": "c0f3d669c7844898fadc3201e446bd7b4d390aa7c1cb47c9d79e94225539db3b"
+      }
+    },
+    "observation_multiset_columns": [
+      "display_name",
+      "content",
+      "response",
+      "reference_answer",
+      "test_condition"
+    ],
+    "observation_multiset_sha256": "5aa565e8d2a6287ecad65370056d516e498aab499859720464a955bd95c196de",
+    "trial_range": [
+      1,
+      216
+    ]
+  },
+  "release": {
+    "tables": {
+      "items": {
+        "rows": 1755,
+        "columns": [
+          "item_id",
+          "benchmark_id",
+          "raw_item_id",
+          "content",
+          "asset_manifest",
+          "reference_answer",
+          "verifier",
+          "content_hash",
+          "item_features"
+        ],
+        "null_counts": {
+          "item_id": 0,
+          "benchmark_id": 0,
+          "raw_item_id": 0,
+          "content": 0,
+          "asset_manifest": 1419,
+          "reference_answer": 271,
+          "verifier": 0,
+          "content_hash": 0,
+          "item_features": 0
+        },
+        "logical_sha256": "b83b707cf6acaa66cfdbb74d11e2c65e8abae93135c0591cf214fb4f14e26377"
+      },
+      "subjects": {
+        "rows": 104,
+        "columns": [
+          "subject_id",
+          "display_name",
+          "normalized_name",
+          "provider",
+          "release_date",
+          "access_date",
+          "harness",
+          "reasoning_effort",
+          "harness_version",
+          "subject_features_extra"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "display_name": 0,
+          "normalized_name": 53,
+          "provider": 53,
+          "release_date": 53,
+          "access_date": 104,
+          "harness": 104,
+          "reasoning_effort": 73,
+          "harness_version": 104,
+          "subject_features_extra": 0
+        },
+        "logical_sha256": "1dfb200ecdb36980b165a0cd5f03ff8c92a72cb8749f2f80085de621fd001628"
+      },
+      "benchmarks": {
+        "rows": 1,
+        "columns": [
+          "benchmark_id",
+          "name",
+          "version",
+          "license",
+          "source_url",
+          "description",
+          "one_line_description",
+          "dataset_source",
+          "modality",
+          "domain",
+          "multi_single_turn",
+          "response_type",
+          "response_scale",
+          "categorical",
+          "paper_url",
+          "release_date",
+          "granularity",
+          "release",
+          "n_unique_responses",
+          "benchmark_features",
+          "n_subjects",
+          "n_items",
+          "n_responses",
+          "n_trials",
+          "coverage",
+          "has_ground_truth"
+        ],
+        "null_counts": {
+          "benchmark_id": 0,
+          "name": 0,
+          "version": 1,
+          "license": 0,
+          "source_url": 0,
+          "description": 0,
+          "one_line_description": 0,
+          "dataset_source": 0,
+          "modality": 0,
+          "domain": 0,
+          "multi_single_turn": 0,
+          "response_type": 0,
+          "response_scale": 0,
+          "categorical": 0,
+          "paper_url": 0,
+          "release_date": 0,
+          "granularity": 0,
+          "release": 0,
+          "n_unique_responses": 0,
+          "benchmark_features": 1,
+          "n_subjects": 0,
+          "n_items": 0,
+          "n_responses": 0,
+          "n_trials": 0,
+          "coverage": 0,
+          "has_ground_truth": 0
+        },
+        "logical_sha256": "a34068471f41a24569ad569cc72844cd35ec2c8efc6d9f6cb7fd18ad6b95fbd5"
+      },
+      "responses": {
+        "rows": 92944,
+        "columns": [
+          "subject_id",
+          "item_id",
+          "response_id",
+          "benchmark_id",
+          "trial",
+          "test_condition",
+          "interactors",
+          "response",
+          "reference_answer",
+          "trace",
+          "source_shard",
+          "source_row",
+          "source_competition",
+          "source_problem_id",
+          "source_idx_answer",
+          "source_judge_slot",
+          "source_criterion_index",
+          "grader_feedback"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "item_id": 0,
+          "response_id": 0,
+          "benchmark_id": 0,
+          "trial": 0,
+          "test_condition": 92944,
+          "interactors": 92944,
+          "response": 0,
+          "reference_answer": 3462,
+          "trace": 92944,
+          "source_shard": 0,
+          "source_row": 0,
+          "source_competition": 0,
+          "source_problem_id": 0,
+          "source_idx_answer": 0,
+          "source_judge_slot": 89482,
+          "source_criterion_index": 89482,
+          "grader_feedback": 89482
+        },
+        "logical_sha256": "6e505f50e31894ccae6b4c584a9d78fdcbb9c147335624099f3e6a14db96d3c5"
+      },
+      "traces": {
+        "rows": 90005,
+        "columns": [
+          "subject_id",
+          "item_id",
+          "benchmark_id",
+          "trial",
+          "test_condition",
+          "interactors",
+          "trace"
+        ],
+        "null_counts": {
+          "subject_id": 0,
+          "item_id": 0,
+          "benchmark_id": 0,
+          "trial": 0,
+          "test_condition": 90005,
+          "interactors": 90005,
+          "trace": 0
+        },
+        "logical_sha256": "36ff0c8cf8486a5af13c8a9d87feba0e01f0fa42d898f8d80dbb26c7edc601a2"
+      },
+      "assets": {
+        "rows": 168,
+        "columns": [
+          "asset_id",
+          "benchmark_id",
+          "byte_size",
+          "data"
+        ],
+        "null_counts": {
+          "asset_id": 0,
+          "benchmark_id": 0,
+          "byte_size": 0,
+          "data": 0
+        },
+        "logical_sha256": "0a149a148e7ad0246c7beea0cc3f5f06315fded448141edfbc7bbdd1e62acaaa"
+      }
+    },
+    "responses_by_competition": {
+      "aime_2025": 7915,
+      "aime_2025_I": 1860,
+      "aime_2025_II": 1860,
+      "aime_2026": 2976,
+      "aime_2026_I": 2376,
+      "apex_2025": 7245,
+      "apex_shortlist": 9237,
+      "arxivmath_0126": 3279,
+      "arxivmath_0226": 2135,
+      "arxivmath_1225": 2832,
+      "brumo_2025": 5280,
+      "cmimc_2025": 5600,
+      "hmmt_feb_2025": 7680,
+      "hmmt_feb_2026": 3255,
+      "hmmt_nov_2025": 2640,
+      "imc_2025": 141,
+      "imo_2025": 1556,
+      "kangaroo_2025_11_12": 2280,
+      "kangaroo_2025_1_2": 1824,
+      "kangaroo_2025_3_4": 1824,
+      "kangaroo_2025_5_6": 2189,
+      "kangaroo_2025_7_8": 2160,
+      "kangaroo_2025_9_10": 2160,
+      "miklos_2025": 13,
+      "putnam_2025": 72,
+      "smt_2025": 10875,
+      "usamo_2025": 1680
+    }
+  }
+}

@@ -1,0 +1,608 @@
+benchmark:
+  description: MathArena scores models on problems from recent mathematics competitions, checking the
+    final answer where there is one and having judges grade written proofs criterion by criterion where
+    the problem asks for a proof.
+  testing_condition: One released attempt per trial; proof judges and criteria are item verifiers, not
+    test conditions. No unrecorded inference conditions are supplied.
+  paper_url: https://arxiv.org/abs/2505.23281
+  data_source_url: https://github.com/eth-sri/matharena
+  subject_type: model
+  item_type: task
+  license: CC-BY-NC-SA-4.0 AND CC-BY-SA-4.0
+  citation: "@misc{balunović2026matharenaevaluatingllmsuncontaminated,\n      title={MathArena: Evaluating\
+    \ LLMs on Uncontaminated Math Competitions},\n      author={Mislav Balunović and Jasper Dekoninck\
+    \ and Ivo Petrov and Nikola Jovanović and Martin Vechev},\n      year={2026},\n      eprint={2505.23281},\n\
+    \      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2505.23281},\n\
+    }"
+  tags:
+  - reasoning
+  modality:
+  - text
+  - image
+  domain:
+  - mathematics
+  multi_single_turn: multi_turn, single_turn
+  response_type: mixed
+  response_scale: binary for AIME family (per-attempt correct); continuous fraction points/max for rubric
+    comps (USAMO/IMO/IMC/Putnam/Miklos, per-criterion)
+  categorical: false
+  release_date: 2025-05
+  release: public
+  name: MathArena
+  granularity: item
+  one_line_description: Measures mathematical problem solving through final-answer correctness and criterion-level
+    proof grades.
+build:
+  contract_version: 1
+sources:
+  competitions:
+    aime_2025:
+      dataset: MathArena/aime_2025_outputs
+      revision: 0b4da2c5bc5769046d87a5c086705bc2100c03e3
+      kind: final_answer
+      shards:
+      - aime_2025_train-00000-of-00001
+      card: aime_2025_card
+    aime_2025_I:
+      dataset: MathArena/aime_2025_I_outputs
+      revision: 05b2f50ac7cb76ff2f1497f9e9425eb071f6858d
+      kind: final_answer
+      shards:
+      - aime_2025_I_train-00000-of-00001
+      card: aime_2025_I_card
+    aime_2025_II:
+      dataset: MathArena/aime_2025_II_outputs
+      revision: 9809200ca4e719df6339839adb2ffe95d85f1893
+      kind: final_answer
+      shards:
+      - aime_2025_II_train-00000-of-00001
+      card: aime_2025_II_card
+    aime_2026:
+      dataset: MathArena/aime_2026_outputs
+      revision: 66b760d27b6e5acf2a6244687959448ea11e1114
+      kind: final_answer
+      shards:
+      - aime_2026_train-00000-of-00001
+      card: aime_2026_card
+    aime_2026_I:
+      dataset: MathArena/aime_2026_I_outputs
+      revision: b4879d5f94c342fab1cecd7e381865631bb625a8
+      kind: final_answer
+      shards:
+      - aime_2026_I_train-00000-of-00001
+      card: aime_2026_I_card
+    hmmt_feb_2025:
+      dataset: MathArena/hmmt_feb_2025_outputs
+      revision: b62ba1a09d3ae1f8fc94053e59d0fc79d84feada
+      kind: final_answer
+      shards:
+      - hmmt_feb_2025_train-00000-of-00001
+      card: hmmt_feb_2025_card
+    hmmt_feb_2026:
+      dataset: MathArena/hmmt_feb_2026_outputs
+      revision: 64529b0549e7c1506f476b2f49aa6bbfce8573b0
+      kind: final_answer
+      shards:
+      - hmmt_feb_2026_train-00000-of-00001
+      card: hmmt_feb_2026_card
+    hmmt_nov_2025:
+      dataset: MathArena/hmmt_nov_2025_outputs
+      revision: 007034eff483da1790d6d013f0d9a09d8ecb06dd
+      kind: final_answer
+      shards:
+      - hmmt_nov_2025_train-00000-of-00001
+      card: hmmt_nov_2025_card
+    brumo_2025:
+      dataset: MathArena/brumo_2025_outputs
+      revision: 31f31fd40676384a2aea9061ac02f2996d26f461
+      kind: final_answer
+      shards:
+      - brumo_2025_train-00000-of-00001
+      card: brumo_2025_card
+    cmimc_2025:
+      dataset: MathArena/cmimc_2025_outputs
+      revision: 1d3655c41d34b8c0423b554d14bff8da3bc29a62
+      kind: final_answer
+      shards:
+      - cmimc_2025_train-00000-of-00001
+      card: cmimc_2025_card
+    smt_2025:
+      dataset: MathArena/smt_2025_outputs
+      revision: c25deb45749cd02d02b24c0d4a914fa71031555f
+      kind: final_answer
+      shards:
+      - smt_2025_train-00000-of-00001
+      card: smt_2025_card
+    apex_2025:
+      dataset: MathArena/apex_2025_outputs
+      revision: 849f47dff756a5920ffd45c4c83f1023e154fa15
+      kind: final_answer
+      shards:
+      - apex_2025_train-00000-of-00002
+      - apex_2025_train-00001-of-00002
+      card: apex_2025_card
+    apex_shortlist:
+      dataset: MathArena/apex_shortlist_outputs
+      revision: 56bce68541b8cfdcf2e2b2a08071e2a531e168d1
+      kind: final_answer
+      shards:
+      - apex_shortlist_train-00000-of-00002
+      - apex_shortlist_train-00001-of-00002
+      card: apex_shortlist_card
+    arxivmath_1225:
+      dataset: MathArena/arxivmath-1225_outputs
+      revision: e8721fe4768ff4fdb94d3397d6cb49f916238976
+      kind: final_answer
+      shards:
+      - arxivmath_1225_train-00000-of-00001
+      card: arxivmath_1225_card
+    arxivmath_0126:
+      dataset: MathArena/arxivmath-0126_outputs
+      revision: b68bb6a65fc422f3b9875203ec4cba54c1aaa60f
+      kind: final_answer
+      shards:
+      - arxivmath_0126_train-00000-of-00001
+      card: arxivmath_0126_card
+    arxivmath_0226:
+      dataset: MathArena/arxivmath-0226_outputs
+      revision: 14b7c6bf66c650ecaadabf4a4f82f2719da142ae
+      kind: final_answer
+      shards:
+      - arxivmath_0226_train-00000-of-00001
+      card: arxivmath_0226_card
+    kangaroo_2025_1_2:
+      dataset: MathArena/kangaroo_2025_1-2_outputs
+      revision: ef948fdc190fc4d8faa9b6e3d1d4e61719a28dc6
+      kind: final_answer
+      shards:
+      - kangaroo_2025_1_2_train-00000-of-00002
+      - kangaroo_2025_1_2_train-00001-of-00002
+      card: kangaroo_2025_1_2_card
+    kangaroo_2025_3_4:
+      dataset: MathArena/kangaroo_2025_3-4_outputs
+      revision: 7f0d4e19c4dd27c542a57d4a00b18b4f268e684c
+      kind: final_answer
+      shards:
+      - kangaroo_2025_3_4_train-00000-of-00002
+      - kangaroo_2025_3_4_train-00001-of-00002
+      card: kangaroo_2025_3_4_card
+    kangaroo_2025_5_6:
+      dataset: MathArena/kangaroo_2025_5-6_outputs
+      revision: 478e7a22f4d8e96db2fe66401d3a17d7c0363921
+      kind: final_answer
+      shards:
+      - kangaroo_2025_5_6_train-00000-of-00002
+      - kangaroo_2025_5_6_train-00001-of-00002
+      card: kangaroo_2025_5_6_card
+    kangaroo_2025_7_8:
+      dataset: MathArena/kangaroo_2025_7-8_outputs
+      revision: ad51d969529ef0eb36d7b2cd25fbfc3a88d5a959
+      kind: final_answer
+      shards:
+      - kangaroo_2025_7_8_train-00000-of-00002
+      - kangaroo_2025_7_8_train-00001-of-00002
+      card: kangaroo_2025_7_8_card
+    kangaroo_2025_9_10:
+      dataset: MathArena/kangaroo_2025_9-10_outputs
+      revision: 8c3724afb7a0fa8254847c55c6a2da658bed2487
+      kind: final_answer
+      shards:
+      - kangaroo_2025_9_10_train-00000-of-00002
+      - kangaroo_2025_9_10_train-00001-of-00002
+      card: kangaroo_2025_9_10_card
+    kangaroo_2025_11_12:
+      dataset: MathArena/kangaroo_2025_11-12_outputs
+      revision: a271a9b02275bad65ddc44eadcca865fadc2b737
+      kind: final_answer
+      shards:
+      - kangaroo_2025_11_12_train-00000-of-00002
+      - kangaroo_2025_11_12_train-00001-of-00002
+      card: kangaroo_2025_11_12_card
+    usamo_2025:
+      dataset: MathArena/usamo_2025_outputs
+      revision: bf808dcf51f1b76a921215b250f67d31d71f8ab4
+      kind: proof
+      shards:
+      - usamo_2025_train-00000-of-00001
+      card: usamo_2025_card
+    imo_2025:
+      dataset: MathArena/imo_2025_outputs
+      revision: e974b7ab4b806eca6046fd00178c41630957020a
+      kind: proof
+      shards:
+      - imo_2025_train-00000-of-00001
+      card: imo_2025_card
+    imc_2025:
+      dataset: MathArena/imc_2025_outputs
+      revision: dcafd79696f3b0d01b1c5be303c495d76e3a2f26
+      kind: proof
+      shards:
+      - imc_2025_train-00000-of-00001
+      card: imc_2025_card
+    putnam_2025:
+      dataset: MathArena/putnam_2025_outputs
+      revision: 4ff9dc7469263f583f12f03c1955ebb0ffe52995
+      kind: proof
+      shards:
+      - putnam_2025_train-00000-of-00001
+      card: putnam_2025_card
+    miklos_2025:
+      dataset: MathArena/miklos_2025_outputs
+      revision: 9b0abc725ad13fb21e52c57e8125295d797b1f03
+      kind: proof
+      shards:
+      - miklos_2025_train-00000-of-00001
+      card: miklos_2025_card
+  downloads:
+    aime_2025_card:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_outputs/resolve/0b4da2c5bc5769046d87a5c086705bc2100c03e3/README.md
+      file: sources/aime_2025/README.md
+      size: 3640
+      sha256: 15660656e24d62c7b66ed051c5d5cda7c064c1055a513033aabeb16f0de56088
+      timeout: 600
+    aime_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_outputs/resolve/0b4da2c5bc5769046d87a5c086705bc2100c03e3/data/train-00000-of-00001.parquet
+      file: sources/aime_2025/data/train-00000-of-00001.parquet
+      size: 142685920
+      sha256: bda1d0fca4bd6bd561484f8a65b9b4f8c602f7dc0550097abd37346bf2b154d7
+      timeout: 600
+    aime_2025_I_card:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_I_outputs/resolve/05b2f50ac7cb76ff2f1497f9e9425eb071f6858d/README.md
+      file: sources/aime_2025_I/README.md
+      size: 3408
+      sha256: 5237daccbfac50a4607ed0e7aea28296c04283b3ea532cc945c46c92d25f2cc7
+      timeout: 600
+    aime_2025_I_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_I_outputs/resolve/05b2f50ac7cb76ff2f1497f9e9425eb071f6858d/data/train-00000-of-00001.parquet
+      file: sources/aime_2025_I/data/train-00000-of-00001.parquet
+      size: 13193926
+      sha256: 9484d509ea8fbaf582eb95dbc7fc76f7a0c6af16aa70e097ea41b34bc2ec5807
+      timeout: 600
+    aime_2025_II_card:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_II_outputs/resolve/9809200ca4e719df6339839adb2ffe95d85f1893/README.md
+      file: sources/aime_2025_II/README.md
+      size: 3412
+      sha256: 8b540dc29941ea9e08072b0bc088385663663ff65920bf8a6e01af52581354c0
+      timeout: 600
+    aime_2025_II_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/aime_2025_II_outputs/resolve/9809200ca4e719df6339839adb2ffe95d85f1893/data/train-00000-of-00001.parquet
+      file: sources/aime_2025_II/data/train-00000-of-00001.parquet
+      size: 12661218
+      sha256: 366669b7bc44b1c5c389b0ffbf79a58be869d6802ab8dbf38dee198b517f8389
+      timeout: 600
+    aime_2026_card:
+      url: https://huggingface.co/datasets/MathArena/aime_2026_outputs/resolve/66b760d27b6e5acf2a6244687959448ea11e1114/README.md
+      file: sources/aime_2026/README.md
+      size: 3639
+      sha256: 0e70c73155997fe02596d79229f840b078166ceb703c1aae78dee2921dfe133e
+      timeout: 600
+    aime_2026_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/aime_2026_outputs/resolve/66b760d27b6e5acf2a6244687959448ea11e1114/data/train-00000-of-00001.parquet
+      file: sources/aime_2026/data/train-00000-of-00001.parquet
+      size: 60460771
+      sha256: 48e812f00979c25dcd558fa497977ed1d9800f956eeb0b35aaa25b6f013e6d33
+      timeout: 600
+    aime_2026_I_card:
+      url: https://huggingface.co/datasets/MathArena/aime_2026_I_outputs/resolve/b4879d5f94c342fab1cecd7e381865631bb625a8/README.md
+      file: sources/aime_2026_I/README.md
+      size: 3743
+      sha256: f1c9110cc8049737eb5965c1a2e47d7d0a1f3241ca55715e0e22411d1133b826
+      timeout: 600
+    aime_2026_I_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/aime_2026_I_outputs/resolve/b4879d5f94c342fab1cecd7e381865631bb625a8/data/train-00000-of-00001.parquet
+      file: sources/aime_2026_I/data/train-00000-of-00001.parquet
+      size: 50758172
+      sha256: bb59c2695ba9d24a176d5f5cee98c044ea6634a7983732994489add9a78c3b7d
+      timeout: 600
+    hmmt_feb_2025_card:
+      url: https://huggingface.co/datasets/MathArena/hmmt_feb_2025_outputs/resolve/b62ba1a09d3ae1f8fc94053e59d0fc79d84feada/README.md
+      file: sources/hmmt_feb_2025/README.md
+      size: 3661
+      sha256: 465d079c3b142a0cf4f4fe2533041c64792f8775aff9bc478872d9a19fdcf29c
+      timeout: 600
+    hmmt_feb_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/hmmt_feb_2025_outputs/resolve/b62ba1a09d3ae1f8fc94053e59d0fc79d84feada/data/train-00000-of-00001.parquet
+      file: sources/hmmt_feb_2025/data/train-00000-of-00001.parquet
+      size: 163542911
+      sha256: 1b781133330b04adb78da6b6f4e82533f8dbb2967d114ed8b90f0a1f7494b505
+      timeout: 600
+    hmmt_feb_2026_card:
+      url: https://huggingface.co/datasets/MathArena/hmmt_feb_2026_outputs/resolve/64529b0549e7c1506f476b2f49aa6bbfce8573b0/README.md
+      file: sources/hmmt_feb_2026/README.md
+      size: 3660
+      sha256: c2fa23f7f4b53a4ec6a608f07d0c9a12c5d58fe9d1c21fe0c4fa3b61233cb5d4
+      timeout: 600
+    hmmt_feb_2026_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/hmmt_feb_2026_outputs/resolve/64529b0549e7c1506f476b2f49aa6bbfce8573b0/data/train-00000-of-00001.parquet
+      file: sources/hmmt_feb_2026/data/train-00000-of-00001.parquet
+      size: 92356027
+      sha256: 60556440ecd380c78f2ca8eab0f8030c25deb866d0f7a427c981b7f090734ce4
+      timeout: 600
+    hmmt_nov_2025_card:
+      url: https://huggingface.co/datasets/MathArena/hmmt_nov_2025_outputs/resolve/007034eff483da1790d6d013f0d9a09d8ecb06dd/README.md
+      file: sources/hmmt_nov_2025/README.md
+      size: 3666
+      sha256: bcfb71e665af3adfbe4737f4097bb8922829d20f3979538182ade2aab370323f
+      timeout: 600
+    hmmt_nov_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/hmmt_nov_2025_outputs/resolve/007034eff483da1790d6d013f0d9a09d8ecb06dd/data/train-00000-of-00001.parquet
+      file: sources/hmmt_nov_2025/data/train-00000-of-00001.parquet
+      size: 46684852
+      sha256: 0a07e88110efe424aa4e866e9f23136ae90b9cc739ae3f97ace8391ad2521662
+      timeout: 600
+    brumo_2025_card:
+      url: https://huggingface.co/datasets/MathArena/brumo_2025_outputs/resolve/31f31fd40676384a2aea9061ac02f2996d26f461/README.md
+      file: sources/brumo_2025/README.md
+      size: 3642
+      sha256: d95c592fb14cd5410a835e681301c443481f4c8c179c97322deeb45b47027aa3
+      timeout: 600
+    brumo_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/brumo_2025_outputs/resolve/31f31fd40676384a2aea9061ac02f2996d26f461/data/train-00000-of-00001.parquet
+      file: sources/brumo_2025/data/train-00000-of-00001.parquet
+      size: 85941185
+      sha256: 92569945ca617852a6026ea1157bba8df9178cf199c8a167212464d86c232679
+      timeout: 600
+    cmimc_2025_card:
+      url: https://huggingface.co/datasets/MathArena/cmimc_2025_outputs/resolve/1d3655c41d34b8c0423b554d14bff8da3bc29a62/README.md
+      file: sources/cmimc_2025/README.md
+      size: 3643
+      sha256: 473ff626ea1931eb03472b4e58677b1a66161d858b60ec7f6174356d45f798cb
+      timeout: 600
+    cmimc_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/cmimc_2025_outputs/resolve/1d3655c41d34b8c0423b554d14bff8da3bc29a62/data/train-00000-of-00001.parquet
+      file: sources/cmimc_2025/data/train-00000-of-00001.parquet
+      size: 134011345
+      sha256: 43306cbc1b76fdbe6e02fcafadf0dc321b8c8bc781b4ac61db1b212a38626c26
+      timeout: 600
+    smt_2025_card:
+      url: https://huggingface.co/datasets/MathArena/smt_2025_outputs/resolve/c25deb45749cd02d02b24c0d4a914fa71031555f/README.md
+      file: sources/smt_2025/README.md
+      size: 3638
+      sha256: 94f3587f4784ceb58f3c64aceabdfcc7a99bb48c9c8b5908c6901ea84bfd885b
+      timeout: 600
+    smt_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/smt_2025_outputs/resolve/c25deb45749cd02d02b24c0d4a914fa71031555f/data/train-00000-of-00001.parquet
+      file: sources/smt_2025/data/train-00000-of-00001.parquet
+      size: 184878833
+      sha256: d1ec11118e0c42370843ce2f0fa32bba8a2682234ea5449fe590720c86ba09a5
+      timeout: 600
+    apex_2025_card:
+      url: https://huggingface.co/datasets/MathArena/apex_2025_outputs/resolve/849f47dff756a5920ffd45c4c83f1023e154fa15/README.md
+      file: sources/apex_2025/README.md
+      size: 3840
+      sha256: d29bc8370f411651a9eb40b1e73d6d12c58ae909c7baed06fc45d192fc93ef15
+      timeout: 600
+    apex_2025_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/apex_2025_outputs/resolve/849f47dff756a5920ffd45c4c83f1023e154fa15/data/train-00000-of-00002.parquet
+      file: sources/apex_2025/data/train-00000-of-00002.parquet
+      size: 174446427
+      sha256: 662e36c79ae6bafbfc424a8e766c6940bb15beef9922d55d327b7dba1736ddf0
+      timeout: 600
+    apex_2025_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/apex_2025_outputs/resolve/849f47dff756a5920ffd45c4c83f1023e154fa15/data/train-00001-of-00002.parquet
+      file: sources/apex_2025/data/train-00001-of-00002.parquet
+      size: 181982845
+      sha256: 603ba19b1e717ea55b1bf2445bc3c6ac60920de07c708e69782d0bd9392aa838
+      timeout: 600
+    apex_shortlist_card:
+      url: https://huggingface.co/datasets/MathArena/apex_shortlist_outputs/resolve/56bce68541b8cfdcf2e2b2a08071e2a531e168d1/README.md
+      file: sources/apex_shortlist/README.md
+      size: 3680
+      sha256: e44768c02de5ec91a094156db8c0f4f563fa4f63c6a77fb4e8eac792fcc3786c
+      timeout: 600
+    apex_shortlist_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/apex_shortlist_outputs/resolve/56bce68541b8cfdcf2e2b2a08071e2a531e168d1/data/train-00000-of-00002.parquet
+      file: sources/apex_shortlist/data/train-00000-of-00002.parquet
+      size: 290836029
+      sha256: de22a22c9537dd847afbedfdf3700aef9c5340f3401855484c484c2d02e4f7fc
+      timeout: 600
+    apex_shortlist_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/apex_shortlist_outputs/resolve/56bce68541b8cfdcf2e2b2a08071e2a531e168d1/data/train-00001-of-00002.parquet
+      file: sources/apex_shortlist/data/train-00001-of-00002.parquet
+      size: 159168649
+      sha256: e7938c86f0032e0db290d78dec71a0491fbfb585b858624b85856b4e9f3ea335
+      timeout: 600
+    arxivmath_1225_card:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-1225_outputs/resolve/e8721fe4768ff4fdb94d3397d6cb49f916238976/README.md
+      file: sources/arxivmath_1225/README.md
+      size: 3494
+      sha256: 2f96f2a72db0f2135dccc69d905ca9f35b4a930dce270823dbc8964a9d93fbc2
+      timeout: 600
+    arxivmath_1225_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-1225_outputs/resolve/e8721fe4768ff4fdb94d3397d6cb49f916238976/data/train-00000-of-00001.parquet
+      file: sources/arxivmath_1225/data/train-00000-of-00001.parquet
+      size: 106004084
+      sha256: 47f8c87d00d039f6ee3e58bf36711a7cba93cb04e6c094814a2ce6555f48044b
+      timeout: 600
+    arxivmath_0126_card:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-0126_outputs/resolve/b68bb6a65fc422f3b9875203ec4cba54c1aaa60f/README.md
+      file: sources/arxivmath_0126/README.md
+      size: 3597
+      sha256: d48e3041b165c152604e158cac3f9982d03831323a572abb4bf7f6f7ab860a1b
+      timeout: 600
+    arxivmath_0126_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-0126_outputs/resolve/b68bb6a65fc422f3b9875203ec4cba54c1aaa60f/data/train-00000-of-00001.parquet
+      file: sources/arxivmath_0126/data/train-00000-of-00001.parquet
+      size: 129792694
+      sha256: f7a729ea5e723206e3d526836ab7612e4f42fe78b6b6e306b18a88303413f039
+      timeout: 600
+    arxivmath_0226_card:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-0226_outputs/resolve/14b7c6bf66c650ecaadabf4a4f82f2719da142ae/README.md
+      file: sources/arxivmath_0226/README.md
+      size: 3600
+      sha256: 58e867eb27074ffc7d46a3af418a57b1962c67e55b709c2bd447ce36b6e28793
+      timeout: 600
+    arxivmath_0226_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/arxivmath-0226_outputs/resolve/14b7c6bf66c650ecaadabf4a4f82f2719da142ae/data/train-00000-of-00001.parquet
+      file: sources/arxivmath_0226/data/train-00000-of-00001.parquet
+      size: 104839644
+      sha256: a6cded3ca2a0fcd3e74cabdf0e87a980743674ec4196e40f5419d3aab63dd1bb
+      timeout: 600
+    kangaroo_2025_1_2_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_1-2_outputs/resolve/ef948fdc190fc4d8faa9b6e3d1d4e61719a28dc6/README.md
+      file: sources/kangaroo_2025_1_2/README.md
+      size: 3793
+      sha256: 8be9b161052ed10ef2cf4b66885cd2cb5a5e9497a24d777d248291ce1bd587a6
+      timeout: 600
+    kangaroo_2025_1_2_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_1-2_outputs/resolve/ef948fdc190fc4d8faa9b6e3d1d4e61719a28dc6/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_1_2/data/train-00000-of-00002.parquet
+      size: 413520250
+      sha256: 0857537277c342d266ee5ccd42c78a8b619f951236c95d013ff23478ee4184d5
+      timeout: 600
+    kangaroo_2025_1_2_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_1-2_outputs/resolve/ef948fdc190fc4d8faa9b6e3d1d4e61719a28dc6/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_1_2/data/train-00001-of-00002.parquet
+      size: 395585363
+      sha256: 7fce5c4f450d7be7237bec32a3f634b2e74a682b89e9c532042cb776d628590f
+      timeout: 600
+    kangaroo_2025_3_4_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_3-4_outputs/resolve/7f0d4e19c4dd27c542a57d4a00b18b4f268e684c/README.md
+      file: sources/kangaroo_2025_3_4/README.md
+      size: 3794
+      sha256: 0b009fca171c453aad01e5a5a2b9a5e18bd0f24babbed2dbec2dec6029a973c0
+      timeout: 600
+    kangaroo_2025_3_4_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_3-4_outputs/resolve/7f0d4e19c4dd27c542a57d4a00b18b4f268e684c/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_3_4/data/train-00000-of-00002.parquet
+      size: 369469543
+      sha256: da254fbdc03184ae3155b91243e4c34b7fde94eeee22bd4d891c7965acf63870
+      timeout: 600
+    kangaroo_2025_3_4_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_3-4_outputs/resolve/7f0d4e19c4dd27c542a57d4a00b18b4f268e684c/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_3_4/data/train-00001-of-00002.parquet
+      size: 371327931
+      sha256: 3d3fdc36433a2645d9cd06085d91e0a13344fbf8f37b569511cafeec1f502d16
+      timeout: 600
+    kangaroo_2025_5_6_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_5-6_outputs/resolve/478e7a22f4d8e96db2fe66401d3a17d7c0363921/README.md
+      file: sources/kangaroo_2025_5_6/README.md
+      size: 4676
+      sha256: 59e3112ba08517310f26847eecb6c75c676c5e667343e3bb10188a2b66392492
+      timeout: 600
+    kangaroo_2025_5_6_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_5-6_outputs/resolve/478e7a22f4d8e96db2fe66401d3a17d7c0363921/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_5_6/data/train-00000-of-00002.parquet
+      size: 382193227
+      sha256: 4f02b4f401caa75907afa64c548796114dd30ce91988d18e9c5dc6fc44d096b4
+      timeout: 600
+    kangaroo_2025_5_6_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_5-6_outputs/resolve/478e7a22f4d8e96db2fe66401d3a17d7c0363921/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_5_6/data/train-00001-of-00002.parquet
+      size: 376578530
+      sha256: b7861290a30e4f8873d0fd12d1af2b811b4caecb0f9d148d06da3d5d3fb9ba9e
+      timeout: 600
+    kangaroo_2025_7_8_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_7-8_outputs/resolve/ad51d969529ef0eb36d7b2cd25fbfc3a88d5a959/README.md
+      file: sources/kangaroo_2025_7_8/README.md
+      size: 3795
+      sha256: 4a87a050f5d5d4693f499e3b9fc5156022c0b2eef32a8e3cf289328fa108cc2f
+      timeout: 600
+    kangaroo_2025_7_8_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_7-8_outputs/resolve/ad51d969529ef0eb36d7b2cd25fbfc3a88d5a959/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_7_8/data/train-00000-of-00002.parquet
+      size: 345616734
+      sha256: 8ea83fcbcc3494b5ce6606aa400ea5a873184c30a504150ff99a7cb4e428f313
+      timeout: 600
+    kangaroo_2025_7_8_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_7-8_outputs/resolve/ad51d969529ef0eb36d7b2cd25fbfc3a88d5a959/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_7_8/data/train-00001-of-00002.parquet
+      size: 341990696
+      sha256: 3371a129214293a71bade55ad37f010e2b7a6806181f1e162f20b7b678a4ae94
+      timeout: 600
+    kangaroo_2025_9_10_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_9-10_outputs/resolve/8c3724afb7a0fa8254847c55c6a2da658bed2487/README.md
+      file: sources/kangaroo_2025_9_10/README.md
+      size: 3797
+      sha256: 21ab67792f737f02bfa61eef2fea25d77ffd11cd2b38c174e54501f404281fd9
+      timeout: 600
+    kangaroo_2025_9_10_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_9-10_outputs/resolve/8c3724afb7a0fa8254847c55c6a2da658bed2487/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_9_10/data/train-00000-of-00002.parquet
+      size: 261484426
+      sha256: d2027e2c69a1888b41533d6aff734c1bd0eb7aa6bf2c449f6e23d286c65625e0
+      timeout: 600
+    kangaroo_2025_9_10_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_9-10_outputs/resolve/8c3724afb7a0fa8254847c55c6a2da658bed2487/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_9_10/data/train-00001-of-00002.parquet
+      size: 258240771
+      sha256: 67fda9114caa0ac0ba040e66a9fb5c6d0473b91bbc336b40b79c9be5277d72d0
+      timeout: 600
+    kangaroo_2025_11_12_card:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_11-12_outputs/resolve/a271a9b02275bad65ddc44eadcca865fadc2b737/README.md
+      file: sources/kangaroo_2025_11_12/README.md
+      size: 3797
+      sha256: fe78f76016343075162bd83d482b7b8850451dc48d46617daf6a8d96dc35adf5
+      timeout: 600
+    kangaroo_2025_11_12_train-00000-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_11-12_outputs/resolve/a271a9b02275bad65ddc44eadcca865fadc2b737/data/train-00000-of-00002.parquet
+      file: sources/kangaroo_2025_11_12/data/train-00000-of-00002.parquet
+      size: 294791520
+      sha256: 21c8bdf794af6f11c6d923ef784340c19bb799aa5c54104ce67a5dc2e2fe59e6
+      timeout: 600
+    kangaroo_2025_11_12_train-00001-of-00002:
+      url: https://huggingface.co/datasets/MathArena/kangaroo_2025_11-12_outputs/resolve/a271a9b02275bad65ddc44eadcca865fadc2b737/data/train-00001-of-00002.parquet
+      file: sources/kangaroo_2025_11_12/data/train-00001-of-00002.parquet
+      size: 287840341
+      sha256: 0c805963804f8fc0a4b8411e660cee65f7d0b2d00df8933eadebaeaa6b66a701
+      timeout: 600
+    usamo_2025_card:
+      url: https://huggingface.co/datasets/MathArena/usamo_2025_outputs/resolve/bf808dcf51f1b76a921215b250f67d31d71f8ab4/README.md
+      file: sources/usamo_2025/README.md
+      size: 4430
+      sha256: 28aff165e519a237932266825426a2330e7cf19d584607bdf82a8a6995268601
+      timeout: 600
+    usamo_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/usamo_2025_outputs/resolve/bf808dcf51f1b76a921215b250f67d31d71f8ab4/data/train-00000-of-00001.parquet
+      file: sources/usamo_2025/data/train-00000-of-00001.parquet
+      size: 2857176
+      sha256: 3c4f83f8fed15f7503bcccdf922cfe0f66e613093edc9a0e5db4303f14b8914d
+      timeout: 600
+    imo_2025_card:
+      url: https://huggingface.co/datasets/MathArena/imo_2025_outputs/resolve/e974b7ab4b806eca6046fd00178c41630957020a/README.md
+      file: sources/imo_2025/README.md
+      size: 4420
+      sha256: 7195da3dad8c69b746f255794be16f3b47ca696a7a0cc67c05c8a03f292cb8ab
+      timeout: 600
+    imo_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/imo_2025_outputs/resolve/e974b7ab4b806eca6046fd00178c41630957020a/data/train-00000-of-00001.parquet
+      file: sources/imo_2025/data/train-00000-of-00001.parquet
+      size: 1277598
+      sha256: 45ae8c362c52128fe2e9dcc3a67fda93928543104444bd404440a8c13eccb0f2
+      timeout: 600
+    imc_2025_card:
+      url: https://huggingface.co/datasets/MathArena/imc_2025_outputs/resolve/dcafd79696f3b0d01b1c5be303c495d76e3a2f26/README.md
+      file: sources/imc_2025/README.md
+      size: 3893
+      sha256: ed3fe6ca81b94ece28e4073214f5c04c3e0d608842b19dc20e6da14502723394
+      timeout: 600
+    imc_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/imc_2025_outputs/resolve/dcafd79696f3b0d01b1c5be303c495d76e3a2f26/data/train-00000-of-00001.parquet
+      file: sources/imc_2025/data/train-00000-of-00001.parquet
+      size: 243226
+      sha256: 4e0f88307fbba2af378f45dc670a152449377927aaec878ee1392173c7571885
+      timeout: 600
+    putnam_2025_card:
+      url: https://huggingface.co/datasets/MathArena/putnam_2025_outputs/resolve/4ff9dc7469263f583f12f03c1955ebb0ffe52995/README.md
+      file: sources/putnam_2025/README.md
+      size: 4064
+      sha256: 271023cb3051c22a93472dba1423bcee75754caaad6402807294a5da89cf0b6b
+      timeout: 600
+    putnam_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/putnam_2025_outputs/resolve/4ff9dc7469263f583f12f03c1955ebb0ffe52995/data/train-00000-of-00001.parquet
+      file: sources/putnam_2025/data/train-00000-of-00001.parquet
+      size: 1868598
+      sha256: 7adccc8297614c0b3a6a5f983a092d02e0ab15ad6395155b4370cd4796fc13a7
+      timeout: 600
+    miklos_2025_card:
+      url: https://huggingface.co/datasets/MathArena/miklos_2025_outputs/resolve/9b0abc725ad13fb21e52c57e8125295d797b1f03/README.md
+      file: sources/miklos_2025/README.md
+      size: 4218
+      sha256: 48bb8e1008f5892711df9619c1dccce8f05a3d22164a3f5b7d434d8f8423f721
+      timeout: 600
+    miklos_2025_train-00000-of-00001:
+      url: https://huggingface.co/datasets/MathArena/miklos_2025_outputs/resolve/9b0abc725ad13fb21e52c57e8125295d797b1f03/data/train-00000-of-00001.parquet
+      file: sources/miklos_2025/data/train-00000-of-00001.parquet
+      size: 115027
+      sha256: b7f2652c0fbe8ab060658c8b041e6e799901e8a69b3fb91f0a9aa5f2c96301e4
+      timeout: 600
