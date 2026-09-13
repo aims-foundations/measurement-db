@@ -1,0 +1,20 @@
+{
+  "slug": "researchcodebench",
+  "model": "sigmoid(theta - z + c)",
+  "aucTrain": 0.9487,
+  "aucTest": 0.9174,
+  "llTrain": -1511.61,
+  "llTest": -497.58,
+  "separatedSubjects": 0,
+  "separatedItems": 44,
+  "accTest": 0.8394,
+  "nTrain": 5427,
+  "nTest": 1357,
+  "nSubjects": 32,
+  "nItems": 212,
+  "nConditions": 20,
+  "meanResponse": 0.3613,
+  "iterations": 1804,
+  "converged": true,
+  "seconds": 6.5
+}
