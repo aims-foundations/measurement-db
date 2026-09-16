@@ -171,7 +171,7 @@ class MathArenaCharacterizationTests(unittest.TestCase):
         cls.metadata = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
         required = [BENCHMARK_DIR / f"{name}.parquet" for name in OUTPUT_NAMES]
         if all(path.is_file() for path in required):
-            cls.sources = declared_source_artifacts(cls.metadata["sources"])
+            cls.sources = declared_source_artifacts(cls.metadata["sources"], benchmark_dir=BENCHMARK_DIR)
             cls.competitions = source_competitions(s["file"] for s in cls.sources)
             required += [BENCHMARK_DIR / "raw" / s["file"] for s in cls.sources]
         missing = [str(path) for path in required if not path.is_file()]

@@ -73,7 +73,3 @@ sources:
   upstream:
   - url: https://github.com/MMDocRAG/MMDocRAG
     revision: 2fd7505c6a576376b4a92aafaff6d87494765bb7
-  archive:
-    repo_id: aims-foundations/measurement-db
-    revision: c969fabbf60c44694dae0e6f4d521de022b21d84
-    path: mmdocrag/raw

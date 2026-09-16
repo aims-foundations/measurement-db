@@ -134,7 +134,7 @@ def _expanded_error_messages(error: ValidationError) -> list[tuple[str, str]]:
                 if yaml_path == "benchmark.slug":
                     message += "; slug is derived from the benchmark folder"
                 if yaml_path in {"sources.downloads", "sources.inputs"}:
-                    message += "; declare upstream references and a pinned sources.archive snapshot"
+                    message += "; declare upstream references under sources.upstream"
                 messages.append((yaml_path, message))
             return messages
 
@@ -166,7 +166,6 @@ def _source_reference_problems(metadata: Mapping[str, object]) -> list[str]:
             permitted_reference = reference in {
                 "benchmark.paper_url",
                 "benchmark.data_source_url",
-                "sources.archive",
                 "sources.upstream",
             } or reference.startswith(
                 ("sources.downloads.", "sources.inputs.", "sources.references.")
@@ -175,7 +174,7 @@ def _source_reference_problems(metadata: Mapping[str, object]) -> list[str]:
                 problems.append(
                     "validation.source_claims."
                     f"{category}.{claim_id}.source_ref: must point to a benchmark "
-                    "paper/data URL, sources.archive, sources.upstream, or a legacy source entry"
+                    "paper/data URL, sources.upstream, or a legacy source entry"
                 )
                 continue
             target: object = metadata
@@ -238,11 +237,6 @@ def validate_benchmark_metadata(
                 declared_source_artifacts(sources)
             except ValueError as exc:
                 problems.append(str(exc))
-    if not problems and metadata["build"]["contract_version"] == 2:
-        archive_path = metadata["sources"]["archive"]["path"]
-        folder = Path(path).parent.name
-        if folder not in ("", ".", "_template") and archive_path != f"{folder}/raw":
-            problems.append(f"sources.archive.path: expected {folder}/raw, found {archive_path}")
     if not problems:
         return
     raise BenchmarkMetadataError(
@@ -266,15 +260,17 @@ def load_benchmark_metadata(path: str | Path) -> dict[str, object]:
     return metadata
 
 
-def declared_source_artifacts(sources: Mapping) -> list[dict]:
+def declared_source_artifacts(sources: Mapping, *, benchmark_dir: str | Path | None = None) -> list[dict]:
     """Return validated input descriptors; references alone are not inputs.
 
     Call after metadata-schema validation. Contract 2 obtains the file inventory
     from the pinned Hub tree; legacy contracts declare their inputs inline.
     """
-    if "archive" in sources:
-        from .source_snapshots import snapshot_artifacts
-        return snapshot_artifacts(sources["archive"])
+    if "upstream" in sources:
+        from .source_snapshots import snapshot_artifacts, snapshot_location
+        if benchmark_dir is None:
+            raise ValueError("benchmark_dir is required to resolve the source snapshot")
+        return snapshot_artifacts(snapshot_location(benchmark_dir))
     artifacts = []
     files = set()
     for group in ("downloads", "inputs"):

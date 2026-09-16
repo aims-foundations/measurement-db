@@ -161,7 +161,7 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
                 raise RuntimeError(message)
             raise unittest.SkipTest(message)
 
-        archive_descriptor = declared_source_artifacts(METADATA["sources"])[0]
+        archive_descriptor = declared_source_artifacts(METADATA["sources"], benchmark_dir=BENCHMARK_DIR)[0]
         cls.archive_path = BENCHMARK_DIR / "raw" / archive_descriptor["file"]
         if not cls.archive_path.is_file():
             raise RuntimeError(

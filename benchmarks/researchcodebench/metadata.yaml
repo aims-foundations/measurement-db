@@ -47,35 +47,31 @@ sources:
   upstream:
   - url: https://github.com/PatrickHua/ResearchCodeBench
     revision: 2758001c2ff84fc25c546339d65479ed058b0265
-  archive:
-    repo_id: aims-foundations/measurement-db
-    revision: c969fabbf60c44694dae0e6f4d521de022b21d84
-    path: researchcodebench/raw
 validation:
   source_claims:
     counts:
       released_items:
         entity: items
         expected: 212
-        source_ref: sources.archive
+        source_ref: sources.upstream
         locator: distinct paper and snippet keys in overall_stats.json
         scope: provider headline greedy run 2025-05-12-17-13-20
       released_subject_configurations:
         entity: subject_configurations
         expected: 32
-        source_ref: sources.archive
+        source_ref: sources.upstream
         locator: model keys in overall_stats.json and run_greedy.sh
         scope: provider headline greedy run 2025-05-12-17-13-20
       released_response_cells:
         entity: responses
         expected: 6784
-        source_ref: sources.archive
+        source_ref: sources.upstream
         locator: completion records nested under overall_stats.json results
         scope: 32 released configurations by 212 snippets, one completion each
       released_traces:
         entity: traces
         expected: 0
-        source_ref: sources.archive
+        source_ref: sources.upstream
         locator: outputs/20llms_greedy/2025-05-12-17-13-20 archive contents
         scope: no completion or raw API text in the pinned released run artifact
     aggregate_tables:
@@ -86,6 +82,6 @@ validation:
         reported_scale: percentage from 0 to 100
         aggregation: 100 times mean of the binary passed flags over 212 snippets
         absolute_tolerance: 1.0e-12
-        source_ref: sources.archive
+        source_ref: sources.upstream
         locator: overall_stats.json overall_scores.<model>.task_rates.mean
         scope: provider headline greedy run 2025-05-12-17-13-20

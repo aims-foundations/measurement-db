@@ -51,8 +51,3 @@ sources:
     revision: null
   - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified
     revision: null
-  archive:
-    repo_id: aims-foundations/measurement-db
-    revision: c969fabbf60c44694dae0e6f4d521de022b21d84
-    path: multi_swebench/raw
-  notes: Original upstream revisions were not recorded; the archive preserves the exact captured inputs.

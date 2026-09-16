@@ -64,22 +64,23 @@ and summary statistics recomputed from the rows. Completed builders run this
 check before replacing their outputs. Migration and publishing tools import
 the same validator; validating individual tables alone is insufficient.
 
-`metadata.yaml` records benchmark facts and source provenance. New definitions
-use `build.contract_version: 2`: `sources.upstream` lists source URLs and known
-revisions (or null), and `sources.archive` identifies an HF dataset repository,
-an immutable commit, and `<slug>/raw`. Optional `sources.notes` records provenance
-limitations. Unknown fields, embedded file inventories, mutable archive revisions,
-and untyped `archive_layout`/`expectations` sections are rejected. Keep parsing
-rules in `build.py` and regression expectations in the characterization test.
+`metadata.yaml` records benchmark facts and upstream provenance. Under build
+contract 2, `sources.upstream` lists source URLs and known revisions (or null).
+Unknown fields, per-file inventories, and untyped `archive_layout`/`expectations` sections
+are rejected. Keep parsing rules in `build.py` and regression expectations in tests.
 
-Archive the reviewed raw inputs first, then record the resulting commit in
-metadata. The shared builder restores missing files and verifies their sizes
-and content hashes against that commit's file tree, including existing cached
-files. `self.source_files` lists the verified raw-relative input paths for the
-row-building hook; use it when discovering files so unrelated local caches do
-not affect the build. The Hub must be reachable to obtain the pinned file tree;
-raw inputs are downloaded only when missing. No additional provenance file is
-maintained. Contract 1 remains available for older, unmigrated private builders.
+The shared loader pins the public HF repository and its validated snapshot once
+in code and derives `<slug>/raw` from the benchmark directory. It verifies file
+sizes and content hashes against that immutable revision, including cached files.
+`self.source_files` lists the verified input paths; use it for file discovery so
+unrelated local caches do not affect a build. The Hub must be reachable to obtain
+the pinned tree; raw inputs are downloaded only when missing. No additional
+provenance file is maintained. Contract 1 remains available for older builders.
+
+To try newly archived inputs, set `MEASUREMENT_DB_SOURCE_REVISION` to their full
+commit SHA when running the builder. `MEASUREMENT_DB_SOURCE_REPO` selects a
+different HF dataset repository and requires an explicit revision. Update the
+shared default revision when promoting a newly validated public release.
 
 Check new definitions without downloading data:
 
@@ -109,7 +110,7 @@ pip install -r requirements.txt
 python benchmarks/real_webagents/build.py
 ```
 
-The builder uses the archive revision in its local `metadata.yaml`; later changes
+The builder uses the snapshot revision pinned by the shared loader; later changes
 to the upstream sources or HF `main` do not change its inputs. Replace
 `real_webagents` with another benchmark to rebuild it. Do not combine a builder
 with metadata from a different build-contract version.

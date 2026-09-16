@@ -12,7 +12,8 @@ import yaml
 from build_base import BenchmarkBuild, BuildContractError
 from scripts.build_measurement_tables.load_source_files import SourceDataError
 from scripts.build_measurement_tables.source_snapshots import (
-    snapshot_artifacts, restore_snapshot, verify_snapshot_file,
+    snapshot_artifacts, restore_snapshot, verify_snapshot_file, snapshot_location,
+    DEFAULT_SOURCE_REPOSITORY, DEFAULT_SOURCE_REVISION,
 )
 from scripts.build_measurement_tables.validate_benchmark_metadata import (
     BenchmarkMetadataError, load_benchmark_metadata, validate_benchmark_metadata,
@@ -25,11 +26,10 @@ PAYLOAD = b'{"released":true}\n'
 class SnapshotTests(unittest.TestCase):
     def setUp(self):
         self.metadata = yaml.safe_load((ROOT / 'benchmarks/real_webagents/metadata.yaml').read_text())
-        self.metadata['sources']['archive']['path'] = 'fixture/raw'
-        self.archive = self.metadata['sources']['archive']
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.folder = Path(self.temp.name) / 'fixture'
+        self.archive = snapshot_location(self.folder)
         self.raw = self.folder / 'raw'
         self.raw.mkdir(parents=True)
         self.metadata_path = self.folder / 'metadata.yaml'
@@ -44,8 +44,8 @@ class SnapshotTests(unittest.TestCase):
         for location, key, value in (
             (('sources',), 'downloads', {'artifact_0001': {}}),
             (('sources',), 'inputs', {'artifact_0001': {}}),
-            (('sources','archive'), 'files', ['source.json']),
-            (('sources','archive'), 'unknown', True),
+            (('sources',), 'archive', {'repo_id': 'example/data'}),
+            (('sources',), 'notes', 'Generic archive explanation'),
             ((), 'archive_layout', {'files': []}),
             ((), 'expectations', {}),
         ):
@@ -56,19 +56,23 @@ class SnapshotTests(unittest.TestCase):
                 with self.assertRaises(BenchmarkMetadataError):
                     validate_benchmark_metadata(metadata, path=self.metadata_path)
 
-    def test_archive_requires_immutable_revision_and_matching_raw_directory(self):
-        for key,value in [('revision','main'),('revision','c969fab'),('revision',None),
-                          ('path','../raw'),('path','other/raw'),('path','fixture')]:
-            with self.subTest(key=key,value=value):
-                metadata=copy.deepcopy(self.metadata)
-                metadata['sources']['archive'][key]=value
-                with self.assertRaises(BenchmarkMetadataError):
-                    validate_benchmark_metadata(metadata,path=self.metadata_path)
+    def test_shared_snapshot_defaults_and_runtime_overrides(self):
+        self.assertEqual(self.archive, {'repo_id': DEFAULT_SOURCE_REPOSITORY,
+                         'revision': DEFAULT_SOURCE_REVISION, 'path': 'fixture/raw'})
+        with patch.dict('os.environ', {'MEASUREMENT_DB_SOURCE_REPO': 'example/data',
+                                      'MEASUREMENT_DB_SOURCE_REVISION': 'b'*40}):
+            self.assertEqual(snapshot_location(self.folder), {
+                'repo_id': 'example/data', 'revision': 'b'*40, 'path': 'fixture/raw'})
+        for value in ('main', 'c969fab', ''):
+            with patch.dict('os.environ', {'MEASUREMENT_DB_SOURCE_REVISION': value}):
+                with self.assertRaises(SourceDataError): snapshot_location(self.folder)
+        with patch.dict('os.environ', {'MEASUREMENT_DB_SOURCE_REPO': 'example/private'}, clear=True):
+            with self.assertRaises(SourceDataError): snapshot_location(self.folder)
 
-    def test_missing_required_archive_fields(self):
-        for key in ('repo_id','revision','path'):
+    def test_missing_required_upstream_fields(self):
+        for key in ('url','revision'):
             metadata=copy.deepcopy(self.metadata)
-            del metadata['sources']['archive'][key]
+            del metadata['sources']['upstream'][0][key]
             with self.assertRaises(BenchmarkMetadataError):
                 validate_benchmark_metadata(metadata,path=self.metadata_path)
 

@@ -48,8 +48,3 @@ sources:
     revision: null
   - url: https://github.com/agi-inc/REAL
     revision: null
-  archive:
-    repo_id: aims-foundations/measurement-db
-    revision: c969fabbf60c44694dae0e6f4d521de022b21d84
-    path: real_webagents/raw
-  notes: Original upstream revisions were not recorded; the archive preserves the exact captured inputs.

@@ -3,7 +3,7 @@ $id: https://aimslab.stanford.edu/measurement-db/benchmark_metadata_schema.yaml
 title: Measurement-DB benchmark metadata
 description: >-
   Authoring contract for benchmarks/<slug>/metadata.yaml. Contract 2 uses compact
-  upstream references and an immutable raw snapshot.
+  upstream references; snapshot selection belongs to the shared loader.
   Contract 1 is retained only for unmigrated builders.
 type: object
 additionalProperties: false
@@ -177,7 +177,7 @@ $defs:
   snapshot_sources:
     type: object
     additionalProperties: false
-    required: [upstream, archive]
+    required: [upstream]
     properties:
       upstream:
         type: array
@@ -195,24 +195,6 @@ $defs:
               anyOf:
                 - $ref: "#/$defs/nonempty_string"
                 - type: 'null'
-      archive:
-        type: object
-        additionalProperties: false
-        required: [repo_id, revision, path]
-        properties:
-          repo_id:
-            type: string
-            pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$'
-          revision:
-            description: Immutable HF dataset commit; branch names are not accepted.
-            type: string
-            pattern: '^[0-9a-f]{40}$'
-          path:
-            description: The benchmark raw directory at this commit.
-            type: string
-            pattern: '^[a-z][a-z0-9_]*/raw$'
-      notes:
-        $ref: "#/$defs/nonempty_string"
   response_scale:
     oneOf:
       - type: object

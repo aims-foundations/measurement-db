@@ -368,7 +368,7 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
         )
 
     def test_pinned_source_bytes_and_question_only_items(self) -> None:
-        for source in declared_source_artifacts(METADATA["sources"]):
+        for source in declared_source_artifacts(METADATA["sources"], benchmark_dir=BENCHMARK_DIR):
             with self.subTest(source=source["file"]):
                 verify_snapshot_file(BENCHMARK_DIR / "raw" / source["file"], source)
         gold = {}
@@ -391,7 +391,7 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
 
     def test_released_judge_cells_and_exact_case_trace_selection(self) -> None:
         layout = LAYOUT
-        files = {source["file"] for source in declared_source_artifacts(METADATA["sources"])}
+        files = {source["file"] for source in declared_source_artifacts(METADATA["sources"], benchmark_dir=BENCHMARK_DIR)}
         evaluations = sorted(
             path
             for path in files

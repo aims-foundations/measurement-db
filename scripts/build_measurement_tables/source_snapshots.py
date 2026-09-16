@@ -6,11 +6,33 @@ inventory. Existing cached bytes are checked, never silently accepted or repaire
 from __future__ import annotations
 
 import hashlib
+import os
+import re
 from pathlib import Path, PurePosixPath
 import shutil
 import tempfile
 
 from .load_source_files import SourceDataError
+
+
+# Published pilot inputs are pinned once with the loader, not in every metadata file.
+DEFAULT_SOURCE_REPOSITORY = "aims-foundations/measurement-db"
+DEFAULT_SOURCE_REVISION = "c969fabbf60c44694dae0e6f4d521de022b21d84"
+
+
+def snapshot_location(benchmark_dir: str | Path) -> dict[str, str]:
+    """Resolve shared defaults or explicit runtime overrides for another snapshot."""
+    slug = Path(benchmark_dir).name
+    repository = os.environ.get("MEASUREMENT_DB_SOURCE_REPO", DEFAULT_SOURCE_REPOSITORY)
+    revision = os.environ.get("MEASUREMENT_DB_SOURCE_REVISION",
+                              DEFAULT_SOURCE_REVISION if repository == DEFAULT_SOURCE_REPOSITORY else "")
+    if not re.fullmatch(r"[a-z][a-z0-9_]*", slug):
+        raise SourceDataError(f"invalid benchmark directory name: {slug}")
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*", repository):
+        raise SourceDataError("MEASUREMENT_DB_SOURCE_REPO must be an owner/dataset identifier")
+    if not re.fullmatch(r"[0-9a-f]{40}", revision):
+        raise SourceDataError("MEASUREMENT_DB_SOURCE_REVISION must be an immutable 40-character commit")
+    return {"repo_id": repository, "revision": revision, "path": f"{slug}/raw"}
 
 
 def snapshot_artifacts(archive: dict) -> list[dict]:

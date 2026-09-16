@@ -48,8 +48,3 @@ sources:
   upstream:
     - url: https://example.invalid/provider/example-benchmark
       revision: null  # Use the captured upstream revision when known.
-  archive:
-    repo_id: organization/dataset
-    revision: "0000000000000000000000000000000000000000"  # Replace with the archive commit.
-    path: example_benchmark/raw
-  notes: Describe any limitations of the captured release.

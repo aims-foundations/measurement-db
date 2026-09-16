@@ -7,7 +7,7 @@ Canonical metadata and table contracts live in
 
 Modern builders provide ``metadata.yaml`` and implement
 ``build_subject_item_response_rows()``. Contract 2 restores and verifies the raw
-snapshot pinned by ``sources.archive``; ``self.source_files`` identifies its
+snapshot pinned in the shared loader; ``self.source_files`` identifies its
 inputs. Contract-1 download hooks remain available to unmigrated builders. A
 builder commits final subjects, items, and responses through
 :meth:`BenchmarkBuild.add_subject`, ``add_item``, and ``add_response``.
@@ -84,6 +84,7 @@ class BenchmarkBuild(ABC):
         self.source_manifest: dict[str, object] = {}
         self.source_files: tuple[str, ...] = ()
         self._source_artifacts: list[dict] = []
+        self._source_archive: dict | None = None
         self.archive_layout: dict[str, object] = {}
         self.expectations: dict[str, object] = {}
         # ``main()`` resets and activates this per-run state immediately
@@ -709,9 +710,8 @@ class BenchmarkBuild(ABC):
         cache hits. Declare custom-acquired files under ``sources.inputs`` in
         metadata.yaml, with their sizes and SHA-256 hashes before building.
         """
-        if "archive" in self.source_manifest:
-            from_source = self.source_manifest["archive"]
-            _source_snapshots.restore_snapshot(from_source, self.raw_dir, self._source_artifacts)
+        if self._source_archive is not None:
+            _source_snapshots.restore_snapshot(self._source_archive, self.raw_dir, self._source_artifacts)
             return [artifact["url"] for artifact in self._source_artifacts]
         downloads = self.source_manifest.get("downloads")
         if not isinstance(downloads, dict) or not downloads:
@@ -1022,7 +1022,11 @@ class BenchmarkBuild(ABC):
         try:
             metadata = _benchmark_metadata.load_benchmark_metadata(metadata_path)
             manifest = copy.deepcopy(metadata.get("sources", {}))
-            artifacts = _benchmark_metadata.declared_source_artifacts(manifest)
+            self._source_archive = (_source_snapshots.snapshot_location(self.dir)
+                                    if metadata["build"]["contract_version"] == 2 else None)
+            artifacts = (_source_snapshots.snapshot_artifacts(self._source_archive)
+                         if self._source_archive is not None
+                         else _benchmark_metadata.declared_source_artifacts(manifest))
         except (TypeError, ValueError) as exc:
             raise BuildContractError(f"{self.slug}: {exc}") from exc
         # Always load provenance from the authoritative file, including when a
@@ -1089,7 +1093,7 @@ class BenchmarkBuild(ABC):
                 cached = self.raw_dir / artifact["file"]
                 if not cached.resolve().is_relative_to(root) or not cached.is_file():
                     raise ValueError(f"declared raw input is missing or outside raw/: {cached}")
-                if "archive" in manifest:
+                if self._source_archive is not None:
                     _source_snapshots.verify_snapshot_file(cached, artifact)
                 else:
                     _source_files.verify_file(
