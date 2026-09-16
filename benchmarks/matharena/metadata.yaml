@@ -23,8 +23,7 @@ benchmark:
   - mathematics
   multi_single_turn: multi_turn, single_turn
   response_type: mixed
-  response_scale: binary for AIME family (per-attempt correct); continuous fraction points/max for rubric
-    comps (USAMO/IMO/IMC/Putnam/Miklos, per-criterion)
+  response_scale: {kind: mixed}
   categorical: false
   release_date: 2025-05
   release: public

@@ -17,7 +17,7 @@ IMPORT_ROOT = Path(__file__).resolve().parents[3]
 if str(IMPORT_ROOT) not in sys.path:
     sys.path.insert(0, str(IMPORT_ROOT))
 
-from measurement_db.build_base import BenchmarkBuild, BuildContractError
+from measurement_db.build_base import BenchmarkBuild, BuildContractError, ExactMatcher
 
 # Snippet markers in the annotated pset/<paper>/*.py files (line-anchored, as
 # in upstream core/annotation/models/file.py START_PATTERN/END_PATTERN).
@@ -402,7 +402,16 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
                         item_ids[key] = self.add_item(
                             raw_item_id=f"{paper}::{snippet_name}",
                             content=content,
-                            reference_answer=reference,
+                            grading_criterion={
+                                "reference_answer": reference,
+                                "rule": "Assign 1 when the provider's paper-specific tests pass, otherwise 0.",
+                            },
+                            verifier=ExactMatcher(spec=(
+                                "Provider's pinned greedy-run harness: parse the last Python Markdown "
+                                "block, insert it into the masked source file, and run the "
+                                "paper-specific Python test program with a 60-second timeout. "
+                                "Import the released passed flag without rerunning the tests."
+                            )),
                             features={"paper": paper},
                         )
                     item_id = item_ids[key]
@@ -427,7 +436,6 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
                             test_condition=None,
                             interactors=None,
                             response=response,
-                            reference_answer=reference,
                             trace=None,
                         )
                         response_count += 1

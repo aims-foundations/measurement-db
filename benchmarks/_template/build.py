@@ -26,7 +26,7 @@ class ExampleBenchmarkBuild(BenchmarkBuild):
             item_id = self.add_item(
                 raw_item_id=str(item_record["question_id"]),
                 content=item_record["question"],
-                reference_answer=item_record["gold_answer"],
+                grading_criterion={"reference_answer": item_record["gold_answer"]},
                 verifier=ExactMatcher(spec="response equals gold answer verbatim"),
                 # Item identity is complete when it is registered.
                 features={"shot": item_record["n_shots"]},
@@ -40,7 +40,6 @@ class ExampleBenchmarkBuild(BenchmarkBuild):
                     test_condition=None,
                     interactors=None,
                     response=1.0 if model_run["correct"] else 0.0,
-                    reference_answer=item_record["gold_answer"],
                     trace=model_run.get("model_output"),
                 )
 

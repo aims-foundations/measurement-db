@@ -1,0 +1,1 @@
+Characterization of the locally reviewed schema migration. The read-only test checks every released grade and trace against cached provider records. Updating this snapshot requires reviewing source and measurement changes; tests never regenerate it.

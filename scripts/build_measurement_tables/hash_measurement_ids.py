@@ -26,9 +26,11 @@ import pandas as pd
 __all__ = [
     "asset_id_from_bytes",
     "canonical_asset_manifest",
+    "canonical_grading_criterion",
     "content_hash",
     "item_id_from_content",
     "response_id_from_row",
+    "response_identity_v1",
     "response_row_hashes",
     "sha256_16",
     "subject_id_from_row",
@@ -193,6 +195,31 @@ def canonical_asset_manifest(
     )
 
 
+def canonical_grading_criterion(value: Mapping[str, object] | str) -> str:
+    """Serialize the required answer/rule object without changing its text."""
+    if isinstance(value, str):
+        try:
+            value = json.loads(value)
+        except ValueError as exc:
+            raise ValueError("grading_criterion must contain a JSON object") from exc
+    if not isinstance(value, Mapping):
+        raise ValueError("grading_criterion must be an object with reference_answer and/or rule")
+    if set(value) - {"reference_answer", "rule", "response_scale"}:
+        raise ValueError("grading_criterion only accepts reference_answer, rule, and response_scale")
+    fields = {key: value.get(key) for key in ("reference_answer", "rule")}
+    for key, component in fields.items():
+        if component is not None and (not isinstance(component, str) or not component.strip()):
+            raise ValueError(f"grading_criterion.{key} must be a nonempty string or null")
+    if all(component is None for component in fields.values()):
+        raise ValueError("grading_criterion requires a reference_answer, a rule, or both")
+    if "response_scale" in value:
+        from .response_scales import canonical_response_scale
+        fields["response_scale"] = json.loads(canonical_response_scale(
+            value["response_scale"], allow_mixed=False,
+        ))
+    return json.dumps(fields, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
 def item_id_from_content(
     benchmark_id: str,
     content: str,
@@ -200,21 +227,55 @@ def item_id_from_content(
     *,
     asset_manifest: str | None = None,
     verifier: str | None = None,
+    grading_criterion: Mapping[str, object] | str | None = None,
+    response_scale: Mapping[str, object] | str | None = None,
 ) -> str:
-    """Derive an item ID from its benchmark, content, features, and assets.
+    """Derive an item ID from its stimulus and complete grading protocol.
 
-    The historical text-only serialization is preserved exactly. Asset-bearing
-    items use a domain-separated JSON payload so arbitrary text cannot absorb
-    the manifest or feature boundary.
+    New registrations supply a criterion, verifier, and benchmark response scale
+    and use the version-4 payload. The effective item scale enters identity once,
+    regardless of whether it is inherited or declared in a mixed-scale criterion.
+    Omitting response_scale retains historical version-3 hashing; omitting the
+    criterion retains earlier formats. JSON formatting does not change identity;
+    strings inside the protocol (including rubric text) retain their exact contents.
     """
 
     normalized_content = _normalize_content(content)
-    if not asset_manifest:
+    if response_scale is not None and grading_criterion is None:
+        raise ValueError("grading_criterion is required with response_scale")
+    if grading_criterion is not None:
+        if verifier is None:
+            raise ValueError("verifier is required with grading_criterion")
+        criterion = json.loads(canonical_grading_criterion(grading_criterion))
+        payload = {
+            "benchmark_id": benchmark_id,
+            "content": normalized_content,
+            "features": _normalize_content(features_str) if features_str else None,
+            "asset_manifest": json.loads(asset_manifest) if asset_manifest else None,
+            "grading_criterion": criterion,
+            "verifier": json.loads(verifier),
+        }
+        version = 3
+        if response_scale is not None:
+            from .response_scales import item_response_scale
+            payload["response_scale"] = item_response_scale(response_scale, criterion)
+            criterion.pop("response_scale", None)
+            version = 4
+        serialized = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+        return sha256_16(f"measurement-db:item:v{version}\0{serialized}")
+
+    # Retain older hash formats for inspecting historical identifiers only.
+    # Registration requires a criterion and scale and takes the version-4 branch.
+    if not asset_manifest and verifier is None:
         key = f"{benchmark_id}::{normalized_content}"
         if features_str:
             key += f"::{_normalize_content(features_str)}"
         return sha256_16(key)
 
+    if verifier is not None:
+        verifier = json.dumps(
+            json.loads(verifier), sort_keys=True, ensure_ascii=False,
+        )
     payload = json.dumps(
         {
             "asset_manifest": asset_manifest,
@@ -229,7 +290,8 @@ def item_id_from_content(
         sort_keys=True,
         separators=(",", ":"),
     )
-    return sha256_16(f"measurement-db:item-with-assets:v1\0{payload}")
+    domain = "item-with-assets:v1" if asset_manifest else "item:v2"
+    return sha256_16(f"measurement-db:{domain}\0{payload}")
 
 
 def content_hash(content: str) -> str:
@@ -269,8 +331,9 @@ def _frame(payload: bytes) -> bytes:
 def response_id_from_row(row: Mapping[str, object]) -> str:
     """Derive one response ID from an ordered finalized-row mapping.
 
-    Mapping iteration order is part of the serialized payload because response
-    extension columns follow the canonical schema columns. The caller must
+    Mapping iteration order is part of the frozen serialized payload. Historical
+    rows may contain extension fields; new builders accept only canonical fields.
+    The caller must
     omit ``response_id`` itself and pass ``trace=None``: raw trace text lives
     in ``traces.parquet``, not in the hashed response-table representation.
     """
@@ -280,6 +343,30 @@ def response_id_from_row(row: Mapping[str, object]) -> str:
         encoded.extend(_frame(str(column).encode("utf-8")))
         encoded.extend(_frame(_stable_response_cell(value)))
     return sha256_16(bytes(encoded))
+
+
+def response_identity_v1(
+    row: Mapping[str, object], reference_answer: str | None,
+) -> dict[str, object]:
+    """Reconstruct the frozen identity payload independently of output schema.
+
+    Version 2 removes duplicated answers and null traces from response files.
+    Retaining these virtual slots here preserves existing IDs, including the
+    order of historical extension columns when inspecting old rows. New builders
+    reject extension fields; removing formerly hashed fields on a rebuild can
+    change response IDs. No retired field is exported.
+    New builders obtain the answer from the registered item; legacy builders
+    may explicitly supply None to reproduce their previously empty copy.
+    """
+    canonical = (
+        "subject_id", "item_id", "benchmark_id", "trial", "test_condition",
+        "interactors", "response",
+    )
+    payload = {name: row[name] for name in canonical}
+    payload.update(reference_answer=reference_answer, trace=None)
+    payload.update({key: value for key, value in row.items()
+                    if key not in payload and key != "response_id"})
+    return payload
 
 
 def response_row_hashes(responses: pd.DataFrame) -> list[str]:

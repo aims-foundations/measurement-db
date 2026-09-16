@@ -15,8 +15,11 @@ the shared build pipeline.
 
 from __future__ import annotations
 
+from datetime import date
 import re
 from typing import TypedDict
+
+from .response_scales import resolve_categorical, validate_scale_type
 
 
 # Required by the BenchmarkBuild metadata contract. ``multi_single_turn`` is
@@ -33,11 +36,12 @@ REQUIRED_KEYS = (
     "domain",
     "response_type",
     "response_scale",
-    "categorical",
     "release_date",
 )
 
 OPTIONAL_KEYS = (
+    "categorical",
+    "version",
     "one_line_description",
     "multi_single_turn",
     "granularity",
@@ -124,9 +128,8 @@ class BenchmarkInfoRequired(TypedDict):
     modality: list[str]
     domain: list[str]
     response_type: str
-    response_scale: str
-    categorical: bool
-    release_date: str
+    response_scale: dict | str
+    release_date: str | None
 
 
 class BenchmarkInfo(BenchmarkInfoRequired, total=False):
@@ -136,6 +139,8 @@ class BenchmarkInfo(BenchmarkInfoRequired, total=False):
     they are not persisted in ``benchmarks.parquet``.
     """
 
+    categorical: bool
+    version: str | None
     one_line_description: str
     multi_single_turn: str
     granularity: str
@@ -154,6 +159,24 @@ def _is_string_list(value: object) -> bool:
         and bool(value)
         and all(isinstance(part, str) and bool(part.strip()) for part in value)
     )
+
+
+def validate_benchmark_release_date(value: object) -> None:
+    """Accept an unknown date or a valid ISO month/day without filling in precision."""
+    if value is None:
+        return
+    message = (
+        "release_date must be null or a valid quoted YYYY-MM or YYYY-MM-DD "
+        "calendar date (years 0001–9999)"
+    )
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9]{4}-[0-9]{2}(?:-[0-9]{2})?", value):
+        raise ValueError(message)
+    parts = [int(part) for part in value.split("-")]
+    try:
+        # Day 1 is used only to validate a month; the stored value is unchanged.
+        date(parts[0], parts[1], parts[2] if len(parts) == 3 else 1)
+    except ValueError as exc:
+        raise ValueError(message) from exc
 
 
 def validate_info(info: object, *, context: str = "benchmark") -> None:
@@ -188,8 +211,6 @@ def validate_info(info: object, *, context: str = "benchmark") -> None:
         "one_line_description",
         "data_source_url",
         "license",
-        "response_scale",
-        "release_date",
     ):
         value = info.get(key)
         if key in info and (not isinstance(value, str) or not value.strip()):
@@ -218,6 +239,16 @@ def validate_info(info: object, *, context: str = "benchmark") -> None:
         if key in info and value is not None and not isinstance(value, str):
             problems.append(f"{key!r} must be a string or None")
 
+    version = info.get("version")
+    if version is not None and (not isinstance(version, str) or not version.strip()):
+        problems.append("'version' must be a non-empty string or None")
+
+    if "release_date" in info:
+        try:
+            validate_benchmark_release_date(info["release_date"])
+        except ValueError as exc:
+            problems.append(str(exc))
+
     for key in ("modality", "domain"):
         if key in info and not _is_string_list(info[key]):
             problems.append(f"{key!r} must be a non-empty list of non-empty strings")
@@ -226,6 +257,16 @@ def validate_info(info: object, *, context: str = "benchmark") -> None:
         problems.append("'categorical' must be a bool")
 
     response_type = info.get("response_type")
+    if isinstance(response_type, str):
+        try:
+            resolve_categorical(response_type, info.get("categorical"))
+        except ValueError as exc:
+            problems.append(str(exc))
+    if "response_scale" in info and isinstance(response_type, str):
+        try:
+            validate_scale_type(response_type, info["response_scale"])
+        except (TypeError, ValueError) as exc:
+            problems.append(str(exc))
     allowed_response_types = set(RESPONSE_TYPES) | _LEGACY_RESPONSE_TYPES
     if "response_type" in info and (
         not isinstance(response_type, str)

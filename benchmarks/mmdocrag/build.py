@@ -11,7 +11,7 @@ import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
-from measurement_db.build_base import BenchmarkBuild
+from measurement_db.build_base import BenchmarkBuild, Judge
 
 # The five LLM-judge quality dimensions. Each is graded 0-5 by the judge
 # (prompt_bank/evaluation_answer.txt), 0 being "completely fails to meet the
@@ -200,7 +200,22 @@ class MMDocRAG(BenchmarkBuild):
                     item_ids[question_id] = self.add_item(
                         raw_item_id=f"q_id::{question_id}",
                         content=question,
-                        reference_answer=answer,
+                        grading_criterion={
+                            "reference_answer": answer,
+                            "rule": (
+                                "Mean of the five 0-5 scores for Fluency, Citation Quality, "
+                                "Text-Image Coherence, Reasoning Logic, and Factuality, divided by 5. "
+                                "A missing or invalid dimension leaves the grade unavailable."
+                            ),
+                        },
+                        verifier=Judge(
+                            judged_by="llm",
+                            spec=(
+                                "Provider MMDocRAG evaluation using prompt_bank/evaluation_answer.txt; "
+                                "exact judge configuration is not attributed per released cell. "
+                                "Preserve the released dimension grades without rejudging."
+                            ),
+                        ),
                     )
                 trace_text = traces.get(question_id)
                 self.add_response(
@@ -210,6 +225,7 @@ class MMDocRAG(BenchmarkBuild):
                     test_condition=f"{mode}/quotes{quotes}",
                     interactors=None,
                     response=answer_quality(judge_output),
+                    # Preserve the legacy response-hash null slot; the item owns the criterion.
                     reference_answer=None,
                     trace=(
                         trace_text

@@ -40,6 +40,7 @@ from __future__ import annotations
 import json
 import sys
 import threading
+import unicodedata
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -48,6 +49,7 @@ from typing import Iterator
 from . import normalize_evaluation_settings as _vocab
 from .hash_measurement_ids import (
     canonical_asset_manifest,
+    canonical_grading_criterion,
     content_hash,
     item_id_from_content,
     subject_id_from_row,
@@ -191,8 +193,8 @@ def resolve_subject(
     the entry in ``scripts/build_measurement_tables/map_model_registry.json``
     when
     ``raw_label`` matches a registry key byte-for-byte. All stay null for
-    unmapped labels (``save`` reports those before schema validation fails; map
-    them using the curation guide's model-registry phase and re-run); a
+    unmapped labels (``save`` reports those as an advisory; the nullable
+    subject schema preserves the released label without guessing a mapping); a
     label mapped after a build ran derives a different ``subject_id`` on the
     next run, since the registry values enter the hash.
 
@@ -260,8 +262,9 @@ class Judge:
     and decides whether it meets the criterion.  The verdict is an opinion,
     not a computation — running the judge again may disagree with itself.
 
-    ``spec`` is the artifact that instructs the judge: the verbatim judge
-    prompt, the per-item rubric, or the human annotation protocol.
+    ``spec`` describes the execution instructions, judge prompt, or human
+    annotation procedure. The item's required grading_criterion supplies the
+    reference answer and/or rule that this procedure applies.
 
     ``judge`` names the judge itself (``"gpt-4o"``, ``"LlamaGuard3"``,
     ``"human"``): the grader is part of the measurement instrument, not of
@@ -302,9 +305,9 @@ class ExactMatcher:
     numeric tolerance, a test suite's pass/fail, a grader script's return
     value.  Running it twice on the same response gives the same verdict.
 
-    ``spec`` is the rule, or the executable artifact that implements it: a
-    matching rule stated precisely, a JSON grading descriptor, a test
-    patch, a ``grade()`` function's source.
+    ``spec`` describes the implementation that applies grading_criterion:
+    the parser/comparator, test harness, JSON execution descriptor, or
+    a ``grade()`` function's source. It can consume the criterion's reference answer.
     """
     spec: str
 
@@ -319,11 +322,11 @@ def _serialize_verifier(
     """Canonical JSON for the items.parquet ``verifier`` column:
     ``{"class": "judge"|"exact_matcher", "spec": ..., ...}``.
 
-    Accepts an already-serialized canonical string unchanged for internal
-    registry round-trips. Any other string is free text and rejected.
+    Canonicalizes already-serialized JSON for internal registry round-trips.
+    Any other string is free text and rejected.
     """
     if verifier is None:
-        return None
+        raise ValueError("verifier is required; provide a Judge or ExactMatcher")
     if isinstance(verifier, Judge):
         payload = {"class": "judge"}
         for f in ("spec", "judge", "judged_by"):
@@ -342,7 +345,11 @@ def _serialize_verifier(
         except ValueError:
             obj = None
         if isinstance(obj, dict) and obj.get("class") in VERIFIER_CLASSES:
-            return verifier
+            if obj["class"] == "judge":
+                Judge(**{key: obj.get(key) for key in ("spec", "judge", "judged_by")})
+            else:
+                ExactMatcher(spec=obj.get("spec"))
+            return json.dumps(obj, sort_keys=True, ensure_ascii=False)
         raise ValueError(
             "register_item: `verifier` must be a Judge or ExactMatcher "
             "instance, not free text. Wrap the artifact: "
@@ -352,7 +359,7 @@ def _serialize_verifier(
             f"Got: {verifier[:120]!r}"
         )
     raise TypeError(
-        "register_item: `verifier` must be Judge, ExactMatcher or None, "
+        "register_item: `verifier` must be Judge or ExactMatcher, "
         f"got {type(verifier).__name__}"
     )
 
@@ -390,63 +397,35 @@ def register_item(
     raw_item_id: str,
     content: str | None,
     *,
-    reference_answer: str | None = None,
+    grading_criterion: dict | str,
+    verifier: "Judge | ExactMatcher | str",
+    response_scale: dict | str,
     asset_manifest: str | None = None,
-    verifier: "Judge | ExactMatcher | str | None" = None,
     features: dict | None = None,
     verifier_features: dict | None = None,
 ) -> str:
     """Register (or look up) an item under a benchmark and return its ``item_id``.
 
-    ``reference_answer`` is the *criterion* the recorded response was scored
-    against, not necessarily a literal answer string.  For a multiple-choice item
-    that is the gold letter; for an item graded by running something, it is the
-    rule in a form a reader can check, e.g.
-    ``'overall_judge_result == "ACCEPTED"'``.  Leaving it null because "there is
-    no single gold answer" loses the only record of how the response column was
-    produced -- the verdict survives and the rule that made it does not.
+    ``grading_criterion`` is a mapping or JSON object with nullable string
+    fields ``reference_answer`` and ``rule``. At least one must be nonempty.
+    It defines the answer or condition being assessed; ``verifier`` describes
+    the required Judge or ExactMatcher that applies it, including parsing,
+    normalization, judge instructions, or implementation details.
+    Mixed benchmarks additionally require a concrete ``response_scale`` in
+    the criterion; uniform scales are inherited from benchmark metadata.
 
-    ``verifier`` carries the artifact that *applies* that criterion when one
-    exists and is small enough to travel.  ``reference_answer`` says what counts
-    as success; ``verifier`` is what decides it.  It must be an instance of
-    one of exactly two classes — every grader is one or the other:
+    Identity includes benchmark, normalized stimulus, item features, assets,
+    the complete criterion, verifier, and effective response scale. Supply the
+    benchmark's structured response_scale; mixed scales resolve through the
+    criterion. Changing the answer, rule, grader, or scale defines a distinct
+    item. JSON key order and equivalent numeric scale spellings do not.
+    All identity-bearing data must be supplied before responses are added.
 
-    - ``Judge``: an LLM or human reads the response and decides.  ``spec``
-      holds the judge prompt, rubric, or annotation protocol.
-    - ``ExactMatcher``: a deterministic rule decides — equality, numeric
-      tolerance, a test suite, a grader script.  ``spec`` holds the rule or
-      the artifact implementing it.
-
-    The column stores the canonical JSON ``{"class": ..., "spec": ...}``.
-    Free-text strings are rejected.  Benchmarks whose grader is a trivial
-    literal comparison against ``reference_answer`` may leave it None.
-
-    ``item_id`` is derived from ``benchmark_id`` + normalized ``content`` plus
-    optional features and ``asset_manifest``. If ``content`` is None and a
-    manifest is present, the attachment-bearing stimulus uses an empty text
-    component. For legacy lower-level registrations with neither, raw_item_id
-    remains the deterministic content surrogate.
-
-    ``features`` holds the item features of this stimulus (``{"tier":
-    "last-exam"}``, few-shot count, prompt phrasing variant, ...): settings
-    that alter how the question is presented, so the same prompt text under
-    two feature values is two materially different items. Keys are
-    alias-folded by ``normalize_evaluation_settings`` and must not be a
-    subject-, interactor-, condition- or trial-class key there. The canonical
-    feature string enters
-    the ``item_id`` hash and is stored in the ``item_features`` column;
-    without ``features`` the id and row are byte-identical to the historical
-    behavior. ``BenchmarkBuild`` subclasses pass final features through
-    ``add_item()``.
-
-    Verifier-class keys (``judge``, ``evaluator``, ``annotator``,
-    ``refusal_detector``) may also arrive in ``features``: they enter the
-    ``item_id`` hash like item features — the same prompt graded by two
-    judges is two items — but are merged into the ``verifier`` JSON payload
-    rather than stored in ``item_features``.  Keys that are verifier-class
-    only by benchmark-specific semantics (and therefore invisible to the
-    shared vocabulary) must be passed via ``verifier_features`` instead; the
-    two dicts are merged with identical hash semantics.
+    Verifier features are merged into the verifier payload. Supplying a judge
+    directly or through verifier features gives the same identity. Item
+    features describe presentation settings, such as few-shot examples.
+    Re-registering an identity must reproduce the same item data; raw upstream
+    aliases and normalization-equivalent content may differ.
 
     Note: ``test_condition`` is NOT an argument here.  A *condition* — a
     property of the measurement occasion rather than of the stimulus
@@ -471,6 +450,9 @@ def register_item(
             raise ValueError(
                 "register_item: asset_manifest must use canonical compact JSON"
             )
+    grading_criterion = canonical_grading_criterion(grading_criterion)
+    if response_scale is None:
+        raise ValueError("register_item: response_scale is required")
     verifier = _serialize_verifier(verifier)
     feats = _vocab.canonicalize_features(features)
     # Verifier-class keys arrive two ways: recognized by the global vocabulary,
@@ -499,10 +481,6 @@ def register_item(
             )
     verifier = _merge_verifier_settings(verifier, ver_feats)
     feats_str = _vocab.features_string(item_feats)
-    # Verifier-class keys enter the id hash alongside item features — the
-    # same prompt graded by two judges is two items — but are stored in the
-    # verifier payload, not in item_features.
-    hash_feats_str = _vocab.features_string({**item_feats, **ver_feats})
 
     global _items
     with _lock:
@@ -517,21 +495,20 @@ def register_item(
         iid = item_id_from_content(
             benchmark_id,
             hash_input,
-            feats_str if asset_manifest else hash_feats_str,
+            feats_str,
             asset_manifest=asset_manifest,
             verifier=verifier,
+            grading_criterion=grading_criterion,
+            response_scale=response_scale,
         )
 
-        if iid in _items:
-            return iid
-
-        _items[iid] = {
+        row = {
             "item_id": iid,
             "benchmark_id": benchmark_id,
             "raw_item_id": str(raw_item_id),
             "content": content,
             "asset_manifest": asset_manifest,
-            "reference_answer": reference_answer,
+            "grading_criterion": grading_criterion,
             "verifier": verifier,
             "content_hash": (
                 content_hash(hash_input)
@@ -540,6 +517,28 @@ def register_item(
             ),
             "item_features": feats_str,
         }
+        if iid in _items:
+            existing = _items[iid]
+            conflicts = []
+            for column, value in row.items():
+                if column in ("item_id", "raw_item_id"):
+                    continue
+                prior = existing[column]
+                if column == "content":
+                    if value is not None:
+                        value = unicodedata.normalize("NFC", value).strip()
+                    if prior is not None:
+                        prior = unicodedata.normalize("NFC", prior).strip()
+                if prior != value:
+                    conflicts.append(column)
+            if conflicts:
+                raise ValueError(
+                    f"register_item: conflicting registration for item {iid}: "
+                    f"{', '.join(conflicts)}; supply one consistent item definition"
+                )
+            return iid
+
+        _items[iid] = row
         return iid
 
 
@@ -629,20 +628,20 @@ def get_benchmark_id(
     domain: list[str] | None = None,
     multi_single_turn: str | None = None,
     response_type: str | None = None,
-    response_scale: str | None = None,
+    response_scale: dict | str | None = None,
     categorical: bool | None = None,
     paper_url: str | None = None,
     release_date: str | None = None,
     granularity: str | None = None,
     release: str | None = None,
     benchmark_features: dict | str | None = None,
-    n_unique_responses: int | None = None,
+    n_response_values: int | None = None,
     n_subjects: int | None = None,
     n_items: int | None = None,
     n_responses: int | None = None,
-    n_trials: int | None = None,
+    max_trial: int | None = None,
     coverage: float | None = None,
-    has_ground_truth: bool | None = None,
+    has_reference_answer: bool | None = None,
 ) -> str:
     """Register a benchmark once, or return its id if already registered.
 
@@ -675,11 +674,13 @@ def get_benchmark_id(
     ``"binary"``, ``"likert_5"``, ``"likert_10"``, ``"win_rate"``,
     ``"ordinal"``, ``"fraction"``, ``"continuous_bounded"``,
     ``"continuous_unbounded"``, ``"error_presence"``, ``"mixed"``.  Defaults
-    to ``"binary"``.  ``response_scale`` is a free-form string naming the
-    value set (``"{0, 1}"``, ``"{1, 2, 3, 4, 5}"``, ``"k/N, N varies per
-    item"``, ``"[-18, 18] continuous"``).  ``categorical`` flags whether the
-    response set is finitely enumerable — downstream IRT code can filter on
-    this for polytomous-vs-continuous model selection.
+    to ``"binary"``. ``response_scale`` is a structured mapping or JSON object
+    declaring discrete values, inclusive interval bounds, or mixed item scales.
+    It is stored as canonical JSON, including optional category meanings and
+    score direction. These annotations never reverse or rescale grades.
+    ``categorical`` is derived for binary, error-presence, Likert, ordinal,
+    and continuous types; contradictory declarations fail. Fractions, rates,
+    and mixed scales require an explicit boolean for downstream modeling.
 
     ``multi_single_turn`` is the benchmark's turn structure, decided by what
     inputs the subject receives *after* its first output: none →
@@ -719,7 +720,23 @@ def get_benchmark_id(
     table statistics above so ``benchmarks.parquet`` can be validated and
     written once. Lower-level legacy callers may omit them and retain the
     historical non-derived benchmark schema.
+
+    ``n_response_values`` counts distinct non-null grades; ``max_trial`` is
+    the maximum repetition index, not a trial count. ``coverage`` is the
+    fraction of registered subject-item pairs with at least one non-null
+    grade; repeated observations of a pair count only once.
+    ``has_reference_answer`` indicates that at least one item has a reference
+    answer; a grading rule alone does not make this flag true.
     """
+    from .response_scales import canonical_response_scale, resolve_categorical, validate_scale_type
+    if response_scale is None and response_type not in (None, "binary", "error_presence"):
+        raise ValueError("an explicit response_scale is required for non-binary benchmarks")
+    response_scale = canonical_response_scale(
+        response_scale if response_scale is not None
+        else {"kind": "discrete", "values": [0, 1]}
+    )
+    validate_scale_type(response_type or "binary", response_scale)
+    categorical = resolve_categorical(response_type or "binary", categorical)
     if isinstance(benchmark_features, dict):
         benchmark_features = _vocab.features_string(
             _vocab.canonicalize_features(benchmark_features))
@@ -727,9 +744,9 @@ def get_benchmark_id(
         "n_subjects": n_subjects,
         "n_items": n_items,
         "n_responses": n_responses,
-        "n_trials": n_trials,
+        "max_trial": max_trial,
         "coverage": coverage,
-        "has_ground_truth": has_ground_truth,
+        "has_reference_answer": has_reference_answer,
     }
     has_derived_statistics = any(
         value is not None for value in derived_statistics.values()
@@ -741,9 +758,9 @@ def get_benchmark_id(
             f"{benchmark_id}: derived benchmark statistics must be supplied "
             "together"
         )
-    if has_derived_statistics and n_unique_responses is None:
+    if has_derived_statistics and n_response_values is None:
         raise ValueError(
-            f"{benchmark_id}: n_unique_responses is required with derived "
+            f"{benchmark_id}: n_response_values is required with derived "
             "benchmark statistics"
         )
     global _benchmarks
@@ -752,9 +769,9 @@ def get_benchmark_id(
         assert _benchmarks is not None
 
         if benchmark_id in _benchmarks:
-            if n_unique_responses is not None:
-                _benchmarks[benchmark_id]["n_unique_responses"] = (
-                    n_unique_responses
+            if n_response_values is not None:
+                _benchmarks[benchmark_id]["n_response_values"] = (
+                    n_response_values
                 )
             if has_derived_statistics:
                 _benchmarks[benchmark_id].update(derived_statistics)
@@ -774,7 +791,6 @@ def get_benchmark_id(
             "version": version,
             "license": license,
             "source_url": source_url,
-            "dataset_source": source_url,
             "description": description,
             "one_line_description": one_line_description,
             "modality": list(modality) if modality else ["text"],
@@ -785,8 +801,8 @@ def get_benchmark_id(
             # than mislabelling the benchmark.
             "multi_single_turn": multi_single_turn,
             "response_type": response_type or "binary",
-            "response_scale": response_scale or "{0, 1}",
-            "categorical": bool(categorical) if categorical is not None else True,
+            "response_scale": response_scale,
+            "categorical": categorical,
             "paper_url": paper_url,
             "release_date": release_date,
             "granularity": granularity or "item",
@@ -796,7 +812,7 @@ def get_benchmark_id(
             # published without an explicit decision); mark publishable
             # datasets "public" explicitly.
             "release": release or "private",
-            "n_unique_responses": n_unique_responses,
+            "n_response_values": n_response_values,
             "benchmark_features": benchmark_features,
         }
         if has_derived_statistics:
@@ -805,7 +821,7 @@ def get_benchmark_id(
         return benchmark_id
 
 
-def set_response_stats(benchmark_id: str, n_unique_responses: int | None) -> None:
+def set_response_stats(benchmark_id: str, n_response_values: int | None) -> None:
     """Record post-build statistics on a benchmark's registry row.
 
     Retained for lower-level legacy callers that register a benchmark before
@@ -817,7 +833,7 @@ def set_response_stats(benchmark_id: str, n_unique_responses: int | None) -> Non
         _ensure_init()
         assert _benchmarks is not None
         if benchmark_id in _benchmarks:
-            _benchmarks[benchmark_id]["n_unique_responses"] = n_unique_responses
+            _benchmarks[benchmark_id]["n_response_values"] = n_response_values
 
 
 def set_benchmark_granularity(benchmark_id: str, granularity: str) -> None:
@@ -854,7 +870,7 @@ def registration_counts() -> dict[str, int]:
                 for row in _items.values()
             ),
             "items_with_reference_answer": sum(
-                isinstance(row.get("reference_answer"), str)
+                json.loads(row["grading_criterion"])["reference_answer"] is not None
                 for row in _items.values()
             ),
             "benchmarks": len(_benchmarks),

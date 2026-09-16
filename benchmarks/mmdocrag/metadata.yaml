@@ -35,8 +35,12 @@ benchmark:
   - reasoning
   multi_single_turn: single_turn
   response_type: fraction
-  response_scale: '{0, 1/25, 2/25, ..., 1} - the LLM judge''s mean of five 0-5 quality dimensions, divided
-    by 5; 0.0 and 1.0 are both attainable'
+  # Mean of five integer 0-5 quality dimensions, divided by 5.
+  response_scale:
+    kind: discrete
+    values: [0, 0.04, 0.08, 0.12, 0.16, 0.20, 0.24, 0.28, 0.32, 0.36,
+             0.40, 0.44, 0.48, 0.52, 0.56, 0.60, 0.64, 0.68, 0.72, 0.76,
+             0.80, 0.84, 0.88, 0.92, 0.96, 1]
   categorical: false
   release_date: 2025-12
   release: public

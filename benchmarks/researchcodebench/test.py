@@ -324,7 +324,6 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             "responses",
             self.responses,
             include_derived=True,
-            allow_extra=True,
             context=BENCHMARK_DIR.name,
         )
         validate_asset_relations(
@@ -332,17 +331,18 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             self.assets,
             benchmark_id="researchcodebench",
             context=BENCHMARK_DIR.name,
+            response_scale=self.benchmarks.iloc[0].response_scale,
         )
 
     def test_prompt_and_reference_contract(self) -> None:
         self.assertEqual(self.items["item_id"].nunique(), EXPECTED["items"])
         self.assertEqual(self.items["content"].nunique(), EXPECTED["items"])
         self.assertEqual(
-            self.items["reference_answer"].nunique(), EXPECTED["items"]
+            self.items["grading_criterion"].map(lambda value: json.loads(value)["reference_answer"]).nunique(), EXPECTED["items"]
         )
         self.assertTrue(self.items["content"].str.strip().ne("").all())
-        self.assertTrue(self.items["reference_answer"].str.strip().ne("").all())
-        self.assertTrue(self.items["verifier"].isna().all())
+        self.assertTrue(self.items["grading_criterion"].map(lambda value: json.loads(value)["reference_answer"]).str.strip().ne("").all())
+        self.assertTrue(self.items["verifier"].map(lambda value: json.loads(value)["class"] == "exact_matcher").all())
         self.assertTrue(
             self.items["content"].str.contains(
                 "Here is the code that you need to complete:", regex=False
@@ -372,16 +372,12 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
         )
         self.assertEqual(dict(sorted(paper_counts.items())), EXPECTED["paper_item_counts"])
         response_references = self.responses.merge(
-            self.items[["item_id", "reference_answer"]],
+            self.items.assign(reference_answer=self.items.grading_criterion.map(lambda value: json.loads(value)["reference_answer"]))[["item_id", "reference_answer"]],
             on="item_id",
-            suffixes=("_response", "_item"),
             validate="many_to_one",
         )
-        self.assertTrue(
-            response_references["reference_answer_response"].eq(
-                response_references["reference_answer_item"]
-            ).all()
-        )
+        self.assertTrue(response_references["reference_answer"].notna().all())
+        self.assertNotIn("reference_answer", self.responses)
 
     def test_subject_identity_and_trials(self) -> None:
         raw_models = {str(row["raw_model"]) for row in self.source_rows}
@@ -435,7 +431,7 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             self.responses.groupby("item_id").size().value_counts().to_dict(),
             {32: EXPECTED["items"]},
         )
-        for column in ("test_condition", "interactors", "trace"):
+        for column in ("test_condition", "interactors"):
             self.assertTrue(self.responses[column].isna().all(), column)
         self.assertFalse(
             self.responses.duplicated(
@@ -464,7 +460,6 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             "source_url",
             "description",
             "one_line_description",
-            "dataset_source",
             "modality",
             "domain",
             "multi_single_turn",
@@ -484,7 +479,7 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
                 _serialized_rows(self.items, self.items.columns)
             ),
             "reference_answers_sha256": _digest_strings(
-                self.items["reference_answer"]
+                self.items["grading_criterion"].map(lambda value: json.loads(value)["reference_answer"])
             ),
             "verifiers_sha256": _digest_strings(self.items["verifier"]),
             "subject_ids_sha256": _digest_strings(self.subjects["subject_id"]),

@@ -10,13 +10,14 @@ Modern builders provide ``metadata.yaml`` and implement
 ``sources.downloads``; override ``download()`` only for custom acquisition. A
 builder commits final subjects, items, and responses through
 :meth:`BenchmarkBuild.add_subject`, ``add_item``, and ``add_response``.
-:meth:`BenchmarkBuild.main` handles validation, provenance, and parquet output.
+:meth:`BenchmarkBuild.main` validates source provenance from metadata.yaml and
+writes the Parquet output. No second provenance manifest is generated.
 """
 
 from abc import ABC, abstractmethod
 import copy
 import json
-from numbers import Integral, Real
+from numbers import Integral
 import os
 import re
 import shutil
@@ -48,6 +49,7 @@ from scripts.build_measurement_tables import (  # noqa: E402
 # from the measurement-table package remains an implementation dependency.
 ExactMatcher = _tables.ExactMatcher
 Judge = _tables.Judge
+_REFERENCE_FROM_ITEM = object()
 
 
 class BuildContractError(RuntimeError):
@@ -89,10 +91,10 @@ class BenchmarkBuild(ABC):
             tuple[str, str, int, str | None, str | None]
         ] = set()
         self._response_ids: set[str] = set()
-        self._response_extra_columns: tuple[str, ...] | None = None
         self._asset_rows: dict[str, dict[str, object]] = {}
         self._asset_id_by_source_path: dict[Path, str] = {}
         self._item_asset_ids: dict[str, set[str]] = {}
+        self._item_response_scales: dict[str, dict] = {}
 
         metadata_path = self.dir / "metadata.yaml"
         if metadata_path.exists():
@@ -322,17 +324,19 @@ class BenchmarkBuild(ABC):
         raw_item_id: str,
         content: str | None,
         attachments: list[dict[str, object]] | None = None,
-        reference_answer: str | None = None,
-        verifier: Judge | ExactMatcher | None = None,
+        grading_criterion: dict | str,
+        verifier: Judge | ExactMatcher,
         features: dict | None = None,
         verifier_features: dict | None = None,
     ) -> str:
         """Register one final item row and return its derived ID.
 
-        Call this only from ``build_subject_item_response_rows()``. Item and
-        verifier features and attachment links are identity-bearing and
-        therefore must be supplied here rather than deferred through response
-        ``settings``. Each attachment mapping contains ``source_path`` (a file
+        Call this only from ``build_subject_item_response_rows()``. Item criterion and
+        verifier fields (including the rubric or rule) and attachment links
+        are identity-bearing and must be supplied here rather than through response
+        ``settings``. The effective response scale is resolved from ``INFO`` and
+        the criterion and included in identity without duplicating inherited
+        scales in item records. Each attachment mapping contains ``source_path`` (a file
         beneath ``raw/``), ``path`` (its stable logical POSIX path),
         ``media_type``, and ``role``. Exact bytes are content-addressed and
         written once to ``assets.parquet``.
@@ -359,11 +363,11 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: add_item() requires non-empty text content or "
                 "at least one attachment"
             )
-        if reference_answer is not None and not isinstance(reference_answer, str):
-            raise BuildContractError(
-                f"{self.slug}: add_item() reference_answer must be a string "
-                "or None"
-            )
+        try:
+            grading_criterion = _tables.canonical_grading_criterion(grading_criterion)
+            response_scale = _tables.item_response_scale(self.INFO["response_scale"], grading_criterion)
+        except (TypeError, ValueError) as exc:
+            raise BuildContractError(f"{self.slug}: add_item() {exc}") from exc
         manifest_entries: list[dict[str, object]] = []
         seen_logical_paths: set[str] = set()
         allowed_attachment_fields = {
@@ -484,8 +488,9 @@ class BenchmarkBuild(ABC):
             raw_item_id,
             content,
             asset_manifest=asset_manifest,
-            reference_answer=reference_answer,
+            grading_criterion=grading_criterion,
             verifier=verifier,
+            response_scale=self.INFO["response_scale"],
             features=features,
             verifier_features=verifier_features,
         )
@@ -497,6 +502,7 @@ class BenchmarkBuild(ABC):
             raise BuildContractError(
                 f"{self.slug}: item_id collision {item_id!r} across asset manifests"
             )
+        self._item_response_scales[item_id] = response_scale
         return item_id
 
     def add_response(
@@ -504,8 +510,8 @@ class BenchmarkBuild(ABC):
         *,
         subject_id: str,
         item_id: str,
-        response: float,
-        reference_answer: str | None,
+        response: float | None,
+        reference_answer: str | None = _REFERENCE_FROM_ITEM,
         trace: str | None,
         trial: int = 1,
         test_condition: str | None = None,
@@ -515,10 +521,19 @@ class BenchmarkBuild(ABC):
         """Validate and commit one final response row, then return its ID.
 
         The row must already be in its final response-table form: subject/item
-        identities, trial, condition, interactors, and extension columns may
-        not be changed later. Raw ``trace`` text is retained for
-        ``traces.parquet`` but represented as null in the response row that
-        enters the hash.
+        identities, trial, condition, and interactors may
+        not be changed later. Reference answers are read from the item criterion; raw trace text is written only to
+        traces.parquet, linked by the returned response_id.
+
+        The optional reference_answer argument is a compatibility input for
+        version-1 ID reproduction, not a response column. New builders omit
+        it. A supplied non-null value must agree with the finalized criterion;
+        response creation cannot change item grading data. Explicit None preserves IDs of legacy
+        builds that left the copy null.
+
+        A released attempt with no usable grade may retain ``response=None``.
+        Its identity and trace are preserved; zero remains an observed grade.
+        Use an absent row for an attempt that was never released.
         """
 
         benchmark_id = self._active_benchmark_id
@@ -538,13 +553,13 @@ class BenchmarkBuild(ABC):
         response_columns = _tables.parquet_columns(
             "responses", include_derived=True
         )
-        reserved = set(response_columns) | {"settings", "access_date"}
-        conflicting = sorted(reserved.intersection(extra_columns))
-        if conflicting:
+        if extra_columns:
             raise BuildContractError(
-                f"{self.slug}: add_response() extension column(s) {conflicting} "
-                "are reserved; pass canonical response fields explicitly, and "
-                "put final subject/item metadata in add_subject()/add_item()"
+                f"{self.slug}: add_response() only accepts the fixed response "
+                f"schema; unsupported column(s) {sorted(extra_columns)}. "
+                "Keep source evidence in pinned raw inputs and document the "
+                "transformation in the builder; subject/item metadata belongs "
+                "in add_subject()/add_item()."
             )
         if not isinstance(subject_id, str):
             raise BuildContractError(
@@ -572,16 +587,18 @@ class BenchmarkBuild(ABC):
             raise BuildContractError(
                 f"{self.slug}: add_response() interactors must be a string or None"
             )
-        if (
-            isinstance(response, bool)
-            or not isinstance(response, Real)
-            or pd.isna(response)
-        ):
+        try:
+            _tables.validate_grade(response)
+        except ValueError as exc:
             raise BuildContractError(
-                f"{self.slug}: add_response() response must be a non-null "
-                f"number, got {response!r}"
-            )
-        if reference_answer is not None and not isinstance(reference_answer, str):
+                f"{self.slug}: add_response() response must be a finite number "
+                f"or None for an ungraded attempt, got {response!r}"
+            ) from exc
+        if (
+            reference_answer is not _REFERENCE_FROM_ITEM
+            and reference_answer is not None
+            and not isinstance(reference_answer, str)
+        ):
             raise BuildContractError(
                 f"{self.slug}: add_response() reference_answer must be a "
                 "string or None"
@@ -610,16 +627,18 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: add_response() references item_id {item_id!r} "
                 f"owned by benchmark {item_registration.get('benchmark_id')!r}"
             )
+        try:
+            _tables.validate_grade(response, self._item_response_scales[item_id])
+        except ValueError as exc:
+            raise BuildContractError(f"{self.slug}: item {item_id}: {exc}") from exc
 
-        extension_names = tuple(extra_columns)
-        if self._response_extra_columns is None:
-            self._response_extra_columns = extension_names
-        elif extension_names != self._response_extra_columns:
+        item_reference = json.loads(item_registration["grading_criterion"])["reference_answer"]
+        if reference_answer is _REFERENCE_FROM_ITEM:
+            reference_answer = item_reference
+        elif reference_answer is not None and reference_answer != item_reference:
             raise BuildContractError(
-                f"{self.slug}: every add_response() call must use the same "
-                "extension columns in the same order; expected "
-                f"{list(self._response_extra_columns)}, got "
-                f"{list(extension_names)}"
+                f"{self.slug}: reference_answer disagrees with the registered "
+                "item; store the authoritative answer in add_item()"
             )
 
         normalized_trial = int(trial)
@@ -638,9 +657,8 @@ class BenchmarkBuild(ABC):
                 "adding the row"
             )
 
-        # Start from schema order because that order is part of response
-        # identity. Updating these keys below preserves their positions, and
-        # benchmark-specific extension columns are appended afterwards.
+        # Export the fixed schema order. The version-1 identity
+        # payload is reconstructed separately so retired columns do not alter IDs.
         stored_row: dict[str, object] = dict.fromkeys(response_columns)
         stored_row.update(
             {
@@ -651,19 +669,16 @@ class BenchmarkBuild(ABC):
                 "test_condition": test_condition,
                 "interactors": interactors,
                 "response": response,
-                "reference_answer": reference_answer,
-                # traces.parquet stores the raw text; responses.parquet and its
-                # identity always carry null in this column.
-                "trace": None,
             }
         )
-        stored_row.update(extra_columns)
         hash_row = {
             column: value
             for column, value in stored_row.items()
             if column != "response_id"
         }
-        response_id = _measurement_ids.response_id_from_row(hash_row)
+        response_id = _measurement_ids.response_id_from_row(
+            _measurement_ids.response_identity_v1(hash_row, reference_answer)
+        )
         if response_id in self._response_ids:
             raise BuildContractError(
                 f"{self.slug}: response_id collision {response_id!r} while "
@@ -685,8 +700,9 @@ class BenchmarkBuild(ABC):
         Override this hook only when acquisition requires behavior such as
         authentication, dynamic discovery, repository cloning, or streaming.
         Custom implementations must still cache their inputs beneath
-        ``self.raw_dir`` and return every source locator, including on cache
-        hits.
+        ``self.raw_dir`` and return every declared source locator, including on
+        cache hits. Declare custom-acquired files under ``sources.inputs`` in
+        metadata.yaml, with their sizes and SHA-256 hashes before building.
         """
         downloads = self.source_manifest.get("downloads")
         if not isinstance(downloads, dict) or not downloads:
@@ -783,10 +799,7 @@ class BenchmarkBuild(ABC):
         """
         raise NotImplementedError
 
-    def _validate_and_write_tables(
-        self,
-        download_sources: list[str],
-    ) -> pd.DataFrame:
+    def _validate_and_write_tables(self) -> pd.DataFrame:
         """Validate the completed build and write its output tables."""
         df = pd.DataFrame(self._response_rows)
         declared = self.INFO.get("granularity") or "item"
@@ -836,6 +849,7 @@ class BenchmarkBuild(ABC):
                 assets,
                 benchmark_id=self.slug,
                 context=self.slug,
+                response_scale=self.INFO["response_scale"],
             )
         except RuntimeError as exc:
             raise BuildContractError(str(exc)) from None
@@ -864,28 +878,37 @@ class BenchmarkBuild(ABC):
             traces = df.loc[
                 df["trace"].notna(), _tables.parquet_columns("traces")
             ].copy()
-            resp = df.copy()
-            resp["trace"] = None
+            resp = df.drop(columns="trace")
             # Revalidate the assembled serialization boundary before anything
             # is written. DataFrame construction determines final column order
-            # and dtypes; allow_extra covers pass-through columns.
+            # and dtypes; no table permits benchmark-specific columns.
             _tables.validate_table(
                 "responses",
                 resp,
                 include_derived=True,
-                allow_extra=True,
                 context=self.slug,
             )
             _tables.validate_table("traces", traces, context=self.slug)
+            _tables.validate_trace_relations(resp, traces, context=self.slug)
 
         n_subjects = int(counts["subjects"])
         n_items = int(counts["items"])
         n_responses = int(len(df))
         denominator = n_items * n_subjects
+        # A matrix cell is observed once it has a grade, regardless of the
+        # number of trials, conditions, or interactors recorded for that pair.
+        n_observed_pairs = (
+            len(
+                df.loc[df["response"].notna(), ["subject_id", "item_id"]]
+                .drop_duplicates()
+            )
+            if not df.empty else 0
+        )
         info = self.INFO
         _tables.get_benchmark_id(
             self.slug,
             name=self.name,
+            version=info.get("version"),
             license=info["license"],
             source_url=info["data_source_url"],
             description=info["description"],
@@ -895,23 +918,23 @@ class BenchmarkBuild(ABC):
             multi_single_turn=info.get("multi_single_turn"),
             response_type=info["response_type"],
             response_scale=info["response_scale"],
-            categorical=info["categorical"],
+            categorical=info.get("categorical"),
             paper_url=info["paper_url"],
             release_date=info["release_date"],
             granularity=info.get("granularity"),
             release=info.get("release"),
             benchmark_features=info.get("benchmark_features"),
-            n_unique_responses=(
+            n_response_values=(
                 int(df["response"].nunique(dropna=True)) if not df.empty else 0
             ),
             n_subjects=n_subjects,
             n_items=n_items,
             n_responses=n_responses,
-            n_trials=int(df["trial"].max()) if not df.empty else 0,
+            max_trial=int(df["trial"].max()) if not df.empty else 0,
             coverage=(
-                round(n_responses / denominator, 4) if denominator else 0.0
+                n_observed_pairs / denominator if denominator else 0.0
             ),
-            has_ground_truth=bool(counts["items_with_reference_answer"]),
+            has_reference_answer=bool(counts["items_with_reference_answer"]),
         )
 
         # Validate every pending registry table before the first staged write.
@@ -929,18 +952,23 @@ class BenchmarkBuild(ABC):
         ) as staging_directory:
             staging_dir = Path(staging_directory)
             if resp is not None:
-                resp.to_parquet(staging_dir / "responses.parquet", index=False)
+                _tables.write_parquet(
+                    resp, staging_dir / "responses.parquet",
+                    response_scale=self.INFO["response_scale"], items=registered_items,
+                )
             if not traces.empty:
-                traces.to_parquet(staging_dir / "traces.parquet", index=False)
+                _tables.write_parquet(traces, staging_dir / "traces.parquet")
             if not assets.empty:
                 # One file payload per row group permits readers to retrieve a
                 # selected asset without decoding unrelated byte blobs.
-                assets.to_parquet(
+                _tables.write_parquet(assets,
                     staging_dir / "assets.parquet",
-                    index=False,
                     row_group_size=1,
                 )
-            _tables.save(staging_dir)
+            _tables.save(staging_dir, expected_benchmark_id=self.slug, additional_tables={
+                name: table for name, table in (("responses", resp), ("traces", traces), ("assets", assets))
+                if table is not None and not table.empty
+            })
 
             staged_assets = staging_dir / "assets.parquet"
             has_staged_assets = staged_assets.exists()
@@ -966,9 +994,9 @@ class BenchmarkBuild(ABC):
                 # sidecar so a failed replacement cannot leave old manifests
                 # dangling.
                 self.assets_path.unlink(missing_ok=True)
-        (self.raw_dir / "_provenance.json").write_text(
-            json.dumps({"sources": download_sources}, indent=2)
-        )
+        # The accepted metadata manifest now covers every reported input.
+        # Retire the old generated sidecar only after all outputs are installed.
+        (self.raw_dir / "_provenance.json").unlink(missing_ok=True)
 
         if resp is None:
             print(
@@ -981,6 +1009,16 @@ class BenchmarkBuild(ABC):
         return df
 
     def main(self) -> pd.DataFrame:
+        metadata_path = self.dir / "metadata.yaml"
+        try:
+            metadata = _benchmark_metadata.load_benchmark_metadata(metadata_path)
+            manifest = copy.deepcopy(metadata.get("sources", {}))
+            artifacts = _benchmark_metadata.declared_source_artifacts(manifest)
+        except (TypeError, ValueError) as exc:
+            raise BuildContractError(f"{self.slug}: {exc}") from exc
+        # Always load provenance from the authoritative file, including when a
+        # legacy caller constructed an inline INFO definition programmatically.
+        self.source_manifest = copy.deepcopy(manifest)
         download_sources = self.download()
         if not isinstance(download_sources, (list, tuple)):
             raise BuildContractError(
@@ -995,17 +1033,16 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: download() must return at least one non-empty "
                 "source URL or path"
             )
-        normalized_sources = list(dict.fromkeys(download_sources))
-
-        raw_has_data = self.raw_dir.exists() and any(
-            path.is_file() and path.name != "_provenance.json"
-            for path in self.raw_dir.rglob("*")
-        )
-        if not raw_has_data:
+        declared = {artifact["url"] for artifact in artifacts}
+        reported = set(download_sources)
+        if declared != reported:
             raise BuildContractError(
-                f"{self.slug}: download() must cache at least one upstream "
-                f"artifact under {self.raw_dir}"
+                f"{self.slug}: download() source locators differ from metadata.yaml; "
+                f"undeclared={sorted(reported - declared)!r}, "
+                f"unreported={sorted(declared - reported)!r}. "
+                "Declare every input before building, including cache hits."
             )
+        self._verify_source_manifest(metadata_path, manifest, artifacts)
 
         # The slug is already the benchmark ID used in item/response identity.
         # Register the complete benchmark row only after all build rows exist.
@@ -1013,10 +1050,10 @@ class BenchmarkBuild(ABC):
         self._response_rows = []
         self._response_keys = set()
         self._response_ids = set()
-        self._response_extra_columns = None
         self._asset_rows = {}
         self._asset_id_by_source_path = {}
         self._item_asset_ids = {}
+        self._item_response_scales = {}
         try:
             result = self.build_subject_item_response_rows()
             if result is not None:
@@ -1025,6 +1062,25 @@ class BenchmarkBuild(ABC):
                     "return None and commit rows through add_subject(), "
                     "add_item(), and add_response()"
                 )
-            return self._validate_and_write_tables(normalized_sources)
+            self._verify_source_manifest(metadata_path, manifest, artifacts)
+            return self._validate_and_write_tables()
         finally:
             self._active_benchmark_id = None
+
+    def _verify_source_manifest(self, path: Path, manifest: dict, artifacts: list[dict]) -> None:
+        """Check the declared manifest and cached bytes before accepting output."""
+        try:
+            current = _benchmark_metadata.load_benchmark_metadata(path)
+            if current.get("sources", {}) != manifest or self.source_manifest != manifest:
+                raise ValueError("sources changed during the build; update metadata.yaml and restart")
+            root = self.raw_dir.resolve()
+            for artifact in artifacts:
+                cached = self.raw_dir / artifact["file"]
+                if not cached.resolve().is_relative_to(root) or not cached.is_file():
+                    raise ValueError(f"declared raw input is missing or outside raw/: {cached}")
+                _source_files.verify_file(
+                    cached, expected_size=artifact["size"],
+                    expected_sha256=artifact["sha256"],
+                )
+        except (OSError, TypeError, ValueError, _source_files.SourceDataError) as exc:
+            raise BuildContractError(f"{self.slug}: source manifest validation failed: {exc}") from exc

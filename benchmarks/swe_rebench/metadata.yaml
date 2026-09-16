@@ -1,0 +1,65 @@
+benchmark:
+  name: SWE-rebench
+  description: 'SWE-rebench: an automated, decontaminated benchmark of real-world software-engineering
+    agent tasks. Each task is a GitHub issue + repo snapshot; an LLM agent must produce a patch verified
+    by the repo test suite (FAIL_TO_PASS / PASS_TO_PASS). This build ingests the publicly released
+    per-instance trajectories of the OpenHands v0.54.0 + Qwen3-Coder-480B-A35B-Instruct agent, emitting
+    a binary resolved=1/0 response per (agent, instance, run).'
+  testing_condition: 'Single public agent: Qwen3-Coder-480B-A35B-Instruct is the subject label and
+    the OpenHands v0.54.0 scaffold lands on `harness` / `harness_version` at subject registration,
+    so both make up subject identity. response is binary: 1 if the agent patch passed the hidden FAIL_TO_PASS
+    / PASS_TO_PASS tests (released `resolved` flag), else 0. Repeat runs of the same instance are
+    separate trials. No test_condition (the trajectory release carries no monthly-slice label).'
+  paper_url: https://openreview.net/forum?id=nMpJoVmRy1
+  data_source_url: https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories
+  subject_type: agent
+  item_type: task
+  license: CC-BY-4.0
+  citation: "@inproceedings{badertdinov2025swerebench,\n  title={SWE-rebench: An Automated Pipeline\
+    \ for Task Collection and Decontaminated Evaluation of Software Engineering Agents},\n  author={Badertdinov,\
+    \ Ibragim and Golubev, Alexander and Nekrashevich, Maksim and Shevtsov, Anton and Karasik, Simon\
+    \ and Andriushchenko, Andrei and Trofimova, Maria and Litvintseva, Daria and Yangel, Boris},\n\
+    \  booktitle={Advances in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks\
+    \ Track},\n  year={2025},\n}"
+  tags:
+  - software_engineering
+  - agent
+  - swe
+  - decontaminated
+  - code_patch
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2025-05
+  release: public
+  multi_single_turn: multi_turn
+build:
+  contract_version: 1
+sources:
+  inputs:
+    artifact_0001:
+      url: hf://datasets/nebius/SWE-rebench
+      file: instances.parquet
+      size: 191231096
+      sha256: cfc58426577cf1cabb91e7078ab46c6bfedd8c6cfecfaef65ced3a432a2bf08c
+    artifact_0002:
+      url: hf://datasets/nebius/SWE-rebench-openhands-trajectories
+      file: openhands_trajectories.parquet
+      size: 235811609
+      sha256: c39fff7863282ea948c35cedcca53b8740b94bcef74970d64cda299c117e82ac
+  references:
+    snapshot_note: Existing cached release; SHA-256 and byte sizes pin the inputs. The original upstream
+      commit was not recorded.

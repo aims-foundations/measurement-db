@@ -1,6 +1,7 @@
+# Parquet schema version 3 (stored in measurement_db.schema_version metadata).
 # Single source of truth for the canonical columns in the six per-benchmark
-# parquet schemas. responses.parquet may carry response-only pass-through
-# extension columns after these; those extras are not type-validated here.
+# parquet schemas. Every benchmark writes exactly these columns, in this order,
+# with these types and nullability. Benchmark-specific extra columns are rejected.
 #
 # The operational owners are:
 #   * `scripts/build_measurement_tables/validate_measurement_tables.py`
@@ -21,11 +22,17 @@
 # Derived columns are excluded from legacy registration-time column lists but
 # included when a modern build registers and writes its completed benchmark row.
 #
-# Never drop a canonical column: a column that is all-null for a benchmark is
-# still written (e.g. `test_condition`), so every file of a kind reads alike.
+# Every canonical column is written even when all-null (e.g. test_condition).
+# Storage types are explicit: float64, int64, string, bool, binary, and
+# list<string>, with the declared nullability even for empty/all-null columns.
+# Each primary_key is non-null and unique within its table. Validation rejects
+# identical and conflicting duplicate rows without deduplicating them. The same
+# subject may retain its subject_id in a different benchmark's subjects table.
+# Retiring columns requires an explicit schema-version migration.
 
 subjects:
   file: "{dataset}/subjects.parquet"
+  primary_key: [subject_id]
   description: >-
     The AI test-takers (models, agents, judges, classifiers) this benchmark
     evaluated — one row per distinct subject configuration.
@@ -45,14 +52,19 @@ subjects:
       description: The AI system's name as given by the provider / upstream source.
     - name: normalized_name
       type: string
-      nullable: false
-      description: This is the model’s normalized name that would be used commonly across benchmarks. The canonical model name is from `scripts/build_measurement_tables/map_model_registry.json` (e.g., OpenAI GPT-4o). This column could be auto-filled by calling `resolve_subject(raw_label)` for every raw AI-system label appearing in each response. If a raw label has not been a registry key in the JSON file above, register the new model name in that registry file.
+      nullable: true
+      description: >-
+        Canonical model name from `scripts/build_measurement_tables/map_model_registry.json`,
+        auto-filled by `resolve_subject(raw_label)`. Null when the provider's
+        released label has no established registry mapping; display_name and
+        the raw-label fallback identity still preserve that subject.
     - name: provider
       type: string
-      nullable: false
+      nullable: true
       description: >-
         Provider of the AI system (OpenAI, Anthropic, Meta, Alibaba, ...) —
         the registry entry's `company`, auto-filled together with `normalized_name`.
+        Null when no provider mapping is established; never inferred from the label.
     - name: release_date
       type: string
       nullable: true
@@ -89,20 +101,22 @@ subjects:
 
 items:
   file: "{dataset}/items.parquet"
-  description: This benchmark's items, one row per distinct prompt/question — what the item is.
+  primary_key: [item_id]
+  description: One row per distinct stimulus and grading protocol within this benchmark.
   columns:
     - name: item_id
       type: string
       nullable: false
       description: >-
-        Primary key: the first 16 hex chars of a sha256 hash. The hash input
-        joins the benchmark_id and content
-        (NFC-normalized and stripped; if content is null, "raw:" +
-        raw_item_id stands in for it for legacy lower-level registrations).
-        The canonical feature string and canonical asset manifest are appended
-        only when present. Thus text-only historical IDs remain stable, while
-        different attachment bytes, subject-visible paths, media types, roles,
-        ordering, features, or judges produce different item IDs.
+        Primary key: the first 16 hex chars of a SHA-256 hash over benchmark,
+        normalized content, item features, asset manifest, grading_criterion,
+        the complete canonical verifier, and the effective response scale
+        (inherited from the benchmark or specified in a mixed-scale criterion).
+        New registrations use item identity version 4. Equivalent effective
+        scales have the same identity regardless of where they are declared.
+        Content is NFC-normalized and stripped. Canonical JSON formatting and
+        key order do not affect identity; text inside the criterion and verifier
+        is preserved exactly. Legacy ungraded IDs are not rewritten automatically.
     - name: benchmark_id
       type: string
       nullable: false
@@ -136,19 +150,29 @@ items:
         that raw bytes were directly delivered to the subject. Null when the
         item has no external files. The manifest is part of item identity; the
         curator's local source path is not.
-    - name: reference_answer
+    - name: grading_criterion
       type: string
-      nullable: true
+      nullable: false
       description: >-
-        Ground-truth answer, if released.
+        Canonical JSON object with reference_answer and rule fields. Each is
+        a nonempty string or null, and at least one must be nonempty. The
+        answer is a released answer/reference solution; the rule is a rubric,
+        test requirement, tolerance, or other condition used to assign a grade.
+        Both may be supplied. The complete criterion contributes to item identity.
+        For mixed-scale benchmarks, also requires response_scale: a concrete
+        discrete or interval object using the benchmarks.response_scale format.
+        Uniform benchmark scales are inherited and must not be repeated here.
     - name: verifier
       type: string
-      nullable: true
+      nullable: false
       description: >-
         Canonical JSON of how the response was graded — exactly one of two
         classes: a `Judge` (an LLM or human reads the response) or an
-        `ExactMatcher` (a deterministic rule). Null when the grader is
-        unknown (legacy folders only).
+        `ExactMatcher` (a deterministic rule). The complete protocol is part
+        of item identity for both text and asset-bearing items; JSON key
+        order and formatting do not affect identity. Required. Describes the
+        grader or implementation that applies grading_criterion, including
+        parsing, normalization, prompts, or executable implementation details.
     - name: content_hash
       type: string
       nullable: true
@@ -168,6 +192,7 @@ items:
 
 assets:
   file: "{dataset}/assets.parquet"
+  primary_key: [asset_id]
   description: >-
     Exact external-file bytes referenced by items.asset_manifest. One row per
     distinct byte payload within the benchmark; shared files are content-
@@ -193,6 +218,7 @@ assets:
 
 benchmarks:
   file: "{dataset}/benchmarks.parquet"
+  primary_key: [benchmark_id]
   description: A single row describing the benchmark's own metadata.
   columns:
     - name: benchmark_id
@@ -206,7 +232,11 @@ benchmarks:
     - name: version
       type: string
       nullable: true
-      description: Version string if the benchmark has one.
+      description: >-
+        Upstream benchmark release identifier from metadata.yaml's
+        benchmark.version (or INFO.version), preserved verbatim. Null when
+        omitted or unknown. Distinct from the table schema version, builder
+        contract version, and revisions of individual source artifacts.
     - name: license
       type: string
       nullable: false
@@ -227,13 +257,6 @@ benchmarks:
         present-tense verb, omits the benchmark name, contains no logical
         newline, and is at most 160 characters. Null for legacy definitions
         not yet migrated to this field.
-    - name: dataset_source
-      type: string
-      nullable: true
-      description: >-
-        Human-facing alias of `source_url`: the upstream URL the benchmark's
-        data was ingested from (HuggingFace, GitHub, Zenodo, ...). Same value
-        as `source_url`.
     - name: modality
       type: list[string]
       nullable: false
@@ -282,18 +305,32 @@ benchmarks:
       type: string
       nullable: false
       description: >-
-        Free-form description of the response value set, e.g. "{0, 1}" or
-        "{1, 2, 3, 4, 5}". Defaults to "{0, 1}".
+        Canonical JSON object declaring the grade domain: {"kind":"discrete",
+        "values":[0,1]} enumerates allowed grades; {"kind":"interval","min":0,
+        "max":1} sets inclusive bounds (null means unbounded). {"kind":"mixed"}
+        requires a concrete response_scale in every item's grading_criterion.
+        Uniform benchmarks declare the scale once here, without item overrides.
+        Binary and error-presence scales require exactly 0 and 1; Likert scales
+        explicitly list their five or ten categories. Concrete scales may add
+        direction: higher_is_better, lower_is_better, or unordered. Omission or
+        null means unknown and is omitted from canonical JSON. Discrete scales
+        may add meanings, a nonempty mapping from quoted allowed values to
+        nonempty descriptions; partial mappings are allowed for known meanings.
+        Numeric key aliases are canonicalized and duplicates rejected. Mixed
+        benchmarks declare interpretations on each item's concrete scale.
+        These semantics participate in item identity. No automatic rescaling,
+        grade reversal, or inference of meanings from response_type.
     - name: categorical
       type: bool
       nullable: false
       description: >-
-        True if the response set is finitely enumerable in a small way
-        (binary, Likert, ordinal, win-rate, error-presence). False for truly
-        continuous responses or fractions with variable denominators (reward
-        scores, rubric-weighted sums, k/N with varying N). Downstream IRT
-        uses this to select dichotomous/polytomous vs continuous model
-        families. Defaults to True.
+        Classification for downstream categorical versus numeric modeling.
+        Derived as true for binary, error_presence, Likert, and ordinal types;
+        false for continuous types. Contradictory declarations are rejected.
+        Fractions, win rates, and mixed scales retain an explicit curator-supplied
+        boolean; finite numeric support alone does not imply categorical
+        measurement. Optional in metadata only where derivable; always a
+        non-null boolean in this table.
     - name: paper_url
       type: string
       nullable: true
@@ -305,8 +342,11 @@ benchmarks:
       type: string
       nullable: true
       description: >-
-        Benchmark release date in `YYYY-MM` format, supplied explicitly by
-        `INFO.release_date` (usually the originating paper's first release).
+        Benchmark release date as `YYYY-MM` or `YYYY-MM-DD`, with valid calendar
+        values and years 0001–9999, supplied by metadata.yaml's
+        benchmark.release_date (or INFO.release_date). Preserve the known
+        precision; use null when unknown rather than placeholders or guessed
+        dates. Usually the originating paper's first release.
     - name: granularity
       type: string
       nullable: false
@@ -326,13 +366,15 @@ benchmarks:
         "public" makes the benchmark eligible for the public HF mirror,
         "private" keeps it private. Declared in build.py's `INFO`; omitting
         it defaults to "private".
-    - name: n_unique_responses
+    - name: n_response_values
       type: int
       nullable: true
       description: >-
         Number of distinct (non-null) values in responses.parquet's
-        `response` column. Populated when the completed benchmark row is
-        registered; null for lower-level legacy registrations.
+        `response` column, not the number of observations. Zero for a
+        no-responses build or when all grades are null. Populated when the
+        completed benchmark row is registered; null for lower-level legacy
+        registrations.
     - name: benchmark_features
       type: string
       nullable: true
@@ -355,35 +397,46 @@ benchmarks:
       type: int
       nullable: false
       derived: true
-      description: Row count of responses.parquet (0 for a no-responses build). Derived.
-    - name: n_trials
+      description: >-
+        Row count of responses.parquet, including repeated trials and ungraded
+        attempts (0 for a no-responses build). Derived.
+    - name: max_trial
       type: int
       nullable: false
       derived: true
       description: >-
-        Maximum final repetition index `max(trial)` in responses.parquet.
+        Maximum final repetition index `max(trial)` in responses.parquet,
+        including ungraded attempts (0 for a no-responses build). This is an
+        index, not a count of trials or observations.
     - name: coverage
       type: float
       nullable: false
       derived: true
       description: >-
-        Matrix fill ratio `n_responses / (n_items * n_subjects)` (0.0 when
-        empty); <1 means a sparse/ragged matrix, >1 means repeated
-        trials/conditions. 
-    - name: has_ground_truth
+        Number of distinct (subject_id, item_id) pairs with at least one
+        non-null response, divided by `n_subjects * n_items`. The denominator
+        uses the registered subject and item banks. Repeated trials,
+        conditions, and interactors do not increase coverage; ungraded-only
+        pairs are unobserved. Ranges from 0.0 to 1.0, with 0.0 when no pairs
+        are observed or the denominator is zero.
+    - name: has_reference_answer
       type: bool
       nullable: false
       derived: true
       description: >-
         True if any item in items.parquet carries a non-null
-        `reference_answer` (objective scoring possible).
+        grading_criterion.reference_answer. False when every item uses only a
+        grading rule. This indicates reference-answer availability for at least
+        one item, not grading completeness or whether every item has an answer.
 
 responses:
   file: "{dataset}/responses.parquet"
+  primary_key: [response_id]
   description: >-
-    The long-form data. One row per (subject, item, trial, test_condition, interactors) — that tuple is the
-    primary key, with NULL in `test_condition` / `interactors` treated as a
-    single value; every dataset must satisfy this uniqueness invariant.
+    The long-form data. Within each benchmark, one row per
+    (subject, item, trial, test_condition, interactors) — that tuple is the
+    unique observation key, with NULL in `test_condition` / `interactors`
+    treated as a single value; every dataset must satisfy this uniqueness invariant.
     Lives at the benchmark root. Written only for granularity "item"; an
     aggregate/not-released item-bank build deliberately has no responses file.
   columns:
@@ -400,13 +453,14 @@ responses:
       nullable: false
       derived: true
       description: >-
-        Per-row id: sha256 of the full row (the registry's normalization,
-        nulls included) truncated to 16 hex chars. Derived when
-        `BenchmarkBuild.add_response` commits the final row.
+        Unique observation identifier, also used by traces.response_id.
+        Derived by BenchmarkBuild.add_response using the version-1 identity
+        payload so schema cleanup does not change existing IDs. Treat this
+        as an opaque identifier, not a hash of the current exported columns.
     - name: benchmark_id
       type: string
       nullable: false
-      description: primary key, typically the same as the folder name, such as `mtbench`.
+      description: Denormalized foreign key to benchmarks.benchmark_id; must match the referenced item.
     - name: trial
       type: int
       nullable: false
@@ -414,8 +468,10 @@ responses:
         1-indexed trial number. Use 1 for single-trial observations;
         increment for repeated measurements (reruns, additional annotators
         of the same (subject, item, test_condition, interactors) cell). This
-        count is positional, not a run label. `add_response` requires the final
-        unique value and rejects a duplicate primary key.
+        count is positional, not a run label. The builder and shared table
+        validator require a positive int64 integer and reject duplicate
+        observation keys and response IDs. Gaps in trial numbering are allowed;
+        validation does not renumber attempts or remove rows.
     - name: test_condition
       type: string
       nullable: true
@@ -433,33 +489,35 @@ responses:
         one but the item.
     - name: response
       type: float
-      nullable: false
+      nullable: true
       description: >-
         The graded outcome. Usually binary (correct/incorrect, pass/fail,
         safe/unsafe), but may be one of a small finite set of categories
         (Likert 1..5, ordinal level). Stored as float for a uniform schema
-        even when the values are integer-coded categories.
-    - name: reference_answer
-      type: string
-      nullable: true
-      description: The correct/reference answer for the item, if known. Null when the information is not released.
-    - name: trace
-      type: string
-      nullable: true
-      description: >-
-        Always null in responses.parquet — the raw model output text is
-        written into the traces.parquet file so the responses table stays small. 
+        even when the values are integer-coded categories. Stored as nullable
+        float64; every non-null grade must be finite and belong to the declared
+        response_scale. Interval bounds and integer-coded categories are exact.
+        Fractional discrete categories allow only float64 roundoff (eight machine
+        epsilons, relative and absolute); stored grades are never rounded or clipped.
+        Null records a released attempt whose grade is unavailable or unusable;
+        retain its trial, condition and trace without inventing a zero grade.
+        No row means no available observation, not proof that no attempt occurred.
+        Builder calls use explicit None for an ungraded attempt and reject NaN;
+        pandas missing sentinels in assembled tables are serialized as null.
 
 traces:
   file: "{dataset}/traces.parquet"
+  primary_key: [response_id]
   description: >-
-    The raw text each model produced, one row per response that has it.
-    The text lives in this separate file so responses.parquet stays small
-    (its `trace` column is always null). To attach a trace to its response,
-    join on (subject_id, item_id, trial, test_condition, interactors) — the
-    same primary key as responses.parquet. If no response in the benchmark
-    has any trace text, this file is not written at all.
+    The raw text each model produced, zero or one row per response.
+    Join to responses.parquet on response_id. The repeated subject, item,
+    benchmark, trial, condition and interactor fields must agree with that
+    response. If no response has trace text, this file is not written.
   columns:
+    - name: response_id
+      type: string
+      nullable: false
+      description: Unique foreign key to responses.response_id; identifies the exact recorded attempt.
     - name: subject_id
       type: string
       nullable: false

@@ -29,7 +29,7 @@ from scripts.build_measurement_tables.validate_benchmark_metadata import (
     load_benchmark_metadata,
 )
 
-from scripts.build_measurement_tables import validate_asset_relations, validate_table
+from scripts.build_measurement_tables import validate_asset_relations, validate_table, validate_trace_relations
 
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses", "traces", "assets")
 PRIMARY_KEY = ["subject_id", "item_id", "trial", "test_condition", "interactors"]
@@ -188,7 +188,7 @@ class MathArenaCharacterizationTests(unittest.TestCase):
         for name, table in self.tables.items():
             with self.subTest(table=name):
                 validate_table(
-                    name, table, include_derived=True, allow_extra=name == "responses"
+                    name, table, include_derived=True
                 )
                 self.assertEqual(
                     characterize(table), self.expected["release"]["tables"][name]
@@ -201,18 +201,20 @@ class MathArenaCharacterizationTests(unittest.TestCase):
         self.assertTrue(responses.response_id.is_unique)
         self.assertTrue(self.tables["items"].item_id.is_unique)
         self.assertTrue(self.tables["subjects"].subject_id.is_unique)
-        self.assertTrue((responses.trial == responses.source_idx_answer + 1).all())
+        self.assertTrue((responses.trial >= 1).all())
         self.assertTrue(
-            responses[["test_condition", "interactors", "trace"]].isna().all().all()
+            responses[["test_condition", "interactors"]].isna().all().all()
         )
         self.assertFalse(traces.duplicated(PRIMARY_KEY).any())
+        validate_trace_relations(responses, traces)
         linked = traces.merge(
             responses, on=PRIMARY_KEY, how="left", validate="one_to_one", indicator=True
         )
         self.assertTrue(linked["_merge"].eq("both").all())
-        self.assertFalse(linked.duplicated(["source_shard", "source_row"]).any())
+        item_features = self.tables["items"].set_index("item_id").item_features.map(features)
+        competitions = responses.item_id.map(lambda item_id: item_features[item_id]["competition"])
         self.assertEqual(
-            responses.groupby("source_competition").size().to_dict(),
+            competitions.value_counts().to_dict(),
             self.expected["release"]["responses_by_competition"],
         )
 
@@ -222,28 +224,28 @@ class MathArenaCharacterizationTests(unittest.TestCase):
         self.assertTrue(images.asset_manifest.notna().all())
         self.assertFalse(images.content.isin(list("ABCDE")).any())
         self.assertEqual(images.raw_item_id.nunique(), len(self.tables["assets"]))
-        validate_asset_relations(items, self.tables["assets"], benchmark_id="matharena")
+        validate_asset_relations(
+            items, self.tables["assets"], benchmark_id="matharena",
+            response_scale=self.tables["benchmarks"].iloc[0].response_scale,
+        )
         for row in self.tables["assets"].itertuples():
             self.assertEqual(hashlib.sha256(row.data).hexdigest(), row.asset_id)
             self.assertEqual(len(row.data), row.byte_size)
 
     def test_judges_and_criteria_are_item_instruments(self):
-        proof = self.tables["responses"].dropna(subset=["source_judge_slot"])
-        self.assertTrue(proof.response.between(0, 1).all())
         items = self.tables["items"].set_index("item_id")
+        judged_items = items.verifier.map(lambda value: json.loads(value)["class"] == "judge")
+        proof = self.tables["responses"].loc[lambda rows: rows.item_id.isin(items.index[judged_items])]
+        self.assertTrue(proof.response.between(0, 1).all())
         for item_id, rows in proof.groupby("item_id"):
             verifier = json.loads(items.loc[item_id, "verifier"])
             self.assertEqual(verifier["class"], "judge")
             self.assertEqual(verifier["judged_by"], "human")
-            self.assertEqual(
-                int(verifier["judge_slot"]), rows.source_judge_slot.iloc[0]
-            )
-            self.assertEqual(
-                int(verifier["criterion_index"]), rows.source_criterion_index.iloc[0]
-            )
+            self.assertGreaterEqual(int(verifier["judge_slot"]), 0)
+            self.assertGreaterEqual(int(verifier["criterion_index"]), 0)
             self.assertEqual(
                 verifier["rubric_sha256"],
-                hashlib.sha256(verifier["spec"].encode()).hexdigest(),
+                hashlib.sha256(json.loads(items.loc[item_id, "grading_criterion"])["rule"].encode()).hexdigest(),
             )
 
     def test_all_pinned_sources_match_hashes_and_provider_card_counts(self):
@@ -277,11 +279,16 @@ class MathArenaCharacterizationTests(unittest.TestCase):
     def test_every_released_score_prompt_configuration_and_trace_reconciles(self):
         """Independent row-level audit, including every formerly skipped rubric."""
         responses = self.tables["responses"]
-        groups = defaultdict(list)
-        for response in responses.to_dict("records"):
-            groups[(response["source_shard"], response["source_row"])].append(response)
         items = self.tables["items"].set_index("item_id").to_dict("index")
         subjects = self.tables["subjects"].set_index("subject_id").to_dict("index")
+        groups = defaultdict(list)
+        for response in responses.to_dict("records"):
+            item_features = features(items[response["item_id"]]["item_features"])
+            subject = subjects[response["subject_id"]]
+            key = (item_features["competition"], item_features["problem_idx"],
+                   subject["display_name"], features(subject["subject_features_extra"])["model_config"],
+                   response["trial"])
+            groups[key].append(response)
         traces = {
             tuple(row[:5]): row[5]
             for row in self.tables["traces"][[*PRIMARY_KEY, "trace"]].itertuples(
@@ -328,12 +335,14 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                                         max(0.0, min(1.0, points / maximum)),
                                     )
                                 )
-                actual = groups.pop((shard, row_index), [])
+                key = (competition_name, str(record["problem_idx"]), record["model_name"],
+                       record["model_config"], int(record["idx_answer"]) + 1)
+                actual = groups.pop(key, [])
                 self.assertEqual(len(actual), len(released), (shard, row_index))
                 actual.sort(
                     key=lambda row: (
-                        row["source_judge_slot"] or 0,
-                        row["source_criterion_index"] or 0,
+                        int(json.loads(items[row["item_id"]]["verifier"]).get("judge_slot", 0)),
+                        int(json.loads(items[row["item_id"]]["verifier"]).get("criterion_index", 0)),
                     )
                 )
                 prompt = record.get("user_message") or record.get("problem")
@@ -374,10 +383,10 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                     subject = subjects[response["subject_id"]]
                     self.assertEqual(response["response"], score)
                     self.assertEqual(
-                        response["source_problem_id"], str(record["problem_idx"])
+                        features(item["item_features"])["problem_idx"], str(record["problem_idx"])
                     )
                     self.assertEqual(
-                        response["source_idx_answer"], record["idx_answer"]
+                        response["trial"], int(record["idx_answer"]) + 1
                     )
                     self.assertEqual(subject["display_name"], record["model_name"])
                     self.assertEqual(
@@ -390,12 +399,11 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                         unicodedata.normalize("NFC", item["content"]).strip(),
                         unicodedata.normalize("NFC", prompt).strip(),
                     )
-                    self.assertEqual(normalized(response["reference_answer"]), reference)
-                    self.assertEqual(normalized(item["reference_answer"]), reference)
+                    self.assertEqual(normalized(json.loads(item["grading_criterion"])["reference_answer"]), reference)
                     if criterion is not None:
                         verifier = json.loads(item["verifier"])
                         self.assertEqual(
-                            json.loads(verifier["spec"]),
+                            json.loads(json.loads(item["grading_criterion"])["rule"]),
                             {
                                 key: criterion.get(key)
                                 for key in (
@@ -405,11 +413,8 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                                 )
                             },
                         )
-                        self.assertEqual(response["source_judge_slot"], judge)
-                        self.assertEqual(response["source_criterion_index"], index)
-                        self.assertEqual(
-                            response["grader_feedback"], criterion.get("desc")
-                        )
+                        self.assertEqual(int(verifier["judge_slot"]), judge)
+                        self.assertEqual(int(verifier["criterion_index"]), index)
                     else:
                         self.assertEqual(
                             json.loads(item["verifier"])["class"], "exact_matcher"

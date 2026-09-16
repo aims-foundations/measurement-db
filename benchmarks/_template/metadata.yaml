@@ -3,6 +3,8 @@
 # The benchmark slug is the containing folder name; do not repeat it here.
 benchmark:
   name: Example Benchmark
+  # Optional provider release identifier; quote numeric versions. Omit if unknown.
+  # version: "2.0"
   one_line_description: >-
     Evaluates whether subjects can solve the released item bank, with each
     response recording the benchmark's scoring outcome.
@@ -17,9 +19,14 @@ benchmark:
   domain:
     - reasoning
   response_type: binary
-  response_scale: "{0, 1}"
-  categorical: true
-  release_date: "YYYY-MM"
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings: {"0": failure, "1": success}  # Optional; use provider-defined meanings.
+    direction: higher_is_better  # Use null or omit when unknown.
+  # categorical is derived for binary/ordinal/Likert and continuous types.
+  # For fraction, win_rate, or mixed types, explicitly set categorical: true/false.
+  release_date: null  # Unknown; use a quoted "YYYY-MM" or "YYYY-MM-DD" when known.
   multi_single_turn: single_turn
   testing_condition: >-
     Describe fixed prompting, sampling, harness, environment, grader, and
@@ -38,6 +45,10 @@ build:
   contract_version: 1
 
 sources:
+  # This is the authoritative provenance manifest. Downloads are fetched by
+  # the shared downloader; use inputs for files acquired by a custom hook.
+  # Both require url, file, size, and sha256. Custom inputs may add revision.
+  # Declare discovered inputs here before accepting a build; no sidecar is written.
   downloads:
     results:
       url: https://example.invalid/provider/example-benchmark/per_item_results.json

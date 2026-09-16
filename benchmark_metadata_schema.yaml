@@ -23,12 +23,37 @@ properties:
       - domain
       - response_type
       - response_scale
-      - categorical
       - release_date
       - multi_single_turn
+    allOf:
+      - if:
+          properties:
+            response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal]}
+        then:
+          properties:
+            categorical: {const: true}
+      - if:
+          properties:
+            response_type: {enum: [continuous, continuous_bounded, continuous_unbounded]}
+        then:
+          properties:
+            categorical: {const: false}
+      - if:
+          properties:
+            response_type: {enum: [fraction, win_rate, mixed]}
+        then:
+          required: [categorical]
     properties:
       name:
         $ref: "#/$defs/nonempty_string"
+      version:
+        description: >-
+          Optional upstream benchmark release identifier, copied verbatim to
+          benchmarks.parquet.version. Omit or use null when unavailable.
+          Distinct from the table schema, build contract, and source revisions.
+        anyOf:
+          - $ref: "#/$defs/nonempty_string"
+          - type: "null"
       one_line_description:
         $ref: "#/$defs/one_line_description"
       description:
@@ -59,11 +84,21 @@ properties:
           - error_presence
           - mixed
       response_scale:
-        $ref: "#/$defs/nonempty_string"
+        $ref: "#/$defs/response_scale"
       categorical:
+        description: >-
+          Optional for binary/error-presence, Likert, ordinal, or continuous
+          types: the builder derives the classification and rejects conflicts.
+          Fractions, rates, and mixed scales require an explicit boolean.
         type: boolean
       release_date:
-        $ref: "#/$defs/nonempty_string"
+        description: >-
+          Known benchmark release date as a quoted YYYY-MM or YYYY-MM-DD string;
+          use explicit null when unknown. Full dates must be valid calendar dates.
+        anyOf:
+          - type: string
+            pattern: '^[0-9]{4}-(0[1-9]|1[0-2])(-(0[1-9]|[12][0-9]|3[01]))?$'
+          - type: "null"
       multi_single_turn:
         enum:
           - single_turn
@@ -121,6 +156,51 @@ properties:
     $ref: "#/$defs/validation_mapping"
 
 $defs:
+  response_scale:
+    oneOf:
+      - type: object
+        additionalProperties: false
+        required: [kind, values]
+        properties:
+          kind: {const: discrete}
+          values:
+            type: array
+            minItems: 1
+            uniqueItems: true
+            items: {type: number}
+          meanings:
+            description: >-
+              Optional meanings for known allowed values. Keys are quoted
+              numeric strings; each must match an allowed value, with no
+              numerically duplicate keys. Omit values whose meaning is unknown.
+            type: object
+            minProperties: 1
+            propertyNames: {type: string}
+            additionalProperties:
+              $ref: "#/$defs/nonempty_string"
+          direction:
+            $ref: "#/$defs/score_direction"
+      - type: object
+        additionalProperties: false
+        required: [kind, min, max]
+        properties:
+          kind: {const: interval}
+          min: {type: [number, 'null']}
+          max: {type: [number, 'null']}
+          direction:
+            $ref: "#/$defs/score_direction"
+      - type: object
+        additionalProperties: false
+        required: [kind]
+        properties:
+          kind: {const: mixed}
+  score_direction:
+    description: >-
+      Declared preference for larger or smaller recorded grades. Unordered
+      means no preferred numeric order; null or omission means unknown.
+      This metadata never reverses or rescales grades. For mixed benchmarks,
+      declare it on each item's concrete scale.
+    enum: [higher_is_better, lower_is_better, unordered, null]
   nonempty_string:
     type: string
     pattern: "\\S"
@@ -147,7 +227,36 @@ $defs:
     properties:
       downloads:
         $ref: "#/$defs/http_downloads"
+      inputs:
+        type: object
+        minProperties: 1
+        propertyNames:
+          type: string
+          pattern: "^\\S+$"
+        additionalProperties:
+          $ref: "#/$defs/custom_input"
     additionalProperties: true
+  custom_input:
+    description: >-
+      Cached upstream input acquired by a custom download hook. Declare every
+      input before building; the shared lifecycle verifies its bytes and locator.
+    type: object
+    additionalProperties: false
+    required: [url, file, size, sha256]
+    properties:
+      url:
+        type: string
+        pattern: "^\\S+$"
+      file:
+        type: string
+        pattern: >-
+          ^(?!/)(?!.*//)(?!.*(?:^|/)\.\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$
+      size: {type: integer, minimum: 0}
+      sha256:
+        type: string
+        pattern: "^[0-9a-f]{64}$"
+      revision:
+        $ref: "#/$defs/nonempty_string"
   http_downloads:
     type: object
     minProperties: 1

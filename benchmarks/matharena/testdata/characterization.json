@@ -186,7 +186,7 @@
           "raw_item_id",
           "content",
           "asset_manifest",
-          "reference_answer",
+          "grading_criterion",
           "verifier",
           "content_hash",
           "item_features"
@@ -197,12 +197,12 @@
           "raw_item_id": 0,
           "content": 0,
           "asset_manifest": 1419,
-          "reference_answer": 271,
+          "grading_criterion": 0,
           "verifier": 0,
           "content_hash": 0,
           "item_features": 0
         },
-        "logical_sha256": "b83b707cf6acaa66cfdbb74d11e2c65e8abae93135c0591cf214fb4f14e26377"
+        "logical_sha256": "0879e42bb7c0d5a9a468b563a3a99bbc298e0cceb280f8b108a80eaf5b1b6921"
       },
       "subjects": {
         "rows": 104,
@@ -221,16 +221,16 @@
         "null_counts": {
           "subject_id": 0,
           "display_name": 0,
-          "normalized_name": 53,
-          "provider": 53,
-          "release_date": 53,
+          "normalized_name": 52,
+          "provider": 52,
+          "release_date": 52,
           "access_date": 104,
           "harness": 104,
           "reasoning_effort": 73,
           "harness_version": 104,
           "subject_features_extra": 0
         },
-        "logical_sha256": "1dfb200ecdb36980b165a0cd5f03ff8c92a72cb8749f2f80085de621fd001628"
+        "logical_sha256": "0f203701435423d50b13ccfc8b070ae2865606a494d9ba6116f605e827082d96"
       },
       "benchmarks": {
         "rows": 1,
@@ -242,7 +242,6 @@
           "source_url",
           "description",
           "one_line_description",
-          "dataset_source",
           "modality",
           "domain",
           "multi_single_turn",
@@ -253,14 +252,14 @@
           "release_date",
           "granularity",
           "release",
-          "n_unique_responses",
+          "n_response_values",
           "benchmark_features",
           "n_subjects",
           "n_items",
           "n_responses",
-          "n_trials",
+          "max_trial",
           "coverage",
-          "has_ground_truth"
+          "has_reference_answer"
         ],
         "null_counts": {
           "benchmark_id": 0,
@@ -270,7 +269,6 @@
           "source_url": 0,
           "description": 0,
           "one_line_description": 0,
-          "dataset_source": 0,
           "modality": 0,
           "domain": 0,
           "multi_single_turn": 0,
@@ -281,16 +279,16 @@
           "release_date": 0,
           "granularity": 0,
           "release": 0,
-          "n_unique_responses": 0,
+          "n_response_values": 0,
           "benchmark_features": 1,
           "n_subjects": 0,
           "n_items": 0,
           "n_responses": 0,
-          "n_trials": 0,
+          "max_trial": 0,
           "coverage": 0,
-          "has_ground_truth": 0
+          "has_reference_answer": 0
         },
-        "logical_sha256": "a34068471f41a24569ad569cc72844cd35ec2c8efc6d9f6cb7fd18ad6b95fbd5"
+        "logical_sha256": "e13b06fc3dda053ce54ec64497ffaa43ffe483f9944c4d81af8ed561ac8a1811"
       },
       "responses": {
         "rows": 92944,
@@ -302,17 +300,7 @@
           "trial",
           "test_condition",
           "interactors",
-          "response",
-          "reference_answer",
-          "trace",
-          "source_shard",
-          "source_row",
-          "source_competition",
-          "source_problem_id",
-          "source_idx_answer",
-          "source_judge_slot",
-          "source_criterion_index",
-          "grader_feedback"
+          "response"
         ],
         "null_counts": {
           "subject_id": 0,
@@ -322,23 +310,14 @@
           "trial": 0,
           "test_condition": 92944,
           "interactors": 92944,
-          "response": 0,
-          "reference_answer": 3462,
-          "trace": 92944,
-          "source_shard": 0,
-          "source_row": 0,
-          "source_competition": 0,
-          "source_problem_id": 0,
-          "source_idx_answer": 0,
-          "source_judge_slot": 89482,
-          "source_criterion_index": 89482,
-          "grader_feedback": 89482
+          "response": 0
         },
-        "logical_sha256": "6e505f50e31894ccae6b4c584a9d78fdcbb9c147335624099f3e6a14db96d3c5"
+        "logical_sha256": "cd7a5e6c5e46793cbd595b924f55b790fdbfc5d300ba680e458db7954536e38c"
       },
       "traces": {
         "rows": 90005,
         "columns": [
+          "response_id",
           "subject_id",
           "item_id",
           "benchmark_id",
@@ -348,6 +327,7 @@
           "trace"
         ],
         "null_counts": {
+          "response_id": 0,
           "subject_id": 0,
           "item_id": 0,
           "benchmark_id": 0,
@@ -356,7 +336,7 @@
           "interactors": 90005,
           "trace": 0
         },
-        "logical_sha256": "36ff0c8cf8486a5af13c8a9d87feba0e01f0fa42d898f8d80dbb26c7edc601a2"
+        "logical_sha256": "2100135ef9273dabfaf43ff3bb86d7d2f33bfeb40399dc488829866e4712fd56"
       },
       "assets": {
         "rows": 168,

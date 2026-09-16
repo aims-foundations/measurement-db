@@ -226,6 +226,11 @@ class MathArenaBuild(BenchmarkBuild):
                     value,
                 ) in enumerate(grades):
                     if criterion is None:
+                        grading_criterion = {
+                            "reference_answer": reference,
+                            "rule": "The provider's parsed final answer matches gold_answer.",
+                            "response_scale": {"kind": "discrete", "values": [0, 1]},
+                        }
                         verifier = ExactMatcher(
                             spec=(
                                 "Import the provider's released correct boolean as 0 or 1; "
@@ -249,12 +254,16 @@ class MathArenaBuild(BenchmarkBuild):
                         rubric_json = json.dumps(
                             rubric, sort_keys=True, ensure_ascii=False
                         )
+                        grading_criterion = {
+                            "reference_answer": reference, "rule": rubric_json,
+                            "response_scale": {"kind": "interval", "min": 0, "max": 1},
+                        }
                         verifier = Judge(
-                            spec=rubric_json,
+                            spec="Provider's human criterion grading; normalize awarded points by max_points.",
                             judge="human",
                             judged_by="human",
                         )
-                        # Text-only shared IDs hash verifier features, not spec.
+                        # Preserve the recorded judge slot and criterion attribution.
                         verifier_features = {
                             "judge_slot": judge_slot,
                             "criterion_index": criterion_index,
@@ -290,7 +299,7 @@ class MathArenaBuild(BenchmarkBuild):
                             raw_item_id=f"{competition_name}::{problem_id}",
                             content=content,
                             attachments=self._attachments(images),
-                            reference_answer=reference,
+                            grading_criterion=grading_criterion,
                             verifier=verifier,
                             verifier_features=verifier_features,
                             features=features,
@@ -302,16 +311,7 @@ class MathArenaBuild(BenchmarkBuild):
                         test_condition=None,
                         interactors=None,
                         response=value,
-                        reference_answer=reference,
                         trace=trace if grade_index == 0 else None,
-                        source_shard=shard,
-                        source_row=row_number,
-                        source_competition=competition_name,
-                        source_problem_id=problem_id,
-                        source_idx_answer=record["idx_answer"],
-                        source_judge_slot=judge_slot,
-                        source_criterion_index=criterion_index,
-                        grader_feedback=criterion.get("desc") if criterion else None,
                     )
 
 

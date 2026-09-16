@@ -4,19 +4,33 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import sys
+from collections.abc import Mapping
+from numbers import Integral
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import yaml
 
+from .define_benchmark_vocabulary import validate_benchmark_release_date
+from .response_scales import (
+    canonical_response_scale,
+    item_response_scale,
+    resolve_categorical,
+    validate_grade,
+    validate_scale_type,
+)
+
 from .register_measurements import (
     _RegistrationRows,
     _locked_registration_rows,
+    _serialize_verifier,
 )
 from .hash_measurement_ids import (
     canonical_asset_manifest,
+    canonical_grading_criterion,
     item_id_from_content,
 )
 
@@ -25,6 +39,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCHEMAS_PATH = _REPO_ROOT / "parquet_schemas.yaml"
 with _SCHEMAS_PATH.open() as _schema_file:
     PARQUET_SCHEMAS = yaml.safe_load(_schema_file)
+
+
+_OBSERVATION_KEY = (
+    "subject_id", "item_id", "benchmark_id", "trial", "test_condition", "interactors",
+)
 
 
 def parquet_columns(table: str, *, include_derived: bool = False) -> list[str]:
@@ -57,9 +76,7 @@ def _type_violation(column: pd.Series, declared: str | None) -> str | None:
             and not is_bool(value)
         )
     elif declared == "float":
-        if pd.api.types.is_numeric_dtype(
-            column
-        ) and not pd.api.types.is_bool_dtype(column):
+        if column.dtype.kind in "iuf":
             return None
         valid = values.map(
             lambda value: isinstance(
@@ -93,23 +110,109 @@ def _type_violation(column: pd.Series, declared: str | None) -> str | None:
     )
 
 
+def _row_locations(mask: pd.Series) -> str:
+    positions = np.flatnonzero(mask.to_numpy(dtype=bool, na_value=False)) + 1
+    suffix = "; first 10 shown" if len(positions) > 10 else ""
+    return f"at 1-based row positions {positions[:10].tolist()}{suffix}"
+
+
+def _primary_key_problems(table: str, dataframe: pd.DataFrame) -> list[str]:
+    """Check the schema-declared key within this table, without changing rows."""
+    schema = PARQUET_SCHEMAS[table]
+    keys = schema["primary_key"]
+    missing_columns = [key for key in keys if key not in dataframe.columns]
+    if missing_columns:
+        return [f"primary key missing column(s) {missing_columns}"]
+    if dataframe.empty:
+        return []
+    problems = []
+    key_frame = dataframe[keys]
+    missing = key_frame.isna().any(axis=1)
+    if missing.any():
+        problems.append(f"primary key {keys} must be non-null " + _row_locations(missing))
+
+    # Validate before hashing/grouping so malformed values such as lists produce
+    # an actionable schema error rather than an unhashable-value exception.
+    types = {column["name"]: column["type"] for column in schema["columns"]}
+    invalid_types = False
+    for key in keys:
+        violation = _type_violation(dataframe[key], types[key])
+        if violation:
+            problems.append(f"primary key {key}: {violation}")
+            invalid_types = True
+    if invalid_types:
+        return problems
+
+    duplicates = ~missing & key_frame.duplicated(keep=False)
+    if duplicates.any():
+        examples = key_frame.loc[duplicates].drop_duplicates().head(5).to_dict("records")
+        problems.append(
+            f"primary key {keys} must be unique; duplicate key values {examples} "
+            + _row_locations(duplicates)
+        )
+    return problems
+
+
+def _observation_integrity_problems(dataframe: pd.DataFrame) -> list[str]:
+    """Check trials and observation keys, independently of the primary key."""
+    if dataframe.empty:
+        return []
+    problems = []
+
+    if "trial" in dataframe:
+        max_trial = np.iinfo(np.int64).max
+        invalid = ~dataframe["trial"].map(
+            lambda value: isinstance(value, Integral)
+            and not isinstance(value, (bool, np.bool_))
+            and 1 <= value <= max_trial
+        )
+        if invalid.any():
+            problems.append(
+                "trial must be a positive 1-based integer representable as int64 "
+                + _row_locations(invalid)
+            )
+
+    if set(_OBSERVATION_KEY) <= set(dataframe.columns):
+        invalid_keys = [
+            name for name in _OBSERVATION_KEY
+            if _type_violation(dataframe[name], "int" if name == "trial" else "string")
+        ]
+        if invalid_keys:
+            problems.append(f"observation key column(s) have invalid types: {invalid_keys}")
+        else:
+            # DataFrame.duplicated treats missing condition/interactor values as
+            # equal, including different pandas/NumPy missing-value sentinels.
+            duplicates = dataframe.duplicated(list(_OBSERVATION_KEY), keep=False)
+            if duplicates.any():
+                problems.append(
+                    f"duplicate observation keys {list(_OBSERVATION_KEY)} " + _row_locations(duplicates)
+                )
+    return problems
+
+
 def validate_table(
     table: str,
     df: pd.DataFrame,
     *,
     include_derived: bool = False,
-    allow_extra: bool = False,
     context: str = "",
 ) -> None:
     """Enforce ``parquet_schemas.yaml`` before writing a table.
 
     All problems are aggregated into one ``RuntimeError``: missing or
     out-of-order columns, unexpected columns, nulls in non-nullable columns,
-    and values that do not match their declared type. ``include_derived``
-    selects the final written schema; ``allow_extra`` permits response-table
-    extensions after the canonical columns.
+    values that do not match their declared type, null/duplicate primary keys,
+    and invalid observation identities or trials in responses and traces. ``include_derived``
+    selects the final written schema. Every table rejects columns outside its
+    canonical schema; no benchmark-specific extension columns are permitted.
     """
     dataframe = df
+    if not dataframe.columns.is_unique:
+        duplicates = dataframe.columns[dataframe.columns.duplicated()].tolist()
+        raise RuntimeError(
+            f"{context + ': ' if context else ''}{table}.parquet violates "
+            f"parquet_schemas.yaml — duplicate column names {duplicates}"
+        )
     specification = [
         column
         for column in PARQUET_SCHEMAS[table]["columns"]
@@ -133,7 +236,7 @@ def validate_table(
     extra_columns = [
         column for column in actual_columns if column not in expected_columns
     ]
-    if extra_columns and not allow_extra:
+    if extra_columns:
         problems.append(f"column(s) not in schema: {extra_columns}")
 
     for column_specification in specification:
@@ -152,6 +255,57 @@ def validate_table(
         if violation:
             problems.append(f"`{column_name}`: {violation}")
 
+    problems.extend(_primary_key_problems(table, dataframe))
+    if table in {"responses", "traces"}:
+        problems.extend(_observation_integrity_problems(dataframe))
+
+    if table == "items":
+        for field, canonicalize in (
+            ("grading_criterion", canonical_grading_criterion),
+            ("verifier", _serialize_verifier),
+        ):
+            if field not in dataframe:
+                continue
+            for value in dataframe[field].dropna():
+                try:
+                    canonicalize(value)
+                except (TypeError, ValueError) as exc:
+                    problems.append(f"invalid {field}: {exc}")
+
+    if table == "responses" and "response" in dataframe:
+        values = dataframe["response"].dropna()
+        if not _type_violation(values, "float"):
+            try:
+                finite = np.isfinite(values.to_numpy(dtype="float64"))
+            except (OverflowError, ValueError):
+                finite = np.array([False])
+            if not finite.all():
+                problems.append("response must contain only finite grades or nulls")
+
+    if table == "benchmarks" and "release_date" in dataframe:
+        for value in dataframe["release_date"].dropna():
+            try:
+                validate_benchmark_release_date(value)
+            except ValueError as exc:
+                problems.append(str(exc))
+
+    if table == "benchmarks" and {"response_type", "response_scale"} <= set(dataframe):
+        for row in dataframe[["response_type", "response_scale"]].itertuples(index=False):
+            try:
+                validate_scale_type(row.response_type, row.response_scale)
+            except (TypeError, ValueError) as exc:
+                problems.append(str(exc))
+
+    if table == "benchmarks" and {"response_type", "categorical"} <= set(dataframe):
+        for row in dataframe[["response_type", "categorical"]].itertuples(index=False):
+            # Column checks already reject nulls and non-booleans. Normalize
+            # NumPy bools only after checking the actual type, never by truthiness.
+            if isinstance(row.response_type, str) and isinstance(row.categorical, (bool, np.bool_)):
+                try:
+                    resolve_categorical(row.response_type, bool(row.categorical))
+                except ValueError as exc:
+                    problems.append(str(exc))
+
     if problems:
         location = f"{context}: " if context else ""
         raise RuntimeError(
@@ -160,18 +314,93 @@ def validate_table(
         )
 
 
+def validate_response_grades(
+    responses: pd.DataFrame, response_scale: dict | str, *,
+    items: pd.DataFrame | None = None,
+) -> None:
+    """Check every distinct observed grade against its explicit item domain.
+
+    Pandas missing sentinels represent previously validated ungraded attempts;
+    authoring APIs reject NaN and require None before DataFrame construction.
+    """
+    domain = json.loads(canonical_response_scale(response_scale))
+    if domain["kind"] != "mixed":
+        if items is not None:
+            for criterion in items["grading_criterion"]:
+                item_response_scale(domain, criterion)
+        groups = [(domain, responses["response"])]
+    else:
+        if items is None:
+            raise ValueError("mixed response_scale requires the items table")
+        if items["item_id"].duplicated().any():
+            raise ValueError("duplicate item IDs in response_scale lookup")
+        domains = {
+            row.item_id: item_response_scale(domain, row.grading_criterion)
+            for row in items[["item_id", "grading_criterion"]].itertuples(index=False)
+        }
+        unknown = set(responses["item_id"]) - set(domains)
+        if unknown:
+            raise ValueError(f"response_scale missing for response item IDs: {sorted(unknown)}")
+        groups = (
+            (domains[item_id], rows["response"])
+            for item_id, rows in responses.groupby("item_id", sort=False)
+        )
+    for item_domain, values in groups:
+        for grade in values.dropna().unique():
+            validate_grade(grade, item_domain)
+
+
+def validate_trace_relations(
+    responses: pd.DataFrame,
+    traces: pd.DataFrame | None,
+    *,
+    context: str = "",
+) -> None:
+    """Validate the zero-or-one trace relationship and repeated join fields."""
+    prefix = f"{context}: " if context else ""
+    keys = list(_OBSERVATION_KEY)
+    for name, table in (("responses", responses), ("traces", traces)):
+        if table is None:
+            continue
+        missing = set(["response_id", *keys]) - set(table.columns)
+        if missing:
+            raise RuntimeError(f"{prefix}{name} missing relationship columns {sorted(missing)}")
+        problems = _primary_key_problems(name, table)
+        problems.extend(_observation_integrity_problems(table))
+        if problems:
+            raise RuntimeError(f"{prefix}{name}: " + "; ".join(problems))
+    if traces is None or traces.empty:
+        return
+    joined = traces[["response_id", *keys]].merge(
+        responses[["response_id", *keys]], on="response_id", how="left",
+        validate="one_to_one", indicator=True, suffixes=("_trace", "_response"),
+    )
+    if joined["_merge"].ne("both").any():
+        raise RuntimeError(f"{prefix}trace references an absent response_id")
+    for name in keys:
+        left, right = joined[f"{name}_trace"], joined[f"{name}_response"]
+        same = left.eq(right).fillna(False) | (left.isna() & right.isna())
+        if not same.all():
+            raise RuntimeError(f"{prefix}trace {name} disagrees with its linked response")
+
+
 def validate_asset_relations(
     items: pd.DataFrame,
     assets: pd.DataFrame | None,
     *,
     benchmark_id: str,
     context: str = "",
+    response_scale: dict | str | None = None,
+    check_item_ids: bool = True,
 ) -> set[str]:
     """Validate canonical item manifests against exact asset sidecar bytes.
 
     Returns the referenced asset IDs. ``assets=None`` represents an absent
     sidecar; an empty schema-correct DataFrame represents an attachment-free
-    build before the optional file is omitted.
+    build before the optional file is omitted. Supply the benchmark response
+    scale for version-4 item IDs; omit it when validating historical IDs.
+    Dataset relationship checks can disable item-ID recomputation; asset
+    ownership, manifests, byte sizes and content hashes are always checked.
     """
 
     problems: list[str] = []
@@ -201,7 +430,7 @@ def validate_asset_relations(
         except TypeError:
             problems.append("items.parquet has invalid benchmark_id values")
         else:
-            if item_benchmark_ids != {benchmark_id}:
+            if item_benchmark_ids - {benchmark_id}:
                 problems.append(
                     "items.parquet must contain exactly benchmark_id "
                     f"{benchmark_id!r}"
@@ -231,10 +460,15 @@ def validate_asset_relations(
             problems.append(f"item row {row_number} has invalid asset_manifest ({exc})")
             continue
         referenced_asset_ids.update(str(entry["asset_id"]) for entry in entries)
+        if not check_item_ids:
+            continue
 
+        required_identity_columns = ("content", "item_features", "verifier")
+        if response_scale is not None:
+            required_identity_columns += ("grading_criterion",)
         missing_identity_columns = [
             column
-            for column in ("content", "item_features", "verifier")
+            for column in required_identity_columns
             if column not in item_row
         ]
         if missing_identity_columns:
@@ -246,8 +480,8 @@ def validate_asset_relations(
 
         identity_values: dict[str, str | None] = {}
         invalid_identity_columns: list[str] = []
-        for column in ("content", "item_features", "verifier"):
-            value = item_row[column]
+        for column in ("content", "item_features", "verifier", "grading_criterion"):
+            value = item_row.get(column)
             try:
                 value_is_missing = bool(pd.isna(value))
             except (TypeError, ValueError):
@@ -266,17 +500,23 @@ def validate_asset_relations(
             continue
 
         stored_item_id = item_row.get("item_id")
-        expected_item_id = item_id_from_content(
-            benchmark_id,
-            identity_values["content"] or "",
-            identity_values["item_features"],
-            asset_manifest=manifest,
-            verifier=identity_values["verifier"],
-        )
+        try:
+            expected_item_id = item_id_from_content(
+                benchmark_id,
+                identity_values["content"] or "",
+                identity_values["item_features"],
+                asset_manifest=manifest,
+                verifier=identity_values["verifier"],
+                grading_criterion=identity_values["grading_criterion"],
+                response_scale=response_scale,
+            )
+        except (TypeError, ValueError) as exc:
+            problems.append(f"item row {row_number} item_id does not match: {exc}")
+            continue
         if stored_item_id != expected_item_id:
             problems.append(
                 f"item row {row_number} item_id does not match its content, "
-                "item_features, verifier, and asset_manifest"
+                "item_features, grading_criterion, verifier, and asset_manifest"
             )
 
     if assets is None:
@@ -329,6 +569,108 @@ def validate_asset_relations(
     return referenced_asset_ids
 
 
+def validate_dataset(
+    tables: Mapping[str, pd.DataFrame], *,
+    expected_benchmark_id: str | None = None, context: str = "",
+) -> None:
+    """Validate one complete benchmark without changing rows or identifiers.
+
+    Require canonical tables, unique keys, one benchmark, valid foreign keys,
+    declared grade domains, matching traces/assets, and exact derived counts.
+    Coverage permits only float64 rounding (absolute tolerance 1e-12). Subjects
+    and items with no responses remain part of the banks and denominator.
+    Responses are required for item-level releases; aggregate/not_released
+    releases omit them. Optional empty trace/asset tables are accepted.
+    Hash-version policy is separate: this function treats item/response IDs as
+    identifiers and does not regenerate them.
+    """
+    prefix = f"{context}: " if context else ""
+    required = {"subjects", "items", "benchmarks"}
+    missing = required - set(tables)
+    unknown = set(tables) - set(PARQUET_SCHEMAS)
+    if missing or unknown:
+        raise RuntimeError(f"{prefix}invalid dataset tables: missing={sorted(missing)}, unknown={sorted(unknown)}")
+    problems = []
+    for name, frame in tables.items():
+        if not isinstance(frame, pd.DataFrame):
+            problems.append(f"{name} must be a DataFrame")
+            continue
+        try:
+            validate_table(name, frame, include_derived=True)
+        except RuntimeError as exc:
+            problems.append(str(exc))
+    if problems:
+        raise RuntimeError(prefix + "dataset validation failed — " + "; ".join(problems))
+    benchmarks, subjects, items = (tables[name] for name in ("benchmarks", "subjects", "items"))
+    if len(benchmarks) != 1:
+        raise RuntimeError(f"{prefix}benchmarks.parquet must contain exactly one benchmark row")
+    benchmark = benchmarks.iloc[0]
+    benchmark_id = benchmark.benchmark_id
+    if expected_benchmark_id is not None and benchmark_id != expected_benchmark_id:
+        problems.append(f"benchmark_id {benchmark_id!r} does not match folder {expected_benchmark_id!r}")
+    for name in ("items", "responses", "traces", "assets"):
+        if name in tables:
+            wrong = tables[name].benchmark_id.ne(benchmark_id)
+            if wrong.any():
+                problems.append(f"{name}.benchmark_id must match {benchmark_id!r} " + _row_locations(wrong))
+    responses = tables.get("responses")
+    traces = tables.get("traces")
+    if benchmark.granularity == "item":
+        if responses is None or responses.empty:
+            problems.append("granularity='item' requires a nonempty responses.parquet")
+    elif benchmark.granularity in {"aggregate", "not_released"}:
+        if responses is not None:
+            problems.append(f"granularity={benchmark.granularity!r} must omit responses.parquet")
+    else:
+        problems.append(f"invalid granularity {benchmark.granularity!r}")
+    if responses is None:
+        if traces is not None:
+            problems.append("traces.parquet exists without responses.parquet")
+        observations = pd.DataFrame(columns=parquet_columns("responses", include_derived=True))
+    else:
+        observations = responses
+        for column, bank in (("subject_id", subjects.subject_id), ("item_id", items.item_id)):
+            absent = ~responses[column].isin(bank)
+            if absent.any():
+                problems.append(f"responses.{column} references absent {column} " + _row_locations(absent))
+        try:
+            validate_trace_relations(responses, traces)
+        except RuntimeError as exc:
+            problems.append(str(exc))
+    try:
+        # This also validates mixed-scale declarations for unobserved items.
+        validate_response_grades(observations, benchmark.response_scale, items=items)
+    except (TypeError, ValueError) as exc:
+        problems.append(f"invalid response scale or grade: {exc}")
+    try:
+        validate_asset_relations(items, tables.get("assets"), benchmark_id=benchmark_id,
+                                 check_item_ids=False)
+    except RuntimeError as exc:
+        problems.append(str(exc))
+    denominator = len(subjects) * len(items)
+    observed_pairs = len(observations.loc[observations.response.notna(), ["subject_id", "item_id"]].drop_duplicates())
+    expected = {
+        "n_subjects": len(subjects), "n_items": len(items),
+        "n_responses": len(observations),
+        "n_response_values": int(observations.response.nunique(dropna=True)),
+        "max_trial": int(observations.trial.max()) if not observations.empty else 0,
+        "coverage": observed_pairs / denominator if denominator else 0.0,
+        "has_reference_answer": any(json.loads(value).get("reference_answer") is not None
+                                    for value in items.grading_criterion),
+    }
+    for column, value in expected.items():
+        actual = benchmark[column]
+        matches = pd.notna(actual) and actual == value
+        if column == "coverage" and pd.notna(actual):
+            matches = math.isfinite(float(actual)) and math.isclose(
+                float(actual), value, rel_tol=0, abs_tol=1e-12,
+            )
+        if not matches:
+            problems.append(f"benchmarks.{column}={actual!r}; expected {value!r} from the dataset")
+    if problems:
+        raise RuntimeError(prefix + "dataset validation failed — " + "; ".join(problems))
+
+
 _SUBJECTS_COLUMNS = parquet_columns("subjects")
 _ITEMS_COLUMNS = parquet_columns("items")
 _BENCHMARKS_COLUMNS = parquet_columns("benchmarks")
@@ -351,9 +693,9 @@ def _materialize(
 ) -> pd.DataFrame:
     """Build one schema-ordered table from registered rows.
 
-    Starting with an all-object empty table preserves the historical column
-    ordering and Parquet dtypes while avoiding repeated DataFrame concatenation
-    during registration.
+    Starting with an all-object empty table preserves registry column ordering
+    while avoiding repeated DataFrame concatenation during registration. The
+    shared writer enforces physical Parquet types independently of pandas inference.
     """
     dataframe = _empty(columns)
     if rows_by_id:
@@ -423,6 +765,7 @@ def _validated_registration_tables(
     context: str,
     *,
     expected_benchmark_id: str | None = None,
+    require_complete: bool = False,
 ) -> dict[str, pd.DataFrame]:
     """Materialize and validate all current registration tables.
 
@@ -455,7 +798,7 @@ def _validated_registration_tables(
                 "phase, then re-run build.py\n"
             )
 
-    benchmark_is_complete = any(
+    benchmark_is_complete = require_complete or any(
         _DERIVED_BENCHMARK_COLUMNS.intersection(row)
         for row in rows.benchmarks.values()
     )
@@ -502,6 +845,23 @@ def _validated_registration_tables(
                 f"{context}: items.parquet references unregistered "
                 f"benchmark_id value(s) {wrong_owner}"
             )
+        for row in tables["items"].itertuples(index=False):
+            try:
+                scale = rows.benchmarks[row.benchmark_id]["response_scale"]
+                expected_item_id = item_id_from_content(
+                    row.benchmark_id,
+                    row.content if pd.notna(row.content) else (
+                        "" if pd.notna(row.asset_manifest) else f"raw:{row.raw_item_id}"
+                    ),
+                    row.item_features if pd.notna(row.item_features) else None,
+                    asset_manifest=row.asset_manifest if pd.notna(row.asset_manifest) else None,
+                    verifier=row.verifier, grading_criterion=row.grading_criterion,
+                    response_scale=scale,
+                )
+                if row.item_id != expected_item_id:
+                    raise ValueError("item_id does not match its grading protocol and effective response_scale")
+            except ValueError as exc:
+                raise RuntimeError(f"{context}: item {row.item_id}: {exc}") from exc
     return tables
 
 

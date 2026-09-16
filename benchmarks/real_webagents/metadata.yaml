@@ -1,0 +1,616 @@
+benchmark:
+  name: REAL
+  description: REAL tests whether web agents can complete user tasks on deterministic clones of real
+    websites, counting an attempt as successful only when every one of the task's automatic checks
+    passes.
+  testing_condition: 'response = per-attempt binary task success in {0, 1}: 1 iff all of the task''s
+    deterministic evals pass, else 0. The website each task runs on is an item feature ; test_condition
+    is null.'
+  paper_url: https://openreview.net/forum?id=Un1sWxmZuI
+  data_source_url: https://realevals.xyz/api/getVerifiedModelData
+  subject_type: agent
+  item_type: task
+  license: unknown
+  citation: "@misc{garg2025realbenchmarkingautonomousagents,\n  title={REAL: Benchmarking Autonomous\
+    \ Agents on Deterministic Simulations of Real Websites},\n  author={Divyansh Garg and Shaun VanWeelden\
+    \ and Diego Caples and Andis Draguns and Nikil Ravi and Pranav Putta and Naman Garg and Tomas\
+    \ Abraham and Michael Lara and Federico Lopez and James Liu and Atharva Gundawar and Prannay Hebbar\
+    \ and Youngchul Joo and Jindong Gu and Charles London and Christian Schroeder de Witt and Sumeet\
+    \ Motwani},\n  year={2025},\n  eprint={2504.11543},\n  archivePrefix={arXiv},\n  primaryClass={cs.AI},\n\
+    \  url={https://arxiv.org/abs/2504.11543},\n}"
+  tags:
+  - web_agent
+  - gui_agent
+  - browser
+  - agent
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  multi_single_turn: multi_turn
+  release_date: 2025-04
+  release: public
+build:
+  contract_version: 1
+sources:
+  downloads:
+    artifact_0001:
+      url: https://realevals.xyz/api/getVerifiedModelData
+      file: model_data.json
+      size: 3421090
+      sha256: 904366e9daf872b8ca250fac5e413248e80d61209aa7db055c213efb695b0683
+    artifact_0002:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-1.json
+      file: tasks/dashdish-1.json
+      size: 636
+      sha256: 0ef0454385827a0f4e86180570dd98b3193837747c32110d88f93d0065522e7b
+    artifact_0003:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-10.json
+      file: tasks/dashdish-10.json
+      size: 2001
+      sha256: e48dcc999608c80b30e85e81b59a948dc47c74564ae2f6a0102e959eb4f4eb00
+    artifact_0004:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-11.json
+      file: tasks/dashdish-11.json
+      size: 1307
+      sha256: 87e894b77b28c54deb08d41fde8bd701f47662603a3fedecac2021a5fca88db7
+    artifact_0005:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-2.json
+      file: tasks/dashdish-2.json
+      size: 1232
+      sha256: de91ecd028794d1789c9e844db44f18bf7d619cb1132d50a4a691f5997ab945b
+    artifact_0006:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-3.json
+      file: tasks/dashdish-3.json
+      size: 623
+      sha256: cf5938b56a409080c52bb0238b62d5ab83a24464e5628df7ca3a0a4226deb21b
+    artifact_0007:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-4.json
+      file: tasks/dashdish-4.json
+      size: 1763
+      sha256: 2849e8b4f931309235b3d8950aa912519c35148f22d4e1fb443e5afc6867dc4d
+    artifact_0008:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-5.json
+      file: tasks/dashdish-5.json
+      size: 1321
+      sha256: 613aaddfc0256a62d8c7193c8966e8fd5b1585e267a96aaac6f3648a072b9324
+    artifact_0009:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-6.json
+      file: tasks/dashdish-6.json
+      size: 605
+      sha256: 60aa118491a99802ba3ae6d73637153520f5dde85840e02be421fe8a17439626
+    artifact_0010:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-7.json
+      file: tasks/dashdish-7.json
+      size: 1315
+      sha256: 213bdc5408a590c7b0312f01d3684a2c278152a64a87a5529db176dcdc51b3b5
+    artifact_0011:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-8.json
+      file: tasks/dashdish-8.json
+      size: 668
+      sha256: cb2bbaa08a46c139a6368b3d24a55630985eb60b1008e9abe4736659ed5b64cc
+    artifact_0012:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/dashdish-9.json
+      file: tasks/dashdish-9.json
+      size: 806
+      sha256: 65e3e7a977cfbcdb4e561743e2fce25e83f9028aca3deb5e9e0c2d66a4fb801c
+    artifact_0013:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-1.json
+      file: tasks/fly-unified-1.json
+      size: 656
+      sha256: 9cd0e42fdbbe9d2cde92636ed8293dd42b87e354c1241f40f6af05e246b892b1
+    artifact_0014:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-10.json
+      file: tasks/fly-unified-10.json
+      size: 1053
+      sha256: cb5bbfe16e489ea2bf97bd9d641c42bbdb20090a79f247e410caebac436f5771
+    artifact_0015:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-11.json
+      file: tasks/fly-unified-11.json
+      size: 780
+      sha256: 634baa55f953b48544885dc6c9b3243d3280e11390b1f4c48bb1dd5fbbf70397
+    artifact_0016:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-12.json
+      file: tasks/fly-unified-12.json
+      size: 1035
+      sha256: bd935b353577474afb2d93986d020e9bdba0a20ea5ccbaa19e2c231944434d53
+    artifact_0017:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-13.json
+      file: tasks/fly-unified-13.json
+      size: 862
+      sha256: 2e2fb15b3d22ecf0f6d90a4a91ee28aaebb87be2263653a2d0c7eb8747ee77b1
+    artifact_0018:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-14.json
+      file: tasks/fly-unified-14.json
+      size: 826
+      sha256: 8221bc6b341386cd8d2ada23725b3e90a9f9a7974fe733abd8db8e1218e4963c
+    artifact_0019:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-2.json
+      file: tasks/fly-unified-2.json
+      size: 4203
+      sha256: c8943b18f4d5d7dcabe03db0b7ca6ef9325a654234bec8982d0cb33d6f186e2a
+    artifact_0020:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-3.json
+      file: tasks/fly-unified-3.json
+      size: 647
+      sha256: 25170a34c87d22888795e72538c85804e4025c1032fd1e567dcfcce9b9c59032
+    artifact_0021:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-4.json
+      file: tasks/fly-unified-4.json
+      size: 2635
+      sha256: c7219a87e3baeb0a839f72f9321f4af0ffe1db0c9746ce8daf4a9c524795bae4
+    artifact_0022:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-5.json
+      file: tasks/fly-unified-5.json
+      size: 1842
+      sha256: f3c1c0977231a521b6851c18b9d4310fa32923413cb3e6d6241518abd084ad1b
+    artifact_0023:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-6.json
+      file: tasks/fly-unified-6.json
+      size: 1862
+      sha256: c862c75dee9f91df19ca588a206966c811d657b70233a3c9363ddc74f853d367
+    artifact_0024:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-7.json
+      file: tasks/fly-unified-7.json
+      size: 655
+      sha256: 45c1362b7eab67a5e9f840e0756861dc24fd5b8d3ba59302299f16e670c13a9c
+    artifact_0025:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-8.json
+      file: tasks/fly-unified-8.json
+      size: 2447
+      sha256: 3d2f81a391eb1c040e242183a12fa6116e87f81719c52974c2d243b1c422b0ae
+    artifact_0026:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/fly-unified-9.json
+      file: tasks/fly-unified-9.json
+      size: 2099
+      sha256: 9b29b4df19e1f32e1e013deb24567d6f9fdd1bae463265af8a67f4731c09bef8
+    artifact_0027:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-1.json
+      file: tasks/gocalendar-1.json
+      size: 1218
+      sha256: 99c6b30eebedc3721ec7523c70439e2518c3c94bdc36775eb0265661b1299af6
+    artifact_0028:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-10.json
+      file: tasks/gocalendar-10.json
+      size: 1286
+      sha256: 40c3353926707d4c4b756066b5376cba1fe5f5cb825bcbd3e2708f80f343df3d
+    artifact_0029:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-2.json
+      file: tasks/gocalendar-2.json
+      size: 942
+      sha256: 72110894810307090c57a97bddbcb85cd7cf69586bc5e8043386d3364ef89760
+    artifact_0030:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-3.json
+      file: tasks/gocalendar-3.json
+      size: 851
+      sha256: b6c7f7ade6c7dd555cc56f4dbd4d34626a7e646753c969903ff7716cac07b392
+    artifact_0031:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-4.json
+      file: tasks/gocalendar-4.json
+      size: 854
+      sha256: 128f5b8f70d1cdf587b53903a4dc2bc425a818576e4d8627990876774ee23e23
+    artifact_0032:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-5.json
+      file: tasks/gocalendar-5.json
+      size: 1516
+      sha256: 0446ad7328dbdd2b9da1cdb8952d695b3658375a0ec1aa3ff787921d095be904
+    artifact_0033:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-6.json
+      file: tasks/gocalendar-6.json
+      size: 779
+      sha256: 0ddca5171265105c0d1ee91987da03967fea6709d957442d74103dcadbe0e357
+    artifact_0034:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-7.json
+      file: tasks/gocalendar-7.json
+      size: 939
+      sha256: 4e371d57707ca8b09743d20d60952555058f5e0a12f85c6130e02e72a38ce042
+    artifact_0035:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-8.json
+      file: tasks/gocalendar-8.json
+      size: 735
+      sha256: a74680aaffb19ad1f558fd330bc834f2499f717de8d4525ec88bbcb4fb8fd072
+    artifact_0036:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gocalendar-9.json
+      file: tasks/gocalendar-9.json
+      size: 1159
+      sha256: c2828290394d447d5090fdbae0a4732d49574b9bc7f3100f115b8f7ec05f8933
+    artifact_0037:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-1.json
+      file: tasks/gomail-1.json
+      size: 578
+      sha256: c482233c022b21797b17c146f061322b27d1d779eeae70eed7cff0d4abbb3e5c
+    artifact_0038:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-2.json
+      file: tasks/gomail-2.json
+      size: 589
+      sha256: fe7323aa3ddb5b1d50792b343b79ca335fc54eaf44c690cc4510936916c2c55c
+    artifact_0039:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-3.json
+      file: tasks/gomail-3.json
+      size: 1089
+      sha256: aab5e28dfc2888103393115ca33d31763aa90251f8fd42d326cc50201762775a
+    artifact_0040:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-4.json
+      file: tasks/gomail-4.json
+      size: 596
+      sha256: c6a26b7f1377ce294f8fd822d8a73f4d50ceb59e26ed91f5eea4df0bc4fdafc1
+    artifact_0041:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-5.json
+      file: tasks/gomail-5.json
+      size: 1083
+      sha256: 70ce978c445c7549e57b6ba046e178d6ca84bfd4948d652ad2639ffafeab0cab
+    artifact_0042:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-6.json
+      file: tasks/gomail-6.json
+      size: 693
+      sha256: a0715bc29ca7315f04c4fb2a65293a7d35161e66c38fda580744fb3ce4fe9744
+    artifact_0043:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-7.json
+      file: tasks/gomail-7.json
+      size: 644
+      sha256: 80d82d8f7249e56d795b3495263bc7e70669d037f2e8b90b5fffe8990191a38f
+    artifact_0044:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/gomail-8.json
+      file: tasks/gomail-8.json
+      size: 998
+      sha256: 89679a22b88b434c72af3ccc0b3123f957708b13a969bf998a513aa236fdc7ec
+    artifact_0045:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-1.json
+      file: tasks/networkin-1.json
+      size: 931
+      sha256: aa78472111784427dcc2c5a4ebc349561d1689b7201b5c4fbf3106e78975dc59
+    artifact_0046:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-10.json
+      file: tasks/networkin-10.json
+      size: 945
+      sha256: 8c2290cc0035f159b9ef2f7651fb04b2c0d8053fc8d36db93a6958698af2c034
+    artifact_0047:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-2.json
+      file: tasks/networkin-2.json
+      size: 745
+      sha256: a71d4273d21f84846d9fcfa8458a86889b9f32619218ff967e80f8500760d99b
+    artifact_0048:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-3.json
+      file: tasks/networkin-3.json
+      size: 1238
+      sha256: 66ba65b4efcc3e64c3b65493328ba92e7c86228ae7252eb6eefeebfbd4b1706c
+    artifact_0049:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-4.json
+      file: tasks/networkin-4.json
+      size: 630
+      sha256: d330b7f10fe2712dc2e825707c98909f686a3c549543b73f9839aac36acf2afb
+    artifact_0050:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-5.json
+      file: tasks/networkin-5.json
+      size: 602
+      sha256: 7742b457aaf0c768d94697b5f564f008396a4bd9f7ca8ff1ea224d762c75c009
+    artifact_0051:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-6.json
+      file: tasks/networkin-6.json
+      size: 1055
+      sha256: 391f9289d9f4d36d7e42626b2390cafa3222e1841d4de453a8eedfa6224c2f38
+    artifact_0052:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-7.json
+      file: tasks/networkin-7.json
+      size: 925
+      sha256: 6c2673f1601a9731555d78b2dde410d5740a37c7e0d9c61ff28d37ef8623362d
+    artifact_0053:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-8.json
+      file: tasks/networkin-8.json
+      size: 879
+      sha256: 007517ae959a32cb491e3a8d5c91b95c20f3a41ed0d40b6c7ea14b0f962674de
+    artifact_0054:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/networkin-9.json
+      file: tasks/networkin-9.json
+      size: 1276
+      sha256: 0f339088b4e27b4717d5b1010eb388109b8ae3c794b73a6ac8b28ab3e6fc5c46
+    artifact_0055:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-1.json
+      file: tasks/omnizon-1.json
+      size: 674
+      sha256: 003b3b220a76ed89f0624c4c19e345007cd52a390e523dc29a255fb3ca273732
+    artifact_0056:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-10.json
+      file: tasks/omnizon-10.json
+      size: 886
+      sha256: 7a52241ab38254bb3870b091ae916e282c83f3da2f49df6fcd21d65351858f6f
+    artifact_0057:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-2.json
+      file: tasks/omnizon-2.json
+      size: 1128
+      sha256: 421f98dba9bccd181dc301293a6e9e41c02df15b5c7b99a892e2bc744736368a
+    artifact_0058:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-3.json
+      file: tasks/omnizon-3.json
+      size: 697
+      sha256: b568fd73ca92a9708cc45956655b60b60dac2d82e1c038b697e8f8c6a302bfb7
+    artifact_0059:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-4.json
+      file: tasks/omnizon-4.json
+      size: 954
+      sha256: bf52952710fa2f3ccbf4a368fc2be6381088bcb06883529517031fb196a10f88
+    artifact_0060:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-5.json
+      file: tasks/omnizon-5.json
+      size: 734
+      sha256: d35f1c7c13ddffc47975aa180984b231f7d12d7385e322191521035cd3405b82
+    artifact_0061:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-6.json
+      file: tasks/omnizon-6.json
+      size: 1363
+      sha256: 85de3c4e39d6363cd869c69f74e8642df7cf8ba9b1f2b846dc2409c04f55c1f1
+    artifact_0062:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-7.json
+      file: tasks/omnizon-7.json
+      size: 642
+      sha256: d87d4551427a8d733dd8a585dc746cb0f8045256b74b7cb16f2eb7e858ed4f6d
+    artifact_0063:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-8.json
+      file: tasks/omnizon-8.json
+      size: 1033
+      sha256: 270e1de767d3a6b36e434ad618c589beda7933ab55cb97aadda44e569c2aa354
+    artifact_0064:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/omnizon-9.json
+      file: tasks/omnizon-9.json
+      size: 1919
+      sha256: 53bf9f7a34eb3ccd32db9ba9aa00d6966488f3e6d026b461dd24a9ed7ddbb910
+    artifact_0065:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-1.json
+      file: tasks/opendining-1.json
+      size: 854
+      sha256: b7cd82165b3725e8b27d2ec295aea425a5c889f112ac4f59e6785e75c824f6b1
+    artifact_0066:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-10.json
+      file: tasks/opendining-10.json
+      size: 967
+      sha256: f09f5a9d056cf0498507102fc0d41214a9931186f8ce87609f8754e43604b232
+    artifact_0067:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-2.json
+      file: tasks/opendining-2.json
+      size: 819
+      sha256: 62c1e1fd4bfc0b26eff34eed579a0f7b7c103cf909ab94f5f79b0c66e1e6a4c5
+    artifact_0068:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-3.json
+      file: tasks/opendining-3.json
+      size: 1504
+      sha256: e57aea8d3de0f7a62bd1ebe6a6ba85d2bb359cc776dce0f849e067bf04f73216
+    artifact_0069:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-4.json
+      file: tasks/opendining-4.json
+      size: 1747
+      sha256: 7e68ceaea376902200a01fe8df6597d52004213b8f051f16ed05ef8c142c60f5
+    artifact_0070:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-5.json
+      file: tasks/opendining-5.json
+      size: 1555
+      sha256: 02357d3c1c1f438ecd7215e7f523a246292792f8433381f89c4faafc36492f9f
+    artifact_0071:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-6.json
+      file: tasks/opendining-6.json
+      size: 762
+      sha256: 9f6ded5505901e5bd4e54735dd61579700401015baea95e18ba28349676722bc
+    artifact_0072:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-7.json
+      file: tasks/opendining-7.json
+      size: 958
+      sha256: 870b2840c76106ac891f0f4df6e591cec29fa2773b71c4ebb320cbfe199e47cc
+    artifact_0073:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-8.json
+      file: tasks/opendining-8.json
+      size: 1122
+      sha256: c5883f7c9de2e0880c6e2877dfa8d06680ede17957c3679e4a37420a36835115
+    artifact_0074:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/opendining-9.json
+      file: tasks/opendining-9.json
+      size: 727
+      sha256: b214700815d359e59bee8139d56db130220cbce66305921f10dbb40883b01909
+    artifact_0075:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-1.json
+      file: tasks/staynb-1.json
+      size: 685
+      sha256: debb0e2a684c8ae658a1331dfbfb96e3e005bf48e2e518e492a4faa37e3af208
+    artifact_0076:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-2.json
+      file: tasks/staynb-2.json
+      size: 721
+      sha256: 1df1d3891ba73ac32bd6276d159196302a545a84217bfe6d03bdf5f78f110c39
+    artifact_0077:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-3.json
+      file: tasks/staynb-3.json
+      size: 629
+      sha256: dc652bb70ef08844f858e3c110188d55e6f0e723eb05c80529e8b71d00602aa8
+    artifact_0078:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-4.json
+      file: tasks/staynb-4.json
+      size: 614
+      sha256: c2c8c7a0af7ed61f88a4bf22536d55b5e828560e73e2482c6d5413c3697d578a
+    artifact_0079:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-5.json
+      file: tasks/staynb-5.json
+      size: 1608
+      sha256: 43cb634cbfa1233246cedc82b7e873dd4fdcc91bf19db9ac8a01fedf4f4a60fb
+    artifact_0080:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-6.json
+      file: tasks/staynb-6.json
+      size: 890
+      sha256: 7d498013be56d59c99112ee5213a6c5b71e6cbd62960180e805e6a165aeb4ce2
+    artifact_0081:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-7.json
+      file: tasks/staynb-7.json
+      size: 827
+      sha256: 937d315e0c607047a9e384d612d79bd2f65dc47b25df00a8efcf3ec881e59556
+    artifact_0082:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-8.json
+      file: tasks/staynb-8.json
+      size: 1127
+      sha256: 2082f4dd12eab1674473df6559407c2cd6c73d631d21f331679175a0d8f6fb29
+    artifact_0083:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/staynb-9.json
+      file: tasks/staynb-9.json
+      size: 857
+      sha256: a194e50a32ebf9f2d7c5ecd732f0375d4e1f9407036a4b94222cde780be2658d
+    artifact_0084:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-1.json
+      file: tasks/topwork-1.json
+      size: 1066
+      sha256: 0526b8789e1e86f51635b5a68a9f98fd6a054a987d6d69981f918ece8f473aef
+    artifact_0085:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-2.json
+      file: tasks/topwork-2.json
+      size: 1510
+      sha256: 2ce8c95ec431d90d47c24b336f8c378d5c5c48ebb59636507206f030dfe7b36a
+    artifact_0086:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-3.json
+      file: tasks/topwork-3.json
+      size: 1487
+      sha256: 3a1e6fce6f693d2ab692752ccac5d8d1ea477f78228169df6b1ee5dd39192a7d
+    artifact_0087:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-4.json
+      file: tasks/topwork-4.json
+      size: 1527
+      sha256: ab198e51a867169b4c9ccd83aea4bb1666ff029c08783070a8045ce027f7eb36
+    artifact_0088:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-5.json
+      file: tasks/topwork-5.json
+      size: 970
+      sha256: a871b7f6b05f780ac8cd28a3639823ff0c860d0e9ad49c4e18728864db5b9aa5
+    artifact_0089:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-6.json
+      file: tasks/topwork-6.json
+      size: 614
+      sha256: b5b92666afdf7f656d6bdae5982026b99ad31fcdddcee71ba25893f7bb30bed8
+    artifact_0090:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-7.json
+      file: tasks/topwork-7.json
+      size: 843
+      sha256: 2e694807d80d27a52a2bf4694a7a5c3ff60b4faa8bb60ee4892cdfb949990e66
+    artifact_0091:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-8.json
+      file: tasks/topwork-8.json
+      size: 562
+      sha256: 4fb3d1f3b84c3a65bd20c5be6570c03300043c8c5c0e1c4809907855142bec23
+    artifact_0092:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/topwork-9.json
+      file: tasks/topwork-9.json
+      size: 949
+      sha256: 095e7387d485d3a2d4d55301bdbf63858e5dbad11aede59addbd33e759152e62
+    artifact_0093:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-1.json
+      file: tasks/udriver-1.json
+      size: 970
+      sha256: 75cfce6e9c2cd2b791b4e0816c57f031f6ea9f1276a0c3cc6f4de5ac06ab3913
+    artifact_0094:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-10.json
+      file: tasks/udriver-10.json
+      size: 1238
+      sha256: 46fd055b865704642bf8719996ecc71b0cdf3fa5b13f04ca441a04bc703d7260
+    artifact_0095:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-11.json
+      file: tasks/udriver-11.json
+      size: 1161
+      sha256: fc4b4259de434ed4248b01a36cacbd0307f675ba56f9655e101c0bff0565a710
+    artifact_0096:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-2.json
+      file: tasks/udriver-2.json
+      size: 588
+      sha256: 483b582f8a29159d6562699d072c2c01bfab4e23e92d4dbbf2a663e39350c0fe
+    artifact_0097:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-3.json
+      file: tasks/udriver-3.json
+      size: 665
+      sha256: 7ba58df263986964d5531aad4e929a2a46e4e9562ce6931716b0b8d37a4d4265
+    artifact_0098:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-4.json
+      file: tasks/udriver-4.json
+      size: 908
+      sha256: 6866ad9a277241f05f910cf1770c1b7806ed7c9eabdfbba6a318a592ffe01b52
+    artifact_0099:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-5.json
+      file: tasks/udriver-5.json
+      size: 1229
+      sha256: 9b835748b2beb5f3927eadf006ca74b5c507255cb65f0d58fef984fa8aac91cb
+    artifact_0100:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-6.json
+      file: tasks/udriver-6.json
+      size: 1089
+      sha256: 974f217fb2da24924525eafbfae7d1da3612ff4336b2fa55bbd673eba9f8c2ef
+    artifact_0101:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-7.json
+      file: tasks/udriver-7.json
+      size: 550
+      sha256: 69d83742643ea8b4787f48c1874e13b9b11d2fcad0a9dfcb3fe9bf741faf349e
+    artifact_0102:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-8.json
+      file: tasks/udriver-8.json
+      size: 920
+      sha256: e5f2f5d85cc07d4776052eeb938c7ed3641e05c8d404c6ebf7a7b381270fe7ec
+    artifact_0103:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/udriver-9.json
+      file: tasks/udriver-9.json
+      size: 1274
+      sha256: 9f88d1a089912e30c2bbb69d7a5a712af25a86c14e928cfd5c45241871684c4b
+    artifact_0104:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-1.json
+      file: tasks/zilloft-1.json
+      size: 699
+      sha256: d2fe5eebcca968e4eba740ed6e6c1b7e4c574679ba2bf957819361e83efa620f
+    artifact_0105:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-10.json
+      file: tasks/zilloft-10.json
+      size: 677
+      sha256: d91af7c636dcf9c7e68f244f7c91946010a46e90ae2fcb36ecff6b779ff92b0e
+    artifact_0106:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-2.json
+      file: tasks/zilloft-2.json
+      size: 759
+      sha256: 9950c6f41a3ad8a86d9d3e9704f71c6f3058776c2834d2df2b20c2dc2bfabd96
+    artifact_0107:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-3.json
+      file: tasks/zilloft-3.json
+      size: 1436
+      sha256: a2f882177b55547f848226f4585ca3d9eb923ec4eedc307ff176ec70f209acf6
+    artifact_0108:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-4.json
+      file: tasks/zilloft-4.json
+      size: 701
+      sha256: 62a0f1cf31c02d063d2316f0f55e0d1e455e75011b23718f895b4e33695b8b60
+    artifact_0109:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-5.json
+      file: tasks/zilloft-5.json
+      size: 777
+      sha256: 3add26a719a6f8bf5d1f7bcf7a495430ec82b65a44bccf18460a0e4e6bb7199a
+    artifact_0110:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-6.json
+      file: tasks/zilloft-6.json
+      size: 1664
+      sha256: 064ba631eb5f76bec9f1b3f122318439aa6dd9feeb52296b348c15d35d5e745a
+    artifact_0111:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-7.json
+      file: tasks/zilloft-7.json
+      size: 650
+      sha256: ddd9b1e556bc64dc46b3d71d67907cb0b8f3eed17d391a8798098f99223029e4
+    artifact_0112:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-8.json
+      file: tasks/zilloft-8.json
+      size: 792
+      sha256: 25fe696c0a8738b5880030a615a2cb1c621ce0d89af62daf99292ce184b57208
+    artifact_0113:
+      url: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/tasks/zilloft-9.json
+      file: tasks/zilloft-9.json
+      size: 2002
+      sha256: 62b4b452263252874356dad64cfb17a0cba620f30b6bb3616f56ee3f4703f4dd
+  references:
+    snapshot_note: Existing cached release; SHA-256 and byte sizes pin the inputs. The original upstream
+      commit was not recorded.

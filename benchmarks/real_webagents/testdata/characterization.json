@@ -1,0 +1,15 @@
+{
+  "review": "Schema migration: same released attempts, grades, task content, and traces; grading protocol distinguishes items. See curation_record.md.",
+  "counts": {
+    "subjects": 33,
+    "items": 233,
+    "responses": 4449,
+    "traces": 1242
+  },
+  "digests": {
+    "subjects": "89403130e4c88b08d5fc8bcb125cec1da2a85229aa994814dd0c7994eb22741d",
+    "items": "764160e301ba02a42ece4783c579c83c9364c26edc709872587e94008b2b40b8",
+    "responses": "4b59efc6d3fefa77c584f12c4d25292ddc827c98823a4dd88163f10cf974265f",
+    "traces": "754acb6deec541dcf2bf6163e1f3776ebd9da9b78309f46781f1dd523a7637cb"
+  }
+}

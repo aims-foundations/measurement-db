@@ -14,7 +14,7 @@ benchmark:
     - software_engineering
     - ml_engineering
   response_type: binary
-  response_scale: "{0, 1}"
+  response_scale: {kind: discrete, values: [0, 1]}
   categorical: true
   release_date: "2025-06"
   multi_single_turn: single_turn

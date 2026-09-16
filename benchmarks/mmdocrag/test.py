@@ -24,9 +24,12 @@ sys.path.insert(0, str(BENCHMARK_DIR.parents[2]))
 
 from measurement_db.scripts.build_measurement_tables import (
     validate_table,
+    validate_trace_relations,
 )
 from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import (
-    response_row_hashes,
+    item_id_from_content,
+    response_id_from_row,
+    response_identity_v1,
     subject_id_from_row,
 )
 from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata import (
@@ -100,6 +103,10 @@ def semantic_cells(tables: dict[str, pd.DataFrame], name: str) -> pd.DataFrame:
         table["interactors"] = None
     columns = CELL_KEY + ["benchmark_id", "interactors"]
     if name == "responses":
+        # Reconstruct the retired all-null slots only for the historical
+        # semantic fingerprint; schema-2 files do not carry these columns.
+        table["reference_answer"] = None
+        table["trace"] = None
         columns += ["response", "reference_answer"]
     return table[columns + ["trace"]]
 
@@ -227,8 +234,17 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
                     logical_fingerprint(table), self.expected["preserved"][name]
                 )
         item_columns = self.expected["legacy"]["items"]["columns"]
+        # Compare the released question/answer bank under its historical hash;
+        # current item IDs also include the grading protocol and response scale.
+        legacy_items = self.tables["items"].copy()
+        legacy_items["reference_answer"] = legacy_items.grading_criterion.map(
+            lambda value: json.loads(value)["reference_answer"]
+        )
+        legacy_items["verifier"] = None
+        legacy_items["item_id"] = [item_id_from_content(row.benchmark_id, row.content)
+                                    for row in legacy_items.itertuples()]
         self.assertEqual(
-            logical_fingerprint(self.tables["items"][item_columns]),
+            logical_fingerprint(legacy_items[item_columns]),
             self.expected["legacy"]["items"]["logical_sha256"],
         )
 
@@ -247,10 +263,12 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
         responses = self.tables["responses"]
         self.assertEqual(
             responses["response_id"].tolist(),
-            response_row_hashes(responses.drop(columns="response_id")),
+            [response_id_from_row(response_identity_v1(row, None))
+             for row in responses.to_dict("records")],
         )
-        self.assertTrue(responses["reference_answer"].isna().all())
-        self.assertTrue(responses["trace"].isna().all())
+        self.assertNotIn("reference_answer", responses)
+        self.assertNotIn("trace", responses)
+        validate_trace_relations(responses, self.tables["traces"])
         for column in (
             "access_date",
             "harness",
@@ -370,9 +388,10 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
             if isinstance(answer, list):
                 answer = ", ".join(str(part) for part in answer)
             self.assertEqual(items.loc[f"q_id::{qid}", "content"], record["question"])
-            self.assertEqual(items.loc[f"q_id::{qid}", "reference_answer"], answer)
-        for column in ("asset_manifest", "item_features", "verifier"):
+            self.assertEqual(json.loads(items.loc[f"q_id::{qid}", "grading_criterion"])["reference_answer"], answer)
+        for column in ("asset_manifest", "item_features"):
             self.assertTrue(items[column].isna().all(), column)
+        self.assertTrue(items.verifier.map(lambda value: json.loads(value)["class"] == "judge").all())
 
     def test_released_judge_cells_and_exact_case_trace_selection(self) -> None:
         layout = METADATA["archive_layout"]

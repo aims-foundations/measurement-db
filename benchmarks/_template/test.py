@@ -28,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.build_measurement_tables import (  # noqa: E402
     validate_asset_relations,
     validate_table,
+    validate_trace_relations,
 )
 
 
@@ -144,7 +145,11 @@ class ExampleBenchmarkCharacterizationTests(unittest.TestCase):
             self.assets,
             benchmark_id=benchmark_id,
             context=BENCHMARK_DIR.name,
+            response_scale=self.benchmarks.iloc[0].response_scale,
         )
+
+    def test_trace_response_links(self) -> None:
+        validate_trace_relations(self.responses, self.traces, context=BENCHMARK_DIR.name)
 
     def test_canonical_table_schemas(self) -> None:
         validate_table("items", self.items, context=BENCHMARK_DIR.name)
@@ -159,7 +164,6 @@ class ExampleBenchmarkCharacterizationTests(unittest.TestCase):
             "responses",
             self.responses,
             include_derived=True,
-            allow_extra=True,
             context=BENCHMARK_DIR.name,
         )
         if self.traces is not None:
@@ -175,7 +179,7 @@ class ExampleBenchmarkCharacterizationTests(unittest.TestCase):
                     row.asset_manifest,
                     row.content_hash,
                     row.item_features,
-                    row.reference_answer,
+                    row.grading_criterion,
                     row.verifier,
                 ],
                 ensure_ascii=False,
@@ -229,7 +233,6 @@ class ExampleBenchmarkCharacterizationTests(unittest.TestCase):
                     row.source_url,
                     row.description,
                     row.one_line_description,
-                    row.dataset_source,
                     list(row.modality),
                     list(row.domain),
                     row.multi_single_turn,
@@ -253,6 +256,7 @@ class ExampleBenchmarkCharacterizationTests(unittest.TestCase):
             else [
                 json.dumps(
                     [
+                        row.response_id,
                         row.subject_id,
                         row.item_id,
                         row.benchmark_id,

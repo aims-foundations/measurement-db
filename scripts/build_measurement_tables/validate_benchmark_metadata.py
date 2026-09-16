@@ -12,6 +12,9 @@ import yaml
 from yaml.constructor import ConstructorError
 from yaml.nodes import MappingNode
 
+from .define_benchmark_vocabulary import validate_benchmark_release_date
+from .response_scales import resolve_categorical, validate_scale_type
+
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCHEMA_PATH = _REPO_ROOT / "benchmark_metadata_schema.yaml"
@@ -159,13 +162,13 @@ def _source_reference_problems(metadata: Mapping[str, object]) -> list[str]:
                 "benchmark.paper_url",
                 "benchmark.data_source_url",
             } or reference.startswith(
-                ("sources.downloads.", "sources.references.")
+                ("sources.downloads.", "sources.inputs.", "sources.references.")
             )
             if not permitted_reference:
                 problems.append(
                     "validation.source_claims."
                     f"{category}.{claim_id}.source_ref: must point to a benchmark "
-                    "paper/data URL or a sources downloads/references entry"
+                    "paper/data URL or a sources downloads/inputs/references entry"
                 )
                 continue
             target: object = metadata
@@ -208,7 +211,26 @@ def validate_benchmark_metadata(
         for yaml_path, message in _expanded_error_messages(error)
     ]
     if not errors and isinstance(metadata, Mapping):
+        try:
+            validate_benchmark_release_date(metadata["benchmark"]["release_date"])
+        except ValueError as exc:
+            problems.append(f"benchmark.release_date: {exc}")
+        benchmark = metadata["benchmark"]
+        try:
+            validate_scale_type(benchmark["response_type"], benchmark["response_scale"])
+        except ValueError as exc:
+            problems.append(f"benchmark.response_scale: {exc}")
+        try:
+            resolve_categorical(benchmark["response_type"], benchmark.get("categorical"))
+        except ValueError as exc:
+            problems.append(f"benchmark.categorical: {exc}")
         problems.extend(_source_reference_problems(metadata))
+        sources = metadata.get("sources", {})
+        if isinstance(sources, Mapping) and any(key in sources for key in ("downloads", "inputs")):
+            try:
+                declared_source_artifacts(sources)
+            except ValueError as exc:
+                problems.append(str(exc))
     if not problems:
         return
     raise BenchmarkMetadataError(
@@ -232,8 +254,31 @@ def load_benchmark_metadata(path: str | Path) -> dict[str, object]:
     return metadata
 
 
+def declared_source_artifacts(sources: Mapping) -> list[dict]:
+    """Return validated input descriptors; references alone are not inputs.
+
+    Call after metadata-schema validation. Each cached file has exactly one
+    manifest entry, whether acquired by the shared or a custom downloader.
+    """
+    artifacts = []
+    files = set()
+    for group in ("downloads", "inputs"):
+        for name, descriptor in sources.get(group, {}).items():
+            path = descriptor["file"]
+            if path == "_provenance.json":
+                raise ValueError("raw/_provenance.json is a retired build artifact, not an upstream input")
+            if path in files:
+                raise ValueError(f"sources.{group}.{name}: duplicate input file {path!r}")
+            files.add(path)
+            artifacts.append(descriptor)
+    if not artifacts:
+        raise ValueError("metadata.yaml must declare inputs under sources.downloads or sources.inputs")
+    return artifacts
+
+
 __all__ = [
     "BenchmarkMetadataError",
     "load_benchmark_metadata",
     "validate_benchmark_metadata",
+    "declared_source_artifacts",
 ]
