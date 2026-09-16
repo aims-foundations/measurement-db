@@ -6,8 +6,9 @@ Canonical metadata and table contracts live in
 ``benchmark_metadata_schema.yaml`` and ``parquet_schemas.yaml``.
 
 Modern builders provide ``metadata.yaml`` and implement
-``build_subject_item_response_rows()``. Static HTTP artifacts belong under
-``sources.downloads``; override ``download()`` only for custom acquisition. A
+``build_subject_item_response_rows()``. Contract 2 restores and verifies the raw
+snapshot pinned by ``sources.archive``; ``self.source_files`` identifies its
+inputs. Contract-1 download hooks remain available to unmigrated builders. A
 builder commits final subjects, items, and responses through
 :meth:`BenchmarkBuild.add_subject`, ``add_item``, and ``add_response``.
 :meth:`BenchmarkBuild.main` validates source provenance from metadata.yaml and
@@ -43,6 +44,7 @@ from scripts.build_measurement_tables import (  # noqa: E402
     load_source_files as _source_files,
     normalize_evaluation_settings as _evaluation_settings,
     validate_benchmark_metadata as _benchmark_metadata,
+    source_snapshots as _source_snapshots,
 )
 
 # Intentional author-facing verifier specifications. Everything else imported
@@ -80,6 +82,8 @@ class BenchmarkBuild(ABC):
         self.traces_path = self.dir / "traces.parquet"
         self.assets_path = self.dir / "assets.parquet"
         self.source_manifest: dict[str, object] = {}
+        self.source_files: tuple[str, ...] = ()
+        self._source_artifacts: list[dict] = []
         self.archive_layout: dict[str, object] = {}
         self.expectations: dict[str, object] = {}
         # ``main()`` resets and activates this per-run state immediately
@@ -185,9 +189,9 @@ class BenchmarkBuild(ABC):
         if (
             isinstance(contract_version, bool)
             or not isinstance(contract_version, int)
-            or contract_version != 1
+            or contract_version not in (1, 2)
         ):
-            problems.append("`BUILD_CONTRACT_VERSION` must be 1")
+            problems.append("`BUILD_CONTRACT_VERSION` must be 1 or 2")
 
         # Benchmark metadata
         try:
@@ -695,15 +699,20 @@ class BenchmarkBuild(ABC):
 
     # --- subclass hooks --------------------------------------------------
     def download(self) -> list[str] | tuple[str, ...]:
-        """Fetch the static HTTP artifacts declared in ``sources.downloads``.
+        """Restore a pinned HF snapshot, or fetch legacy static HTTP artifacts.
 
-        Override this hook only when acquisition requires behavior such as
-        authentication, dynamic discovery, repository cloning, or streaming.
+        Contract 2 needs no download override. The following legacy behavior
+        remains available for contract-1 builders. Override this hook only when
+        acquisition requires authentication, dynamic discovery, cloning, or streaming.
         Custom implementations must still cache their inputs beneath
         ``self.raw_dir`` and return every declared source locator, including on
         cache hits. Declare custom-acquired files under ``sources.inputs`` in
         metadata.yaml, with their sizes and SHA-256 hashes before building.
         """
+        if "archive" in self.source_manifest:
+            from_source = self.source_manifest["archive"]
+            _source_snapshots.restore_snapshot(from_source, self.raw_dir, self._source_artifacts)
+            return [artifact["url"] for artifact in self._source_artifacts]
         downloads = self.source_manifest.get("downloads")
         if not isinstance(downloads, dict) or not downloads:
             raise BuildContractError(
@@ -1019,6 +1028,8 @@ class BenchmarkBuild(ABC):
         # Always load provenance from the authoritative file, including when a
         # legacy caller constructed an inline INFO definition programmatically.
         self.source_manifest = copy.deepcopy(manifest)
+        self._source_artifacts = artifacts
+        self.source_files = tuple(artifact["file"] for artifact in artifacts)
         download_sources = self.download()
         if not isinstance(download_sources, (list, tuple)):
             raise BuildContractError(
@@ -1078,9 +1089,12 @@ class BenchmarkBuild(ABC):
                 cached = self.raw_dir / artifact["file"]
                 if not cached.resolve().is_relative_to(root) or not cached.is_file():
                     raise ValueError(f"declared raw input is missing or outside raw/: {cached}")
-                _source_files.verify_file(
-                    cached, expected_size=artifact["size"],
-                    expected_sha256=artifact["sha256"],
-                )
+                if "archive" in manifest:
+                    _source_snapshots.verify_snapshot_file(cached, artifact)
+                else:
+                    _source_files.verify_file(
+                        cached, expected_size=artifact["size"],
+                        expected_sha256=artifact["sha256"],
+                    )
         except (OSError, TypeError, ValueError, _source_files.SourceDataError) as exc:
             raise BuildContractError(f"{self.slug}: source manifest validation failed: {exc}") from exc

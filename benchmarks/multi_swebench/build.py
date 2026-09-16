@@ -152,7 +152,8 @@ class MultiSWEBench(BenchmarkBuild):
         content: dict[str, str] = {}
         correct: dict[str, str] = {}
         verifier: dict[str, str] = {}
-        for path in sorted(self.raw_dir.glob("*.jsonl")):
+        for path in sorted(self.raw_dir / name for name in self.source_files
+                           if "/" not in name and name.endswith(".jsonl")):
             if path.stat().st_size == 0:
                 continue
             with open(path) as fh:
@@ -218,10 +219,8 @@ class MultiSWEBench(BenchmarkBuild):
         content, answers, verifiers = self._load_item_data()
         sources = []
         earliest = {}
-        original_paths = self.archive_layout.get("original_paths", {})
-        for descriptor in self.source_manifest["downloads"].values():
-            local = descriptor["file"]
-            original = original_paths.get(local, local)
+        for local in self.source_files:
+            original = re.sub(r"_x([0-9a-f]{2})_", lambda m: chr(int(m[1], 16)), local)
             if not original.startswith("results/"):
                 continue
             stem = Path(original).stem

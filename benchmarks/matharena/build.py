@@ -117,14 +117,32 @@ def subject_features(model_name: str, model_config: str) -> dict[str, str]:
     return features
 
 
+PROOF_COMPETITIONS = {"imc_2025", "imo_2025", "miklos_2025", "putnam_2025", "usamo_2025"}
+
+
+def source_competitions(files):
+    """Group verified release shards by their archived competition directory."""
+    competitions = {}
+    for name in sorted(files):
+        path = Path(name)
+        if len(path.parts) != 4 or path.parts[0] != "sources" or path.suffix != ".parquet":
+            continue
+        competition = path.parts[1]
+        group = competitions.setdefault(competition, {
+            "kind": "proof" if competition in PROOF_COMPETITIONS else "final_answer",
+            "shards": [], "card": f"sources/{competition}/README.md",
+        })
+        group["shards"].append(name)
+    return competitions
+
+
 class MathArenaBuild(BenchmarkBuild):
     """One observation per released final verdict or usable rubric criterion."""
 
     def source_records(self, competition: Mapping) -> Iterator[tuple[str, int, dict]]:
         """Read bounded Arrow batches without materializing unused message logs."""
         for shard in competition["shards"]:
-            source = self.source_manifest["downloads"][shard]
-            parquet = pq.ParquetFile(self.raw_dir / source["file"])
+            parquet = pq.ParquetFile(self.raw_dir / shard)
             columns = [
                 column
                 for column in parquet.schema_arrow.names
@@ -172,9 +190,7 @@ class MathArenaBuild(BenchmarkBuild):
     def build_subject_item_response_rows(self) -> None:
         subjects: dict[tuple[str, str], str] = {}
         items: dict[tuple, str] = {}
-        for competition_name, competition in self.source_manifest[
-            "competitions"
-        ].items():
+        for competition_name, competition in source_competitions(self.source_files).items():
             print(f"[matharena] translating {competition_name}", flush=True)
             for shard, row_number, record in self.source_records(competition):
                 model_name = record["model_name"]

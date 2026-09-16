@@ -160,6 +160,21 @@ def _reference_code(body: list[str]) -> str:
     return "\n".join(_strip_markers(body))
 
 
+LAYOUT = {'root': 'ResearchCodeBench-2758001c2ff84fc25c546339d65479ed058b0265',
+ 'pset_prefix': 'pset',
+ 'results_member': 'outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json'}
+EXPECTED_RELEASE = {'papers': 20,
+ 'items': 212,
+ 'matched_items': 212,
+ 'selected_pset_files': 113,
+ 'raw_subject_configurations': 32,
+ 'canonical_subjects': 31,
+ 'responses': 6784,
+ 'traces': 0,
+ 'response_counts': {0: 4333, 1: 2451},
+ 'trial_counts': {1: 6572, 2: 212}}
+
+
 class ResearchCodeBenchBuild(BenchmarkBuild):
     """Translate the released greedy result matrix without changing its cells."""
 
@@ -168,11 +183,10 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
     ) -> tuple[dict[str, object], dict[str, dict[str, str]]]:
         """Load the released statistics and selected prompt sources from the pin."""
 
-        archive_source = self.source_manifest["downloads"]["provider_archive"]
-        archive_path = self.raw_dir / archive_source["file"]
-        archive_root = str(self.archive_layout["root"])
-        results_member = str(self.archive_layout["results_member"])
-        pset_prefix = str(self.archive_layout["pset_prefix"]).rstrip("/")
+        archive_path = self.raw_dir / next(name for name in self.source_files if name.endswith(".tar.gz"))
+        archive_root = str(LAYOUT["root"])
+        results_member = str(LAYOUT["results_member"])
+        pset_prefix = str(LAYOUT["pset_prefix"]).rstrip("/")
 
         try:
             archive = tarfile.open(archive_path, "r:gz")  # noqa: SIM115
@@ -250,7 +264,7 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
                 )
 
         selected_file_count = sum(len(files) for files in source_files.values())
-        expected_file_count = int(self.expectations["selected_pset_files"])
+        expected_file_count = int(EXPECTED_RELEASE["selected_pset_files"])
         if selected_file_count != expected_file_count:
             raise BuildContractError(
                 "researchcodebench: selected pset source count "
@@ -330,7 +344,7 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
             raise BuildContractError(
                 "researchcodebench: released results must be a mapping"
             )
-        if len(results) != int(self.expectations["papers"]):
+        if len(results) != int(EXPECTED_RELEASE["papers"]):
             raise BuildContractError(
                 "researchcodebench: released paper count violates expectations"
             )
@@ -444,11 +458,11 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
 
         expected_response_counts = {
             int(value): int(count)
-            for value, count in self.expectations["response_counts"].items()
+            for value, count in EXPECTED_RELEASE["response_counts"].items()
         }
         expected_trial_counts = {
             int(trial): int(count)
-            for trial, count in self.expectations["trial_counts"].items()
+            for trial, count in EXPECTED_RELEASE["trial_counts"].items()
         }
         observed = {
             "items": total_items,
@@ -457,7 +471,7 @@ class ResearchCodeBenchBuild(BenchmarkBuild):
             "canonical_subjects": len(set(subject_ids.values())),
             "responses": response_count,
         }
-        expected = {key: int(self.expectations[key]) for key in observed}
+        expected = {key: int(EXPECTED_RELEASE[key]) for key in observed}
         if observed != expected:
             raise BuildContractError(
                 f"researchcodebench: release shape {observed} != expectations {expected}"

@@ -14,31 +14,6 @@ from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
 MODEL_LABEL = "Qwen3-Coder-480B-A35B-Instruct"
 SUBJECT_FEATURES = {"harness": "OpenHands", "harness_version": "v0.54.0"}
 
-TRAJ_REPO = "nebius/SWE-rebench-openhands-trajectories"
-BANK_REPO = "nebius/SWE-rebench"
-# Parquet files on the dataset-server `refs/convert/parquet` branch.
-TRAJ_FILE = f"datasets/{TRAJ_REPO}@refs/convert/parquet/default/train/0000.parquet"
-BANK_FILES = [
-    f"datasets/{BANK_REPO}@refs/convert/parquet/default/test/0000.parquet",
-    f"datasets/{BANK_REPO}@refs/convert/parquet/default/test/0001.parquet",
-    f"datasets/{BANK_REPO}@refs/convert/parquet/default/filtered/0000.parquet",
-]
-# Skip the giant per-step `trajectory` / `tools` columns (~2 GB); we only need
-# the per-instance outcome + the final patch as a trace.
-TRAJ_COLS = ["trajectory_id", "instance_id", "repo", "resolved", "exit_status", "model_patch"]
-# problem_statement is item content; the rest is the SWE-bench-style grading
-# rule the released `resolved` flag was computed from (apply test_patch, then
-# FAIL_TO_PASS must pass and PASS_TO_PASS must still pass) plus what is needed
-# to actually run that check.
-BANK_COLS = [
-    "instance_id",
-    "problem_statement",
-    "patch",
-    "test_patch",
-    "FAIL_TO_PASS",
-    "PASS_TO_PASS",
-    "docker_image",
-]
 
 
 def _to_list(x) -> list[str]:
@@ -93,35 +68,6 @@ def _grading_spec(bank_row) -> tuple[str | None, str | None]:
 
 
 class SWERebench(BenchmarkBuild):
-    def download(self) -> list[str]:
-        """Retain the two historical column projections, pinned by byte hashes.
-
-        The original release did not record upstream commit IDs. A cache miss
-        may fetch the provider's current projection, but manifest verification
-        rejects it if it differs from this reviewed snapshot.
-        """
-        import pyarrow.parquet as pq
-        from huggingface_hub import HfFileSystem
-
-        descriptors = list(self.source_manifest["inputs"].values())
-        for descriptor in descriptors:
-            target = self.raw_dir / descriptor["file"]
-            if target.exists():
-                continue
-            fs = HfFileSystem()
-            if target.name == "openhands_trajectories.parquet":
-                with fs.open(TRAJ_FILE) as fh:
-                    frame = pq.ParquetFile(fh).read(columns=TRAJ_COLS).to_pandas()
-            else:
-                frames = []
-                for source in BANK_FILES:
-                    with fs.open(source) as fh:
-                        frames.append(pq.ParquetFile(fh).read(columns=BANK_COLS).to_pandas())
-                frame = pd.concat(frames, ignore_index=True)
-                frame = frame.dropna(subset=["instance_id"]).drop_duplicates(subset=["instance_id"])
-            frame.to_parquet(target, index=False)
-        return [entry["url"] for entry in descriptors]
-
     def build_subject_item_response_rows(self) -> None:
         bank = pd.read_parquet(self.raw_dir / "instances.parquet").set_index("instance_id").to_dict("index")
         subject = self.add_subject(MODEL_LABEL, features=SUBJECT_FEATURES)

@@ -25,6 +25,18 @@ JUDGE_DIMS = (
 )
 JUDGE_MAX = 5.0
 
+LAYOUT = {'gold_sources': ['evaluation_20.jsonl', 'evaluation_15.jsonl'],
+ 'evaluation_directory': 'eval',
+ 'trace_directory': 'resp',
+ 'subject_aliases': {'Internvl3-38B': 'internvl3-38b',
+                     'Internvl3-78B': 'internvl3-78b'},
+ 'subject_features': {'qvq-max-no-think': {'released_variant': 'no-think'},
+                      'qwen3-14b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-30b-a3b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-4b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-8b-no-think': {'released_variant': 'no-think'}}}
+QUESTION_IDS = range(2000)
+
 # The judge returns free-form JSON keys: the example format in its own system
 # prompt is written `{' Fluency': score, '  Citation Quality': score, ...}`, so
 # a minority of rows come back space-padded, quote-wrapped or de-spaced. Match
@@ -112,10 +124,9 @@ class MMDocRAG(BenchmarkBuild):
     def _load_gold(self) -> dict[int, tuple[str, str | None]]:
         """Prefer the 20-quote gold record, as in the accepted legacy build."""
         gold: dict[int, tuple[str, str | None]] = {}
-        downloads = self.source_manifest["downloads"]
-        for source_name in self.archive_layout["gold_sources"]:
+        for source_name in LAYOUT["gold_sources"]:
             for record in self._read_jsonl(
-                self.raw_dir / downloads[source_name]["file"]
+                self.raw_dir / source_name
             ):
                 question_id = record.get("q_id")
                 if question_id is None or question_id in gold:
@@ -125,9 +136,8 @@ class MMDocRAG(BenchmarkBuild):
                     answer = ", ".join(str(part) for part in answer)
                 gold[question_id] = (record.get("question") or "", answer)
 
-        expected_ids = self.expectations["question_ids"]
-        if set(gold) != set(range(expected_ids["first"], expected_ids["last"] + 1)):
-            raise ValueError("Pinned MMDocRAG gold question IDs do not match metadata")
+        if set(gold) != set(QUESTION_IDS):
+            raise ValueError("Pinned MMDocRAG gold question IDs do not match the reviewed release")
         return gold
 
     def _load_traces(
@@ -137,7 +147,7 @@ class MMDocRAG(BenchmarkBuild):
         quotes: str,
     ) -> dict[int, object]:
         """Use the first exact-case filename; last duplicate q_id wins."""
-        trace_directory = self.archive_layout["trace_directory"]
+        trace_directory = LAYOUT["trace_directory"]
         candidates = (
             f"{trace_directory}/{model}_{mode}_quotes{quotes}_response.jsonl",
             f"{trace_directory}/{model}_{mode}_response_quotes{quotes}.jsonl",
@@ -156,10 +166,8 @@ class MMDocRAG(BenchmarkBuild):
 
     def build_subject_item_response_rows(self) -> None:
         gold = self._load_gold()
-        self._manifest_files = {
-            source["file"] for source in self.source_manifest["downloads"].values()
-        }
-        evaluation_directory = self.archive_layout["evaluation_directory"]
+        self._manifest_files = set(self.source_files)
+        evaluation_directory = LAYOUT["evaluation_directory"]
         evaluation_paths = sorted(
             self.raw_dir / relative_file
             for relative_file in self._manifest_files
@@ -179,12 +187,12 @@ class MMDocRAG(BenchmarkBuild):
             # the current contract freezes metadata when the ID is derived.
             subject_key = unicodedata.normalize("NFC", model).strip().lower()
             if subject_key not in subject_ids:
-                registry_label = self.archive_layout["subject_aliases"].get(
+                registry_label = LAYOUT["subject_aliases"].get(
                     model, model
                 )
                 # Preserve the released variant without guessing an effort
                 # level or treating a no-think run as a different base model.
-                features = self.archive_layout["subject_features"].get(model)
+                features = LAYOUT["subject_features"].get(model)
                 subject_ids[subject_key] = self.add_subject(
                     registry_label, features=features
                 )

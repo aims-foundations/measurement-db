@@ -2,13 +2,31 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: https://aimslab.stanford.edu/measurement-db/benchmark_metadata_schema.yaml
 title: Measurement-DB benchmark metadata
 description: >-
-  Authoring contract for benchmarks/<slug>/metadata.yaml. Canonical benchmark
-  and build fields are strict; provider-specific build data remains open.
+  Authoring contract for benchmarks/<slug>/metadata.yaml. Contract 2 uses compact
+  upstream references and an immutable raw snapshot.
+  Contract 1 is retained only for unmigrated builders.
 type: object
 additionalProperties: false
 required:
   - benchmark
   - build
+allOf:
+  - if:
+      properties:
+        build:
+          properties:
+            contract_version: {const: 2}
+    then:
+      required: [sources]
+      properties:
+        sources:
+          $ref: "#/$defs/snapshot_sources"
+        archive_layout: {not: {}}
+        expectations: {not: {}}
+    else:
+      properties:
+        sources:
+          $ref: "#/$defs/sources_mapping"
 properties:
   benchmark:
     type: object
@@ -144,10 +162,10 @@ properties:
       - contract_version
     properties:
       contract_version:
-        const: 1
+        enum: [1, 2]
 
   sources:
-    $ref: "#/$defs/sources_mapping"
+    type: object
   archive_layout:
     $ref: "#/$defs/open_mapping"
   expectations:
@@ -156,6 +174,45 @@ properties:
     $ref: "#/$defs/validation_mapping"
 
 $defs:
+  snapshot_sources:
+    type: object
+    additionalProperties: false
+    required: [upstream, archive]
+    properties:
+      upstream:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          type: object
+          additionalProperties: false
+          required: [url, revision]
+          properties:
+            url:
+              type: string
+              pattern: '^https?://\S+$'
+            revision:
+              anyOf:
+                - $ref: "#/$defs/nonempty_string"
+                - type: 'null'
+      archive:
+        type: object
+        additionalProperties: false
+        required: [repo_id, revision, path]
+        properties:
+          repo_id:
+            type: string
+            pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*/[A-Za-z0-9][A-Za-z0-9._-]*$'
+          revision:
+            description: Immutable HF dataset commit; branch names are not accepted.
+            type: string
+            pattern: '^[0-9a-f]{40}$'
+          path:
+            description: The benchmark raw directory at this commit.
+            type: string
+            pattern: '^[a-z][a-z0-9_]*/raw$'
+      notes:
+        $ref: "#/$defs/nonempty_string"
   response_scale:
     oneOf:
       - type: object

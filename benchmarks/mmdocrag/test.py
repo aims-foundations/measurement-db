@@ -34,7 +34,11 @@ from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import
 )
 from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata import (
     load_benchmark_metadata,
+    declared_source_artifacts,
 )
+
+from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
+from measurement_db.benchmarks.mmdocrag.build import LAYOUT, QUESTION_IDS
 
 METADATA = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses", "traces")
@@ -283,7 +287,7 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
             / "measurement_db/scripts/build_measurement_tables/map_model_registry.json"
         )
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
-        features_by_label = METADATA["archive_layout"]["subject_features"]
+        features_by_label = LAYOUT["subject_features"]
         subjects = self.tables["subjects"]
         self.assertTrue(subjects[["normalized_name", "provider"]].notna().all().all())
         for record in subjects.to_dict(orient="records"):
@@ -326,7 +330,7 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
             label for label in subjects.index if label.endswith("-no-think")
         }
         self.assertEqual(
-            no_think_labels, set(METADATA["archive_layout"]["subject_features"])
+            no_think_labels, set(LAYOUT["subject_features"])
         )
         for label in no_think_labels:
             variant = subjects.loc[label]
@@ -364,23 +368,15 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
         )
 
     def test_pinned_source_bytes_and_question_only_items(self) -> None:
-        downloads = METADATA["sources"]["downloads"]
-        for source in downloads.values():
-            path = BENCHMARK_DIR / "raw" / source["file"]
+        for source in declared_source_artifacts(METADATA["sources"]):
             with self.subTest(source=source["file"]):
-                self.assertEqual(path.stat().st_size, source["size"])
-                with path.open("rb") as stream:
-                    self.assertEqual(
-                        hashlib.file_digest(stream, "sha256").hexdigest(),
-                        source["sha256"],
-                    )
+                verify_snapshot_file(BENCHMARK_DIR / "raw" / source["file"], source)
         gold = {}
-        for source_name in METADATA["archive_layout"]["gold_sources"]:
-            path = BENCHMARK_DIR / "raw" / downloads[source_name]["file"]
+        for source_name in LAYOUT["gold_sources"]:
+            path = BENCHMARK_DIR / "raw" / source_name
             for record in read_jsonl(path):
                 gold.setdefault(record["q_id"], record)
-        ids = METADATA["expectations"]["question_ids"]
-        self.assertEqual(set(gold), set(range(ids["first"], ids["last"] + 1)))
+        self.assertEqual(set(gold), set(QUESTION_IDS))
         items = self.tables["items"].set_index("raw_item_id")
         self.assertEqual(set(items.index), {f"q_id::{qid}" for qid in gold})
         for qid, record in gold.items():
@@ -394,8 +390,8 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
         self.assertTrue(items.verifier.map(lambda value: json.loads(value)["class"] == "judge").all())
 
     def test_released_judge_cells_and_exact_case_trace_selection(self) -> None:
-        layout = METADATA["archive_layout"]
-        files = {source["file"] for source in METADATA["sources"]["downloads"].values()}
+        layout = LAYOUT
+        files = {source["file"] for source in declared_source_artifacts(METADATA["sources"])}
         evaluations = sorted(
             path
             for path in files
@@ -464,7 +460,7 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
 
     def test_alias_resolution_preserves_internvl_registry_metadata(self) -> None:
         subjects = self.tables["subjects"].set_index("display_name")
-        for raw_label, registry_label in METADATA["archive_layout"][
+        for raw_label, registry_label in LAYOUT[
             "subject_aliases"
         ].items():
             self.assertNotIn(raw_label, subjects.index)

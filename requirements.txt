@@ -3,3 +3,4 @@ numpy
 PyYAML
 jsonschema
 pyarrow
+huggingface_hub>=1.0,<2

@@ -25,11 +25,16 @@ import yaml
 BENCHMARK_DIR = Path(__file__).resolve().parent
 SHARED_ROOT = BENCHMARK_DIR.parents[2] / "measurement_db"
 sys.path.insert(0, str(SHARED_ROOT))
+sys.path.insert(0, str(SHARED_ROOT.parent))
 from scripts.build_measurement_tables.validate_benchmark_metadata import (
     load_benchmark_metadata,
+    declared_source_artifacts,
 )
 
 from scripts.build_measurement_tables import validate_asset_relations, validate_table, validate_trace_relations
+
+from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
+from measurement_db.benchmarks.matharena.build import source_competitions
 
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses", "traces", "assets")
 PRIMARY_KEY = ["subject_id", "item_id", "trial", "test_condition", "interactors"]
@@ -84,8 +89,7 @@ def features(serialized: str) -> dict[str, str]:
 def source_records(metadata: dict, competition: dict):
     """Read the upstream records independently of the builder's iterator."""
     for shard in competition["shards"]:
-        source = metadata["sources"]["downloads"][shard]
-        parquet = pq.ParquetFile(BENCHMARK_DIR / "raw" / source["file"])
+        parquet = pq.ParquetFile(BENCHMARK_DIR / "raw" / shard)
         columns = [
             c
             for c in parquet.schema_arrow.names
@@ -166,10 +170,10 @@ class MathArenaCharacterizationTests(unittest.TestCase):
     def setUpClass(cls):
         cls.metadata = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
         required = [BENCHMARK_DIR / f"{name}.parquet" for name in OUTPUT_NAMES]
-        required += [
-            BENCHMARK_DIR / "raw" / s["file"]
-            for s in cls.metadata["sources"]["downloads"].values()
-        ]
+        if all(path.is_file() for path in required):
+            cls.sources = declared_source_artifacts(cls.metadata["sources"])
+            cls.competitions = source_competitions(s["file"] for s in cls.sources)
+            required += [BENCHMARK_DIR / "raw" / s["file"] for s in cls.sources]
         missing = [str(path) for path in required if not path.is_file()]
         if missing:
             message = f"run benchmarks/matharena/build.py first; missing {missing[0]}"
@@ -249,19 +253,12 @@ class MathArenaCharacterizationTests(unittest.TestCase):
             )
 
     def test_all_pinned_sources_match_hashes_and_provider_card_counts(self):
-        for name, source in self.metadata["sources"]["downloads"].items():
-            with self.subTest(source=name):
-                path = BENCHMARK_DIR / "raw" / source["file"]
-                self.assertEqual(path.stat().st_size, source["size"])
-                with path.open("rb") as stream:
-                    self.assertEqual(
-                        hashlib.file_digest(stream, "sha256").hexdigest(),
-                        source["sha256"],
-                    )
-        for name, competition in self.metadata["sources"]["competitions"].items():
-            card = self.metadata["sources"]["downloads"][competition["card"]]
+        for source in self.sources:
+            with self.subTest(source=source["file"]):
+                verify_snapshot_file(BENCHMARK_DIR / "raw" / source["file"], source)
+        for name, competition in self.competitions.items():
             frontmatter = (
-                (BENCHMARK_DIR / "raw" / card["file"]).read_text().split("---", 2)[1]
+                (BENCHMARK_DIR / "raw" / competition["card"]).read_text().split("---", 2)[1]
             )
             claimed = yaml.safe_load(frontmatter)["dataset_info"]["splits"][0][
                 "num_examples"
@@ -270,7 +267,7 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                 pq.ParquetFile(
                     BENCHMARK_DIR
                     / "raw"
-                    / self.metadata["sources"]["downloads"][shard]["file"]
+                    / shard
                 ).metadata.num_rows
                 for shard in competition["shards"]
             )
@@ -298,9 +295,7 @@ class MathArenaCharacterizationTests(unittest.TestCase):
         assets = self.tables["assets"].set_index("asset_id")["data"].to_dict()
         seen = 0
         legacy_rows = []
-        for competition_name, competition in self.metadata["sources"][
-            "competitions"
-        ].items():
+        for competition_name, competition in self.competitions.items():
             legacy_items = {}
             for shard, row_index, record in source_records(self.metadata, competition):
                 released = []

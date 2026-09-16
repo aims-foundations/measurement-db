@@ -61,9 +61,11 @@ class ReleaseTests(unittest.TestCase):
     def provider_records(self):
         import yaml
         metadata = yaml.safe_load((DIRECTORY / "metadata.yaml").read_text())
-        originals = metadata.get("archive_layout", {}).get("original_paths", {})
-        paths = {originals.get(d["file"], d["file"]): DIRECTORY / "raw" / d["file"]
-                 for d in metadata["sources"]["downloads"].values()}
+        import re
+        from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata import declared_source_artifacts
+        paths = {re.sub(r"_x([0-9a-f]{2})_", lambda m: chr(int(m[1], 16)), d["file"]):
+                 DIRECTORY / "raw" / d["file"]
+                 for d in declared_source_artifacts(metadata["sources"])}
         result = Counter()
         lfs_pointers = 0
         for original, path in paths.items():

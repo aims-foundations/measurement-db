@@ -26,7 +26,11 @@ from measurement_db.scripts.build_measurement_tables import (
 )
 from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata import (
     load_benchmark_metadata,
+    declared_source_artifacts,
 )
+
+from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
+from measurement_db.benchmarks.researchcodebench.build import LAYOUT, EXPECTED_RELEASE
 
 METADATA = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
 EXPECTED = json.loads(
@@ -157,19 +161,15 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
                 raise RuntimeError(message)
             raise unittest.SkipTest(message)
 
-        archive_descriptor = METADATA["sources"]["downloads"]["provider_archive"]
+        archive_descriptor = declared_source_artifacts(METADATA["sources"])[0]
         cls.archive_path = BENCHMARK_DIR / "raw" / archive_descriptor["file"]
         if not cls.archive_path.is_file():
             raise RuntimeError(
                 "pinned ResearchCodeBench archive is absent; rerun build.py"
             )
-        if cls.archive_path.stat().st_size != archive_descriptor["size"]:
-            raise RuntimeError("pinned ResearchCodeBench archive size mismatch")
-        archive_digest = hashlib.sha256(cls.archive_path.read_bytes()).hexdigest()
-        if archive_digest != archive_descriptor["sha256"]:
-            raise RuntimeError("pinned ResearchCodeBench archive SHA-256 mismatch")
+        verify_snapshot_file(cls.archive_path, archive_descriptor)
 
-        layout = METADATA["archive_layout"]
+        layout = LAYOUT
         archive_root = str(layout["root"])
         results_member = str(layout["results_member"])
         full_results_member = f"{archive_root}/{results_member}"
@@ -241,10 +241,10 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             count_claims["released_response_cells"]["expected"],
         )
         self.assertEqual(count_claims["released_traces"]["expected"], 0)
-        self.assertEqual(self.released_run_members, [METADATA["archive_layout"]["results_member"]])
+        self.assertEqual(self.released_run_members, [LAYOUT["results_member"]])
         self.assertEqual(
             len(self.selected_source_members),
-            METADATA["expectations"]["selected_pset_files"],
+            EXPECTED_RELEASE["selected_pset_files"],
         )
         self.assertEqual(
             Counter(per_model_rows.values()),

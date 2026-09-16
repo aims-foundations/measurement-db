@@ -42,50 +42,14 @@ benchmark:
   release: private
 
 build:
-  contract_version: 1
+  contract_version: 2
 
 sources:
-  # This is the authoritative provenance manifest. Downloads are fetched by
-  # the shared downloader; use inputs for files acquired by a custom hook.
-  # Both require url, file, size, and sha256. Custom inputs may add revision.
-  # Declare discovered inputs here before accepting a build; no sidecar is written.
-  downloads:
-    results:
-      url: https://example.invalid/provider/example-benchmark/per_item_results.json
-      file: per_item_results.json
-      size: 0  # replace with the exact byte count
-      sha256: "0000000000000000000000000000000000000000000000000000000000000000"  # replace
-  revisions:
-    provider: REPLACE_WITH_IMMUTABLE_REVISION
-
-# Optional build-only sections belong here rather than in build.py. Add only
-# the fields the benchmark actually needs, and remove these comments afterward.
-# archive_layout:
-#   prompt_member: path/inside/provider-archive.txt
-# expectations:
-#   items: REPLACE_WITH_REVIEWED_COUNT
-#   subjects: REPLACE_WITH_REVIEWED_COUNT
-
-# Optional source claims are externally reported facts, not values copied from
-# a completed build or its characterization.json. Keep the executable
-# reconciliation in test.py and point source_ref at a pinned metadata source.
-# validation:
-#   source_claims:
-#     counts:
-#       released_items:
-#         entity: items
-#         expected: REPLACE_WITH_SOURCE_REPORTED_COUNT
-#         source_ref: sources.downloads.results
-#         locator: "dataset card, test-split row count"
-#         scope: "exact provider release and split"
-#     aggregate_tables:
-#       published_scores:
-#         metric: "provider metric name"
-#         grouping: "provider subject configuration"
-#         expected_groups: REPLACE_WITH_SOURCE_ROW_COUNT
-#         reported_scale: "proportion rounded to four decimal places"
-#         aggregation: "exact provider aggregation rule"
-#         absolute_tolerance: 0.00005
-#         source_ref: sources.downloads.results
-#         locator: "table and column names"
-#         scope: "exact release, split, condition, and trial policy"
+  upstream:
+    - url: https://example.invalid/provider/example-benchmark
+      revision: null  # Use the captured upstream revision when known.
+  archive:
+    repo_id: organization/dataset
+    revision: "0000000000000000000000000000000000000000"  # Replace with the archive commit.
+    path: example_benchmark/raw
+  notes: Describe any limitations of the captured release.

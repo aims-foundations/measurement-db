@@ -1,0 +1,20 @@
+name: Benchmark metadata
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt
+      - name: Require compact metadata for all public benchmarks
+        run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
+      - name: Test snapshot validation without downloads
+        run: python -m unittest discover -s tests -v

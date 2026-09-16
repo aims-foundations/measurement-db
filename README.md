@@ -64,11 +64,30 @@ and summary statistics recomputed from the rows. Completed builders run this
 check before replacing their outputs. Migration and publishing tools import
 the same validator; validating individual tables alone is insufficient.
 
-`metadata.yaml` is the authoritative upstream-source manifest. Declare static
-HTTP inputs in `sources.downloads` and files acquired by custom downloaders in
-`sources.inputs`, including each locator, raw-relative filename, byte size,
-and SHA-256. Builds verify these inputs and do not generate a separate
-`raw/_provenance.json`.
+`metadata.yaml` records benchmark facts and source provenance. New definitions
+use `build.contract_version: 2`: `sources.upstream` lists source URLs and known
+revisions (or null), and `sources.archive` identifies an HF dataset repository,
+an immutable commit, and `<slug>/raw`. Optional `sources.notes` records provenance
+limitations. Unknown fields, embedded file inventories, mutable archive revisions,
+and untyped `archive_layout`/`expectations` sections are rejected. Keep parsing
+rules in `build.py` and regression expectations in the characterization test.
+
+Archive the reviewed raw inputs first, then record the resulting commit in
+metadata. The shared builder restores missing files and verifies their sizes
+and content hashes against that commit's file tree, including existing cached
+files. `self.source_files` lists the verified raw-relative input paths for the
+row-building hook; use it when discovering files so unrelated local caches do
+not affect the build. The Hub must be reachable to obtain the pinned file tree;
+raw inputs are downloaded only when missing. No additional provenance file is
+maintained. Contract 1 remains available for older, unmigrated private builders.
+
+Check new definitions without downloading data:
+
+```bash
+python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
+```
+
+GitHub checks run this validator and the snapshot tests for every pull request.
 
 Optional `benchmark.version` records the provider's benchmark release in
 `benchmarks.parquet.version` (for example, `version: "2.0"`). Omit it or use
@@ -82,28 +101,18 @@ available precision rather than guessing a month or day.
 ## Restoring archived sources
 
 The [Hugging Face repository](https://huggingface.co/datasets/aims-foundations/measurement-db/tree/main)
-also stores each benchmark's source snapshot under `<benchmark>/raw/`, with its
-`metadata.yaml` manifest alongside it. These are the exact input files used by
-the builders, checked by size and SHA-256, so they remain available if upstream
-links change. The archived snapshots below correspond to the
-[schema version 3 builders](https://github.com/aims-foundations/measurement-db/tree/f212270).
+stores the six public source snapshots under `<benchmark>/raw/`. From a checkout
+of this repository, install the dependencies and run a builder:
 
-From that checkout's root, restore one benchmark with:
-
-```python
-from huggingface_hub import snapshot_download
-
-snapshot_download(
-    repo_id="aims-foundations/measurement-db",
-    repo_type="dataset",
-    revision="c969fabbf60c44694dae0e6f4d521de022b21d84",
-    allow_patterns=["real_webagents/raw/**", "real_webagents/metadata.yaml"],
-    local_dir="benchmarks",
-)
+```bash
+pip install -r requirements.txt
+python benchmarks/real_webagents/build.py
 ```
 
-Then run `python benchmarks/real_webagents/build.py` to validate the cached
-sources and rebuild the tables. Replace `real_webagents` to restore another benchmark.
+The builder uses the archive revision in its local `metadata.yaml`; later changes
+to the upstream sources or HF `main` do not change its inputs. Replace
+`real_webagents` with another benchmark to rebuild it. Do not combine a builder
+with metadata from a different build-contract version.
 
 ## License
 

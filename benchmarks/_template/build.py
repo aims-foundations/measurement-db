@@ -17,9 +17,8 @@ class ExampleBenchmarkBuild(BenchmarkBuild):
     """Translate the provider release into measurement-db response rows."""
 
     def build_subject_item_response_rows(self) -> None:
-        results_source = self.source_manifest["downloads"]["results"]
         item_records = json.loads(
-            (self.raw_dir / results_source["file"]).read_text(encoding="utf-8")
+            (self.raw_dir / "per_item_results.json").read_text(encoding="utf-8")
         )
 
         for item_record in item_records:

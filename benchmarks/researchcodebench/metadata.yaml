@@ -1,121 +1,81 @@
 benchmark:
   name: ResearchCodeBench
-  description: >-
-    ResearchCodeBench tests whether models can implement a missing piece of a
-    recent machine learning paper's code, given the paper itself and the
-    surrounding file, with curated tests deciding whether the filled in code
-    works.
+  description: ResearchCodeBench tests whether models can implement a missing piece of a recent machine
+    learning paper's code, given the paper itself and the surrounding file, with curated tests deciding
+    whether the filled in code works.
   paper_url: https://openreview.net/forum?id=3k70Vt0YFS
   data_source_url: https://researchcodebench.github.io/
   license: unknown
   modality:
-    - text
+  - text
   domain:
-    - software_engineering
-    - ml_engineering
+  - software_engineering
+  - ml_engineering
   response_type: binary
-  response_scale: {kind: discrete, values: [0, 1]}
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
   categorical: true
-  release_date: "2025-06"
+  release_date: 2025-06
   multi_single_turn: single_turn
-  testing_condition: >-
-    The provider's headline greedy run requested one completion at temperature
-    zero, used one user message with no system message, included each paper by
-    default, parsed the last Python Markdown block, inserted it into the masked
-    source file, and ran the paper-specific Python test program with a 60-second
-    timeout. Per-model client overrides in the released configuration still
-    apply. Each item stores the legacy reconstructed prompt and reference code;
-    paper is an item feature, while test_condition and interactors are null.
-    Response is the released per-(model configuration, snippet) passed flag.
-    The two Gemini 2.5 Pro preview labels resolve to one canonical subject, so
-    their historical rows remain trials 1 and 2 rather than distinct subjects.
-    No completion text or raw API trace was released in the pinned run artifact.
+  testing_condition: The provider's headline greedy run requested one completion at temperature zero,
+    used one user message with no system message, included each paper by default, parsed the last Python
+    Markdown block, inserted it into the masked source file, and ran the paper-specific Python test program
+    with a 60-second timeout. Per-model client overrides in the released configuration still apply. Each
+    item stores the legacy reconstructed prompt and reference code; paper is an item feature, while test_condition
+    and interactors are null. Response is the released per-(model configuration, snippet) passed flag.
+    The two Gemini 2.5 Pro preview labels resolve to one canonical subject, so their historical rows remain
+    trials 1 and 2 rather than distinct subjects. No completion text or raw API trace was released in
+    the pinned run artifact.
   subject_type: model
   item_type: task
-  citation: |-
-    @inproceedings{hua2025researchcodebench,
-      title={ResearchCodeBench: Benchmarking LLMs on Implementing Novel Machine Learning Research Code},
-      author={Hua, Tianyu and Hua, Harper and Xiang, Violet and Klieger, Benjamin and Truong, Sang T. and Liang, Weixin and Sun, Fan-Yun and Haber, Nick},
-      booktitle={NeurIPS 2025 Datasets and Benchmarks Track},
-      year={2025},
-    }
+  citation: "@inproceedings{hua2025researchcodebench,\n  title={ResearchCodeBench: Benchmarking LLMs on\
+    \ Implementing Novel Machine Learning Research Code},\n  author={Hua, Tianyu and Hua, Harper and Xiang,\
+    \ Violet and Klieger, Benjamin and Truong, Sang T. and Liang, Weixin and Sun, Fan-Yun and Haber, Nick},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
   tags:
-    - code_generation
-    - machine_learning
-    - research
-    - novelty
+  - code_generation
+  - machine_learning
+  - research
+  - novelty
   release: public
-
 build:
-  contract_version: 1
-
+  contract_version: 2
 sources:
-  downloads:
-    provider_archive:
-      url: https://codeload.github.com/PatrickHua/ResearchCodeBench/tar.gz/2758001c2ff84fc25c546339d65479ed058b0265
-      file: researchcodebench-2758001c2ff84fc25c546339d65479ed058b0265.tar.gz
-      size: 1085442
-      sha256: "0ea1c8e5ccd1f223a168d47e9a744a9d5f0baca80225c75036dfe3c38557a857"
-      timeout: 180
-  references:
-    project_site: https://researchcodebench.github.io/
-    provider_repository: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
-    provider_readme: https://github.com/PatrickHua/ResearchCodeBench/blob/2758001c2ff84fc25c546339d65479ed058b0265/README.md
-    released_results: https://github.com/PatrickHua/ResearchCodeBench/blob/2758001c2ff84fc25c546339d65479ed058b0265/outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json
-    greedy_run: https://github.com/PatrickHua/ResearchCodeBench/blob/2758001c2ff84fc25c546339d65479ed058b0265/run_greedy.sh
-    prompt_builder: https://github.com/PatrickHua/ResearchCodeBench/blob/2758001c2ff84fc25c546339d65479ed058b0265/core/annotation/utils/run_inference.py
-    test_runner: https://github.com/PatrickHua/ResearchCodeBench/blob/2758001c2ff84fc25c546339d65479ed058b0265/core/annotation/models/pset.py
-    paper_arxiv: https://arxiv.org/abs/2506.02314
-  revisions:
-    github: "2758001c2ff84fc25c546339d65479ed058b0265"
-    released_run: "2025-05-12-17-13-20"
-
-archive_layout:
-  root: ResearchCodeBench-2758001c2ff84fc25c546339d65479ed058b0265
-  pset_prefix: pset
-  results_member: outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json
-
-expectations:
-  papers: 20
-  items: 212
-  matched_items: 212
-  selected_pset_files: 113
-  raw_subject_configurations: 32
-  canonical_subjects: 31
-  responses: 6784
-  traces: 0
-  response_counts:
-    0: 4333
-    1: 2451
-  trial_counts:
-    1: 6572
-    2: 212
-
+  upstream:
+  - url: https://github.com/PatrickHua/ResearchCodeBench
+    revision: 2758001c2ff84fc25c546339d65479ed058b0265
+  archive:
+    repo_id: aims-foundations/measurement-db
+    revision: c969fabbf60c44694dae0e6f4d521de022b21d84
+    path: researchcodebench/raw
 validation:
   source_claims:
     counts:
       released_items:
         entity: items
         expected: 212
-        source_ref: sources.downloads.provider_archive
+        source_ref: sources.archive
         locator: distinct paper and snippet keys in overall_stats.json
         scope: provider headline greedy run 2025-05-12-17-13-20
       released_subject_configurations:
         entity: subject_configurations
         expected: 32
-        source_ref: sources.downloads.provider_archive
+        source_ref: sources.archive
         locator: model keys in overall_stats.json and run_greedy.sh
         scope: provider headline greedy run 2025-05-12-17-13-20
       released_response_cells:
         entity: responses
         expected: 6784
-        source_ref: sources.downloads.provider_archive
+        source_ref: sources.archive
         locator: completion records nested under overall_stats.json results
         scope: 32 released configurations by 212 snippets, one completion each
       released_traces:
         entity: traces
         expected: 0
-        source_ref: sources.downloads.provider_archive
+        source_ref: sources.archive
         locator: outputs/20llms_greedy/2025-05-12-17-13-20 archive contents
         scope: no completion or raw API text in the pinned released run artifact
     aggregate_tables:
@@ -125,7 +85,7 @@ validation:
         expected_groups: 32
         reported_scale: percentage from 0 to 100
         aggregation: 100 times mean of the binary passed flags over 212 snippets
-        absolute_tolerance: 0.000000000001
-        source_ref: sources.downloads.provider_archive
+        absolute_tolerance: 1.0e-12
+        source_ref: sources.archive
         locator: overall_stats.json overall_scores.<model>.task_rates.mean
         scope: provider headline greedy run 2025-05-12-17-13-20
