@@ -1,0 +1,33 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 4ec7e33aefe50dd3e3b139c528ab981a945cb57ae486de0593e3d2005be41e5c
+  items:
+    rows: 2000
+    logical_sha256: d73a27d70f9518b9e831a74b68fe165957684a1ef211416bf24c3fe1d42c6616
+  responses:
+    rows: 342695
+    logical_sha256: 1b29b85b813f0db763292bcda96f08a773fd548f69892086858cc41820257a67
+  subjects:
+    rows: 68
+    logical_sha256: b4b9d4641a37a2f669bc02675ac8f14531a05b6e38392f0f2d533ff9eb710ad1
+  traces:
+    rows: 328286
+    logical_sha256: 8b719c71d62b1312073be29e823da750e1d7b75e5e9be30b15d8e3c905e175fc
+source_claims:
+  released_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMDocRAG/MMDocRAG/tree/2fd7505c6a576376b4a92aafaff6d87494765bb7
+    locator: 'raw/evaluation_20.jsonl and raw/evaluation_15.jsonl: distinct q_id values across the released
+      answer banks'
+    scope: Union of released question IDs; repeated appearances count once.
+    expected: 2000
+  released_judge_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMDocRAG/MMDocRAG/tree/2fd7505c6a576376b4a92aafaff6d87494765bb7
+    locator: 'raw/eval/*.jsonl: unique (normalized model, q_id, mode, quotes) records with response mappings'
+    scope: Retained judge attempts, including incomplete judge outputs stored as ungraded responses.
+    expected: 342695

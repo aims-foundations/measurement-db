@@ -104,6 +104,8 @@ def _expanded_error_messages(error: ValidationError) -> list[tuple[str, str]]:
     """Turn aggregate JSON Schema errors into one path-aware message per key."""
 
     absolute_path = tuple(error.absolute_path)
+    if error.validator == "not" and absolute_path == ("validation",):
+        return [("validation", "store required source_claims in characterization.yaml")]
     if error.validator == "not" and absolute_path in {("archive_layout",), ("expectations",)}:
         return [(_format_yaml_path(absolute_path),
                  "unsupported in contract 2; keep parsing rules in the builder and expectations in tests")]

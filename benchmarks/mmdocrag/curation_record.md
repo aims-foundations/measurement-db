@@ -18,8 +18,9 @@ condition. The record's `model` field identifies the **judge**, not the subject.
 The accepted output has 2,000 items, 68 subjects, 342,695 attempt rows, and
 328,286 answer traces. Of those attempts, 342,566 have usable grades and 129
 are retained with null grades. Exact counts, coverage by condition, categories,
-IDs, null patterns, and logical fingerprints are reviewed output expectations
-in [testdata/characterization.json](testdata/characterization.json).
+Reviewed counts and full-table fingerprints are in
+[characterization.yaml](characterization.yaml); detailed identity, null-pattern,
+and migration assertions remain in `test.py`.
 
 ## Provider-owned provenance
 
@@ -74,7 +75,7 @@ The subsequent approved registry curation preserves the literal `no-think`
 variant as a subject feature, without claiming a numeric effort, token budget,
 or verified server-side behavior. See the registry-completion section below.
 
-The released judge labels are recorded in the characterization. The public
+The released judge labels are checked by the regression assertions in `test.py`. The public
 judge wrapper defaults to the dated GPT-4o version recorded in the release,
 combines the question and gold answers with the submitted answer, and requests
 a JSON object. Successful JSON decoding does not guarantee that the object
@@ -362,3 +363,9 @@ The benchmark-local migration is verified; the repository-wide green-test and
 green-lint requirements remain outstanding because of the issues above.
 No raw data, generated Parquet, caches, credentials, or downloaded archives
 belong in the migration diff. No Hugging Face upload or commit was performed.
+
+Validation expectations are now stored beside metadata in `characterization.yaml`,
+using the shared schema and table hash algorithm. The previous source audits and
+migration assertions passed before conversion; release-specific assertions remain
+in `test.py`. Source claims distinguish reported quantities from those independently
+derived from the archived release. This format change does not alter curated data.

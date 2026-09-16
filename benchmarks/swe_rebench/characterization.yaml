@@ -1,0 +1,33 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: c3495bdef40e626e50a8e5378d60e7b3d041d8cbaee20fda99060e04a097698c
+  items:
+    rows: 6306
+    logical_sha256: 61e154383bcac2f5fa140e5fff7498b89abab462b9a2cd1bcb6216461599f84f
+  responses:
+    rows: 67074
+    logical_sha256: 9c70405ad25cf033dd58161bb0fb9035cc467e3cfa5e3eeee3908f51cac0ea09
+  subjects:
+    rows: 1
+    logical_sha256: 0fcb0e6d4abc3ecd41f9aae02198ec234af8a2dc9762a18909cd0a5282cdc34f
+  traces:
+    rows: 67018
+    logical_sha256: a45a47ab5a5aaa33f70e3e4a120b2d774b065e41385f33081e3d395d9ac33a77
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories
+    locator: 'raw/openhands_trajectories.parquet: resolved and model_patch columns'
+    scope: Archived OpenHands trajectory rows with a non-null resolved flag; repeated runs count separately.
+    expected: 67074
+  released_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories
+    locator: 'raw/openhands_trajectories.parquet: resolved and model_patch columns'
+    scope: Archived OpenHands trajectory rows with a non-null resolved flag; repeated runs count separately.
+      Count retained resolved rows with nonempty model_patch text.
+    expected: 67018

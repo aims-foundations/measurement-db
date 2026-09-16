@@ -84,13 +84,7 @@ def logical_fingerprint(table: pd.DataFrame) -> str:
     return digest.hexdigest()
 
 
-def characterize_table(table: pd.DataFrame) -> dict:
-    return {
-        "rows": len(table),
-        "columns": list(table.columns),
-        "null_counts": {column: int(table[column].isna().sum()) for column in table},
-        "logical_sha256": logical_fingerprint(table),
-    }
+
 
 
 def semantic_cells(tables: dict[str, pd.DataFrame], name: str) -> pd.DataFrame:
@@ -146,6 +140,133 @@ def source_dimensions(payload: dict) -> dict[str, float]:
     return grades
 
 
+from measurement_db.scripts.build_measurement_tables.validate_characterization import (
+    load_characterization, check_tables, check_source_claims,
+)
+
+# Reviewed migration and parsing invariants; current tables use the shared checker.
+REGRESSION = {'legacy': {'items': {'columns': ['item_id',
+                                  'benchmark_id',
+                                  'raw_item_id',
+                                  'content',
+                                  'reference_answer',
+                                  'verifier',
+                                  'content_hash'],
+                      'logical_sha256': 'c689e6722c3364ac770daa78b19f410fd113a92d2a2c9d0c03179d225710cb3e'}},
+ 'preserved': {'responses': 'ec638eea1c2c80d059dee555e2724d7eb9686b3729dd159b608ce07841419263',
+               'traces': 'f55dfe8c4f750cf2c27f3c13300daf26a6f87fff80f8a09f66ad498fbd405da6'},
+ 'release': {'score_values': [0,
+                              0.04,
+                              0.08,
+                              0.12,
+                              0.16,
+                              0.2,
+                              0.24,
+                              0.27999999999999997,
+                              0.32,
+                              0.36,
+                              0.4,
+                              0.44000000000000006,
+                              0.48,
+                              0.52,
+                              0.5599999999999999,
+                              0.6,
+                              0.64,
+                              0.6799999999999999,
+                              0.72,
+                              0.76,
+                              0.8,
+                              0.8400000000000001,
+                              0.8800000000000001,
+                              0.9199999999999999,
+                              0.96,
+                              1],
+             'conditions': {'responses': {'multimodal/quotes15': 61966,
+                                          'multimodal/quotes20': 63963,
+                                          'pure-text/quotes15': 108458,
+                                          'pure-text/quotes20': 108308},
+                            'traces': {'multimodal/quotes15': 59756,
+                                       'multimodal/quotes20': 59868,
+                                       'pure-text/quotes15': 104413,
+                                       'pure-text/quotes20': 104249}},
+             'ungraded_attempts': 129,
+             'ungraded_with_traces': 120,
+             'subject_ids': {'internvl3-38b': 'e57466a395ae6879',
+                             'internvl3-78b': '6132a6d2f00daf1a',
+                             'claude-3.5-sonnet': 'c68b0b4cebac1009',
+                             'deepseek-r1-distill-llama-70b': 'a3e762a25636977b',
+                             'deepseek-r1-distill-qwen-32b': '66c4ad8d059f92bb',
+                             'deepseek-r1': '50cbacf8db8037c0',
+                             'deepseek-v3': '7bc3eed814b23142',
+                             'gemini-1.5-pro': '563f181242d45ea1',
+                             'gemini-2.0-flash-tk': '9c0918c6cebe31f9',
+                             'gemini-2.0-flash': '96098bb6ed439973',
+                             'gemini-2.0-pro': '943a3219f5f642a9',
+                             'gemini-2.5-flash': 'e4b4ec61717e2e26',
+                             'gemini-2.5-pro': 'f3c1964f1cdb72be',
+                             'gpt-4-turbo': '97f2da5bc3b55368',
+                             'gpt-4.1-mini': '0b840a32283e38bc',
+                             'gpt-4.1-nano': 'a0c325c2fb187522',
+                             'gpt-4.1': '7facc3df28eab6df',
+                             'gpt-4o-mini': '1ba99d7bfc77bdf7',
+                             'gpt-4o': 'b8d2171afab2c063',
+                             'gpt-o3-mini': '8d0f7b00fa1ee7d4',
+                             'grok-3-beta': '9605092c664cd9d1',
+                             'grok-3-mini-beta': '7d65eb53a8cc7d83',
+                             'internvl2.5-26b': '1bd0aa11d48be47b',
+                             'internvl2.5-38b': '4c1714009675ac9f',
+                             'internvl2.5-78b': '03594df58e38f87e',
+                             'internvl2.5-8b': 'c62d52764d3ddafe',
+                             'internvl3-14b': '6f05b1b00cca0388',
+                             'internvl3-8b': 'c7822b5fffaca5ed',
+                             'internvl3-9b': '6d0880e12b1fcd93',
+                             'janus-pro-7b': 'a54e80c202df69de',
+                             'llama3.1-8b': '55fdc5e18ebe84af',
+                             'llama3.2-3b': '784ad8c8c9ae5a64',
+                             'llama3.3-70b': '9f1120099dc1d940',
+                             'llama4-mave-17b-128e': '6842e28b19417e47',
+                             'llama4-scout-17b-16e': '887aa841d605d9ed',
+                             'minicpm-o-2.6-8b': 'df5d0083a1d15a83',
+                             'mistral-7b': 'fb91c581a3ab32b5',
+                             'mistral-small-24b': 'cff1937ef021c5b6',
+                             'mixtral-8x7b': 'e38e92acaca170e8',
+                             'qvq-max-no-think': 'f1c299f63abfe2a1',
+                             'qwen-max': 'e414e08afa9a7f89',
+                             'qwen-plus': '9f2b6da23207a778',
+                             'qwen-qvq-max': '73f13888c23d3f34',
+                             'qwen-qwq-plus': 'd52f31a8bb7d041c',
+                             'qwen-vl-max': 'df981a41948cb0dd',
+                             'qwen-vl-plus': 'e0b9d6ea70a29061',
+                             'qwen2.5-14b-ft': '02563a11cc439c01',
+                             'qwen2.5-14b': '8a8a59104a846579',
+                             'qwen2.5-32b-ft': '5bcc7c5d5b4602b0',
+                             'qwen2.5-32b': '7299112b66af415f',
+                             'qwen2.5-3b-ft': '05772d61c90364a0',
+                             'qwen2.5-3b': '9213330abd9929c1',
+                             'qwen2.5-72b-ft': '00f6650d983cdc8b',
+                             'qwen2.5-72b': 'f7fbe8b6231489cb',
+                             'qwen2.5-7b-ft': 'cfd5e8cf564e5f43',
+                             'qwen2.5-7b': 'cf1a5aedf5266778',
+                             'qwen2.5-vl-32b': 'b06669275cee43f3',
+                             'qwen2.5-vl-72b': '45f6ddbec5ea38aa',
+                             'qwen2.5-vl-7b': 'fa5687bfa12d4337',
+                             'qwen3-14b-no-think': 'd1ab289874373f7f',
+                             'qwen3-14b': '2ec99af5c6359e30',
+                             'qwen3-235b-a22b': '2e663d8f22f5a8ea',
+                             'qwen3-30b-a3b-no-think': '93aaa277c4b81776',
+                             'qwen3-30b-a3b': '2a42cf4c586eab0c',
+                             'qwen3-32b': '3b7ff8dae0a232cd',
+                             'qwen3-4b-no-think': '244b8cc284dd22aa',
+                             'qwen3-8b-no-think': '78c305a8596192ef',
+                             'qwen3-8b': '8ddb957632e6146b'},
+             'ungraded_reasons': {'empty': 112, 'no_usable_dimensions': 8, 'partial_dimensions': 9},
+             'judge_labels': {'gpt-4o-2024-08-06': 153955, 'gpt-4o-2024-08-06_vlm': 188740},
+             'case_alias_groups': {'internvl3-38b': ['Internvl3-38B', 'internvl3-38b'],
+                                   'internvl3-78b': ['Internvl3-78B', 'internvl3-78b'],
+                                   'internvl3-14b': ['internvl3-14B', 'internvl3-14b'],
+                                   'internvl3-8b': ['internvl3-8B', 'internvl3-8b'],
+                                   'internvl3-9b': ['internvl3-9B', 'internvl3-9b']}}}
+
 class JudgeParsingTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
@@ -196,11 +317,8 @@ class JudgeParsingTests(unittest.TestCase):
 class MMDocRAGCharacterizationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.expected = json.loads(
-            (BENCHMARK_DIR / "testdata" / "characterization.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        cls.expected = REGRESSION
+        cls.characterization = load_characterization(BENCHMARK_DIR / "characterization.yaml")
         missing = [
             name
             for name in OUTPUT_NAMES
@@ -223,11 +341,8 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
 
     def test_full_table_shapes_null_patterns_and_logical_fingerprints(self) -> None:
         for name, table in self.tables.items():
-            with self.subTest(table=name):
-                validate_table(name, table, include_derived=True)
-                self.assertEqual(
-                    characterize_table(table), self.expected["release"]["tables"][name]
-                )
+            validate_table(name, table, include_derived=True)
+        check_tables(self.characterization, self.tables)
 
     def test_attempt_values_and_trace_attribution_match_legacy_fingerprints(
         self,
@@ -446,6 +561,12 @@ class MMDocRAGCharacterizationTests(unittest.TestCase):
                 else:
                     self.assertNotIn(key, actual_traces)
         self.assertEqual(seen, set(actual_scores))
+        gold_ids = {record["q_id"] for name in LAYOUT["gold_sources"]
+                    for record in read_jsonl(BENCHMARK_DIR / "raw" / name)}
+        check_source_claims(self.characterization, {
+            "released_questions": len(gold_ids),
+            "released_judge_attempts": len(seen),
+        })
         self.assertEqual(seen_traces, set(actual_traces))
         self.assertEqual(dict(reasons), self.expected["release"]["ungraded_reasons"])
         self.assertEqual(dict(judge_labels), self.expected["release"]["judge_labels"])

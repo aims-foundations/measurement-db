@@ -16,5 +16,7 @@ jobs:
       - run: pip install -r requirements.txt
       - name: Require compact metadata for all public benchmarks
         run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
+      - name: Require reviewed characterizations and source claims
+        run: python -m scripts.build_measurement_tables.validate_characterization --benchmarks-dir benchmarks
       - name: Test snapshot validation without downloads
         run: python -m unittest discover -s tests -v

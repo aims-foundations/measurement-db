@@ -1,0 +1,37 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: d1fc476437b70f672050e3421772376c71dcbb0521fb6fa5ddf75ff0df5fabbb
+  items:
+    rows: 2126
+    logical_sha256: 9326643d217381cc7616b0f03d0389d8e5ef31a29710bc8bcf1567bf3327e918
+  responses:
+    rows: 57975
+    logical_sha256: cba1f04fd5969f671807dea4b704ccbff423f1c6e9c48d0fc346192f3ece07d2
+  subjects:
+    rows: 82
+    logical_sha256: d6accc9a03538a2828b6f4b7980c0d91321ace3f9decdeb5063ee8880949ece5
+  traces:
+    rows: 57184
+    logical_sha256: 0ce27651137e6e434b60de342fc9a33aea66ac0b65816a758dbd9b38fa85189f
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/multi-swe-bench/experiments
+    locator: raw/results/*.json resolved/unresolved instance IDs and matching raw/preds/*.jsonl model_patch
+      fields
+    scope: Archived experiment runs with retained task definitions. One response per attempted instance;
+      repeated runs count separately.
+    expected: 57975
+  released_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/multi-swe-bench/experiments
+    locator: raw/results/*.json resolved/unresolved instance IDs and matching raw/preds/*.jsonl model_patch
+      fields
+    scope: Archived experiment runs with retained task definitions. One response per attempted instance;
+      repeated runs count separately. Count attempted instances with nonempty released model_patch text;
+      unavailable patches are excluded.
+    expected: 57184

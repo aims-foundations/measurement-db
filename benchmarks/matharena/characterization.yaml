@@ -1,0 +1,37 @@
+format_version: 1
+tables:
+  assets:
+    rows: 168
+    logical_sha256: c11f72149217e4cbe4b224b6ec81bc47ef5d8a8ebc0c905f7f2a4fed4c8375bf
+  benchmarks:
+    rows: 1
+    logical_sha256: 2517f68d0aca2da192adfc249312dab1494307fb9de440c1a252ea5aecd643fe
+  items:
+    rows: 1755
+    logical_sha256: f47cf7eda15d08b87ec7ee2fca4b506f58bc862a23c7ac1496637d78aa0f4157
+  responses:
+    rows: 92944
+    logical_sha256: 7f8a7b936b1262c550af10f8243e2e160d20f29429fb5701c4b3c7ee002461ab
+  subjects:
+    rows: 104
+    logical_sha256: 3f6064878dadfbb2c71182c31522c668792e3a240e88a3fdee79c79177cec8ca
+  traces:
+    rows: 90005
+    logical_sha256: cabbe4404029ac00dc1584ff1f0088549769c1cb5cb1e7837d50e99d9704a914
+source_claims:
+  provider_raw_rows:
+    kind: count
+    origin: reported
+    source: https://huggingface.co/MathArena
+    locator: 'raw/sources/<competition>/README.md front matter: dataset_info.splits[0].num_examples'
+    scope: Sum over the 27 pinned competition datasets; source attempts, before rubric expansion into
+      separate graded responses.
+    expected: 90005
+  released_response_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: 'raw/sources/<competition>/data/*.parquet: correct flags or grading_details_judge_* criteria'
+    scope: One grade per non-null final-answer verdict or finite rubric criterion with nonzero maximum;
+      multiple judge criteria count separately.
+    expected: 92944

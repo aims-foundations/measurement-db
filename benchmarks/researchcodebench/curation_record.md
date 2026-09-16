@@ -391,3 +391,9 @@ values under its newer hash contract; this identifier-only difference was
 reviewed and explicitly approved during migration. No raw downloads, generated
 Parquet files, credentials, or third-party rerun data belong in the migration
 diff.
+
+Validation expectations are now stored beside metadata in `characterization.yaml`,
+using the shared schema and table hash algorithm. The previous source audits and
+migration assertions passed before conversion; release-specific assertions remain
+in `test.py`. Source claims distinguish reported quantities from those independently
+derived from the archived release. This format change does not alter curated data.

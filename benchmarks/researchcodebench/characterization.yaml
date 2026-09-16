@@ -1,0 +1,84 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: c87ad9380b19fd66e1894a3a4abd13d2d9224b2eac450ac0db289045264b9e70
+  items:
+    rows: 212
+    logical_sha256: 72bd28f6892d05bbe4eae1c129e9efe36852b7df234f275f0e6da662afd53c30
+  responses:
+    rows: 6784
+    logical_sha256: 76ac5ad6b2fc5db74f29aa0416f8f294a3b76c51c0987e69a851323213e3b62a
+  subjects:
+    rows: 31
+    logical_sha256: 2a8422441f702a957e4d85fd1241055493fc97985cfdf9f48e9273eaf2b328f4
+source_claims:
+  released_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
+    locator: distinct paper and snippet keys in overall_stats.json
+    scope: provider headline greedy run 2025-05-12-17-13-20
+    expected: 212
+  released_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
+    locator: model keys in overall_stats.json and run_greedy.sh
+    scope: provider headline greedy run 2025-05-12-17-13-20
+    expected: 32
+  released_response_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
+    locator: completion records nested under overall_stats.json results
+    scope: 32 released configurations by 212 snippets, one completion each
+    expected: 6784
+  released_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
+    locator: outputs/20llms_greedy/2025-05-12-17-13-20 archive contents
+    scope: no completion or raw API text in the pinned released run artifact
+    expected: 0
+  released_task_rates:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/PatrickHua/ResearchCodeBench/tree/2758001c2ff84fc25c546339d65479ed058b0265
+    locator: 'outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json: overall_scores.<model>.task_rates.mean'
+    scope: Percentage passed for each of the 32 released model configurations, each over 212 snippets
+      in the headline greedy run; compare 100 times mean(passed).
+    expected:
+      CLAUDE_3_5_SONNET_2024_10_22: 48.58490566037736
+      CLAUDE_3_7_SONNET_2025_02_19: 51.886792452830186
+      DEEPSEEK_R1: 45.75471698113208
+      GEMINI_2_0_FLASH: 37.264150943396224
+      GEMINI_2_0_FLASH_LITE: 30.660377358490564
+      GEMINI_2_5_FLASH_PREVIEW_04_17: 45.28301886792453
+      GEMINI_2_5_PRO_PREVIEW_03_25: 58.9622641509434
+      GEMINI_2_5_PRO_PREVIEW_05_06: 64.15094339622641
+      GPT_4O_2024_08_06: 41.0377358490566
+      GPT_4O_MINI: 23.11320754716981
+      GPT_4_1: 50.0
+      GPT_4_1_MINI: 42.45283018867924
+      GPT_4_1_NANO: 15.09433962264151
+      GROK_2_1212: 22.169811320754718
+      GROK_3_BETA: 42.924528301886795
+      GROK_3_MINI_BETA_HIGH: 19.81132075471698
+      LLAMA_3_3_70B_INSTRUCT: 12.264150943396226
+      MISTRAL_CODESTRAL_2501: 33.490566037735846
+      O1_HIGH: 48.113207547169814
+      O3_HIGH: 59.43396226415094
+      O3_MINI_HIGH: 52.358490566037744
+      OPENROUTER_AMAZON_NOVA_PRO_1_0: 25.0
+      OPENROUTER_CLAUDE_3_5_HAIKU: 37.735849056603776
+      OPENROUTER_COHERE_COMMAND_A: 31.132075471698112
+      OPENROUTER_DEEPSEEK_CHAT_V3_0324: 42.45283018867924
+      OPENROUTER_LLAMA_4_MAVERICK: 27.358490566037734
+      OPENROUTER_LLAMA_4_SCOUT: 18.39622641509434
+      OPENROUTER_MISTRAL_CODESTRAL_MAMBA: 1.4150943396226416
+      OPENROUTER_MISTRAL_MEDIUM_3: 35.37735849056604
+      OPENROUTER_O4_MINI_HIGH: 58.490566037735846
+      OPENROUTER_QWEN_TURBO: 8.018867924528301
+      QWEN_2_5_CODER_32B_INSTRUCT: 25.943396226415093
+    absolute_tolerance: 1.0e-12

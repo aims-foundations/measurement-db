@@ -13,6 +13,10 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.scripts.build_measurement_tables import validate_dataset
 
+from measurement_db.scripts.build_measurement_tables.validate_characterization import (
+    load_characterization, check_tables, check_source_claims,
+)
+
 DIRECTORY = Path(__file__).resolve().parent
 
 
@@ -24,12 +28,7 @@ def text_hash(value):
     return hashlib.sha256(value.encode()).hexdigest() if value is not None else None
 
 
-def table_digest(frame):
-    rows = []
-    for values in frame.itertuples(index=False, name=None):
-        values = [None if pd.isna(v) else v for v in values]
-        rows.append(json.dumps(values, ensure_ascii=False, sort_keys=True, default=str))
-    return hashlib.sha256("\n".join(sorted(rows)).encode()).hexdigest()
+
 
 
 class ReleaseTests(unittest.TestCase):
@@ -41,15 +40,13 @@ class ReleaseTests(unittest.TestCase):
             raise unittest.SkipTest("Run build.py to populate the released tables")
         cls.tables = {name: pd.read_parquet(DIRECTORY / f"{name}.parquet")
                       for name in ("subjects", "items", "benchmarks", "responses", "traces")}
-        cls.expected = json.loads((DIRECTORY / "testdata/characterization.json").read_text())
+        cls.expected = load_characterization(DIRECTORY / "characterization.yaml")
 
     def test_complete_dataset(self):
         validate_dataset(self.tables, expected_benchmark_id=DIRECTORY.name)
 
     def test_reviewed_measurements(self):
-        for name in ("subjects", "items", "responses", "traces"):
-            self.assertEqual(len(self.tables[name]), self.expected["counts"][name], name)
-            self.assertEqual(table_digest(self.tables[name]), self.expected["digests"][name], name)
+        check_tables(self.expected, self.tables)
 
     def test_provider_outcomes_and_traces(self):
         expected = self.provider_records()
@@ -57,6 +54,10 @@ class ReleaseTests(unittest.TestCase):
         actual = Counter((float(r.response), text_hash(traces.get(r.response_id)))
                          for r in self.tables["responses"].itertuples())
         self.assertEqual(actual, expected)
+        check_source_claims(self.expected, {
+            "released_responses": sum(expected.values()),
+            "released_traces": sum(n for (_, trace), n in expected.items() if trace is not None),
+        })
 
     def provider_records(self):
         import yaml

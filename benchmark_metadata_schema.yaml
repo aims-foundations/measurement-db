@@ -23,6 +23,7 @@ allOf:
           $ref: "#/$defs/snapshot_sources"
         archive_layout: {not: {}}
         expectations: {not: {}}
+        validation: {not: {}}
     else:
       properties:
         sources:

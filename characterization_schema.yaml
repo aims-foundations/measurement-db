@@ -1,0 +1,72 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Reviewed benchmark characterization
+type: object
+additionalProperties: false
+required: [format_version, tables, source_claims]
+properties:
+  format_version:
+    type: integer
+    const: 1
+  tables:
+    type: object
+    additionalProperties: false
+    required: [subjects, items, benchmarks]
+    properties:
+      subjects: { $ref: '#/$defs/table' }
+      items: { $ref: '#/$defs/table' }
+      benchmarks: { $ref: '#/$defs/table' }
+      responses: { $ref: '#/$defs/table' }
+      traces: { $ref: '#/$defs/table' }
+      assets: { $ref: '#/$defs/table' }
+  source_claims:
+    type: object
+    minProperties: 1
+    propertyNames:
+      pattern: '^[a-z][a-z0-9_]*$'
+    additionalProperties:
+      $ref: '#/$defs/claim'
+$defs:
+  text:
+    type: string
+    pattern: '\S'
+  table:
+    type: object
+    additionalProperties: false
+    required: [rows, logical_sha256]
+    properties:
+      rows: { type: integer, minimum: 0 }
+      logical_sha256:
+        type: string
+        pattern: '^[a-f0-9]{64}$'
+  claim:
+    type: object
+    additionalProperties: false
+    required: [kind, origin, source, locator, scope, expected]
+    properties:
+      kind: { enum: [count, aggregate] }
+      origin: { enum: [reported, derived_from_data] }
+      source:
+        type: string
+        format: uri
+        pattern: '^https?://[^/\s]+'
+      locator: { $ref: '#/$defs/text' }
+      scope: { $ref: '#/$defs/text' }
+      expected:
+        oneOf:
+          - { type: number }
+          - type: object
+            minProperties: 1
+            propertyNames: { $ref: '#/$defs/text' }
+            additionalProperties: { type: number }
+      absolute_tolerance: { type: number, minimum: 0 }
+    allOf:
+      - if:
+          properties:
+            kind: { const: count }
+        then:
+          properties:
+            expected: { type: integer, minimum: 0 }
+          not:
+            required: [absolute_tolerance]
+        else:
+          required: [absolute_tolerance]

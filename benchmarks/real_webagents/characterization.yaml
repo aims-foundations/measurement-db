@@ -1,0 +1,34 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 3ec122a8cc0e2339d04987b15a1e74918759ec6b21f99b61be3e7b08399ceefa
+  items:
+    rows: 233
+    logical_sha256: 419884aad6e02253af8ab229add65307e3fd4699359255413a4e7f4ff3aa20fb
+  responses:
+    rows: 4449
+    logical_sha256: e97c88934fbcd7ddd8af17e5a5b47e48bf4c3f968945e3065da7510688fe3522
+  subjects:
+    rows: 33
+    logical_sha256: cda98edfa8629cdd6072d766b86992302254a500a3f900f229eacbee6cb70b02
+  traces:
+    rows: 1242
+    logical_sha256: caca6bb613fc0730863b196397e1a0ab3e4b57caf5beb357d0050c7a0e5e7124
+source_claims:
+  released_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://realevals.xyz/api/getVerifiedModelData
+    locator: 'raw/model_data.json: aiModels[].websites[].tasks[]'
+    scope: Archived named model runs with task IDs and accuracy values. evalsFailed determines success
+      when present.
+    expected: 4449
+  released_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://realevals.xyz/api/getVerifiedModelData
+    locator: 'raw/model_data.json: aiModels[].websites[].tasks[]'
+    scope: Archived named model runs with task IDs and accuracy values. evalsFailed determines success
+      when present. Count retained nonempty retrievedAnswer text, excluding Done and No response placeholders.
+    expected: 1242

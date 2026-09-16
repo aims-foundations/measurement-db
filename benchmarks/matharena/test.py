@@ -71,15 +71,7 @@ def logical_digest(rows) -> str:
     return digest.hexdigest()
 
 
-def characterize(table: pd.DataFrame) -> dict:
-    return {
-        "rows": len(table),
-        "columns": list(table.columns),
-        "null_counts": {
-            column: int(value) for column, value in table.isna().sum().items()
-        },
-        "logical_sha256": logical_digest(table.itertuples(index=False, name=None)),
-    }
+
 
 
 def features(serialized: str) -> dict[str, str]:
@@ -101,6 +93,40 @@ def source_records(metadata: dict, competition: dict):
                 yield shard, row_index, record
                 row_index += 1
 
+
+from measurement_db.scripts.build_measurement_tables.validate_characterization import (
+    load_characterization, check_tables, check_source_claims,
+)
+
+# Reviewed migration invariants; current table snapshots live in characterization.yaml.
+REGRESSION = {'legacy_baseline': {'observation_multiset_sha256': '5aa565e8d2a6287ecad65370056d516e498aab499859720464a955bd95c196de'},
+ 'release': {'responses_by_competition': {'aime_2025': 7915,
+                                          'aime_2025_I': 1860,
+                                          'aime_2025_II': 1860,
+                                          'aime_2026': 2976,
+                                          'aime_2026_I': 2376,
+                                          'apex_2025': 7245,
+                                          'apex_shortlist': 9237,
+                                          'arxivmath_0126': 3279,
+                                          'arxivmath_0226': 2135,
+                                          'arxivmath_1225': 2832,
+                                          'brumo_2025': 5280,
+                                          'cmimc_2025': 5600,
+                                          'hmmt_feb_2025': 7680,
+                                          'hmmt_feb_2026': 3255,
+                                          'hmmt_nov_2025': 2640,
+                                          'imc_2025': 141,
+                                          'imo_2025': 1556,
+                                          'kangaroo_2025_11_12': 2280,
+                                          'kangaroo_2025_1_2': 1824,
+                                          'kangaroo_2025_3_4': 1824,
+                                          'kangaroo_2025_5_6': 2189,
+                                          'kangaroo_2025_7_8': 2160,
+                                          'kangaroo_2025_9_10': 2160,
+                                          'miklos_2025': 13,
+                                          'putnam_2025': 72,
+                                          'smt_2025': 10875,
+                                          'usamo_2025': 1680}}}
 
 class ParserTests(unittest.TestCase):
     @classmethod
@@ -180,9 +206,8 @@ class MathArenaCharacterizationTests(unittest.TestCase):
             if os.environ.get("MEASUREMENT_DB_FULL_TEST") == "1":
                 raise RuntimeError(message)
             raise unittest.SkipTest(message)
-        cls.expected = json.loads(
-            (BENCHMARK_DIR / "testdata" / "characterization.json").read_text()
-        )
+        cls.expected = REGRESSION
+        cls.characterization = load_characterization(BENCHMARK_DIR / "characterization.yaml")
         cls.tables = {
             name: pd.read_parquet(BENCHMARK_DIR / f"{name}.parquet")
             for name in OUTPUT_NAMES
@@ -190,13 +215,8 @@ class MathArenaCharacterizationTests(unittest.TestCase):
 
     def test_reviewed_table_shapes_null_patterns_and_fingerprints(self):
         for name, table in self.tables.items():
-            with self.subTest(table=name):
-                validate_table(
-                    name, table, include_derived=True
-                )
-                self.assertEqual(
-                    characterize(table), self.expected["release"]["tables"][name]
-                )
+            validate_table(name, table, include_derived=True)
+        check_tables(self.characterization, self.tables)
 
     def test_primary_keys_trial_indices_and_trace_attribution(self):
         responses = self.tables["responses"]
@@ -457,6 +477,13 @@ class MathArenaCharacterizationTests(unittest.TestCase):
                         )
         self.assertFalse(groups, "output rows have no pinned-source origin")
         self.assertEqual(seen, len(responses))
+        raw_rows = sum(pq.ParquetFile(BENCHMARK_DIR / "raw" / shard).metadata.num_rows
+                       for competition in self.competitions.values()
+                       for shard in competition["shards"])
+        check_source_claims(self.characterization, {
+            "provider_raw_rows": raw_rows,
+            "released_response_grades": seen,
+        })
         self.assertEqual(
             logical_digest(legacy_rows),
             self.expected["legacy_baseline"]["observation_multiset_sha256"],

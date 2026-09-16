@@ -67,7 +67,7 @@ the same validator; validating individual tables alone is insufficient.
 `metadata.yaml` records benchmark facts and upstream provenance. Under build
 contract 2, `sources.upstream` lists source URLs and known revisions (or null).
 Unknown fields, per-file inventories, and untyped `archive_layout`/`expectations` sections
-are rejected. Keep parsing rules in `build.py` and regression expectations in tests.
+are rejected. Keep parsing rules in `build.py` and reviewed expectations in `characterization.yaml`.
 
 The shared loader pins the public HF repository and its validated snapshot once
 in code and derives `<slug>/raw` from the benchmark directory. It verifies file
@@ -88,7 +88,20 @@ Check new definitions without downloading data:
 python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
 ```
 
-GitHub checks run this validator and the snapshot tests for every pull request.
+Each benchmark also requires a colocated `characterization.yaml`, governed by
+[`characterization_schema.yaml`](characterization_schema.yaml). It contains
+reviewed table counts and content hashes plus a nonempty `source_claims` section.
+Claims cite precise locations in papers, official posts, or released data and
+identify whether values were reported or independently derived. The shared
+checker requires every claim to be verified by the benchmark's source audit.
+See [the characterization guide](characterization.md) for fields and review steps.
+
+```bash
+python -m scripts.build_measurement_tables.validate_characterization --benchmarks-dir benchmarks
+```
+
+GitHub checks validate both definitions and run the shared unit tests for every
+pull request. Full benchmark tests compare generated tables and source evidence.
 
 Optional `benchmark.version` records the provider's benchmark release in
 `benchmarks.parquet.version` (for example, `version: "2.0"`). Omit it or use

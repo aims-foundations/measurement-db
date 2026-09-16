@@ -33,8 +33,8 @@ The selected provider revisions reproduce the historical observation multiset.
 They are not a refresh to today's leaderboard. The train counts in the pinned
 cards are independently reconciled against all downloaded shards by the tests.
 The exact manifests and output counts are not duplicated here: source facts
-live in YAML; reviewed table shapes, null patterns and fingerprints live in
-`testdata/characterization.json`.
+live in YAML; reviewed row counts and full-table fingerprints live in
+`characterization.yaml`; parsing and migration invariants remain in `test.py`.
 
 The retained families are AIME (including the released combined and split
 datasets), HMMT, BRUMO, CMIMC, SMT, APEX and its shortlist, ArXivMath, six
@@ -209,3 +209,9 @@ Final checks on the corrected build:
 
 MathArena's migration and local verification are complete. The repository-wide
 definition of done remains blocked on the unrelated suite/lint failures above.
+
+Validation expectations are now stored beside metadata in `characterization.yaml`,
+using the shared schema and table hash algorithm. The previous source audits and
+migration assertions passed before conversion; release-specific assertions remain
+in `test.py`. Source claims distinguish reported quantities from those independently
+derived from the archived release. This format change does not alter curated data.

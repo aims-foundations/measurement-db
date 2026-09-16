@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import os
@@ -10,7 +9,6 @@ import sys
 import tarfile
 import unittest
 from collections import Counter
-from collections.abc import Iterable
 from pathlib import Path, PurePosixPath
 
 import pandas as pd
@@ -32,13 +30,44 @@ from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata
 from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
 from measurement_db.benchmarks.researchcodebench.build import LAYOUT, EXPECTED_RELEASE
 
+from measurement_db.scripts.build_measurement_tables.validate_characterization import (
+    load_characterization, check_tables, check_source_claims,
+)
+
 METADATA = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
-EXPECTED = json.loads(
-    (BENCHMARK_DIR / "testdata" / "characterization.json").read_text(
-        encoding="utf-8"
-    )
-)["release"]
-SOURCE_CLAIMS = METADATA["validation"]["source_claims"]
+CHARACTERIZATION = load_characterization(BENCHMARK_DIR / "characterization.yaml")
+# Reviewed release-specific parsing and identity invariants.
+EXPECTED = {'papers': 20,
+ 'response_counts': {'0': 4333, '1': 2451},
+ 'trial_counts': {'1': 6572, '2': 212},
+ 'rows_per_subject': {'212': 30, '424': 1},
+ 'gemini_preview_passes_by_trial': {'1': 125, '2': 136},
+ 'exit_code_counts': {'0': 2451, '1': 4272, '124': 61},
+ 'with_paper_prompts': 206,
+ 'without_paper_prompts': 6,
+ 'paper_item_counts': {'Diff-Transformer': 7,
+                       'DiffusionDPO': 9,
+                       'DyT': 9,
+                       'GMFlow': 16,
+                       'GPS': 6,
+                       'LEN': 14,
+                       'OptimalSteps': 11,
+                       'REPA-E': 5,
+                       'SISS': 5,
+                       'TabDiff': 6,
+                       'Tanh-Init': 4,
+                       'advantage-alignment': 5,
+                       'eomt': 37,
+                       'fractalgen': 13,
+                       'grid-cell-conformal-isometry': 15,
+                       'hyla': 3,
+                       'llm-sci-use': 15,
+                       'minp': 7,
+                       'schedule_free': 14,
+                       'semanticist': 11}}
+EXPECTED.update({name: CHARACTERIZATION["tables"].get(name, {}).get("rows", 0)
+                 for name in ("items", "assets", "subjects", "responses", "traces")})
+SOURCE_CLAIMS = CHARACTERIZATION["source_claims"]
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses")
 
 _PAPER_HEADER = "You are an expert in reproducing research code from a paper."
@@ -46,52 +75,6 @@ _NO_PAPER_HEADER = "You are an expert in completing research code."
 _ALIAS_DISPLAY = {
     "GEMINI_2_5_PRO_PREVIEW_05_06": "GEMINI_2_5_PRO_PREVIEW_03_25"
 }
-
-
-def _digest_strings(values: Iterable[object]) -> str:
-    """Return an order-independent, length-framed SHA-256 digest."""
-
-    digest = hashlib.sha256()
-    for value in sorted(str(value) for value in values):
-        payload = value.encode("utf-8")
-        digest.update(len(payload).to_bytes(8, "big"))
-        digest.update(payload)
-    return digest.hexdigest()
-
-
-def _normalized_cell(value: object) -> object:
-    """Convert one Parquet cell to a deterministic JSON-compatible value."""
-
-    if isinstance(value, (list, tuple)):
-        return [_normalized_cell(member) for member in value]
-    if hasattr(value, "tolist") and not isinstance(value, (str, bytes)):
-        converted = value.tolist()
-        if isinstance(converted, list):
-            return [_normalized_cell(member) for member in converted]
-        value = converted
-    try:
-        missing = pd.isna(value)
-    except (TypeError, ValueError):
-        missing = False
-    if isinstance(missing, bool) and missing:
-        return None
-    if hasattr(value, "item") and not isinstance(value, (str, bytes)):
-        return value.item()
-    return value
-
-
-def _serialized_rows(table: pd.DataFrame, columns: Iterable[str]) -> list[str]:
-    """Serialize selected rows for an order-independent logical fingerprint."""
-
-    selected_columns = list(columns)
-    return [
-        json.dumps(
-            [_normalized_cell(value) for value in row],
-            ensure_ascii=False,
-            separators=(",", ":"),
-        )
-        for row in table.loc[:, selected_columns].itertuples(index=False, name=None)
-    ]
 
 
 def _parse_features(serialized: str) -> dict[str, str]:
@@ -218,7 +201,7 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
         cls.traces = None
 
     def test_provider_release_counts_and_aggregates(self) -> None:
-        count_claims = SOURCE_CLAIMS["counts"]
+        count_claims = SOURCE_CLAIMS
         results = self.stats["results"]
         raw_models: set[str] = set()
         raw_items: set[str] = set()
@@ -251,11 +234,17 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
             {EXPECTED["items"]: len(raw_models)},
         )
 
-        aggregate_claim = SOURCE_CLAIMS["aggregate_tables"][
-            "released_task_rates"
-        ]
+        aggregate_claim = SOURCE_CLAIMS["released_task_rates"]
+        check_source_claims(CHARACTERIZATION, {
+            "released_items": len(raw_items),
+            "released_subject_configurations": len(raw_models),
+            "released_response_cells": len(self.source_rows),
+            "released_traces": 0,  # The archive-members assertion above rules out completion files.
+            "released_task_rates": {model: 100.0 * per_model_passes[model] / per_model_rows[model]
+                                    for model in raw_models},
+        })
         overall_scores = self.stats["overall_scores"]
-        self.assertEqual(len(overall_scores), aggregate_claim["expected_groups"])
+        self.assertEqual(len(overall_scores), len(aggregate_claim["expected"]))
         for raw_model in sorted(raw_models):
             released_rate = float(overall_scores[raw_model]["task_rates"]["mean"])
             observed_rate = 100.0 * per_model_passes[raw_model] / per_model_rows[raw_model]
@@ -452,51 +441,10 @@ class ResearchCodeBenchCharacterizationTests(unittest.TestCase):
         self.assertFalse((BENCHMARK_DIR / "assets.parquet").exists())
 
     def test_logical_fingerprints(self) -> None:
-        benchmark_columns = (
-            "benchmark_id",
-            "name",
-            "version",
-            "license",
-            "source_url",
-            "description",
-            "one_line_description",
-            "modality",
-            "domain",
-            "multi_single_turn",
-            "response_type",
-            "response_scale",
-            "categorical",
-            "paper_url",
-            "release_date",
-            "granularity",
-            "release",
-            "benchmark_features",
-        )
-        observed = {
-            "item_ids_sha256": _digest_strings(self.items["item_id"]),
-            "content_hashes_sha256": _digest_strings(self.items["content_hash"]),
-            "item_rows_sha256": _digest_strings(
-                _serialized_rows(self.items, self.items.columns)
-            ),
-            "reference_answers_sha256": _digest_strings(
-                self.items["grading_criterion"].map(lambda value: json.loads(value)["reference_answer"])
-            ),
-            "verifiers_sha256": _digest_strings(self.items["verifier"]),
-            "subject_ids_sha256": _digest_strings(self.subjects["subject_id"]),
-            "subject_rows_sha256": _digest_strings(
-                _serialized_rows(self.subjects, self.subjects.columns)
-            ),
-            "benchmark_row_sha256": _digest_strings(
-                _serialized_rows(self.benchmarks, benchmark_columns)
-            ),
-            "response_ids_sha256": _digest_strings(self.responses["response_id"]),
-            "response_cells_sha256": _digest_strings(
-                _serialized_rows(self.responses, self.responses.columns)
-            ),
-            "asset_rows_sha256": _digest_strings([]),
-            "trace_rows_sha256": _digest_strings([]),
-        }
-        self.assertEqual(observed, {key: EXPECTED[key] for key in observed})
+        check_tables(CHARACTERIZATION, {
+            "items": self.items, "subjects": self.subjects,
+            "benchmarks": self.benchmarks, "responses": self.responses,
+        })
 
 
 if __name__ == "__main__":
