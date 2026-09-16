@@ -79,6 +79,32 @@ Set `benchmark.release_date` explicitly to `null` when unknown. Known dates use
 quoted `YYYY-MM` or `YYYY-MM-DD` strings with valid calendar values; retain the
 available precision rather than guessing a month or day.
 
+## Restoring archived sources
+
+The [Hugging Face repository](https://huggingface.co/datasets/aims-foundations/measurement-db/tree/main)
+also stores each benchmark's source snapshot under `<benchmark>/raw/`, with its
+`metadata.yaml` manifest alongside it. These are the exact input files used by
+the builders, checked by size and SHA-256, so they remain available if upstream
+links change. The archived snapshots below correspond to the
+[schema version 3 builders](https://github.com/aims-foundations/measurement-db/tree/f212270).
+
+From that checkout's root, restore one benchmark with:
+
+```python
+from huggingface_hub import snapshot_download
+
+snapshot_download(
+    repo_id="aims-foundations/measurement-db",
+    repo_type="dataset",
+    revision="c969fabbf60c44694dae0e6f4d521de022b21d84",
+    allow_patterns=["real_webagents/raw/**", "real_webagents/metadata.yaml"],
+    local_dir="benchmarks",
+)
+```
+
+Then run `python benchmarks/real_webagents/build.py` to validate the cached
+sources and rebuild the tables. Replace `real_webagents` to restore another benchmark.
+
 ## License
 
 To the extent that AIMS holds copyright or database rights, the original curation contributions in the AI Measurement Data Bank—including their selection, organization, standardized schema, metadata, and normalization work—are licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). 
