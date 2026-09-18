@@ -90,3 +90,5 @@ sources:
     revision: 4ff9dc7469263f583f12f03c1955ebb0ffe52995
   - url: https://huggingface.co/datasets/MathArena/miklos_2025_outputs
     revision: 9b0abc725ad13fb21e52c57e8125295d797b1f03
+  - url: https://github.com/eth-sri/matharena
+    revision: b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b

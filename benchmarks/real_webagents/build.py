@@ -104,4 +104,4 @@ class REALWebAgents(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    REALWebAgents(__file__).main()
+    REALWebAgents(__file__).main_from_args()

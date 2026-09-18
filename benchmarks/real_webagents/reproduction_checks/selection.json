@@ -1,0 +1,474 @@
+{
+  "algorithm": "SHA256(seed NUL benchmark NUL kind NUL identifier), ascending priority",
+  "benchmark": "real_webagents",
+  "design": "Three tasks without replacement from the complete eligible list",
+  "eligible_count": 112,
+  "eligible_tasks": [
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-1"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-10"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-11"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-2"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-3"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-4"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-5"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-6"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-7"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-8"
+    },
+    {
+      "stratum": "dashdish",
+      "task_id": "dashdish-9"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-1"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-10"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-11"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-12"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-13"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-14"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-2"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-3"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-4"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-5"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-6"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-7"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-8"
+    },
+    {
+      "stratum": "fly-unified",
+      "task_id": "fly-unified-9"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-1"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-10"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-2"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-3"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-4"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-5"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-6"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-7"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-8"
+    },
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-9"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-1"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-2"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-3"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-4"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-5"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-6"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-7"
+    },
+    {
+      "stratum": "gomail",
+      "task_id": "gomail-8"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-1"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-10"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-2"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-3"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-4"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-5"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-6"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-7"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-8"
+    },
+    {
+      "stratum": "networkin",
+      "task_id": "networkin-9"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-1"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-10"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-2"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-3"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-4"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-5"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-6"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-7"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-8"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-9"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-1"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-10"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-2"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-3"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-4"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-5"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-6"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-7"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-8"
+    },
+    {
+      "stratum": "opendining",
+      "task_id": "opendining-9"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-1"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-2"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-3"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-4"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-5"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-6"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-7"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-8"
+    },
+    {
+      "stratum": "staynb",
+      "task_id": "staynb-9"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-1"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-2"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-3"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-4"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-5"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-6"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-7"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-8"
+    },
+    {
+      "stratum": "topwork",
+      "task_id": "topwork-9"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-1"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-10"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-11"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-2"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-3"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-4"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-5"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-6"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-7"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-8"
+    },
+    {
+      "stratum": "udriver",
+      "task_id": "udriver-9"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-1"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-10"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-2"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-3"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-4"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-5"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-6"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-7"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-8"
+    },
+    {
+      "stratum": "zilloft",
+      "task_id": "zilloft-9"
+    }
+  ],
+  "goal": "Environment execution and replay of native grades; model task success is not the acceptance criterion",
+  "replacement_policy": "No replacement for missing assets, setup failures, grade failures or task difficulty",
+  "scope": "All captured REAL task definitions with published environment configuration; newer leaderboard-only v2 tasks have no matching released definitions in this capture.",
+  "seed": "measurement-db-public-reproduction-20260918",
+  "selected_tasks": [
+    {
+      "stratum": "gocalendar",
+      "task_id": "gocalendar-2"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-6"
+    },
+    {
+      "stratum": "omnizon",
+      "task_id": "omnizon-9"
+    }
+  ]
+}

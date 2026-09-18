@@ -51,3 +51,7 @@ sources:
     revision: null
   - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified
     revision: null
+  - url: https://github.com/multi-swe-bench/MSWE-agent
+    revision: 88217624b637646b886cb0462995c07559e96f58
+  - url: https://github.com/multi-swe-bench/multi-swe-bench
+    revision: 24f493f8a103e72312ded4f6b9c89f081d69cb09

@@ -2,3 +2,8 @@ __pycache__/
 *.pyc
 **/raw/
 *.parquet
+
+# Local reproduction captures, environments and run evidence.
+/artifacts/
+/benchmarks/*/reproduction_checks/run_results/
+/.pytest_cache/

@@ -1,0 +1,111 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: Benchmark reproducibility pilot contract
+type: object
+additionalProperties: false
+required: [format_version, artifacts, profiles, commands, verification]
+properties:
+  format_version: {const: 1}
+  artifacts:
+    type: object
+    minProperties: 1
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      required: [kind, roles, path, receipt, source_index]
+      properties:
+        kind: {enum: [github_archive, container_archive, vm_archive, file]}
+        roles:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {enum: [code, tasks, configuration, evaluator, traces, environment]}
+        path: {$ref: '#/$defs/path'}
+        receipt: {$ref: '#/$defs/path'}
+        source_index: {type: integer, minimum: 0}
+  profiles:
+    type: object
+    minProperties: 1
+    additionalProperties:
+      type: object
+      additionalProperties: false
+      required: [description, source_artifact, historical_match, tasks, environments, agent]
+      properties:
+        description: {$ref: '#/$defs/text'}
+        source_artifact: {$ref: '#/$defs/text'}
+        historical_match: {enum: [documented, unknown, not_claimed]}
+        tasks:
+          type: array
+          minItems: 1
+          uniqueItems: true
+          items: {$ref: '#/$defs/text'}
+        environments:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [kind, specification, requirements, archive_status]
+            properties:
+              kind: {enum: [python, container, vm, external_service]}
+              specification: {$ref: '#/$defs/text'}
+              requirements: {type: array, items: {$ref: '#/$defs/text'}}
+              archive_status: {enum: [captured, partial, not_captured]}
+        agent:
+          description: Null for checks that do not execute an agent.
+          anyOf:
+            - {type: 'null'}
+            - type: object
+              additionalProperties: false
+              required: [model, configuration, credential_names]
+              properties:
+                model: {$ref: '#/$defs/text'}
+                configuration: {$ref: '#/$defs/text'}
+                credential_names: {type: array, items: {$ref: '#/$defs/text'}}
+  commands:
+    type: object
+    required: [prepare, exercise, regrade, rerun]
+    additionalProperties: false
+    properties:
+      prepare: {$ref: '#/$defs/command'}
+      exercise: {$ref: '#/$defs/command'}
+      regrade: {$ref: '#/$defs/command'}
+      rerun: {$ref: '#/$defs/command'}
+  verification:
+    type: object
+    additionalProperties: false
+    required: [default_profile, default_stages, limitations]
+    properties:
+      default_profile: {$ref: '#/$defs/text'}
+      default_stages:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items: {enum: [prepare, exercise, regrade, rerun]}
+      limitations: {type: array, minItems: 1, items: {$ref: '#/$defs/text'}}
+$defs:
+  text: {type: string, pattern: '\S'}
+  path:
+    type: string
+    pattern: '^(?!/)(?!.*(?:^|/)\.\.(?:/|$))(?!.*\\)\S+$'
+  command:
+    type: object
+    additionalProperties: false
+    required: [argv, description, timeout_seconds, requires, unavailable_reason]
+    properties:
+      argv:
+        anyOf:
+          - {type: 'null'}
+          - type: array
+            minItems: 1
+            items: {$ref: '#/$defs/text'}
+      description: {$ref: '#/$defs/text'}
+      timeout_seconds: {type: [integer, 'null'], minimum: 1, maximum: 86400, description: 'Null leaves runtime limits to the upstream procedure.'}
+      requires:
+        type: array
+        uniqueItems: true
+        items: {enum: [prepare, exercise, regrade]}
+      unavailable_reason: {type: [string, 'null']}
+    allOf:
+      - if: {properties: {argv: {type: 'null'}}}
+        then: {properties: {unavailable_reason: {$ref: '#/$defs/text'}}}
+        else: {properties: {unavailable_reason: {type: 'null'}}}

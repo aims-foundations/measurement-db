@@ -54,3 +54,9 @@ sources:
     revision: null
   - url: https://huggingface.co/datasets/nebius/SWE-rebench-openhands-trajectories
     revision: null
+  - url: https://github.com/All-Hands-AI/OpenHands
+    revision: 4aae68ae53477d05010a509f1f1e3f02e61b1831
+  - url: https://github.com/SWE-rebench/SWE-bench-fork
+    revision: e4907b7a90eafaa1f0a6428fd04fe31cdd8b4284
+  - url: https://huggingface.co/datasets/nebius/SWE-rebench
+    revision: 89cdfbab4ab1bd8f5a658bb212d1b63624f4f881

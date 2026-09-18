@@ -219,6 +219,10 @@ class MMDocRAG(BenchmarkBuild):
                         verifier=Judge(
                             judged_by="llm",
                             spec=(
+                                f"MMDocRAG native judge {record.get('model')}; "
+                                "prompt_bank/evaluation_answer.txt at code revision "
+                                "2fd7505c6a576376b4a92aafaff6d87494765bb7."
+                                if getattr(self, "_local_source", False) else
                                 "Provider MMDocRAG evaluation using prompt_bank/evaluation_answer.txt; "
                                 "exact judge configuration is not attributed per released cell. "
                                 "Preserve the released dimension grades without rejudging."
@@ -244,4 +248,4 @@ class MMDocRAG(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    MMDocRAG(__file__).main()
+    MMDocRAG(__file__).main_from_args()

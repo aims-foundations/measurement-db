@@ -19,6 +19,11 @@ def cache_path(path: str) -> str:
     return re.sub(r"[^A-Za-z0-9._/-]", lambda match: f"_x{ord(match[0]):02x}_", path)
 
 
+def _instance_id(value: str) -> str:
+    """Accept the native grader's org/repo:pr-number and released instance IDs."""
+    return re.sub(r"^([^/]+)/([^:]+):pr-(\d+)$", r"\1__\2-\3", value)
+
+
 CONTENT_CAP = 12000
 
 # Cap for the reference patch (reference_answer) and the test-patch diff carried
@@ -226,8 +231,8 @@ class MultiSWEBench(BenchmarkBuild):
             stem = Path(original).stem
             lang, folder = stem.split("__", 1)
             record = json.loads((self.raw_dir / local).read_text())
-            resolved = set(record.get("resolved") or record.get("resolved_ids") or [])
-            unresolved = set(record.get("unresolved_ids") or record.get("unresolved") or [])
+            resolved = {_instance_id(value) for value in (record.get("resolved") or record.get("resolved_ids") or [])}
+            unresolved = {_instance_id(value) for value in (record.get("unresolved_ids") or record.get("unresolved") or [])}
             if not resolved and not unresolved:
                 continue
             date, agent, model = _parse_folder(folder)
@@ -256,4 +261,4 @@ class MultiSWEBench(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    MultiSWEBench(__file__).main()
+    MultiSWEBench(__file__).main_from_args()

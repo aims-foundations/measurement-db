@@ -70,7 +70,11 @@ def _grading_spec(bank_row) -> tuple[str | None, str | None]:
 class SWERebench(BenchmarkBuild):
     def build_subject_item_response_rows(self) -> None:
         bank = pd.read_parquet(self.raw_dir / "instances.parquet").set_index("instance_id").to_dict("index")
-        subject = self.add_subject(MODEL_LABEL, features=SUBJECT_FEATURES)
+        settings_path = self.raw_dir / "subject_settings.json"
+        labels = list(json.loads(settings_path.read_text())) if settings_path.exists() else [MODEL_LABEL]
+        if len(labels) != 1:
+            raise ValueError("SWE-rebench input contains trajectories for exactly one declared subject")
+        subject = self.add_subject(labels[0], features=SUBJECT_FEATURES)
         items = {}
         trials = Counter()
         for row in pd.read_parquet(self.raw_dir / "openhands_trajectories.parquet").itertuples(index=False):
@@ -93,4 +97,4 @@ class SWERebench(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    SWERebench(__file__).main()
+    SWERebench(__file__).main_from_args()

@@ -48,3 +48,5 @@ sources:
     revision: null
   - url: https://github.com/agi-inc/REAL
     revision: null
+  - url: https://github.com/agi-inc/REAL
+    revision: 56d8f1643bdaa5e662086b1a357a9693c9ededf6

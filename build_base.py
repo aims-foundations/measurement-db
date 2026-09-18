@@ -17,6 +17,8 @@ writes the Parquet output. No second provenance manifest is generated.
 
 from abc import ABC, abstractmethod
 import copy
+import argparse
+import hashlib
 import json
 from numbers import Integral
 import os
@@ -319,7 +321,7 @@ class BenchmarkBuild(ABC):
             )
         return _tables.resolve_subject(
             raw_label,
-            features=features,
+            features=self.subject_settings(raw_label, features or {}),
             access_date=access_date,
         )
 
@@ -1016,6 +1018,87 @@ class BenchmarkBuild(ABC):
             return df
 
         return df
+
+    def main_from_args(self, argv=None):
+        """CLI entry point for builders supporting a separate local result set."""
+        parser = argparse.ArgumentParser(description=type(self).__doc__)
+        parser.add_argument("--source", type=Path, help="Local directory in the benchmark's upstream input format")
+        parser.add_argument("--output", type=Path, help="Separate output directory (default: SOURCE's sibling tables/)")
+        args = parser.parse_args(argv)
+        if args.source is not None:
+            return self._build_local_source(args.source, args.output)
+        if args.output is not None:
+            parser.error("--output requires --source; omit both for the published-release build")
+        return self.main()
+
+    def _build_local_source(self, source, output):
+        """Use the same parser and shared table writer for an explicit local input."""
+        source = source.resolve(strict=True)
+        output = (output or source.parent / "tables").resolve()
+        if not source.is_dir():
+            raise ValueError("--source must be a directory")
+        if output == self.dir or output.is_relative_to(self.raw_dir.resolve()) or output.is_relative_to(source) or source.is_relative_to(output):
+            raise ValueError("Local results need a separate output directory outside the source and published tables")
+        # The older shared writer retires this legacy file after writing. Never
+        # let that cleanup edit a caller-supplied, immutable input directory.
+        if (source / "_provenance.json").exists():
+            raise ValueError("The selected source contains a legacy sidecar the shared writer would modify")
+
+        def fingerprint():
+            hashes = {}
+            for path in sorted(source.rglob("*")):
+                if path.is_file():
+                    digest = hashlib.sha256()
+                    with path.open("rb") as stream:
+                        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                            digest.update(chunk)
+                    hashes[str(path.relative_to(source))] = digest.hexdigest()
+            return hashes
+
+        before = fingerprint()
+        if not before:
+            raise ValueError("The selected source directory is empty")
+        original = self.dir, self.raw_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files
+        if output.exists() and any(output.glob("*.parquet")):
+            raise ValueError("Choose a new output directory; existing tables are not overwritten")
+        output.mkdir(parents=True, exist_ok=True)
+        self.dir, self.raw_dir = output, source
+        self.responses_path, self.traces_path, self.assets_path = (
+            output / f"{name}.parquet" for name in ("responses", "traces", "assets"))
+        self.source_files = tuple(before)
+        self._response_rows = []
+        self._response_keys = set()
+        self._response_ids = set()
+        self._asset_rows = {}
+        self._asset_id_by_source_path = {}
+        self._item_asset_ids = {}
+        self._item_response_scales = {}
+        self._active_benchmark_id = self.slug
+        self._local_source = True
+        try:
+            result = self.build_subject_item_response_rows()
+            if result is not None:
+                raise ValueError("The builder must register rows, not return another data format")
+            if fingerprint() != before:
+                raise ValueError("Input files changed while building")
+            result = self._validate_and_write_tables()
+            (output / "source.json").write_text(json.dumps(
+                {"source": str(source), "sha256": before}, indent=2) + "\n")
+            return result
+        finally:
+            self._local_source = False
+            self._active_benchmark_id = None
+            self.dir, self.raw_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files = original
+
+    def subject_settings(self, label, defaults):
+        """Optional recorded run settings override historical release defaults."""
+        path = self.raw_dir / "subject_settings.json"
+        if not path.is_file():
+            return defaults
+        settings = json.loads(path.read_text())
+        if label not in settings:
+            raise ValueError(f"Missing recorded settings for subject {label!r}")
+        return {**defaults, **settings[label]}
 
     def main(self) -> pd.DataFrame:
         metadata_path = self.dir / "metadata.yaml"

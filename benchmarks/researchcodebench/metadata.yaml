@@ -47,3 +47,9 @@ sources:
   upstream:
   - url: https://github.com/PatrickHua/ResearchCodeBench
     revision: 2758001c2ff84fc25c546339d65479ed058b0265
+  - url: https://github.com/open-mmlab/mmcv
+    revision: d409eedc816fccfb1c8d57e5eed5f03bd075f327
+  - url: https://github.com/Lakonik/mmgeneration
+    revision: 500a93e474638c87dcaf8fad94cfbe1ef29acd1f
+  - url: https://github.com/huggingface/diffusers
+    revision: 57084dacc5275d7212513b24837b60a28e55603d

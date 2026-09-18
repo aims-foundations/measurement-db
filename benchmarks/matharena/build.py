@@ -332,4 +332,4 @@ class MathArenaBuild(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    MathArenaBuild(__file__).main()
+    MathArenaBuild(__file__).main_from_args()

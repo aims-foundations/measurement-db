@@ -1,0 +1,87 @@
+format_version: 1
+artifacts:
+  source:
+    kind: github_archive
+    roles:
+    - code
+    - configuration
+    - evaluator
+    path: raw/reproducibility/source-88217624b637646b886cb0462995c07559e96f58.tar.gz
+    receipt: raw/reproducibility/source-88217624b637646b886cb0462995c07559e96f58.tar.gz.receipt.json
+    source_index: 3
+  grader:
+    kind: github_archive
+    roles:
+    - code
+    - configuration
+    - evaluator
+    path: raw/reproducibility/grader-24f493f8a103e72312ded4f6b9c89f081d69cb09.tar.gz
+    receipt: raw/reproducibility/grader-24f493f8a103e72312ded4f6b9c89f081d69cb09.tar.gz.receipt.json
+    source_index: 4
+profiles:
+  luna_medium:
+    description: Three frozen random tasks using the released agent and native grading; additional shared
+      dollar cap.
+    source_artifact: source
+    historical_match: not_claimed
+    tasks:
+    - cli__cli-9520
+    - cli__cli-7201
+    - cli__cli-2909
+    environments:
+    - kind: container
+      specification: Pinned upstream revisions and runtime configuration in check.sh; environment details
+        recorded per run.
+      requirements:
+      - Linux x86_64
+      - Docker
+      - Network access
+      archive_status: partial
+    agent:
+      model: gpt-5.6-luna
+      configuration: reproduction_checks/luna.json
+      credential_names:
+      - OPENAI_API_KEY
+commands:
+  prepare:
+    argv:
+    - bash
+    - reproduction_checks/check.sh
+    - --prepare-only
+    description: Complete visible Bash procedure including setup, native checks and, unless prepare-only,
+      fresh inference.
+    timeout_seconds: null
+    requires: []
+    unavailable_reason: null
+  exercise:
+    argv: null
+    description: Complete visible Bash procedure including setup, native checks and, unless prepare-only,
+      fresh inference.
+    timeout_seconds: null
+    requires: []
+    unavailable_reason: Included in the complete Bash procedure.
+  regrade:
+    argv: null
+    description: Complete visible Bash procedure including setup, native checks and, unless prepare-only,
+      fresh inference.
+    timeout_seconds: null
+    requires: []
+    unavailable_reason: Included in the complete Bash procedure.
+  rerun:
+    argv:
+    - bash
+    - reproduction_checks/check.sh
+    description: Complete visible Bash procedure including setup, native checks and, unless prepare-only,
+      fresh inference.
+    timeout_seconds: null
+    requires: []
+    unavailable_reason: null
+verification:
+  default_profile: luna_medium
+  default_stages:
+  - prepare
+  limitations:
+  - Three tasks test execution and grading; they do not reproduce historical model scores.
+  - Captured raw inputs remain immutable; installations use writable run directories.
+  - Model and grading failures remain distinct from setup and cost interruptions.
+  - No replacement of unavailable or failed randomly selected tasks.

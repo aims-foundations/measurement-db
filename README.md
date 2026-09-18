@@ -128,6 +128,8 @@ to the upstream sources or HF `main` do not change its inputs. Replace
 `real_webagents` with another benchmark to rebuild it. Do not combine a builder
 with metadata from a different build-contract version.
 
+Fresh evaluation pilots follow the [shared reproducibility procedure](scripts/reproduce_evaluations/README.md), with frozen random tasks, immutable upstream captures, spending limits and separate review tables.
+
 ## License
 
 To the extent that AIMS holds copyright or database rights, the original curation contributions in the AI Measurement Data Bank—including their selection, organization, standardized schema, metadata, and normalization work—are licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). 
