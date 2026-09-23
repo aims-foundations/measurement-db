@@ -1,6 +1,6 @@
 # Benchmark characterization
 
-Keep `characterization.yaml` beside `metadata.yaml`, `build.py`, and `test.py`.
+Keep `characterization.yaml` beside `metadata.yaml` and `build.py`.
 The metadata describes the benchmark and upstream sources. The characterization
 records reviewed output expectations and the source evidence used to check them.
 Its contract is defined in [`characterization_schema.yaml`](characterization_schema.yaml).
@@ -51,7 +51,8 @@ was counted. Do not obtain source expectations by copying the builder's outputs.
 A full-benchmark paper count should not be compared directly with a released
 subset unless the difference is explicitly accounted for. Neither a citation
 nor matching an overall count alone proves that each response was parsed correctly;
-retain source-specific record, grading, and trace checks in `test.py`.
+retain source-specific record, grading, and trace checks in
+`tests/benchmarks/test_<slug>.py`.
 
 ## Review and checks
 
@@ -62,30 +63,38 @@ retain source-specific record, grading, and trace checks in `test.py`.
    `characterize_tables(tables)` function computes candidate table expectations;
    review them before saving them. Existing tests must pass before migrating
    an already accepted snapshot to a new format.
-3. In `test.py`, use `load_characterization(path)` to enforce the schema,
-   `check_tables(characterization, tables)` to compare all produced tables, and
-   `check_source_claims(characterization, observations)` to verify source evidence.
-   Compute observations independently of the builder and reconcile them with the
-   curated records. Missing or extra claim IDs fail; no declared claim is ignored.
+3. The shared dataset runner validates metadata, table schemas, relationships,
+   counts, and fingerprints. Keep only source-specific assertions under
+   `tests/benchmarks/`; these use `check_source_claims(characterization, observations)`
+   to verify source evidence. Compute observations independently of the builder
+   and reconcile them with the curated records. Missing or extra claim IDs fail;
+   no declared claim is ignored.
 4. Run the full benchmark test. After an intentional data change, review its
    source and output differences before updating expectations. A failing hash
    is not a reason by itself to replace the stored hash.
 
 The shared helpers live in
 [`validate_characterization.py`](scripts/build_measurement_tables/validate_characterization.py).
-Benchmark-specific parsing and historical migration assertions remain in
-`test.py`; the YAML has the same closed structure for every benchmark.
+The runner is implemented once in
+[`validate_benchmark_datasets.py`](scripts/build_measurement_tables/validate_benchmark_datasets.py)
+and reused by the private repository. Benchmark-specific parsing and historical
+migration assertions live under `tests/benchmarks/`; no benchmark-local `test.py`
+is needed. The YAML has the same closed structure for every benchmark.
 
 ```bash
 python -m scripts.build_measurement_tables.validate_characterization --benchmarks-dir benchmarks
 python benchmarks/<slug>/build.py
-MEASUREMENT_DB_FULL_TEST=1 python benchmarks/<slug>/test.py -v
+python tests/test_benchmark_datasets.py <slug>
+python tests/test_benchmark_datasets.py --all
 ```
 
-The first command validates definitions without downloading data and requires a
-file for every non-template benchmark. The full test executes the comparisons.
-The template intentionally contains no fabricated characterization; its source
-audit must be implemented and its expected values reviewed for the new benchmark.
+The first command validates definitions without downloading data. Dataset tests
+require cached inputs and generated tables; missing data fail by default. Use
+`--allow-missing` on a code-only checkout, or `--list` to see registered datasets.
+`--all` covers benchmarks with a characterization or a source suite; unreviewed
+folders are not silently treated as validated. Repository unit tests exercise
+builder and validator code separately. The template contains no fabricated
+characterization; review expectations and implement source checks for new data.
 
 ## Logical hashes
 

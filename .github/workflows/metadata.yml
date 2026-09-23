@@ -8,15 +8,22 @@ permissions:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: measurement_db
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: measurement_db
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt
+      - run: pip install -r requirements.txt pytest==8.3.5
       - name: Require compact metadata for all public benchmarks
         run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
       - name: Require reviewed characterizations and source claims
         run: python -m scripts.build_measurement_tables.validate_characterization --benchmarks-dir benchmarks
-      - name: Test snapshot validation without downloads
+      - name: Test shared validation and available datasets without downloads
         run: python -m unittest discover -s tests -v
+      - name: Test table builders and row-builder compatibility
+        run: python -m pytest -q tests/test_tabular_builder.py tests/test_real_webagents_builder.py tests/test_multi_swebench_builder.py tests/test_swe_rebench_builder.py tests/test_researchcodebench_builder.py tests/test_local_source.py

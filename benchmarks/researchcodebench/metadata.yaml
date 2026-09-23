@@ -43,8 +43,82 @@ benchmark:
   release: public
 build:
   contract_version: 2
+  parameters:
+    # Fixed inputs for reconstructing the pinned release; no executable code.
+    # Prompt text: upstream core/annotation/utils/run_inference.py.
+    # Marker patterns: upstream core/annotation/models/file.py.
+    archive:
+      file: researchcodebench-2758001c2ff84fc25c546339d65479ed058b0265.tar.gz
+      root: ResearchCodeBench-2758001c2ff84fc25c546339d65479ed058b0265
+      pset_prefix: pset
+      results_member: outputs/20llms_greedy/2025-05-12-17-13-20/overall_stats.json
+    snippet_markers:
+      opening: ^\s*#\s*<paper2code\s+name="([^"]+)">\s*$
+      closing: ^\s*#\s*</paper2code\s+name="([^"]+)">\s*$
+    prompt:
+      with_paper_prefix: |2
+
+        You are an expert in reproducing research code from a paper.
+
+        Here is the paper that you need to use to complete the code:
+      without_paper: |2+
+
+        You are an expert in completing research code.
+
+      code_prefix: |2
+
+
+
+        Here is the code that you need to complete:
+      code_suffix: |2
+
+
+
+        Please implement the missing code in the TODO blocks. Follow these guidelines carefully:
+
+        1. ONLY provide the implementation code that replaces the TODO comments
+        2. Your implementation must preserve the EXACT indentation level of the TODO block you are replacing
+        3. Do not include the function/class definitions or any surrounding code
+        4. Ensure your implementation is complete, functional, and follows best practices
+        5. If a corresponding paper is given, use it as a reference for reproducing the code
+        6. ALWAYS wrap your implementation in ```python and ``` markers
+
+        For example, if you see this nested TODO block:
+        ```python
+        class Calculator:
+            def calculate_area(self, radius):
+                if radius > 0:
+                    # TODO: Implement block "calculate area"
+                    # Approximately 2 line(s) of code.
+                    pass
+        ```
+
+        Your answer should preserve the EXACT indentation (12 spaces/3 levels) and be wrapped in code block markers like this:
+        ```python
+                    area = radius * radius * math.pi
+                    return area
+        ```
+
+        Notice how:
+        1. The implementation maintains the same indentation level as the TODO comment it replaces
+        2. The code is wrapped in ```python at the start and ``` at the end
+grading:
+  rule: Assign 1 when the provider's paper-specific tests pass, otherwise 0.
+  verifiers:
+    greedy_run:
+      description: >-
+        Provider's pinned greedy-run harness: parse the last Python Markdown
+        block, insert it into the masked source file, and run the
+        paper-specific Python test program with a 60-second timeout.
+        Import the released passed flag without rerunning the tests.
 sources:
   upstream:
+  - name: release
+    revision: 2758001c2ff84fc25c546339d65479ed058b0265
+    url: https://codeload.github.com/PatrickHua/ResearchCodeBench/tar.gz/2758001c2ff84fc25c546339d65479ed058b0265
+    file: researchcodebench-2758001c2ff84fc25c546339d65479ed058b0265.tar.gz
+    size: 1085442
+    sha256: 0ea1c8e5ccd1f223a168d47e9a744a9d5f0baca80225c75036dfe3c38557a857
   - url: https://github.com/PatrickHua/ResearchCodeBench
     revision: 2758001c2ff84fc25c546339d65479ed058b0265
   - url: https://github.com/open-mmlab/mmcv

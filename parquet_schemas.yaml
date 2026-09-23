@@ -31,7 +31,7 @@
 # Retiring columns requires an explicit schema-version migration.
 
 subjects:
-  file: "{dataset}/subjects.parquet"
+  file: "{dataset}/formatted_tables/subjects.parquet"
   primary_key: [subject_id]
   description: >-
     The AI test-takers (models, agents, judges, classifiers) this benchmark
@@ -100,7 +100,7 @@ subjects:
       description: Any other features of the subject. Passed at subject registration; part of the `subject_id` hash.
 
 items:
-  file: "{dataset}/items.parquet"
+  file: "{dataset}/formatted_tables/items.parquet"
   primary_key: [item_id]
   description: One row per distinct stimulus and grading protocol within this benchmark.
   columns:
@@ -191,7 +191,7 @@ items:
         final feature mapping when the item is registered.
 
 assets:
-  file: "{dataset}/assets.parquet"
+  file: "{dataset}/formatted_tables/assets.parquet"
   primary_key: [asset_id]
   description: >-
     Exact external-file bytes referenced by items.asset_manifest. One row per
@@ -217,7 +217,7 @@ assets:
       description: Exact file bytes; media type and logical filename live on each item link.
 
 benchmarks:
-  file: "{dataset}/benchmarks.parquet"
+  file: "{dataset}/formatted_tables/benchmarks.parquet"
   primary_key: [benchmark_id]
   description: A single row describing the benchmark's own metadata.
   columns:
@@ -430,7 +430,7 @@ benchmarks:
         one item, not grading completeness or whether every item has an answer.
 
 responses:
-  file: "{dataset}/responses.parquet"
+  file: "{dataset}/formatted_tables/responses.parquet"
   primary_key: [response_id]
   description: >-
     The long-form data. Within each benchmark, one row per
@@ -506,7 +506,7 @@ responses:
         pandas missing sentinels in assembled tables are serialized as null.
 
 traces:
-  file: "{dataset}/traces.parquet"
+  file: "{dataset}/formatted_tables/traces.parquet"
   primary_key: [response_id]
   description: >-
     The raw text each model produced, zero or one row per response.

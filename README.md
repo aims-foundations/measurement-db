@@ -65,22 +65,35 @@ check before replacing their outputs. Migration and publishing tools import
 the same validator; validating individual tables alone is insufficient.
 
 `metadata.yaml` records benchmark facts and upstream provenance. Under build
-contract 2, `sources.upstream` lists source URLs and known revisions (or null).
-Unknown fields, per-file inventories, and untyped `archive_layout`/`expectations` sections
-are rejected. Keep parsing rules in `build.py` and reviewed expectations in `characterization.yaml`.
+contract 2, `sources.upstream` lists source URLs and revisions. Named entries also
+declare which files to download and their destinations under `raw/`. Keep transformations
+in `build.py` and reviewed expectations in `characterization.yaml`.
+Optional `build.parameters` groups string constants such as source paths, marker
+patterns, and verbatim prompt text inside `metadata.yaml`. The shared builder
+validates their structure and exposes them as `self.build_parameters`, including
+when importing fresh runs with `--source`. ResearchCodeBench provides an example.
 
-The shared loader pins the public HF repository and its validated snapshot once
-in code and derives `<slug>/raw` from the benchmark directory. It verifies file
-sizes and content hashes against that immutable revision, including cached files.
-`self.source_files` lists the verified input paths; use it for file discovery so
-unrelated local caches do not affect a build. The Hub must be reachable to obtain
-the pinned tree; raw inputs are downloaded only when missing. No additional
-provenance file is maintained. Contract 1 remains available for older builders.
+Each public builder explicitly selects its inputs in a short hook:
 
-To try newly archived inputs, set `MEASUREMENT_DB_SOURCE_REVISION` to their full
-commit SHA when running the builder. `MEASUREMENT_DB_SOURCE_REPO` selects a
-different HF dataset repository and requires an explicit revision. Update the
-shared default revision when promoting a newly validated public release.
+```python
+def download(self):
+    return self.fetch_sources("results", "tasks")
+```
+
+The names refer to `sources.upstream` entries in `metadata.yaml`. For GitHub and
+author-owned HF repositories, `revision` is a full commit SHA; `files` contains
+full-match path expressions and raw-relative destination templates. Named captures
+can be inserted into the destination, and `{path}` preserves the upstream path.
+For a single HTTP URL, specify `file`, `size`, and `sha256` instead. See REAL for
+both forms. MathArena uses `fetch_sources("*")` to select all its named releases.
+Unnamed entries document additional references without downloading them.
+
+The shared downloader creates `raw/`, verifies files against the upstream repository's
+hashes or the declared HTTP checksum, and fetches missing inputs. Existing raw files
+with different contents cause an error rather than being overwritten. `self.source_files`
+lists the verified paths; use it so unrelated local caches do not enter a build.
+Repository inventories require network access, including when files are cached.
+Contract 1 remains available for older builders.
 
 Check new definitions without downloading data:
 
@@ -103,6 +116,12 @@ python -m scripts.build_measurement_tables.validate_characterization --benchmark
 GitHub checks validate both definitions and run the shared unit tests for every
 pull request. Full benchmark tests compare generated tables and source evidence.
 
+Use one entrypoint for dataset checks: `python tests/test_benchmark_datasets.py <slug>`
+or `python tests/test_benchmark_datasets.py --all`. The runner reads each benchmark's
+characterization and includes its source-specific checks from `tests/benchmarks/`.
+Missing data fail by default; `--allow-missing` skips absent tables on code-only
+checkouts. `--list` lists the reviewed datasets covered by the runner.
+
 Optional `benchmark.version` records the provider's benchmark release in
 `benchmarks.parquet.version` (for example, `version: "2.0"`). Omit it or use
 `null` when unknown; schema versions, `build.contract_version`, and source
@@ -112,23 +131,85 @@ Set `benchmark.release_date` explicitly to `null` when unknown. Known dates use
 quoted `YYYY-MM` or `YYYY-MM-DD` strings with valid calendar values; retain the
 available precision rather than guessing a month or day.
 
-## Restoring archived sources
+Fixed verifier descriptions belong in the optional `grading.verifiers` mapping
+in `metadata.yaml`, exposed to builders through `self.grading`. Each named
+description is a nonempty JSON-compatible object; its fields describe the
+upstream grading protocol. Builders select and serialize these descriptions into
+the existing item verifier specs. An optional `grading.fallback_rule` records the
+known criterion when item-specific rules are unavailable; `grading.rule` records
+a criterion shared by all items. Item-specific rules
+come from the source tables, and transformations that derive response values
+remain in the builder. REAL provides an example; no Parquet columns are added.
 
-The [Hugging Face repository](https://huggingface.co/datasets/aims-foundations/measurement-db/tree/main)
-stores the six public source snapshots under `<benchmark>/raw/`. From a checkout
-of this repository, install the dependencies and run a builder:
+## Building from DataFrames
+
+`BenchmarkBuild.build_tables()` accepts a benchmark-specific transformation of
+raw inputs into pandas DataFrames. Return a dictionary containing `subjects`,
+`items`, and `responses`, with optional `traces`. The
+[REAL builder](benchmarks/real_webagents/build.py) demonstrates JSON normalization,
+joins, grading, and trace selection before registration. The
+[Multi-SWE-bench builder](benchmarks/multi_swebench/build.py) follows the same
+staged method with complete JSONL records, explicit uniqueness checks, and
+patches linked to their source runs.
+
+| Input table | Required columns | Optional columns |
+| --- | --- | --- |
+| `subjects` | `subject_key`, `raw_label` | `features`, `access_date` |
+| `items` | `item_key`, `raw_item_id`, `content`, `grading_criterion`, `verifier` | `attachments`, `features`, `verifier_features` |
+| `responses` | `response_key`, `subject_key`, `item_key`, `response` | `trial`, `test_condition`, `interactors` |
+| `traces` | `response_key`, `trace` | — |
+
+Keys are temporary string or integer identifiers linking these input tables;
+they are not exported. Each table's own key must be unique and non-null, and
+every reference must resolve. The shared layer derives canonical IDs using
+the existing registration rules, so different source keys can resolve to the
+same subject or item. If `trial` is omitted, attempts are numbered from one in
+response-table order within each canonical subject, item, condition, and
+interactor combination. Supply `trial` explicitly when the source records it.
+Trace rows link through `response_key` and preserve the complete text.
+
+Other columns use the corresponding `add_subject`, `add_item`, and `add_response`
+arguments, including `ExactMatcher`/`Judge` verifier objects. Missing DataFrame
+cells become `None`; grading-scale and finite-value checks still apply. Item
+attachments use the existing asset handling, and benchmark statistics are
+computed centrally. These are in-memory input tables; the six published
+Parquet schemas remain unchanged. Existing builders can continue implementing
+`build_subject_item_response_rows()` with the `add_*` methods.
+
+## Building and restoring sources
+
+Clone this repository into a directory named `measurement_db`, install the dependencies,
+and run a builder. It downloads directly from the authors' upstream sources and writes
+the validated tables under `benchmarks/<slug>/formatted_tables/`:
 
 ```bash
 pip install -r requirements.txt
 python benchmarks/real_webagents/build.py
 ```
 
-The builder uses the snapshot revision pinned by the shared loader; later changes
-to the upstream sources or HF `main` do not change its inputs. Replace
-`real_webagents` with another benchmark to rebuild it. Do not combine a builder
-with metadata from a different build-contract version.
+Replace `real_webagents` with another benchmark to rebuild it. Normal public builds
+do not need access to the MeasurementDB HF dataset. Upstream sources may have their
+own access requirements. Revisions and checksums preserve the selected release;
+if an unversioned endpoint changes, the build fails instead of silently accepting
+different observations.
 
-Fresh evaluation pilots follow the [shared reproducibility procedure](scripts/reproduce_evaluations/README.md), with frozen random tasks, immutable upstream captures, spending limits and separate review tables.
+Our [HF archive](https://huggingface.co/datasets/aims-foundations/measurement-db/tree/main)
+preserves historical inputs when upstream sources change or disappear. Select it explicitly:
+
+```bash
+python benchmarks/real_webagents/build.py --archive
+```
+
+Archive restoration requires access to that HF dataset and uses the shared pinned
+revision. `MEASUREMENT_DB_SOURCE_REVISION` selects another full archive commit SHA;
+`MEASUREMENT_DB_SOURCE_REPO` selects a different archive repository and requires an
+explicit revision. These existing environment overrides also select archive mode.
+Older private definitions without named selections retain their existing archive behavior.
+
+MeasurementDB maintains reproducible data curation from captured upstream inputs.
+Running new model evaluations and maintaining their execution environments are
+outside this repository's scope. Source provenance, released traces, and the
+checks needed to rebuild and audit the curated tables remain part of the project.
 
 ## License
 
@@ -149,3 +230,27 @@ If you use the data curated in AI Measurement Data Bank, please cite:
   note         = {AIMS Lab, Stanford University}
 }
 ```
+
+## Local benchmark layout
+
+Each benchmark keeps its builder and metadata at the folder root, captured upstream
+inputs in `raw/`, and generated Parquet tables in `formatted_tables/`:
+
+```text
+benchmarks/<benchmark>/
+  build.py
+  metadata.yaml
+  characterization.yaml
+  raw/
+  formatted_tables/
+    benchmarks.parquet
+    subjects.parquet
+    items.parquet
+    responses.parquet
+    traces.parquet       # when available
+    assets.parquet       # when available
+```
+
+Builders write to `formatted_tables/` automatically. Generated files remain ignored
+by Git. Hugging Face keeps its existing `<benchmark>/<table>.parquet` paths; the
+publisher maps the local table folder to those paths.

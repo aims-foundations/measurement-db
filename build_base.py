@@ -5,17 +5,19 @@ guide linked from ``README.md`` and start from ``benchmarks/_template/``.
 Canonical metadata and table contracts live in
 ``benchmark_metadata_schema.yaml`` and ``parquet_schemas.yaml``.
 
-Modern builders provide ``metadata.yaml`` and implement
-``build_subject_item_response_rows()``. Contract 2 restores and verifies the raw
-snapshot pinned in the shared loader; ``self.source_files`` identifies its
-inputs. Contract-1 download hooks remain available to unmigrated builders. A
-builder commits final subjects, items, and responses through
+Modern builders provide ``metadata.yaml`` and implement ``build_tables()``
+or the existing ``build_subject_item_response_rows()`` hook. A short ``download()``
+hook selects named upstream sources from metadata using ``fetch_sources()``;
+``self.source_files`` identifies the verified inputs. Archive restoration remains
+available explicitly, and for older definitions without upstream selections. A
+table builder returns DataFrames with local keys; the shared layer commits
+final subjects, items, and responses through
 :meth:`BenchmarkBuild.add_subject`, ``add_item``, and ``add_response``.
 :meth:`BenchmarkBuild.main` validates source provenance from metadata.yaml and
 writes the Parquet output. No second provenance manifest is generated.
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 import copy
 import argparse
 import hashlib
@@ -63,7 +65,7 @@ class BuildContractError(RuntimeError):
 class BenchmarkBuild(ABC):
     """Shared pipeline for benchmark-specific builders.
 
-    Subclasses implement :meth:`build_subject_item_response_rows` and override
+    Subclasses implement :meth:`build_tables` or :meth:`build_subject_item_response_rows` and override
     :meth:`download` only when the metadata-driven HTTP downloader is
     insufficient.
     """
@@ -80,15 +82,18 @@ class BenchmarkBuild(ABC):
         validated before any directory is created or data is downloaded."""
         self.dir = Path(benchmark_file).resolve().parent
         self.raw_dir = self.dir / "raw"
-        self.responses_path = self.dir / "responses.parquet"
-        self.traces_path = self.dir / "traces.parquet"
-        self.assets_path = self.dir / "assets.parquet"
+        self.tables_dir = self.dir / "formatted_tables"
+        self.responses_path = self.tables_dir / "responses.parquet"
+        self.traces_path = self.tables_dir / "traces.parquet"
+        self.assets_path = self.tables_dir / "assets.parquet"
         self.source_manifest: dict[str, object] = {}
         self.source_files: tuple[str, ...] = ()
         self._source_artifacts: list[dict] = []
         self._source_archive: dict | None = None
         self.archive_layout: dict[str, object] = {}
         self.expectations: dict[str, object] = {}
+        self.grading: dict[str, object] = {}
+        self.build_parameters: dict[str, dict[str, str]] = {}
         # ``main()`` resets and activates this per-run state immediately
         # before calling the benchmark-specific
         # ``build_subject_item_response_rows()`` hook.
@@ -120,6 +125,8 @@ class BenchmarkBuild(ABC):
                     "source_manifest",
                     "archive_layout",
                     "expectations",
+                    "grading",
+                    "build_parameters",
                 )
                 if attribute in type(self).__dict__
             )
@@ -137,11 +144,13 @@ class BenchmarkBuild(ABC):
 
             benchmark_metadata = metadata["benchmark"]
             build_metadata = metadata["build"]
+            self.build_parameters = copy.deepcopy(build_metadata.get("parameters", {}))
 
             for section, attribute in (
                 ("sources", "source_manifest"),
                 ("archive_layout", "archive_layout"),
                 ("expectations", "expectations"),
+                ("grading", "grading"),
             ):
                 if section not in metadata:
                     continue
@@ -171,6 +180,10 @@ class BenchmarkBuild(ABC):
         contract_version = self.BUILD_CONTRACT_VERSION
         info = self.INFO
         context = slug or class_name
+
+        if (type(self).build_tables is BenchmarkBuild.build_tables
+                and type(self).build_subject_item_response_rows is BenchmarkBuild.build_subject_item_response_rows):
+            problems.append("implement build_tables() or build_subject_item_response_rows()")
 
         # Benchmark identity
         if not isinstance(slug, str) or not slug.strip():
@@ -701,12 +714,45 @@ class BenchmarkBuild(ABC):
         return response_id
 
     # --- subclass hooks --------------------------------------------------
-    def download(self) -> list[str] | tuple[str, ...]:
-        """Restore a pinned HF snapshot, or fetch legacy static HTTP artifacts.
+    def fetch_sources(self, *names: str) -> list[str]:
+        """Fetch named metadata sources, or restore an explicitly selected archive."""
+        if self._source_archive is not None:
+            return BenchmarkBuild.download(self)
+        artifacts = _source_files.upstream_artifacts(self.source_manifest["upstream"], names)
+        root = self.raw_dir.resolve()
+        for artifact in artifacts:
+            target = self.raw_dir / artifact["file"]
+            if not target.resolve().is_relative_to(root):
+                raise BuildContractError(f"Upstream destination escapes raw/: {target}")
+            if target.exists():
+                _source_snapshots.verify_snapshot_file(target, artifact)
+                continue
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # Verify before installing a file; never replace an existing raw input.
+            with tempfile.TemporaryDirectory(prefix=".download-", dir=target.parent) as staging:
+                temporary = Path(staging) / "input"
+                if "hf_repo" in artifact:
+                    from huggingface_hub import hf_hub_download
+                    cached = Path(hf_hub_download(artifact["hf_repo"], artifact["hf_path"],
+                                  repo_type="dataset", revision=artifact["hf_revision"]))
+                    _source_snapshots.verify_snapshot_file(cached, artifact)
+                    shutil.copyfile(cached, temporary)
+                else:
+                    self._download(artifact["url"], temporary, timeout=600,
+                                   expected_size=artifact["size"],
+                                   expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None)
+                _source_snapshots.verify_snapshot_file(temporary, artifact)
+                temporary.replace(target)
+        self._source_artifacts = artifacts
+        self.source_files = tuple(artifact["file"] for artifact in artifacts)
+        return [artifact["url"] for artifact in artifacts]
 
-        Contract 2 needs no download override. The following legacy behavior
-        remains available for contract-1 builders. Override this hook only when
-        acquisition requires authentication, dynamic discovery, cloning, or streaming.
+    def download(self) -> list[str] | tuple[str, ...]:
+        """Restore an archive, or fetch legacy static HTTP artifacts.
+
+        New builders select upstream sources with a short override calling
+        ``fetch_sources()``. The following legacy behavior remains available for
+        contract-1 builders and definitions without upstream file selections.
         Custom implementations must still cache their inputs beneath
         ``self.raw_dir`` and return every declared source locator, including on
         cache hits. Declare custom-acquired files under ``sources.inputs`` in
@@ -715,6 +761,8 @@ class BenchmarkBuild(ABC):
         if self._source_archive is not None:
             _source_snapshots.restore_snapshot(self._source_archive, self.raw_dir, self._source_artifacts)
             return [artifact["url"] for artifact in self._source_artifacts]
+        if "upstream" in self.source_manifest:
+            raise BuildContractError(f"{self.slug}: implement download() with fetch_sources() to select named upstream sources")
         downloads = self.source_manifest.get("downloads")
         if not isinstance(downloads, dict) or not downloads:
             raise BuildContractError(
@@ -800,15 +848,95 @@ class BenchmarkBuild(ABC):
             source_urls.append(url)
         return source_urls
 
-    @abstractmethod
-    def build_subject_item_response_rows(self) -> None:
-        """Commit source rows through ``add_subject/item/response``.
+    def build_tables(self) -> dict[str, pd.DataFrame]:
+        """Return subjects, items, responses, and optional traces for registration.
 
-        ``main()`` owns benchmark registration, so the hook needs no benchmark
-        argument. It must return ``None``; all table rows enter through the
-        three explicit add methods.
+        Keys are local to these input tables, not canonical measurement IDs.
+        Column names match the add methods, with subject_key/item_key replacing
+        subject_id/item_id and response_key linking optional traces. If trial is
+        omitted, attempts are numbered in input order after canonical IDs resolve.
+        See README.md for required columns and the REAL builder for an example.
         """
         raise NotImplementedError
+
+    def build_subject_item_response_rows(self) -> None:
+        """Register build_tables() output using the existing identity/validation path.
+
+        Row-based builders may continue overriding this hook directly. main()
+        still owns benchmark registration, output validation, and atomic writing.
+        """
+        supplied = self.build_tables()
+        required = {
+            "subjects": {"subject_key", "raw_label"},
+            "items": {"item_key", "raw_item_id", "content", "grading_criterion", "verifier"},
+            "responses": {"response_key", "subject_key", "item_key", "response"},
+            "traces": {"response_key", "trace"},
+        }
+        optional = {
+            "subjects": {"features", "access_date"},
+            "items": {"attachments", "features", "verifier_features"},
+            "responses": {"trial", "test_condition", "interactors"},
+            "traces": set(),
+        }
+        primary_keys = {"subjects": "subject_key", "items": "item_key",
+                        "responses": "response_key", "traces": "response_key"}
+        if not isinstance(supplied, dict) or not {"subjects", "items", "responses"} <= supplied.keys():
+            raise BuildContractError("build_tables() must return subjects, items, and responses DataFrames")
+        if supplied.keys() - required.keys():
+            raise BuildContractError(f"build_tables(): unknown tables {sorted(supplied.keys() - required.keys())}")
+
+        tables = {}
+        for name, frame in supplied.items():
+            if not isinstance(frame, pd.DataFrame):
+                raise BuildContractError(f"build_tables().{name} must be a DataFrame")
+            if not frame.columns.is_unique:
+                raise BuildContractError(f"build_tables().{name} has duplicate columns")
+            missing = required[name] - set(frame.columns)
+            extra = set(frame.columns) - required[name] - optional[name]
+            if missing or extra:
+                raise BuildContractError(f"build_tables().{name}: missing columns {sorted(missing)}, unknown columns {sorted(extra)}")
+            for key in set(frame.columns) & {"subject_key", "item_key", "response_key"}:
+                valid = frame[key].map(lambda value: isinstance(value, (str, Integral)) and not isinstance(value, bool))
+                if not valid.all():
+                    raise BuildContractError(f"build_tables().{name}.{key} requires non-null string or integer keys")
+            if frame[primary_keys[name]].duplicated().any():
+                raise BuildContractError(f"build_tables().{name} has duplicate {primary_keys[name]}")
+            tables[name] = frame.astype(object).where(frame.notna(), None)
+
+        subjects, items, responses = (tables[name] for name in ("subjects", "items", "responses"))
+        for key, parent in (("subject_key", subjects), ("item_key", items)):
+            if not responses[key].isin(parent[key]).all():
+                raise BuildContractError(f"build_tables().responses references an unknown {key}")
+        if "traces" in tables and not tables["traces"].response_key.isin(responses.response_key).all():
+            raise BuildContractError("build_tables().traces references an unknown response_key")
+
+        # Reuse the existing ID, grading, attachment, and collision checks.
+        subject_ids = subjects[["subject_key"]].copy()
+        subject_ids["subject_id"] = [
+            self.add_subject(**{key: value for key, value in row.items() if key != "subject_key"})
+            for row in subjects.to_dict("records")
+        ]
+        item_ids = items[["item_key"]].copy()
+        item_ids["item_id"] = [
+            self.add_item(**{key: value for key, value in row.items() if key != "item_key"})
+            for row in items.to_dict("records")
+        ]
+        responses = responses.merge(subject_ids, on="subject_key", how="left", sort=False, validate="many_to_one")
+        responses = responses.merge(item_ids, on="item_key", how="left", sort=False, validate="many_to_one")
+        if "traces" in tables:
+            responses = responses.merge(tables["traces"], on="response_key", how="left", sort=False, validate="one_to_one")
+        else:
+            responses["trace"] = None
+        for column in ("test_condition", "interactors"):
+            if column not in responses:
+                responses[column] = None
+        if "trial" not in responses:
+            observation = ["subject_id", "item_id", "test_condition", "interactors"]
+            responses["trial"] = responses.groupby(observation, sort=False, dropna=False).cumcount() + 1
+        responses = responses.drop(columns=["subject_key", "item_key", "response_key"])
+        responses = responses.astype(object).where(responses.notna(), None)
+        for row in responses.to_dict("records"):
+            self.add_response(**row)
 
     def _validate_and_write_tables(self) -> pd.DataFrame:
         """Validate the completed build and write its output tables."""
@@ -981,6 +1109,7 @@ class BenchmarkBuild(ABC):
                 if table is not None and not table.empty
             })
 
+            self.tables_dir.mkdir(parents=True, exist_ok=True)
             staged_assets = staging_dir / "assets.parquet"
             has_staged_assets = staged_assets.exists()
             if has_staged_assets:
@@ -995,7 +1124,7 @@ class BenchmarkBuild(ABC):
             )
             for output_name in output_names:
                 staged_path = staging_dir / output_name
-                destination = self.dir / output_name
+                destination = self.tables_dir / output_name
                 if staged_path.exists():
                     staged_path.replace(destination)
                 else:
@@ -1023,21 +1152,28 @@ class BenchmarkBuild(ABC):
         """CLI entry point for builders supporting a separate local result set."""
         parser = argparse.ArgumentParser(description=type(self).__doc__)
         parser.add_argument("--source", type=Path, help="Local directory in the benchmark's upstream input format")
-        parser.add_argument("--output", type=Path, help="Separate output directory (default: SOURCE's sibling tables/)")
+        parser.add_argument("--output", type=Path, help="Separate output directory (default: SOURCE's sibling formatted_tables/)")
+        parser.add_argument("--archive", action="store_true", help="Restore the pinned MeasurementDB HF archive instead of fetching upstream")
         args = parser.parse_args(argv)
+        if args.archive and args.source is not None:
+            parser.error("--archive and --source select different input sources; choose one")
         if args.source is not None:
             return self._build_local_source(args.source, args.output)
         if args.output is not None:
             parser.error("--output requires --source; omit both for the published-release build")
-        return self.main()
+        self._archive_requested = args.archive
+        try:
+            return self.main()
+        finally:
+            self._archive_requested = False
 
     def _build_local_source(self, source, output):
         """Use the same parser and shared table writer for an explicit local input."""
         source = source.resolve(strict=True)
-        output = (output or source.parent / "tables").resolve()
+        output = (output or source.parent / "formatted_tables").resolve()
         if not source.is_dir():
             raise ValueError("--source must be a directory")
-        if output == self.dir or output.is_relative_to(self.raw_dir.resolve()) or output.is_relative_to(source) or source.is_relative_to(output):
+        if output == self.dir or output.is_relative_to(self.tables_dir.resolve()) or output.is_relative_to(self.raw_dir.resolve()) or output.is_relative_to(source) or source.is_relative_to(output):
             raise ValueError("Local results need a separate output directory outside the source and published tables")
         # The older shared writer retires this legacy file after writing. Never
         # let that cleanup edit a caller-supplied, immutable input directory.
@@ -1058,11 +1194,11 @@ class BenchmarkBuild(ABC):
         before = fingerprint()
         if not before:
             raise ValueError("The selected source directory is empty")
-        original = self.dir, self.raw_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files
+        original = self.dir, self.raw_dir, self.tables_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files
         if output.exists() and any(output.glob("*.parquet")):
             raise ValueError("Choose a new output directory; existing tables are not overwritten")
         output.mkdir(parents=True, exist_ok=True)
-        self.dir, self.raw_dir = output, source
+        self.dir, self.raw_dir, self.tables_dir = output, source, output
         self.responses_path, self.traces_path, self.assets_path = (
             output / f"{name}.parquet" for name in ("responses", "traces", "assets"))
         self.source_files = tuple(before)
@@ -1088,7 +1224,7 @@ class BenchmarkBuild(ABC):
         finally:
             self._local_source = False
             self._active_benchmark_id = None
-            self.dir, self.raw_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files = original
+            self.dir, self.raw_dir, self.tables_dir, self.responses_path, self.traces_path, self.assets_path, self.source_files = original
 
     def subject_settings(self, label, defaults):
         """Optional recorded run settings override historical release defaults."""
@@ -1105,11 +1241,18 @@ class BenchmarkBuild(ABC):
         try:
             metadata = _benchmark_metadata.load_benchmark_metadata(metadata_path)
             manifest = copy.deepcopy(metadata.get("sources", {}))
-            self._source_archive = (_source_snapshots.snapshot_location(self.dir)
-                                    if metadata["build"]["contract_version"] == 2 else None)
-            artifacts = (_source_snapshots.snapshot_artifacts(self._source_archive)
-                         if self._source_archive is not None
-                         else _benchmark_metadata.declared_source_artifacts(manifest))
+            named_upstream = any("name" in source for source in manifest.get("upstream", []))
+            archive_requested = getattr(self, "_archive_requested", False) or any(
+                key in os.environ for key in ("MEASUREMENT_DB_SOURCE_REPO",
+                "MEASUREMENT_DB_SOURCE_REVISION", "MEASUREMENT_DB_SOURCE_MANIFEST"))
+            self._source_archive = None
+            if metadata["build"]["contract_version"] == 2 and (archive_requested or not named_upstream):
+                self._source_archive = _source_snapshots.snapshot_location(self.dir)
+                artifacts = _source_snapshots.snapshot_artifacts(self._source_archive)
+            elif named_upstream:
+                artifacts = []  # The download hook selects and resolves these inputs.
+            else:
+                artifacts = _benchmark_metadata.declared_source_artifacts(manifest)
         except (TypeError, ValueError) as exc:
             raise BuildContractError(f"{self.slug}: {exc}") from exc
         # Always load provenance from the authoritative file, including when a
@@ -1118,6 +1261,7 @@ class BenchmarkBuild(ABC):
         self._source_artifacts = artifacts
         self.source_files = tuple(artifact["file"] for artifact in artifacts)
         download_sources = self.download()
+        artifacts = self._source_artifacts
         if not isinstance(download_sources, (list, tuple)):
             raise BuildContractError(
                 f"{self.slug}: download() must return a list or tuple of "
@@ -1176,7 +1320,7 @@ class BenchmarkBuild(ABC):
                 cached = self.raw_dir / artifact["file"]
                 if not cached.resolve().is_relative_to(root) or not cached.is_file():
                     raise ValueError(f"declared raw input is missing or outside raw/: {cached}")
-                if self._source_archive is not None:
+                if "hash_kind" in artifact:
                     _source_snapshots.verify_snapshot_file(cached, artifact)
                 else:
                     _source_files.verify_file(

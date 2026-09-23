@@ -6,11 +6,95 @@ import hashlib
 import json
 from pathlib import Path
 import re
+from urllib.parse import quote, urlparse
+from urllib.request import Request, urlopen
 from typing import Any
 
 
 class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
+
+
+def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict]:
+    """Resolve named upstream selections to pinned files, without downloading them.
+
+    Repository trees supply the file hashes. HTTP endpoints instead declare their
+    expected bytes in metadata. No MeasurementDB archive is consulted.
+    """
+    named = {source["name"]: source for source in sources if "name" in source}
+    if names == ("*",):
+        names = tuple(named)
+    if len(named) != sum("name" in source for source in sources):
+        raise SourceDataError("Duplicate upstream source names")
+    if not names or len(set(names)) != len(names) or set(names) - named.keys():
+        raise SourceDataError(f"Select distinct declared upstream source names: {names}")
+    artifacts, destinations = [], set()
+    for name in names:
+        source = named[name]
+        url = source["url"]
+        if "file" in source:
+            selected = [dict(file=source["file"], url=url, size=source["size"],
+                             hash_kind="sha256", digest=source["sha256"])]
+        else:
+            revision = source["revision"]
+            if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+                raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
+            location = urlparse(url)
+            entries = []
+            if location.netloc == "github.com":
+                repository = location.path.strip("/")
+                if len(repository.split("/")) != 2:
+                    raise SourceDataError(f"{name}: expected a GitHub repository URL")
+                request = Request(f"https://api.github.com/repos/{repository}/git/trees/{revision}?recursive=1",
+                                  headers={"User-Agent": "measurement-db"})
+                with urlopen(request, timeout=120) as response:
+                    tree = json.load(response)
+                if tree.get("truncated"):
+                    raise SourceDataError(f"{name}: upstream GitHub tree is truncated")
+                for entry in tree["tree"]:
+                    if entry["type"] == "blob":
+                        entries.append(dict(path=entry["path"], size=entry["size"],
+                            hash_kind="git_sha1", digest=entry["sha"],
+                            url=f"https://raw.githubusercontent.com/{repository}/{revision}/{quote(entry['path'], safe='/')}"))
+            elif location.netloc == "huggingface.co" and location.path.startswith("/datasets/"):
+                from huggingface_hub import HfApi, hf_hub_url
+                repository = location.path.removeprefix("/datasets/").rstrip("/")
+                if len(repository.split("/")) != 2:
+                    raise SourceDataError(f"{name}: expected a Hugging Face dataset URL")
+                for entry in HfApi().list_repo_tree(repository, repo_type="dataset", revision=revision, recursive=True):
+                    if not hasattr(entry, "blob_id"):
+                        continue
+                    lfs = entry.lfs
+                    digest = (lfs["sha256"] if isinstance(lfs, dict) else lfs.sha256) if lfs else entry.blob_id
+                    entries.append(dict(path=entry.path, size=entry.size,
+                        hash_kind="sha256" if lfs else "git_sha1", digest=digest,
+                        url=hf_hub_url(repository, entry.path, repo_type="dataset", revision=revision),
+                        hf_repo=repository, hf_revision=revision, hf_path=entry.path))
+            else:
+                raise SourceDataError(f"{name}: unsupported repository URL {url}")
+            selected = []
+            for rule in source["files"]:
+                matches = 0
+                for entry in sorted(entries, key=lambda row: row["path"]):
+                    match = re.fullmatch(rule["match"], entry["path"])
+                    if match is None:
+                        continue
+                    matches += 1
+                    destination = rule["path"].format(path=entry["path"], **match.groupdict())
+                    # Keep established cache filenames for punctuation in run names.
+                    destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                    selected.append({**entry, "file": destination})
+                if not matches:
+                    raise SourceDataError(f"{name}: no upstream files match {rule['match']!r}")
+        for artifact in selected:
+            path = Path(artifact["file"])
+            if path.is_absolute() or ".." in path.parts or str(path) in {".", ""}:
+                raise SourceDataError(f"{name}: unsafe raw destination {path}")
+            if path.as_posix() in destinations:
+                raise SourceDataError(f"Duplicate upstream destination: {path}")
+            destinations.add(path.as_posix())
+            artifacts.append(artifact)
+    return sorted(artifacts, key=lambda artifact: artifact["file"])
 
 
 def sha256_file(path: Path) -> str:

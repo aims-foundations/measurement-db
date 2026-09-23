@@ -5,7 +5,7 @@ benchmark:
   testing_condition: 'response = per-attempt binary task success in {0, 1}: 1 iff all of the task''s deterministic
     evals pass, else 0. The website each task runs on is an item feature ; test_condition is null.'
   paper_url: https://openreview.net/forum?id=Un1sWxmZuI
-  data_source_url: https://realevals.xyz/api/getVerifiedModelData
+  data_source_url: &leaderboard_api https://realevals.xyz/api/getVerifiedModelData
   subject_type: agent
   item_type: task
   license: unknown
@@ -42,11 +42,35 @@ benchmark:
   release: public
 build:
   contract_version: 2
+grading:
+  verifiers:
+    task_checks:
+      kind: external_judge
+      source: https://raw.githubusercontent.com/agi-inc/REAL/main/src/agisdk/REAL/browsergym/webclones/evaluate.py
+      class: WebCloneEvaluator.evaluate
+      logic: >-
+        ANDs every entry of the task's evals[]. type="jmespath": runs
+        `query` against the recorded environment-state diff and exact-matches
+        `expected_value`. type="llm_boolean": sends (model_response, `rubric`)
+        to an LLM judge and passes if the returned similarity score > 0.8.
+    provider_result:
+      kind: provider_result_mapping
+      source: *leaderboard_api
+      logic: "1 iff evalsFailed is empty; if absent, 1 iff accuracy >= 100; otherwise 0"
+      upstream_task_verifier: not released in the captured v2 task snapshot
+  fallback_rule: >-
+    Success requires all provider task checks to pass; task-specific checks are unavailable in the captured release.
 sources:
   upstream:
   - url: https://realevals.xyz/api/getVerifiedModelData
     revision: null
-  - url: https://github.com/agi-inc/REAL
-    revision: null
+    name: results
+    file: model_data.json
+    size: 3421090
+    sha256: 904366e9daf872b8ca250fac5e413248e80d61209aa7db055c213efb695b0683
   - url: https://github.com/agi-inc/REAL
     revision: 56d8f1643bdaa5e662086b1a357a9693c9ededf6
+    name: tasks
+    files:
+    - match: src/agisdk/REAL/browsergym/webclones/tasks/(?P<name>[^/]+\.json)
+      path: tasks/{name}

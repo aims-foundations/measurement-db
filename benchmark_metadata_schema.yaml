@@ -3,7 +3,7 @@ $id: https://aimslab.stanford.edu/measurement-db/benchmark_metadata_schema.yaml
 title: Measurement-DB benchmark metadata
 description: >-
   Authoring contract for benchmarks/<slug>/metadata.yaml. Contract 2 uses compact
-  upstream references; snapshot selection belongs to the shared loader.
+  upstream references and named file selections; downloads use the shared loader.
   Contract 1 is retained only for unmigrated builders.
 type: object
 additionalProperties: false
@@ -164,9 +164,53 @@ properties:
     properties:
       contract_version:
         enum: [1, 2]
+      parameters:
+        description: >-
+          Optional named groups of string constants used by the builder, such as
+          source paths, marker patterns, and verbatim prompt text. Transformations
+          remain in build.py; these values are data, not executable instructions.
+        type: object
+        minProperties: 1
+        propertyNames:
+          $ref: "#/$defs/nonempty_string"
+        additionalProperties:
+          type: object
+          minProperties: 1
+          propertyNames:
+            $ref: "#/$defs/nonempty_string"
+          additionalProperties:
+            type: string
 
   sources:
     type: object
+  grading:
+    description: >-
+      Optional fixed grading descriptions reused across items. These are data,
+      not executable rules; item-specific criteria still come from source tables.
+    type: object
+    additionalProperties: false
+    minProperties: 1
+    properties:
+      rule:
+        description: Known grading criterion shared by the benchmark's items.
+        $ref: "#/$defs/nonempty_string"
+      verifiers:
+        description: >-
+          Named, nonempty JSON-compatible verifier descriptions. Builders select
+          a description and serialize it into the existing item verifier spec.
+          Description fields follow the upstream grading protocol.
+        type: object
+        minProperties: 1
+        propertyNames:
+          $ref: "#/$defs/nonempty_string"
+        additionalProperties:
+          type: object
+          minProperties: 1
+      fallback_rule:
+        description: >-
+          Known grading criterion used when an item-specific rule is unavailable.
+          It must describe the available evidence without inventing a missing rule.
+        $ref: "#/$defs/nonempty_string"
   archive_layout:
     $ref: "#/$defs/open_mapping"
   expectations:
@@ -188,7 +232,28 @@ $defs:
           type: object
           additionalProperties: false
           required: [url, revision]
+          allOf:
+            - if:
+                required: [name]
+              then:
+                oneOf:
+                  - required: [file, size, sha256]
+                    not: {required: [files]}
+                  - required: [files]
+                    not: {required: [file]}
+                    properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+            - if:
+                anyOf:
+                  - required: [files]
+                  - required: [file]
+              then:
+                required: [name]
           properties:
+            name:
+              description: Name selected by the builder's fetch_sources() call.
+              type: string
+              pattern: '^[a-z][a-z0-9_]*$'
             url:
               type: string
               pattern: '^https?://\S+$'
@@ -196,6 +261,27 @@ $defs:
               anyOf:
                 - $ref: "#/$defs/nonempty_string"
                 - type: 'null'
+            file:
+              description: Raw-relative destination for one HTTP download.
+              type: string
+              pattern: '^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$'
+            size: {type: integer, minimum: 0}
+            sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            files:
+              description: Select files from the pinned repository tree and map them into raw/.
+              type: array
+              minItems: 1
+              items:
+                type: object
+                additionalProperties: false
+                required: [match, path]
+                properties:
+                  match:
+                    description: Full-match regular expression on the upstream path; optional named groups.
+                    $ref: '#/$defs/nonempty_string'
+                  path:
+                    description: Raw-relative path with named captures or {path} for the complete upstream path.
+                    $ref: '#/$defs/nonempty_string'
   response_scale:
     oneOf:
       - type: object

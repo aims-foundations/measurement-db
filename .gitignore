@@ -3,7 +3,6 @@ __pycache__/
 **/raw/
 *.parquet
 
-# Local reproduction captures, environments and run evidence.
+# Local development artifacts and archived evaluation records.
 /artifacts/
-/benchmarks/*/reproduction_checks/run_results/
 /.pytest_cache/

@@ -16,6 +16,9 @@ from build_base import BenchmarkBuild, ExactMatcher  # noqa: E402
 class ExampleBenchmarkBuild(BenchmarkBuild):
     """Translate the provider release into measurement-db response rows."""
 
+    def download(self):
+        return self.fetch_sources("results")
+
     def build_subject_item_response_rows(self) -> None:
         item_records = json.loads(
             (self.raw_dir / "per_item_results.json").read_text(encoding="utf-8")
@@ -44,4 +47,4 @@ class ExampleBenchmarkBuild(BenchmarkBuild):
 
 
 if __name__ == "__main__":
-    ExampleBenchmarkBuild(__file__).main()
+    ExampleBenchmarkBuild(__file__).main_from_args()

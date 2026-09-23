@@ -73,3 +73,11 @@ sources:
   upstream:
   - url: https://github.com/MMDocRAG/MMDocRAG
     revision: 2fd7505c6a576376b4a92aafaff6d87494765bb7
+    name: release
+    files:
+    - match: dataset/(?P<name>evaluation_(?:15|20)\.jsonl)
+      path: '{name}'
+    - match: response/evaluation/(?P<name>[^/]+\.jsonl)
+      path: eval/{name}
+    - match: response/(?P<name>[^/]+\.jsonl)
+      path: resp/{name}

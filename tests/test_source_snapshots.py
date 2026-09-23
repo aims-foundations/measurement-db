@@ -1,22 +1,31 @@
-"""Contract-2 metadata and snapshot restoration, without network access."""
+"""Named upstream downloads and explicit snapshot restoration, without network access."""
 import copy
 import hashlib
-from pathlib import Path
-from types import SimpleNamespace
+import json
+import io
 import tempfile
 import unittest
+from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 import yaml
 
-from build_base import BenchmarkBuild, BuildContractError
+from build_base import BenchmarkBuild, BuildContractError, ExactMatcher
+from scripts.build_measurement_tables import reload
 from scripts.build_measurement_tables.load_source_files import SourceDataError
 from scripts.build_measurement_tables.source_snapshots import (
-    snapshot_artifacts, restore_snapshot, verify_snapshot_file, snapshot_location,
-    DEFAULT_SOURCE_REPOSITORY, DEFAULT_SOURCE_REVISION,
+    DEFAULT_SOURCE_REPOSITORY,
+    DEFAULT_SOURCE_REVISION,
+    restore_snapshot,
+    snapshot_artifacts,
+    snapshot_location,
+    verify_snapshot_file,
 )
 from scripts.build_measurement_tables.validate_benchmark_metadata import (
-    BenchmarkMetadataError, load_benchmark_metadata, validate_benchmark_metadata,
+    BenchmarkMetadataError,
+    load_benchmark_metadata,
+    validate_benchmark_metadata,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +48,35 @@ class SnapshotTests(unittest.TestCase):
 
     def test_compact_metadata_and_unknown_upstream_revision(self):
         load_benchmark_metadata(self.metadata_path)
+
+    def test_local_unpublished_snapshot_is_verified_without_network(self):
+        manifest = self.folder / 'inputs.json'
+        manifest.write_text(json.dumps({'format_version': 1,
+            'benchmarks': {'fixture': [self.artifact]}}))
+        with patch.dict('os.environ', {'MEASUREMENT_DB_SOURCE_MANIFEST': str(manifest)}):
+            location = snapshot_location(self.folder)
+        artifacts = snapshot_artifacts(location)
+        with self.assertRaisesRegex(SourceDataError, 'absent'):
+            restore_snapshot(location, self.raw, artifacts)
+        target = self.raw / 'source.json'
+        target.write_bytes(PAYLOAD)
+        with patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+            restore_snapshot(location, self.raw, artifacts)
+        target.write_bytes(b'x' * len(PAYLOAD))
+        with self.assertRaisesRegex(SourceDataError, 'differs'):
+            restore_snapshot(location, self.raw, artifacts)
+
+    def test_invalid_local_manifest_is_rejected(self):
+        manifest = self.folder / 'inputs.json'
+        location = {'manifest': str(manifest), 'benchmark': 'fixture'}
+        for artifacts in ([], [self.artifact, self.artifact],
+                          [dict(self.artifact, file='../outside')],
+                          [dict(self.artifact, size=True)],
+                          [dict(self.artifact, digest='wrong')]):
+            manifest.write_text(json.dumps({'format_version': 1,
+                'benchmarks': {'fixture': artifacts}}))
+            with self.assertRaises(SourceDataError):
+                snapshot_artifacts(location)
 
     def test_unknown_fields_and_embedded_file_lists_are_rejected(self):
         for location, key, value in (
@@ -105,7 +143,7 @@ class SnapshotTests(unittest.TestCase):
     def test_corrupt_cached_input_is_rejected_without_network_or_replacement(self):
         target=self.raw/'source.json';target.write_bytes(b'x'*len(PAYLOAD))
         with patch('huggingface_hub.hf_hub_download') as download:
-            with self.assertRaisesRegex(SourceDataError,'pinned archive'):
+            with self.assertRaisesRegex(SourceDataError,'pinned source'):
                 restore_snapshot(self.archive,self.raw,[self.artifact])
             download.assert_not_called()
         self.assertEqual(target.read_bytes(),b'x'*len(PAYLOAD))
@@ -129,12 +167,106 @@ class SnapshotTests(unittest.TestCase):
             def build_subject_item_response_rows(self):
                 (self.raw_dir/'source.json').write_bytes(b'x'*len(PAYLOAD))
         (self.raw/'source.json').write_bytes(PAYLOAD)
-        output=self.folder/'responses.parquet';output.write_bytes(b'previous output')
+        tables = self.folder / 'formatted_tables'
+        tables.mkdir()
+        output=tables/'responses.parquet';output.write_bytes(b'previous output')
         with patch('scripts.build_measurement_tables.source_snapshots.snapshot_artifacts',
                    return_value=[self.artifact]):
-            with self.assertRaisesRegex(BuildContractError,'pinned archive'):
-                MutationBuild(str(self.folder/'build.py')).main()
+            with self.assertRaisesRegex(BuildContractError,'pinned source'):
+                MutationBuild(str(self.folder/'build.py')).main_from_args(['--archive'])
         self.assertEqual(output.read_bytes(),b'previous output')
+
+    def test_archive_build_keeps_tables_separate_from_sources_and_metadata(self):
+        class FixtureBuild(BenchmarkBuild):
+            def build_subject_item_response_rows(self):
+                subject = self.add_subject('gpt-4o')
+                item = self.add_item(raw_item_id='q1', content='Return one.',
+                    grading_criterion={'reference_answer': '1'},
+                    verifier=ExactMatcher(spec='Exact binary match'))
+                self.add_response(subject_id=subject, item_id=item,
+                                  response=1, trace='1')
+
+        reload()
+        self.addCleanup(reload)
+        source = self.raw / 'source.json'
+        source.write_bytes(PAYLOAD)
+        metadata = self.metadata_path.read_bytes()
+        with patch('scripts.build_measurement_tables.source_snapshots.snapshot_artifacts',
+                   return_value=[self.artifact]):
+            FixtureBuild(str(self.folder / 'build.py')).main_from_args(['--archive'])
+        self.assertEqual({p.stem for p in (self.folder / 'formatted_tables').glob('*.parquet')},
+                         {'items', 'subjects', 'benchmarks', 'responses', 'traces'})
+        self.assertFalse(list(self.folder.glob('*.parquet')))
+        self.assertEqual(source.read_bytes(), PAYLOAD)
+        self.assertEqual(self.metadata_path.read_bytes(), metadata)
+
+    def test_upstream_is_default_and_cache_is_verified_without_archive_access(self):
+        class FixtureBuild(BenchmarkBuild):
+            def download(self):
+                return self.fetch_sources('results')
+
+            def build_subject_item_response_rows(self):
+                subject = self.add_subject('gpt-4o')
+                item = self.add_item(raw_item_id='q1', content='Return one.',
+                    grading_criterion={'reference_answer': '1'}, verifier=ExactMatcher(spec='Equality'))
+                self.add_response(subject_id=subject, item_id=item, response=1, trace='1')
+
+        self.metadata['sources']['upstream'] = [dict(
+            name='results', url='https://provider.example/results.json', revision=None,
+            file='source.json', size=len(PAYLOAD), sha256=hashlib.sha256(PAYLOAD).hexdigest())]
+        self.metadata_path.write_text(yaml.safe_dump(self.metadata))
+        reload()
+        self.addCleanup(reload)
+        with patch('scripts.build_measurement_tables.source_snapshots.snapshot_artifacts',
+                   side_effect=AssertionError('archive must not be consulted')):
+            with patch('urllib.request.urlopen', return_value=io.BytesIO(PAYLOAD)) as download:
+                FixtureBuild(str(self.folder/'build.py')).main()
+            self.assertEqual(download.call_count, 1)
+            self.assertEqual((self.raw/'source.json').read_bytes(), PAYLOAD)
+            with patch('urllib.request.urlopen', side_effect=AssertionError('cached file')):
+                reload()
+                FixtureBuild(str(self.folder/'build.py')).main()
+            output = self.folder/'formatted_tables/responses.parquet'
+            before = output.read_bytes()
+            (self.raw/'source.json').write_bytes(b'x' * len(PAYLOAD))
+            with self.assertRaises(SourceDataError):
+                FixtureBuild(str(self.folder/'build.py')).main()
+            self.assertEqual(output.read_bytes(), before)
+
+    def test_upstream_repository_selection_and_missing_paths(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        sources = [dict(name='tasks', url='https://github.com/provider/benchmark', revision='a'*40,
+            files=[{'match': r'tasks/(?P<name>[^/]+\.json)', 'path': 'tasks/{name}'}])]
+        tree = dict(tree=[dict(type='blob', path='tasks/one.json', size=2, sha='b'*40),
+                         dict(type='blob', path='README.md', size=10, sha='c'*40)], truncated=False)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(tree).encode())):
+            artifacts = upstream_artifacts(sources, ('tasks',))
+        self.assertEqual([a['file'] for a in artifacts], ['tasks/one.json'])
+        self.assertEqual(artifacts[0]['digest'], 'b'*40)
+        self.assertIn('/'+'a'*40+'/', artifacts[0]['url'])
+        with self.assertRaisesRegex(SourceDataError, 'declared upstream'):
+            upstream_artifacts(sources, ('missing',))
+        for rule, message in (({'match': 'absent', 'path': 'absent'}, 'no upstream files'),
+                              ({'match': r'tasks/.*', 'path': '../outside'}, 'unsafe raw destination')):
+            sources[0]['files'] = [rule]
+            with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                       return_value=io.BytesIO(json.dumps(tree).encode())):
+                with self.assertRaisesRegex(SourceDataError, message):
+                    upstream_artifacts(sources, ('tasks',))
+        sources[0]['files'] = [{'match': '.*', 'path': 'same'}]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(tree).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'Duplicate upstream destination'):
+                upstream_artifacts(sources, ('tasks',))
+
+    def test_upstream_metadata_requires_pins_and_complete_download_specification(self):
+        for entry in (dict(name='broken', url='https://provider.example/results', revision=None),
+                      dict(name='moving', url='https://github.com/provider/benchmark', revision='main',
+                           files=[{'match': '.*', 'path': '{path}'}])):
+            self.metadata['sources']['upstream'] = [entry]
+            with self.assertRaises(BenchmarkMetadataError):
+                validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
 
 if __name__=='__main__': unittest.main()

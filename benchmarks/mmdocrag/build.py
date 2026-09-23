@@ -112,6 +112,9 @@ def parse_eval_filename(name: str) -> tuple[str, str, str] | None:
 class MMDocRAG(BenchmarkBuild):
     """Preserve the released attempt cells, including missing judge grades."""
 
+    def download(self):
+        return self.fetch_sources('release')
+
     @staticmethod
     def _read_jsonl(path: Path) -> list[dict]:
         records = []

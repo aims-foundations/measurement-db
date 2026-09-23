@@ -139,6 +139,9 @@ def source_competitions(files):
 class MathArenaBuild(BenchmarkBuild):
     """One observation per released final verdict or usable rubric criterion."""
 
+    def download(self):
+        return self.fetch_sources('*')
+
     def source_records(self, competition: Mapping) -> Iterator[tuple[str, int, dict]]:
         """Read bounded Arrow batches without materializing unused message logs."""
         for shard in competition["shards"]:

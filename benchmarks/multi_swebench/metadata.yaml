@@ -43,14 +43,30 @@ benchmark:
   release: public
 build:
   contract_version: 2
+grading:
+  rule: The patch must pass the released FAIL_TO_PASS tests and preserve PASS_TO_PASS tests.
 sources:
   upstream:
   - url: https://github.com/multi-swe-bench/experiments
-    revision: null
+    revision: 6a7d5566f62fa76f4192302cf763051b98e4facc
+    name: runs
+    files:
+    - match: evaluation/(?P<language>[^/]+)/verified/(?P<run>[^/]+)/results/results\.json
+      path: results/{language}__{run}.json
+    - match: evaluation/(?P<language>[^/]+)/verified/(?P<run>[^/]+)/all_preds\.jsonl
+      path: preds/{language}__{run}.jsonl
   - url: https://huggingface.co/datasets/ByteDance-Seed/Multi-SWE-bench
-    revision: null
+    revision: 56ff018c04a38e27ada1e9d0a6d5839a51f88f0d
+    name: tasks
+    files:
+    - match: (?P<language>[^/]+)/(?P<name>[^/]+\.jsonl)
+      path: '{language}__{name}'
   - url: https://huggingface.co/datasets/princeton-nlp/SWE-bench_Verified
-    revision: null
+    revision: c104f840cc67f8b6eec6f759ebc8b2693d585d4a
+    name: python_tasks
+    files:
+    - match: data/test-00000-of-00001\.parquet
+      path: swebench_verified.parquet
   - url: https://github.com/multi-swe-bench/MSWE-agent
     revision: 88217624b637646b886cb0462995c07559e96f58
   - url: https://github.com/multi-swe-bench/multi-swe-bench

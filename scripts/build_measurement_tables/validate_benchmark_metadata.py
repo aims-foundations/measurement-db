@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from pathlib import Path
+import json
+import os
 import re
 
 from jsonschema import Draft202012Validator
@@ -233,6 +235,11 @@ def validate_benchmark_metadata(
         except ValueError as exc:
             problems.append(f"benchmark.categorical: {exc}")
         problems.extend(_source_reference_problems(metadata))
+        for name, description in metadata.get("grading", {}).get("verifiers", {}).items():
+            try:
+                json.dumps(description, sort_keys=True, allow_nan=False)
+            except (TypeError, ValueError) as exc:
+                problems.append(f"grading.verifiers.{name}: must be JSON-compatible: {exc}")
         sources = metadata.get("sources", {})
         if isinstance(sources, Mapping) and any(key in sources for key in ("downloads", "inputs")):
             try:
@@ -265,10 +272,16 @@ def load_benchmark_metadata(path: str | Path) -> dict[str, object]:
 def declared_source_artifacts(sources: Mapping, *, benchmark_dir: str | Path | None = None) -> list[dict]:
     """Return validated input descriptors; references alone are not inputs.
 
-    Call after metadata-schema validation. Contract 2 obtains the file inventory
-    from the pinned Hub tree; legacy contracts declare their inputs inline.
+    Call after metadata-schema validation. Named selections use upstream trees;
+    archive overrides and older definitions use the pinned MeasurementDB snapshot.
+    Legacy contracts declare their inputs inline.
     """
     if "upstream" in sources:
+        names = tuple(source["name"] for source in sources["upstream"] if "name" in source)
+        if names and not any(key in os.environ for key in (
+                "MEASUREMENT_DB_SOURCE_REPO", "MEASUREMENT_DB_SOURCE_REVISION", "MEASUREMENT_DB_SOURCE_MANIFEST")):
+            from .load_source_files import upstream_artifacts
+            return upstream_artifacts(sources["upstream"], names)
         from .source_snapshots import snapshot_artifacts, snapshot_location
         if benchmark_dir is None:
             raise ValueError("benchmark_dir is required to resolve the source snapshot")

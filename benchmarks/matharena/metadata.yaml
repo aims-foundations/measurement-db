@@ -38,57 +38,165 @@ sources:
   upstream:
   - url: https://huggingface.co/datasets/MathArena/aime_2025_outputs
     revision: 0b4da2c5bc5769046d87a5c086705bc2100c03e3
+    name: aime_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/aime_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/aime_2025_I_outputs
     revision: 05b2f50ac7cb76ff2f1497f9e9425eb071f6858d
+    name: aime_2025_i
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/aime_2025_I/{path}
   - url: https://huggingface.co/datasets/MathArena/aime_2025_II_outputs
     revision: 9809200ca4e719df6339839adb2ffe95d85f1893
+    name: aime_2025_ii
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/aime_2025_II/{path}
   - url: https://huggingface.co/datasets/MathArena/aime_2026_outputs
     revision: 66b760d27b6e5acf2a6244687959448ea11e1114
+    name: aime_2026
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/aime_2026/{path}
   - url: https://huggingface.co/datasets/MathArena/aime_2026_I_outputs
     revision: b4879d5f94c342fab1cecd7e381865631bb625a8
+    name: aime_2026_i
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/aime_2026_I/{path}
   - url: https://huggingface.co/datasets/MathArena/hmmt_feb_2025_outputs
     revision: b62ba1a09d3ae1f8fc94053e59d0fc79d84feada
+    name: hmmt_feb_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/hmmt_feb_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/hmmt_feb_2026_outputs
     revision: 64529b0549e7c1506f476b2f49aa6bbfce8573b0
+    name: hmmt_feb_2026
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/hmmt_feb_2026/{path}
   - url: https://huggingface.co/datasets/MathArena/hmmt_nov_2025_outputs
     revision: 007034eff483da1790d6d013f0d9a09d8ecb06dd
+    name: hmmt_nov_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/hmmt_nov_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/brumo_2025_outputs
     revision: 31f31fd40676384a2aea9061ac02f2996d26f461
+    name: brumo_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/brumo_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/cmimc_2025_outputs
     revision: 1d3655c41d34b8c0423b554d14bff8da3bc29a62
+    name: cmimc_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/cmimc_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/smt_2025_outputs
     revision: c25deb45749cd02d02b24c0d4a914fa71031555f
+    name: smt_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/smt_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/apex_2025_outputs
     revision: 849f47dff756a5920ffd45c4c83f1023e154fa15
+    name: apex_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/apex_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/apex_shortlist_outputs
     revision: 56bce68541b8cfdcf2e2b2a08071e2a531e168d1
+    name: apex_shortlist
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/apex_shortlist/{path}
   - url: https://huggingface.co/datasets/MathArena/arxivmath-1225_outputs
     revision: e8721fe4768ff4fdb94d3397d6cb49f916238976
+    name: arxivmath_1225
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/arxivmath_1225/{path}
   - url: https://huggingface.co/datasets/MathArena/arxivmath-0126_outputs
     revision: b68bb6a65fc422f3b9875203ec4cba54c1aaa60f
+    name: arxivmath_0126
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/arxivmath_0126/{path}
   - url: https://huggingface.co/datasets/MathArena/arxivmath-0226_outputs
     revision: 14b7c6bf66c650ecaadabf4a4f82f2719da142ae
+    name: arxivmath_0226
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/arxivmath_0226/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_1-2_outputs
     revision: ef948fdc190fc4d8faa9b6e3d1d4e61719a28dc6
+    name: kangaroo_2025_1_2
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_1_2/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_3-4_outputs
     revision: 7f0d4e19c4dd27c542a57d4a00b18b4f268e684c
+    name: kangaroo_2025_3_4
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_3_4/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_5-6_outputs
     revision: 478e7a22f4d8e96db2fe66401d3a17d7c0363921
+    name: kangaroo_2025_5_6
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_5_6/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_7-8_outputs
     revision: ad51d969529ef0eb36d7b2cd25fbfc3a88d5a959
+    name: kangaroo_2025_7_8
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_7_8/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_9-10_outputs
     revision: 8c3724afb7a0fa8254847c55c6a2da658bed2487
+    name: kangaroo_2025_9_10
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_9_10/{path}
   - url: https://huggingface.co/datasets/MathArena/kangaroo_2025_11-12_outputs
     revision: a271a9b02275bad65ddc44eadcca865fadc2b737
+    name: kangaroo_2025_11_12
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/kangaroo_2025_11_12/{path}
   - url: https://huggingface.co/datasets/MathArena/usamo_2025_outputs
     revision: bf808dcf51f1b76a921215b250f67d31d71f8ab4
+    name: usamo_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/usamo_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/imo_2025_outputs
     revision: e974b7ab4b806eca6046fd00178c41630957020a
+    name: imo_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/imo_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/imc_2025_outputs
     revision: dcafd79696f3b0d01b1c5be303c495d76e3a2f26
+    name: imc_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/imc_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/putnam_2025_outputs
     revision: 4ff9dc7469263f583f12f03c1955ebb0ffe52995
+    name: putnam_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/putnam_2025/{path}
   - url: https://huggingface.co/datasets/MathArena/miklos_2025_outputs
     revision: 9b0abc725ad13fb21e52c57e8125295d797b1f03
+    name: miklos_2025
+    files:
+    - match: README\.md|data/[^/]+\.parquet
+      path: sources/miklos_2025/{path}
   - url: https://github.com/eth-sri/matharena
     revision: b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b
