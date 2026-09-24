@@ -1,0 +1,113 @@
+benchmark:
+  description: 'AlgoTune evaluates agents that optimize 154 numerical-programming tasks. This curation retains one
+    published final speedup per task/model and the existing binary threshold: a finite final_speedup >= 1.0 is 1;
+    a smaller finite speedup or the provider''s explicit N/A is 0.'
+  testing_condition: The upstream harness checks individual outputs with task-specific is_solution implementations
+    and reports mean_speedup from finite available speedups. The public summary does not include complete per-input
+    validity counts. Retain the existing reported-speedup threshold without independently executing code or asserting
+    that every test input passed. Preserve exact reported speedups, available conversations and final source files;
+    do not infer the specific causes of N/A.
+  paper_url: https://openreview.net/forum?id=dF1tD9hjvn
+  data_source_url: https://github.com/oripress/AlgoTune
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{press2025algotune,\n  title={AlgoTune: Can Language Models Speed Up General-Purpose\
+    \ Numerical Programs?},\n  author={Press, Ori and Amos, Brandon and Zhao, Haoyu and Wu, Yikai and others},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - code
+  - optimization
+  - numerical
+  - agent
+  - runtime
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2025-07
+  name: AlgoTune
+  one_line_description: Evaluates coding agents on producing correct numerical programs that match or improve reference
+    runtime.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      summary: release/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906/reports/agent_summary.json
+      tasks: release/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906/AlgoTuneTasks
+      site: website/5e6953f33431672d8a07ffc76df15a124caafe0b7ebd0b83013b1f14a8daf946
+    model_page_suffix:
+      claude-opus-4-1-20250805: anthropic_claude-opus-4-1-20250805
+      claude-opus-4-20250514: claude-opus-4-20250514
+      claude-opus-4.5: openrouter_anthropic_claude-opus-4.5
+      claude-opus-4.6: openrouter_anthropic_claude-opus-4.6
+      claude-sonnet-4-5-20250929: claude-sonnet-4-5-20250929
+      deepseek-reasoner: deepseek_deepseek-reasoner
+      gemini-2.5-pro: gemini_gemini-2.5-pro
+      gemini-3-pro-preview: openrouter_google_gemini-3-pro-preview
+      gemini-3.1-pro-preview: openrouter_google_gemini-3.1-pro-preview
+      glm-4.5: openrouter_z-ai_glm-4.5
+      gpt-5: gpt-5
+      gpt-5-mini: gpt-5-mini
+      gpt-5-pro (medium): gpt-5-pro
+      gpt-5.2: openrouter_openai_gpt-5.2
+      gpt-5.4: openrouter_openai_gpt-5.4
+      gpt-oss-120b: gpt-oss-120b
+      o4-mini: o4-mini
+      qwen3-coder: openrouter_qwen_qwen3-coder
+    grading:
+      speedup_threshold: '1.0'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/oripress/AlgoTune
+    revision: dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    files:
+    - match: AlgoTuneTasks/[^/]+/(?:description\.txt|[^/]+\.py)
+      path: release/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906/{path}
+    - match: (?:reports/agent_summary\.json|README\.md|LICENSE|AlgoTuner/main\.py|AlgoTuner/config/config\.yaml|AlgoTuner/utils/evaluator/(?:scoring|result_aggregator)\.py|html/batch_html_generator\.py)
+      path: release/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906/{path}
+  - name: site_index
+    url: https://algotune.io/index.html
+    revision: null
+    file: website/5e6953f33431672d8a07ffc76df15a124caafe0b7ebd0b83013b1f14a8daf946/index.html
+    size: 1780724
+    sha256: 5e6953f33431672d8a07ffc76df15a124caafe0b7ebd0b83013b1f14a8daf946
+  - name: conversations
+    url: https://algotune.io/
+    revision: null
+    html_index: site_index
+    tree_sha256: e7eb59d5abab043fef86d07372a157086ea66b0405ba2c1ea59f21ae1257e0a6
+    files:
+    - match: (?!index\.html$)[^/]+\.html
+      path: website/5e6953f33431672d8a07ffc76df15a124caafe0b7ebd0b83013b1f14a8daf946/{path}
+  - url: https://arxiv.org/abs/2507.15887
+    revision: null
+  - url: https://huggingface.co/datasets/oripress/AlgoTune
+    revision: fc3744ffd7eebaa9e9b55427e2cda440955fdd2d
+grading:
+  rule: Set response to 1 exactly when the provider reports a finite final_speedup >= 1.0; a smaller finite speedup
+    or the explicit N/A result maps to 0. The upstream harness uses the task-specific is_solution check for measured
+    outputs; complete per-input validity counts are not present in the public summary.
+  verifiers:
+    task:
+      kind: published_correctness_and_runtime
+      source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+      method: AlgoTuneTasks/<task>/<task>.py:is_solution and AlgoTuner final held-out evaluation
+      result_field: final_speedup
+      unavailable_result: N/A
+      logic: Finite reported speedup >= 1.0 is 1; a smaller finite speedup or N/A is 0. No code is executed during
+        curation.

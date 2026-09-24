@@ -112,6 +112,11 @@ match the manifest's versioned run paths. This preserves the release's actual
 model panel without listing hundreds of file URLs in metadata.
 Omit `group` to select the complete release panel, including all its tasks.
 
+For static transcript sites, `html_index: <source name>` selects same-site links
+from a separately pinned HTML index. The `files` patterns select pages, and
+`tree_sha256` pins their paths, sizes and SHA-256 content hashes. The downloader
+checks the complete selection, including cached files, before building tables.
+
 The shared downloader creates `raw/`, verifies files against the upstream repository's
 hashes or the declared HTTP checksum, and fetches missing inputs. Existing raw files
 with different contents cause an error rather than being overwritten. `self.source_files`

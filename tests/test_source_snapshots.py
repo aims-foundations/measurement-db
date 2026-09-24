@@ -449,5 +449,50 @@ class SnapshotTests(unittest.TestCase):
             with self.assertRaisesRegex(SourceDataError, 'index differs'):
                 upstream_artifacts([index, source], ('runs',))
 
+    def test_html_index_pins_linked_contents_and_reuses_verified_raw_files(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        page = b'<div class="message">Original &amp; complete transcript</div>'
+        index_bytes = (b'<a href="run.html">Run</a><a href="run.html">Duplicate link</a>'
+                       b'<a href="https://elsewhere.example/run.html">External</a>'
+                       b'<a href="../run.html">Outside prefix</a><a href="style.css">Style</a>')
+        index = dict(name='index', url='https://provider.example/release/index.html', revision=None,
+                     file='site/index.html', size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path='run.html', size=len(page), digest=hashlib.sha256(page).hexdigest())]
+        source = dict(name='logs', url='https://provider.example/release/', revision=None, html_index='index',
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[^/]+\.html', path='site/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_header('Accept-encoding'), 'identity')
+            return io.BytesIO({index['url']: index_bytes, 'https://provider.example/release/run.html': page}[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch) as download:
+            artifacts = upstream_artifacts([index, source], ('index', 'logs'))
+        self.assertEqual(download.call_count, 2)
+        self.assertEqual([a['file'] for a in artifacts], ['site/index.html', 'site/run.html'])
+        (self.raw/'site').mkdir()
+        (self.raw/'site/index.html').write_bytes(index_bytes)
+        target = self.raw/'site/run.html'
+        target.write_bytes(page)
+        verify_snapshot_file(target, artifacts[1])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts([index, source], ('index', 'logs'), raw_dir=self.raw), artifacts)
+            target.write_bytes(page.replace(b'Original', b'Modified'))
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('logs',), raw_dir=self.raw)
+            target.write_bytes(page)
+            (self.raw/'site/index.html').write_bytes(index_bytes+b' ')
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('logs',), raw_dir=self.raw)
+        source['files'][0]['path'] = '../outside.html'
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            with self.assertRaisesRegex(SourceDataError, 'unsafe raw destination'):
+                upstream_artifacts([index, source], ('logs',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
 
 if __name__=='__main__': unittest.main()

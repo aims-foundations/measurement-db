@@ -762,3 +762,4 @@ SOURCE_AUDITS["bertaqa"] = verify_native_results
 SOURCE_AUDITS["afrimedqa"] = verify_native_results
 SOURCE_AUDITS["agc_bench"] = verify_native_results
 SOURCE_AUDITS["adaptivestep"] = verify_native_results
+SOURCE_AUDITS["algotune"] = verify_native_results

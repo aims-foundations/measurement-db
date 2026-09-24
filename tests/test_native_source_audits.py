@@ -88,5 +88,24 @@ class NativeTrajectoryAuditTests(unittest.TestCase):
                 self.frames[name].to_parquet(self.tables / f"{name}.parquet", index=False)
 
 
+class PublishedHTMLAuditTests(unittest.TestCase):
+    def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
+        source = ('<div class="file-name">solver.py</div><pre class="best-code"><code>def solve():\n'
+                  '    return 1 &lt; 2\n</code></pre>'
+                  '<div class="file-name">helper.pyx</div><pre class="best-code">cdef int value = 2\n</pre>'
+                  '<div class="message assistant"><div class="message-content"><pre>  original\n\n'
+                  '    indentation</pre></div></div>')
+        messages, files = _algotune_html(source)
+        self.assertEqual(files, [dict(name='solver.py', content='def solve():\n    return 1 < 2\n'),
+                                 dict(name='helper.pyx', content='cdef int value = 2\n')])
+        self.assertEqual(len(messages), 1)
+        self.assertEqual(messages[0][0], 'assistant')
+        altered, _ = _algotune_html(source.replace('    indentation', '  indentation'))
+        self.assertNotEqual(messages, altered)
+        with self.assertRaises(ValueError):
+            _algotune_html(source.removesuffix('</div>'))
+
+
 if __name__ == "__main__":
     unittest.main()

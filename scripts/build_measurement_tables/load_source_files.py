@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import base64
+from concurrent.futures import ThreadPoolExecutor
 from fnmatch import fnmatchcase
 import hashlib
+from html.parser import HTMLParser
 import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import tempfile
-from urllib.parse import quote, urlencode, urlparse
+from urllib.parse import quote, urlencode, urljoin, urlparse
 from urllib.request import Request, urlopen
 from typing import Any
 
@@ -94,11 +96,81 @@ def read_gpg_json(path: Path, *, password: str, scratch_dir: Path) -> Any:
     return json.loads(result.stdout)
 
 
-def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict]:
-    """Resolve named upstream selections to pinned files, without downloading them.
+def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve a static site's linked files and verify their complete content tree.
+
+    The index and the selected page contents are both pinned. Existing raw files
+    may supply the bytes, but are checked against the same tree fingerprint.
+    This supports sites that publish transcripts without a repository archive.
+    """
+    name = source["name"]
+    index = named.get(source["html_index"], {})
+    if not {"url", "file", "size", "sha256"} <= index.keys():
+        raise SourceDataError(f"{name}: HTML index must name a pinned HTTP source")
+
+    def read(url, destination):
+        if raw_dir is not None:
+            path = raw_dir / destination
+            if not path.resolve().is_relative_to(raw_dir.resolve()):
+                raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+            if path.exists():
+                return path.read_bytes()
+        with urlopen(Request(url, headers={"User-Agent": "measurement-db", "Accept-Encoding": "identity"}), timeout=120) as response:
+            return response.read()
+
+    payload = read(index["url"], index["file"])
+    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
+        raise SourceDataError(f"{name}: HTML index differs from its declared bytes")
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.hrefs = set()
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "a" and (href := dict(attrs).get("href")):
+                self.hrefs.add(href)
+
+    parser = Links()
+    parser.feed(payload.decode("utf-8"))
+    base = urlparse(source["url"].rstrip("/") + "/")
+    paths = {}
+    for href in parser.hrefs:
+        location = urlparse(urljoin(index["url"], href))
+        if ((location.scheme, location.netloc) != (base.scheme, base.netloc)
+                or not location.path.startswith(base.path) or location.query or location.fragment):
+            continue
+        relative = location.path.removeprefix(base.path)
+        for rule in source["files"]:
+            if match := re.fullmatch(rule["match"], relative):
+                destination = rule["path"].format(path=relative, **match.groupdict())
+                destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                if Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                    raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+                paths[relative] = (location.geturl(), destination)
+
+    def inspect(relative):
+        url, destination = paths[relative]
+        content = read(url, destination)
+        return dict(path=relative, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                    hash_kind="sha256", url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(paths)))
+    identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"{name}: linked page contents differ from the pinned tree ({fingerprint})")
+    return entries
+
+
+def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve named upstream selections to pinned files and verify their inventory.
 
     Repository trees supply the file hashes. HTTP endpoints instead declare their
-    expected bytes in metadata. No MeasurementDB archive is consulted.
+    expected bytes in metadata. Static HTML collections verify all selected page
+    contents, reading existing raw files when available. No MeasurementDB archive
+    is consulted.
     """
     named = {source["name"]: source for source in sources if "name" in source}
     if names == ("*",):
@@ -121,7 +193,9 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
         else:
             location = urlparse(url)
             entries = []
-            if location.netloc == "storage.googleapis.com" and "prefix" in source:
+            if "html_index" in source:
+                entries = html_index_entries(source, named, raw_dir)
+            elif location.netloc == "storage.googleapis.com" and "prefix" in source:
                 bucket, prefix = location.path.strip("/"), source["prefix"]
                 if not re.fullmatch(r"[a-z0-9._-]+", bucket):
                     raise SourceDataError(f"{name}: expected a public GCS bucket URL")
@@ -186,7 +260,9 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if location.netloc == "github.com":
+            if "html_index" in source:
+                pass
+            elif location.netloc == "github.com":
                 repository = location.path.strip("/")
                 if len(repository.split("/")) != 2:
                     raise SourceDataError(f"{name}: expected a GitHub repository URL")

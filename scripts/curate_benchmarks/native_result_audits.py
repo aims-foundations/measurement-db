@@ -2645,6 +2645,151 @@ def _adaptivestep(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _algotune_html(text):
+    """Read semantic HTML tokens with the standard parser, independently of bs4."""
+    from html.parser import HTMLParser
+
+    class Capture(HTMLParser):
+        void = {'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr'}
+
+        def __init__(self):
+            super().__init__()
+            self.messages, self.best_files, self.filename = [], [], None
+            self.kind, self.stack, self.tokens, self.text = None, [], [], []
+
+        def handle_starttag(self, tag, attrs):
+            classes = dict(attrs).get('class', '').split()
+            if self.kind is None:
+                if tag == 'div' and 'message' in classes:
+                    self.kind, self.role = 'message', ' '.join(c for c in classes if c != 'message')
+                elif tag == 'pre' and 'best-code' in classes:
+                    self.kind = 'best_code'
+                elif tag == 'div' and 'file-name' in classes:
+                    self.kind = 'filename'
+                else:
+                    return
+            self.tokens.append(('start', tag, sorted(attrs)))
+            if tag not in self.void:
+                self.stack.append(tag)
+
+        def handle_startendtag(self, tag, attrs):
+            self.handle_starttag(tag, attrs)
+            if tag not in self.void:
+                self.handle_endtag(tag)
+
+        def handle_endtag(self, tag):
+            if self.kind is None or tag in self.void:
+                return
+            _check(bool(self.stack) and self.stack[-1] == tag, True, 'AlgoTune balanced captured message HTML')
+            self.stack.pop()
+            self.tokens.append(('end', tag))
+            if not self.stack:
+                if self.kind == 'message':
+                    self.messages.append((self.role, _digest(json.dumps(self.tokens, ensure_ascii=False))))
+                elif self.kind == 'filename':
+                    self.filename = ''.join(self.text)
+                else:
+                    _check(bool(self.filename), True, 'AlgoTune final source filename')
+                    self.best_files.append({'name': self.filename, 'content': ''.join(self.text)})
+                self.kind, self.tokens, self.text = None, [], []
+
+        def handle_data(self, data):
+            if self.kind is not None:
+                self.text.append(data)
+                # Ignore layout indentation, retaining all whitespace in code.
+                if data.strip() or 'pre' in self.stack or 'code' in self.stack:
+                    self.tokens.append(('text', data))
+
+    parsed = Capture()
+    parsed.feed(text)
+    parsed.close()
+    _check(parsed.kind, None, 'AlgoTune complete captured HTML blocks')
+    return parsed.messages, parsed.best_files
+
+
+def _algotune_source_records(directory, metadata):
+    import html
+    import math
+    import re
+    paths = {name: directory / 'raw' / value for name, value in metadata['build']['parameters']['layout'].items()}
+    summary = json.loads(paths['summary'].read_text())
+    suffixes = metadata['build']['parameters']['model_page_suffix']
+    native, definitions, counts = {}, {}, Counter()
+    for task, models in summary.items():
+        definitions[task] = ((paths['tasks']/task/'description.txt').read_text(),
+                             (paths['tasks']/task/(task+'.py')).read_text())
+        for model, result in models.items():
+            _check(set(result), {'final_speedup'}, 'AlgoTune native result fields')
+            speedup = result['final_speedup']
+            if speedup == 'N/A':
+                grade = 0.0
+                counts['source_reported_failures'] += 1
+            else:
+                _check(math.isfinite(float(speedup)), True, 'AlgoTune finite reported speedup')
+                grade = float(float(speedup) >= 1.0)
+            page = paths['site'] / f'{task}_{suffixes[model]}.html'
+            text = page.read_text()
+            title = re.search(r'<title>AlgoTuner Log – (.*?) – (.*?)</title>', text)
+            _check(title is not None, True, 'AlgoTune native page title')
+            title_task, title_model = (html.unescape(value) for value in title.groups())
+            _check((title_task, title_model.rsplit('/', 1)[-1]), (task, model.removesuffix(' (medium)')),
+                   'AlgoTune page task/model identity independently confirms the filename mapping')
+            messages, best_files = _algotune_html(text)
+            native[model, task] = dict(grade=grade, speedup=speedup, messages=messages, best_files=best_files,
+                                      source_file=str(page.relative_to(directory/'raw')))
+            counts.update(source_responses=1, source_successes=int(grade), source_messages=len(messages),
+                          source_traces=int(bool(messages)), source_final_files=len(best_files))
+    counts.update(source_items=len(definitions), source_subjects=len({model for model, task in native}))
+    return native, definitions, dict(counts)
+
+
+def _algotune(directory, tables, metadata, source_records=None):
+    native, definitions, counts = (_algotune_source_records(directory, metadata)
+                                   if source_records is None else source_records)
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        subjects[row.subject_id] = _features(row.subject_features_extra)['model_identifier']
+        _check(row.harness, 'AlgoTuner', 'AlgoTune subject harness')
+    _check(Counter(subjects.values()), Counter({model: 1 for model, task in native}), 'AlgoTune complete model labels')
+    items = {}
+    for row in tables['items'].itertuples():
+        task = row.raw_item_id
+        _check(row.content, definitions[task][0], 'AlgoTune full task instruction')
+        _check(json.loads(row.grading_criterion)['rule'], metadata['grading']['rule'], 'AlgoTune explicit binary rule')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'AlgoTune recorded code-based grading')
+        _check(json.loads(verifier['spec']), {**metadata['grading']['verifiers']['task'], 'task_code': definitions[task][1]},
+               'AlgoTune full task-specific verifier')
+        items[row.item_id] = task
+    _check(Counter(items.values()), Counter({task: 1 for task in definitions}), 'AlgoTune complete task identities')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, traced = Counter(), set()
+    for row in tables['responses'].itertuples():
+        key = subjects[row.subject_id], items[row.item_id]
+        source = native[key]
+        seen[key] += 1
+        _check((row.response, row.trial), (source['grade'], 1), 'AlgoTune each native task/model outcome')
+        if source['messages']:
+            trace = json.loads(traces[row.response_id])
+            _check(set(trace), {'source_file', 'speedup', 'messages', 'best_files'}, 'AlgoTune trace fields')
+            _check((trace['source_file'], trace['speedup'], trace['best_files']),
+                   (source['source_file'], source['speedup'], source['best_files']), 'AlgoTune native score, source and final files')
+            messages = []
+            for message in trace['messages']:
+                _check(set(message), {'role', 'html'}, 'AlgoTune message fields')
+                extracted, _ = _algotune_html(message['html'])
+                _check(len(extracted), 1, 'AlgoTune one native block per message')
+                _check(message['role'], extracted[0][0], 'AlgoTune message role')
+                messages.extend(extracted)
+            _check(messages, source['messages'], 'AlgoTune all conversation content and message order')
+            traced.add(row.response_id)
+        else:
+            _check(row.response_id not in traces, True, 'AlgoTune absent conversation remains absent')
+    _check(seen, Counter({key: 1 for key in native}), 'AlgoTune every native task/model result exactly once')
+    _check(set(traces), traced, 'AlgoTune all trace associations')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2659,4 +2804,4 @@ def verify_native_results(directory, tables_directory=None):
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
-            "adaptivestep": _adaptivestep}[directory.name](directory, tables, metadata)
+            "adaptivestep": _adaptivestep, "algotune": _algotune}[directory.name](directory, tables, metadata)

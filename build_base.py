@@ -724,7 +724,7 @@ class BenchmarkBuild(ABC):
         """Fetch named metadata sources, or restore an explicitly selected archive."""
         if self._source_archive is not None:
             return BenchmarkBuild.download(self)
-        artifacts = _source_files.upstream_artifacts(self.source_manifest["upstream"], names)
+        artifacts = _source_files.upstream_artifacts(self.source_manifest["upstream"], names, raw_dir=self.raw_dir)
         root = self.raw_dir.resolve()
         for artifact in artifacts:
             target = self.raw_dir / artifact["file"]

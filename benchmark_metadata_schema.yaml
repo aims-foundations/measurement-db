@@ -240,13 +240,15 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {anyOf: [{required: [file]}, {required: [prefix]}]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
                   - required: [files, prefix, tree_sha256]
                     not: {required: [file]}
                     properties:
                       url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
+                  - required: [files, html_index, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}]}
             - if:
                 anyOf:
                   - required: [files]
@@ -260,6 +262,11 @@ $defs:
                 properties:
                   prefix: {type: string, pattern: '/$'}
                   url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
+            - if:
+                required: [html_index]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
             - if:
                 required: [git_lfs]
                 properties: {git_lfs: {const: true}}
@@ -304,9 +311,13 @@ $defs:
               description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
               $ref: '#/$defs/nonempty_string'
             tree_sha256:
-              description: SHA-256 of the selected GCS object paths, generations, sizes, MD5 hashes and content encodings.
+              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML indexes include linked paths, sizes and SHA-256 content hashes.
               type: string
               pattern: '^[0-9a-f]{64}$'
+            html_index:
+              description: Name of a pinned HTML source whose same-site links are selected by files patterns.
+              type: string
+              pattern: '^[a-z][a-z0-9_]*$'
             helm_index:
               description: Select all run directories in a pinned HELM release manifest, optionally limited to one group.
               type: object
@@ -316,7 +327,7 @@ $defs:
                 source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
                 group: {$ref: '#/$defs/nonempty_string'}
             files:
-              description: Select files from the pinned repository tree and map them into raw/.
+              description: Select files from a pinned source tree and map them into raw/.
               type: array
               minItems: 1
               items:
