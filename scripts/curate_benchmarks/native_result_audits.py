@@ -3047,6 +3047,160 @@ def _alpacaeval(directory, tables, metadata, source_records=None):
     return dict(counts)
 
 
+def _ai2d_source_records(directory, metadata):
+    """Read native Excel cells and the official-checksum task TSV independently."""
+    import csv
+    import hashlib
+    from openpyxl import load_workbook
+
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    release = raw / layout["release"]
+    task_file = raw / layout["tasks"]
+    _check(hashlib.md5(task_file.read_bytes()).hexdigest(), "0f593e0d1c7df9a3d69bf1f947e71975",
+           "AI2D original harness task checksum, including every diagram")
+    previous_limit = csv.field_size_limit()
+    try:
+        csv.field_size_limit(10000000)
+        with task_file.open(newline="") as stream:
+            bank = {int(row["index"]): row for row in csv.DictReader(stream, delimiter="\t")}
+    finally:
+        csv.field_size_limit(previous_limit)
+
+    def cells(path):
+        workbook = load_workbook(path, read_only=True, data_only=True)
+        try:
+            rows = workbook.active.iter_rows(values_only=True)
+            names = next(rows)
+            return [dict(zip(names, ("" if value is None else value for value in row), strict=True)) for row in rows]
+        finally:
+            workbook.close()
+
+    native, models = {}, set()
+    for path in sorted(release.glob("mmeval/*/*_AI2D_TEST.xlsx")):
+        model = path.name.removesuffix("_AI2D_TEST.xlsx")
+        models.add(model)
+        seen = set()
+        for position, row in enumerate(cells(path)):
+            _check(row["index"] not in seen, True, "AI2D unique native question within primary model export")
+            seen.add(row["index"])
+            native[str(path.relative_to(raw)), position] = row
+        _check(seen, set(bank), "AI2D all source questions in each primary model export")
+    published = {row["index"]: row for row in cells(release / layout["published_grades"])}
+    _check((len(native), len(models), len(bank), len(published)), (784352, 254, 3088, 3088),
+           "AI2D complete pinned primary predictions, task bank, and native grades")
+    return native, bank, published
+
+
+def _ai2d_answer(text, choices):
+    """Scalar form of the reviewed historical upstream matcher (VERBOSE disabled)."""
+    if "Failed to obtain answer via API" in text:
+        return None
+    if any(marker in text for marker in ("Sorry, I can't help with images of people yet.",
+            "I can't process this file.", "I'm sorry, but without the image provided", "Cannot determine the answer")):
+        return "Z"
+    tokens = text
+    for character in ".()[],:;!*#{}":
+        tokens = tokens.replace(character, " ")
+    words = tokens.split()
+    present = [letter for letter in choices if letter in words]
+    if len(present) == 1:
+        return present[0]
+    if not present and "Z" in words:
+        return "Z"
+    present = [letter for letter, option in choices.items() if option.lower() in text.lower()]
+    return present[0] if len(present) == 1 else "Z"
+
+
+def _ai2d_test(directory, tables, metadata, source_records=None):
+    """Check every original record, task/image association, and deterministic grade."""
+    import base64
+    import hashlib
+    from urllib.parse import unquote
+
+    native, bank, published = _ai2d_source_records(directory, metadata) if source_records is None else source_records
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    models = {key: unquote(_features(row["subject_features_extra"])["model_identifier"])
+              for key, row in subjects.items()}
+    _check(Counter(models.values()), Counter({Path(key[0]).name.removesuffix("_AI2D_TEST.xlsx"): 1 for key in native}),
+           "AI2D all reported models remain distinct")
+    for row in subjects.values():
+        _check(row["harness"], "VLMEvalKit", "AI2D recorded harness")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    item_indices, used_assets = {}, set()
+    for item_id, item in items.items():
+        index = int(item["raw_item_id"].removeprefix("ai2d_test_"))
+        source = bank[index]
+        options = {letter: source[letter] for letter in "ABCD" if source[letter] not in ("", "None", "NA")}
+        text = "Question: " + source["question"] + "\nOptions:\n"
+        text += "".join(f"{letter}. {option}\n" for letter, option in options.items())
+        text += "Please select the correct answer from the options above. \n"
+        data = base64.b64decode(source["image"], validate=True)
+        image_path = "images/" + hashlib.sha256(data).hexdigest() + ".jpg"
+        _check(json.loads(item["content"]), {"multimedia_elements": [
+            {"content_type": "image/jpeg", "location": image_path},
+            {"content_type": "text/plain", "text": text}]}, "AI2D exact standard task text and image reference")
+        links = json.loads(item["asset_manifest"])
+        _check(len(links), 1, "AI2D one complete diagram per task")
+        _check(links[0]["path"], image_path, "AI2D matching image path")
+        _check(assets[links[0]["asset_id"]]["data"], data, "AI2D exact unmodified diagram bytes")
+        used_assets.add(links[0]["asset_id"])
+        _check(_features(item["item_features"]), {"category": source["category"],
+               "abc_label": source["abcLabel"].lower(), "source_image_path": source["image_path"]},
+               "AI2D original category and image condition")
+        criterion = json.loads(item["grading_criterion"])
+        _check(criterion["reference_answer"], source["answer"], "AI2D original correct option")
+        _check(criterion["rule"], metadata["grading"]["rule"], "AI2D documented deterministic grading rule")
+        _check(json.loads(json.loads(item["verifier"])["spec"]), metadata["grading"]["verifiers"]["exact_matching"],
+               "AI2D fixed historical grading implementation")
+        item_indices[item_id] = index
+    _check(set(assets), used_assets, "AI2D no missing or orphan image assets")
+    _check((len(items), len(used_assets)), (3088, 1201), "AI2D complete tasks and distinct diagrams")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, counts = Counter(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_file"], trace["source_row"]
+        row = native[key]
+        model = Path(key[0]).name.removesuffix("_AI2D_TEST.xlsx")
+        _check(models[response.subject_id], model, "AI2D response belongs to its original model")
+        _check(item_indices[response.item_id], row["index"], "AI2D response belongs to its original question and diagram")
+        source = bank[row["index"]]
+        for column in ("question", "A", "B", "C", "D", "answer", "category", "abcLabel", "image_path"):
+            original, reference = row[column], source[column]
+            if column in "ABCD":
+                original = "" if original in ("", "None", "NA") else original
+                reference = "" if reference in ("", "None", "NA") else reference
+            _check(str(original), reference, "AI2D unchanged native task field: " + column)
+        choices = {letter: source[letter] for letter in "ABCD" if source[letter] not in ("", "None", "NA")}
+        text = str(row["prediction"])
+        unavailable = not text or "Failed to obtain answer via API" in text
+        answer = None if unavailable else _ai2d_answer(text, choices)
+        native_grade = published[row["index"]] if model == "GPT4o" else None
+        status = "unavailable_output" if unavailable else "published_exact_matching" if native_grade else "derived_exact_matching"
+        _check(trace, {"source_file": key[0], "source_row": key[1], "native_record": row,
+               "grade_status": status, "extracted_answer": answer, "published_record": native_grade},
+               "AI2D full native output and grading record without truncation")
+        if unavailable:
+            _check(pd.isna(response.response), True, "AI2D unavailable output remains ungraded")
+        else:
+            _check(response.response, float(answer == source["answer"]), "AI2D exact deterministic grade")
+        if native_grade:
+            _check(native_grade["prediction"], row["prediction"], "AI2D published grader evaluated the same output")
+            _check(response.response, float(native_grade["hit"]), "AI2D unchanged published GPT-4o grade")
+        _check(response.trial, 1, "AI2D one maintained primary record per model and task")
+        _check(pd.isna(response.test_condition), True, "AI2D no invented inference setting")
+        seen[key] += 1
+        counts["source_ungraded"] += unavailable
+        counts["source_published_grades"] += native_grade is not None
+    _check(seen, Counter({key: 1 for key in native}), "AI2D complete source census without dropped or duplicate records")
+    _check(len(traces), len(native), "AI2D complete trace coverage")
+    counts.update(source_responses=len(native), source_traces=len(native), source_subjects=len(subjects),
+                  source_items=len(items), source_assets=len(assets))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3062,4 +3216,4 @@ def verify_native_results(directory, tables_directory=None):
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
-            "alpacaeval": _alpacaeval}[directory.name](directory, tables, metadata)
+            "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test}[directory.name](directory, tables, metadata)

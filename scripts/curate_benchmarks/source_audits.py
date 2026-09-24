@@ -765,3 +765,4 @@ SOURCE_AUDITS["adaptivestep"] = verify_native_results
 SOURCE_AUDITS["algotune"] = verify_native_results
 SOURCE_AUDITS["aider"] = verify_native_results
 SOURCE_AUDITS["alpacaeval"] = verify_native_results
+SOURCE_AUDITS["ai2d_test"] = verify_native_results
