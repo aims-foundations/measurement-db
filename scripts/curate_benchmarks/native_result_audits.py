@@ -2790,6 +2790,162 @@ def _algotune(directory, tables, metadata, source_records=None):
     return counts
 
 
+
+def _aider_source_records(directory, metadata):
+    """Read native attempts and task definitions without the builder's joins."""
+    import csv
+    import hashlib
+    import io
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    task_root = raw / layout["tasks"] / "cpp/exercises/practice"
+    records, definitions, trials = {}, {}, Counter()
+    with ZipFile(raw / layout["archive"]) as archive:
+        prefix = metadata["build"]["parameters"]["archive"]["root"] + "/"
+        names = set(archive.namelist())
+        with archive.open(prefix + "experiments_data/all_functional_tests.csv") as stream:
+            rows = list(csv.DictReader(io.TextIOWrapper(stream, encoding="utf-8")))
+        published = {(row["build_id"], row["testcase"]): row for row in rows}
+        _check(len(published), len(rows), "Aider unique published run/task rows")
+        for member in sorted(name for name in names if name.endswith("/.aider.results.json")):
+            relative = member.removeprefix(prefix)
+            _, run, language, _, _, task, _ = relative.split("/")
+            _check(language, "cpp", "Aider captured C++ cohort")
+            native = json.loads(archive.read(member))
+            _check(native["testcase"], task, "Aider task identity in filename and record")
+            _check(native["testdir"], f"/benchmarks/{run}/cpp/exercises/practice/{task}", "Aider original run directory")
+            row = published[run.split("--", 1)[1], task]
+            _check((native["model"], native["edit_format"]), (row["model"], row["edit_format"]), "Aider native versus published model configuration")
+            outcomes = native["tests_outcomes"]
+            _check(1 <= len(outcomes) <= 2 and all(type(value) is bool for value in outcomes), True, "Aider native test-feedback cycles")
+            grade = float(outcomes[-1])
+            _check(grade, {"True": 1., "False": 0.}[row["pass2"]], "Aider native versus published verdict")
+
+            stem = member.rsplit("/", 1)[0] + "/"
+            history = archive.read(stem + ".aider.chat.history.md").decode("utf-8")
+            prompt_lines = []
+            for line in history.splitlines():
+                if line.startswith("####"):
+                    prompt_lines.append(line)
+                elif prompt_lines:
+                    break
+            recorded_prompt = "\n".join(prompt_lines)
+            boundary = "Only use standard libraries, don't suggest installing any packages."
+            _check(boundary in recorded_prompt, True, "Aider complete first user prompt")
+            suffix = recorded_prompt.split(boundary, 1)[1]
+            header = history.split("\n####", 1)[0].splitlines()
+            version = next(line.removeprefix("> Aider ").strip() for line in header if line.startswith("> Aider "))
+            weak = next((line.removeprefix("> Weak model: ").strip() for line in header if line.startswith("> Weak model: ")), None)
+            banner = next(line.split(": ", 1)[1].strip() for line in header if line.startswith(("> Model: ", "> Main model: ")))
+            expected_banner = f"{native['model']} with {native['edit_format']} edit format"
+            _check(banner == expected_banner or banner.startswith(expected_banner + ", "),
+                   True, "Aider recorded main model and edit format")
+            features = {"harness": "Aider", "harness_version": version, "harness_commit": native["commit_hash"],
+                        "model_identifier": native["model"], "weak_model": weak,
+                        "model_banner": banner,
+                        "prompting_condition": row["experiment"], "edit_format": native["edit_format"],
+                        "prompt_variant": hashlib.sha256(suffix.encode("utf-8")).hexdigest()}
+            features = {key: value for key, value in features.items() if value is not None}
+            for key in ["reasoning_effort", "thinking_tokens"]:
+                if native.get(key) is not None:
+                    features[key] = str(native[key])
+            configuration = tuple(sorted(features.items()))
+
+            config = json.loads(archive.read(stem + ".meta/config.json"))
+            local = task_root / task
+            _check(json.loads((local / ".meta/config.json").read_text()), config, "Aider task configuration matches the captured run")
+            instructions = ""
+            for name in ["introduction.md", "instructions.md", "instructions.append.md"]:
+                filename = ".docs/" + name
+                available = stem + filename in names
+                _check((local / filename).exists(), available, "Aider optional instruction sections")
+                if available:
+                    text = archive.read(stem + filename).decode("utf-8")
+                    _check((local / filename).read_text(), text, "Aider captured instruction text")
+                    instructions += text
+            tests = {name: archive.read(stem + name).decode("utf-8") for name in config["files"]["test"]}
+            references = {name: archive.read(stem + name).decode("utf-8") for name in config["files"].get("example", [])}
+            for name, text in {**tests, **references}.items():
+                _check((local / name).read_text(), text, "Aider captured tests and reference implementation")
+            cmake = archive.read(stem + "CMakeLists.txt").decode("utf-8")
+            postbuild = archive.read(prefix + f"polyglot_artifacts/{run}/cpp/cpptest-postbuild.cmake").decode("utf-8")
+            _check((local / "CMakeLists.txt").read_text(), cmake, "Aider captured CMake test configuration")
+            _check((raw / layout["tasks"] / "cpp/cpptest-postbuild.cmake").read_text(), postbuild, "Aider captured post-build hook")
+            initial = {name: (local / name).read_text() for name in config["files"]["solution"]}
+            definition = {"content": {"instructions": instructions, "initial_files": initial},
+                          "references": references, "test_files": tests, "cmake": cmake, "postbuild": postbuild}
+            if task in definitions:
+                _check(definitions[task], definition, "Aider consistent stimulus and grading across runs")
+            else:
+                definitions[task] = definition
+            final_files = {name: archive.read(stem + name).decode("utf-8") for name in config["files"]["solution"]}
+            trials[configuration, task] += 1
+            records[relative] = {"native_record": native, "published_record": row, "history": history,
+                                 "additional_instructions_md": suffix, "final_files": final_files,
+                                 "features": features, "task": task, "grade": grade, "trial": trials[configuration, task]}
+    _check(len(records), len(published), "Aider every published attempt has a native record")
+    return records, definitions
+
+
+def _aider(directory, tables, metadata, source_records=None):
+    native, definitions = (_aider_source_records(directory, metadata) if source_records is None else source_records)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    protocol = metadata["grading"]["verifiers"]["functional_tests"]
+    _check(protocol["max_test_cycles"], 2, "Aider grading budget")
+    _check(protocol["result_field"], "tests_outcomes[-1] (agrees with the published pass2 column)", "Aider grading field")
+    seen, seen_items, seen_subjects = Counter(), set(), set()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_member"]
+        original = native[key]
+        expected_trace = {name: original[name] for name in [
+            "native_record", "published_record", "history", "additional_instructions_md", "final_files"]}
+        expected_trace.update(source_member=key, source_archive=metadata["build"]["parameters"]["layout"]["archive"])
+        _check(trace, expected_trace, "Aider full native record, conversation and final files without truncation")
+        _check(response.response, original["grade"], "Aider preserved native grade")
+        _check(response.trial, original["trial"], "Aider distinct trials in source-directory order")
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, "Aider no invented run conditions")
+        subject = subjects[response.subject_id]
+        actual_features = _features(subject["subject_features_extra"])
+        for field in ["harness", "harness_version", "reasoning_effort"]:
+            if not pd.isna(subject[field]):
+                actual_features[field] = subject[field]
+        _check(actual_features, original["features"], "Aider complete recorded agent configuration and prompt variant")
+        _check(subject["display_name"], original["native_record"]["model"], "Aider unmodified model label")
+
+        item = items[response.item_id]
+        definition = definitions[original["task"]]
+        _check(item["raw_item_id"], "cpp/" + original["task"], "Aider response-to-exercise association")
+        _check(json.loads(item["content"]), definition["content"], "Aider full instructions and initial source files")
+        _check(_features(item["item_features"]), {"lang": "cpp"}, "Aider task language")
+        criterion = json.loads(item["grading_criterion"])
+        _check(criterion["rule"], metadata["grading"]["rule"], "Aider grading criterion")
+        _check(json.loads(criterion["reference_answer"]), definition["references"], "Aider released reference implementations")
+        specification = json.loads(json.loads(item["verifier"])["spec"])
+        _check(specification, {**protocol, **{key: definition[key] for key in ["test_files", "cmake", "postbuild"]}},
+               "Aider exact per-task tests, CMake build and post-build hook")
+        seen[key] += 1
+        seen_items.add(response.item_id)
+        seen_subjects.add(response.subject_id)
+    _check(seen, Counter({key: 1 for key in native}), "Aider complete source attempt census without duplication")
+    _check(len(traces), len(native), "Aider complete response-trace associations")
+    _check(seen_items, set(items), "Aider exact used task definitions")
+    _check(seen_subjects, set(subjects), "Aider exact used model configurations")
+    configurations = {tuple(sorted(row["features"].items())) for row in native.values()}
+    _check(len(subjects), len(configurations), "Aider separate identities for recorded prompting variants")
+    return {"source_responses": len(native), "source_successes": int(sum(row["grade"] for row in native.values())),
+            "source_items": len(definitions), "source_subjects": len(configurations),
+            "source_models": len({row["native_record"]["model"] for row in native.values()}),
+            "source_conditions": len({row["published_record"]["experiment"] for row in native.values()}),
+            "source_runs": len({row["published_record"]["build_id"] for row in native.values()}),
+            "source_traces": len(native), "source_final_files": sum(len(row["final_files"]) for row in native.values()),
+            "source_test_cycles": sum(len(row["native_record"]["tests_outcomes"]) for row in native.values())}
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2804,4 +2960,4 @@ def verify_native_results(directory, tables_directory=None):
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
-            "adaptivestep": _adaptivestep, "algotune": _algotune}[directory.name](directory, tables, metadata)
+            "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider}[directory.name](directory, tables, metadata)

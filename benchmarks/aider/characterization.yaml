@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5356
+    logical_sha256: 317fe2c1bb5e3fe2f99c9ea020d43b06b0cd9afb74bb9e6c656659343ecd11ce
+  subjects:
+    rows: 17
+    logical_sha256: 854dfe5930c10a9222e3cfb8775fbe57e3a4dd01c770551807159ee8a201f8d0
+  responses:
+    rows: 5356
+    logical_sha256: 3430c9b995d0e01e59f8e8fd9f1808e6a5621fdf56211db059dc35c46250abc9
+  items:
+    rows: 26
+    logical_sha256: 52c32fc9bc3abd92ecb5c6a3bc7f79d4d8b526af80a99f2857994af696a0cc0b
+  benchmarks:
+    rows: 1
+    logical_sha256: 7dbee98e0a0816f87b68d298fbb8a2f82f90e4fa113a755b81b94cbb5146ba21
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 5356
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 3747
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 26
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 17
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 7
+  source_conditions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 16
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 206
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 5356
+  source_final_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 10712
+  source_test_cycles:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    locator: experiments_data/all_functional_tests.csv and native .aider.results.json files, sibling histories and
+      task definitions
+    scope: All C++ study attempts, complete logs and final files; the two instruction variants within the Top-5
+      GPT-5 arm remain distinct subjects.
+    expected: 9268
