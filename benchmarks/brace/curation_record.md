@@ -1,0 +1,4 @@
+- Sources: pinned BRACE annotations/audio and third-party CAF-Score exports; 202,096 decisions on 12,631 caption pairs, with 28 scoring configurations and 2,027 distinct audio files.
+- Import: five table stages preserve actual captions, complete native scores, both annotation versions and exact audio bytes. Smoothed/raw variants share underlying runs; their grades reproduce the released accuracies, not the original BRACE paper's F1 scores.
+- Corrections and limits: replace legacy aggregate-score buckets with observed pair decisions. Preserve one changed caption and the published raw Hallucination selector, whose decisions differ from stored-score argmax in 10,565 records. Historical model checkpoints and component outputs are unreported.
+- Validation: every source decision and audio attachment reconciles independently; all published accuracy summaries, five shared checks and twelve deliberate-corruption checks pass. Captured upstream inputs remain unchanged.

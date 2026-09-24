@@ -755,3 +755,5 @@ SOURCE_AUDITS["engibench"] = verify_native_results
 SOURCE_AUDITS["llmail_inject"] = verify_native_results
 SOURCE_AUDITS["safeagentbench"] = verify_native_results
 SOURCE_AUDITS["critic_discernment_game"] = verify_native_results
+SOURCE_AUDITS["brace"] = verify_native_results
+SOURCE_AUDITS["biggen"] = verify_native_results

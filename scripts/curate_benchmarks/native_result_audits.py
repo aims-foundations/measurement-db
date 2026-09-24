@@ -1658,6 +1658,259 @@ def _critic_discernment_game(directory, tables, metadata):
             "source_traces": len(native), "source_correct_by_export": totals}
 
 
+def _brace_source_records(directory, metadata):
+    """Read original JSON and audio independently of the builder's pandas joins."""
+    import hashlib
+    import math
+    import re
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    layout = parameters["layout"]
+    annotations, audio_hashes, original_changes = {}, {}, []
+    for dataset, stem in parameters["datasets"].items():
+        original = json.loads((raw / layout["original"] / (stem + ".json")).read_text())
+        processed = json.loads((raw / layout["processed"] / ("BRACE_" + stem + "_Processed.json")).read_text())
+        original_pairs = {(row["file_name"], key): pair for row in original
+                          for key, pair in row.items() if key not in {"file_name", "references"}}
+        processed_pairs = {(row["file_name"], key): pair for row in processed
+                           for key, pair in row.items() if key not in {"file_name", "references"}}
+        for records, pairs in ((original, original_pairs), (processed, processed_pairs)):
+            _check(len(pairs), sum(len(set(row) - {"file_name", "references"}) for row in records),
+                   "BRACE unique annotation source keys")
+        _check(set(original_pairs), set(processed_pairs), "BRACE complete processed annotation coverage")
+        for (filename, pair_key), pair in processed_pairs.items():
+            source = original_pairs[filename, pair_key]
+            answer = int(sum(source[-1]) < 0) if dataset.endswith("main") else int(source[2] == "human")
+            _check(pair[2], answer, "BRACE original votes or human-caption designation")
+            if pair[:2] != source[:2]:
+                original_changes.append((dataset, filename, pair_key))
+            annotations[dataset, filename, pair_key] = pair, source
+        for row in processed:
+            logical = parameters["audio_directories"][dataset] + "/" + row["file_name"]
+            physical = re.sub(r"[^A-Za-z0-9._/-]", lambda match: f"_x{ord(match[0]):02x}_", layout["audio"] + "/" + logical)
+            with (raw / physical).open("rb") as stream:
+                audio_hashes[logical] = hashlib.file_digest(stream, "sha256").hexdigest()
+    _check(original_changes, [("clotho_hallu", "big-machine-fan.wav", "caption_3")],
+           "BRACE documented change in the evaluated caption bank")
+
+    native, subjects, totals, ties = {}, set(), {}, 0
+    root = raw / layout["results"]
+    for path in sorted(root.glob("*/*/weighted_8.json")):
+        dataset, profile = path.relative_to(root).parts[:2]
+        published, clips = json.loads(path.read_text())
+        successes, denominators = Counter(), Counter()
+        observed_pairs = set()
+        for position, clip in enumerate(clips["Results"]):
+            filename = clip["file_name"]
+            for key, record in clip.items():
+                if key == "file_name":
+                    continue
+                _check((dataset, filename, key) in observed_pairs, False, "BRACE no duplicate pair within an export")
+                observed_pairs.add((dataset, filename, key))
+                annotation, original = annotations[dataset, filename, key]
+                _check([record["caption0"], record["caption1"], record["answer"]], annotation,
+                       "BRACE native result agrees with the actual evaluated captions")
+                _check(all(math.isfinite(record[field]) for field in (
+                    "caption0_caf_score", "caption1_caf_score", "caption0_raw_csf_score", "caption1_raw_csf_score")),
+                    True, "BRACE released scores are finite")
+                category = "HH" if key.startswith("Human-Human") else "HM" if key.startswith("Human-Machine") else "MM"
+                for field, variant in parameters["variants"].items():
+                    _check(type(record[field]) is int and record[field] in [-1, 0, 1], True, "BRACE native prediction code")
+                    grade = int(record[field] == record["answer"])
+                    for group in ("Overall", category):
+                        successes[variant, group] += grade
+                        denominators[variant, group] += 1
+                    subjects.add((profile, variant))
+                    native[str(path.relative_to(raw)), position, key, field] = (
+                        dataset, filename, profile, variant, record, original, annotation, grade)
+                    ties += record[field] == -1
+        _check(observed_pairs, {key for key in annotations if key[0] == dataset}, "BRACE complete native pair coverage per export")
+        for field, variant in parameters["variants"].items():
+            label = "CAF" if field == "caf_prediction" else "Raw CAF"
+            for group in ("Overall", "HH", "HM", "MM") if dataset.endswith("main") else ("Overall",):
+                reported = published["Result_Metric"][label + " " + group + " Accuracy"]
+                _check(abs(successes[variant, group] / denominators[variant, group] - reported) < 1e-12,
+                       True, "BRACE native decisions reproduce each published accuracy")
+            if "Total Pairs Evaluated" in published["Result_Metric"]:
+                _check(denominators[variant, "Overall"], published["Result_Metric"]["Total Pairs Evaluated"],
+                       "BRACE reported export size")
+            totals[dataset + "/" + profile + "/" + variant] = successes[variant, "Overall"]
+    return native, annotations, audio_hashes, subjects, {
+        "source_responses": len(native), "source_items": len(annotations), "source_subjects": len(subjects),
+        "source_traces": len(native), "source_assets": len(set(audio_hashes.values())),
+        "source_successes": sum(totals.values()), "source_tie_predictions": ties,
+        "source_changed_annotation_pairs": len(original_changes), "source_correct_by_configuration": totals,
+    }
+
+
+def _brace(directory, tables, metadata, source_records=None):
+    """Reconcile every native decision, annotation, configuration and audio attachment."""
+    import hashlib
+
+    native, annotations, audio_hashes, configurations, counts = (
+        _brace_source_records(directory, metadata) if source_records is None else source_records)
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        profile = features["lalm"] + "_" + features["clap"]
+        subjects[row.subject_id] = profile, features["score_variant"]
+        _check(features, {"lalm": profile.split("_", 1)[0], "clap": profile.split("_", 1)[1],
+                          "score_variant": subjects[row.subject_id][1], "reported_alpha": parameters["subject"]["reported_alpha"]},
+               "BRACE complete score configuration")
+        _check((row.display_name, row.harness), (parameters["subject"]["name"], parameters["subject"]["harness"]),
+               "BRACE published metric identity")
+    _check(set(subjects.values()), configurations, "BRACE complete distinct subject configurations")
+    _check(len(subjects), len(configurations), "BRACE no duplicate subject configurations")
+
+    aliases = {dataset + "/" + filename + "/" + key: (dataset, filename, key) for dataset, filename, key in annotations}
+    items, asset_references = {}, {}
+    for row in tables["items"].itertuples():
+        _check(row.raw_item_id in aliases, True, "BRACE original audio/pair alias")
+        dataset, filename, key = aliases[row.raw_item_id]
+        annotation, _ = annotations[dataset, filename, key]
+        items[row.item_id] = dataset, filename, key
+        _check(json.loads(row.content), {"caption0": annotation[0], "caption1": annotation[1]}, "BRACE exact evaluated captions")
+        _check(_features(row.item_features), {"dataset": dataset, "pair_type": key}, "BRACE item subset and pair type")
+        _check(json.loads(row.grading_criterion), {"reference_answer": str(annotation[2]), "rule": metadata["grading"]["rule"]},
+               "BRACE answer and grading convention")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "exact_matcher", "BRACE saved decision comparison")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["native_prediction"], "BRACE grading provenance")
+        manifest = json.loads(row.asset_manifest)
+        logical = parameters["audio_directories"][dataset] + "/" + filename
+        _check(len(manifest), 1, "BRACE one audio stimulus per pair")
+        asset = manifest[0]
+        _check({k: v for k, v in asset.items() if k != "asset_id"},
+               {"path": logical, "role": "input", "media_type": "audio/wav", "ordinal": 1}, "BRACE source audio attachment")
+        _check(asset_references.get(asset["asset_id"], audio_hashes[logical]), audio_hashes[logical], "BRACE consistent shared audio")
+        asset_references[asset["asset_id"]] = audio_hashes[logical]
+    _check(set(items.values()), set(annotations), "BRACE every released caption pair")
+    _check(len(items), len(annotations), "BRACE distinct caption-pair coverage")
+
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    observed = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_clip_row"], trace["pair_key"], trace["prediction_field"]
+        _check(key in native, True, "BRACE source observation exists")
+        dataset, filename, profile, variant, record, original, annotation, grade = native[key]
+        _check(trace, {"source_file": key[0], "source_clip_row": key[1], "pair_key": key[2], "prediction_field": key[3],
+                       "record": record, "original_annotation": original, "processed_annotation": annotation},
+               "BRACE complete native scores and both annotation versions")
+        _check((subjects[row.subject_id], items[row.item_id], row.response, row.trial),
+               ((profile, variant), (dataset, filename, key[2]), grade, 1), "BRACE correct source/system/item/grade association")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "BRACE no invented run conditions")
+        observed[key] += 1
+    _check(observed, Counter({key: 1 for key in native}), "BRACE each published variant decision exactly once")
+    _check(len(traces), len(native), "BRACE complete trace coverage")
+    actual_audio = {row.asset_id: hashlib.sha256(row.data).hexdigest() for row in tables["assets"].itertuples()}
+    _check(actual_audio, asset_references, "BRACE exact audio bytes and no unrelated assets")
+    _check(len(actual_audio), counts["source_assets"], "BRACE content-deduplicated audio coverage")
+    return counts
+
+
+def _biggen_source_records(directory, metadata):
+    """Inspect native Arrow rows without using the builder's melt/explode operations."""
+    import pyarrow.parquet as pq
+
+    parameters = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    root = raw / parameters["layout"]["data"]
+    native, definitions, expected, models, totals, counts = {}, {}, {}, set(), Counter(), Counter()
+    for path in sorted(root.glob("*.parquet")):
+        split = path.name.split("-000")[0]
+        _check(split in parameters["splits"], True, "BiGGen declared default result split")
+        for position, row in enumerate(pq.read_table(path).to_pylist()):
+            generation = row["uuid"]
+            _check(generation in native, False, "BiGGen unique released generation identity")
+            _check(isinstance(row["response"], str), True, "BiGGen generation text including empty outputs")
+            definition = json.dumps({key: row[key] for key in ("system_prompt", "input", "reference_answer", "score_rubric")},
+                                    ensure_ascii=True, sort_keys=True)
+            native[generation] = row, str(path.relative_to(raw)), position, split, definition
+            models.add(row["model_name"])
+            for field in parameters["judges"]:
+                value = row[field]
+                if field == "human_score" and value == -1:
+                    counts["source_unreleased_human_ratings"] += 1
+                    continue
+                if field.startswith("prometheus_") and row["task"] in ("llm_judge_absolute", "llm_judge_relative"):
+                    _check(value, None, "BiGGen upstream exclusion of Prometheus on judge-evaluation tasks")
+                    counts["source_inapplicable_prometheus_judgments"] += 1
+                    continue
+                definitions.setdefault((definition, field), row)
+                for index, grade in enumerate(value if isinstance(value, list) else [value]):
+                    _check(grade is None or grade in (1, 2, 3, 4, 5), True, "BiGGen native rubric category or null")
+                    expected[generation, field, index] = grade
+                    totals[field + "/" + ("null" if grade is None else str(grade))] += 1
+                    counts["source_ungraded_measurements"] += grade is None
+    counts.update(source_generations=len(native), source_responses=len(expected), source_traces=len(expected),
+                  source_subjects=len(models), source_items=len(definitions),
+                  source_empty_outputs=sum(row[0]["response"] == "" for row in native.values()))
+    return native, definitions, expected, models, {**counts, "source_rating_histograms": dict(totals)}
+
+
+def _biggen(directory, tables, metadata, source_records=None):
+    """Check the full source-to-table mapping, including repeated and ungraded ratings."""
+    native, definitions, expected, model_names, counts = (
+        _biggen_source_records(directory, metadata) if source_records is None else source_records)
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        subjects[row.subject_id] = row.display_name
+        _check(row.harness, "BiGGen-Bench", "BiGGen published evaluation harness")
+        _check(_features(row.subject_features_extra), {"model_identifier": row.display_name},
+               "BiGGen exact released model identifier, including base/chat and revision variants")
+    _check(set(subjects.values()), model_names, "BiGGen complete model panel")
+    _check(len(subjects), len(model_names), "BiGGen distinct system coverage")
+
+    judge_fields = {judge: field for field, judge in parameters["judges"].items()}
+    items = {}
+    for row in tables["items"].itertuples():
+        content, criterion, verifier = json.loads(row.content), json.loads(row.grading_criterion), json.loads(row.verifier)
+        rule = json.loads(criterion["rule"])
+        definition = json.dumps({**content, "reference_answer": criterion["reference_answer"], "score_rubric": rule["rubric"]},
+                                ensure_ascii=True, sort_keys=True)
+        field = judge_fields[verifier["judge"]]
+        key = definition, field
+        _check(key in definitions, True, "BiGGen exact system/user instructions, reference and rubric")
+        original = definitions[key]
+        items[row.item_id] = key
+        _check(row.raw_item_id, original["id"] + ":" + field, "BiGGen upstream item and judge alias")
+        _check(_features(row.item_features), {"capability": original["capability"], "task": original["task"], "lang": original["language"]},
+               "BiGGen released capability, task and language")
+        _check(rule["interpretation"], metadata["grading"]["rule"], "BiGGen score interpretation")
+        _check((verifier["class"], verifier["judged_by"]), ("judge", "human" if field == "human_score" else "llm"),
+               "BiGGen grader type and identity")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["rubric"], "BiGGen grading protocol provenance")
+    _check(set(items.values()), set(definitions), "BiGGen every distinct prompt/rubric/judge definition")
+    _check(len(items), len(definitions), "BiGGen no lost rubric variants")
+
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    observed = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["generation_id"], trace["score_field"], trace["rating_index"]
+        _check(key in expected, True, "BiGGen published rating position or applicable ungraded observation")
+        original, filename, position, split, definition = native[key[0]]
+        _check(trace, {"source_file": filename, "source_row": position, "split": split,
+                       "generation_id": key[0], "used_for_training": original["used_for_training"],
+                       "model_output": original["response"], "score_field": key[1], "rating_index": key[2],
+                       "published_scores": original[key[1]],
+                       "published_feedback": original.get(key[1].replace("_score", "_feedback"))},
+               "BiGGen full output, feedback and all unaveraged source ratings")
+        grade = None if pd.isna(row.response) else row.response
+        _check((subjects[row.subject_id], items[row.item_id], grade, row.trial),
+               (original["model_name"], (definition, key[1]), expected[key], key[2] + 1),
+               "BiGGen model, item, judge, native grade and rating position")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "BiGGen no fabricated run conditions")
+        observed[key] += 1
+    _check(observed, Counter({key: 1 for key in expected}), "BiGGen every released rating exactly once")
+    _check(len(traces), len(expected), "BiGGen complete trace coverage")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -1669,4 +1922,5 @@ def verify_native_results(directory, tables_directory=None):
             "scigym": _scigym, "advprompter": _advprompter,
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
-            "critic_discernment_game": _critic_discernment_game}[directory.name](directory, tables, metadata)
+            "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "biggen": _biggen}[directory.name](directory, tables, metadata)

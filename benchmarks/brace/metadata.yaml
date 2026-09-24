@@ -1,0 +1,110 @@
+benchmark:
+  description: 'Released CAF-Score caption-pair decisions on BRACE audio: correctness of smoothed and
+    raw score variants against the annotations actually used in the third-party evaluation.'
+  testing_condition: Import the 32 CAF-Score exports at alpha=0.8, with separate system identities for
+    language model, CLAP configuration and smoothed/raw variants. A response is 1 exactly when the released
+    prediction equals the released answer. Main uses 0 for caption0, whereas Hallucination uses 1 for
+    caption0. Raw ties (-1) count as incorrect under the released accuracy calculation. These are paired
+    variants derived from saved scores, not independent model reruns. Preserve complete pair records,
+    original BRACE annotations and processed CAF annotations. One Hallucination caption differs from the
+    original bank; use the actual evaluated caption and retain both versions. The auxiliary raw Hallucination
+    selector differs from an argmax over its stored combined scores in 10,565 records; preserve its published
+    decisions. The source accuracies are not the original BRACE paper F1 scores. Exact historical model
+    checkpoints and uncombined component outputs are unavailable.
+  paper_url: https://openreview.net/forum?id=MdEkxa6PV9
+  data_source_url: https://github.com/inseong00/CAF-Score
+  subject_type: model
+  item_type: task
+  license: Apache-2.0 for the BRACE repository; MIT for the CAF-Score repository; audio retains its
+    AudioCaps/Clotho source terms
+  citation: "@inproceedings{guo2025brace,\n  title={BRACE: A Benchmark for Robust Audio Caption Quality\
+    \ Evaluation},\n  author={Guo, Tianyu and Chen, Hongyu and Liang, Hao and Qiang, Meiyi and Zeng, Bohan\
+    \ and Sun, Linzhuang and Cui, Bin and Zhang, Wentao},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks\
+    \ Track},\n  year={2025},\n}"
+  tags:
+  - audio_captioning
+  - evaluation_metric
+  - hallucination
+  - clap
+  - lalm
+  modality:
+  - audio
+  - text
+  domain:
+  - general
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Released prediction disagrees with the evaluated annotation, including raw ties.
+      '1': Released prediction agrees with the evaluated annotation.
+  categorical: true
+  release_date: 2025-12
+  name: BRACE (CAF-Score decisions)
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: source_review/661f9b9a8e5a89db8bf19e9fa9d5df153ae1bd0a/data/results/caf
+      processed: source_review/661f9b9a8e5a89db8bf19e9fa9d5df153ae1bd0a/data/meta
+      original: source_review/709b44d24ec79d3296b45790cefb238292cbc3d5/BRACE/meta
+      audio: source_review/60729676c42a9430b5134cbf2ff81289b35730d6
+    datasets:
+      audiocaps_main: AudioCaps_Main
+      clotho_main: Clotho_Main
+      audiocaps_hallu: AudioCaps_Hallu
+      clotho_hallu: Clotho_Hallu
+    audio_directories:
+      audiocaps_main: benchmark/AudioCaps/audio
+      clotho_main: benchmark/Clotho/audio
+      audiocaps_hallu: benchmark_hallucination/AudioCaps/audio
+      clotho_hallu: benchmark_hallucination/Clotho/audio
+    variants:
+      caf_prediction: smoothed
+      raw_caf_prediction: raw
+    subject:
+      name: CAF-Score
+      harness: CAF-Score
+      reported_alpha: '0.8'
+grading:
+  rule: Correctness is exact equality of the published CAF/raw prediction and the published processed
+    annotation. Raw tie predictions (-1) are incorrect; use the actual evaluated captions and preserve
+    the released selection behavior.
+  verifiers:
+    native_prediction:
+      kind: released_caption_preference_match
+      source: https://github.com/inseong00/CAF-Score/blob/661f9b9a8e5a89db8bf19e9fa9d5df153ae1bd0a/calc_caf.py
+      interpretation: Correctness is exact equality of the published CAF/raw prediction and the published
+        processed annotation. Raw tie predictions (-1) are incorrect; use the actual evaluated captions
+        and preserve the released selection behavior.
+      answer_encoding:
+        main: 0 selects caption0; 1 selects caption1
+        hallu: 1 selects caption0; 0 selects caption1
+      original_annotations: BRACE Main human pair preferences and Hallucination human/altered caption
+        designations. Preserve the one changed processed caption.
+      execution: Read published predictions; do not recompute CAF, generate captions or rerun models.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/inseong00/CAF-Score
+    revision: 661f9b9a8e5a89db8bf19e9fa9d5df153ae1bd0a
+    files:
+    - match: (?:data/.*|README\.md|LICENSE|calc_caf\.py|eval_caf\.py|run_caf\.py|src/fleur/(?:af3|qwen|base)\.py|eval_lalm\.py|eval_clap\.py)
+      path: source_review/661f9b9a8e5a89db8bf19e9fa9d5df153ae1bd0a/{path}
+  - name: annotations
+    url: https://github.com/HychTus/BRACE_Evaluation
+    revision: 709b44d24ec79d3296b45790cefb238292cbc3d5
+    files:
+    - match: (?:BRACE/meta/.*\.json|README\.md|LICENSE|src/data\.py|src/eval_clap/eval\.py|src/eval_lalm/post\.py)
+      path: source_review/709b44d24ec79d3296b45790cefb238292cbc3d5/{path}
+  - name: audio
+    url: https://huggingface.co/datasets/gtysssp/audio_benchmarks
+    revision: 60729676c42a9430b5134cbf2ff81289b35730d6
+    files:
+    - match: (?:benchmark|benchmark_hallucination)/(?:AudioCaps|Clotho)/audio/.*\.wav
+      path: source_review/60729676c42a9430b5134cbf2ff81289b35730d6/{path}
