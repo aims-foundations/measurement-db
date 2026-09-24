@@ -2946,6 +2946,107 @@ def _aider(directory, tables, metadata, source_records=None):
             "source_test_cycles": sum(len(row["native_record"]["tests_outcomes"]) for row in native.values())}
 
 
+def _alpaca_source_records(directory, metadata):
+    """Read native annotations and reference texts without the builder's table operations."""
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    release = raw / layout["release"]
+    reference = json.loads((release / layout["reference"]).read_text())
+    native = {}
+    for path in sorted((release / "results").glob("*/weighted_alpaca_eval_gpt4_turbo/annotations.json")):
+        for position, record in enumerate(json.loads(path.read_text())):
+            native[str(path.relative_to(raw)), position] = record
+    copies = 0
+    for path in sorted((release / "results").glob(
+            "*/weighted_alpaca_eval_gpt4_turbo/weighted_alpaca_eval_gpt4_turbo/annotations.json")):
+        original = json.loads((path.parent.parent / "annotations.json").read_text())
+        augmented = json.loads(path.read_text())
+        _check([{key: value for key, value in row.items() if key != "glm_preference"}
+                for row in augmented], original, "AlpacaEval nested export is the same original judgments")
+        copies += 1
+    _check((len(native), len(reference), copies), (177892, 805, 2), "AlpacaEval complete pinned native release")
+    return native, reference, copies
+
+
+def _alpacaeval(directory, tables, metadata, source_records=None):
+    """Check every native comparison, its fixed opponent, grade and full judge record."""
+    import math
+    from urllib.parse import unquote
+
+    native, reference, copies = (
+        _alpaca_source_records(directory, metadata) if source_records is None else source_records)
+    bank = {row["instruction"]: (position, row) for position, row in enumerate(reference)}
+    _check(len(bank), len(reference), "AlpacaEval unique reference instructions")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    expected_models = {row["generator_2"] for row in native.values()}
+    actual_models = []
+    for subject in subjects.values():
+        features = _features(subject["subject_features_extra"])
+        _check(set(features), {"model_identifier"}, "AlpacaEval reported model identity")
+        _check(subject["harness"], "AlpacaEval 2.0", "AlpacaEval source harness")
+        actual_models.append(unquote(features["model_identifier"]))
+    _check(Counter(actual_models), Counter({model: 1 for model in expected_models}),
+           "AlpacaEval distinct reported generators without alias collapse")
+
+    protocol = dict(metadata["grading"]["verifiers"]["weighted_preference"])
+    layout = metadata["build"]["parameters"]["layout"]
+    protocol["prompt_template"] = (directory / "raw" / layout["release"] / layout["judge_prompt"]).read_text()
+    _check(protocol["judge_model"], "gpt-4-1106-preview", "AlpacaEval judge model")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    for item in items.values():
+        position, original = bank[item["content"]]
+        _check(item["raw_item_id"], f"alpaca_eval:{position}", "AlpacaEval original reference-bank position")
+        _check(_features(item["item_features"]), {"dataset": original["dataset"]}, "AlpacaEval task provenance")
+        criterion = json.loads(item["grading_criterion"])
+        _check(criterion.get("reference_answer"), None, "AlpacaEval reference is not a gold correctness answer")
+        _check(json.loads(criterion["rule"]), {"rule": metadata["grading"]["rule"],
+               "reference_model": "gpt4_1106_preview", "reference_output": original["output"]},
+               "AlpacaEval complete fixed reference and grading rule")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "judge", "AlpacaEval judgment-based verifier")
+        _check(json.loads(verifier["spec"]), protocol, "AlpacaEval full judge prompt and configuration")
+
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items, counts = Counter(), set(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, {"source_file": key[0], "source_row": key[1], "native_record": original},
+               "AlpacaEval complete original record without clipping or invented fields")
+        _check(original["generator_1"], "gpt4_1106_preview", "AlpacaEval original opponent orientation")
+        _check(original["annotator"], "weighted_alpaca_eval_gpt4_turbo", "AlpacaEval native annotator")
+        _check(original.get("input") in (None, ""), True, "AlpacaEval no omitted extra task input")
+        _check(unquote(_features(subjects[response.subject_id]["subject_features_extra"])["model_identifier"]),
+               original["generator_2"], "AlpacaEval correct response-to-generator association")
+        item = items[response.item_id]
+        _check(item["content"], original["instruction"], "AlpacaEval correct response-to-instruction association")
+        _check(bank[original["instruction"]][1]["output"], original["output_1"], "AlpacaEval unchanged fixed opponent output")
+        preference = original["preference"]
+        valid = isinstance(preference, (int, float)) and math.isfinite(preference) and 1 <= preference <= 2
+        if valid:
+            _check(response.response, float(preference) - 1.0, "AlpacaEval exact native soft preference")
+            counts["source_graded"] += 1
+        else:
+            _check(preference is None or (preference == -1 and original.get("raw_completion") is None),
+                   True, "AlpacaEval only reviewed unavailable judgments may lack a grade")
+            _check(pd.isna(response.response), True, "AlpacaEval unavailable or invalid preference remains ungraded")
+            counts["source_ungraded"] += 1
+            counts["source_invalid_preferences"] += preference is not None
+        _check(response.trial, 1, "AlpacaEval one primary annotation per generator and instruction")
+        _check(pd.isna(response.test_condition), True, "AlpacaEval grading protocol belongs to the item")
+        _check(response.interactors, "opponent=gpt4_1106_preview", "AlpacaEval fixed comparison partner")
+        counts["source_identical_outputs"] += original["output_1"] == original["output_2"]
+        seen[key] += 1
+        used_items.add(response.item_id)
+    _check(seen, Counter({key: 1 for key in native}), "AlpacaEval exact census without omitted or duplicated comparisons")
+    _check(len(traces), len(native), "AlpacaEval complete trace associations")
+    _check((len(items), len(used_items)), (len(bank), len(bank)), "AlpacaEval full instruction coverage")
+    counts.update(source_responses=len(native), source_traces=len(native), source_subjects=len(subjects),
+                  source_items=len(bank), source_derived_copies=copies)
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2960,4 +3061,5 @@ def verify_native_results(directory, tables_directory=None):
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
-            "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider}[directory.name](directory, tables, metadata)
+            "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
+            "alpacaeval": _alpacaeval}[directory.name](directory, tables, metadata)
