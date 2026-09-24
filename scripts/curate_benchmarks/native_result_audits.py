@@ -2500,6 +2500,151 @@ def _afrimedqa(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _adaptivestep_source_records(directory, metadata):
+    """Read native JSON lines and use the captured author's grading functions."""
+    import ast
+    import re
+    import runpy
+    from types import SimpleNamespace
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    paths = {key: raw / value for key, value in metadata["build"]["parameters"]["layout"].items()}
+    utility = runpy.run_path(str(paths["math_util"]))
+    tree = ast.parse(paths["math_util"].with_name("eval.py").read_text())
+    functions = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                 and node.name in {"remove_boxed", "process_results"}]
+    _check({node.name for node in functions}, {"remove_boxed", "process_results"}, "AdaptiveStep captured grader functions")
+    author = {"util": SimpleNamespace(**utility)}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), "captured_asprm_answer_checker", "exec"), author)
+    references = {}
+    for record in pq.read_table(paths["gsm_reference"]).to_pylist():
+        reference = re.search(r"####\s*([+-]?\d*[\.,]?\d+)", record["answer"]).group(1)
+        references["gsm8k", record["question"]] = reference
+    with paths["math_reference"].open() as stream:
+        for line in stream:
+            record = json.loads(line)
+            reference = author["remove_boxed"](utility["last_boxed_only_string"](record["solution"]))
+            _check(reference is not None, True, "AdaptiveStep authoritative boxed reference")
+            references["math500", record["problem"]] = reference
+
+    native, definitions, counts, questions = {}, {}, Counter(), set()
+    canonical_aliases, trial_counts = {}, Counter()
+    arrays = ["pred", "math_random_list", "math_hard_list", "math_confidence_list"]
+    for path in sorted(paths["math"].glob("*_testset_bo256.jsonl")):
+        dataset = "gsm8k" if "GSM8k" in path.name else "math500"
+        model = "MetaMath-Llama" if path.name.startswith("Llama31_") else "MetaMath-Mistral"
+        with path.open() as stream:
+            for position, line in enumerate(stream):
+                record = json.loads(line)
+                _check([len(record[key]) for key in arrays], [256] * 4, "AdaptiveStep aligned math samples")
+                reference = references[dataset, record["question"]]
+                original = (re.search(r"####\s*([+-]?\d*[\.,]?\d+)", record["gt_answer"]).group(1)
+                            if dataset == "gsm8k" else author["remove_boxed"](utility["last_boxed_only_string"](record["gt_answer"])))
+                content = record.get("input", record["question"])
+                _check(record["question"] in content, True, "AdaptiveStep full recorded math prompt")
+                origin = "recorded_input" if "input" in record else "released_question"
+                definition = content, reference, dataset, origin, f"{dataset}_{record['idx']}"
+                definitions[definition] = True
+                questions.add((dataset, record["question"]))
+                counts.update(source_pools=1, source_reference_corrections=int(original != reference))
+                context = {key: value for key, value in record.items() if key not in arrays}
+                for offset, completion in enumerate(record["pred"]):
+                    if dataset == "gsm8k":
+                        match = re.search(r"The answer is:\s*([+-]?\d*[\.,]?\d+)", completion)
+                        grade = float(bool(match and match.group(1) == reference))
+                        old_grade = float(bool(match and match.group(1) == original))
+                    else:
+                        grade = float(author["process_results"](completion, reference))
+                        old_grade = float(author["process_results"](completion, original))
+                    key = path.name, position, offset + 1
+                    trace = {"source_file": path.name, "source_row": position, "trial": offset + 1,
+                             "source_record": context, **{name: record[name][offset] for name in arrays},
+                             "original_reference": original, "reference": reference, "original_response": old_grade}
+                    trial_counts[model, definition] += 1
+                    native[key] = model, definition, grade, trial_counts[model, definition], _digest(json.dumps(trace, sort_keys=True, ensure_ascii=False))
+                    counts.update(source_responses=1, source_graded_responses=1, source_successes=int(grade),
+                                  source_original_math_successes=int(old_grade), source_corrected_grades=int(grade != old_grade))
+        counts.update(source_result_files=1)
+
+    for path in sorted(paths["code"].glob("*_eval.jsonl")):
+        dataset = "livecodebench" if "_lcb_" in path.name else "leetcode"
+        orm_path = path.with_name(path.name.replace(".jsonl", "_orm.jsonl"))
+        with path.open() as primary, orm_path.open() as secondary:
+            for position, (line, orm_line) in enumerate(zip(primary, secondary, strict=True)):
+                record, orm = json.loads(line), json.loads(orm_line)
+                _check({key: value for key, value in record.items() if key != "code_confidence_list"},
+                       {key: value for key, value in orm.items() if key != "code_confidence_list"},
+                       "AdaptiveStep PRM/ORM files annotate identical candidates")
+                candidates = record["code"] if dataset == "livecodebench" else record["pred"]
+                _check([len(candidates), len(record["code_confidence_list"]), len(orm["code_confidence_list"])],
+                       [64, 64, 64], "AdaptiveStep final code pool sizes")
+                content = record["prompt_use"] if dataset == "livecodebench" else record["question"]
+                question = record["question_content"] if dataset == "livecodebench" else record["question"]
+                _check(question in content, True, "AdaptiveStep complete code task in recorded input")
+                reference = None if dataset == "livecodebench" else record["answer"]
+                origin = "recorded_input" if dataset == "livecodebench" else "released_question"
+                alias = record["question_id"] if dataset == "livecodebench" else record["task_id"]
+                identity = content, reference, dataset, origin
+                canonical_aliases.setdefault(identity, f"{dataset}_{alias}")
+                definition = *identity, canonical_aliases[identity]
+                definitions[definition] = True
+                questions.add((dataset, alias))
+                context = {key: value for key, value in record.items() if key not in {
+                    "pred", "code", "code_list", "code_confidence_list_pre", "code_confidence_list"}}
+                filename, orm_filename = str(path.relative_to(raw)), str(orm_path.relative_to(raw))
+                for offset, completion in enumerate(candidates):
+                    key = filename, position, offset + 1
+                    trace = {"source_file": filename, "orm_source_file": orm_filename, "source_row": position,
+                             "trial": offset + 1, "source_record": context, "candidate": completion,
+                             "code_confidence_list": record["code_confidence_list"][offset],
+                             "orm_annotation": orm["code_confidence_list"][offset]}
+                    trial_counts["LCD-DS", definition] += 1
+                    native[key] = "LCD-DS", definition, None, trial_counts["LCD-DS", definition], _digest(json.dumps(trace, sort_keys=True, ensure_ascii=False))
+                    counts.update(source_responses=1, source_ungraded_responses=1)
+                counts.update(source_pools=1)
+        counts.update(source_result_files=2)
+    counts.update(source_unique_questions=len(questions), source_prompt_definitions=len(definitions), source_subjects=3)
+    return native, definitions, dict(counts)
+
+
+def _adaptivestep(directory, tables, metadata, source_records=None):
+    native, definitions, counts = (_adaptivestep_source_records(directory, metadata)
+                                   if source_records is None else source_records)
+    _check(len(tables["responses"]), len(native), "AdaptiveStep complete candidate count")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        _check(row.harness, "ASPRM", "AdaptiveStep recorded subject harness")
+        subjects[row.subject_id] = _features(row.subject_features_extra)["model_identifier"]
+    _check(Counter(subjects.values()), Counter({"MetaMath-Llama": 1, "MetaMath-Mistral": 1, "LCD-DS": 1}),
+           "AdaptiveStep policy models, not reward-model identities")
+    items = {}
+    for row in tables["items"].itertuples():
+        features, criterion = _features(row.item_features), json.loads(row.grading_criterion)
+        dataset = features["dataset"]
+        _check(set(features), {"dataset", "prompt_origin"}, "AdaptiveStep item attributes")
+        _check(criterion["rule"], metadata["grading"]["verifiers"][dataset]["rule"], "AdaptiveStep explicit grading rule")
+        spec = json.loads(row.verifier)
+        _check(spec["class"], "exact_matcher", "AdaptiveStep non-LLM verifier")
+        _check(json.loads(spec["spec"]), metadata["grading"]["verifiers"][dataset], "AdaptiveStep grader provenance")
+        items[row.item_id] = row.content, criterion["reference_answer"], dataset, features["prompt_origin"], row.raw_item_id
+    _check(Counter(items.values()), Counter(definitions), "AdaptiveStep complete prompts, references and source aliases")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["trial"]
+        observed = (subjects[row.subject_id], items[row.item_id], None if pd.isna(row.response) else row.response, row.trial,
+                    _digest(json.dumps(trace, sort_keys=True, ensure_ascii=False)))
+        _check(observed, native[key], "AdaptiveStep every candidate/model/task/reference/grade and complete trace")
+        _check(row.test_condition, "dataset=" + items[row.item_id][2], "AdaptiveStep source pool condition")
+        _check(pd.isna(row.interactors), True, "AdaptiveStep no invented interaction context")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "AdaptiveStep every final candidate exactly once")
+    _check(len(traces), len(native), "AdaptiveStep full trace coverage")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2513,4 +2658,5 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
-            "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench}[directory.name](directory, tables, metadata)
+            "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
+            "adaptivestep": _adaptivestep}[directory.name](directory, tables, metadata)

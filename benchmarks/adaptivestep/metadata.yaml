@@ -1,0 +1,142 @@
+benchmark:
+  name: AdaptiveStep candidate pools
+  description: Released math and code candidate solutions used for AdaptiveStep Best-of-N evaluation. The tables
+    measure individual policy-generator attempts, not reward-model selection or token-guided decoding.
+  testing_condition: Preserve 256 math candidates per generator/problem and the 64 final code candidates per problem.
+    Math grades are derived with the authors' answer parser and question-matched reference banks; four swapped Llama
+    MATH500 references are corrected. Original references and original derived grades remain in traces. Code pools
+    have no released execution verdicts, so their responses are null. PRM and ORM files annotate the same code candidates
+    and are not independent runs. Pre-filter code arrays and alternate math step formatting are retained or referenced
+    as source material, not counted as additional evaluated pools. Use the recorded input/prompt when available;
+    otherwise retain the released question without inventing a generation wrapper. Exact generator checkpoint revisions
+    and sampling settings are not recorded.
+  paper_url: https://proceedings.mlr.press/v267/liu25aq.html
+  data_source_url: https://github.com/Lux0926/ASPRM
+  subject_type: model
+  item_type: task
+  license: 'Math candidate release and ASPRM code: unspecified; code candidate release: MIT; reference datasets
+    retain their upstream terms.'
+  citation: 'Liu et al. (2025). AdaptiveStep: Automatically Dividing Reasoning Step through Model Confidence. ICML,
+    PMLR 267:39016–39031.'
+  tags:
+  - math
+  - code
+  - reasoning
+  - best-of-n
+  - process-reward-model
+  modality:
+  - text
+  domain:
+  - mathematics
+  - coding
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Answer fails the specified checker
+      '1': Answer passes the specified checker
+  categorical: true
+  release_date: 2025-02
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      math: math/3e8428e783605f7ebf95b3390acb77b1f0632d29
+      code: code/747691002b84e1eee22f0b93ea7287065b86e938
+      math_util: harness/6682033ba686b7d7fddd13df4cac09347148f42e/evaluation/math/BON/util.py
+      math_reference: references/math500/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be/test.jsonl
+      gsm_reference: references/gsm8k/740312add88f781978c0658806c59bc2815b9866/main/test-00000-of-00001.parquet
+    datasets:
+      Llama31_GSM8k_testset_bo256.jsonl: gsm8k
+      Llama31_MATH500_testset_bo256.jsonl: math500
+      Mistral_GSM8k_testset_bo256.jsonl: gsm8k
+      Mistral_MATH500_testset_bo256.jsonl: math500
+      result_lcb_bo64_eval.jsonl: livecodebench
+      result_lct_bo64_eval.jsonl: leetcode
+    models:
+      Llama31_GSM8k_testset_bo256.jsonl: MetaMath-Llama
+      Llama31_MATH500_testset_bo256.jsonl: MetaMath-Llama
+      Mistral_GSM8k_testset_bo256.jsonl: MetaMath-Mistral
+      Mistral_MATH500_testset_bo256.jsonl: MetaMath-Mistral
+      result_lcb_bo64_eval.jsonl: LCD-DS
+      result_lct_bo64_eval.jsonl: LCD-DS
+    math_patterns:
+      predicted_number: The answer is:\s*([+-]?\d*[\.,]?\d+)
+      reference_number: '####\s*([+-]?\d*[\.,]?\d+)'
+      answer_marker: 'The answer is: '
+sources:
+  upstream:
+  - name: math_results
+    url: https://huggingface.co/datasets/Lux0926/ASPRM-BON-Evaluation-Dataset-Math
+    revision: 3e8428e783605f7ebf95b3390acb77b1f0632d29
+    files:
+    - match: (?:Llama31|Mistral)_(?:GSM8k|MATH500)_testset_bo256\.jsonl
+      path: math/3e8428e783605f7ebf95b3390acb77b1f0632d29/{path}
+  - name: code_results
+    url: https://huggingface.co/datasets/Lux0926/ASPRM-BON-Evaluation-Dataset-Code
+    revision: 747691002b84e1eee22f0b93ea7287065b86e938
+    files:
+    - match: result_lc[bt]_bo64_eval(?:_orm)?\.jsonl|README\.md
+      path: code/747691002b84e1eee22f0b93ea7287065b86e938/{path}
+  - name: harness
+    url: https://github.com/Lux0926/ASPRM
+    revision: 6682033ba686b7d7fddd13df4cac09347148f42e
+    files:
+    - match: readme\.md|evaluation/math/BON/(?:eval|util)\.py|evaluation/code/BON/eval_lc[bt]\.py
+      path: harness/6682033ba686b7d7fddd13df4cac09347148f42e/{path}
+  - name: math_reference
+    url: https://huggingface.co/datasets/HuggingFaceH4/MATH-500
+    revision: 6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be
+    files:
+    - match: test\.jsonl|README\.md
+      path: references/math500/6e4ed1a2a79af7d8630a6b768ec859cb5af4d3be/{path}
+  - name: gsm_reference
+    url: https://huggingface.co/datasets/openai/gsm8k
+    revision: 740312add88f781978c0658806c59bc2815b9866
+    files:
+    - match: main/test-00000-of-00001\.parquet|README\.md
+      path: references/gsm8k/740312add88f781978c0658806c59bc2815b9866/{path}
+  - name: paper
+    url: https://raw.githubusercontent.com/mlresearch/v267/main/assets/liu25aq/liu25aq.pdf
+    revision: 4da75933d38d002f2476c597a8b9f39f894d7c5c36c9f3cc455ced5c1eec5582
+    file: paper/liu25aq.pdf
+    size: 4217240
+    sha256: 4da75933d38d002f2476c597a8b9f39f894d7c5c36c9f3cc455ced5c1eec5582
+grading:
+  verifiers:
+    gsm8k:
+      kind: derived_answer_match
+      source: https://github.com/Lux0926/ASPRM/blob/6682033ba686b7d7fddd13df4cac09347148f42e/evaluation/math/BON/eval.py
+      grade_origin: recomputed_from_released_model_output
+      rule: 'Extract the first numeric match after ''The answer is:'' and compare its captured string exactly with
+        the number after #### in the question-matched GSM8k reference. Preserve the native regex, including its
+        comma handling; no match fails. This is answer parsing, not numeric tolerance or symbolic equivalence.'
+    math500:
+      kind: derived_answer_match
+      source: https://github.com/Lux0926/ASPRM/blob/6682033ba686b7d7fddd13df4cac09347148f42e/evaluation/math/BON/eval.py
+      normalizer: https://github.com/Lux0926/ASPRM/blob/6682033ba686b7d7fddd13df4cac09347148f42e/evaluation/math/BON/util.py
+      grade_origin: recomputed_from_released_model_output
+      rule: 'Use the last ''The answer is: '' segment, cut at the first period-newline, trim whitespace and one
+        final period. Compare with the last boxed answer in the question-matched MATH500 reference solution using
+        the unchanged upstream util.is_equiv normalizer. Missing markers fail. Four swapped source gt_answer values
+        are corrected by exact question matching; original fields and their derived verdicts are retained.'
+    livecodebench:
+      kind: code_execution
+      source: https://github.com/Lux0926/ASPRM/blob/6682033ba686b7d7fddd13df4cac09347148f42e/readme.md
+      grade_origin: not_released
+      evaluation: LiveCodeBench release_v4 custom evaluator
+      rule: The generated program must pass all benchmark test cases. The captured AdaptiveStep candidate files
+        contain no execution verdicts; retain these attempts with response=null rather than inferring success.
+    leetcode:
+      kind: code_execution
+      source: https://github.com/Lux0926/ASPRM/blob/6682033ba686b7d7fddd13df4cac09347148f42e/readme.md
+      grade_origin: not_released
+      evaluation: ASPRM_LCT_Eval LeetCodeTest
+      rule: The generated program must pass the task's LeetCodeDataset tests. The released reference implementation
+        is not an execution verdict; candidate grades remain null because no per-candidate test outcomes are published.
