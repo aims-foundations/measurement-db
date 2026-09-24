@@ -1,0 +1,396 @@
+format_version: 1
+tables:
+  traces:
+    rows: 302354
+    logical_sha256: 4f396f1394f0652ac556dc1d0fb075fb0bf380d354c4e36ce8dd225c598f0f9e
+  subjects:
+    rows: 34
+    logical_sha256: fad17d97e5dcd14cece758626737caa57907985c2c9c45f4e77dd1251652150f
+  responses:
+    rows: 302354
+    logical_sha256: 1bd2fceb092f6a51be6e5f84f44680719f014d92c948aaf695d205a4473da8c7
+  items:
+    rows: 42494
+    logical_sha256: d3c59552f332471c53c94b5a741df18f3e49e45ea9387c7ab1d534354bddf7dc
+  benchmarks:
+    rows: 1
+    logical_sha256: 351c93b615737f09e0cf58db8c665223a384975fa9b4c2e1dcbc85f39c99c1f3
+source_claims:
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 190143
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 21000
+  source_bare_cr_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 1230
+  source_foreign_runs_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 30
+  source_recovered_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 12000
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 302354
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 302354
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 42494
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 34
+  source_target_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 7039
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected: 117
+  source_run_responses:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected:
+      results/BioMistral-7B/BioMistral-7B_mcq_base-prompt_0shot_score-0.0000_3000.csv: 3000
+      results/BioMistral-7B/afrimed-qa-v1_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.5353_3000.csv: 3000
+      results/BioMistral-7B/afrimed-qa-v2.5_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.3806_289.csv: 289
+      results/BioMistral-7B/afrimed-qa-v2_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.4402_3910.csv: 3910
+      results/Llama3-OpenBioLLM-70B/Llama3-OpenBioLLM-70B_mcq_base-prompt_0shot_score-0.7213_3000.csv: 3000
+      results/Llama3-OpenBioLLM-70B/Llama3-OpenBioLLM-70B_mcq_instruct-prompt_0shot_score-0.7280_3000.csv: 3000
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v1_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.6863_3000.csv: 3000
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v2.5_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.6955_289.csv: 289
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v2_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.5862_3910.csv: 3910
+      results/Llama3-OpenBioLLM-8B/Llama3-OpenBioLLM-8B_mcq_base-prompt_0shot_score-0.5193_3000.csv: 3000
+      results/Llama3-OpenBioLLM-8B/Llama3-OpenBioLLM-8B_mcq_instruct-prompt_0shot_score-0.5100_3000.csv: 3000
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v1_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.5327_3000.csv: 3000
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v2.5_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.5363_289.csv: 289
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v2_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.4499_3910.csv: 3910
+      results/Meditron-7B-FT/Meditron-7B-Instruct_mcq_0shot_x28_s_x29_.csv: 3000
+      ? results/Meditron-7B-FT/afrimed-qa-v1_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.5807_3000.csv
+      : 3000
+      ? results/Meditron-7B-FT/afrimed-qa-v2.5_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.4360_289.csv
+      : 289
+      ? results/Meditron-7B-FT/afrimed-qa-v2_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.5102_3910.csv
+      : 3910
+      results/Meta-Llama-3-70B-Instruct/Meta-Llama-3-70B-Instruct_mcq_base-prompt_0shot_score-0.7963_3000.csv: 3000
+      results/Meta-Llama-3-70B-Instruct/Meta-Llama-3-70B-Instruct_mcq_instruct-prompt_0shot_score-0.8037_3000.csv: 3000
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v1_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.8043_3000.csv
+      : 3000
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v2.5_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.7716_289.csv
+      : 289
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v2_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.7379_3910.csv
+      : 3910
+      results/Meta-Llama-3-8B/Meta-Llama-3-8B_mcq_base-prompt_0shot_x28_s_x29__score-0.2739_3000.csv: 3000
+      results/Meta-Llama-3-8B/Meta-Llama-3-8B_mcq_base-prompt__no_exp_0-shot_score_0.6003_3000.csv: 3000
+      results/Meta-Llama-3-8B/afrimed-qa-v2.5_Meta-Llama-3-8B_mcq_base-prompt__0-shot_score_0.6194_289.csv: 289
+      results/Meta-Llama-3-8B/afrimed-qa-v2_Meta-Llama-3-8B_mcq_base-prompt__no_exp_0-shot_score_0.4724_3910.csv: 3910
+      results/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct_mcq_base-prompt_0shot_score-0.6677_3000.csv: 3000
+      results/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct_mcq_instruct-prompt_0shot_score-0.6583_3000.csv: 3000
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__0-shot_score_0.7509_289.csv: 289
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.61892_3910.csv: 3910
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.6933_3000.csv: 3000
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__0-shot_score_0.6159_289.csv: 289
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__no_exp_0-shot_score_0.4847_3910.csv: 3910
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__no_exp_0-shot_score_0.5837_3000.csv: 3000
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_instruct_0shot_x28_s_x29_.csv: 3000
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__0-shot_score_0.6263_289.csv: 289
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__no_exp_0-shot_score_0.5084_3910.csv: 3910
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__no_exp_0-shot_score_0.6100_3000.csv: 3000
+      results/Mixtral-8x7B-Instruct-v0.1/Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt_0shot_score-0.7203_3000.csv: 3000
+      results/Mixtral-8x7B-Instruct-v0.1/Mixtral-8x7B-Instruct-v0.1_mcq_instruct-prompt_0shot_score-0.7047_3000.csv: 3000
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v1_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.7023_3000.csv
+      : 3000
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v2.5_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.6678_289.csv
+      : 289
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v2_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.6033_3910.csv
+      : 3910
+      results/OpenBioLLM-8B-Instruct/OpenBioLLM-8B-Instruct_mcq_instruct_0shot_x28_s_x29_.csv: 3000
+      results/PMC-LLAMA-7B-FT/PMC-Llama-7B-FT_mcq_instruct_prompt_0shot_x28_s_x29_.csv: 3000
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v1_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.5433_3000.csv
+      : 3000
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v2.5_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.3599_289.csv
+      : 289
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v2_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.4629_3910.csv
+      : 3910
+      results/Phi-3-medium-128k-instruct/Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.7520_3000.csv: 3000
+      results/Phi-3-medium-128k-instruct/afrimed-qa-v2.5_Phi-3-medium-128k-instruct_mcq_base-prompt__0-shot_score_0.7405_289.csv: 289
+      ? results/Phi-3-medium-128k-instruct/afrimed-qa-v2_Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6708_3910.csv
+      : 3910
+      results/Phi-3-mini-128k-instruct/Phi-3-mini-128k-instruct_mcq_base-prompt_0shot_x28_s_x29__score-0.0000_3000.csv: 3000
+      results/Phi-3-mini-128k-instruct/Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6813_3000.csv: 3000
+      results/Phi-3-mini-128k-instruct/afrimed-qa-v2.5_Phi-3-mini-128k-instruct_mcq_base-prompt__0-shot_score_0.6298_289.csv: 289
+      ? results/Phi-3-mini-128k-instruct/afrimed-qa-v2_Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.5903_3910.csv
+      : 3910
+      results/claude-3-5-sonnet-20240620/afrimed-qa-v2-5_claude-3-5-sonnet-20240620_mcq_base-prompt__0-shot_score_0.7820_289.csv: 289
+      ? results/claude-3-5-sonnet-20240620/claude-3-5-sonnet-20240620_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8423_3000.csv
+      : 3000
+      ? results/claude-3-5-sonnet-20240620/claude-3-5-sonnet-20240620_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7770_3910.csv
+      : 3910
+      results/claude-3-haiku-20240307/afrimed-qa-v2-5_claude-3-haiku-20240307_mcq_base-prompt__0-shot_score_0.7439_289.csv: 289
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7433_3000.csv: 3000
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.6639_3910.csv: 3910
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_base-prompt_0shot_score-0.7120_3000.csv: 3000
+      results/claude-3-opus-20240229/afrimed-qa-v2-5_claude-3-opus-20240229_mcq_base-prompt__0-shot_score_0.7820_289.csv: 289
+      results/claude-3-opus-20240229/afrimed-qa-v2_claude-3-opus-20240229_mcq_base-prompt__no_exp_0-shot_score_0.7455_3910.csv: 3910
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8110_3000.csv: 3000
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_base-prompt_0shot_score-0.7907_3000.csv: 3000
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_instruct-prompt_0shot_score-0.677_3000.csv: 3000
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_instruct-prompt_3shot_score-0.763_3000.csv: 3000
+      results/claude-3-sonnet-20240229/afrimed-qa-v2-5_claude-3-sonnet-20240229_mcq_base-prompt__0-shot_score_0.6817_289.csv: 289
+      ? results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7330_3000.csv
+      : 3000
+      ? results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.6504_3910.csv
+      : 3910
+      results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_base-prompt_0shot_score-0.6893_3000.csv: 3000
+      results/gemini_pro/afrimed-qa_mcq_instruct_prompt_0shot.csv: 3000
+      results/gemini_pro/gemini_pro_mcq_base_prompt_0shot.csv: 3000
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_0shot.csv: 3000
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_3shot.csv: 3000
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_5shot.csv: 3000
+      results/gemini_ultra/gemini_ultra_mcq_base_prompt_0shot.csv: 3000
+      results/gemma-7b-it/gemma-7b-it_mcq_instruct-prompt_0shot_score-0.0000_3000.csv: 3000
+      results/gpt-3.5-turbo/gpt-3.5-turbo_mcq_base-prompt_0shot_score-0.6830_3000.csv: 3000
+      results/gpt-3.5-turbo-1106/afrimed-qa-v1_gpt-3.5-turbo-1106_mcq_base-prompt__no_exp_0-shot_score_0.6890_3000.csv: 3000
+      results/gpt-3.5-turbo-1106/afrimed-qa-v2-5_gpt-3.5-turbo-1106_mcq_base-prompt__0-shot_score_0.6332_289.csv: 289
+      results/gpt-3.5-turbo-1106/afrimed-qa-v2_gpt-3.5-turbo-1106_mcq_base-prompt__no_exp_0-shot_score_0.5629_3910.csv: 3910
+      results/gpt-4/afrimed-qa-v2-5_gpt-4_mcq_base-prompt__0-shot_score_0.7993_289.csv: 289
+      results/gpt-4/gpt-4_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8247_3000.csv: 3000
+      results/gpt-4/gpt-4_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7568_3910.csv: 3910
+      results/gpt-4/gpt-4_mcq_base-prompt_0shot_score-0.8253_3000.csv: 3000
+      results/gpt-4-turbo/gpt-4-turbo_mcq_base-prompt_0shot_score-0.8243_3000.csv: 3000
+      results/gpt-4o/afrimed-qa-v2-5_gpt-4o_mcq_base-prompt__0-shot_score_0.7924_289.csv: 289
+      results/gpt-4o/gpt-4o_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8500_3000.csv: 3000
+      results/gpt-4o/gpt-4o_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7928_3910.csv: 3910
+      results/gpt-4o/gpt-4o_mcq_base-prompt_0shot_score-0.8277_3000.csv: 3000
+      results/gpt-4o/gpt-4o_mcq_instruct-prompt_0shot_score-0.848_3000.csv: 3000
+      results/gpt-4o/gpt-4o_mcq_instruct-prompt_3shot_score-0.7427_3000.csv: 3000
+      results/gpt-4o-mini/afrimed-qa-v2-5_gpt-4o-mini_mcq_base-prompt__0-shot_score_0.7405_289.csv: 289
+      results/gpt-4o-mini/gpt-4o-mini_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7880_3000.csv: 3000
+      results/gpt-4o-mini/gpt-4o-mini_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7176_3910.csv: 3910
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt_0shot_x28_s_x29__score-0.2713_3000.csv: 3000
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__0-shot_score_0.6713_289.csv: 289
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__no_exp_0-shot_score_0.5726_3910.csv: 3910
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__no_exp_0-shot_score_0.6723_3000.csv: 3000
+      results/llama3-405b-instruct-maas/_afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.7958_289.csv: 289
+      results/llama3-405b-instruct-maas/afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.3010_289.csv: 289
+      results/llama3-405b-instruct-maas/afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.7889_289.csv: 289
+      ? results/llama3-405b-instruct-maas/afrimed-qa-v2_llama3-405b-instruct-maas_mcq_base-prompt__no_exp_0-shot_score_0.7627_3910.csv
+      : 3910
+      results/medlm/afrimed-qa_mcq_instruct_prompt_0shot.csv: 3000
+      results/medlm/afrimed-qa_mcq_instruct_prompt_5shot.csv: 3000
+      results/medlm/medlm_mcq_base_prompt_0shot.csv: 3000
+      results/medpalm2/afrimed-qa_mcq_instruct_prompt_0shot.csv: 3000
+      results/medpalm2/afrimed-qa_mcq_instruct_prompt_5shot.csv: 3000
+      results/medpalm2/medpalm2_mcq_base_prompt_0shot.csv: 3000
+      results/mistral-7b/Mistral-7B-Instruct-v0.2_mcq_instruct-prompt_0shot_x28_s_x29__score-0.2760_3000.csv: 3000
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__0-shot_score_0.6298_289.csv: 289
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6036_3910.csv: 3910
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6803_3000.csv: 3000
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_instruct-prompt_0shot_x28_s_x29__score-0.2886_3000.csv: 3000
+    absolute_tolerance: 0
+  source_run_successes:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/results
+    locator: Native MCQ CSV records, published Phase-1 references and Phase-2 bank, and src/evals/evaluate.py.
+    scope: All attributable MCQ attempts, complete recorded prompts, references, extracted grades and
+      untruncated source records; preserve unavailable grades as null.
+    expected:
+      results/BioMistral-7B/BioMistral-7B_mcq_base-prompt_0shot_score-0.0000_3000.csv: 0
+      results/BioMistral-7B/afrimed-qa-v1_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.5353_3000.csv: 1606
+      results/BioMistral-7B/afrimed-qa-v2.5_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.3806_289.csv: 110
+      results/BioMistral-7B/afrimed-qa-v2_BioMistral-7B_mcq_base-prompt__no_exp_0-shot_score_0.4402_3910.csv: 1721
+      results/Llama3-OpenBioLLM-70B/Llama3-OpenBioLLM-70B_mcq_base-prompt_0shot_score-0.7213_3000.csv: 2164
+      results/Llama3-OpenBioLLM-70B/Llama3-OpenBioLLM-70B_mcq_instruct-prompt_0shot_score-0.7280_3000.csv: 2184
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v1_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.6863_3000.csv: 2059
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v2.5_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.6955_289.csv: 201
+      results/Llama3-OpenBioLLM-70B/afrimed-qa-v2_Llama3-OpenBioLLM-70B_mcq_base-prompt__no_exp_0-shot_score_0.5862_3910.csv: 2292
+      results/Llama3-OpenBioLLM-8B/Llama3-OpenBioLLM-8B_mcq_base-prompt_0shot_score-0.5193_3000.csv: 1558
+      results/Llama3-OpenBioLLM-8B/Llama3-OpenBioLLM-8B_mcq_instruct-prompt_0shot_score-0.5100_3000.csv: 1530
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v1_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.5327_3000.csv: 1598
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v2.5_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.5363_289.csv: 155
+      results/Llama3-OpenBioLLM-8B/afrimed-qa-v2_Llama3-OpenBioLLM-8B_mcq_base-prompt__no_exp_0-shot_score_0.4499_3910.csv: 1759
+      results/Meditron-7B-FT/Meditron-7B-Instruct_mcq_0shot_x28_s_x29_.csv: 0
+      ? results/Meditron-7B-FT/afrimed-qa-v1_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.5807_3000.csv
+      : 1742
+      ? results/Meditron-7B-FT/afrimed-qa-v2.5_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.4360_289.csv
+      : 126
+      ? results/Meditron-7B-FT/afrimed-qa-v2_meditron_output_dir-24_04_26_10_51_02_mcq_base-prompt__no_exp_0-shot_score_0.5102_3910.csv
+      : 1995
+      results/Meta-Llama-3-70B-Instruct/Meta-Llama-3-70B-Instruct_mcq_base-prompt_0shot_score-0.7963_3000.csv: 2389
+      results/Meta-Llama-3-70B-Instruct/Meta-Llama-3-70B-Instruct_mcq_instruct-prompt_0shot_score-0.8037_3000.csv: 2411
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v1_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.8043_3000.csv
+      : 2413
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v2.5_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.7716_289.csv
+      : 223
+      ? results/Meta-Llama-3-70B-Instruct/afrimed-qa-v2_Meta-Llama-3-70B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.7379_3910.csv
+      : 2885
+      results/Meta-Llama-3-8B/Meta-Llama-3-8B_mcq_base-prompt_0shot_x28_s_x29__score-0.2739_3000.csv: 1905
+      results/Meta-Llama-3-8B/Meta-Llama-3-8B_mcq_base-prompt__no_exp_0-shot_score_0.6003_3000.csv: 1801
+      results/Meta-Llama-3-8B/afrimed-qa-v2.5_Meta-Llama-3-8B_mcq_base-prompt__0-shot_score_0.6194_289.csv: 179
+      results/Meta-Llama-3-8B/afrimed-qa-v2_Meta-Llama-3-8B_mcq_base-prompt__no_exp_0-shot_score_0.4724_3910.csv: 1847
+      results/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct_mcq_base-prompt_0shot_score-0.6677_3000.csv: 2003
+      results/Meta-Llama-3-8B-Instruct/Meta-Llama-3-8B-Instruct_mcq_instruct-prompt_0shot_score-0.6583_3000.csv: 1975
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__0-shot_score_0.7509_289.csv: 217
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.61892_3910.csv: 2420
+      results/Meta-Llama-3.1-8B-Instruct/Meta-Llama-3.1-8B-Instruct_mcq_base-prompt__no_exp_0-shot_score_0.6933_3000.csv: 2080
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__0-shot_score_0.6159_289.csv: 178
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__no_exp_0-shot_score_0.4847_3910.csv: 1895
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_base-prompt__no_exp_0-shot_score_0.5837_3000.csv: 1751
+      results/Mistral-7B-Instruct-v02/Mistral-7B-Instruct-v0.2_mcq_instruct_0shot_x28_s_x29_.csv: 0
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__0-shot_score_0.6263_289.csv: 181
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__no_exp_0-shot_score_0.5084_3910.csv: 1988
+      results/Mistral-7B-Instruct-v03/Mistral-7B-Instruct-v0.3_mcq_base-prompt__no_exp_0-shot_score_0.6100_3000.csv: 1830
+      results/Mixtral-8x7B-Instruct-v0.1/Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt_0shot_score-0.7203_3000.csv: 2161
+      results/Mixtral-8x7B-Instruct-v0.1/Mixtral-8x7B-Instruct-v0.1_mcq_instruct-prompt_0shot_score-0.7047_3000.csv: 2114
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v1_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.7023_3000.csv
+      : 2107
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v2.5_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.6678_289.csv
+      : 193
+      ? results/Mixtral-8x7B-Instruct-v0.1/afrimed-qa-v2_Mixtral-8x7B-Instruct-v0.1_mcq_base-prompt__no_exp_0-shot_score_0.6033_3910.csv
+      : 2359
+      results/OpenBioLLM-8B-Instruct/OpenBioLLM-8B-Instruct_mcq_instruct_0shot_x28_s_x29_.csv: 0
+      results/PMC-LLAMA-7B-FT/PMC-Llama-7B-FT_mcq_instruct_prompt_0shot_x28_s_x29_.csv: 0
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v1_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.5433_3000.csv
+      : 1630
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v2.5_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.3599_289.csv
+      : 104
+      ? results/PMC-LLAMA-7B-FT/afrimed-qa-v2_pmc_llama_output_dir-24_04_19_21_25_33_mcq_base-prompt__no_exp_0-shot_score_0.4629_3910.csv
+      : 1810
+      results/Phi-3-medium-128k-instruct/Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.7520_3000.csv: 2256
+      results/Phi-3-medium-128k-instruct/afrimed-qa-v2.5_Phi-3-medium-128k-instruct_mcq_base-prompt__0-shot_score_0.7405_289.csv: 214
+      ? results/Phi-3-medium-128k-instruct/afrimed-qa-v2_Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6708_3910.csv
+      : 2623
+      results/Phi-3-mini-128k-instruct/Phi-3-mini-128k-instruct_mcq_base-prompt_0shot_x28_s_x29__score-0.0000_3000.csv: 0
+      results/Phi-3-mini-128k-instruct/Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6813_3000.csv: 2044
+      results/Phi-3-mini-128k-instruct/afrimed-qa-v2.5_Phi-3-mini-128k-instruct_mcq_base-prompt__0-shot_score_0.6298_289.csv: 182
+      ? results/Phi-3-mini-128k-instruct/afrimed-qa-v2_Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.5903_3910.csv
+      : 2308
+      results/claude-3-5-sonnet-20240620/afrimed-qa-v2-5_claude-3-5-sonnet-20240620_mcq_base-prompt__0-shot_score_0.7820_289.csv: 226
+      ? results/claude-3-5-sonnet-20240620/claude-3-5-sonnet-20240620_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8423_3000.csv
+      : 2527
+      ? results/claude-3-5-sonnet-20240620/claude-3-5-sonnet-20240620_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7770_3910.csv
+      : 3038
+      results/claude-3-haiku-20240307/afrimed-qa-v2-5_claude-3-haiku-20240307_mcq_base-prompt__0-shot_score_0.7439_289.csv: 215
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7433_3000.csv: 2230
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.6639_3910.csv: 2596
+      results/claude-3-haiku-20240307/claude-3-haiku-20240307_mcq_base-prompt_0shot_score-0.7120_3000.csv: 2136
+      results/claude-3-opus-20240229/afrimed-qa-v2-5_claude-3-opus-20240229_mcq_base-prompt__0-shot_score_0.7820_289.csv: 226
+      results/claude-3-opus-20240229/afrimed-qa-v2_claude-3-opus-20240229_mcq_base-prompt__no_exp_0-shot_score_0.7455_3910.csv: 2915
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8110_3000.csv: 2433
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_base-prompt_0shot_score-0.7907_3000.csv: 2372
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_instruct-prompt_0shot_score-0.677_3000.csv: 2031
+      results/claude-3-opus-20240229/claude-3-opus-20240229_mcq_instruct-prompt_3shot_score-0.763_3000.csv: 2289
+      results/claude-3-sonnet-20240229/afrimed-qa-v2-5_claude-3-sonnet-20240229_mcq_base-prompt__0-shot_score_0.6817_289.csv: 197
+      ? results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7330_3000.csv
+      : 2199
+      ? results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.6504_3910.csv
+      : 2543
+      results/claude-3-sonnet-20240229/claude-3-sonnet-20240229_mcq_base-prompt_0shot_score-0.6893_3000.csv: 2068
+      results/gemini_pro/afrimed-qa_mcq_instruct_prompt_0shot.csv: 2052
+      results/gemini_pro/gemini_pro_mcq_base_prompt_0shot.csv: 1893
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_0shot.csv: 2392
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_3shot.csv: 2424
+      results/gemini_ultra/afrimed-qa_mcq_instruct_prompt_5shot.csv: 2419
+      results/gemini_ultra/gemini_ultra_mcq_base_prompt_0shot.csv: 2401
+      results/gemma-7b-it/gemma-7b-it_mcq_instruct-prompt_0shot_score-0.0000_3000.csv: 0
+      results/gpt-3.5-turbo/gpt-3.5-turbo_mcq_base-prompt_0shot_score-0.6830_3000.csv: 2049
+      results/gpt-3.5-turbo-1106/afrimed-qa-v1_gpt-3.5-turbo-1106_mcq_base-prompt__no_exp_0-shot_score_0.6890_3000.csv: 2067
+      results/gpt-3.5-turbo-1106/afrimed-qa-v2-5_gpt-3.5-turbo-1106_mcq_base-prompt__0-shot_score_0.6332_289.csv: 183
+      results/gpt-3.5-turbo-1106/afrimed-qa-v2_gpt-3.5-turbo-1106_mcq_base-prompt__no_exp_0-shot_score_0.5629_3910.csv: 2201
+      results/gpt-4/afrimed-qa-v2-5_gpt-4_mcq_base-prompt__0-shot_score_0.7993_289.csv: 231
+      results/gpt-4/gpt-4_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8247_3000.csv: 2474
+      results/gpt-4/gpt-4_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7568_3910.csv: 2959
+      results/gpt-4/gpt-4_mcq_base-prompt_0shot_score-0.8253_3000.csv: 2476
+      results/gpt-4-turbo/gpt-4-turbo_mcq_base-prompt_0shot_score-0.8243_3000.csv: 2473
+      results/gpt-4o/afrimed-qa-v2-5_gpt-4o_mcq_base-prompt__0-shot_score_0.7924_289.csv: 229
+      results/gpt-4o/gpt-4o_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.8500_3000.csv: 2550
+      results/gpt-4o/gpt-4o_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7928_3910.csv: 3100
+      results/gpt-4o/gpt-4o_mcq_base-prompt_0shot_score-0.8277_3000.csv: 2483
+      results/gpt-4o/gpt-4o_mcq_instruct-prompt_0shot_score-0.848_3000.csv: 2544
+      results/gpt-4o/gpt-4o_mcq_instruct-prompt_3shot_score-0.7427_3000.csv: 2228
+      results/gpt-4o-mini/afrimed-qa-v2-5_gpt-4o-mini_mcq_base-prompt__0-shot_score_0.7405_289.csv: 214
+      results/gpt-4o-mini/gpt-4o-mini_mcq_afrimed-qa-v1_base-prompt__no_exp_0-shot_score_0.7880_3000.csv: 2364
+      results/gpt-4o-mini/gpt-4o-mini_mcq_afrimed-qa-v2_base-prompt__no_exp_0-shot_score_0.7176_3910.csv: 2806
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt_0shot_x28_s_x29__score-0.2713_3000.csv: 1982
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__0-shot_score_0.6713_289.csv: 194
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__no_exp_0-shot_score_0.5726_3910.csv: 2239
+      results/jsl-med-llama-8b/JSL-MedLlama-3-8B-v2.0_mcq_base-prompt__no_exp_0-shot_score_0.6723_3000.csv: 2017
+      results/llama3-405b-instruct-maas/_afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.7958_289.csv: 230
+      results/llama3-405b-instruct-maas/afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.3010_289.csv: 87
+      results/llama3-405b-instruct-maas/afrimed-qa-v2.5_llama3-405b-instruct-maas_mcq_base-prompt__0-shot_score_0.7889_289.csv: 228
+      ? results/llama3-405b-instruct-maas/afrimed-qa-v2_llama3-405b-instruct-maas_mcq_base-prompt__no_exp_0-shot_score_0.7627_3910.csv
+      : 2982
+      results/medlm/afrimed-qa_mcq_instruct_prompt_0shot.csv: 2106
+      results/medlm/afrimed-qa_mcq_instruct_prompt_5shot.csv: 2098
+      results/medlm/medlm_mcq_base_prompt_0shot.csv: 2113
+      results/medpalm2/afrimed-qa_mcq_instruct_prompt_0shot.csv: 2226
+      results/medpalm2/afrimed-qa_mcq_instruct_prompt_5shot.csv: 2253
+      results/medpalm2/medpalm2_mcq_base_prompt_0shot.csv: 2241
+      results/mistral-7b/Mistral-7B-Instruct-v0.2_mcq_instruct-prompt_0shot_x28_s_x29__score-0.2760_3000.csv: 1653
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__0-shot_score_0.6298_289.csv: 182
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6036_3910.csv: 2360
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6803_3000.csv: 2041
+      results/phi3-mini-4k/Phi-3-mini-4k-instruct_mcq_instruct-prompt_0shot_x28_s_x29__score-0.2886_3000.csv: 1982
+    absolute_tolerance: 0

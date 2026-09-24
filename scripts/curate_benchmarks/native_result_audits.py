@@ -2169,6 +2169,165 @@ def _bertaqa(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _afrimedqa_csv(path):
+    """Read CSV independently, retaining the one bare-CR answer continuation."""
+    import csv
+    import sys
+
+    csv.field_size_limit(sys.maxsize)
+    with path.open(newline="") as stream:
+        records = iter(csv.reader(stream))
+        header = next(records)
+        header = [name or f"Unnamed: {index}" for index, name in enumerate(header)]
+        result = []
+        for values in records:
+            if len(values) != len(header):
+                continuation = next(records)
+                _check((len(header), len(values), len(continuation)), (14, 12, 3), "AfriMed-QA known CSV continuation shape")
+                _check(values[0], "7276cbf1ad6d7295806602d5f4e6f3007543597eed7050cc437e00ae5384936a", "AfriMed-QA bare-CR source task")
+                _check(continuation, [" E.  Ovulation can be confirmed by measurement of LH on day 14..", "E", "False"], "AfriMed-QA original answer continuation")
+                values[-1] += "\r" + continuation[0]
+                values.extend(continuation[1:])
+            result.append(dict(zip(header, values, strict=True)))
+    return result
+
+
+def _afrimedqa_source_records(directory, metadata):
+    """Reconcile native MCQ records, reference banks, duplicate files and nulls."""
+    import re
+
+    parameters = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    root = raw / parameters["layout"]["release"]
+    phase1_rows = _afrimedqa_csv(root / parameters["layout"]["phase1_reference"])
+    phase1 = {row["sample_id"]: row for row in phase1_rows}
+    questions = {" ".join(row["question"].split()): row for row in phase1_rows}
+    _check((len(phase1), len(questions)), (3000, 3000), "AfriMed-QA unique Phase-1 references")
+    phase2 = {row["sample_id"]: row for row in _afrimedqa_csv(root / parameters["layout"]["phase2_reference"])}
+    experts = {key for key, row in phase2.items() if (row["question_type"], row["tier"], row["split"]) == ("mcq", "expert", "test")}
+    medqa = _afrimedqa_csv(root / parameters["layout"]["medqa_reference"])
+    foreign = {value for row in medqa for value in (row["sample_id"], row["question"])}
+    _check(len(experts), 3910, "AfriMed-QA released expert question bank")
+    for path, reason in parameters["excluded_results"].items():
+        if reason.startswith("Byte-identical copy of "):
+            other = reason.removeprefix("Byte-identical copy of ")
+            _check((root / path).read_bytes(), (root / other).read_bytes(), "AfriMed-QA duplicate source bytes")
+    ambiguous = [path for path, reason in parameters["excluded_results"].items() if not reason.startswith("Byte-identical copy of ")]
+    fingerprints = []
+    for path in ambiguous:
+        fingerprints.append(sorted((r["sample_id"], r["model_prompt"], r["outputs"], r["preds"], r["correct"])
+                                   for r in _afrimedqa_csv(root / path)))
+    _check(len(fingerprints), 3, "AfriMed-QA reviewed ambiguous file group")
+    _check(fingerprints[0] == fingerprints[1] == fingerprints[2], True, "AfriMed-QA cross-model copied prompts and outputs")
+
+    native, definitions, trials = {}, {}, Counter()
+    counts, files, models, tasks = Counter(), {}, set(), set()
+    for path in sorted((root / "results").glob("*/*mcq*.csv")):
+        relative = str(path.relative_to(root))
+        if relative in parameters["excluded_results"]:
+            continue
+        rows = _afrimedqa_csv(path)
+        recovered = "sample_id" not in rows[0]
+        if not recovered and {row["sample_id"] for row in rows} <= foreign:
+            counts["source_foreign_runs_excluded"] += 1
+            continue
+        if recovered:
+            task_rows = []
+            for row in rows:
+                question = row["model_prompt"].split("###Question: ", 1)[1].split("\n###Options:", 1)[0]
+                reference = questions[" ".join(question.split())]
+                options = row["model_prompt"].split("\n###Options:\n", 1)[1].split("\n\n\n### Response:", 1)[0]
+                parts = re.split(r"(?m)^([A-E])\. ", options)
+                actual = {parts[index]: " ".join(parts[index + 1].split()) for index in range(1, len(parts), 2)}
+                for letter in "ABCDE":
+                    expected = " ".join(reference.get(letter, "").split())
+                    value = actual.get(letter, "")
+                    _check(value == expected or (not expected and value.upper() == "N/A"), True,
+                           "AfriMed-QA all options in recovered output-only prompts")
+                task_rows.append(reference)
+            counts["source_recovered_ungraded"] += len(rows)
+        else:
+            task_rows = rows
+        ids = {row["sample_id"] for row in task_rows}
+        _check(len(ids), len(rows), "AfriMed-QA unique tasks in each native run")
+        if ids == set(phase1):
+            bank = "afrimedqa-v1"
+        elif ids == experts:
+            bank = "afrimedqa-v2"
+        else:
+            _check((len(ids), len(ids & experts), ids <= set(phase2)), (289, 160, True), "AfriMed-QA overlapping Phase-2 subset")
+            bank = "afrimedqa-v2.5"
+        successes = 0
+        for position, (row, reference) in enumerate(zip(rows, task_rows, strict=True)):
+            task, gold = reference["sample_id"], reference["answer"]
+            if task in phase1:
+                _check(gold, phase1[task]["answer"], "AfriMed-QA Phase-1 reference letter")
+            else:
+                option = phase2[task]["correct_answer"].split(",")[0].strip()
+                _check(gold, "ABCDE"[int(option.removeprefix("option")) - 1], "AfriMed-QA Phase-2 reference letter")
+            grade_text = row.get("correct", "")
+            _check(grade_text in ("", "True", "False", "true", "false", "1", "0"), True, "AfriMed-QA finite native grade")
+            grade = None if grade_text == "" else int(grade_text in ("True", "true", "1"))
+            if grade is not None:
+                _check(grade, int(row["answer"] == row["preds"]), "AfriMed-QA native exact-letter scoring")
+            definition = row["model_prompt"], gold
+            definitions.setdefault(definition, task)
+            model = path.parent.name
+            condition = "source=" + bank
+            trial_key = model, definition, condition
+            trials[trial_key] += 1
+            key = str(path.relative_to(raw)), position
+            trace = {"source_file": key[0], "source_row": position, "record": row}
+            native[key] = model, definition, grade, condition, trials[trial_key], _digest(json.dumps(trace, ensure_ascii=False, sort_keys=True))
+            models.add(model)
+            tasks.add(task)
+            successes += grade == 1
+            counts["source_successes"] += grade == 1
+            counts["source_ungraded"] += grade is None
+            counts["source_bare_cr_answers"] += "\r" in row.get("outputs", "")
+        files[relative] = {"responses": len(rows), "successes": successes}
+    counts.update(source_responses=len(native), source_traces=len(native), source_items=len(definitions),
+                  source_subjects=len(models), source_target_questions=len(tasks), source_result_files=len(files))
+    return native, definitions, {**counts,
+        "source_run_responses": {path: values["responses"] for path, values in files.items()},
+        "source_run_successes": {path: values["successes"] for path, values in files.items()}}
+
+
+def _afrimedqa(directory, tables, metadata, source_records=None):
+    native, definitions, counts = _afrimedqa_source_records(directory, metadata) if source_records is None else source_records
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        _check(row.harness, "AfriMed-QA", "AfriMed-QA source harness")
+        features = _features(row.subject_features_extra)
+        _check(set(features), {"model_identifier"}, "AfriMed-QA original model label")
+        subjects[row.subject_id] = features["model_identifier"]
+    _check(Counter(subjects.values()), Counter({row[0]: 1 for row in native.values()}), "AfriMed-QA every model, including fine-tuned variants")
+    for row in tables["items"].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        definition = row.content, criterion["reference_answer"]
+        _check(row.raw_item_id, definitions[definition], "AfriMed-QA original question alias")
+        _check(criterion, {"reference_answer": definition[1], "rule": metadata["grading"]["rule"]}, "AfriMed-QA reference and grading rule")
+        _check(_features(row.item_features), {"lang": "en"}, "AfriMed-QA item language")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "exact_matcher", "AfriMed-QA grading method")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["released_accuracy"], "AfriMed-QA upstream extraction and comparison")
+        items[row.item_id] = definition
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), "AfriMed-QA complete full-prompt definitions")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        observed = (subjects[row.subject_id], items[row.item_id], None if pd.isna(row.response) else row.response,
+                    row.test_condition, row.trial, _digest(json.dumps(trace, ensure_ascii=False, sort_keys=True)))
+        _check(observed, native[key], "AfriMed-QA every model/prompt/reference/grade/trial and complete source record")
+        _check(pd.isna(row.interactors), True, "AfriMed-QA no invented interactors")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "AfriMed-QA every native attempt exactly once")
+    _check(len(tables["traces"]), len(native), "AfriMed-QA complete trace coverage")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2182,4 +2341,4 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
-            "bertaqa": _bertaqa}[directory.name](directory, tables, metadata)
+            "bertaqa": _bertaqa, "afrimedqa": _afrimedqa}[directory.name](directory, tables, metadata)
