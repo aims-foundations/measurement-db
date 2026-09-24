@@ -1911,6 +1911,145 @@ def _biggen(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _wcf_source_records(directory, metadata):
+    """Read native JSON directly, independently of the builder's joins and melt."""
+    parameters = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    root = raw / parameters["layout"]["release"]
+    fields = {"is_relevant": "relevant", "is_factual": "factual", "has_what_and_why": "what_and_why",
+              "has_what_to_do": "what_to_do", "is_comprehensible": "comprehensible",
+              "has_out_of_scope": "out_of_scope", "is_direct": "directness", "feedback_quality": "quality"}
+    _check(parameters["metrics"], fields, "WCF eight released rating dimensions")
+    _check(parameters["conditions"], {"temperature": "0"}, "WCF paper section 4.1 inference temperature")
+    _check(parameters["subject_features"], {"model_identifier": "gpt-4o-2024-11-20",
+           "harness": "Annotating Errors WCF", "response_format": "json_object"}, "WCF reported model settings")
+    generations, ratings, expected, display_changes = {}, {}, {}, set()
+    totals, per_source, histogram = Counter(), Counter(), Counter()
+    for source, filename in parameters["generations"].items():
+        path = root / filename
+        for position, row in enumerate(_jsonl(path)):
+            key = source, row["annotation_instance_id"]
+            _check(key in generations, False, "WCF unique source-system/task generation")
+            _check(row["fb_source"], source, "WCF native generation system")
+            _check(set(row["input_prompt"]), {"system", "user"}, "WCF full recorded model input")
+            _check(all(isinstance(v, str) and v for v in row["input_prompt"].values()), True, "WCF nonempty system/user prompts")
+            generations[key] = row, str(path.relative_to(raw)), position
+    path = root / parameters["layout"]["ratings"]
+    native = json.loads(path.read_text())
+    for position, row in enumerate(native):
+        if row["fb_source"] == "human":
+            continue
+        key = row["user_id"], row["rater_task_id"]
+        _check(key in ratings, False, "WCF composite native rater/task identity")
+        generation_key = row["fb_source"], row["annotation_instance_id"]
+        generation = generations[generation_key][0]
+        _check(row["user_id"] in metadata["grading"]["verifiers"]["human_ratings"]["raters"], True, "WCF identified teacher")
+        _check(row["instance_text"]["feedback"], generation["feedback_explanation"] + " " + generation["feedback_suggestion"],
+               "WCF exact association between generated and rated feedback")
+        _check(row["annotator_id"], generation["annotator_id"], "WCF oracle error-annotation author")
+        for field in ("source", "corrected"):
+            if row["instance_text"][field] != generation[field]:
+                _check(row["instance_text"][field], generation[field].replace("[NONE] ", "").replace(" [NONE]", ""),
+                       "WCF documented rater-display removal of insertion/deletion markers")
+                display_changes.add((*generation_key, field))
+        ratings[key] = row, str(path.relative_to(raw)), position
+        for field, dimension in fields.items():
+            value = row[field]
+            if field == "is_direct":
+                _check(value in ("Direct", "Hint", "N/A"), True, "WCF nominal directness category")
+                grade = {"Direct": 0, "Hint": 1, "N/A": 2}[value]
+            elif field == "feedback_quality":
+                _check(type(value) is int and 1 <= value <= 5, True, "WCF integer teacher quality rating")
+                grade = value
+            else:
+                _check(type(value) is bool, True, "WCF native boolean criterion")
+                grade = int(value)
+            expected[*key, field] = grade
+            totals[row["fb_source"] + "/" + dimension] += grade
+            histogram[field + "/" + str(grade)] += 1
+        per_source[row["fb_source"]] += 1
+    cells = Counter((row[0]["fb_source"], row[0]["annotation_instance_id"]) for row in ratings.values())
+    _check(set(cells.values()), {2}, "WCF two released teachers per rated generation")
+    unrated = [row for key, (row, _, _) in generations.items() if key not in cells]
+    _check({row["fb_source"] for row in unrated}, {"template_system"}, "WCF unrated-template scope")
+    reported = {
+        "our_tags": [1.000, .970, .992, 1.000, .970, .008, 4.487],
+        "ERRANT_tags": [.997, .967, .992, 1.000, .982, .003, 4.475],
+        "EXPECT_tags": [.997, .975, .990, 1.000, .975, .005, 4.500],
+        "tagless": [.995, .970, .997, 1.000, .982, .005, 4.495],
+        "template_system": [.977, .921, .944, .994, .980, .023, 4.184],
+    }
+    means = {}
+    dimensions = [value for value in fields.values() if value != "directness"]
+    for source, values in reported.items():
+        for dimension, value in zip(dimensions, values):
+            key = source + "/" + dimension
+            means[key] = round(totals[key] / per_source[source], 3)
+            _check(means[key], value, "WCF paper Table 3 rounded native mean: " + key)
+    counts = {"source_ratings": len(ratings), "source_responses": len(expected), "source_traces": len(expected),
+              "source_items": len(expected), "source_subjects": len(per_source), "source_rated_generations": len(cells),
+              "source_tasks": len({key[1] for key in cells}), "source_unrated_generations": len(unrated),
+              "source_unrated_empty_outputs": sum(not row["feedback_explanation"] and not row["feedback_suggestion"] for row in unrated),
+              "source_human_reference_ratings": sum(row["fb_source"] == "human" for row in native),
+              "source_changed_display_fields": len(display_changes), "source_grade_histograms": dict(histogram),
+              "paper_table3_means": means}
+    return generations, ratings, expected, counts
+
+
+def _annotating_errors_wcf(directory, tables, metadata, source_records=None):
+    generations, ratings, expected, counts = (_wcf_source_records(directory, metadata)
+                                             if source_records is None else source_records)
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        source = features["feedback_strategy"]
+        _check(row.display_name, parameters["subjects"][source], "WCF source-system label")
+        _check(row.harness, "Annotating Errors WCF", "WCF evaluation harness")
+        _check(features, {"feedback_strategy": source, "model_identifier": "gpt-4o-2024-11-20",
+                          "response_format": "json_object"}, "WCF exact GPT revision and prompting strategy")
+        subjects[row.subject_id] = source
+    _check(Counter(subjects.values()), Counter({key: 1 for key in parameters["subjects"]}), "WCF distinct five-system panel")
+    protocol = metadata["grading"]["verifiers"]["human_ratings"]
+    for row in tables["items"].itertuples():
+        source, task, dimension, rater = row.raw_item_id.split(":")
+        generation = generations[source, task][0]
+        _check(json.loads(row.content), generation["input_prompt"], "WCF exact system/user prompt including all examples")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, {"reference_answer": None, **protocol["criteria"][dimension]}, "WCF full criterion and scale")
+        direction = "unordered" if dimension == "directness" else "lower_is_better" if dimension == "out_of_scope" else "higher_is_better"
+        values = [0, 1, 2] if dimension == "directness" else [1, 2, 3, 4, 5] if dimension == "quality" else [0, 1]
+        _check((criterion["response_scale"]["values"], criterion["response_scale"]["direction"]),
+               (values, direction), "WCF criterion-specific rating categories and preference direction")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], verifier["judge"], verifier["judged_by"]), ("judge", rater, "human"), "WCF teacher identity in grading")
+        _check(json.loads(verifier["spec"]), protocol, "WCF captured rating protocol")
+        _check(_features(row.item_features), {"annotation_instance_id": task, "original_id": generation["original_id"],
+               "cefr_level": generation["cefr_level"], "lang": "en"}, "WCF exact task aliases and learner level")
+        items[row.item_id] = source, task, dimension, rater
+    _check(len(items), len(expected), "WCF distinct prompt/criterion/teacher definitions")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        native = trace["rating_record"]
+        key = native["user_id"], native["rater_task_id"], trace["score_field"]
+        original, filename, position = ratings[key[:2]]
+        generation, generation_file, generation_position = generations[original["fb_source"], original["annotation_instance_id"]]
+        _check(trace, {"rating_source_file": filename, "rating_source_row": position, "rating_record": original,
+                       "generation_source_file": generation_file, "generation_source_row": generation_position,
+                       "generation_record": generation, "score_field": key[2]}, "WCF complete native records and source positions")
+        _check((subjects[row.subject_id], items[row.item_id], row.response, row.trial, row.test_condition),
+               (original["fb_source"], (original["fb_source"], original["annotation_instance_id"],
+                parameters["metrics"][key[2]], original["user_id"]), expected[key], 1, "temperature=0"),
+               "WCF model/task/criterion/teacher association and unchanged native rating")
+        _check(pd.isna(row.interactors), True, "WCF no invented interacting agent")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in expected}), "WCF every released AI-feedback rating exactly once")
+    _check(len(traces), len(expected), "WCF full trace coverage")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -1923,4 +2062,4 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
-            "biggen": _biggen}[directory.name](directory, tables, metadata)
+            "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf}[directory.name](directory, tables, metadata)
