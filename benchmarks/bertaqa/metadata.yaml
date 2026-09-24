@@ -1,0 +1,91 @@
+benchmark:
+  name: BertaQA
+  description: Released API-model responses to parallel English and Basque trivia questions about local Basque culture and global topics.
+  testing_condition: >-
+    Import all twelve released five-shot result files for six API models. Preserve the full system
+    instruction, five question/answer demonstrations and target question for each call; different
+    demonstrations create distinct prompt variants of the same question. English and Basque each
+    contain 4,756 target records. Grades are the authors' strict comparison of the first response
+    text with the correct option letter, without stripping or extracting text. Retain all native API
+    records, including non-letter failures. Published scripts specify temperature 0, OpenAI seed 42
+    and Anthropic max_tokens 1; per-request settings are not separately recorded in result rows.
+    Open-weight model results in the reviewed GitHub tree are aggregate summaries and are outside
+    this item-level import.
+  paper_url: https://arxiv.org/abs/2406.07302
+  data_source_url: https://github.com/juletx/BertaQA
+  subject_type: model
+  item_type: question
+  license: 'Question dataset: CC-BY-4.0; GitHub code/results repository: MIT.'
+  citation: >-
+    Etxaniz, Azkune, Soroa, Lopez de Lacalle and Artetxe (2024).
+    BertaQA: How Much Do Language Models Know About Local Culture? NeurIPS 2024.
+  tags: [trivia, multiple_choice, multilingual, cultural, qa]
+  modality: [text]
+  domain: [cultural, multilingual, knowledge]
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    direction: higher_is_better
+    meanings: {'0': Response text does not exactly match the correct letter, '1': Response text exactly matches the correct letter}
+  categorical: true
+  release_date: 2024-06
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: source_review/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+      questions: source_review/a3d29442379599e7dfff5bdd2f18289eb3d7519e
+    providers:
+      claude-3-haiku-20240307: anthropic
+      claude-3-opus-20240229: anthropic
+      claude-3-sonnet-20240229: anthropic
+      gpt-3.5-turbo-0125: openai
+      gpt-4-0125-preview: openai
+      gpt-4-0613: openai
+    question_files:
+      en: eustrivia_elhuyar_zuzenduta.jsonl
+      eu: eustrivia_zuzenduta.jsonl
+    subject_features:
+      harness: BertaQA
+    prompt:
+      shots: '5'
+    answer_letters:
+      '0': A
+      '1': B
+      '2': C
+    openai_request:
+      temperature: '0'
+      seed: '42'
+    anthropic_request:
+      temperature: '0'
+      max_tokens: '1'
+grading:
+  rule: >-
+    Compare the complete first response text with the correct option letter A, B or C by exact,
+    case-sensitive equality. Do not strip whitespace, extract letters or repair invalid answers.
+  verifiers:
+    released_accuracy:
+      kind: published_exact_letter_match
+      openai_source: https://github.com/juletx/BertaQA/blob/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/openai/evaluate.py
+      anthropic_source: https://github.com/juletx/BertaQA/blob/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/anthropic/evaluate.py
+      response_selectors:
+        openai: choices[0].message.content
+        anthropic: content[0].text
+      comparison: The selected response text must equal answer2letter[item.answer] exactly.
+      imported_field: correct
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/juletx/BertaQA
+    revision: 6d610d06377277691f16cdb7c31fb1f0fca4b5ce
+    files:
+    - match: (?:LICENSE|README\.md|(?:openai|anthropic)/(?:evaluate\.py|.*\.sh)|analysis/.*\.ipynb|results/[^/]+/bertaqa_(?:en|eu)_5-shot\.jsonl)
+      path: source_review/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/{path}
+  - name: questions
+    url: https://huggingface.co/datasets/HiTZ/BertaQA
+    revision: a3d29442379599e7dfff5bdd2f18289eb3d7519e
+    files:
+    - match: (?:README\.md|eustrivia_zuzenduta\.jsonl|eustrivia_elhuyar_zuzenduta\.jsonl)
+      path: source_review/a3d29442379599e7dfff5bdd2f18289eb3d7519e/{path}

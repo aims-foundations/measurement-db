@@ -2050,6 +2050,125 @@ def _annotating_errors_wcf(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _bertaqa_source_records(directory, metadata):
+    """Match native API records with the independent question bank and scoring rule."""
+    parameters = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    banks, prompts, native, definitions = {}, {}, {}, {}
+    counts, group_sizes, correct_groups = Counter(), Counter(), Counter()
+    for language, filename in parameters["question_files"].items():
+        rows = _jsonl(raw / parameters["layout"]["questions"] / filename)
+        banks[language] = {row["id"]: row for row in rows}
+        _check(len(banks[language]), len(rows), "BertaQA unique question-bank IDs")
+        prompts[language] = {}
+        for row in rows:
+            question, answer = ("Galdera", "Erantzuna") if language == "eu" else ("Question", "Answer")
+            text = f"{question}: {row['question']}\nA: {row['candidates'][0]}\nB: {row['candidates'][1]}\nC: {row['candidates'][2]}\n{answer}:"
+            gold = "ABC"[row["answer"]]
+            if text in prompts[language]:
+                _check(prompts[language][text], gold, "BertaQA no conflicting references for identical questions")
+            prompts[language][text] = gold
+    api_ids, model_names = set(), set()
+    files = sorted((raw / parameters["layout"]["results"]).glob("*/bertaqa_??_5-shot.jsonl"))
+    for path in files:
+        model, language = path.parent.name, path.stem.split("_")[1]
+        provider = parameters["providers"][model]
+        seen_ids = set()
+        for position, row in enumerate(_jsonl(path)):
+            _check(row["id"] in seen_ids, False, "BertaQA unique target per result file")
+            seen_ids.add(row["id"])
+            reference = banks[language][row["id"]]
+            _check({key: row[key] for key in reference}, reference, "BertaQA question/options/reference and original annotations")
+            messages = ([{"role": "system", "content": row["system"]}] if provider == "anthropic" else []) + row["messages"]
+            _check([message["role"] for message in messages], ["system", *(["user", "assistant"] * 5), "user"],
+                   "BertaQA system instruction, five demonstrations and target")
+            _check(messages[0]["content"], "Respond always with a single letter: A, B or C.", "BertaQA saved system instruction")
+            question, answer = ("Galdera", "Erantzuna") if language == "eu" else ("Question", "Answer")
+            target = f"{question}: {row['question']}\nA: {row['candidates'][0]}\nB: {row['candidates'][1]}\nC: {row['candidates'][2]}\n{answer}:"
+            _check(messages[-1]["content"], target, "BertaQA exact target prompt")
+            for index in range(1, 11, 2):
+                _check(prompts[language][messages[index]["content"]], messages[index + 1]["content"], "BertaQA native few-shot reference")
+            output = row["response"]
+            _check(output["model"], model, "BertaQA exact returned model identifier")
+            _check(output["id"] in api_ids, False, "BertaQA unique recorded API response")
+            api_ids.add(output["id"])
+            text = output["content"][0]["text"] if provider == "anthropic" else output["choices"][0]["message"]["content"]
+            gold = "ABC"[row["answer"]]
+            _check(type(row["correct"]) is bool and row["correct"] == (text == gold), True, "BertaQA native exact-letter grade")
+            definition = json.dumps({"messages": messages, "reference": gold}, ensure_ascii=False, sort_keys=True)
+            definitions.setdefault(definition, (row, language))
+            native[str(path.relative_to(raw)), position] = row, model, language, definition
+            model_names.add(model)
+            group = model + "/" + language + "/" + row["group"]
+            group_sizes[group] += 1
+            correct_groups[group] += row["correct"]
+            counts["source_nonletter_outputs"] += text not in ("A", "B", "C")
+            counts["source_successes"] += row["correct"]
+            counts["source_anthropic_traces"] += provider == "anthropic"
+        _check(seen_ids, set(banks[language]), "BertaQA complete language-specific task coverage")
+    reported = {
+        "gpt-3.5-turbo-0125": [55.08, 82.40, 47.25, 66.22],
+        "gpt-4-0613": [69.88, 91.43, 62.94, 85.91],
+        "gpt-4-0125-preview": [72.17, 91.68, 69.46, 89.21],
+        "claude-3-haiku-20240307": [58.71, 84.16, 58.21, 79.85],
+        "claude-3-sonnet-20240229": [58.33, 86.41, 56.13, 83.24],
+        "claude-3-opus-20240229": [71.91, 91.85, 71.32, 90.89],
+    }
+    percentages = {}
+    for model, expected in reported.items():
+        groups = [(language, group) for language in ("en", "eu") for group in ("Euskal gaiak", "Gai orokorrak")]
+        for (language, group), value in zip(groups, expected):
+            key = model + "/" + language + "/" + group
+            percentages[key] = round(100 * correct_groups[key] / group_sizes[key], 2)
+            _check(percentages[key], value, "BertaQA paper Tables 2 and 4 accuracy: " + key)
+    counts.update(source_responses=len(native), source_traces=len(native), source_items=len(definitions),
+                  source_subjects=len(model_names), source_result_files=len(files),
+                  source_language_tasks=sum(len(bank) for bank in banks.values()))
+    return native, definitions, {**counts, "source_correct_by_group": dict(correct_groups), "paper_accuracy_percent": percentages}
+
+
+def _bertaqa(directory, tables, metadata, source_records=None):
+    native, definitions, counts = _bertaqa_source_records(directory, metadata) if source_records is None else source_records
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        _check(row.harness, "BertaQA", "BertaQA evaluation harness")
+        _check(_features(row.subject_features_extra), {"model_identifier": row.display_name,
+               "api_provider": parameters["providers"][row.display_name]}, "BertaQA dated model identifier and API provider")
+        subjects[row.subject_id] = row.display_name
+    _check(Counter(subjects.values()), Counter({key: 1 for key in parameters["providers"]}), "BertaQA complete six-model panel")
+    for row in tables["items"].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        messages = json.loads(row.content)
+        definition = json.dumps({"messages": messages, "reference": criterion["reference_answer"]}, ensure_ascii=False, sort_keys=True)
+        original, language = definitions[definition]
+        items[row.item_id] = definition
+        _check(row.raw_item_id, f"{language}-{original['id']}", "BertaQA language and original question alias")
+        _check(criterion, {"reference_answer": "ABC"[original["answer"]], "rule": metadata["grading"]["rule"]}, "BertaQA gold letter and strict scoring rule")
+        _check(_features(row.item_features), {"lang": language, "category": original["category"], "group": original["group"],
+               "difficulty": str(original["difficulty"]), "shot": "5"}, "BertaQA original question characteristics")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "exact_matcher", "BertaQA deterministic grading")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["released_accuracy"], "BertaQA upstream response selectors")
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), "BertaQA every distinct full prompt and reference")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original, model, language, definition = native[key]
+        settings = {"temperature": "0", "max_tokens": "1"} if model.startswith("claude-") else {"temperature": "0", "seed": "42"}
+        _check(trace, {"source_file": key[0], "source_row": key[1], "record": original, "published_request_settings": settings},
+               "BertaQA complete native API response, usage, cost, prompt and published request settings")
+        _check((subjects[row.subject_id], items[row.item_id], row.response, row.trial, row.test_condition),
+               (model, definition, int(original["correct"]), 1, "temperature=0"), "BertaQA native model/prompt/grade association")
+        _check(pd.isna(row.interactors), True, "BertaQA no invented interaction participants")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "BertaQA every native result exactly once")
+    _check(len(traces), len(native), "BertaQA full OpenAI and Anthropic trace coverage")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -2062,4 +2181,5 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
-            "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf}[directory.name](directory, tables, metadata)
+            "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
+            "bertaqa": _bertaqa}[directory.name](directory, tables, metadata)

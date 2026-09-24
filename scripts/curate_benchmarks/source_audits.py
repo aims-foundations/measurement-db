@@ -758,3 +758,4 @@ SOURCE_AUDITS["critic_discernment_game"] = verify_native_results
 SOURCE_AUDITS["brace"] = verify_native_results
 SOURCE_AUDITS["biggen"] = verify_native_results
 SOURCE_AUDITS["annotating_errors_wcf"] = verify_native_results
+SOURCE_AUDITS["bertaqa"] = verify_native_results
