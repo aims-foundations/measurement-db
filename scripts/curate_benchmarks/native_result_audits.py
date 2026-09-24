@@ -12,6 +12,178 @@ from measurement_db.scripts.curate_benchmarks.batch3_audits import (
 )
 
 
+def _agc_source_records(directory, metadata):
+    """Read the native rows independently of the builder's DataFrame joins."""
+    import csv
+    import math
+    import random
+    from zipfile import ZipFile
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    paths = {name: raw / value for name, value in metadata["build"]["parameters"]["layout"].items()}
+    native, lookup, prompts, panels = {}, {}, {}, {}
+    for path in sorted((paths["release"] / "generations/prompts").glob("*.parquet")):
+        for row in pq.read_table(path).to_pylist():
+            key = path.stem, row["instance_id"]
+            _check(key not in prompts, True, "AGC unique source prompt key")
+            prompts[key] = row["prompt"]
+    for path in sorted((paths["release"] / "generations").glob("*/*/*.parquet")):
+        for position, row in enumerate(pq.read_table(path).to_pylist()):
+            key = str(path.relative_to(raw)), position
+            measurement = row["benchmark"], row["model"], row["instance_id"]
+            _check(measurement not in lookup, True, "AGC unique native model/component/item")
+            if row["canonical_score"] is not None:
+                _check(math.isfinite(row["canonical_score"]), True, "AGC finite native statistic")
+            native[key], lookup[measurement] = row, key
+    for row in pq.read_table(paths["release"] / "analysis/jrt_complete_ratings.parquet").to_pylist():
+        source = lookup[row["benchmark"], row["model"], row["item_id"]]
+        key = source, row["rater"]
+        _check(key not in panels, True, "AGC unique original panel judgment")
+        _check(math.isfinite(row["score"]), True, "AGC finite original panel judgment")
+        panels[key] = row
+
+    # The exported IRFL prompts omit their multimedia fields. Reconstruct the
+    # source's exact text, seeded option order and bytes independently.
+    restored, golds, images = {}, {}, {}
+    with (paths["irfl"] / "idiom_detection_task.csv").open() as stream:
+        bank = list(csv.DictReader(stream))
+    with ZipFile(paths["irfl"] / "IRFL_images.zip") as archive:
+        for index, row in enumerate(bank):
+            task = f"idiom-detection-task_{index}"
+            correct = json.loads(row["answer"])[0]
+            order = [correct] + json.loads(row["distractors"])
+            random.Random(f"idiom-detection-task:{index}:{row['phrase']}").shuffle(order)
+            golds["irfl", task] = "ABCD"[order.index(correct)]
+            definition = json.loads(row["definition"])[0]
+            text = (f'Choose the image that best visualizes the meaning of the figurative expression: "{row["phrase"]}"\n\n'
+                    f"Definition: {definition}\n\nSelect exactly one option and answer with a single letter: A, B, C, or D.\n\n")
+            elements = [{"content_type": "text/plain", "text": text}]
+            for letter, image in zip("ABCD", order, strict=True):
+                filename = f"images/{image}.jpeg"
+                elements.extend([{"content_type": "text/plain", "text": f"\n{letter})"},
+                                 {"content_type": "image/jpeg", "location": filename}])
+                images[filename] = archive.read(filename)
+            elements.append({"content_type": "text/plain", "text": "\n\nAnswer:"})
+            restored["irfl", task] = {"multimedia_elements": elements}
+    with (paths["analobench"] / "AnaloBench-T1-Subset-S1.csv").open() as stream:
+        for index, row in enumerate(csv.DictReader(stream)):
+            golds["analobench", f"id{index}"] = row["Label"]
+    with ZipFile(paths["moh_x"]) as archive:
+        import io
+        with archive.open("data/MOH-X/MOH-X_formatted_svo_cleaned.csv") as handle:
+            for index, row in enumerate(csv.DictReader(io.TextIOWrapper(handle))):
+                golds["moh_x", f"id{index}"] = "Yes" if row["label"] == "1" else "No"
+    _check((len(native), len(panels), len({row["model"] for row in native.values()}),
+            len({row["benchmark"] for row in native.values()})),
+           (267018, 182924, 83, 67), "AGC full released generation/panel coverage")
+    return native, prompts, panels, restored, golds, images
+
+
+def _agc_bench(directory, tables, metadata, source_records=None):
+    """Check every output against the immutable generation and rater records."""
+    import math
+    import re
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, prompts, panels, restored, golds, images = (
+        _agc_source_records(directory, metadata) if source_records is None else source_records)
+    protocols = metadata["grading"]["verifiers"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        original = _features(row.subject_features_extra)["model_identifier"]
+        _check(row.harness, "AGC-Bench/HELM", "AGC subject harness")
+        subjects[row.subject_id] = original
+    _check(Counter(subjects.values()), Counter({row["model"]: 1 for row in native.values()}), "AGC exact source model labels")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    checked_items, seen, counts = set(), Counter(), Counter()
+    invalid_bands = {"arastories": (1, 5), "future_ideas": (1, 5), "poetmt": (1, 5),
+                     "rpgbench": (1, 5), "showerthoughts": (1, 6)}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        source_key = trace["source_file"], trace["source_row"]
+        original = native[source_key]
+        _check(trace["generation"], original, "AGC complete native generation record without rounding or truncation")
+        judge = trace["panel_rating"]
+        rater = judge["rater"] if judge is not None else ""
+        key = source_key, rater
+        benchmark, task = original["benchmark"], original["instance_id"]
+        if judge is not None:
+            _check(judge, panels[key], "AGC original individual judge record")
+            grade, status = judge["score"], "released_grade"
+            if benchmark == "cpers" and not 1 <= grade <= 5:
+                grade, status = None, "invalid_rating_preserved_in_trace"
+            protocol = "panel_" + benchmark
+            counts["source_panel_judgments"] += 1
+        else:
+            grade = original["canonical_score"]
+            status = "not_released" if grade is None else "released_grade"
+            if benchmark == "story_quality":
+                grade, status = None, "non_grade_statistic"
+            elif grade is not None and benchmark in invalid_bands:
+                low, high = invalid_bands[benchmark]
+                if not low <= grade <= high:
+                    grade, status = None, "invalid_rating_preserved_in_trace"
+            protocol = "canonical_" + benchmark
+            counts["source_native_attempts"] += 1
+        _check(trace["grade_status"], status, "AGC explicit missing/invalid/non-grade distinction")
+        _check(None if pd.isna(row.response) else row.response, grade, "AGC unmodified native grade or explicitly unavailable grade")
+        _check(subjects[row.subject_id], original["model"], "AGC response-model association")
+        _check(row.trial, 1, "AGC one retained attempt per source model/task/grading protocol")
+        _check(row.test_condition, "source_run=" + original["source_run_dir"], "AGC retained run provenance")
+        _check(pd.isna(row.interactors), True, "AGC no invented interactors")
+        counts["source_graded_observations"] += grade is not None
+        counts["source_ungraded_observations"] += grade is None
+        counts["source_invalid_ratings"] += status == "invalid_rating_preserved_in_trace"
+        counts["source_non_grade_statistics"] += status == "non_grade_statistic"
+        item = items[row.item_id]
+        features = _features(item.item_features)
+        _check(features["component_dataset"], benchmark, "AGC response-component association")
+        _check(features["grading_channel"], protocol, "AGC native versus panel protocol")
+        criterion = json.loads(item.grading_criterion)
+        verifier = json.loads(item.verifier)
+        _check(verifier.get("judge"), metadata["build"]["parameters"]["panel_raters"].get(rater), "AGC exact judge identity belongs to item")
+        _check(json.loads(verifier["spec"]), protocols[protocol]["implementation"], "AGC matching grading implementation")
+        _check(criterion["response_scale"], json.loads(canonical_response_scale(protocols[protocol]["response_scale"])), "AGC effective grading scale")
+        if (benchmark, task) in golds:
+            _check(criterion["reference_answer"], golds[benchmark, task], "AGC pinned task-bank reference")
+        if benchmark == "irfl":
+            _check(json.loads(item.content), restored[benchmark, task], "AGC complete reconstructed multimodal stimulus")
+            if judge is None:
+                option = re.search(r"\b([ABCD])\b", original["completion"] or "")
+                predicted = option.group(1) if option else None
+                _check(grade, float(predicted == golds[benchmark, task]), "AGC every IRFL grade agrees with shuffled image reference")
+                counts["source_irfl_verified_attempts"] += 1
+        else:
+            _check(item.content, prompts[benchmark, task], "AGC complete recorded prompt")
+        if benchmark == "analobench" and judge is None:
+            match = re.search(r"(?:\:\s)?([A-D])(?:\.|\s|$)", original["completion"] or "", re.IGNORECASE)
+            expected = .25 if match is None else float(match.group(1).upper() == golds[benchmark, task])
+            _check(grade, expected, "AGC all AnaloBench grades including unparsed-option partial credit")
+            counts["source_partial_credit_attempts"] += grade == .25
+        if row.item_id not in checked_items:
+            _check(criterion["rule"], protocols[protocol]["rule"], "AGC grading rule")
+            if benchmark == "irfl":
+                links = json.loads(item.asset_manifest)
+                expected_paths = [part["location"] for part in restored[benchmark, task]["multimedia_elements"] if part["content_type"] == "image/jpeg"]
+                _check([link["path"] for link in links], expected_paths, "AGC all image choices in their presented order")
+                for link in links:
+                    _check(assets[link["asset_id"]]["data"], images[link["path"]], "AGC original image bytes")
+            checked_items.add(row.item_id)
+        seen[key] += 1
+    expected = Counter({(key, ""): 1 for key in native})
+    expected.update({key: 1 for key in panels})
+    _check(seen, expected, "AGC every native attempt and individual judgment exactly once")
+    _check(len(traces), len(expected), "AGC complete trace associations")
+    _check(checked_items, set(items), "AGC no unused task definitions")
+    counts.update(source_responses=len(expected), source_traces=len(traces), source_subjects=len(subjects),
+                  source_component_datasets=67, source_assets=len(assets), source_items=len(items))
+    _check((counts["source_invalid_ratings"], counts["source_non_grade_statistics"]), (121, 4150), "AGC reviewed grading corrections")
+    return dict(counts)
+
+
 def _jsonl(path):
     return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
 
@@ -2341,4 +2513,4 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
-            "bertaqa": _bertaqa, "afrimedqa": _afrimedqa}[directory.name](directory, tables, metadata)
+            "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench}[directory.name](directory, tables, metadata)

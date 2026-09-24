@@ -1,0 +1,1883 @@
+benchmark:
+  name: AGC-Bench
+  description: Released model attempts and individual creativity judgments across the AGC-Bench component datasets.
+  testing_condition: Import the pinned generation corpus, retaining native scores, missing grades, complete
+    outputs and individual panel ratings. Join the fixed prompt banks; reconstruct IRFL's multimodal stimulus
+    from its pinned task bank and scenario, verified against every recorded IRFL grade. Native canonical statistics
+    and panel judgments define separate grading protocols. Aggregate dataset_z, calibrated JRT targets and
+    distilled AGC-Judge predictions remain trace metadata. Known invalid ratings and non-grade statistics are
+    flagged in traces and have null responses. Exact API configurations and native judge identities are not
+    fully recorded; source run labels are preserved without inventing settings.
+  paper_url: https://arxiv.org/abs/2607.01152
+  data_source_url: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+  subject_type: model
+  item_type: task
+  license: CC-BY-4.0 (AGC-Bench release); component input licenses remain applicable
+  tags:
+  - creativity
+  - meta-benchmark
+  - helm
+  modality:
+  - text
+  - image
+  domain:
+  - reasoning
+  - nlp_task
+  multi_single_turn: single_turn
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2026-07
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: source_review/30918045d5c1cf318e698c73469400de2251b9e6
+      analobench: references/analobench/58c09414e35f38dd010e7cc87d3e2a5d24f151cc
+      fig_qa: references/fig_qa/b29ec2faf6ef73d634db9757f8741dee68f6c874
+      humor_transfer: references/humor_transfer/643ceefc17441e56cff66f57c03b13615545d42b
+      nyt_connections: references/nyt_connections/a10f47fd3ed3dd3db04f760373941d06fcd42ca0
+      irfl: references/irfl/b94fb4fe1fb52e524dba595d00add901671a2251
+      munch: references/munch/5b78a540705661f49fda693e504250d4a1fc4516
+      pun_eval: references/pun_eval/932693e23269269f323f9d385596ae1e54f939bc
+      chinese_homophonic_puns: references/chinese_homophonic_puns/432a8f0d141f02aa9182ef3aeea441fcd0305533
+      lcc_metaphor: references/lcc_metaphor/48b0f7adb97dc6c9e4e8bcc02bd4b83d4b6b2219
+      slang_generation: references/slang_generation/33ce86f469655dd48f781fc1bba2593033798583
+      ttcw: references/ttcw/3d029879df6878f611363db88cc02d465699bc51
+      arn: references/arn/dbc75b190f775e4819465582f755e0683051a0a19c13b2eee8b3e4e48ee7680e/dataset.xlsx
+      moh_x: references/moh_x/b5aca53416deeeec5f137559cdb2ffa3d7d49da440b50edb3f87d10411047f4e/moh_x.zip
+    templates:
+      moh_x: 'Is the word "{verb}" used metaphorically in the following sentence?
+
+
+        Sentence: {sentence}
+
+
+        Answer (Yes or No):'
+      munch: 'Which of the given options can replace the highlighted word in the given sentence without altering
+        the sentence''s meaning?
+
+        Sentence: {sentence}
+
+        Option A: {a}
+
+        Option B: {b}
+
+        Option C: Both Option A and Option B
+
+        Option D: Neither Option A nor Option B
+
+        Correct answer: Option'
+      nyt_connections: 'Find groups of four items that share something in common. Output them in the following
+        format: four total lines. On each line, there should be four comma-separated items. No additional text
+        (like group titles or descriptions) should be in the output. Also, there should not be anything in
+        your output before or after the solution.
+
+
+        Words: {words}
+
+
+        Answer:'
+      chinese_homophonic_puns: '你现在的任务是从下面的笑话中找出其中幽默来源的那一个词语。当你无法找到时请输出未知，否则只输出该词语，不要有其他内容。
+
+
+        笑话：{text}
+
+        答案：'
+      lcc_metaphor: 'Is the word "{word}" used metaphorically in the following sentence?
+
+
+        Sentence: {sentence}
+
+
+        Answer (Yes or No):'
+      analobench: "Which of the following is the most analogous story to the target story?\n\nNote: Only generate\
+        \ the index without any additional text. \n\nTarget Story:\n{sentence}\n\nOptions:\n{options}\n\nAnswer:"
+      fig_qa: '{startphrase}
+
+
+        Which interpretation is correct?
+
+        A. {ending1}
+
+        B. {ending2}
+
+        Answer:'
+      irfl: 'Choose the image that best visualizes the meaning of the figurative expression: "{phrase}"
+
+
+        Definition: {definition}
+
+
+        Select exactly one option and answer with a single letter: A, B, C, or D.
+
+
+        '
+    prefixes:
+      moh_x: 'Respond with only one word: Yes or No.
+
+        '
+      munch: 'Choose the single best answer. Respond with only one letter: A, B, C, or D.
+
+        '
+    panel_raters:
+      gemini: google/gemini-3-flash-preview
+      grok: x-ai/grok-4.1-fast
+      gpt41mini: openai/gpt-4.1-mini
+    subject_features:
+      harness: AGC-Bench/HELM
+grading:
+  rule: Preserve the selected native measurement and its declared interpretation. A missing or invalid grade
+    never becomes a failure or an aggregate score.
+  verifiers:
+    canonical_analobench:
+      metric: accuracy
+      rule: Parse the first A-D option with the upstream regex. Give 1 for the reference option, 0 for a different
+        option, and 0.25 when no option is parsed.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 0.25
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/analobench_run_specs.py
+        metric_classes:
+        - metrics.analobench_t1_metric.AnaloBenchT1Metric
+        imported_field: canonical_score
+        canonical_metric: accuracy
+      grade_policy: validate
+    canonical_arastories:
+      metric: fluency
+      rule: Judge smoothness and naturalness of the Arabic story, including grammar, vocabulary and sentence
+        structure, on the declared 1-5 fluency scale.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/arastories_run_specs.py
+        metric_classes:
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: fluency
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_arena_hard_creative:
+      metric: arena_hard_instance_score
+      rule: Average the candidate's parsed pairwise battle scores against the released baseline and multiply
+        by 100; wins, ties and losses contribute 1, 0.5 and 0 before averaging.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/arena_hard_creative_run_specs.py
+        metric_classes:
+        - metrics.arena_hard_pairwise_metric.ArenaHardPairwiseMetric
+        imported_field: canonical_score
+        canonical_metric: arena_hard_instance_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_arn:
+      metric: arn_accuracy
+      rule: Extract the selected narrative option and compare it with the released correct_answer (1 or 2).
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/arn_run_specs.py
+        metric_classes:
+        - metrics.arn_metric.ARNMetric
+        imported_field: canonical_score
+        canonical_metric: arn_accuracy
+      grade_policy: validate
+    canonical_brainteaser:
+      metric: brainteaser_all_overall_accuracy
+      rule: The selected statistic is overall BrainTeaser accuracy. Its corpus-level value is not substituted
+        for missing per-instance grades.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/brainteaser_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.brainteaser_metric.BrainteaserMetric
+        imported_field: canonical_score
+        canonical_metric: brainteaser_all_overall_accuracy
+      grade_policy: validate
+    canonical_c3_crosstalk:
+      metric: bleu_2
+      rule: Use the selected BLEU-2 statistic against the released reference crosstalk. Missing per-instance
+        scores remain null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/c3_crosstalk_run_specs.py
+        metric_classes:
+        - metrics.c3_crosstalk_metric.C3CrosstalkMetric
+        imported_field: canonical_score
+        canonical_metric: bleu_2
+      grade_policy: validate
+    canonical_chinese_homophonic_puns:
+      metric: exact_match_accuracy
+      rule: Extract the word responsible for the Chinese homophonic joke and apply the released exact-match
+        parser against punchline.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/chinese_homophonic_puns_run_specs.py
+        metric_classes:
+        - metrics.chinese_homophonic_puns_metric.ChineseHomophonicPunsMetric
+        imported_field: canonical_score
+        canonical_metric: exact_match_accuracy
+      grade_policy: validate
+    canonical_conceptual_design:
+      metric: conceptual_design_novelty
+      rule: Judge novelty of the generated design under the source's 0-2 rubric. The release's selected canonical
+        statistic is absent at the item level; independent panel judgments are retained separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 2
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/conceptual_design_run_specs.py
+        metric_classes:
+        - metrics.conceptual_design_metric.ConceptualDesignMetric
+        imported_field: canonical_score
+        canonical_metric: conceptual_design_novelty
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_cpers:
+      metric: cpers_elaboration
+      rule: Use the judge's average of the three 1-5 elaboration questions about vocabulary, imagery and emotion
+        in the generated Persian sentence.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/cpers_run_specs.py
+        metric_classes:
+        - metrics.cpers_metric.CPersMetric
+        imported_field: canonical_score
+        canonical_metric: cpers_elaboration
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_creatset:
+      metric: creatset_pairwise_loss_rate
+      rule: Record candidate_loss=1 when the pairwise judge's verdict is 2, otherwise 0. Zero also includes
+        an unparsed verdict and must not be interpreted as an assured win.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: lower_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/creatset_run_specs.py
+        metric_classes:
+        - metrics.creatset_pairwise_metric.CreatSetPairwiseMetric
+        imported_field: canonical_score
+        canonical_metric: creatset_pairwise_loss_rate
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_crowd_vote:
+      metric: marketing_creativity_judge_originality
+      rule: Judge originality of the generated marketing response using the declared 1-5 rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/crowd_vote_run_specs.py
+        metric_classes:
+        - metrics.crowd_vote_metric.CrowdVoteMetric
+        imported_field: canonical_score
+        canonical_metric: marketing_creativity_judge_originality
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_cue_word_story:
+      metric: llm_judge_effectiveness
+      rule: Judge effectiveness of the story generated from the supplied cue words using the declared 1-5 rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/cue_word_story_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.cue_word_story_metric.CueWordStoryMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: llm_judge_effectiveness
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_data_narrative:
+      metric: bert_score
+      rule: Use the released BERTScore comparison between the generated narrative and its reference. Keep its
+        native numeric scale without imposing a probability range.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/data_narrative_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: bert_score
+      grade_policy: validate
+    canonical_eqbench_creative_writing_v3:
+      metric: creative_score_0_20
+      rule: Use the EQBench creative-writing annotator's creative_score_0_20, preserving its 0-20 scale and
+        fractional rubric aggregation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 20
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/eqbench_creative_writing_v3_run_specs.py
+        metric_classes:
+        - metrics.eqbench_creative_writing_v3_metric.EQBenchCreativeWritingV3Metric
+        imported_field: canonical_score
+        canonical_metric: creative_score_0_20
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_fann_or_flop:
+      metric: overall_score
+      rule: Use the released annotator's overall story score on its 0-5 scale, including the upstream zero
+        fallback.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/fann_or_flop_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.fann_or_flop_metric.FannOrFlopMetric
+        imported_field: canonical_score
+        canonical_metric: overall_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_fig_qa:
+      metric: exact_match
+      rule: Compare the selected A/B interpretation with the reference label using HELM's exact_match statistic;
+        retain the full few-shot prompt.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/fig_qa_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: exact_match
+      grade_policy: validate
+    canonical_future_ideas:
+      metric: llm_judge_novelty
+      rule: Judge novelty of the generated future scientific or technological idea on the declared 1-5 rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/future_ideas_run_specs.py
+        metric_classes:
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: llm_judge_novelty
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_futuregen:
+      metric: rouge_l
+      rule: Use reference-overlap ROUGE-L on the generated future-news text.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/futuregen_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        - metrics.futuregen_similarity_metric.FutureGenSimilarityMetric
+        imported_field: canonical_score
+        canonical_metric: rouge_l
+      grade_policy: validate
+    canonical_grapheval_ai_researcher:
+      metric: f1_macro
+      rule: Use GraphEval macro F1 for research decisions. No corpus-level value is assigned to an individual
+        ungraded attempt.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/grapheval_ai_researcher_run_specs.py
+        metric_classes:
+        - metrics.grapheval_decision_metric.GraphEvalDecisionMetric
+        imported_field: canonical_score
+        canonical_metric: f1_macro
+      grade_policy: validate
+    canonical_grapheval_iclr:
+      metric: recall_macro
+      rule: Use GraphEval macro recall for ICLR decisions. No corpus-level value is assigned to an individual
+        ungraded attempt.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/grapheval_iclr_run_specs.py
+        metric_classes:
+        - metrics.grapheval_decision_metric.GraphEvalDecisionMetric
+        imported_field: canonical_score
+        canonical_metric: recall_macro
+      grade_policy: validate
+    canonical_grapheval_review_advisor:
+      metric: recall_macro
+      rule: Use GraphEval macro recall for review-advisor decisions. No corpus-level value is assigned to an
+        individual ungraded attempt.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/grapheval_review_advisor_run_specs.py
+        metric_classes:
+        - metrics.grapheval_decision_metric.GraphEvalDecisionMetric
+        imported_field: canonical_score
+        canonical_metric: recall_macro
+      grade_policy: validate
+    canonical_historical_analogy:
+      metric: historical_analogy_pass_at_1
+      rule: Use the historical-analogy pass-at-one implementation; missing per-instance values remain null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/historical_analogy_run_specs.py
+        metric_classes:
+        - metrics.historical_analogy_metric.HistoricalAnalogyMetric
+        imported_field: canonical_score
+        canonical_metric: historical_analogy_pass_at_1
+      grade_policy: validate
+    canonical_humor_transfer:
+      metric: accuracy
+      rule: Parse the model's funny/not-funny judgment and compare it with the released sarcasm label; preserve
+        the source's humor-proxy interpretation.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/humor_transfer_run_specs.py
+        metric_classes:
+        - metrics.humor_transfer_metric.HumorTransferMetric
+        imported_field: canonical_score
+        canonical_metric: accuracy
+      grade_policy: validate
+    canonical_hypobench:
+      metric: hypobench_ind_parsed_label_rate
+      rule: Use the fraction of in-distribution inference labels successfully parsed for the generated hypotheses.
+        This statistic measures parse coverage, not classification accuracy.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/hypobench_run_specs.py
+        metric_classes:
+        - metrics.hypobench_inference_metric.HypoBenchInferenceMetric
+        imported_field: canonical_score
+        canonical_metric: hypobench_ind_parsed_label_rate
+      grade_policy: validate
+    canonical_hypogen:
+      metric: hypogen_proxy_novelty
+      rule: Judge the generated hypothesis using the 1-5 proxy-novelty rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/hypogen_run_specs.py
+        metric_classes:
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: hypogen_proxy_novelty
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_irfl:
+      metric: exact_match
+      rule: Compare the selected A-D image with the correct image after replaying the scenario's per-item seeded
+        option shuffle. Preserve the text and all four image choices.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/irfl_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - helm.benchmark.metrics.classification_metrics.MultipleChoiceClassificationMetric
+        imported_field: canonical_score
+        canonical_metric: exact_match
+      grade_policy: validate
+    canonical_lcc_metaphor:
+      metric: quasi_exact_match
+      rule: Apply the released quasi-exact-match normalization to the Yes/No metaphor judgment and its reference
+        label.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/lcc_metaphor_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: quasi_exact_match
+      grade_policy: validate
+    canonical_liveideabench:
+      metric: liveideabench_originality
+      rule: Judge originality of the generated research idea on the declared 1-10 scale. Missing canonical
+        per-instance scores remain null.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 10
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/liveideabench_run_specs.py
+        metric_classes:
+        - metrics.liveideabench_metric.LiveIdeaBenchMetric
+        imported_field: canonical_score
+        canonical_metric: liveideabench_originality
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_meta4xnli:
+      metric: classification_micro_f1
+      rule: Use micro F1 from the released classification protocol; keep absent per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/meta4xnli_run_specs.py
+        metric_classes:
+        - metrics.markdown_normalized_classification_metric.MarkdownNormalizedMCQClassificationMetric
+        - metrics.meta4xnli_detection_metric.Meta4XNLIDetectionMetric
+        imported_field: canonical_score
+        canonical_metric: classification_micro_f1
+      grade_policy: validate
+    canonical_metaphor_generation:
+      metric: f1_score
+      rule: Use HELM token-overlap F1 between the generated metaphor and its reference.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/metaphor_generation_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: f1_score
+      grade_policy: validate
+    canonical_metaphoric_analogies:
+      metric: f1_score
+      rule: Use HELM token-overlap F1 between the generated analogy and its reference.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/metaphoric_analogies_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: f1_score
+      grade_policy: validate
+    canonical_moh_x:
+      metric: exact_match
+      rule: Compare the predicted Yes/No metaphor judgment with the MOH-X binary reference label using exact
+        match.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/moh_x_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: exact_match
+      grade_policy: validate
+    canonical_mops:
+      metric: mops_quality_score
+      rule: Use the released MoPS judge's quality score on its 0-100 scale, preserving fractional rubric aggregation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/mops_run_specs.py
+        metric_classes:
+        - llm_judge.mops_metric.MoPSMetric
+        - metrics.mops_diversity_metric.MoPSDiversityMetric
+        imported_field: canonical_score
+        canonical_metric: mops_quality_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_munch:
+      metric: exact_match
+      rule: Compare the selected A-D replacement option with the apt/inapt labels of the two candidate replacements.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/munch_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: exact_match
+      grade_policy: validate
+    canonical_newyorker_humor:
+      metric: accuracy
+      rule: Use the released cartoon-caption accuracy implementation; a missing per-instance statistic remains
+        null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/newyorker_humor_run_specs.py
+        metric_classes:
+        - metrics.newyorker_humor_metric.NewYorkerHumorMetric
+        imported_field: canonical_score
+        canonical_metric: accuracy
+      grade_policy: validate
+    canonical_nyt_connections:
+      metric: full_wall
+      rule: Give 1 only when all four reference groups are recovered; order within and between groups is ignored
+        by the released group matcher.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/nyt_connections_run_specs.py
+        metric_classes:
+        - metrics.group_match_score_metric.GroupMatchScoreMetric
+        imported_field: canonical_score
+        canonical_metric: full_wall
+      grade_policy: validate
+    canonical_ocw:
+      metric: empty_group_slots
+      rule: Count empty slots among the four groups of four words. This 0-16 structural-error count is lower-is-better
+        and is not puzzle accuracy.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        direction: lower_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/ocw_run_specs.py
+        metric_classes:
+        - metrics.group_match_score_metric.GroupMatchScoreMetric
+        imported_field: canonical_score
+        canonical_metric: empty_group_slots
+      grade_policy: validate
+    canonical_ocw_connections:
+      metric: rouge_1
+      rule: Use reference-overlap ROUGE-1 on the generated connecting-wall solution.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/ocw_connections_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        imported_field: canonical_score
+        canonical_metric: rouge_1
+      grade_policy: validate
+    canonical_outline_to_story:
+      metric: rouge_2
+      rule: Use reference-overlap ROUGE-2 on the story generated from its outline.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/outline_to_story_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.outline_to_story_metric.OutlineToStoryMetric
+        imported_field: canonical_score
+        canonical_metric: rouge_2
+      grade_policy: validate
+    canonical_permpst:
+      metric: kendall_tau_correlation
+      rule: Use Kendall rank correlation between predicted and reference story orderings. Missing per-instance
+        statistics remain null.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/permpst_run_specs.py
+        metric_classes:
+        - metrics.permpst_score_metric.PerMPSTScoreMetric
+        imported_field: canonical_score
+        canonical_metric: kendall_tau_correlation
+      grade_policy: validate
+    canonical_poetmt:
+      metric: llm_judge_beauty_of_form
+      rule: Judge structural alignment and beauty of form of the English translation of a Chinese poem on the
+        declared 1-5 rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/poetmt_run_specs.py
+        metric_classes:
+        - metrics.poetmt_metric.PoetMTAutomaticMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: llm_judge_beauty_of_form
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_pollux_creativity:
+      metric: pollux_score
+      rule: Use the released POLLUX annotator's 0-4 creativity score.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pollux_creativity_run_specs.py
+        metric_classes:
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: pollux_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_pron_vs_prompt:
+      metric: pron_vs_prompt_creativity
+      rule: Average the title-creativity and synopsis-creativity judgments on the source's 0-3 scale; preserve
+        the upstream zero fallback.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 3
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pron_vs_prompt_run_specs.py
+        metric_classes:
+        - metrics.pron_vs_prompt_metric.PronVsPromptMetric
+        imported_field: canonical_score
+        canonical_metric: pron_vs_prompt_creativity
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_proparalogy:
+      metric: classification_macro_f1
+      rule: Use macro F1 from the released classification protocol; keep absent per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/proparalogy_run_specs.py
+        metric_classes:
+        - metrics.markdown_normalized_classification_metric.MarkdownNormalizedMCQClassificationMetric
+        imported_field: canonical_score
+        canonical_metric: classification_macro_f1
+      grade_policy: validate
+    canonical_pun_eval:
+      metric: pun_detection_rate
+      rule: Use the LLM judge's binary detection of a pun in the generated response. The released human pun
+        is a reference example, not an exact-match target.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pun_eval_run_specs.py
+        metric_classes:
+        - llm_judge.pun_eval_metric.PunEvalMetric
+        imported_field: canonical_score
+        canonical_metric: pun_detection_rate
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_puntuguese:
+      metric: classification_macro_f1
+      rule: Use macro F1 from the released Portuguese pun-classification protocol; keep absent per-instance
+        grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/puntuguese_run_specs.py
+        metric_classes:
+        - metrics.markdown_normalized_classification_metric.MarkdownNormalizedMCQClassificationMetric
+        imported_field: canonical_score
+        canonical_metric: classification_macro_f1
+      grade_policy: validate
+    canonical_riddlesense:
+      metric: classification_macro_f1
+      rule: Use macro F1 from the released riddle-classification protocol; keep absent per-instance grades
+        null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/riddlesense_run_specs.py
+        metric_classes:
+        - metrics.markdown_normalized_classification_metric.MarkdownNormalizedMCQClassificationMetric
+        imported_field: canonical_score
+        canonical_metric: classification_macro_f1
+      grade_policy: validate
+    canonical_rpgbench:
+      metric: interestingness
+      rule: Judge interestingness of the generated RPG content on the declared 1-5 rubric; the annotator's
+        -100 parse/API-failure sentinel is not a grade.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/rpgbench_run_specs.py
+        metric_classes:
+        - metrics.json_validity_metric.JsonValidityMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: interestingness
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_scar:
+      metric: scar_f1
+      rule: Use F1 from the released SCAR classification implementation; keep absent per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/scar_run_specs.py
+        metric_classes:
+        - metrics.scar_metric.SCARMetric
+        imported_field: canonical_score
+        canonical_metric: scar_f1
+      grade_policy: validate
+    canonical_schnovel:
+      metric: classification_micro_f1
+      rule: Use micro F1 from the released classification protocol; keep absent per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/schnovel_run_specs.py
+        metric_classes:
+        - metrics.markdown_normalized_classification_metric.MarkdownNormalizedMCQClassificationMetric
+        imported_field: canonical_score
+        canonical_metric: classification_micro_f1
+      grade_policy: validate
+    canonical_science_analogies:
+      metric: science_analogies_meteor
+      rule: Use the released METEOR comparison with reference scientific analogies; keep absent per-instance
+        grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/science_analogies_run_specs.py
+        metric_classes:
+        - metrics.science_analogies_metric.ScienceAnalogiesAutomaticMetric
+        imported_field: canonical_score
+        canonical_metric: science_analogies_meteor
+      grade_policy: validate
+    canonical_scimon:
+      metric: bleu_4
+      rule: Use HELM BLEU-4 against reference scientific ideas, retaining the native floating-point value without
+        decimal rounding.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/scimon_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        imported_field: canonical_score
+        canonical_metric: bleu_4
+      grade_policy: validate
+    canonical_sdat:
+      metric: sdat_score
+      rule: Parse at least seven proposed items, compute mean pairwise embedding cosine distance, and apply
+        the source's affine DAT calibration. Fewer than seven parsed items score zero. The release uses gemini-embedding-001.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/sdat_run_specs.py
+        metric_classes:
+        - metrics.sdat_metric.SDATMetric
+        imported_field: canonical_score
+        canonical_metric: sdat_score
+      grade_policy: validate
+    canonical_showerthoughts:
+      metric: llm_judge_cleverness
+      rule: Judge agreement with 'It is clever' on the declared six-point scale. Values outside 1-6 are invalid
+        ratings, not extended scale categories.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/showerthoughts_run_specs.py
+        metric_classes:
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: llm_judge_cleverness
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_simile_generation:
+      metric: simile_generation_bleu_1
+      rule: Use the released BLEU-1 comparison against reference similes; keep absent per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/simile_generation_run_specs.py
+        metric_classes:
+        - metrics.simile_generation_metric.SimileGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: simile_generation_bleu_1
+      grade_policy: validate
+    canonical_slang_generation:
+      metric: slang_parse_rate
+      rule: Give 1 exactly when the parser extracts nonempty word, definition and usage_context fields, otherwise
+        0. This is output-format completeness, not matching a reference slang term.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/slang_generation_run_specs.py
+        metric_classes:
+        - metrics.slang_generation_metric.SlangGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: slang_parse_rate
+      grade_policy: validate
+    canonical_speak_to_structure:
+      metric: validity
+      rule: Use the structure-validity implementation wired by the released run specification; keep absent
+        per-instance grades null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/speak_to_structure_run_specs.py
+        metric_classes:
+        - metrics.speak_to_structure_metric.SpeakToStructureMetric
+        imported_field: canonical_score
+        canonical_metric: validity
+      grade_policy: validate
+    canonical_ss_gen:
+      metric: llm_judge_descriptiveness
+      rule: Judge how descriptive the generated short story is on the declared 1-5 rubric.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/ss_gen_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: llm_judge_descriptiveness
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_story_generation_rocstories:
+      metric: rouge_l
+      rule: Use reference-overlap ROUGE-L on the generated ROCStories continuation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/story_generation_rocstories_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        imported_field: canonical_score
+        canonical_metric: rouge_l
+      grade_policy: validate
+    canonical_story_quality:
+      metric: pearson_correlation_pred
+      rule: Compare predicted story-quality ratings with gold human ratings in a dataset-level correlation.
+        The exported pearson_correlation_pred is the model's numeric prediction, not a grade; retain it in
+        the trace and leave response null.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/story_quality_run_specs.py
+        metric_classes:
+        - metrics.correlation_metric.CorrelationMetric
+        - metrics.correlation_metric.CorrelationMetric
+        imported_field: canonical_score
+        canonical_metric: pearson_correlation_pred
+      grade_policy: non_grade_statistic
+    canonical_thenextchapter:
+      metric: meteor
+      rule: Use the released METEOR comparison against the reference continuation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/thenextchapter_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.meteor_metric.MeteorMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        - llm_judge.generic_llm_judge_metric.GenericLLMJudgeMetric
+        imported_field: canonical_score
+        canonical_metric: meteor
+      grade_policy: validate
+    canonical_tinyfabulist:
+      metric: creativity_score
+      rule: Use the released TinyFabulist judge's creativity score on its 0-9 scale.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/tinyfabulist_run_specs.py
+        metric_classes:
+        - llm_judge.tinyfabulist_metric.TinyFabulistMetric
+        - metrics.tinyfabulist_corpus_metric.TinyFabulistCorpusMetric
+        imported_field: canonical_score
+        canonical_metric: creativity_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_tinystories:
+      metric: tinystories_creativity_score
+      rule: Use the released TinyStories judge's creativity score on its 0-10 scale.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/tinystories_run_specs.py
+        metric_classes:
+        - llm_judge.tinystories_metric.TinyStoriesMetric
+        imported_field: canonical_score
+        canonical_metric: tinystories_creativity_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    canonical_ttcw:
+      metric: majority_accuracy
+      rule: Compare the model's binary creativity-test judgment with the majority expert verdict for the same
+        story and TTCW question.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/ttcw_run_specs.py
+        metric_classes:
+        - metrics.ttcw_metric.TTCWMetric
+        imported_field: canonical_score
+        canonical_metric: majority_accuracy
+      grade_policy: validate
+    canonical_twistlist:
+      metric: bleu_1
+      rule: Use reference-overlap BLEU-1 on the generated twist.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/twistlist_run_specs.py
+        metric_classes:
+        - helm.benchmark.metrics.basic_metrics.BasicGenerationMetric
+        - metrics.bert_score_metric.BertScoreMetric
+        imported_field: canonical_score
+        canonical_metric: bleu_1
+      grade_policy: validate
+    canonical_unfun_corpus:
+      metric: edit_distance
+      rule: Use edit distance from the released humorous-to-unfunny transformation protocol; missing per-instance
+        values remain null.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+      kind: exact_matcher
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/unfun_corpus_run_specs.py
+        metric_classes:
+        - metrics.unfun_automatic_metric.UnfunAutomaticMetric
+        imported_field: canonical_score
+        canonical_metric: edit_distance
+      grade_policy: validate
+    canonical_writingbench:
+      metric: writingbench_score
+      rule: Use the WritingBench judge's average criterion score on its 1-10 scale.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 10
+        direction: higher_is_better
+      kind: judge
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/writingbench_run_specs.py
+        metric_classes:
+        - llm_judge.writingbench_metric.WritingBenchMetric
+        imported_field: canonical_score
+        canonical_metric: writingbench_score
+        judge_identity: Not recorded for this native statistic; run-spec defaults can be overridden.
+      grade_policy: flag_invalid_rating
+    panel_arastories:
+      metric: variety
+      rule: Adherence to the requested Arabic variety. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/arastories_run_specs.py
+        imported_field: score
+        metric: variety
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_arena_hard_creative:
+      metric: battle_scores
+      rule: Mean pairwise candidate preference, before multiplication by 100. Preserve each released rater's
+        judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/arena_hard_creative_run_specs.py
+        imported_field: score
+        metric: battle_scores
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_conceptual_design:
+      metric: novelty
+      rule: Novelty of the generated design. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 2
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/conceptual_design_run_specs.py
+        imported_field: score
+        metric: novelty
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_cpers:
+      metric: overall_creativity
+      rule: Overall creativity of the Persian literary sentence. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/cpers_run_specs.py
+        imported_field: score
+        metric: overall_creativity
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_creatset:
+      metric: verdict
+      rule: 'Pairwise verdict: 1 selects the candidate, 2 selects the released baseline. Preserve each released
+        rater''s judgment separately.'
+      response_scale:
+        kind: interval
+        min: 1
+        max: 2
+        direction: lower_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/creatset_run_specs.py
+        imported_field: score
+        metric: verdict
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_crowd_vote:
+      metric: originality
+      rule: Originality of the marketing response. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/crowd_vote_run_specs.py
+        imported_field: score
+        metric: originality
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_cue_word_story:
+      metric: llm_judge_creativity
+      rule: Creativity of the cue-word story. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/cue_word_story_run_specs.py
+        imported_field: score
+        metric: llm_judge_creativity
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_data_narrative:
+      metric: data_narrative_narrative_quality
+      rule: Quality of the generated data narrative. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/data_narrative_run_specs.py
+        imported_field: score
+        metric: data_narrative_narrative_quality
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_eqbench_creative_writing_v3:
+      metric: eqbench_creative_score
+      rule: EQBench creative-writing score on its panel 0-100 scale. Preserve each released rater's judgment
+        separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/eqbench_creative_writing_v3_run_specs.py
+        imported_field: score
+        metric: eqbench_creative_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_fann_or_flop:
+      metric: overall_score
+      rule: Overall story score. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/fann_or_flop_run_specs.py
+        imported_field: score
+        metric: overall_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_future_ideas:
+      metric: llm_judge_novelty
+      rule: Novelty of the proposed scientific or technological idea. Preserve each released rater's judgment
+        separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/future_ideas_run_specs.py
+        imported_field: score
+        metric: llm_judge_novelty
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_hypogen:
+      metric: hypogen_proxy_novelty
+      rule: Proxy novelty of the generated hypothesis. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/hypogen_run_specs.py
+        imported_field: score
+        metric: hypogen_proxy_novelty
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_liveideabench:
+      metric: mean_originality
+      rule: Mean originality of the generated research idea. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 10
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/liveideabench_run_specs.py
+        imported_field: score
+        metric: mean_originality
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_mops:
+      metric: mops_quality_score
+      rule: Quality of the generated story. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/mops_run_specs.py
+        imported_field: score
+        metric: mops_quality_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_pollux_creativity:
+      metric: pollux_score
+      rule: POLLUX creativity score. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 4
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pollux_creativity_run_specs.py
+        imported_field: score
+        metric: pollux_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_pron_vs_prompt:
+      metric: plot_originality
+      rule: Originality of the generated plot. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 3
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pron_vs_prompt_run_specs.py
+        imported_field: score
+        metric: plot_originality
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_pun_eval:
+      metric: pun_detection_rate
+      rule: Detection of a pun in the generated response. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/pun_eval_run_specs.py
+        imported_field: score
+        metric: pun_detection_rate
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_rpgbench:
+      metric: interestingness
+      rule: Interestingness of the generated RPG content. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/rpgbench_run_specs.py
+        imported_field: score
+        metric: interestingness
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_showerthoughts:
+      metric: llm_judge_creativity
+      rule: Creativity of the generated Showerthought. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 6
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/showerthoughts_run_specs.py
+        imported_field: score
+        metric: llm_judge_creativity
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_ss_gen:
+      metric: llm_judge_descriptiveness
+      rule: Descriptiveness of the generated short story. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/ss_gen_run_specs.py
+        imported_field: score
+        metric: llm_judge_descriptiveness
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_thenextchapter:
+      metric: thenextchapter_interestingness
+      rule: Interestingness of the generated continuation. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/thenextchapter_run_specs.py
+        imported_field: score
+        metric: thenextchapter_interestingness
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_tinyfabulist:
+      metric: creativity_score
+      rule: TinyFabulist creativity score. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 9
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/tinyfabulist_run_specs.py
+        imported_field: score
+        metric: creativity_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_tinystories:
+      metric: tinystories_creativity_score
+      rule: TinyStories creativity score. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 10
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/tinystories_run_specs.py
+        imported_field: score
+        metric: tinystories_creativity_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+    panel_writingbench:
+      metric: writingbench_score
+      rule: Mean WritingBench criterion score. Preserve each released rater's judgment separately.
+      response_scale:
+        kind: interval
+        min: 1
+        max: 10
+        direction: higher_is_better
+      kind: judge
+      grade_policy: flag_invalid_rating
+      implementation:
+        source: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/analysis/jrt_complete_ratings.parquet
+        protocol: https://huggingface.co/datasets/agcbench-2026/AGC-Bench/blob/30918045d5c1cf318e698c73469400de2251b9e6/run_specs/writingbench_run_specs.py
+        imported_field: score
+        metric: writingbench_score
+        interpretation: Uncalibrated individual panel judgment; not JRT theta or a distilled AGC-Judge prediction.
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/agcbench-2026/AGC-Bench
+    revision: 30918045d5c1cf318e698c73469400de2251b9e6
+    files:
+    - match: .*
+      path: source_review/30918045d5c1cf318e698c73469400de2251b9e6/{path}
+  - name: analobench
+    url: https://huggingface.co/datasets/jhu-clsp/AnaloBench
+    revision: 58c09414e35f38dd010e7cc87d3e2a5d24f151cc
+    files:
+    - match: (?:README\.md|AnaloBench-T1-Subset-S1\.csv)
+      path: references/analobench/58c09414e35f38dd010e7cc87d3e2a5d24f151cc/{path}
+  - name: fig_qa
+    url: https://huggingface.co/datasets/nightingal3/fig-qa
+    revision: b29ec2faf6ef73d634db9757f8741dee68f6c874
+    files:
+    - match: (?:README\.md|.*\.csv)
+      path: references/fig_qa/b29ec2faf6ef73d634db9757f8741dee68f6c874/{path}
+  - name: humor_transfer
+    url: https://huggingface.co/datasets/raquiba/Sarcasm_News_Headline
+    revision: 643ceefc17441e56cff66f57c03b13615545d42b
+    files:
+    - match: (?:README\.md|test\.json)
+      path: references/humor_transfer/643ceefc17441e56cff66f57c03b13615545d42b/{path}
+  - name: nyt_connections
+    url: https://huggingface.co/datasets/tm21cy/NYT-Connections
+    revision: a10f47fd3ed3dd3db04f760373941d06fcd42ca0
+    files:
+    - match: (?:README\.md|ConnectionsFinalDataset\.json)
+      path: references/nyt_connections/a10f47fd3ed3dd3db04f760373941d06fcd42ca0/{path}
+  - name: irfl
+    url: https://huggingface.co/datasets/lampent/IRFL
+    revision: b94fb4fe1fb52e524dba595d00add901671a2251
+    files:
+    - match: (?:README\.md|idiom_detection_task\.csv|IRFL_images\.zip)
+      path: references/irfl/b94fb4fe1fb52e524dba595d00add901671a2251/{path}
+  - name: munch
+    url: https://github.com/xiaoyuisrain/metaphor-understanding-challenge
+    revision: 5b78a540705661f49fda693e504250d4a1fc4516
+    files:
+    - match: (?:tasks/word_judge\.json)
+      path: references/munch/5b78a540705661f49fda693e504250d4a1fc4516/{path}
+  - name: pun_eval
+    url: https://github.com/Zhijun-Xu/PunEval
+    revision: 932693e23269269f323f9d385596ae1e54f939bc
+    files:
+    - match: (?:dataset/hom_dataset\.json|dataset/het_dataset\.json)
+      path: references/pun_eval/932693e23269269f323f9d385596ae1e54f939bc/{path}
+  - name: chinese_homophonic_puns
+    url: https://github.com/YesianRohn/DuanzAI
+    revision: 432a8f0d141f02aa9182ef3aeea441fcd0305533
+    files:
+    - match: (?:data/task_1\.json)
+      path: references/chinese_homophonic_puns/432a8f0d141f02aa9182ef3aeea441fcd0305533/{path}
+  - name: lcc_metaphor
+    url: https://github.com/EhsanAghazadeh/Metaphors_in_PLMs
+    revision: 48b0f7adb97dc6c9e4e8bcc02bd4b83d4b6b2219
+    files:
+    - match: (?:data/multi_ling/lcc_en/test\.csv)
+      path: references/lcc_metaphor/48b0f7adb97dc6c9e4e8bcc02bd4b83d4b6b2219/{path}
+  - name: slang_generation
+    url: https://github.com/siyangwu1/LLM-Slang-Dictionary
+    revision: 33ce86f469655dd48f781fc1bba2593033798583
+    files:
+    - match: (?:data/conv_slang\.txt)
+      path: references/slang_generation/33ce86f469655dd48f781fc1bba2593033798583/{path}
+  - name: ttcw
+    url: https://github.com/salesforce/creativity_eval
+    revision: 3d029879df6878f611363db88cc02d465699bc51
+    files:
+    - match: (?:Art_or_Artifice/stories/ttcw_short_stories\.json|Art_or_Artifice/annotations/ttcw_annotations\.json)
+      path: references/ttcw/3d029879df6878f611363db88cc02d465699bc51/{path}
+  - name: arn
+    url: https://drive.google.com/uc?export=download&id=1iVHJrUkuNF6bGarauvdRNg0BCuy_BGjz
+    revision: null
+    file: references/arn/dbc75b190f775e4819465582f755e0683051a0a19c13b2eee8b3e4e48ee7680e/dataset.xlsx
+    size: 279562
+    sha256: dbc75b190f775e4819465582f755e0683051a0a19c13b2eee8b3e4e48ee7680e
+  - name: moh_x
+    url: https://drive.google.com/uc?export=download&id=1-v_sUlupDrKq8ERlnh5RwdI7Pyk-6cxn
+    revision: null
+    file: references/moh_x/b5aca53416deeeec5f137559cdb2ffa3d7d49da440b50edb3f87d10411047f4e/moh_x.zip
+    size: 5524398
+    sha256: b5aca53416deeeec5f137559cdb2ffa3d7d49da440b50edb3f87d10411047f4e
