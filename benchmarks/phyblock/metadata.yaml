@@ -1,0 +1,141 @@
+benchmark:
+  description: Visual 3D block assembly planning with released model outputs, scene images, candidate
+    blocks and dependency annotations. This import covers the assembly branch, not aggregate paper rows
+    or VQA references without predictions.
+  testing_condition: 'One recorded full-plan output per model and scene. Reconstruct per-scene F1 with
+    the released deterministic checker; these are derived grades, not published grade CSVs. Pose-constrained
+    scoring covers all available scenes; the topology-only condition reuses outputs on source-level-2
+    scenes with fewer than seven blocks, so its observations are dependent on the main condition. Items
+    retain exact recorded instructions for open models. Other API outputs lack recorded requests: their
+    item content is the paper Figure 14 task definition, and the attached images are the corresponding
+    released scene/candidate bank, not a recovered API payload. Prompt variants remain distinct items.
+    Exact historical API request settings are unknown. The released Qwen scene-069 output differs from
+    the paper example. Missing result files remain absent.'
+  paper_url: https://arxiv.org/abs/2506.08708
+  data_source_url: https://github.com/PhyBlock/PhyBlock
+  subject_type: model
+  item_type: task
+  license: CC-BY-NC-SA-4.0
+  citation: "@inproceedings{ma2025phyblock,\n  title={PhyBlock: A Progressive Benchmark for Physical Understanding\
+    \ and Planning via 3D Block Assembly},\n  author={Ma, Liang and Wen, Jiajun and Lin, Min and Xu, Rongtao\
+    \ and Liang, Xiwen and Lin, Bingqian and Ma, Jun and Wang, Yongxin and Wei, Ziming and Lin, Haokun\
+    \ and Han, Mingfei and Cao, Meng and Chen, Bokui and Laptev, Ivan and Liang, Xiaodan},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - vlm
+  - physical_reasoning
+  - planning
+  - 3d_assembly
+  - multimodal
+  modality:
+  - text
+  - image
+  domain:
+  - reasoning
+  - general
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: '2025-06-04'
+  name: PhyBlock
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: source_review/da81ed9cad8184509aadb6f01af83d53e5c9d6fa.zip
+      outputs_pattern: ^outputs/(?P<model_directory>[^/]+)/(?P<scene>\d{3})\.json$
+      goals_pattern: ^data/SCENEs_400_Goal_Jsons/(?P<scene>\d{3})\.json$
+      candidates: data/SCENEs_400_Cand_Jsons/{scene}_16_cand_blocks.json
+      goal_image: data/SCENEs_400_Goal_Imgs/{scene}_1.png
+      candidate_image: data/SCENEs_400_Cand_Imgs/{scene}_16_cand.png
+    instructions:
+      paper_definition: "You are an intelligent agent who can understand the spatial relationship between\
+        \ objects and assist me in \nthe task planning of building blocks. I will give you a image of\
+        \ the target block and a image of the blocks \nto be used. Please choose the blocks that match\
+        \ the target and assemble them in the correct order based on \nyour current observation. \n##\
+        \ Task Overview:\nYou must construct a structure using building blocks based on visual input.\
+        \ Two images are provided:\n1. Main Target Image:\n      - Displays the desired structure composed\
+        \ of various building blocks.\n      - Shows the overall layout, including how many blocks, the\
+        \ number of layers, and the spatial \nrelationships between blocks.\n2. Block Dictionary Image:\n\
+        \      - Contains a collection of sub-images, each showing a building block in a specific euler\
+        \ orientation.\n      - Each sub-image has a block index marked at the lower right corner.\n##\
+        \ Steps to Complete the Task:\n1. Analyze and Describe the Main Target Image:\n      - Count &\
+        \ Layers: Determine how many blocks are used and how many layers the structure has.\n      - Spatial\
+        \ Relationships: Describe how the blocks are arranged relative to each other (e.g., which blocks\
+        \ \nare adjacent, above, or below one another).\n2. Select the Required Blocks from the Dictionary:\n\
+        \      - Identify Needed Blocks: Based on your analysis, decide which blocks from the dictionary\
+        \ are \nrequired to match the target structure.\n      - List Block Indices: Provide a list of\
+        \ the corresponding block indices.\n      - Matching Criteria: The chosen blocks must match the\
+        \ target image exactly in shape, color, and \nrotational orientation.\n      - Important: You\
+        \ cannot rotate any block. Use the blocks exactly as they appear in the dictionary.\n      - The\
+        \ same block index may be used multiple times if needed.\n      - Example: If the main image shows\
+        \ a green rectangular block in a horizontal orientation, you must \nselect the horizontally oriented\
+        \ green rectangular block from the dictionary—not the vertical one.\n3. Determine the Assembly\
+        \ Order:\n      - Inference of Order: Based on the selected blocks, infer a step-by-step assembly\
+        \ sequence.\n      - Output Format: Use the following template for your instructions:\n      \
+        \   {\n            Step1: Move block with index {idx}\n            Step2: Move block with index\
+        \ {idx}\n            ...\n            Stepn: Move block with index {idx}\n         }\n## Additional\
+        \ Guidelines:\n      - Detailed Analysis: Ensure your description of the main target image is\
+        \ thorough and covers all key \ndetails (block count, layers, spatial arrangement).\n      - Exact\
+        \ Matching: Carefully match each block’s rotational orientation as shown in the dictionary; no\
+        \ \nadjustments or rotations beyond the provided images are allowed.\n      - Clear Assembly Instructions:\
+        \ Your final output must be organized and follow the given step-by-step \nformat precisely."
+      source: https://arxiv.org/html/2506.08708v1#A2.F14
+    native_images:
+      goal: SCENEs/{scene}_1.png
+      candidates: SCENEs_cand/{scene}_16_cand.png
+    reasoning_effort:
+      claude-3-7-thinking: extended
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/PhyBlock/PhyBlock/zip/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    revision: da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    file: source_review/da81ed9cad8184509aadb6f01af83d53e5c9d6fa.zip
+    size: 476794711
+    sha256: 003c4c45ef066f7c8edef705fea5dbc4707a8fa9ad6a7108ef9c761594a26a48
+grading:
+  rule: Derive the native per-scene F1 from the published output. Extract candidate indices in message
+    order and greedily match each selection to the first unplaced reference block allowed by the condition.
+    Pose-constrained grading matches type, color and Euler orientation and requires dependencies already
+    placed. Topology-only grading matches type and color without dependency or orientation constraints.
+    TP is matched placements, FP unmatched selections, FN unmatched reference blocks; compute precision/recall
+    and their harmonic mean, rounded to three decimals as in the native CSV writer. These are not micro-averaged
+    paper scores.
+  verifiers:
+    pose_constrained:
+      kind: derived_deterministic_f1
+      source: https://github.com/PhyBlock/PhyBlock/blob/da81ed9cad8184509aadb6f01af83d53e5c9d6fa/evaluate_block_construction.py
+      definition_revision: da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+      index_pattern: block with index (\d+)
+      decimal_places: 3
+      grade_origin: recomputed_from_released_model_output
+      extraction: Native message extraction precedence; all case-sensitive block-index matches are parsed,
+        out-of-range indices are discarded. No new inference or simulation.
+      function: validate_block_placement
+      matching_fields:
+      - type
+      - color
+      - euler
+      check_dependencies: true
+    topology_only:
+      kind: derived_deterministic_f1
+      source: https://github.com/PhyBlock/PhyBlock/blob/da81ed9cad8184509aadb6f01af83d53e5c9d6fa/evaluate_block_construction.py
+      definition_revision: da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+      index_pattern: block with index (\d+)
+      decimal_places: 3
+      grade_origin: recomputed_from_released_model_output
+      extraction: Native message extraction precedence; all case-sensitive block-index matches are parsed,
+        out-of-range indices are discarded. No new inference or simulation.
+      function: validate_block_placement_level1
+      matching_fields:
+      - type
+      - color
+      check_dependencies: false
+      source_level: 2
+      max_blocks_exclusive: 7

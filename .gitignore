@@ -1,8 +1,24 @@
 __pycache__/
 *.pyc
 **/raw/
+**/formatted_tables/
 *.parquet
 
 # Local development artifacts and archived evaluation records.
 /artifacts/
 /.pytest_cache/
+
+# Generated files accompanying legacy curated benchmarks.
+**/raw_results/
+**/processed/
+**/_contrib/
+**/_oceanbench_src/
+**/traces/
+**/model_fits/
+**/.venv*/
+*.log
+*.out
+.cache/
+/.hf-cache/
+benchmarks/haiid/clickstream_public.txt.gz
+benchmarks/reliancescope/harbor/

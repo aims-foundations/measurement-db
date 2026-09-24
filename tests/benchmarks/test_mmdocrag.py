@@ -14,6 +14,7 @@ import re
 import sys
 import unicodedata
 import unittest
+from unittest.mock import patch
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -38,7 +39,18 @@ from measurement_db.scripts.build_measurement_tables.validate_benchmark_metadata
 )
 
 from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
-from measurement_db.benchmarks.mmdocrag.build import LAYOUT, QUESTION_IDS
+# Independent expectations for the pinned release, not imported from the builder.
+LAYOUT = {'gold_sources': ['evaluation_20.jsonl', 'evaluation_15.jsonl'],
+ 'evaluation_directory': 'eval',
+ 'trace_directory': 'resp',
+ 'subject_aliases': {'Internvl3-38B': 'internvl3-38b',
+                     'Internvl3-78B': 'internvl3-78b'},
+ 'subject_features': {'qvq-max-no-think': {'released_variant': 'no-think'},
+                      'qwen3-14b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-30b-a3b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-4b-no-think': {'released_variant': 'no-think'},
+                      'qwen3-8b-no-think': {'released_variant': 'no-think'}}}
+QUESTION_IDS = range(2000)
 
 METADATA = load_benchmark_metadata(BENCHMARK_DIR / "metadata.yaml")
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses", "traces")
@@ -266,49 +278,46 @@ REGRESSION = {'legacy': {'items': {'columns': ['item_id',
 
 class JudgeParsingTests(unittest.TestCase):
     @classmethod
-    def setUpClass(cls) -> None:
-        spec = importlib.util.spec_from_file_location(
-            "mmdocrag_builder_under_test", BENCHMARK_DIR / "build.py"
-        )
-        cls.builder = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cls.builder)
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location("mmdocrag_builder_under_test", BENCHMARK_DIR / "build.py")
+        cls.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.module)
 
-    def test_zero_is_a_grade_and_missing_dimension_is_not(self) -> None:
-        payload = dict.fromkeys(self.builder.JUDGE_DIMS, 0)
-        self.assertEqual(self.builder.answer_quality(payload), 0.0)
+    def transformed(self, payload, filename="subject_pure-text_quotes15_llm-judge.jsonl"):
+        builder = self.module.MMDocRAG(str(BENCHMARK_DIR / "build.py"))
+        builder.source_files = ["evaluation_20.jsonl", "evaluation_15.jsonl", "eval/" + filename]
+        gold = pd.DataFrame({"q_id": [0], "question": ["Question"], "answer_short": ["Answer"]})
+        judgments = pd.DataFrame({"q_id": [0], "model": ["recorded-judge"], "response": [payload]})
+        def native_table(path, **kwargs):
+            return (judgments if Path(path).parent.name == "eval" else gold).copy(deep=True)
+        with patch.object(self.module.pd, "read_json", side_effect=native_table):
+            return builder.build_tables()
+
+    def test_zero_is_a_grade_and_missing_dimension_is_not(self):
+        payload = dict.fromkeys(["Fluency", "Citation Quality", "Text-Image Coherence", "Reasoning Logic", "Factuality"], 0)
+        self.assertEqual(self.transformed(payload)["responses"].response.iloc[0], 0.0)
         for invalid in (None, True, "0", -1, 6, float("nan")):
             with self.subTest(invalid=invalid):
-                self.assertIsNone(
-                    self.builder.answer_quality({**payload, "Fluency": invalid})
-                )
-        self.assertIsNone(self.builder.answer_quality({}))
+                self.assertTrue(pd.isna(self.transformed({**payload, "Fluency": invalid})["responses"].response.iloc[0]))
+        self.assertTrue(pd.isna(self.transformed({})["responses"].response.iloc[0]))
         payload.pop("Fluency")
-        self.assertIsNone(self.builder.answer_quality(payload))
+        self.assertTrue(pd.isna(self.transformed(payload)["responses"].response.iloc[0]))
 
-    def test_key_noise_and_first_valid_duplicate_keep_legacy_arithmetic(self) -> None:
-        payload = {
-            " 'Fluency' ": 1,
-            "Fluency": 5,
-            "CitationQuality": 2,
-            "Text Image Coherence": 3,
-            "Reasoning Logic": 4,
-            "Factuality": 5,
-        }
-        self.assertEqual(self.builder.answer_quality(payload), 15.0 / 5 / 5.0)
+    def test_key_noise_and_first_valid_duplicate_keep_legacy_arithmetic(self):
+        payload = {" 'Fluency' ": 1, "Fluency": 5, "CitationQuality": 2,
+                   "Text Image Coherence": 3, "Reasoning Logic": 4, "Factuality": 5}
+        self.assertEqual(self.transformed(payload)["responses"].response.iloc[0], 15.0 / 5 / 5.0)
         payload[" 'Fluency' "] = "invalid"
-        self.assertEqual(self.builder.answer_quality(payload), 19.0 / 5 / 5.0)
+        self.assertEqual(self.transformed(payload)["responses"].response.iloc[0], 19.0 / 5 / 5.0)
 
-    def test_legacy_and_current_filename_forms(self) -> None:
-        for suffix in (
-            "_pure-text_quotes15_llm-judge.jsonl",
-            "_pure-text_response_quotes15.jsonl",
-            "_pure-text_response_quotes15.jsonl_evaluation.jsonl",
-        ):
-            self.assertEqual(
-                self.builder.parse_eval_filename("subject" + suffix),
-                ("subject", "pure-text", "15"),
-            )
-        self.assertIsNone(self.builder.parse_eval_filename("not-an-evaluation.jsonl"))
+    def test_legacy_and_current_filename_forms(self):
+        for suffix in ("_pure-text_quotes15_llm-judge.jsonl", "_pure-text_response_quotes15.jsonl",
+                       "_pure-text_response_quotes15.jsonl_evaluation.jsonl"):
+            tables = self.transformed({}, "subject" + suffix)
+            self.assertEqual(tables["subjects"].subject_key.tolist(), ["subject"])
+            self.assertEqual(tables["responses"].test_condition.tolist(), ["pure-text/quotes15"])
+        with self.assertRaisesRegex(ValueError, "Unrecognized"):
+            self.transformed({}, "not-an-evaluation.jsonl")
 
 
 class MMDocRAGCharacterizationTests(unittest.TestCase):

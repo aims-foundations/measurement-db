@@ -1,0 +1,32 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3100
+    logical_sha256: d876e5129567a589f04aec8de229449207d7c5c88463c7d04d5b2c408458a9d7
+  subjects:
+    rows: 2
+    logical_sha256: 3e6bea18e0728797579b3a5c7262475850738fc6b6f7f7b92ab761cb172de433
+  responses:
+    rows: 3100
+    logical_sha256: 19d4804767912c9078d53c863e32f77c66f5121b9a39933cedcd4747e1e3ad86
+  items:
+    rows: 310
+    logical_sha256: 2b75a6f96081cbb695a0c611d48d0d3328d4e27771f714b8096660f64589563b
+  benchmarks:
+    rows: 1
+    logical_sha256: 6667bd648bb05d96876e44b79ecef3d8b2e7cf553a43c7b61eab182ebdc88c35
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Peiyance/REVOLVE
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 3100
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Peiyance/REVOLVE
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 1061

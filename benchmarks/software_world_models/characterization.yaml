@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7830
+    logical_sha256: 8ae7469b957d950aeafc5f5fa5d4d003252ea47a6f1a3195d8130e6e8515c9f3
+  subjects:
+    rows: 18
+    logical_sha256: 56bc9b8aa4a8dbedbad4f0ca8e55382e25aa20eb263ff66f769178b4dbcfeb34
+  responses:
+    rows: 7830
+    logical_sha256: c3c03253d78d58f7c8ddf09b5520531b5fdefb83281ef0b09efb0fb497cbe427
+  items:
+    rows: 434
+    logical_sha256: 34b56896f6af122171e27f8aa17ff5d0b0450d358fb925ad79e9a7b644e7f18e
+  benchmarks:
+    rows: 1
+    logical_sha256: d2dfb366ba15d727fc30ae2752ba60624d24b31d8a479019fb71044ae46967c9
+source_claims:
+  source_item_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/collections/JetBrains-Research/dl4c26-evaluation-of-software-world-model
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 435
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/collections/JetBrains-Research/dl4c26-evaluation-of-software-world-model
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 18
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/collections/JetBrains-Research/dl4c26-evaluation-of-software-world-model
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 7830

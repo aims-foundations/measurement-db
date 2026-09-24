@@ -1,8 +1,12 @@
 """Named upstream downloads and explicit snapshot restoration, without network access."""
 import copy
+import base64
+import gzip
 import hashlib
 import json
 import io
+import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +52,26 @@ class SnapshotTests(unittest.TestCase):
 
     def test_compact_metadata_and_unknown_upstream_revision(self):
         load_benchmark_metadata(self.metadata_path)
+
+    @unittest.skipUnless(shutil.which("gpg"), "GnuPG is required for encrypted upstream releases")
+    def test_gpg_json_preserves_raw_and_rejects_wrong_password(self):
+        from scripts.build_measurement_tables.load_source_files import read_gpg_json
+        with tempfile.TemporaryDirectory(dir=self.folder) as home:
+            encrypted = subprocess.run(
+                ["gpg", "--no-options", "--homedir", home, "--batch", "--no-tty",
+                 "--pinentry-mode", "loopback", "--passphrase", "public-test-password",
+                 "--symmetric", "--output", "-"],
+                input=PAYLOAD, capture_output=True, check=True,
+            ).stdout
+        source = self.raw / "bank.json.gpg"
+        source.write_bytes(encrypted)
+        self.assertEqual(read_gpg_json(source, password="public-test-password", scratch_dir=self.folder),
+                         json.loads(PAYLOAD))
+        with self.assertRaisesRegex(SourceDataError, "Cannot decrypt"):
+            read_gpg_json(source, password="wrong-password", scratch_dir=self.folder)
+        self.assertEqual(source.read_bytes(), encrypted)
+        self.assertEqual(list(self.raw.iterdir()), [source])
+        self.assertFalse(list(self.folder.glob(".gpg-*")))
 
     def test_local_unpublished_snapshot_is_verified_without_network(self):
         manifest = self.folder / 'inputs.json'
@@ -267,6 +291,163 @@ class SnapshotTests(unittest.TestCase):
             self.metadata['sources']['upstream'] = [entry]
             with self.assertRaises(BenchmarkMetadataError):
                 validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_scoped_github_trees_keep_hashes_and_skip_unselected_assets(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        source = dict(name='results', url='https://github.com/provider/benchmark', revision='a'*40,
+                      tree_paths=['runs/*/results', 'runs/one/results/item.json'],
+                      files=[dict(match=r'runs/(?P<run>[^/]+)/results/(?P<file>.+)', path='{run}/{file}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        tree = lambda path, sha: dict(type='tree', path=path, sha=sha)
+        blob = dict(type='blob', path='item.json', sha='f'*40, size=12)
+        payloads = {
+            'a'*40: [tree('runs', 'b'*40), tree('large-assets', '0'*40)],
+            'b'*40: [tree('one', 'c'*40)],
+            'c'*40: [tree('results', 'd'*40), tree('screenshots', 'e'*40)],
+            'd'*40: [blob], 'd'*40+'?recursive=1': [blob],
+        }
+        calls = []
+        def respond(request, **kwargs):
+            key = request.full_url.rsplit('/', 1)[-1]
+            calls.append(key)
+            return io.BytesIO(json.dumps(dict(tree=payloads[key], truncated=False)).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=respond):
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertEqual([a['file'] for a in artifacts], ['one/item.json'])
+        self.assertEqual(artifacts[0]['digest'], 'f'*40)
+        self.assertIn('/'+'a'*40+'/runs/one/results/item.json', artifacts[0]['url'])
+        self.assertEqual(calls.count('a'*40), 1)
+        self.assertNotIn('e'*40, calls)
+        for paths in (['../outside'], ['/absolute'], ['runs/**'], ['runs/missing']):
+            with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=respond):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([dict(source, tree_paths=paths)], ('results',))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(dict(tree=[], truncated=True)).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'truncated'):
+                upstream_artifacts([source], ('results',))
+
+    def test_github_lfs_verifies_pointer_and_downloaded_content(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        pointer = (f'version https://git-lfs.github.com/spec/v1\noid sha256:{hashlib.sha256(PAYLOAD).hexdigest()}\n'
+                   f'size {len(PAYLOAD)}\n').encode()
+        pointer_hash = hashlib.sha1(f'blob {len(pointer)}\0'.encode() + pointer).hexdigest()
+        source = dict(name='bundles', url='https://github.com/provider/benchmark', revision='a'*40,
+                      git_lfs=True, files=[dict(match=r'outputs/one\.bundle', path='one.bundle')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        tree = dict(tree=[dict(type='blob', path='outputs/one.bundle', size=len(pointer), sha=pointer_hash)], truncated=False)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(tree).encode()), io.BytesIO(pointer)]):
+            artifact, = upstream_artifacts([source], ('bundles',))
+        self.assertEqual(artifact['size'], len(PAYLOAD))
+        self.assertEqual(artifact['hash_kind'], 'sha256')
+        self.assertEqual(artifact['digest'], hashlib.sha256(PAYLOAD).hexdigest())
+        self.assertEqual(artifact['url'], 'https://media.githubusercontent.com/media/provider/benchmark/' + 'a'*40 + '/outputs/one.bundle')
+        target = self.raw / 'one.bundle'
+        target.write_bytes(PAYLOAD)
+        verify_snapshot_file(target, artifact)
+        target.write_bytes(pointer)
+        with self.assertRaises(SourceDataError):
+            verify_snapshot_file(target, artifact)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(tree).encode()), io.BytesIO(pointer.replace(b'size ', b'Size '))]):
+            with self.assertRaisesRegex(SourceDataError, 'pointer differs'):
+                upstream_artifacts([source], ('bundles',))
+
+    def test_public_gcs_selection_pins_versions_and_keeps_encoded_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        encoded = gzip.compress(PAYLOAD, mtime=0)
+        checksum = hashlib.md5(encoded).hexdigest()
+        entry = dict(name='release/run:one/source.json', generation='123', size=str(len(encoded)),
+                     md5Hash=base64.b64encode(bytes.fromhex(checksum)).decode(), contentEncoding='gzip')
+        identity = [dict(path='run:one/source.json', generation='123', size=len(encoded),
+                         digest=checksum, content_encoding='gzip')]
+        fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        source = dict(name='results', url='https://storage.googleapis.com/provider-bucket', revision='v1',
+                      prefix='release/', tree_sha256=fingerprint,
+                      files=[dict(match=r'[^/]+/source\.json', path='{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        pages = [dict(items=[], nextPageToken='next'), dict(items=[entry])]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(page).encode()) for page in pages]) as fetch:
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertIn('pageToken=next', fetch.call_args_list[1].args[0].full_url)
+        self.assertEqual(artifacts[0]['file'], 'run_x3a_one/source.json.gz')
+        self.assertTrue(artifacts[0]['url'].endswith('?generation=123'))
+        target = self.raw / 'captured.json.gz'
+        target.write_bytes(encoded)
+        verify_snapshot_file(target, artifacts[0])
+        target.write_bytes(b'x' * len(encoded))
+        with self.assertRaisesRegex(SourceDataError, 'content differs'):
+            verify_snapshot_file(target, artifacts[0])
+        changed = {**entry, 'generation': '124'}
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(dict(items=[changed])).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('results',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_gcs_download_requests_original_gzip_representation(self):
+        encoded = gzip.compress(PAYLOAD, mtime=0)
+        class FixtureBuild(BenchmarkBuild):
+            def build_tables(self):
+                raise AssertionError('No table build is needed for this transport check')
+        self.metadata_path.write_text(yaml.safe_dump(self.metadata))
+        builder = FixtureBuild(str(self.folder / 'build.py'))
+        artifact = dict(file='new.json.gz', size=len(encoded), hash_kind='md5',
+                        digest=hashlib.md5(encoded).hexdigest(), content_encoding='gzip',
+                        url='https://storage.googleapis.com/bucket/object?generation=123')
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('build_base.urllib.request.urlopen', return_value=io.BytesIO(encoded)) as fetch:
+            builder.fetch_sources('results')
+        self.assertEqual(fetch.call_args.args[0].get_header('Accept-encoding'), 'gzip')
+        self.assertEqual(fetch.call_args.args[0].get_header('User-agent'), 'measurement-db')
+        self.assertEqual((self.raw/'new.json.gz').read_bytes(), encoded)
+
+    def test_helm_release_index_selects_versioned_runs_and_checks_its_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        payload = json.dumps([
+            {'run_spec': {'groups': ['chosen']},
+             'run_path': '/old/machine/benchmark_output/runs/v1/scenario:model=a'},
+            {'run_spec': {'groups': ['other']},
+             'run_path': 'benchmark_output/runs/v2/other:model=b'},
+        ]).encode()
+        index = dict(name='release', url='https://provider.example/runs.json', revision='v2',
+                     file='release.json', size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+        relative = 'benchmark_output/runs/v1/scenario:model=a/instances.json'
+        entry = dict(name='safety/'+relative, generation='123', size='2',
+                     md5Hash=base64.b64encode(hashlib.md5(b'[]').digest()).decode())
+        identity = [dict(path=relative, generation='123', size=2,
+                         digest=hashlib.md5(b'[]').hexdigest(), content_encoding='')]
+        source = dict(name='runs', url='https://storage.googleapis.com/provider-bucket', revision='v2',
+                      prefix='safety/', helm_index={'source': 'release', 'group': 'chosen'},
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/instances\.json',
+                                  path='runs/{version}/{run}/instances.json')])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(payload), io.BytesIO(json.dumps({'items': [entry]}).encode())]) as fetch:
+            artifacts = upstream_artifacts([index, source], ('release', 'runs'))
+        self.assertEqual([a['file'] for a in artifacts], ['release.json', 'runs/v1/scenario_x3a_model_x3d_a/instances.json'])
+        self.assertIn('scenario%3Amodel%3Da%2F', fetch.call_args.args[0].full_url)
+        # With no group restriction, a multi-task release selects both runs.
+        source['helm_index'].pop('group')
+        other = dict(entry, name='safety/benchmark_output/runs/v2/other:model=b/instances.json')
+        identity.append(dict(identity[0], path=other['name'].removeprefix('safety/')))
+        source['tree_sha256'] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=[
+                io.BytesIO(payload), io.BytesIO(json.dumps({'items': [entry]}).encode()),
+                io.BytesIO(json.dumps({'items': [other]}).encode())]):
+            artifacts = upstream_artifacts([index, source], ('runs',))
+        self.assertEqual(len(artifacts), 2)
+        index['sha256'] = '0'*64
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=io.BytesIO(payload)):
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('runs',))
 
 
 if __name__=='__main__': unittest.main()

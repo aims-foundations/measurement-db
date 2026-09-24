@@ -1,0 +1,5 @@
+- Scope: HELM mmlu-winogrande-afr v1.1.0, 968 native run exports, 745,360 observations and 72,223 canonical prompt/grading items. Sources and grading are declared in `metadata.yaml`.
+- Import: preserve each run’s full prompts, native task/language/exam definitions, request settings, accepted references and complete traces. Missing grades remain null; repeated attempts are retained.
+- Checks: independently reconciled all 745,360 observations with native requests, predictions, references, grades and traces; shared schema and relationship checks passed.
+- Correction: the legacy citation pointed to IrokoBench; these native scenarios use the MMLU/Winogrande translations from “Bridging the Gap” (arXiv:2412.12417). Correct-tagged translated choices can repeat, so all accepted references are preserved.
+- Limits: the release does not identify its executed harness commit. Captured grader code is an inspected reference; dataset licensing is not inferred from the code license.

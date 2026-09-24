@@ -1,0 +1,34 @@
+format_version: 1
+tables:
+  traces:
+    rows: 10583
+    logical_sha256: 4b20a74867044a32f98626463fb79ce6d561968bf8ee6ce7798d316e6110fe81
+  subjects:
+    rows: 12
+    logical_sha256: de04907e43edf07f228ed7053b5d8ec3db6ff02a411aa6cf52ca228bea7b2c9c
+  responses:
+    rows: 11862
+    logical_sha256: a1cb3c37c17ff3a622e6a1e4b0552818496bfe0f0552efc4c45db58ab2ca3d15
+  items:
+    rows: 504
+    logical_sha256: 8e096f3510492c376faaafcf552bc37342909786f26c7a4c3cddc9f244a5e094
+  benchmarks:
+    rows: 1
+    logical_sha256: d53d6d7631f5ff66cc79cd779d9415cfd9174a323a5e02dd18709bb87e0d72d2
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned results/*/{easy,hard,hard2}/{no_tools,tools}.json and instance
+      banks
+    scope: Released graded attempts with a matching frozen problem definition.
+    expected: 11862
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vireshpati/Math-Constraint
+    locator: Pinned results/*/{easy,hard,hard2}/{no_tools,tools}.json and instance
+      banks
+    scope: Released graded attempts with a matching frozen problem definition.
+    expected: 7640

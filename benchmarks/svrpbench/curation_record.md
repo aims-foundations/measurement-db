@@ -1,0 +1,3 @@
+- Recovers 32 released individual routes from four solvers on eight instances. The 160 metric observations preserve cost, constraint violation rate, feasibility, runtime, and robustness with their own grading scales; aggregate paper-table cells are excluded.
+- Links the author-hosted MBZUAI Parquet bank by instance key and verifies exact coordinates for every route. All released task parameters and complete native route exports are retained.
+- These are per-instance recorded metrics, not individual stochastic realizations. Their exact run configuration and random draws are not supplied with the exports; solver labels are preserved without inventing versions.

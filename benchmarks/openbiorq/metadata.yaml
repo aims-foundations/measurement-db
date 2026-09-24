@@ -1,0 +1,99 @@
+benchmark:
+  description: 'OpenBioRQ: 657-question core of unsolved biomedical research questions for tool-using
+    agents, graded by a frozen per-question checklist; solve = checklist score >= 0.5. Full per-(model
+    x item) matrix released for 11 agents (roster, held-out, frontier, no-tool ablations).'
+  testing_condition: Eleven released configurations cover 657 questions at T=0, with or without the ten-tool
+    harness. The GLM-5.1 checklist judge assigns weighted rubric scores; solve means score >= 0.5. Fourteen
+    recorded attempts have no checklist grade and remain null. Published predictions and tool trajectories
+    are retained in full; the authors have scrubbed private infrastructure details.
+  paper_url: https://arxiv.org/abs/2606.21959
+  data_source_url: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+  subject_type: model
+  item_type: task
+  license: CC-BY-4.0
+  citation: 'Minbyul Jeong. OpenBioRQ: Unsolved Biomedical Research Questions for Agents. arXiv:2606.21959,
+    2026.'
+  tags:
+  - biomedical
+  - agentic
+  - tool-use
+  - citation-faithfulness
+  - open-questions
+  - abstention
+  modality:
+  - text
+  domain:
+  - medicine
+  - science
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': unsuccessful
+      '1': successful
+  categorical: true
+  release_date: 2026-06
+  name: OpenBioRQ
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      tasks: full_core_657.jsonl
+      rubrics: rubrics.jsonl
+      results: predictions
+    models:
+      glm-5.1: GLM-5.1
+      qwen3.6: Qwen3.6
+      deepseek-v4: DeepSeek-V4
+      glm-5: GLM-5
+      qwen3.5-397b: Qwen3.5-397B
+      qwen3-235b: Qwen3-235B
+      gemini-3-pro: Gemini-3-Pro
+      opus-4.7: Opus-4.7
+      gpt-5.5: GPT-5.5
+      glm-5.1-no-tools: GLM-5.1
+      gpt-5.5-no-tools: GPT-5.5
+    tool_access:
+      glm-5.1: enabled
+      qwen3.6: enabled
+      deepseek-v4: enabled
+      glm-5: enabled
+      qwen3.5-397b: enabled
+      qwen3-235b: enabled
+      gemini-3-pro: enabled
+      opus-4.7: enabled
+      gpt-5.5: enabled
+      glm-5.1-no-tools: disabled
+      gpt-5.5-no-tools: disabled
+    subject_features:
+      harness: OpenBioRQ
+    conditions:
+      test_condition: temperature=0
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    revision: db59a048e16100d9d4709ebabf78c50f0242f321
+    files:
+    - match: (?:README\.md|full_core_657\.jsonl|rubrics\.jsonl|frozen_core_ids\.json|predictions/[^/]+/(?:predictions\.jsonl|checklist\.jsonl|summary\.json))
+      path: '{path}'
+grading:
+  rule: Solve if the released checklist_score is at least 0.5. Unavailable checklist grades remain null.
+  verifiers:
+    checklist:
+      kind: weighted_llm_checklist
+      judge_model: GLM-5.1
+      temperature: 0
+      source: https://huggingface.co/datasets/Minbyul/OpenBioRQ/blob/db59a048e16100d9d4709ebabf78c50f0242f321/README.md
+      aggregation: Sum(weight * verdict_value) / sum(weight); released scores are rounded to three decimals.
+      verdict_values:
+        met: 1.0
+        partial: 0.5
+        not_met: 0.0
+      success_threshold: 0.5

@@ -1,0 +1,3 @@
+- **Source:** Six original model-response Parquet files match the pinned author GitHub blobs. Prompt templates and analysis code are retained; grades are imported as released, without new model or judge calls.
+- **Correction:** Count each reused closed-book answer once per model/question, as the authors do; retain every context-conditioned source row. Separate those inputs and reconstruct their released system/user templates. The exact API envelope and original correctness-labeling implementation remain unreported.
+- **Preservation:** Keep complete outputs, log probabilities, original references and source positions, including empty/missing output fields. The old table files remain archived after validated replacement.

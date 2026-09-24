@@ -240,15 +240,39 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {required: [file]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                  - required: [files, prefix, tree_sha256]
+                    not: {required: [file]}
+                    properties:
+                      url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
             - if:
                 anyOf:
                   - required: [files]
                   - required: [file]
               then:
                 required: [name]
+            - if:
+                required: [helm_index]
+              then:
+                required: [files, prefix, tree_sha256]
+                properties:
+                  prefix: {type: string, pattern: '/$'}
+                  url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
+            - if:
+                required: [git_lfs]
+                properties: {git_lfs: {const: true}}
+              then:
+                required: [files]
+                properties:
+                  url: {type: string, pattern: '^https://github\.com/[^/]+/[^/]+$'}
+            - if:
+                required: [tree_paths]
+              then:
+                required: [files]
+                properties:
+                  url: {type: string, pattern: '^https://github\.com/[^/]+/[^/]+$'}
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -267,6 +291,30 @@ $defs:
               pattern: '^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$'
             size: {type: integer, minimum: 0}
             sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            git_lfs:
+              description: Resolve selected GitHub LFS pointers to their SHA-256-pinned large files.
+              type: boolean
+            tree_paths:
+              description: Optional repository-relative paths or component-wise globs limiting GitHub tree traversal; selected directories include their descendants.
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: {$ref: '#/$defs/nonempty_string'}
+            prefix:
+              description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
+              $ref: '#/$defs/nonempty_string'
+            tree_sha256:
+              description: SHA-256 of the selected GCS object paths, generations, sizes, MD5 hashes and content encodings.
+              type: string
+              pattern: '^[0-9a-f]{64}$'
+            helm_index:
+              description: Select all run directories in a pinned HELM release manifest, optionally limited to one group.
+              type: object
+              additionalProperties: false
+              required: [source]
+              properties:
+                source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+                group: {$ref: '#/$defs/nonempty_string'}
             files:
               description: Select files from the pinned repository tree and map them into raw/.
               type: array

@@ -1,0 +1,125 @@
+format_version: 1
+tables:
+  traces:
+    rows: 461593
+    logical_sha256: 690a01954f0439c99ff515f1fe432eb3247368cdd203d731555f60bafe75845f
+  subjects:
+    rows: 23
+    logical_sha256: e641a2fed8f56c4cf27d4239ab70c9fb1da5debed1d8919266b77db3c815bc1e
+  responses:
+    rows: 461593
+    logical_sha256: f1040bae77902a67ee00167723e44235a08c12ba76f927b92be61e819fc6c3ea
+  assets:
+    rows: 4
+    logical_sha256: fac39dfe02052dbf4fcc9043eeb0fd823a0fcd893c24330f10cc384b127f4fc0
+  items:
+    rows: 207291
+    logical_sha256: 5354f80f2bb8a48a6b093c25202ed0b9f26ccef8feb4d902e7a0880a231d0fe2
+  benchmarks:
+    rows: 1
+    logical_sha256: 18f8b57cdbf1a4445b458874446116a4a5b885e331aa57e2ddab065f418b4ab7
+source_claims:
+  source_jobs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 461640
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 461016
+  source_attack_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 3324
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 577
+  source_records_with_nul:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 69
+  source_unstarted_jobs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 21
+  source_nonexistent_scenarios:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 26
+  source_unresolved_configuration_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 461593
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 207291
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 23
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 461593
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/microsoft/llmail-inject-challenge
+    locator: Both complete raw_submissions_phase*.jsonl files and released scenario/level definitions.
+    scope: 'Every eligible job: target configuration, exact input, objective conjunction, repeated trial
+      and complete returned record; separately count excluded jobs and unresolved configuration.'
+    expected: 4

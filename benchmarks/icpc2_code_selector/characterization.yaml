@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 70897
+    logical_sha256: ea99cfcc2a225faaedc88a72dedab512b5d551599b78ca647d169f5fa2121fb0
+  subjects:
+    rows: 39
+    logical_sha256: 336317b6d5181c6d65c1e072a107e9be7436e1a60ef860c3bdcee976ea2e5659
+  responses:
+    rows: 70905
+    logical_sha256: 9affb8b470e2ed902f6aa10fd6137153acf515e9bc0e195420173d6fc1ca54ce
+  items:
+    rows: 2175
+    logical_sha256: 8049f1c3a51e5a2f7e93559d82c66c2b4550d0fd7c36d5bbc59f70fe194fd703
+  benchmarks:
+    rows: 1
+    logical_sha256: a8bc6531bcafec514f1f79c8c0a5c82fd4648c5df5288dd01f9ff640cc9edbc4
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/almeidava93/llm-as-code-selectors-paper
+    locator: metrics/predictions_data.csv joined to data/eval_dataset.csv
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 70905
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/almeidava93/llm-as-code-selectors-paper
+    locator: metrics/predictions_data.csv joined to data/eval_dataset.csv
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 47340
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/almeidava93/llm-as-code-selectors-paper
+    locator: metrics/predictions_data.csv joined to data/eval_dataset.csv
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 2175

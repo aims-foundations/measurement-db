@@ -1,0 +1,76 @@
+benchmark:
+  description: Cell-type annotation from verbalized single-cell gene expression. This curation covers
+    the released DeepSeek-R1 results for the 748 multiple-sclerosis scRNA-seq questions.
+  testing_condition: One released DeepSeek-R1 answer per cell-type question. Input contains the system
+    and user messages; the final assistant message in the task bank is the reference and is not shown
+    as input. Binary correctness compares the released extracted prediction with that reference. The original
+    full model output is retained as the trace. Exact model revision, endpoint and historical inference
+    settings are not independently recorded.
+  paper_url: https://arxiv.org/abs/2505.07865
+  data_source_url: https://github.com/zfkarl/CellVerse
+  subject_type: model
+  item_type: task
+  license: CC-BY-4.0
+  citation: "@inproceedings{zhang2025cellverse,\n  title={CellVerse: Do Large Language Models Really Understand\
+    \ Cell Biology?},\n  author={Zhang, Fan and Liu, Tianyu and Zhu, Zhihong and Wu, Hao and Wang, Haixin\
+    \ and Zhou, Donghao and Zheng, Yefeng and Wang, Kun and Wu, Xian and Heng, Pheng-Ann},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - single_cell
+  - biology
+  - multi_omics
+  - multiple_choice
+  modality:
+  - text
+  domain:
+  - medicine
+  - science
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect cell type
+      '1': correct cell type
+  categorical: true
+  release_date: 2025-05
+  name: CellVerse
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      tasks: data/cta_scrna_full.json
+      results: results/ms_cta_response_deepseek_r1.json
+    model:
+      raw_label: DeepSeek-R1
+    subject_features:
+      harness: CellVerse
+    item_features:
+      task_type: cell_type_annotation
+      data_modality: scRNA-seq
+      dataset: multiple_sclerosis
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/zfkarl/CellVerse
+    revision: 59b0e223e8ab2c809612e4f94a1b60dd6e426c93
+    files:
+    - match: (?:README\.md|LICENSE\.txt|data/cta_scrna_full\.json|results/ms_cta_response_deepseek_r1\.json|evaluation/infer_api\.py)
+      path: '{path}'
+  - url: https://huggingface.co/datasets/Karl28/CellVerse
+    revision: d2fb290c09cccfa4269b2b00b03e02982c312f16
+grading:
+  rule: Compare the provider-released extracted prediction with the reference cell type by exact string
+    equality. The answer extractor itself was not released; retain its published prediction without re-extracting
+    the model output.
+  verifiers:
+    exact_match:
+      kind: provider_extracted_answer_exact_match
+      prediction_field: prediction
+      reference_field: ground_truth
+      source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/results/ms_cta_response_deepseek_r1.json
+      comparison: case-sensitive exact string equality

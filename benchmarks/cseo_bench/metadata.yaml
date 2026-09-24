@@ -1,0 +1,90 @@
+benchmark:
+  name: C-SEO Bench
+  description: >-
+    C-SEO Bench measures changes in document citation ranking in conversational search.
+    Each item is a paired Original/intervention prompt with one target document;
+    each response is that document's rank improvement for one released model.
+    The release spans books, retail, videogames, web, news and debate.
+  testing_condition: >-
+    Published baseline and intervention outputs are paired by model, domain and query.
+    Multi-adopter runs contribute one comparison per target document; comparisons
+    sharing an output or baseline are dependent observations. Both full prompts are
+    retained because historical exports can differ in query wording and formatting.
+    Original controls supply comparison evidence; the additional NoRAG control has no
+    promoted target and contributes no rank-improvement observation. API sampling
+    settings are not recorded in the result files and are not inferred from code defaults.
+  paper_url: https://arxiv.org/abs/2506.11097
+  data_source_url: https://huggingface.co/datasets/parameterlab/c-seo-results
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: >-
+    Puerto, H., Gubri, M., Green, T., Oh, S. J., and Yun, S. (2025).
+    C-SEO Bench: Does Conversational SEO Work? NeurIPS Datasets and Benchmarks.
+  tags: [conversational-search, citation-ranking, document-optimization]
+  modality: [text]
+  domain: [general]
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values: [-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5]
+    direction: higher_is_better
+    meanings:
+      '0': No change under the released rank-difference rule.
+  categorical: true
+  release_date: 2025-06
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    columns:
+      Prompt: prompt
+      Response: output
+      Search Query: query
+      Boost Product Index: targets
+      Citation Order: citations
+      Citation Order w. Duplicates: citations_with_duplicates
+    pairing:
+      query_suffix: ' videogame'
+    subject_features:
+      harness: C-SEO Bench
+    result_aliases:
+      retail/seo_baseline_game_theory/gpt-4o-mini-2024-07-18/AdoptionMode.UNILATERAL/responses.parquet: retail/seo_baseline-1/gpt-4o-mini-2024-07-18/AdoptionMode.UNILATERAL/responses.parquet
+      videogames/seo_baseline_game_theory/gpt-4o-mini-2024-07-18/AdoptionMode.UNILATERAL/responses.parquet: videogames/seo_baseline-1/gpt-4o-mini-2024-07-18/AdoptionMode.UNILATERAL/responses.parquet
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/parameterlab/c-seo-results
+    revision: 620e095fe4fac55cc5d735062cd61eaef0b3a8eb
+    files:
+    - match: (?:.*/(?:responses\.parquet|cost\.json)|README\.md)
+      path: 'release/results/{path}'
+  - name: harness
+    url: https://github.com/parameterlab/c-seo-bench
+    revision: 352eba1133e2bb54c6d6d1a9f0e0aa3a15b99abd
+    files:
+    - match: (?:README\.md|notebooks/4_evaluation\.ipynb|src/(?:benchmark/engine|data/benchmark|llms/openai|llms/anthropic|config/adoption_mode)\.py)
+      path: 'release/harness/{path}'
+grading:
+  rule: >-
+    Use the first five entries of each released distinct-citation list. Subtract the
+    target's intervention position from its Original position (zero-based). An absent
+    target uses the length of that output's truncated list; if absent from both lists,
+    the difference is zero. Missing model outputs remain ungraded (null). This measures
+    citation-rank change, not answer correctness, factuality or causal benefit.
+  verifiers:
+    rank_difference:
+      kind: deterministic_rank_comparison
+      source: https://github.com/parameterlab/c-seo-bench/blob/352eba1133e2bb54c6d6d1a9f0e0aa3a15b99abd/notebooks/4_evaluation.ipynb
+      functions: [calculate_significant_improvements, calculate_seo_baseline_improvements]
+      max_citations: 5
+      target_mapping: >-
+        Content edits retain the original document index. seo_baseline-N uses N-1,
+        exactly as the published scoring function does, even if fewer documents exist.
+        seo_baseline_game_theory promotes sorted targets to positions 0, 1, ...,
+        following src/data/benchmark.py. Multi-target arrays are expanded to individual
+        document comparisons, avoiding the notebook's NumPy-array/list ambiguity.
+      native_parser_policy: >-
+        Preserve the released Citation Order values, including out-of-range citations
+        and historical discrepancies with the current engine parser; do not regrade
+        model outputs with a newer extraction implementation.

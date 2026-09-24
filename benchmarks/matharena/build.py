@@ -1,64 +1,144 @@
 #!/usr/bin/env python3
-"""Translate pinned MathArena releases; see metadata.yaml and curation_record.md."""
+"""Curate MathArena's released final verdicts and proof criteria as linked tables."""
 
 import base64
 import hashlib
 import json
-import math
 import re
 import sys
-from collections.abc import Iterator, Mapping
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher, Judge
 
 
-def nonempty_text(value: object) -> str | None:
-    """Keep released text, including whitespace, without legacy truncation."""
-    return value if isinstance(value, str) and value.strip() else None
+class MathArenaBuild(BenchmarkBuild):
+
+    def download(self):
+        return self.fetch_sources("*")
+
+    def build_tables(self) -> dict[str, pd.DataFrame]:
+        # 1. Concatenate the native result shards, retaining their competition and attempt order.
+        layout = self.build_parameters["layout"]
+        source_columns = ['problem_idx', 'problem', 'user_message', 'image', 'model_name', 'model_config', 'idx_answer', 'correct', 'gold_answer', 'answer', 'parsed_answer']
+        frames = []
+        for name in sorted(self.source_files):
+            path = Path(name)
+            if len(path.parts) != 4 or path.parts[0] != "sources" or path.parts[2] != "data" or path.suffix != ".parquet":
+                continue
+            columns = [column for column in pq.read_schema(self.raw_dir / path).names
+                       if column in source_columns or column.startswith(layout["judge_prefix"])]
+            frame = pd.read_parquet(self.raw_dir / path, columns=columns, dtype_backend="pyarrow").astype(object)
+            frames.append(frame.assign(competition=path.parts[1]))
+        attempts = pd.concat(frames, ignore_index=True).astype(object)
+        attempts = attempts.reindex(columns=list(dict.fromkeys([*attempts.columns, *source_columns])))
+        attempts = attempts.where(attempts.notna(), None).assign(attempt_key=lambda frame: frame.index)
+        attempts["problem_idx"] = attempts.problem_idx.astype(str)
+        attempts["reference"] = attempts.gold_answer.map(lambda value: str(value) if value is not None else None).astype(object)
+        attempts["reference"] = attempts.reference.where(attempts.reference.notna(), None)
+        attempts["trial"] = attempts.idx_answer.astype("int64") + 1
+        attempts["kind"] = np.where(attempts.competition.isin(self.grading["verifiers"]["proof"]["competitions"]), "proof", "final_answer")
+
+        # 2. Decode each distinct prompt once; image bytes stay in memory, leaving raw/ unchanged.
+        text = attempts.user_message.map(lambda value: isinstance(value, str) and bool(value.strip()))
+        attempts["prompt_source"] = np.where(text, "user_message", "problem")
+        attempts["prompt"] = attempts.user_message.where(text, attempts.problem)
+        if not attempts.prompt.map(lambda value: isinstance(value, str) and bool(value.strip())).all():
+            raise ValueError("source record has no released prompt")
+        attempts["has_image"] = attempts.image.notna()
+        prompt_keys = ["prompt", "prompt_source", "has_image"]
+        prompts = attempts[prompt_keys].drop_duplicates().copy()
+        decoded = [decode_prompt(prompt, has_image) for prompt, has_image in zip(prompts.prompt, prompts.has_image)]
+        prompts = prompts.join(pd.DataFrame(decoded, index=prompts.index))
+        attempts = attempts.drop(columns=["image", "user_message", "problem"]).merge(
+            prompts, on=prompt_keys, how="left", sort=False, validate="many_to_one")
+
+        # 3. Keep distinct model configurations and only explicitly recorded reasoning effort.
+        subjects = attempts[["model_name", "model_config"]].drop_duplicates().copy()
+        subjects["subject_key"] = range(len(subjects))
+        subjects["raw_label"] = subjects.model_name
+        features = subjects.rename(columns={"model_name": "source_model_name"})[["source_model_name", "model_config"]].copy()
+        features["reasoning_effort"] = subjects.model_name.str.extract(layout["effort_pattern"], expand=False).str.lower()
+        subjects["features"] = features.apply(lambda row: row.dropna().to_dict(), axis=1)
+        attempts = attempts.merge(subjects[["model_name", "model_config", "subject_key"]],
+                                  on=["model_name", "model_config"], how="left", sort=False, validate="many_to_one")
+
+        # 4. Expand proof rubrics to one row per judge/criterion; retain final-answer booleans directly.
+        final = attempts.loc[attempts.kind.eq("final_answer") & attempts.correct.notna(), ["attempt_key", "correct"]].copy()
+        if not final.correct.map(lambda value: isinstance(value, bool)).all():
+            raise ValueError("final-answer correctness must be a released boolean")
+        final = final.assign(response=final.correct.astype(float), judge_slot=None, criterion_index=None, rubric_json=None)
+        judge_columns = sorted(column for column in attempts if column.startswith(layout["judge_prefix"]))
+        proof = attempts.loc[attempts.kind.eq("proof"), ["attempt_key", *judge_columns]].melt(
+            id_vars="attempt_key", value_vars=judge_columns, var_name="judge", value_name="criteria").dropna(subset="criteria")
+        proof["criteria"] = proof.criteria.map(lambda value: json.loads(value) if isinstance(value, str)
+                                                else value.tolist() if isinstance(value, np.ndarray) else value)
+        if not proof.criteria.map(lambda value: isinstance(value, list) and all(isinstance(part, dict) for part in value)).all():
+            raise ValueError("grading_details must be a JSON or native list of criteria")
+        proof = proof.explode("criteria", ignore_index=True).dropna(subset="criteria")
+        proof["judge_slot"] = proof.judge.str.rsplit("_", n=1).str[-1].astype("int64")
+        proof["criterion_index"] = proof.groupby(["attempt_key", "judge"], sort=False).cumcount()
+        points = pd.json_normalize(proof.criteria.tolist()).reindex(columns=["points", "max_points"]).set_axis(proof.index)
+        points = points.apply(pd.to_numeric, errors="coerce")
+        valid = np.isfinite(points.points) & np.isfinite(points.max_points) & points.max_points.ne(0)
+        proof["response"] = (points.points / points.max_points).clip(0, 1).where(valid)
+        proof = proof.loc[valid].copy()
+        proof["rubric_json"] = proof.criteria.map(lambda value: json.dumps(
+            {field: value.get(field) for field in ['title', 'grading_scheme_desc', 'max_points']}, sort_keys=True, ensure_ascii=False))
+        grade_columns = ["attempt_key", "response", "judge_slot", "criterion_index", "rubric_json"]
+        grades = pd.concat([final[grade_columns], proof[grade_columns]], ignore_index=True)
+        grades[["judge_slot", "criterion_index"]] = grades[["judge_slot", "criterion_index"]].astype("Int64")
+        grades = grades.sort_values(["attempt_key", "judge_slot", "criterion_index"], kind="stable", na_position="first")
+        observations = grades.merge(attempts, on="attempt_key", how="left", sort=False, validate="many_to_one")
+
+        # 5. Distinguish item content, images and grading protocols before assigning local item keys.
+        item_columns = ["competition", "problem_idx", "content", "reference", "image_key", "kind", "judge_slot", "criterion_index", "rubric_json"]
+        observations["item_key"] = observations.groupby(item_columns, sort=False, dropna=False).ngroup()
+        items = observations.drop_duplicates("item_key").copy()
+        items["raw_item_id"] = items.competition + "::" + items.problem_idx
+        item_features = items[["competition", "problem_idx", "prompt_source", "image_detail"]]
+        items["features"] = item_features.apply(lambda row: row.dropna().to_dict(), axis=1)
+        final_spec, proof_spec = (self.grading["verifiers"][kind] for kind in ["final_answer", "proof"])
+        items["verifier"] = ExactMatcher(spec=final_spec["spec"])
+        is_proof = items.kind.eq("proof")
+        items.loc[is_proof, "verifier"] = Judge(spec=proof_spec["spec"], judge=proof_spec["judge"], judged_by=proof_spec["judged_by"])
+        rules = items.rubric_json.where(is_proof, final_spec["rule"])
+        scales = items.kind.map({"final_answer": final_spec["response_scale"], "proof": proof_spec["response_scale"]})
+        items["grading_criterion"] = [dict(reference_answer=reference, rule=rule, response_scale=scale)
+                                     for reference, rule, scale in zip(items.reference, rules, scales)]
+        items["verifier_features"] = items.reference.map(lambda value: {
+            "reference_answer_sha256": hashlib.sha256(json.dumps(value, ensure_ascii=False).encode()).hexdigest()})
+        items.loc[is_proof, "verifier_features"] = pd.Series([
+            {"judge_slot": int(judge), "criterion_index": int(index), "rubric_sha256": hashlib.sha256(rubric.encode()).hexdigest()}
+            for judge, index, rubric in items.loc[is_proof, ["judge_slot", "criterion_index", "rubric_json"]].itertuples(index=False, name=None)
+        ], index=items.index[is_proof], dtype=object)
+
+        # 6. Link each complete attempt trace to its first usable grade, without copying it per criterion.
+        responses = observations.assign(response_key=range(len(observations)))
+        traces = responses.drop_duplicates("attempt_key").copy()
+        has_answer = traces.answer.map(lambda value: isinstance(value, str) and bool(value.strip()))
+        traces["trace"] = traces.answer.where(has_answer, traces.parsed_answer)
+        traces = traces.loc[traces.trace.map(lambda value: isinstance(value, str) and bool(value.strip()))]
+        return {
+            "subjects": subjects[["subject_key", "raw_label", "features"]],
+            "items": items[["item_key", "raw_item_id", "content", "attachments", "grading_criterion", "verifier", "verifier_features", "features"]],
+            "responses": responses[["response_key", "subject_key", "item_key", "trial", "response"]],
+            "traces": traces[["response_key", "trace"]],
+        }
 
 
-def grading_details(value: object) -> list[dict]:
-    """Decode both released rubric encodings; malformed rubrics fail loudly."""
-    if value is None:
-        return []
-    if isinstance(value, str):
-        value = json.loads(value)
-    if not isinstance(value, list) or any(not isinstance(c, dict) for c in value):
-        raise ValueError("grading_details must be a JSON or native list of criteria")
-    return value
-
-
-def criterion_fraction(criterion: Mapping) -> float | None:
-    """Retain the legacy points/max_points definition, skips, and clipping."""
-    try:
-        points = float(criterion.get("points"))
-        maximum = float(criterion.get("max_points"))
-    except (TypeError, ValueError):
-        return None
-    if not math.isfinite(points) or not math.isfinite(maximum) or maximum == 0:
-        return None
-    return max(0.0, min(1.0, points / maximum))
-
-
-def prompt_components(record: Mapping) -> tuple[str, list[dict], str]:
-    """Separate released prompt text and inline image bytes, never answer text."""
-    prompt = nonempty_text(record.get("user_message"))
-    prompt_source = "user_message"
-    if prompt is None:
-        prompt = nonempty_text(record.get("problem"))
-        prompt_source = "problem"
-    if prompt is None:
-        raise ValueError("source record has no released prompt")
+def decode_prompt(prompt: str, has_image: bool) -> dict:
+    """Decode native multimodal payloads; this is input parsing, not grading."""
     parts = None
     if prompt.startswith("["):
         try:
             parts = json.loads(prompt)
         except json.JSONDecodeError:
-            pass  # A mathematical statement may itself start with '['.
+            pass  # A mathematical statement may itself begin with '['.
     images = []
     if isinstance(parts, list):
         texts = []
@@ -68,270 +148,32 @@ def prompt_components(record: Mapping) -> tuple[str, list[dict], str]:
                     raise ValueError("unexpected interleaved image/text prompt")
                 texts.append(part["text"])
             elif part["type"] in ("image_url", "input_image"):
-                image_url = part["image_url"]
-                detail = part.get("detail")
-                if isinstance(image_url, dict):
-                    detail = image_url.get("detail")
-                    image_url = image_url["url"]
-                match = re.fullmatch(
-                    r"data:(image/[a-z0-9.+-]+);base64,(.+)", image_url
-                )
+                url, detail = part["image_url"], part.get("detail")
+                if isinstance(url, dict):
+                    url, detail = url["url"], url.get("detail")
+                match = re.fullmatch(r"data:(image/[a-z0-9.+-]+);base64,(.+)", url)
                 if match is None:
                     raise ValueError("image prompt must contain released inline bytes")
-                images.append(
-                    {
-                        "data": base64.b64decode(match[2], validate=True),
-                        "media_type": match[1],
-                        "detail": detail,
-                    }
-                )
+                images.append({"data": base64.b64decode(match[2], validate=True), "media_type": match[1], "detail": detail})
             elif part["type"] == "image":
                 source = part["source"]
                 if source["type"] != "base64":
                     raise ValueError("image source must contain released base64 bytes")
-                images.append(
-                    {
-                        "data": base64.b64decode(source["data"], validate=True),
-                        "media_type": source["media_type"],
-                        "detail": None,
-                    }
-                )
+                images.append({"data": base64.b64decode(source["data"], validate=True), "media_type": source["media_type"], "detail": None})
             else:
                 raise ValueError(f"unsupported prompt part: {part['type']!r}")
         if len(texts) != 1:
             raise ValueError("expected one released textual prompt component")
         prompt = texts[0]
-    if record.get("image") is not None and not images:
+    if has_image and not images:
         raise ValueError("released image was not recovered from the delivered prompt")
-    return prompt, images, prompt_source
-
-
-def subject_features(model_name: str, model_config: str) -> dict[str, str]:
-    """Retain configuration identity and only explicitly labelled effort levels."""
-    features = {"source_model_name": model_name, "model_config": model_config}
-    effort = re.search(r"\((low|medium|high|xhigh|max)\)", model_name, re.IGNORECASE)
-    if effort:
-        features["reasoning_effort"] = effort[1].lower()
-    # A config path is evidence of a configuration, not its unreleased contents.
-    # In particular, do not infer a harness version, token budget, or access date.
-    return features
-
-
-PROOF_COMPETITIONS = {"imc_2025", "imo_2025", "miklos_2025", "putnam_2025", "usamo_2025"}
-
-
-def source_competitions(files):
-    """Group verified release shards by their archived competition directory."""
-    competitions = {}
-    for name in sorted(files):
-        path = Path(name)
-        if len(path.parts) != 4 or path.parts[0] != "sources" or path.suffix != ".parquet":
-            continue
-        competition = path.parts[1]
-        group = competitions.setdefault(competition, {
-            "kind": "proof" if competition in PROOF_COMPETITIONS else "final_answer",
-            "shards": [], "card": f"sources/{competition}/README.md",
-        })
-        group["shards"].append(name)
-    return competitions
-
-
-class MathArenaBuild(BenchmarkBuild):
-    """One observation per released final verdict or usable rubric criterion."""
-
-    def download(self):
-        return self.fetch_sources('*')
-
-    def source_records(self, competition: Mapping) -> Iterator[tuple[str, int, dict]]:
-        """Read bounded Arrow batches without materializing unused message logs."""
-        for shard in competition["shards"]:
-            parquet = pq.ParquetFile(self.raw_dir / shard)
-            columns = [
-                column
-                for column in parquet.schema_arrow.names
-                if column
-                in {
-                    "problem_idx",
-                    "problem",
-                    "user_message",
-                    "image",
-                    "model_name",
-                    "model_config",
-                    "idx_answer",
-                    "correct",
-                    "gold_answer",
-                    "answer",
-                    "parsed_answer",
-                }
-                or column.startswith("grading_details_judge_")
-            ]
-            row_number = 0
-            for batch in parquet.iter_batches(batch_size=64, columns=columns):
-                for record in batch.to_pylist():
-                    yield shard, row_number, record
-                    row_number += 1
-
-    def _attachments(self, images: list[dict]) -> list[dict]:
-        attachments = []
-        for ordinal, image in enumerate(images, 1):
-            payload = image["data"]
-            digest = hashlib.sha256(payload).hexdigest()
-            source_path = self.raw_dir / "decoded_images" / digest
-            if not source_path.exists() or source_path.read_bytes() != payload:
-                source_path.parent.mkdir(parents=True, exist_ok=True)
-                source_path.write_bytes(payload)
-            attachments.append(
-                {
-                    "source_path": source_path,
-                    "path": f"image-{ordinal}.{image['media_type'].split('/')[-1]}",
-                    "media_type": image["media_type"],
-                    "role": "input_image",
-                }
-            )
-        return attachments
-
-    def build_subject_item_response_rows(self) -> None:
-        subjects: dict[tuple[str, str], str] = {}
-        items: dict[tuple, str] = {}
-        for competition_name, competition in source_competitions(self.source_files).items():
-            print(f"[matharena] translating {competition_name}", flush=True)
-            for shard, row_number, record in self.source_records(competition):
-                model_name = record["model_name"]
-                model_config = record["model_config"]
-                subject_key = (model_name, model_config)
-                if subject_key not in subjects:
-                    subjects[subject_key] = self.add_subject(
-                        model_name,
-                        features=subject_features(model_name, model_config),
-                    )
-                problem_id = str(record["problem_idx"])
-                trial = int(record["idx_answer"]) + 1
-                content, images, prompt_source = prompt_components(record)
-                reference = record.get("gold_answer")
-                if reference is not None:
-                    reference = str(reference)
-                trace = nonempty_text(record.get("answer")) or nonempty_text(
-                    record.get("parsed_answer")
-                )
-                grades = []
-                if competition["kind"] == "final_answer":
-                    if record["correct"] is None:
-                        continue
-                    if not isinstance(record["correct"], bool):
-                        raise ValueError(
-                            "final-answer correctness must be a released boolean"
-                        )
-                    grades.append((None, None, None, float(record["correct"])))
-                else:
-                    judge_columns = sorted(
-                        key
-                        for key in record
-                        if key.startswith("grading_details_judge_")
-                    )
-                    for column in judge_columns:
-                        judge_slot = int(column.rsplit("_", 1)[1])
-                        for criterion_index, criterion in enumerate(
-                            grading_details(record[column])
-                        ):
-                            fraction = criterion_fraction(criterion)
-                            if fraction is not None:
-                                grades.append(
-                                    (judge_slot, criterion_index, criterion, fraction)
-                                )
-                for grade_index, (
-                    judge_slot,
-                    criterion_index,
-                    criterion,
-                    value,
-                ) in enumerate(grades):
-                    if criterion is None:
-                        grading_criterion = {
-                            "reference_answer": reference,
-                            "rule": "The provider's parsed final answer matches gold_answer.",
-                            "response_scale": {"kind": "discrete", "values": [0, 1]},
-                        }
-                        verifier = ExactMatcher(
-                            spec=(
-                                "Import the provider's released correct boolean as 0 or 1; "
-                                "the provider compares its parsed final answer with gold_answer. "
-                                "Do not reparse or regrade the solution."
-                            )
-                        )
-                        # Some releases spell the same problem's gold answer
-                        # differently across records. Preserve each instrument
-                        # rather than letting first-registration wins erase it.
-                        verifier_features = {
-                            "reference_answer_sha256": hashlib.sha256(
-                                json.dumps(reference, ensure_ascii=False).encode()
-                            ).hexdigest(),
-                        }
-                    else:
-                        rubric = {
-                            key: criterion.get(key)
-                            for key in ("title", "grading_scheme_desc", "max_points")
-                        }
-                        rubric_json = json.dumps(
-                            rubric, sort_keys=True, ensure_ascii=False
-                        )
-                        grading_criterion = {
-                            "reference_answer": reference, "rule": rubric_json,
-                            "response_scale": {"kind": "interval", "min": 0, "max": 1},
-                        }
-                        verifier = Judge(
-                            spec="Provider's human criterion grading; normalize awarded points by max_points.",
-                            judge="human",
-                            judged_by="human",
-                        )
-                        # Preserve the recorded judge slot and criterion attribution.
-                        verifier_features = {
-                            "judge_slot": judge_slot,
-                            "criterion_index": criterion_index,
-                            "rubric_sha256": hashlib.sha256(
-                                rubric_json.encode()
-                            ).hexdigest(),
-                        }
-                    image_keys = tuple(
-                        (hashlib.sha256(i["data"]).hexdigest(), i["detail"])
-                        for i in images
-                    )
-                    item_key = (
-                        competition_name,
-                        problem_id,
-                        content,
-                        reference,
-                        image_keys,
-                        verifier,
-                        judge_slot,
-                        criterion_index,
-                    )
-                    if item_key not in items:
-                        features = {
-                            "competition": competition_name,
-                            "problem_idx": problem_id,
-                            "prompt_source": prompt_source,
-                        }
-                        if images:
-                            features["image_detail"] = json.dumps(
-                                [i["detail"] for i in images]
-                            )
-                        items[item_key] = self.add_item(
-                            raw_item_id=f"{competition_name}::{problem_id}",
-                            content=content,
-                            attachments=self._attachments(images),
-                            grading_criterion=grading_criterion,
-                            verifier=verifier,
-                            verifier_features=verifier_features,
-                            features=features,
-                        )
-                    self.add_response(
-                        subject_id=subjects[subject_key],
-                        item_id=items[item_key],
-                        trial=trial,
-                        test_condition=None,
-                        interactors=None,
-                        response=value,
-                        trace=trace if grade_index == 0 else None,
-                    )
+    return {
+        "content": prompt,
+        "image_key": json.dumps([(hashlib.sha256(image["data"]).hexdigest(), image["detail"]) for image in images]),
+        "image_detail": json.dumps([image["detail"] for image in images]) if images else None,
+        "attachments": [{"data": image["data"], "path": f"image-{index}.{image['media_type'].split('/')[-1]}",
+                         "media_type": image["media_type"], "role": "input_image"} for index, image in enumerate(images, 1)],
+    }
 
 
 if __name__ == "__main__":

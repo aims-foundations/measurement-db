@@ -1,0 +1,80 @@
+benchmark:
+  description: Released idea-generation and research-proposal reviews for 201 ML research tasks, six generator
+    models and two LLM reviewers. Each observation is one rubric dimension of a released review.
+  testing_condition: Idea generation receives the task description. Proposal generation additionally receives
+    the released common idea and literature review for that task. Stage, rubric dimension and reviewer
+    define the item grading protocol. Generated artifacts and reviewer evidence are retained without regrading.
+    The separate experiment/write-up subset is outside this import.
+  paper_url: https://openreview.net/forum?id=JX9DE6colf
+  data_source_url: https://github.com/chchenhui/mlrbench
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{chen2025mlrbench,\n  title={MLR-Bench: Evaluating AI Agents on Open-Ended\
+    \ Machine Learning Research},\n  author={Chen, Hui and Xiong, Miao and Lu, Yujie and Han, Wei and\
+    \ Deng, Ailin and He, Yufei and Wu, Jiaying and Li, Yibo and Liu, Yue and Hooi, Bryan},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - ai_agents
+  - ml_research
+  - llm_judge
+  - scientific_discovery
+  modality:
+  - text
+  domain:
+  - ml_engineering
+  - reasoning
+  response_type: likert_10
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    direction: higher_is_better
+  categorical: true
+  release_date: null
+  name: MLR-Bench
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    source:
+      archive: mlrbench-f728d571a992d71c8b526eeb4d9ab6bb5c8cc824.tar.gz
+    run:
+      harness: MLR-Agent
+    idea:
+      generator: mlrbench/agent/idea_generator.py
+      function: generate_idea
+      rubric_file: mlrbench/evals/review_idea.py
+      rubric_symbol: RESEARCH_IDEA_RUBRIC
+    proposal:
+      generator: mlrbench/agent/proposal_generator.py
+      function: generate_proposal
+      rubric_file: mlrbench/evals/review_proposal.py
+      rubric_symbol: RESEARCH_PROPOSAL_RUBRIC
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/chchenhui/mlrbench/tar.gz/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824
+    revision: f728d571a992d71c8b526eeb4d9ab6bb5c8cc824
+    file: mlrbench-f728d571a992d71c8b526eeb4d9ab6bb5c8cc824.tar.gz
+    size: 91831849
+    sha256: fdb462e740b1f040ed7c749e173da530a1ca2d0503a94a5db687b333d742edc9
+  - url: https://huggingface.co/datasets/chchenhui/mlrbench-tasks
+    revision: f1a9a989d4925ff8145e70810e144130be3f8a11
+grading:
+  rule: Use the released LLM reviewer score for this rubric dimension on its integer 1–10 scale. Higher
+    is better; the overall assessment is a separate native judgment, not a recomputed mean.
+  verifiers:
+    review:
+      kind: released_llm_review
+      source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/mlrbench/evals

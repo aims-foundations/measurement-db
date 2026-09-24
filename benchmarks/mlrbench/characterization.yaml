@@ -1,0 +1,82 @@
+format_version: 1
+tables:
+  traces:
+    rows: 31356
+    logical_sha256: 4dc16c5dea68f21cb424c961e829f0c5e548eed0ff5261d4a764eedc52b879cb
+  subjects:
+    rows: 6
+    logical_sha256: 531f60f9259e9ca27bd4c85d27964922e5bc89b002bef3158a7d73807cb10e2c
+  responses:
+    rows: 31356
+    logical_sha256: 00cf030730b407b99a716dcc292eab6c7e901242e41a38cf1b8554fcae733e23
+  items:
+    rows: 5226
+    logical_sha256: a9d4d99c30e4f6bcaa999552c6f68270c84280b2aad88480639843d65a4f1b0d
+  benchmarks:
+    rows: 1
+    logical_sha256: a2d364933a3d2fa3254338f4201cd974a4b879ddb31ba29887ccb2d0a1a9ad1a
+source_claims:
+  source_rubric_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 31356
+  source_reviews:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 4824
+  source_generated_artifacts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 2412
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 201
+  source_generators:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 6
+  source_reviewers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 2
+  source_grade_sum:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/chchenhui/mlrbench/tree/f728d571a992d71c8b526eeb4d9ab6bb5c8cc824/agent_reviews
+    locator: 'Pinned archive: agent_reviews/idea_proposal_reviews_*/<task>/<stage>/*.json, corresponding
+      generated Markdown, tasks/*.md and native prompt/rubric definitions.'
+    scope: Complete released idea/proposal panel. Individual 1–10 rubric grades, not independent model
+      executions; the separate later-stage subset remains outside this import.
+    expected: 250646
+    absolute_tolerance: 0

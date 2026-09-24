@@ -1,0 +1,86 @@
+benchmark:
+  description: 'Released EngiOpt Beams2D demonstration results: conditional GAN and conditional diffusion
+    outputs at three explicit design conditions, with initial, cumulative and final signed optimality
+    gaps.'
+  testing_condition: 'Demonstration subset only: two saved example notebooks, three designs per method,
+    three dependent numerical measurements per design. Conditions and printed grades are imported without
+    executing notebooks. Scores are differences from a locally optimized design, not a certified global
+    optimum; negative values are preserved. The GAN notebook loads a local generator.pth with USE_WANDB=False;
+    the diffusion notebook records a seed_1 W&B alias. Exact weight digests, generation RNG state, simulator
+    versions and full numerical optimization histories are not released. Full notebook outputs, including
+    rendered designs, are preserved in traces.'
+  paper_url: https://openreview.net/forum?id=YowD33Q89V
+  data_source_url: https://github.com/IDEALLab/EngiOpt
+  subject_type: model
+  item_type: design_condition
+  license: GPL-3.0
+  citation: "@inproceedings{felten2025engibench,\n  title={EngiBench: A Framework for Data-Driven Engineering\
+    \ Design Research},\n  author={Felten, Florian and Apaza, Gabriel and Br{\\\"a}unlich, Gerhard and\
+    \ Diniz, Cashen and Dong, Xuliang and Drake, Arthur and Habibi, Milad and Hoffman, Nathaniel James\
+    \ and Keeler, Matthew and Massoudi, Soheyl and VanGessel, Francis and Fuge, Mark},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - engineering_design
+  - generative_models
+  - optimization
+  - surrogate
+  modality:
+  - text
+  - image
+  domain:
+  - science
+  response_type: continuous_unbounded
+  response_scale:
+    kind: interval
+    min: null
+    max: null
+    direction: lower_is_better
+  categorical: false
+  release_date: 2025-12
+  name: EngiBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      root: source_review/7a98ba52107ccd42d91809f276a1bf7339c85898
+    examples:
+      example_easy_model.ipynb: EngiOpt Conditional GAN
+      example_hard_model.ipynb: EngiOpt Conditional Diffusion
+    problem:
+      name: Beams2D
+      version: v0
+    metrics:
+      Initial: initial_gap
+      Cumulative: cumulative_gap
+      Final: final_gap
+    rules:
+      initial_gap: The first optimization-history objective minus the objective of the locally optimized
+        design at the same conditions.
+      cumulative_gap: Sum of signed objective gaps over the recorded optimization history, using that
+        locally optimized design as baseline.
+      final_gap: The final optimization-history objective minus the objective of the locally optimized
+        design at the same conditions.
+    patterns:
+      conditions: (?s)\bconditions\s*=\s*(\[.*?\n\])
+      grades: '(Initial|Cumulative|Final) optimality gaps: (\[[^\n]*?\])'
+grading:
+  verifiers:
+    native_gap:
+      kind: published_numerical_evaluation
+      source: https://github.com/IDEALLab/EngiOpt/blob/7a98ba52107ccd42d91809f276a1bf7339c85898/engiopt/metrics.py
+      function: optimality_gap
+      formula: opt.obj_values - baseline for each step; the notebook reports the initial, sum and final
+        values.
+      execution: Import printed native scores; the notebooks and generated programs are not executed.
+      limitations: The exact installed runtime revision and numerical histories for the saved notebook
+        outputs are unknown. This pinned metric implementation documents the released method, not an independently
+        rerun evaluation.
+sources:
+  upstream:
+  - name: examples
+    url: https://github.com/IDEALLab/EngiOpt
+    revision: 7a98ba52107ccd42d91809f276a1bf7339c85898
+    files:
+    - match: (?:example_(?:easy|hard)_model\.ipynb|engiopt/metrics\.py|README\.md|LICENSE)
+      path: source_review/7a98ba52107ccd42d91809f276a1bf7339c85898/{path}

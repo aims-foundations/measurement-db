@@ -2,17 +2,96 @@
 
 from __future__ import annotations
 
+import base64
+from fnmatch import fnmatchcase
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
-from urllib.parse import quote, urlparse
+import subprocess
+import tempfile
+from urllib.parse import quote, urlencode, urlparse
 from urllib.request import Request, urlopen
 from typing import Any
 
 
 class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
+
+
+def github_tree_entries(repository: str, revision: str, paths: list[str] | None = None) -> list[dict]:
+    """Read pinned GitHub files, optionally limiting traversal to named subtrees.
+
+    Large result repositories can exceed GitHub's recursive-tree response limit.
+    Path globs select complete subtrees without traversing unrelated screenshots;
+    every selected file still carries the commit's native Git blob hash.
+    """
+    cache = {}
+    headers = {"User-Agent": "measurement-db"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    def read_tree(sha, recursive=False):
+        key = sha, recursive
+        if key not in cache:
+            url = f"https://api.github.com/repos/{repository}/git/trees/{sha}"
+            request = Request(url + ("?recursive=1" if recursive else ""), headers=headers)
+            with urlopen(request, timeout=120) as response:
+                tree = json.load(response)
+            if tree.get("truncated"):
+                raise SourceDataError("Upstream GitHub tree is truncated; select smaller tree_paths")
+            cache[key] = tree["tree"]
+        return cache[key]
+
+    if paths is None:
+        return read_tree(revision, recursive=True)
+    if not paths or any(not isinstance(path, str) or "\\" in path or
+                        any(part in ("", ".", "..", "**") for part in path.split("/")) for path in paths):
+        raise SourceDataError("tree_paths must contain relative paths with component-wise globs")
+    files = {}
+    for pattern in paths:
+        selected = [{"path": "", "sha": revision, "type": "tree"}]
+        for component in pattern.split("/"):
+            selected = [
+                {**child, "path": f"{parent['path']}/{child['path']}".lstrip("/")}
+                for parent in selected if parent["type"] == "tree"
+                for child in read_tree(parent["sha"]) if fnmatchcase(child["path"], component)
+            ]
+        if not selected:
+            raise SourceDataError(f"tree_paths matches no upstream path: {pattern}")
+        for entry in selected:
+            if entry["type"] == "blob":
+                descendants = [entry]
+            elif entry["type"] == "tree":
+                descendants = [{**child, "path": entry["path"] + "/" + child["path"]}
+                               for child in read_tree(entry["sha"], recursive=True) if child["type"] == "blob"]
+            else:
+                continue
+            files.update({child["path"]: child for child in descendants})
+    return sorted(files.values(), key=lambda entry: entry["path"])
+
+
+def read_gpg_json(path: Path, *, password: str, scratch_dir: Path) -> Any:
+    """Read a provider's password-encrypted JSON without extracting into raw/.
+
+    GnuPG uses an isolated temporary home, never the user's keyring. Passwords
+    for public benchmark releases belong in metadata alongside the source.
+    """
+    with tempfile.TemporaryDirectory(prefix=".gpg-", dir=scratch_dir) as home:
+        try:
+            result = subprocess.run(
+                ["gpg", "--no-options", "--homedir", home, "--batch", "--no-tty",
+                 "--pinentry-mode", "loopback", "--no-symkey-cache", "--passphrase-fd", "0",
+                 "--decrypt", str(path)],
+                input=(password + "\n").encode(), capture_output=True, check=True, timeout=120,
+            )
+        except FileNotFoundError as exc:
+            raise SourceDataError("Install GnuPG (gpg) to read this encrypted upstream JSON") from exc
+        except subprocess.CalledProcessError as exc:
+            raise SourceDataError(f"Cannot decrypt {path}: {exc.stderr.decode(errors='replace')}") from exc
+    return json.loads(result.stdout)
 
 
 def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict]:
@@ -32,26 +111,86 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
     for name in names:
         source = named[name]
         url = source["url"]
+        if source.get("git_lfs") and (urlparse(url).netloc != "github.com" or "files" not in source):
+            raise SourceDataError(f"{name}: git_lfs requires a pinned GitHub file selection")
+        if "tree_paths" in source and (urlparse(url).netloc != "github.com" or "files" not in source):
+            raise SourceDataError(f"{name}: tree_paths requires a pinned GitHub file selection")
         if "file" in source:
             selected = [dict(file=source["file"], url=url, size=source["size"],
                              hash_kind="sha256", digest=source["sha256"])]
         else:
-            revision = source["revision"]
-            if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
-                raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
             location = urlparse(url)
             entries = []
+            if location.netloc == "storage.googleapis.com" and "prefix" in source:
+                bucket, prefix = location.path.strip("/"), source["prefix"]
+                if not re.fullmatch(r"[a-z0-9._-]+", bucket):
+                    raise SourceDataError(f"{name}: expected a public GCS bucket URL")
+                prefixes = [prefix]
+                if "helm_index" in source:
+                    selector = source["helm_index"]
+                    index = named.get(selector["source"], {})
+                    if not {"url", "file", "size", "sha256"} <= index.keys():
+                        raise SourceDataError(f"{name}: HELM index must name a pinned HTTP source")
+                    request = Request(index["url"], headers={"User-Agent": "Mozilla/5.0"})
+                    with urlopen(request, timeout=120) as response:
+                        payload = response.read()
+                    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
+                        raise SourceDataError(f"{name}: HELM release index differs from its declared bytes")
+                    prefixes = []
+                    for run in json.loads(payload):
+                        if selector.get("group") and selector["group"] not in run.get("run_spec", {}).get("groups", []):
+                            continue
+                        path = run["run_path"]
+                        marker = "benchmark_output/runs/"
+                        if marker not in path:
+                            raise SourceDataError(f"{name}: invalid HELM run path {path!r}")
+                        relative = path[path.index(marker):].rstrip("/")
+                        if ".." in Path(relative).parts:
+                            raise SourceDataError(f"{name}: unsafe HELM run path {path!r}")
+                        prefixes.append(prefix + relative + "/")
+                    if not prefixes or len(set(prefixes)) != len(prefixes):
+                        raise SourceDataError(f"{name}: HELM selection has no runs or duplicate run paths")
+                for selected_prefix in prefixes:
+                    parameters = {"prefix": selected_prefix, "maxResults": 1000,
+                                  "fields": "items(name,size,generation,md5Hash,contentEncoding),nextPageToken"}
+                    while True:
+                        request = Request(f"https://storage.googleapis.com/storage/v1/b/{bucket}/o?{urlencode(parameters)}",
+                                          headers={"User-Agent": "measurement-db"})
+                        with urlopen(request, timeout=120) as response:
+                            page = json.load(response)
+                        for entry in page.get("items", []):
+                            relative = entry["name"].removeprefix(prefix)
+                            if not any(re.fullmatch(rule["match"], relative) for rule in source["files"]):
+                                continue
+                            try:
+                                checksum = base64.b64decode(entry["md5Hash"], validate=True)
+                                if len(checksum) != 16 or not str(entry["generation"]).isdigit():
+                                    raise ValueError("missing MD5 or generation")
+                            except (KeyError, TypeError, ValueError) as exc:
+                                raise SourceDataError(f"{name}: GCS object lacks a usable version/checksum: {entry['name']}") from exc
+                            encoding = entry.get("contentEncoding", "")
+                            if encoding not in ("", "gzip"):
+                                raise SourceDataError(f"{name}: unsupported GCS content encoding {encoding!r}")
+                            entries.append(dict(path=relative, size=int(entry["size"]), hash_kind="md5", digest=checksum.hex(),
+                                generation=str(entry["generation"]), content_encoding=encoding,
+                                url=f"https://storage.googleapis.com/{bucket}/{quote(entry['name'], safe='/')}?generation={entry['generation']}"))
+                        if not page.get("nextPageToken"):
+                            break
+                        parameters["pageToken"] = page["nextPageToken"]
+                identity = [{key: entry[key] for key in ("path", "generation", "size", "digest", "content_encoding")}
+                            for entry in sorted(entries, key=lambda entry: entry["path"])]
+                fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                if fingerprint != source.get("tree_sha256"):
+                    raise SourceDataError(f"{name}: selected GCS objects differ from the pinned tree ({fingerprint})")
+            else:
+                revision = source["revision"]
+                if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+                    raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
             if location.netloc == "github.com":
                 repository = location.path.strip("/")
                 if len(repository.split("/")) != 2:
                     raise SourceDataError(f"{name}: expected a GitHub repository URL")
-                request = Request(f"https://api.github.com/repos/{repository}/git/trees/{revision}?recursive=1",
-                                  headers={"User-Agent": "measurement-db"})
-                with urlopen(request, timeout=120) as response:
-                    tree = json.load(response)
-                if tree.get("truncated"):
-                    raise SourceDataError(f"{name}: upstream GitHub tree is truncated")
-                for entry in tree["tree"]:
+                for entry in github_tree_entries(repository, revision, source.get("tree_paths")):
                     if entry["type"] == "blob":
                         entries.append(dict(path=entry["path"], size=entry["size"],
                             hash_kind="git_sha1", digest=entry["sha"],
@@ -70,7 +209,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
                         hash_kind="sha256" if lfs else "git_sha1", digest=digest,
                         url=hf_hub_url(repository, entry.path, repo_type="dataset", revision=revision),
                         hf_repo=repository, hf_revision=revision, hf_path=entry.path))
-            else:
+            elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
             selected = []
             for rule in source["files"]:
@@ -83,6 +222,22 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
                     destination = rule["path"].format(path=entry["path"], **match.groupdict())
                     # Keep established cache filenames for punctuation in run names.
                     destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                    if entry.get("content_encoding") == "gzip":
+                        destination += ".gz"
+                    if source.get("git_lfs"):
+                        # The commit pins the pointer; its object ID pins the
+                        # large file. Verify both, rather than saving the pointer.
+                        request = Request(entry["url"], headers={"User-Agent": "measurement-db"})
+                        with urlopen(request, timeout=120) as response:
+                            pointer = response.read(1024)
+                        digest = hashlib.sha1(f"blob {len(pointer)}\0".encode() + pointer).hexdigest()
+                        if len(pointer) != entry["size"] or digest != entry["digest"]:
+                            raise SourceDataError(f"{name}: Git LFS pointer differs from the pinned commit")
+                        fields = re.fullmatch(rb"version https://git-lfs.github.com/spec/v1\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n", pointer)
+                        if fields is None:
+                            raise SourceDataError(f"{name}: expected an unextended Git LFS v1 pointer: {entry['path']}")
+                        entry = {**entry, "size": int(fields[2]), "hash_kind": "sha256", "digest": fields[1].decode(),
+                                 "url": f"https://media.githubusercontent.com/media/{repository}/{revision}/{quote(entry['path'], safe='/')}"}
                     selected.append({**entry, "file": destination})
                 if not matches:
                     raise SourceDataError(f"{name}: no upstream files match {rule['match']!r}")

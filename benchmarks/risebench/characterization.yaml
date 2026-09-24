@@ -1,0 +1,164 @@
+format_version: 1
+tables:
+  traces:
+    rows: 8280
+    logical_sha256: a681cd55ab9eb85dad045769414a9d41f33f9be58e761a0484722f8853d0ffdd
+  subjects:
+    rows: 23
+    logical_sha256: ab15575f7c7fa97552edfd1d723ced3c8ec45fbd6a181fb2b771a3de3777dc67
+  responses:
+    rows: 8280
+    logical_sha256: 1ecd6d5363fe6a3588eefbd188b9912f149af48336945b3bf8dc8138a96ac666
+  assets:
+    rows: 413
+    logical_sha256: 17045ffcf64b2b63c4bb8ea24cec6acc6abe0ed2a0072a8ee77320dbb9246b75
+  items:
+    rows: 1080
+    logical_sha256: d66c0c8e801d508a9b3e79b96cda9292e585088f7a99b15ef3cdfe52eabc8adc
+  benchmarks:
+    rows: 1
+    logical_sha256: 8da6599e2ddda926832deca00a4caa39ea67558f5e5a0e0ace4f14d52b7a471f
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 8280
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 1359
+  source_task_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 360
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 1080
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 23
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 8280
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 413
+  source_thinking_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 720
+  source_missing_consistency_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 163
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 9
+  source_missing_image_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 7
+  source_generated_videos:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 360
+  source_generated_images:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    locator: 21 native *_judge.xlsx worksheets at author-output revision 01cdcc1d8a557825bb103a9987cf1bbf91510bca,
+      plus two BAGEL archives at 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165. Independent worksheet XML,
+      complete images, text and explicit grading-failure checks.
+    scope: Two grading protocols over 360 task definitions, including 360 additional recorded video-prompt
+      variants; 23 released model configurations. Failed judge parses are ungraded, while explicit missing-image
+      auto-failures retain their recorded zero.
+    expected: 8273

@@ -1,0 +1,42 @@
+format_version: 1
+tables:
+  traces:
+    rows: 11268
+    logical_sha256: 938666000232057b392e8b40a28865580f487fe05a902a4949e034c36b53414c
+  subjects:
+    rows: 6
+    logical_sha256: e0c7a8ad74b6d97010a69e859d6aad3e3e004f7ca2ad90ca052d6da1a0d766f5
+  responses:
+    rows: 11268
+    logical_sha256: 07f27faa886b9eeb23fd081c5353aa850b6a0b92ec24e7d967531b1eb2cd6b8f
+  items:
+    rows: 1876
+    logical_sha256: 6e1c53ff04a8bf7241d7da66b369b27dee89d94c7f7e11029eac1808018d8816
+  benchmarks:
+    rows: 1
+    logical_sha256: 741efc424b7878f8695e1c9ed46918059dbe4d9a5b3f79311af6013cc3a6a8ba
+source_claims:
+  source_prompt_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LibrAI/do-not-answer
+    locator: 'data_en.csv: question rows and nonempty *_harmful / *_action annotations'
+    scope: The six released models and both human annotation families; repeated identical prompts remain
+      separate source rows.
+    expected: 939
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LibrAI/do-not-answer
+    locator: 'data_en.csv: question rows and nonempty *_harmful / *_action annotations'
+    scope: The six released models and both human annotation families; repeated identical prompts remain
+      separate source rows.
+    expected: 11268
+  source_label_sum:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LibrAI/do-not-answer
+    locator: 'data_en.csv: question rows and nonempty *_harmful / *_action annotations'
+    scope: The six released models and both human annotation families; repeated identical prompts remain
+      separate source rows.
+    expected: 11337

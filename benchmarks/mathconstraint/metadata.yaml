@@ -1,0 +1,68 @@
+benchmark:
+  description: 'Adaptive combinatorial-reasoning benchmark: constraint-satisfaction (CSP/SAT) decision
+    problems with solver-verified SAT/UNSAT ground truth; 12 models evaluated with and without a sandboxed
+    SAT/SMT solver.'
+  testing_condition: split (easy/hard/hard2) x tools (Python SAT/SMT solver) vs no-tools
+  paper_url: https://arxiv.org/abs/2605.08498
+  data_source_url: https://github.com/vireshpati/Math-Constraint
+  subject_type: model
+  item_type: task
+  license: cc-by-4.0
+  citation: 'MathConstraint: Automated Generation of Verified Combinatorial Reasoning Instances for LLMs
+    (arXiv 2605.08498).'
+  tags:
+  - combinatorial-reasoning
+  - constraint-satisfaction
+  - sat
+  - tool-use
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2026-05
+  release: private
+  name: MathConstraint
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    splits:
+      easy: easy
+      hard: hard
+      hard2: hard2
+    conditions:
+      no_tools: 'no'
+      tools: 'yes'
+grading:
+  rule: Accept a correct SAT/UNSAT decision and, for a satisfiable instance, a solution passing the benchmark
+    constraint validator.
+  verifiers:
+    solver:
+      kind: deterministic_constraint_validator
+      source: https://github.com/vireshpati/Math-Constraint/tree/687a6d5510f96afdfa7229fc04b230e434e0c792/src/math_constraint
+      logic: Preserve each released result.correct flag; do not rerun or replace the historical solver
+        verdict.
+sources:
+  upstream:
+  - name: benchmark
+    url: https://github.com/vireshpati/Math-Constraint
+    revision: 687a6d5510f96afdfa7229fc04b230e434e0c792
+    files:
+    - match: mathconstraint_easy/instances/(?P<name>[^/]+\.json)
+      path: easy_instances/{name}
+    - match: mathconstraint/instances/(?P<name>[^/]+\.json)
+      path: hard_instances/{name}
+    - match: results/(?P<relative>[^/]+/(?:easy|hard|hard2)/(?:no_tools|tools)\.json)
+      path: results/{relative}

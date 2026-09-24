@@ -1,0 +1,89 @@
+benchmark:
+  description: Stochastic vehicle routing benchmark. This curation preserves the released individual route
+    exports and their cost, constraint violation, feasibility, runtime, and robustness metrics.
+  testing_condition: Individual route exports for four solvers on eight captured instances. Each recorded
+    metric is a distinct item grading protocol; metrics are not converted to binary success.
+  paper_url: https://openreview.net/forum?id=yADrJyaBJl
+  data_source_url: https://huggingface.co/datasets/MBZUAI/svrp-bench
+  subject_type: method
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{heakl2025svrpbench,\n  title={SVRPBench: A Realistic Benchmark for Stochastic\
+    \ Vehicle Routing Problem},\n  author={Heakl, Ahmed and Shaaban, Yahia Salaheldin and Tak{\\'a}{\\\
+    v{c}}, Martin and Lahlou, Salem and Iklassov, Zangir},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks\
+    \ Track},\n  year={2025},\n}"
+  tags:
+  - optimization
+  - vehicle_routing
+  - stochastic
+  - logistics
+  modality:
+  - text
+  domain:
+  - general
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-12
+  name: SVRPBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+grading:
+  verifiers:
+    total_cost:
+      source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench
+      rule: The total route cost reported for this instance.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    cvr:
+      source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench
+      rule: The released constraint violation rate, in the provider's percentage units.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: lower_is_better
+    feasibility:
+      source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench
+      rule: The released feasibility rate for this instance.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    runtime:
+      source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench
+      rule: The released solver runtime, in seconds.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    robustness:
+      source: https://github.com/yehias21/vrp-benchmarks/tree/9fd5737ae598e1667ae94907f9c45224c501c84b/vrp_bench
+      rule: The released route-cost variability statistic; preserve the native units and aggregation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+sources:
+  upstream:
+  - name: instances
+    url: https://huggingface.co/datasets/MBZUAI/svrp-bench/resolve/4a79ade38f663edaefa62e34e7c2ea330a2e15da/data/test-00000-of-00001.parquet
+    revision: 4a79ade38f663edaefa62e34e7c2ea330a2e15da
+    file: instances.parquet
+    size: 495447
+    sha256: c367e3ccd6185c591f19cd6aceb1c1cd41d2845b8e1976b0fe54cf67568a13c8
+  - name: results
+    url: https://github.com/yehias21/vrp-benchmarks
+    revision: 9fd5737ae598e1667ae94907f9c45224c501c84b
+    files:
+    - match: vrp_bench/vrp_results/data/(?P<name>[^/]+\.json)
+      path: results/{name}

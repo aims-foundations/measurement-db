@@ -121,6 +121,22 @@ class DatasetRunnerTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "independent source checks"):
             case.test_independent_provider_claims()
 
+    def test_audit_mapping_selects_only_the_requested_benchmark(self):
+        def audit(directory):
+            self.assertEqual(directory, self.directory)
+            return {"source_responses": 2}
+
+        suite = runner.benchmark_suite(self.root, "example", source_audit={"example": audit})
+        case = next(t for t in suite if t._testMethodName == "test_independent_provider_claims")
+        case.expected = expectations()
+        case.tables = {"responses": pd.DataFrame({"response": [0.0, 1.0]})}
+        case.test_independent_provider_claims()
+
+        suite = runner.benchmark_suite(self.root, "example", source_audit={"other": audit})
+        case = next(t for t in suite if t._testMethodName == "test_independent_provider_claims")
+        with self.assertRaisesRegex(AssertionError, "independent source checks"):
+            case.test_independent_provider_claims()
+
 
 if __name__ == "__main__":
     unittest.main()

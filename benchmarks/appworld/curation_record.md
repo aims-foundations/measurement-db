@@ -1,0 +1,4 @@
+- Scope: 10,530 released observations on 585 tasks from 18 model/scaffold configurations (36 experiment bundles). The named Git LFS selection preserves this captured panel; later leaderboard additions are not silently included.
+- Import: join native pass/fail results to full task instructions and task-specific checks; retain all 10,386 available environment logs. Sources, pinned revisions and the grading description are in `metadata.yaml`.
+- Checks: all source-keyed grades, task definitions, graders and complete logs match upstream; every output table is unchanged by the tabular refactor.
+- Limits: historical execution commits are unspecified. Bundles use the provider’s published decoding format; AppWorld’s upstream distribution conditions still apply.

@@ -1,0 +1,60 @@
+benchmark:
+  description: Released early per-error detection results for a Claude Opus 4.6 review workflow on six
+    perturbed papers. Items contain the released paper text; grading criteria identify the injected errors.
+    This is a partial experimental slice, not the full paper evaluation.
+  testing_condition: The baseline and experimental scripts read the same perturbed documents. The experimental
+    script replaces review prompts with an experimental-error-focused prompt; baseline retains the standard
+    review prompt. Method and prompt variant belong to subject configuration. The provider detected/missed
+    lists determine the binary grade.
+  paper_url: https://arxiv.org/abs/2606.19749
+  data_source_url: https://github.com/ChicagoHAI/OpenAIReview
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@article{nguyen2026benchmarking,\n  title={Benchmarking Agentic Review Systems},\n  author={Nguyen,\
+    \ Dang and Hao, Wanqing and Elazar, Yanai and Tan, Chenhao},\n  journal={arXiv preprint arXiv:2606.19749},\n\
+    \  year={2026}\n}"
+  tags:
+  - peer-review
+  - error-detection
+  - perturbation
+  - scientific-papers
+  modality:
+  - text
+  domain:
+  - science
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': injected error not detected
+      '1': injected error detected
+  categorical: true
+  release_date: 2026-06
+  release: private
+  name: Agentic Review Systems — Perturbation Benchmark
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      root: extracted/benchmarks/experimental_perturbations
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/ChicagoHAI/OpenAIReview
+    revision: 510ef2a2a10e8da5a6048692baa0fa1cfe0dcee4
+    files:
+    - match: benchmarks/experimental_perturbations/(?:results_[^/]+/.+|perturbation_results/.+_recorrupted\.md)
+      path: extracted/{path}
+grading:
+  rule: Read the released detected/missed lists for this injected perturbation.
+  verifiers:
+    detection:
+      spec: Provider LLM matches reviewer comments to injected-error descriptions; read the captured score
+        JSON. Historical scorer model is not recorded here.

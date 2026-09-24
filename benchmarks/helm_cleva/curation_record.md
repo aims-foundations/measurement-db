@@ -1,0 +1,5 @@
+- Scope: HELM cleva v1.0.0, 84 native run exports, 28,724 observations and 7,536 canonical prompt/grading items. Sources and grading are declared in `metadata.yaml`.
+- Import: preserve each run’s full prompts, native task/language/exam definitions, request settings, accepted references and complete traces. Missing grades remain null; repeated attempts are retained.
+- Checks: independently reconciled all 28,724 observations with native requests, predictions, references, grades and traces; shared schema and relationship checks passed.
+- Grades: select the primary metric declared for each task. Preserve fractional BLEU/ROUGE scores and item-specific scales; 2,212 translation/paraphrase attempts have no item-level grade. Their corpus scores remain in the captured release index.
+- Limits: the release does not identify its executed harness commit. Captured grader code is an inspected reference; dataset licensing is not inferred from the code license.

@@ -1,0 +1,80 @@
+benchmark:
+  name: CORE-Bench
+  description: 'CORE-Bench: computational reproducibility agent benchmark (capsule x difficulty).'
+  testing_condition: Each response is the released fraction of capsule subquestions answered correctly.
+    Difficulty belongs to the item. Agent architecture and cost limit belong to subject identity. Train/test
+    membership remains in the source dataset; it does not define a different agent. Historical trace text
+    is preserved. Full task prompts replace the former capsule-title summaries.
+  paper_url: https://arxiv.org/abs/2409.11363
+  data_source_url: https://github.com/siegelz/core-bench
+  subject_type: agent
+  item_type: research_task
+  license: MIT
+  citation: "@misc{siegel2024corebenchfosteringcredibilitypublished,\n      title={CORE-Bench: Fostering\
+    \ the Credibility of Published Research Through a Computational Reproducibility Agent Benchmark},\n\
+    \      author={Zachary S. Siegel and Sayash Kapoor and Nitya Nagdir and Benedikt Stroebl and Arvind\
+    \ Narayanan},\n      year={2024},\n      eprint={2409.11363},\n      archivePrefix={arXiv},\n    \
+    \  primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2409.11363},\n}"
+  tags:
+  - agent
+  modality:
+  - text
+  domain:
+  - science
+  response_type: fraction
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-09
+  release: private
+  one_line_description: Evaluates agents on reproducing scientific code and answering questions about
+    its outputs.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      gpt4o: GPT-4o
+      gpt4o-mini: GPT-4o-mini
+      o1: o1
+      o1-mini: o1-mini
+      o1-preview: o1-preview
+      claude_35_sonnet: Claude-3.5-Sonnet
+    agents:
+      coreagent: CORE-Agent
+      autogpt: AutoGPT
+    excluded_files:
+      results/test_coreagent_gpt4o_c-4/20250112-052839_codeocean_hard.json: Post-paper run; outside the
+        released paper comparison.
+      results/test_coreagent_gpt4o-mini_c-4/20250112-065033_codeocean_hard.json: Post-paper run; outside
+        the released paper comparison.
+    task_bank:
+      public_password: reproducibility
+sources:
+  upstream:
+  - name: tasks
+    url: https://github.com/siegelz/core-bench
+    revision: e32a2980e72fe6eb04ee04eb749458f570625663
+    files:
+    - match: (?:README\.md|benchmark/(?:dataset/core_(?:train\.json|test\.json\.gpg)|benchmark_prompts\.json|evaluations\.py))
+      path: core-bench/{path}
+  - name: results
+    url: https://corebench.cs.princeton.edu/agent_results.tar.gz
+    revision: null
+    file: core-bench/agent_results.tar.gz
+    size: 628536
+    sha256: 207b041faa5889b7b053be6b462b0798b76b2ffcc5c6ec0c5b49f80badc70bfa
+  - url: https://corebench.cs.princeton.edu/capsules
+    revision: null
+grading:
+  rule: The response is (correct_written_answers + correct_vision_answers) / (total_written_questions
+    + total_vision_questions), using the provider's released per-run counts.
+  verifiers:
+    provider_result:
+      kind: provider_result_mapping
+      implementation: Use released per-run correct/total counts; the captured evaluator source documents
+        the original scoring procedure.
+      source: https://github.com/siegelz/core-bench/blob/e32a2980e72fe6eb04ee04eb749458f570625663/benchmark/evaluations.py

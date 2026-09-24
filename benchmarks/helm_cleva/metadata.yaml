@@ -1,0 +1,176 @@
+benchmark:
+  description: 'Chinese language evaluation across 21 released task configurations and four model exports.
+    Preserve the declared task metric: item grades where published, and null grades for attempts evaluated
+    only by corpus-level metrics.'
+  testing_condition: Published HELM requests. Preserve native task/language/exam definitions, actual generation
+    settings, all accepted references and every observed attempt; no best-score deduplication.
+  paper_url: https://arxiv.org/abs/2308.04813
+  data_source_url: https://crfm.stanford.edu/helm/cleva/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @misc{li2023clevachineselanguagemodels,
+          title={CLEVA: Chinese Language Models EVAluation Platform},
+          author={Yanyang Li and Jianqiao Zhao and Duo Zheng and Zi-Yuan Hu and Zhi Chen and Xiaohui Su and Yongfeng Huang and Shijia Huang and Dahua Lin and Michael R. Lyu and Liwei Wang},
+          year={2023},
+          eprint={2308.04813},
+          archivePrefix={arXiv},
+          primaryClass={cs.CL},
+          url={https://arxiv.org/abs/2308.04813},
+    }
+  tags:
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-08
+  release: public
+  name: HELM CLEVA (Chinese)
+  version: HELM cleva v1.0.0
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: cleva
+      release: v1.0.0
+      item_features: scenario_spec
+    primary_metrics:
+      helm.benchmark.metrics.paraphrase_generation_metrics.CLEVAParaphraseGenerationMetric: chinese_ibleu
+      helm.benchmark.metrics.machine_translation_metrics.CLEVAMachineTranslationMetric: cleva_machine_translation_bleu
+grading:
+  rule: Import the published task metric unchanged. reference_answer is a JSON array containing every
+    correct-tagged reference, in native order; repeated choices remain represented.
+  verifiers:
+    exact_match:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale: &id001
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': incorrect
+          '1': correct
+      criterion: First completion compared with the correct-tagged references; preserve the released exact_match
+        grade.
+    cleva_math_result_match:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: cleva_math_result_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale: *id001
+      criterion: Match the final math expression in the first completion against an accepted reference
+        using the declared HELM parser.
+    chinese_bleu_1:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: chinese_bleu_1
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      criterion: Character-tokenized sentence BLEU-1, with the maximum score across correct-tagged references
+        for the first completion.
+    chinese_rouge_2:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: chinese_rouge_2
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      criterion: Character-tokenized ROUGE-2 F measure, with the maximum score across correct-tagged references
+        for the first completion.
+    chinese_ibleu:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: chinese_ibleu
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/paraphrase_generation_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale:
+        kind: interval
+        min: -0.2
+        max: 0.8
+        direction: higher_is_better
+      criterion: 'Corpus-level character iBLEU at alpha=0.8: 0.8 times reference BLEU minus 0.2 times
+        source-copy BLEU. No per-item grade is published; retain each attempt with response=null. The
+        release index retains the corpus score.'
+    cleva_machine_translation_bleu:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: cleva_machine_translation_bleu
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/machine_translation_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      criterion: Corpus-level SacreBLEU with a target-language tokenizer and all released reference translations.
+        No per-item grade is published; retain each attempt with response=null. The release index retains
+        the corpus score.
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
+    revision: v1.0.0
+    file: release_index.json
+    size: 2767897
+    sha256: 05749d7e4bf7c6f81e3dbd5928e9798e8e12f8d7471ec07e25dfba51c5a32fce
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.0.0
+    prefix: cleva/
+    helm_index:
+      source: release
+      group: cleva
+    tree_sha256: 2b1e7d692a924b3707d620af57274e5b03aecce24e7199fb785e420ba5f142c1
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py|evaluate_reference_metrics\.py|paraphrase_generation_metrics\.py|machine_translation_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/scenarios/(?:cleva_scenario\.py)
+      path: harness/{path}

@@ -1,0 +1,45 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1454
+    logical_sha256: 1c7aa78caf3be0eeb13d62227e86a640f0b5b2a54a06756028f68ec5b4a3bdee
+  subjects:
+    rows: 11
+    logical_sha256: cead4fb832f3ccecb6b50de2106039d6ec46df7dc8ef4fd87112ef63796b09e3
+  responses:
+    rows: 1956
+    logical_sha256: cbe125e96eaf861f0bd9581fc4707490943e99e53c9012139eda6bb25403c96a
+  items:
+    rows: 270
+    logical_sha256: d00cd97713ef866e375e52b6d02f6a9eabcf0d87c0c351f5338492a1a3e47e6e
+  benchmarks:
+    rows: 1
+    logical_sha256: 04f144ac59d14229dcb1f5085de605ce9d5b720d607c2e24abd4e9be1f868623
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
+      benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
+      per-run question-accuracy fractions and result_report traces.
+    expected: 1956
+  source_capsules:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
+      benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
+      per-run question-accuracy fractions and result_report traces.
+    expected: 90
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/siegelz/core-bench
+    locator: raw/core-bench/agent_results.tar.gz; benchmark/dataset/core_train.json and core_test.json.gpg;
+      benchmark/benchmark_prompts.json
+    scope: Released paper-scope capsule runs, excluding the two documented post-paper result files. Preserve
+      per-run question-accuracy fractions and result_report traces.
+    expected: 1454

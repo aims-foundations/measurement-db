@@ -1,0 +1,3 @@
+- Import all eight official Lighteval exports, preserving full prompts, reference solutions, judgments and source records. Verify each published aggregate against its item-level grades.
+- Separate checkpoint and reported task-generation settings in subject identity, and temperature in response conditions; keep the task setting distinct from the launcher’s generation cap, whose effective historical value is unverified.
+- Replace process-dependent item aliases and extracted traces with source-row aliases and complete records. No model execution or rejudging is required.

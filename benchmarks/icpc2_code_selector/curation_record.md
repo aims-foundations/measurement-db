@@ -1,0 +1,3 @@
+- Read the released predictions and question CSVs directly into tables; one item is a (query, top_k) prompt, and success is the provider’s true_positive or true_negative verdict.
+- Two question strings have repeated definitions with differing candidate orders. Preserve the original curation’s first definition because response rows do not identify a definition row.
+- The tabular migration preserves all 70,905 observations and 70,897 complete traces. Grading descriptions now use the current schema, so item and response IDs change.

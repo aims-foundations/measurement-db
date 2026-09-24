@@ -1,0 +1,3 @@
+- Curates the pinned NQ/TQ releases as question tables joined to five model-answer and human-judgment columns. All 27,548 observations and complete answers were independently checked against the native JSON.
+- Preserves 2,189 ungraded attempts: 2,114 previously omitted answers plus 75 literal `nan` annotations previously misclassified as successes. Missing annotations never become binary grades.
+- Uses the explicit `text-davinci-003` identifier so that the registry keeps this system distinct from ChatGPT (`gpt-3.5-turbo`). The tables now contain all five released systems.

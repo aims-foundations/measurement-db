@@ -1,0 +1,56 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2400
+    logical_sha256: b25665f82bbcad33c2d3371fa609c217ee156e2a581dd894e6b7e80c6efd2a02
+  subjects:
+    rows: 16
+    logical_sha256: c93ad209ae6bd282db67a517c6d9b7c1c9939f715d09506aaa4fbb1c01ab3eab
+  responses:
+    rows: 2400
+    logical_sha256: bd36e0128bb8b1f59eef0d6808f3572875da81c054ea1ec4a87f2384a61ab25d
+  assets:
+    rows: 84
+    logical_sha256: 086f4eaad05e2f474228ae9f1ad16c7206d1c11e95c95fce77aa812d44d302ca
+  items:
+    rows: 150
+    logical_sha256: e819b075b24d032d74a415c2fa54a1de125240c1d0ee5e712dc785f6fe48fc20
+  benchmarks:
+    rows: 1
+    logical_sha256: 77ae4f270bde1f25da5359b00b7aed44f3179a0caa04efcf5acb0ed894e514c0
+source_claims:
+  open_source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/patronus-ai/financebench/tar.gz/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    locator: README and data/financebench_open_source.jsonl
+    scope: pinned open-source human-evaluation sample
+    expected: 150
+  referenced_source_documents:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/patronus-ai/financebench/tar.gz/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    locator: distinct doc_name values joined to pdfs/{doc_name}.pdf
+    scope: target filing PDFs referenced by the 150 open-source questions
+    expected: 84
+  released_subject_configurations:
+    kind: count
+    origin: reported
+    source: https://arxiv.org/pdf/2311.11944v1
+    locator: abstract, Section 4, and Appendix B
+    scope: model and evaluation-mode configurations evaluated in November 2023
+    expected: 16
+  released_human_reviews:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/patronus-ai/financebench/tar.gz/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    locator: 16 results/*.jsonl files with 150 rows each
+    scope: provider-released item-level model answers and human labels
+    expected: 2400
+  released_model_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/patronus-ai/financebench/tar.gz/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    locator: model_answer in every results/*.jsonl row
+    scope: complete released output field, without truncation
+    expected: 2400

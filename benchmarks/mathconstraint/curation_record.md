@@ -1,0 +1,3 @@
+- Curates the pinned easy/hard problem banks and released per-model solver results. All 11,862 observations match the previous subjects, prompts, conditions, grades, trials, and full traces.
+- Preserves each recorded solver verdict; no solver is rerun. Identical definitions shared by the banks are deduplicated, and conflicting definitions are rejected.
+- Keeps tool/no-tool and difficulty conditions on each response. Chain-of-thought text is retained where released, otherwise the full raw response is used.

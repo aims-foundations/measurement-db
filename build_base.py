@@ -248,6 +248,7 @@ class BenchmarkBuild(ABC):
         *,
         expected_size: int | None = None,
         expected_sha256: str | None = None,
+        request_headers: dict[str, str] | None = None,
     ) -> Path:
         """Download and optionally verify one cached source artifact.
 
@@ -279,7 +280,7 @@ class BenchmarkBuild(ABC):
 
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "Mozilla/5.0"},
+            headers={"User-Agent": "Mozilla/5.0", **(request_headers or {})},
         )
         dest.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None
@@ -356,8 +357,9 @@ class BenchmarkBuild(ABC):
         are identity-bearing and must be supplied here rather than through response
         ``settings``. The effective response scale is resolved from ``INFO`` and
         the criterion and included in identity without duplicating inherited
-        scales in item records. Each attachment mapping contains ``source_path`` (a file
-        beneath ``raw/``), ``path`` (its stable logical POSIX path),
+        scales in item records. Each attachment mapping contains either ``source_path``
+        (a file beneath ``raw/``) or ``data`` (bytes already read from a source table),
+        ``path`` (its stable logical POSIX path),
         ``media_type``, and ``role``. Exact bytes are content-addressed and
         written once to ``assets.parquet``.
         """
@@ -391,7 +393,6 @@ class BenchmarkBuild(ABC):
         manifest_entries: list[dict[str, object]] = []
         seen_logical_paths: set[str] = set()
         allowed_attachment_fields = {
-            "source_path",
             "path",
             "media_type",
             "role",
@@ -401,36 +402,39 @@ class BenchmarkBuild(ABC):
             context = f"{self.slug}: add_item() attachment {ordinal}"
             if not isinstance(attachment, dict):
                 raise BuildContractError(f"{context} must be a mapping")
-            if set(attachment) != allowed_attachment_fields:
+            if set(attachment) not in (
+                allowed_attachment_fields | {"source_path"},
+                allowed_attachment_fields | {"data"},
+            ):
                 raise BuildContractError(
-                    f"{context} must contain exactly "
-                    f"{sorted(allowed_attachment_fields)}"
+                    f"{context} must contain {sorted(allowed_attachment_fields)} "
+                    "and exactly one of source_path or data"
                 )
 
-            supplied_source = attachment["source_path"]
-            if not isinstance(supplied_source, (str, Path)):
-                raise BuildContractError(
-                    f"{context}.source_path must be a string or Path"
-                )
-            source_path = Path(supplied_source)
-            if not source_path.is_absolute():
-                source_path = self.raw_dir / source_path
-            try:
-                resolved_source = source_path.resolve(strict=True)
-            except (FileNotFoundError, OSError) as exc:
-                raise BuildContractError(
-                    f"{context}.source_path is not a readable file: {source_path}"
-                ) from exc
-            try:
-                resolved_source.relative_to(raw_root)
-            except ValueError:
-                raise BuildContractError(
-                    f"{context}.source_path must stay beneath {self.raw_dir}"
-                ) from None
-            if not resolved_source.is_file():
-                raise BuildContractError(
-                    f"{context}.source_path is not a file: {source_path}"
-                )
+            resolved_source = None
+            if "data" in attachment:
+                payload = attachment["data"]
+                if not isinstance(payload, bytes):
+                    raise BuildContractError(f"{context}.data must be bytes")
+            else:
+                supplied_source = attachment["source_path"]
+                if not isinstance(supplied_source, (str, Path)):
+                    raise BuildContractError(f"{context}.source_path must be a string or Path")
+                source_path = Path(supplied_source)
+                if not source_path.is_absolute():
+                    source_path = self.raw_dir / source_path
+                try:
+                    resolved_source = source_path.resolve(strict=True)
+                except (FileNotFoundError, OSError) as exc:
+                    raise BuildContractError(
+                        f"{context}.source_path is not a readable file: {source_path}"
+                    ) from exc
+                if not resolved_source.is_relative_to(raw_root):
+                    raise BuildContractError(
+                        f"{context}.source_path must stay beneath {self.raw_dir}"
+                    )
+                if not resolved_source.is_file():
+                    raise BuildContractError(f"{context}.source_path is not a file: {source_path}")
 
             logical_path = attachment["path"]
             if not isinstance(logical_path, str) or not logical_path:
@@ -473,7 +477,8 @@ class BenchmarkBuild(ABC):
 
             asset_id = self._asset_id_by_source_path.get(resolved_source)
             if asset_id is None:
-                payload = resolved_source.read_bytes()
+                if resolved_source is not None:
+                    payload = resolved_source.read_bytes()
                 asset_id = _measurement_ids.asset_id_from_bytes(payload)
                 existing = self._asset_rows.get(asset_id)
                 if existing is not None and existing["data"] != payload:
@@ -489,7 +494,8 @@ class BenchmarkBuild(ABC):
                         "data": payload,
                     },
                 )
-                self._asset_id_by_source_path[resolved_source] = asset_id
+                if resolved_source is not None:
+                    self._asset_id_by_source_path[resolved_source] = asset_id
 
             seen_logical_paths.add(logical_path)
             manifest_entries.append(
@@ -733,14 +739,22 @@ class BenchmarkBuild(ABC):
                 temporary = Path(staging) / "input"
                 if "hf_repo" in artifact:
                     from huggingface_hub import hf_hub_download
+                    # Keep byte ranges and checksums on the original representation;
+                    # compressed CDN responses can break streamed/resumed downloads.
                     cached = Path(hf_hub_download(artifact["hf_repo"], artifact["hf_path"],
-                                  repo_type="dataset", revision=artifact["hf_revision"]))
+                                  repo_type="dataset", revision=artifact["hf_revision"],
+                                  headers={"Accept-Encoding": "identity"}))
                     _source_snapshots.verify_snapshot_file(cached, artifact)
                     shutil.copyfile(cached, temporary)
                 else:
+                    # GCS transcodes gzip for some browser user agents even
+                    # when Accept-Encoding is set. Keep the stored bytes.
+                    encoding_options = ({"request_headers": {"Accept-Encoding": "gzip", "User-Agent": "measurement-db"}}
+                                        if artifact.get("content_encoding") == "gzip" else {})
                     self._download(artifact["url"], temporary, timeout=600,
                                    expected_size=artifact["size"],
-                                   expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None)
+                                   expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None,
+                                   **encoding_options)
                 _source_snapshots.verify_snapshot_file(temporary, artifact)
                 temporary.replace(target)
         self._source_artifacts = artifacts
@@ -875,7 +889,9 @@ class BenchmarkBuild(ABC):
         optional = {
             "subjects": {"features", "access_date"},
             "items": {"attachments", "features", "verifier_features"},
-            "responses": {"trial", "test_condition", "interactors"},
+            # reference_answer is the existing add_response compatibility input;
+            # it is never an output column. Explicit None preserves legacy IDs.
+            "responses": {"trial", "test_condition", "interactors", "reference_answer"},
             "traces": set(),
         }
         primary_keys = {"subjects": "subject_key", "items": "item_key",

@@ -1,0 +1,114 @@
+benchmark:
+  name: TheAgentCompany
+  description: 'TheAgentCompany: ~175 consequential real-world workplace agent tasks across professional
+    domains (admin, HR, finance/PM, software engineering, data science). Each task has an agent-facing
+    prompt (task.md) and a checkpoint rubric; runs are graded into a partial-credit final_score. Per-(model,
+    task) final scores are taken from the official experiments leaderboard repo.'
+  testing_condition: Each recorded attempt is graded by the released final_score.result / final_score.total.
+    The scaffold identifies the subject configuration; test_condition is null. Task-specific evaluator
+    definitions distinguish identical prompts with different grading protocols. Native JSON and text trajectories
+    are retained in full, including tool outputs, without reconstructing them from an earlier MeasurementDB
+    table.
+  paper_url: https://arxiv.org/abs/2412.14161
+  data_source_url: https://github.com/TheAgentCompany/experiments
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@misc{xu2025theagentcompanybenchmarkingllmagents,\n      title={TheAgentCompany: Benchmarking\
+    \ LLM Agents on Consequential Real World Tasks},\n      author={Frank F. Xu and Yufan Song and Boxuan\
+    \ Li and Yuxuan Tang and Kritanjali Jain and Mengxue Bao and Zora Z. Wang and Xuhui Zhou and Zhitong\
+    \ Guo and Murong Cao and Mingyang Yang and Hao Yang Lu and Amaad Martin and Zhe Su and Leander Maben\
+    \ and Raj Mehta and Wayne Chi and Lawrence Jang and Yiqing Xie and Shuyan Zhou and Graham Neubig},\n\
+    \      year={2025},\n      eprint={2412.14161},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n\
+    \      url={https://arxiv.org/abs/2412.14161},\n}"
+  tags:
+  - agent
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - tool_use
+  response_type: fraction
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-12
+  release: private
+  one_line_description: Evaluates agents on workplace tasks in a simulated company using task-specific
+    checkpoint scores.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      runs: experiments/evaluation/1.0.0
+      tasks: tasks
+    models:
+      20241217_OpenHands-0.14.2-gemini-1.5-pro: gemini-1.5-pro
+      20241217_OpenHands-0.14.2-gemini-2.0-flash: gemini-2.0-flash
+      20241217_OpenHands-0.14.2-gpt-4o-2024-08-06: gpt-4o-2024-08-06
+      20241217_OpenHands-0.14.2-llama-3.1-405b: llama-3.1-405b
+      20241217_OpenHands-0.14.2-llama-3.1-70b: llama-3.1-70b
+      20241217_OpenHands-0.14.2-llama-3.3-70b: llama-3.3-70b
+      20241217_OpenHands-0.14.2-nova-pro-v1_x3a_0: amazon-nova-pro-v1:0
+      20241217_OpenHands-0.14.2-qwen2-72b: qwen2-72b
+      20241217_OpenHands-0.14.2-qwen2.5-72b: qwen2.5-72b
+      20241217_OpenHands-0.14.2-sonnet-20241022: claude-3-5-sonnet-20241022
+      20250510_OWL-RolePlay-gpt-4o-o3-mini: gpt-4o + o3-mini
+      20250510_OpenHands-0.28.1-gemini-2.5-pro: gemini-2.5-pro
+      20250510_OpenHands-0.28.1-sonnet-20250219: claude-3-7-sonnet-20250219
+      20250614_OpenHands-Versa-claude-3.7-sonnet: claude-3-7-sonnet
+      20250614_OpenHands-Versa-claude-sonnet-4: claude-sonnet-4
+      20250729_OpenHands-0.28.1-claude37-deepseekv3: claude-3-7-sonnet + deepseek-v3
+      20250729_OpenHands-0.28.1-claude37-gpt4o: claude-3-7-sonnet + gpt-4o
+      20251013_MUSE-gemini-2.5-flash: gemini-2.5-flash
+      20251110_TTE-MatrixAgent-Deepseek-V3.2: deepseek-v3.2
+    harnesses:
+      20241217_OpenHands-0.14.2-gemini-1.5-pro: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-gemini-2.0-flash: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-gpt-4o-2024-08-06: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-llama-3.1-405b: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-llama-3.1-70b: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-llama-3.3-70b: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-nova-pro-v1_x3a_0: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-qwen2-72b: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-qwen2.5-72b: OpenHands-0.14.2
+      20241217_OpenHands-0.14.2-sonnet-20241022: OpenHands-0.14.2
+      20250510_OWL-RolePlay-gpt-4o-o3-mini: OWL-RolePlay
+      20250510_OpenHands-0.28.1-gemini-2.5-pro: OpenHands-0.28.1
+      20250510_OpenHands-0.28.1-sonnet-20250219: OpenHands-0.28.1
+      20250614_OpenHands-Versa-claude-3.7-sonnet: OpenHands-Versa
+      20250614_OpenHands-Versa-claude-sonnet-4: OpenHands-Versa
+      20250729_OpenHands-0.28.1-claude37-deepseekv3: OpenHands-0.28.1
+      20250729_OpenHands-0.28.1-claude37-gpt4o: OpenHands-0.28.1
+      20251013_MUSE-gemini-2.5-flash: MUSE
+      20251110_TTE-MatrixAgent-Deepseek-V3.2: TTE-MatrixAgent
+sources:
+  upstream:
+  - name: runs
+    url: https://github.com/TheAgentCompany/experiments
+    revision: f9b1e9411fcb554e76509a0e1bc8fe7f8b0e69d6
+    tree_paths:
+    - README.md
+    - evaluation/1.0.0/*
+    files:
+    - match: (?P<file>README\.md|evaluation/1\.0\.0/[^/]+/(?:README\.md|(?:results|trajectories)/[^/]+))
+      path: experiments/{file}
+  - name: tasks
+    url: https://github.com/TheAgentCompany/TheAgentCompany
+    revision: 98b68ef82a47690c316f42fddb05baafaab56851
+    files:
+    - match: workspaces/tasks/(?P<task>[^/]+)/(?P<file>task\.md|evaluator\.py)
+      path: tasks/{task}/{file}
+grading:
+  rule: Response is the fraction of available checkpoint credit awarded by the task evaluator, as recorded
+    in final_score.result / final_score.total.
+  verifiers:
+    checkpoint:
+      kind: provider_result_mapping
+      source_revision: 98b68ef82a47690c316f42fddb05baafaab56851
+      interpretation: Read the released checkpoint fraction; captured grading code is versioned, not asserted
+        to be the exact historical run commit.

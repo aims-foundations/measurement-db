@@ -1,0 +1,92 @@
+benchmark:
+  description: DAVE tests whether audio-visual models can link an overlaid sound to the corresponding
+    event in an egocentric video. This import covers the released multimodal judgments of eight end-to-end
+    models, with complete question text and original video/audio assets.
+  testing_condition: Recorded multimodal runs from the Epic Kitchens and Ego4D splits. Preserve provider
+    correctness and response payloads. Exclude ambiguous media matches independently of prediction correctness;
+    pipeline models and auxiliary/ablation tasks remain outside this import.
+  paper_url: https://openreview.net/forum?id=4ZAX1NT0ms
+  data_source_url: https://huggingface.co/datasets/gorjanradevski/dave
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{radevski2025dave,\n  title={DAVE: Diagnostic benchmark for Audio Visual Evaluation},\n\
+    \  author={Radevski, Gorjan and Popordanoska, Teodora and Blaschko, Matthew B. and Tuytelaars, Tinne},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - audio_visual
+  - multimodal
+  - multiple_choice
+  - temporal_alignment
+  - diagnostic
+  modality:
+  - text
+  - audio
+  - video
+  domain:
+  - general
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect multiple-choice answer
+      '1': correct multiple-choice answer
+  categorical: true
+  release_date: 2025-12
+  name: DAVE
+  one_line_description: Measures audio-visual reasoning through questions linking sounds to events in
+    egocentric videos.
+  multi_single_turn: single_turn
+  granularity: item
+  release: private
+build:
+  contract_version: 2
+  parameters:
+    splits:
+      ego4d: dataset/ego4d.json
+      epic: dataset/epic.json
+    models:
+      gemini-1.5-flash-8b: gemini-1.5-flash-8b
+      gemini-1.5-flash-latest: gemini-1.5-flash-latest
+      gemini-1.5-pro: gemini-1.5-pro
+      models/gemini-2.0-flash-lite: gemini-2.0-flash-lite
+      gemini-2.0-flash-001: gemini-2.0-flash-001
+      pandagpt: PandaGPT
+      salmonn: video-SALMONN
+      videollama: Video-LLaMA2
+    layout:
+      results_directory: results
+      media_directory: dataset
+      condition: multimodal
+    patterns:
+      option: ^\(([A-Z])\) (.+)$
+      sound: when the (.*?) sound is heard
+grading:
+  rule: The released response_text exactly equals one of the accepted multiple-choice labels; preserve
+    the provider is_correct boolean without regrading or parsing the generated text.
+  verifiers:
+    recorded_choice:
+      kind: provider_verdict
+      source: https://github.com/gorjanradevski/dave/blob/096818b91692f8eef879c264b053078ddac350f1/src/utils/evaluation.py
+      class: Evaluator.is_correct
+      logic: For the imported multimodal condition, response_text membership in ground_truth is the released
+        binary grade.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/gorjanradevski/dave
+    revision: 096818b91692f8eef879c264b053078ddac350f1
+    files:
+    - match: README\.md|results/[^/]+\.json|src/.+\.py
+      path: '{path}'
+  - name: stimuli
+    url: https://huggingface.co/datasets/gorjanradevski/dave
+    revision: fd4d94a1d57726b3788dff3616494a70d5864ad8
+    files:
+    - match: (?:epic|ego4d)\.(?:json|zip)|README\.md|dave\.py
+      path: dataset/{path}

@@ -1,0 +1,67 @@
+benchmark:
+  description: Coding LLMs predict a runtime test outcome (passed/failed/error) for 435 library-level cases
+    derived from SWE-bench Verified; response is per-item outcome-prediction correctness.
+  testing_condition: Exact three-category test-outcome correctness over the v05_clean generation release. This
+    curation compares passed, failed, or error; it does not substitute the native binary failure-detection
+    confusion counts.
+  paper_url: https://arxiv.org/abs/2606.27406
+  data_source_url: https://huggingface.co/collections/JetBrains-Research/dl4c26-evaluation-of-software-world-model
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: Bogomolov and Zharov. Towards Evaluation of Implicit Software World Models in Coding LLMs. 2026.
+  tags:
+  - code_execution
+  - code_reasoning
+  - swe_bench
+  - world_model
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect or unsolved
+      '1': correct or solved
+  categorical: true
+  release_date: 2026-06
+  multi_single_turn: single_turn
+  name: Software World Models (DL4C'26)
+build:
+  contract_version: 2
+  parameters:
+    subject_features:
+      harness: CWM-benchmarks
+      evaluation_run: v05_clean
+    evaluation:
+      condition: task=test_outcome
+grading:
+  rule: Extract prediction.outcome.outcome from the normalized JSON prediction and compare it with ground_truth_outcome.
+    Exact passed/failed/error agreement scores 1; a different or unparsed outcome scores 0.
+  verifiers:
+    outcome:
+      source: https://huggingface.co/datasets/JetBrains-Research/cwm-benchmarks-dl4c-generations/tree/f91ad2a6d8e09f2ff9cad0f99a115b60a0c212a8
+      kind: derived_three_category_exact_match
+      rule: Extract prediction.outcome.outcome from the normalized JSON prediction and compare it with ground_truth_outcome.
+        Exact passed/failed/error agreement scores 1; a different or unparsed outcome scores 0.
+sources:
+  upstream:
+  - name: items
+    url: https://huggingface.co/datasets/JetBrains-Research/cwm-benchmarks-dl4c-benchmark
+    revision: 2a60ad844598eb9e48cebd7ee581aef164218b03
+    files:
+    - match: data/(?P<file>[^/]+\.parquet)
+      path: benchmark/data/{file}
+  - name: generations
+    url: https://huggingface.co/datasets/JetBrains-Research/cwm-benchmarks-dl4c-generations
+    revision: f91ad2a6d8e09f2ff9cad0f99a115b60a0c212a8
+    files:
+    - match: data/(?P<file>[^/]+\.parquet)
+      path: generations/data/{file}

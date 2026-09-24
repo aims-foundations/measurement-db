@@ -1,0 +1,53 @@
+format_version: 1
+tables:
+  traces:
+    rows: 16507
+    logical_sha256: 58a542855c4c8bc9726cc6528da70fd6d9c1cb2cda296ade1e3c3c2585150607
+  subjects:
+    rows: 24
+    logical_sha256: d024dcde356f1d76d3d0a576cf64a596cc3f70a3f0a3d2214bc47bfc4c31fc67
+  responses:
+    rows: 16560
+    logical_sha256: 7ab809f22879fac72c78a355a838201da76260ebfd95a25dae59a3b92af137be
+  items:
+    rows: 690
+    logical_sha256: d9dff2e0f7780e4c0589d87f531fc935adcebcfa8fc058fca95ba9a8eac0a1b8
+  benchmarks:
+    rows: 1
+    logical_sha256: 1f992b90b7a9d0b34e035490971efc5a272e1fa7685a2f6168d1a35d59c9625f
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/olly-styles/WorkBench
+    locator: raw/WorkBench/retro/data/model_results.json; data/results; data/processed/tasks_and_outcomes;
+      src/evals/metrics.py
+    scope: The 24 WorkBench Revisited configurations in the captured provider summary, each with 690 tasks.
+      Recomputed outcomes reconcile with source per-model totals and every previously published observation.
+    expected: 16560
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/olly-styles/WorkBench
+    locator: raw/WorkBench/retro/data/model_results.json; data/results; data/processed/tasks_and_outcomes;
+      src/evals/metrics.py
+    scope: The 24 WorkBench Revisited configurations in the captured provider summary, each with 690 tasks.
+      Recomputed outcomes reconcile with source per-model totals and every previously published observation.
+    expected: 12231
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/olly-styles/WorkBench
+    locator: raw/WorkBench/retro/data/model_results.json; data/results; data/processed/tasks_and_outcomes;
+      src/evals/metrics.py
+    scope: The 24 WorkBench Revisited configurations in the captured provider summary, each with 690 tasks.
+      Recomputed outcomes reconcile with source per-model totals and every previously published observation.
+    expected: 24
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/olly-styles/WorkBench
+    locator: Pinned Revisited result CSVs, full_response column
+    scope: Nonempty full-response strings from the same 144 result files as the 16,560 correctness verdicts.
+      Separate optional JSON traces are not included.
+    expected: 16507

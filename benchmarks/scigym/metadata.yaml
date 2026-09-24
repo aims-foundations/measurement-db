@@ -1,0 +1,126 @@
+benchmark:
+  description: Iterative scientific-discovery trajectories on 137 systems-biology tasks. Agents receive
+    a partial SBML model, design simulated experiments, and submit a reconstructed model. The curated
+    release includes six reaction-recovery metrics derived from final models and explicitly unavailable
+    trajectory-error grades.
+  testing_condition: 'The export has 2,466 rows but only 822 distinct complete records: six models on
+    137 tasks, each copied three times without separate trial IDs. Preserve one observation per distinct
+    trajectory and metric and retain every source-row position. The seven metric observations for a trajectory
+    are dependent measurements, not seven agent runs. Initial user prompts and the recorded 20-action
+    allowance come from the transcripts. System prompts, complete structured API requests and original
+    numeric grading records are not exported; current harness defaults do not establish historical settings.
+    Reaction scores describe the released final model under the native structural rule, without replaying
+    simulations or their validity gates. Keep simulation trajectory error null; no failures or aggregate
+    paper values are imputed.'
+  paper_url: https://arxiv.org/abs/2507.02083
+  data_source_url: https://huggingface.co/datasets/h4duan/scigym-eval
+  subject_type: model
+  item_type: task
+  license: Not specified in captured upstream releases
+  citation: "@inproceedings{duan2025scigym,\n  title={Measuring Scientific Capabilities of Language Models\
+    \ with a Systems Biology Dry Lab},\n  author={Duan, Haonan and Lu, Stephen Zhewen and Harrigan, Caitlin\
+    \ Fiona and Desai, Nishkrit and Lu, Jiarui and Koziarski, Micha{\\l} and Cotta, Leonardo and Maddison,\
+    \ Chris J.},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - systems_biology
+  - scientific_discovery
+  - agent
+  - sbml
+  - dry_lab
+  modality:
+  - text
+  domain:
+  - science
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: '2025-05-19'
+  name: SciGym
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results.parquet
+      tasks: tasks.parquet
+    transcript:
+      initial_prompt_end: Format your response according to the instructions in the system message.
+      iteration_pattern: '## Max iterations\s+(\d+)'
+    xml:
+      reactions: ./{*}model/{*}listOfReactions/{*}reaction
+      reactants: ./{*}listOfReactants/{*}speciesReference
+      products: ./{*}listOfProducts/{*}speciesReference
+      modifiers: ./{*}listOfModifiers/{*}modifierSpeciesReference
+    metrics:
+      rpm_precision: rms_with_modifiers_precision
+      rpm_recall: rms_with_modifiers_recall
+      rpm_f1: rms_with_modifiers_f1
+      rp_precision: rms_without_modifiers_precision
+      rp_recall: rms_without_modifiers_recall
+      rp_f1: rms_without_modifiers_f1
+      ste: simulation_trajectory_error
+    conditions:
+      with_modifiers: rpm
+      without_modifiers: rp
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/h4duan/scigym-eval
+    revision: 7d472c12855d46702c4915892578290355894c1a
+    files:
+    - match: data/small-00000-of-00001\.parquet
+      path: results.parquet
+    - match: README\.md
+      path: results_README.md
+  - name: tasks
+    url: https://huggingface.co/datasets/h4duan/scigym-sbml
+    revision: dbb10c12a33427e8e05ebbac66de690c65b6acae
+    files:
+    - match: data/small-00000-of-00001\.parquet
+      path: tasks.parquet
+    - match: README\.md
+      path: tasks_README.md
+  - name: harness
+    url: https://codeload.github.com/h4duan/SciGym/zip/88a7b93609e35b6ecb4eb343d816d6ff09256c6a
+    revision: 88a7b93609e35b6ecb4eb343d816d6ff09256c6a
+    file: source_review/88a7b93609e35b6ecb4eb343d816d6ff09256c6a.zip
+    size: 94751
+    sha256: 1bcda5fb0ef092b0314fbd819d066608d1ef864a789a5b7c69dec7f5475690df
+grading:
+  rule: Reaction scores are derived from the released final SBML and task references. Treat each reaction
+    as sets of reactant and product species IDs, and optionally modifier IDs; duplicate reactions, stoichiometric
+    multiplicity, reaction names, kinetic laws and reversibility are ignored by this structural metric.
+    Exclude reactions already present in the partial model. Precision is correctly recovered missing reactions
+    divided by added reactions; recall divides by missing reference reactions; F1 is their harmonic mean.
+    Empty denominators yield zero as in the author checker. These metrics do not certify valid simulation
+    behavior. Simulation trajectory error is unavailable because no original numeric result or complete
+    reference/predicted simulation arrays are released.
+  verifiers:
+    reaction_recovery:
+      kind: derived_deterministic_reaction_recovery
+      source: https://github.com/h4duan/SciGym/blob/88a7b93609e35b6ecb4eb343d816d6ff09256c6a/scigym/eval/evaluator.py
+      function: Evaluator.evaluate_exact_reaction_recovery
+      signature_source: https://github.com/h4duan/SciGym/blob/88a7b93609e35b6ecb4eb343d816d6ff09256c6a/scigym/eval/utils.py
+      signature_functions:
+      - get_reaction_hash
+      - extract_reaction_hashes
+      definition_revision: 88a7b93609e35b6ecb4eb343d816d6ff09256c6a
+      grade_origin: recomputed_from_released_final_model
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    trajectory_error:
+      kind: unavailable_simulation_result
+      source: https://github.com/h4duan/SciGym/blob/88a7b93609e35b6ecb4eb343d816d6ff09256c6a/scigym/eval/evaluator.py
+      function: Evaluator.evaluate_smape
+      definition_revision: 88a7b93609e35b6ecb4eb343d816d6ff09256c6a
+      grade_origin: not_released_not_rerun
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: lower_is_better

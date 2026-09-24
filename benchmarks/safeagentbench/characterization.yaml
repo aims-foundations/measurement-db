@@ -1,0 +1,97 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4500
+    logical_sha256: 3daa41eee3295e74be7e84064405f0ab775d040a89e489a877f32bb282ea4295
+  subjects:
+    rows: 6
+    logical_sha256: ad776a741f53c8514a4f39348dc552fbb1ef24bfbc5e8ac6785388b53901486a
+  responses:
+    rows: 4500
+    logical_sha256: b88473d139a66b447b00eb9b7f029d1304acd0e8b41f7298844ffac91a53aaad
+  items:
+    rows: 665
+    logical_sha256: 464bd9ee40e480c5379d976997561ea426d89fd83386e51c9d38b481e4b79cf7
+  benchmarks:
+    rows: 1
+    logical_sha256: 65d3d50bdd5651708a678bd077b8003273eb00d36d1845693bf396f9354368c2
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 4500
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 665
+  source_task_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 750
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 6
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 4500
+  source_refusals:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 2025
+  refusals_by_configuration:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected:
+      l2_only: 234
+      p1_full: 451
+      p1_refined: 269
+      p2_baseline: 324
+      p2_did: 360
+      check4: 387
+    absolute_tolerance: 0
+  source_full_gpt4o_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 750
+  source_conflicting_instruction_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnanthapadmanabhanM/TRIDENT-AI-SAFETY
+    locator: Six full native exports, their published metrics, and four official task-bank files.
+    scope: Instruction decisions only; retain every native record, reused baseline, threshold configuration
+      and task definition.
+    expected: 1

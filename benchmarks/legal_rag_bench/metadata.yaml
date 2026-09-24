@@ -1,0 +1,157 @@
+benchmark:
+  description: 'End-to-end legal RAG benchmark: 100 Victorian criminal-law questions x (3 embedders x
+    2 frontier LLMs), judged on binary correctness, groundedness, and retrieval accuracy.'
+  testing_condition: 'Six RAG pipelines (three embedding models and two generators) each answer 100 questions
+    with five retrieved passages. Each answer has three dependent grades: correctness and groundedness
+    from the released GPT-5.2 judgment, and retrieval from the recorded passage-ID check. Grading protocols
+    define distinct items. Complete result records preserve retrieved text, metadata, answers and judge
+    explanations. The attached 4,876-passage corpus is pinned; all 3,000 retrieved texts match it. The
+    published code is reference configuration, not a recovered exact API envelope; its Gemini alias and
+    result-field names differ from the viewer export. No models are rerun.'
+  paper_url: https://arxiv.org/abs/2603.01710
+  data_source_url: https://huggingface.co/datasets/isaacus/legal-rag-bench
+  subject_type: model
+  item_type: question
+  license: cc-by-nc-sa-4.0
+  citation: 'Butler & Butler, Legal RAG Bench: an end-to-end benchmark for legal RAG, Isaacus, 2026.'
+  tags:
+  - legal
+  - rag
+  - retrieval
+  - australia
+  - criminal-law
+  modality:
+  - text
+  domain:
+  - law
+  - knowledge
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The specified grading criterion was not satisfied.
+      '1': The specified grading criterion was satisfied.
+  categorical: true
+  release_date: 2026-03
+  name: Legal RAG Bench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results.jsonl
+      questions: source_review/db0b31dc6d195ce9916897e1ac5e4e6209736c8a/qa.jsonl
+      corpus: source_review/db0b31dc6d195ce9916897e1ac5e4e6209736c8a/corpus.jsonl
+    generators:
+      gemini3: Gemini 3.1 Pro
+      gpt52: GPT-5.2
+    generator_identifiers:
+      gemini3: gemini-3.1-pro-preview
+      gpt52: gpt-5.2
+    embedders:
+      kanon2: kanon-2-embedder
+      te3l: text-embedding-3-large
+      gemini001: gemini-embedding-001
+    subject_features:
+      harness: Legal RAG Bench (LangChain FAISS)
+      retrieval_k: '5'
+    criteria:
+      correctness: The answer matches the meaning or conclusion of the expert answer without contradiction.
+        Import judge_verdict.correct.
+      groundedness: The answer introduces no unsupported legal claims or contradictions relative to its
+        retrieved context. Import judge_verdict.grounded.
+      retrieval: The reference passage identifier is a substring of at least one retrieved document metadata
+        ID. Import gold_id_in_context; verify against the native predicate.
+grading:
+  verifiers:
+    llm:
+      kind: released_llm_judgment
+      judge_model: gpt-5.2
+      reasoning_effort: high
+      seed: 42
+      source: https://github.com/isaacus-dev/legal-rag-bench/blob/9e30a36d1ef58cd35ec4ed724ef3e5edc6b0d00b/prompts.py
+      configuration_source: https://github.com/isaacus-dev/legal-rag-bench/blob/9e30a36d1ef58cd35ec4ed724ef3e5edc6b0d00b/config.py
+      judge_prompts:
+        system: "You are a strict evaluator for a RAG system built on a corpus sourced from the Victorian\
+          \ Criminal Charge Book.\n\nYou must output TWO booleans and ONE short explaination of your reasoning.\n\
+          \n1) correct (judge ONLY against ANSWER):\n- true if the core meaning/essence of RAG_ANSWER\
+          \ matches \\ANSWER or supports the same conclusion as the ANSWER but with slightly different\
+          \ reasoning.\n- false if RAG_ANSWER is irrelevant or contradicts ANSWER.\n- Extra details not\
+          \ in ANSWER are allowed only if they do NOT change the meaning or introduce contradictions.\n\
+          2) grounded (HALLUCINATION CHECK; judge ONLY against CONTEXT):\n- true if RAG_ANSWER does NOT\
+          \ introduce facts, key terms and concepts that are not present in the CONTEXT.\n- false ONLY\
+          \ if RAG_ANSWER contains at least one hallucination, defined as:\n  (a) a specific factual legal\
+          \ claim presented as coming from the CONTEXT (or about the underlying documents) that is NOT\
+          \ supported by CONTEXT, OR\n  (b) a factual claim that contradicts CONTEXT, OR.\n  (c) use of\
+          \ a key legal term or concept that comes from the model's knowledge rather than being present\
+          \ in the context.\n- Allow general/background statements or generic common-knowledge framing\
+          \ that does NOT assert legal facts.\n- Allow clearly-labeled uncertainty (e.g., \"may\", \"\
+          unclear\", \"not stated in the excerpts\") even if CONTEXT doesn't confirm.\n- If CONTEXT is\
+          \ irrelevant, that is the model has given an answer completely orthogonal to the materials it\
+          \ had to work with, then grounded=false\nHallucination matching rules (important!):\n- Use semantic\
+          \ matching, not exact string matching: clear paraphrases and synonyms count as supported.\n\
+          - Focus groundedness on legal specifics such as names, dates, locations, numbers, quotes, charges,\
+          \ statutes/sections,\n  outcomes, procedural details, legal concepts, key terms or claims.\n\
+          - If you set grounded=false, you MUST identify at least one specific hallucinated/unsupported\
+          \ claim.\n\nReturn ONLY valid JSON with exactly these keys and no extra text, with keys in this\
+          \ order:\n{{\"correct\": true/false, \"grounded\": true/false, \"reasoning\": \"...\"}}\n\n\
+          Reasoning requirements:\n- reasoning must be 2–4 sentences total and contain TWO labeled sections\
+          \ in this exact format:\n  \"Correctness: <1–2 sentences> Groundedness: <1–2 sentences>\"\n\
+          - If grounded=false, the Groundedness section MUST include the substring:\n  \"Unsupported claim:\
+          \ <...>\" (keep it short; prefer a brief paraphrase, not a long quote).\n- If grounded=true,\
+          \ do NOT include \"Unsupported claim:\".\n- Prefer referencing using the metadata IDs for the\
+          \ document (e.g., \"DOC: 2.5.1-c1-s1\") instead of quoting.\n- Do not quote more than 25 words\
+          \ total from the provided text.\n- Keep the total reasoning under ~900 characters."
+        user: 'QUESTION:
+
+          {question}
+
+
+          RAG_ANSWER:
+
+          {rag_answer}
+
+
+          ANSWER:
+
+          {answer}
+
+
+          CONTEXT:
+
+          {context}
+
+          '
+      result_field: judge_verdict
+      execution: Import the released booleans and retain reasoning; do not rerun the judge.
+    retrieval:
+      kind: passage_identifier_membership
+      source: https://github.com/isaacus-dev/legal-rag-bench/blob/9e30a36d1ef58cd35ec4ed724ef3e5edc6b0d00b/eval.py
+      function: relevant_passage_in_context
+      predicate: any(gold_id in document.metadata.get('id', '') for document in context)
+      result_field: gold_id_in_context
+sources:
+  upstream:
+  - name: results
+    url: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    file: results.jsonl
+    size: 6611848
+    sha256: 7f1ac6d67fbc1e5e859e6d5b34b1239167a25e60351a9f028fea5f93c8f2d898
+    revision: sha256:7f1ac6d67fbc1e5e859e6d5b34b1239167a25e60351a9f028fea5f93c8f2d898
+  - name: tasks
+    url: https://huggingface.co/datasets/isaacus/legal-rag-bench
+    revision: db0b31dc6d195ce9916897e1ac5e4e6209736c8a
+    files:
+    - match: (?:README\.md|qa\.jsonl|corpus\.jsonl)
+      path: source_review/db0b31dc6d195ce9916897e1ac5e4e6209736c8a/{path}
+  - name: harness
+    url: https://github.com/isaacus-dev/legal-rag-bench
+    revision: 9e30a36d1ef58cd35ec4ed724ef3e5edc6b0d00b
+    files:
+    - match: (?:README\.md|config\.py|db\.py|eval\.py|prompts\.py|requirements\.txt)
+      path: source_review/9e30a36d1ef58cd35ec4ed724ef3e5edc6b0d00b/{path}

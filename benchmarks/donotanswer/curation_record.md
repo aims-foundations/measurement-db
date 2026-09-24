@@ -1,0 +1,3 @@
+- Source: pinned Do-Not-Answer CSV, with 939 prompt rows, six models, and two annotation families (11,268 observations). Complete generated answers are retained as traces.
+- Harmfulness and action labels have different grading scales, so they now define separate items. One repeated prompt is deduplicated: 938 distinct prompts produce 1,876 graded items. The action categories are nominal, not an ordinal performance score.
+- All observation contents, subjects, trials, labels, and traces match the previous tables. The dataset card specifies CC-BY-NC-SA-4.0 for data and Apache-2.0 for source code; metadata uses the data license.

@@ -7,6 +7,7 @@ This runner never downloads data, rebuilds tables, or updates expectations.
 from __future__ import annotations
 
 import argparse
+from collections.abc import Mapping
 import importlib.util
 import os
 from pathlib import Path
@@ -101,6 +102,8 @@ def benchmark_names(root):
 def benchmark_suite(root, slug, *, source_audit=None, tables_directory=None):
     """Combine shared validation and the selected benchmark's source checks."""
     root = Path(root).resolve()
+    if isinstance(source_audit, Mapping):
+        source_audit = source_audit.get(slug)
     directory = root / "benchmarks" / slug
     if slug not in benchmark_names(root) or not directory.is_dir():
         raise ValueError(f"No reviewed dataset or source tests registered for {slug!r}")

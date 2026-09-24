@@ -1,0 +1,50 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4004
+    logical_sha256: cfc1babec7e715f759d9b352d78014b2d7aff6ba5535f1508063bc61f3335226
+  subjects:
+    rows: 13
+    logical_sha256: def53788109ce43bbb9ef5af5604f883c79e88ab8b0e2a7c1b74d0df991a85ba
+  responses:
+    rows: 4004
+    logical_sha256: b63a9dc232e6b783d0dd28c1b2317ec83123b2f6fcda2b0ddfcae6f636502805
+  items:
+    rows: 298
+    logical_sha256: 33817e682b68367a160f20ab50de443e7f4d9b77076eb1f0e1f3777c37644ffd
+  benchmarks:
+    rows: 1
+    logical_sha256: 247ae2726834d617744a65a1dce45f2340d46070dcc73ac189e13cbf8f0fbf00
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/medbullets:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 13
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/medbullets:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 4004
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/medbullets:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 2812.0
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/medbullets:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 0

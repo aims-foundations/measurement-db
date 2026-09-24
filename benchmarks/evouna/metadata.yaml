@@ -1,0 +1,68 @@
+benchmark:
+  description: 'EVOUNA (QA-Eval): per-(model, question) human correctness judgments for five Open-QA systems
+    (FiD, GPT-3.5/text-davinci-003, ChatGPT, GPT-4, New Bing) answering the same Open-domain questions
+    from Natural Questions (3,610) and TriviaQA (2,000). Each model answer was manually judged correct/incorrect
+    by a human annotator.'
+  testing_condition: test_condition encodes the source dataset (nq|tq) and whether the question was flagged
+    improper; response is the human binary correctness judgment of that model's free-form answer.
+  paper_url: https://arxiv.org/abs/2305.12421
+  data_source_url: https://github.com/wangcunxiang/QA-Eval
+  subject_type: model
+  item_type: question
+  license: Apache-2.0
+  citation: "@article{wang2023evaluating,\n  title={Evaluating Open-QA Evaluation},\n  author={Wang, Cunxiang\
+    \ and Cheng, Sirui and Guo, Qipeng and Yue, Yuanhao and Ding, Bowen and Xu, Zhikun and Wang, Yidong\
+    \ and Hu, Xiangkun and Zhang, Zheng and Zhang, Yue},\n  journal={Advances in Neural Information Processing\
+    \ Systems (NeurIPS)},\n  year={2023}\n}"
+  tags:
+  - open_qa
+  - question_answering
+  - human_judgment
+  - evaluation
+  modality:
+  - text
+  domain:
+  - knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2023-05
+  release: private
+  name: EVOUNA
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    datasets:
+      NQ.json: nq
+      TQ.json: tq
+    models:
+      fid: FiD
+      gpt35: text-davinci-003
+      chatgpt: ChatGPT (gpt-3.5-turbo)
+      gpt4: GPT-4
+      newbing: New Bing
+grading:
+  rule: A human annotator judges the generated answer to the question as correct or incorrect.
+  verifiers:
+    human_annotation:
+      kind: human
+      source: https://github.com/wangcunxiang/QA-Eval
+      logic: Preserve judge_<model> booleans; null and the literal string nan are missing grades. Retain
+        a missing-grade attempt when a generated answer is recorded.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/wangcunxiang/QA-Eval
+    revision: 90007d39d4ef0720984f80d56a586c66d6241e70
+    files:
+    - match: EVOUNA/(?P<name>NQ|TQ)\.json
+      path: '{name}.json'

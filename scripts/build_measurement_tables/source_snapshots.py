@@ -102,8 +102,12 @@ def verify_snapshot_file(path: Path, artifact: dict) -> None:
         raise SourceDataError(f"cannot stat {path}: {exc}") from exc
     if size != artifact["size"]:
         raise SourceDataError(f"{path}: expected {artifact['size']} bytes, found {size}")
-    digest = (hashlib.sha256() if artifact["hash_kind"] == "sha256"
-              else hashlib.sha1(b"blob %d\0" % size))
+    if artifact["hash_kind"] == "git_sha1":
+        digest = hashlib.sha1(b"blob %d\0" % size)
+    elif artifact["hash_kind"] in ("sha256", "md5"):
+        digest = hashlib.new(artifact["hash_kind"])
+    else:
+        raise SourceDataError(f"Unsupported source checksum: {artifact['hash_kind']}")
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)

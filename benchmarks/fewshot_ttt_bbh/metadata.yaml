@@ -1,0 +1,78 @@
+benchmark:
+  description: Released five-example previews for BIG-Bench Hard evaluations of Llama-3.1-8B-Instruct
+    under eleven zero-shot, few-shot ICL and test-time training interventions. These previews cover 7,425
+    observations, not the complete evaluation sets used to calculate the accompanying task accuracies.
+  testing_condition: Released Llama-3.1-8B-Instruct experiments for eleven zero-shot, 10-shot ICL and
+    test-time training configurations, each with five seeded result files. Each task exports only its
+    first five examples. Grading is case-insensitive exact match after stripping surrounding whitespace.
+    Repeated subject-item observations retain separate trials.
+  paper_url: https://arxiv.org/abs/2411.07279
+  data_source_url: https://github.com/adamzweiger/Fewshot-TTT
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: Akyurek et al., The Surprising Effectiveness of Test-Time Training for Few-Shot Learning,
+    ICML 2025
+  tags:
+  - test-time-training
+  - few-shot
+  - bbh
+  - reasoning
+  - llama
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': unsuccessful
+      '1': successful
+  categorical: true
+  release_date: 2024-11
+  name: Few-Shot TTT (BIG-Bench Hard)
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: Fewshot-TTT/logs/archive/results
+    models:
+      ZSL: Llama-3.1-8B-Instruct (zero-shot)
+      ICL_10: Llama-3.1-8B-Instruct (10-shot ICL)
+      ICL_10_maj: Llama-3.1-8B-Instruct (10-shot ICL, majority vote)
+      TTT_10: Llama-3.1-8B-Instruct + TTT (10-shot, main)
+      TTT_10_maj: Llama-3.1-8B-Instruct + TTT (10-shot, majority vote)
+      TTT_10_all: Llama-3.1-8B-Instruct + TTT (10-shot, loss on all tokens)
+      TTT_10_last: Llama-3.1-8B-Instruct + TTT (10-shot, loss on last output)
+      TTT_10_noshuffle: Llama-3.1-8B-Instruct + TTT (10-shot, no shuffle)
+      TTT_10_noshuffle_maj: Llama-3.1-8B-Instruct + TTT (10-shot, no shuffle, majority vote)
+      shared_TTT_10: Llama-3.1-8B-Instruct + Shared TTT (10-shot)
+      shared_E2E_10: Llama-3.1-8B-Instruct + Shared E2E direct I/O (10-shot)
+    subject_features:
+      harness: Fewshot-TTT
+      base_model: Llama-3.1-8B-Instruct
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/adamzweiger/Fewshot-TTT
+    revision: ad40084c63f5cf503e59d2acdab426843dffd254
+    files:
+    - match: (?:README\.md|LICENSE(?:\.txt)?|requirements\.txt|\.gitmodules|src/.*\.py|scripts/.*\.sh|logs/archive/results/(?:ZSL|ICL_10|ICL_10_maj|TTT_10|TTT_10_maj|TTT_10_all|TTT_10_last|TTT_10_noshuffle|TTT_10_noshuffle_maj|shared_TTT_10|shared_E2E_10)/[^/]+\.json)
+      path: Fewshot-TTT/{path}
+grading:
+  rule: The released prediction equals true_answer after stripping surrounding whitespace and lowercasing
+    both strings.
+  verifiers:
+    exact_match:
+      kind: normalized_exact_match
+      source: https://github.com/adamzweiger/Fewshot-TTT/blob/ad40084c63f5cf503e59d2acdab426843dffd254/src/utils.py
+      function: compute_accuracy
+      normalization:
+      - strip
+      - lower

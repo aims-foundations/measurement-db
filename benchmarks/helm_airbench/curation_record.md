@@ -1,0 +1,4 @@
+- Scope: HELM air-bench v1.12.0, 66 complete native run exports, 375,804 observations and 7,723 canonical prompt/grading items. Sources and the metric are pinned in `metadata.yaml`.
+- Import: retain each run’s actual prompts, generation settings, references or category metadata, native grades and complete prediction/annotation traces. Original requests remain verbatim in traces; canonical item identity normalizes NFC and surrounding whitespace.
+- Checks: all 375,804 observations independently reconciled with native files; prior model/question-stem/grade records match exactly after applying the old thresholds. 24,918 formerly thresholded fractional grades are now preserved.
+- Limits: the releases do not record the executed harness commit. Linked grader code is an inspected reference; its code license is not assumed to cover the dataset.

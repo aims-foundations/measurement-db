@@ -1,0 +1,3 @@
+- Curates the two released model files at graph lengths 7–15. All 9,000 prompts, model assignments, conditions, grades, and complete prediction traces match the previous observations.
+- Grading strips surrounding whitespace and compares Yes/No case-insensitively, as in the existing curation. Aggregate header rows are excluded.
+- Source aliases now use deterministic SHA-256 instead of Python’s process-randomized hash. The grading protocol is explicit in metadata.

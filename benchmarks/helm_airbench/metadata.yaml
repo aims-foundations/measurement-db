@@ -1,0 +1,90 @@
+benchmark:
+  description: AIR-Bench tests model replies against a taxonomy of risks drawn from government regulations
+    and company policies. This import preserves the published refusal/safety grades, including intermediate
+    values.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2407.17436
+  data_source_url: https://crfm.stanford.edu/helm/air-bench/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @inproceedings{zeng2025airbench,
+      title={AIR-BENCH 2024: A Safety Benchmark Based on Regulation and Policies Specified Risk Categories},
+      author={Zeng, Yi and Yang, Yu and Zhou, Andy and Tan, Jeffrey Ziwei and Tu, Yuheng and Mai, Yifan and Klyman, Kevin and Pan, Minzhou and Jia, Ruoxi and Song, Dawn and Liang, Percy and Li, Bo},
+      booktitle={The Thirteenth International Conference on Learning Representations},
+      year={2025},
+      url={https://openreview.net/forum?id=UVnD9Ze6mF},
+    }
+  tags:
+  - safety
+  - red_teaming
+  - air_taxonomy
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  multi_single_turn: single_turn
+  release_date: 2024-07
+  release: public
+  name: AIR-Bench 2024
+  version: HELM air-bench v1.12.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: air_bench_2024
+      release: v1.12.0
+      metric: air_score
+grading:
+  rule: Use the published category-specific AIR refusal/safety grade unchanged. Preserve the native rubric
+    and empty/blocked-response handling recorded by the release.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: judge
+      reference_kind: metadata
+      metric: air_score
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/air_bench_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+      annotation_key: air_bench_2024
+      model_response_start: <model_response>
+      model_response_end: </model_response>
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/air-bench/benchmark_output/releases/v1.12.0/runs.json
+    revision: v1.12.0
+    file: release_index.json
+    size: 35603038
+    sha256: 62cc743ac665507a93b670ba80ca498ad5610ed39d3eeb15e6e13f98aa0cd283
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.12.0
+    prefix: air-bench/
+    helm_index:
+      source: release
+      group: air_bench_2024
+    tree_sha256: 5ad9d1250c6c0cbf644f862b09280e3d145fc7c550fdf49fc9bc274d1fa97599
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:air_bench_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/annotation/(?:air_bench_annotator\.py|model_as_judge\.py)
+      path: harness/{path}

@@ -1,0 +1,62 @@
+benchmark:
+  description: 'Axiomatic Training causal-reasoning evaluation: per-item Yes/No d-separation questions
+    over linear causal chains of length 7-15 (500 items per length), answered by the baseline Meta-Llama-3-8B-Instruct
+    and its axiomatic-training LoRA finetune. Response is binary (1 = prediction matches the gold Yes/No
+    label).'
+  testing_condition: Zero-shot prompting with the instruction "Answer the following question with ONLY
+    'Yes' or 'No'." test_condition encodes the causal-chain length of the eval split (length=7..15).
+  paper_url: https://arxiv.org/abs/2407.07612
+  data_source_url: https://github.com/AniketVashishtha/Causal_Axioms
+  subject_type: model
+  item_type: question
+  license: unknown
+  citation: "@inproceedings{vashishtha2025teaching,\n  title={Teaching Transformers Causal Reasoning through\
+    \ Axiomatic Training},\n  author={Vashishtha, Aniket and Kumar, Abhinav and Pandey, Atharva and Reddy,\
+    \ Abbavaram Gowtham and Ahuja, Kabir and Balasubramanian, Vineeth N and Sharma, Amit},\n  booktitle={International\
+    \ Conference on Machine Learning (ICML)},\n  year={2025}\n}"
+  tags:
+  - causal-reasoning
+  - d-separation
+  - axiomatic-training
+  - fine-tuning-intervention
+  - length-generalization
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2024-07
+  release: private
+  name: Causal Axioms (Axiomatic Training)
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      predictions_Meta-Llama-3-8B-Instruct.jsonl: Meta-Llama-3-8B-Instruct
+      predictions_llama_3_8b_lora_dsep_updated_175k_merged.jsonl: Llama-3-8B-Instruct-axiomatic-dsep-LoRA
+grading:
+  rule: Strip surrounding whitespace and compare predicted Yes/No to the reference case-insensitively.
+  verifiers:
+    exact_match:
+      kind: exact_match
+      source: https://github.com/AniketVashishtha/Causal_Axioms/tree/fbddd14c1774473231c7d558cbb5065227473c16/eval_dsep
+      logic: Strip surrounding whitespace and compare predicted Yes/No to the reference case-insensitively.
+sources:
+  upstream:
+  - name: predictions
+    url: https://github.com/AniketVashishtha/Causal_Axioms
+    revision: fbddd14c1774473231c7d558cbb5065227473c16
+    files:
+    - match: eval_dsep/dsep_eval_complex_linear/final/results/(?P<folder>length_(?:[7-9]|1[0-5]))/(?P<name>predictions_[^/]+\.jsonl)
+      path: '{folder}/{name}'

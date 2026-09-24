@@ -1,0 +1,3 @@
+- Joins 435 native sample records to 7,830 responses from 18 model exports; verifies the references agree across releases and retains complete prompts and outputs. There are 434 canonical items: four reference conflicts previously collapsed by content are separated, and the remaining repeated prompt retains separate trials.
+- Preserves the existing exact three-category outcome grade (`passed` / `failed` / `error`); 21 unparsed outcomes score 0. This derived grade differs from the release’s binary failure-detection confusion counts.
+- Source revisions and file selections are in `metadata.yaml`; no model or test execution is performed during curation.

@@ -1,0 +1,3 @@
+- **Source:** Pinned RISEBench task bank, two historical BAGEL archives and the author’s 21-model output release; 8,280 judgments across 23 configurations. Existing records and IDs are preserved.
+- **Representation:** Full judge/thinking text, 8,273 generated images, 360 generated videos and 413 input/reference assets. Distinct grading protocols and Hailuo’s recorded video prompts remain separate items; nine failed judge parses are null, while seven explicit missing-image auto-failures retain zero.
+- **Limits:** These are historical judgments, not fresh evaluations. Most exact generation settings and the newer release’s judge identity are unrecorded. The task bank does not declare a license, so the combined dataset is not assigned an inferred license.

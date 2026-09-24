@@ -1,0 +1,32 @@
+format_version: 1
+tables:
+  traces:
+    rows: 9000
+    logical_sha256: 7dea97f9eeeb31445ba67c040462f45d27c87b3a9f20a17708ffc0cb708b479b
+  subjects:
+    rows: 2
+    logical_sha256: ee521a25062604da92cf3bb9d188b72eafc498ff039c32ef2be88647edcd2683
+  responses:
+    rows: 9000
+    logical_sha256: c266bfe56e363e08627e02564e3adbe58b4471fb7900c8456da0be57352c2df0
+  items:
+    rows: 4500
+    logical_sha256: d60f8147a857ed34998573ee568f5976e905c01a9c5d91de8bc378275c9befe5
+  benchmarks:
+    rows: 1
+    logical_sha256: ab222ffd01dcd0f9756687cb705d27db843fae881b93efa597f32f315e3fef09
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AniketVashishtha/Causal_Axioms
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 9000
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AniketVashishtha/Causal_Axioms
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 6017

@@ -1,0 +1,87 @@
+benchmark:
+  description: WorkBench Revisited (2026) — workplace-agent benchmark of 690 sandbox tasks (5 databases,
+    26 tools), graded by comparing the sandbox final state to ground truth. Per-(model, task) binary task-completion
+    outcomes for ~24 models (2023-2026) run under a native tool-calling harness, reproduced from the released
+    per-task agent runs via the repo scoring pipeline.
+  testing_condition: The authors’ item-level correctness export for the 24 WorkBench Revisited runs, joined
+    to the captured per-task result files. Each configuration covers 690 tasks graded against v2 ground-truth
+    actions. Correct final sandbox state is 1 and incorrect state is 0; reference actions are item reference
+    answers. Full response strings are retained where released. Richer separate JSON trace files are not
+    part of this release.
+  paper_url: https://arxiv.org/abs/2606.13715
+  data_source_url: https://github.com/olly-styles/WorkBench
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@article{styles2026workbenchrevisited,\n      title={WorkBench Revisited: Workplace Agents\
+    \ Two Years On},\n      author={Styles, Olly and Miller, Sam},\n      year={2026},\n      eprint={2606.13715},\n\
+    \      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2606.13715},\n\
+    }\n@inproceedings{styles2024workbench,\n      title={WorkBench: a Benchmark Dataset for Agents in\
+    \ a Realistic Workplace Setting},\n      author={Styles, Olly and Miller, Sam and Cerda-Mardini, Patricio\
+    \ and Guha, Tanaya and Sanchez, Victor and Vidgen, Bertie},\n      booktitle={Conference on Language\
+    \ Modeling (COLM)},\n      year={2024},\n}"
+  tags:
+  - agent
+  - tool_use
+  - workplace
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2026-06
+  release: private
+  name: WorkBench Revisited
+  one_line_description: Evaluates tool-using agents on workplace tasks by comparing their final sandbox
+    state with the expected outcome.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      repository: WorkBench
+      model_summary: retro/data/model_results.json
+      verdicts: item_level_results.csv.gz
+      run_group: revisited_2026
+    display_names:
+      Haiku 4.5: Claude Haiku 4.5
+      Sonnet 4.6: Claude Sonnet 4.6
+      Opus 4.8: Claude Opus 4.8
+      Fable 5: Claude Fable 5
+      Mistral-Small-4: Mistral Small 4
+      Mistral-Medium-3.5: Mistral Medium 3.5
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/olly-styles/WorkBench
+    revision: da6f8ee8d9f8efc87b2f5f3cc9edc1befdac726e
+    files:
+    - match: (?P<file>retro/data/model_results\.json|data/results/[^/]+/[^/]+\.(?:csv(?:\.gz)?|json)|data/processed/(?:tasks_and_outcomes/[^/]+\.csv|[^/]+\.csv)|data/raw/email_addresses\.csv|src/(?:evals|tools)/.*\.py|README\.md|LICENSE)
+      path: WorkBench/{file}
+  - name: verdicts
+    url: https://github.com/olly-styles/WorkBench
+    revision: 7844e94c0a1f5c138699562830c37f37ede6d51b
+    files:
+    - match: data/results/item_level_results\.csv\.gz
+      path: item_level_results.csv.gz
+grading:
+  rule: The released WorkBench scorer finds the predicted final sandbox state correct against the task
+    ground truth.
+  verifiers:
+    sandbox:
+      kind: deterministic_sandbox
+      source: https://github.com/olly-styles/WorkBench/blob/da6f8ee8d9f8efc87b2f5f3cc9edc1befdac726e/src/evals/metrics.py
+      revision: da6f8ee8d9f8efc87b2f5f3cc9edc1befdac726e
+      entrypoint: src.evals.metrics.compute_metrics
+      implementation: Execute recorded function_calls in the captured sandbox and compare final state
+        with the reference actions; use the correct field.

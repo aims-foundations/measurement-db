@@ -7,10 +7,12 @@ The AI Measurement Data Bank is community-owned infrastructure for turning fragm
 - [Explore the AI Measurement Data Bank](https://aimslab.stanford.edu/measurement-db)
 - [Access the released data](https://huggingface.co/datasets/aims-foundations/measurement-db)
 
-The [`benchmarks/`](benchmarks) directory contains the six public curation
-examples: MathArena, MMDocRAG, Multi-SWE-bench, REAL, ResearchCodeBench, and
-SWE-rebench. Each includes its builder, source manifest, read-only tests, and
-curation record. Generated data remain on Hugging Face rather than in Git.
+The [`benchmarks/`](benchmarks) directory contains the six released examples—MathArena,
+MMDocRAG, Multi-SWE-bench, REAL, ResearchCodeBench, and SWE-rebench—and additional
+benchmarks migrated to the same tabular builder contract. Each includes source
+metadata, a reviewed characterization, and a curation record. Publishing a builder
+here does not imply a Hugging Face data release. Raw inputs, generated tables,
+and model-fitting outputs are excluded from Git.
 
 ## Contributing
 
@@ -87,6 +89,28 @@ can be inserted into the destination, and `{path}` preserves the upstream path.
 For a single HTTP URL, specify `file`, `size`, and `sha256` instead. See REAL for
 both forms. MathArena uses `fetch_sources("*")` to select all its named releases.
 Unnamed entries document additional references without downloading them.
+
+For GitHub files stored with Git LFS, set `git_lfs: true` on that source.
+The downloader verifies the pointer against the pinned commit, then downloads
+the large file and verifies its declared SHA-256 and size.
+
+Encrypted JSON releases can use the shared `read_gpg_json` reader (requires
+GnuPG). The provider's public password belongs in metadata; decoding uses an
+isolated temporary directory and leaves captured inputs unchanged.
+
+Public GCS sources use a bucket URL, an object `prefix`, the same `files` rules,
+and a `tree_sha256` fingerprint of the selected object paths, generations, sizes,
+MD5 checksums and content encodings. Downloads select each recorded generation
+and verify its bytes; a changed inventory requires review. Gzip-encoded objects
+stay compressed under `raw/` with a `.gz` suffix, so their captured bytes match
+the provider's checksum.
+
+For HELM releases, `helm_index: {source: release, group: <scenario>}` selects
+run directories from a separately declared, checksum-pinned HTTP manifest.
+The GCS prefix is the project root (for example, `safety/`); file patterns then
+match the manifest's versioned run paths. This preserves the release's actual
+model panel without listing hundreds of file URLs in metadata.
+Omit `group` to select the complete release panel, including all its tasks.
 
 The shared downloader creates `raw/`, verifies files against the upstream repository's
 hashes or the declared HTTP checksum, and fetches missing inputs. Existing raw files

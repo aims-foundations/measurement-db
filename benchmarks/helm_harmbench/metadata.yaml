@@ -1,0 +1,96 @@
+benchmark:
+  description: HarmBench measures whether a model refuses harmful requests, covering behaviors such as
+    cybercrime, misinformation and chemical or biological harm, with a classifier judging each reply as
+    safe or unsafe. Recorded scores retain intermediate judge ratings; 1 indicates the best rubric score
+    and 0 the worst.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2402.04249
+  data_source_url: https://crfm.stanford.edu/helm/safety/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @inproceedings{pmlr-v235-mazeika24a,
+      title={{H}arm{B}ench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal},
+      author={Mazeika, Mantas and Phan, Long and Yin, Xuwang and Zou, Andy and Wang, Zifan and Mu, Norman and Sakhaee, Elham and Li, Nathaniel and Basart, Steven and Li, Bo and Forsyth, David and Hendrycks, Dan},
+      booktitle={Proceedings of the 41st International Conference on Machine Learning},
+      pages={35181--35224},
+      year={2024},
+      volume={235},
+      series={Proceedings of Machine Learning Research},
+      publisher={PMLR},
+      url={https://proceedings.mlr.press/v235/mazeika24a.html},
+    }
+  tags:
+  - safety
+  - jailbreak
+  - red_teaming
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  multi_single_turn: single_turn
+  release_date: 2024-02
+  release: public
+  name: HarmBench
+  version: HELM safety v1.17.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: harm_bench
+      release: v1.17.0
+      metric: safety_score
+grading:
+  rule: Use the published mean of available judge ratings without thresholding. The released annotation
+    prompt defines whether compliance or refusal is appropriate; missing judge ratings are excluded by
+    the upstream metric.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: judge
+      reference_kind: metadata
+      metric: safety_score
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/safety_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+      annotation_key: harm_bench
+      model_response_start: <MODEL_RESPONSE_START>
+      model_response_end: </MODEL_RESPONSE_END>
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/safety/benchmark_output/releases/v1.17.0/runs.json
+    revision: v1.17.0
+    file: release_index.json
+    size: 12112520
+    sha256: 303e95492d3c65e0bfc4486311b5df083d6538454714d50bc6c491ca3c263041
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.17.0
+    prefix: safety/
+    helm_index:
+      source: release
+      group: harm_bench
+    tree_sha256: 919d65913f92ae64533d74c6d46da5edfcf49af7f2b725a350ea45d294c3c361
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:safety_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/annotation/(?:harm_bench_annotator\.py|model_as_judge\.py)
+      path: harness/{path}

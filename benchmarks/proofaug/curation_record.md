@@ -1,0 +1,3 @@
+- Curates the complete cumulative ProofAug campaign: 161 solved and 83 unsolved problems from the 244-item curated miniF2F-test bank. These are campaign outcomes, not individual generation attempts.
+- Records the Isabelle/PISA verification rule in `grading_criterion.rule`, rather than presenting it as a reference solution. The subject includes the mixed ProofAug strategy and 2,100-query budget.
+- The upstream [README](https://github.com/haoxiongliu/ProofAug/blob/4bf8ea2e877ebf66a4b6392d50b6e4675038c18a/isabelle_src/README.md) asks that the successful-proof archive not be redistributed. No proofs are copied into traces; the raw archive remains local.

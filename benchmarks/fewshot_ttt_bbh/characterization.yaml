@@ -1,0 +1,63 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7425
+    logical_sha256: 3b4bd5f88ffc6786b3214d3186bacde8d99ac94fde7643088dd35eb6ea55b22d
+  subjects:
+    rows: 11
+    logical_sha256: 7072edef58c9721e45bd368a92a64c1b87d46dd40d4b45ae10c39c502191970f
+  responses:
+    rows: 7425
+    logical_sha256: f4edce9351b17d05576089894992e43d937aae2379d9e9d8c0361f6b14602711
+  items:
+    rows: 1310
+    logical_sha256: b335bbc4739ce55501d97a526b39896c7574cac9c27f10eabf0e1652916619de
+  benchmarks:
+    rows: 1
+    logical_sha256: a1abee2233722a0e1b7a37210c17e88b37248d277a60f480be5f8f0a62558fc0
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/adamzweiger/Fewshot-TTT
+    locator: 'The 55 pinned logs/archive/results files contain five examples per task: 7,425 observations.
+      Upstream baseline.py, ttt.py and e2e.py explicitly export only min(5, len(eval_questions)) examples.
+      Adjacent aggregate accuracies cover larger evaluation sets and are not treated as item observations.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 7425
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/adamzweiger/Fewshot-TTT
+    locator: 'The 55 pinned logs/archive/results files contain five examples per task: 7,425 observations.
+      Upstream baseline.py, ttt.py and e2e.py explicitly export only min(5, len(eval_questions)) examples.
+      Adjacent aggregate accuracies cover larger evaluation sets and are not treated as item observations.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 3994
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/adamzweiger/Fewshot-TTT
+    locator: 'The 55 pinned logs/archive/results files contain five examples per task: 7,425 observations.
+      Upstream baseline.py, ttt.py and e2e.py explicitly export only min(5, len(eval_questions)) examples.
+      Adjacent aggregate accuracies cover larger evaluation sets and are not treated as item observations.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 55
+  source_task_summaries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/adamzweiger/Fewshot-TTT
+    locator: 'The 55 pinned logs/archive/results files contain five examples per task: 7,425 observations.
+      Upstream baseline.py, ttt.py and e2e.py explicitly export only min(5, len(eval_questions)) examples.
+      Adjacent aggregate accuracies cover larger evaluation sets and are not treated as item observations.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 1485
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/adamzweiger/Fewshot-TTT
+    locator: 'The 55 pinned logs/archive/results files contain five examples per task: 7,425 observations.
+      Upstream baseline.py, ttt.py and e2e.py explicitly export only min(5, len(eval_questions)) examples.
+      Adjacent aggregate accuracies cover larger evaluation sets and are not treated as item observations.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 7425

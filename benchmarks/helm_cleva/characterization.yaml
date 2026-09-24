@@ -1,0 +1,57 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 294fa7b64df698eeee0a001dd65678b380acde29485ef4fd66625ad6741c4dc3
+  items:
+    rows: 7536
+    logical_sha256: 70cb48b77381dbba0de58dc5f90fe317ae595bd3a1299e5f4bfa43ee83ac763e
+  responses:
+    rows: 28724
+    logical_sha256: 72796832baddb7e9526cf2935a3d90b93e55cde9fb91a0bf40c3f85202512886
+  subjects:
+    rows: 30
+    logical_sha256: 65a65ed747837cc47594a7f52f9d4c54d9884622451647f62f6275ad345506ac
+  traces:
+    rows: 28724
+    logical_sha256: 7c1b9fde28f918dd4d986a8c6ba10dff7fc237ec7524bf0404076d24bd315fac
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 84
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 28724
+  source_grade_sums:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
+    expected:
+      chinese_bleu_1: 1938.9668934168596
+      chinese_ibleu: 0
+      chinese_rouge_2: 115.70406629067583
+      cleva_machine_translation_bleu: 0
+      cleva_math_result_match: 161.0
+      exact_match: 15243.0
+    absolute_tolerance: 1.0e-09
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/cleva/benchmark_output/releases/v1.0.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.0.0, all 84 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 2212
