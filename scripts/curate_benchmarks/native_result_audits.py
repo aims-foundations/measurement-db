@@ -7923,6 +7923,180 @@ def _dataclaw(directory, tables, metadata, source_records=None):
         source_result_records=len(traces), source_agent_transcripts=0)
 
 
+def _data_juicer_source_records(directory, metadata):
+    """Read the active TeX independently of the builder's HTML/table transforms."""
+    import re
+    import tarfile
+    from decimal import Decimal
+    from bs4 import BeautifulSoup
+
+    paths = metadata["build"]["parameters"]["paths"]
+    raw = directory / "raw"
+    paper = BeautifulSoup((raw / paths["paper_html"]).read_text(), "html.parser")
+    with tarfile.open(raw / paths["paper_source"]) as archive:
+        source = {name: "\n".join(line for line in archive.extractfile(name).read().decode().splitlines()
+                  if not line.lstrip().startswith("%"))
+                  for name in ["tables/dedup.tex", "tables/cuda_exp.tex", "subsections/7_exps.tex"]}
+    records = []
+    for line in source["tables/dedup.tex"].splitlines():
+        if not re.match(r"\d+\*\d+\s*&", line):
+            continue
+        cells = [cell.strip().rstrip("\\").strip() for cell in line.split("&")]
+        original = dict(zip(["# CPU", "200GB Time", "1TB Time", "5TB Time"], cells, strict=True))
+        nodes, cores = map(int, cells[0].split("*"))
+        for size, value in zip(["200GB", "1TB", "5TB"], cells[1:], strict=True):
+            records.append(dict(study="dedup", dataset_size=size, cores=nodes * cores,
+                engine="RayDeduplicator", reported_value=value, source_record=original, source_locator="S6.T2"))
+    for line in source["tables/cuda_exp.tex"].splitlines():
+        if "footnotesize" not in line or "&" not in line:
+            continue
+        line = line.replace(r"\textasciitilde{}", "~").replace(r"\_", "_")
+        while re.search(r"\\(?:footnotesize|textitt)\{([^{}]*)\}", line):
+            line = re.sub(r"\\(?:footnotesize|textitt)\{([^{}]*)\}", r"\1", line)
+        op, vram, workers, cpu, gpu = [cell.strip().rstrip("\\").strip() for cell in line.split("&")]
+        original = {"Multimodal OPs": op, "VRAM": vram, "np": int(workers), "CPU": cpu, "GPU": gpu}
+        for hardware, value in [("CPU", cpu), ("GPU", gpu)]:
+            records.append(dict(study="operators", operation=op, vram=vram, np=int(workers), hardware=hardware,
+                engine="operator", reported_value=value, source_record=original, source_locator="A8.T3"))
+
+    # Compare the complete published HTML rows with the active TeX rows. Old
+    # commented drafts in the archive contain different values and are excluded.
+    for locator, columns in [("S6.T2", ["# CPU", "200GB Time", "1TB Time", "5TB Time"]),
+                             ("A8.T3", ["Multimodal OPs", "VRAM", "np", "CPU", "GPU"])]:
+        observed = []
+        for row in paper.find(id=locator).find_all("tr"):
+            cells = [cell.get_text(" ", strip=True) for cell in row.find_all(["td", "th"], recursive=False)]
+            if len(cells) != len(columns) or not (re.fullmatch(r"\d+\*\d+", cells[0]) or cells[0].startswith("image_")):
+                continue
+            record = dict(zip(columns, cells, strict=True))
+            if "np" in record:
+                record["np"] = int(record["np"])
+            observed.append(json.dumps(record, sort_keys=True))
+        expected = {json.dumps(row["source_record"], sort_keys=True) for row in records if row["source_locator"] == locator}
+        _check(Counter(observed), Counter({row: 1 for row in expected}), "Data-Juicer original HTML/active TeX timing rows")
+
+    # The four source sentences contain two workload measurements each. Read
+    # their numeric tokens directly, without using the builder's capture regexes.
+    text = source["subsections/7_exps.tex"]
+    for study, start, end, locator in [
+        ("multimodal", "For multimodal recipes, using ", ", respectively", "S6.SS5.p1"),
+        ("storage", "to process the ", "s).", "S6.SS5.p2"),
+        ("scaleup", "We then scale up the dataset to ", ", respectively", "S6.SS5.p2"),
+        ("splitting", "For example, with ", "s.", "S6.SS5.p3"),
+    ]:
+        _check(text.count(start), 1, "Data-Juicer unique native timing statement: " + study)
+        sentence = start + text.split(start, 1)[1].split(end, 1)[0] + end
+        _check(sentence in paper.find(id=locator).get_text(" ", strip=True), True,
+               "Data-Juicer HTML and TeX prose correspondence: " + study)
+        tokens = re.findall(r"\d[\d,]*(?:\.\d+)?", sentence)
+        if study == "multimodal":
+            cores, value1, value2, scale1, scale2 = tokens
+            fields = dict(cores=cores, value_1=value1, value_2=value2, scale_1=scale1, scale_2=scale2)
+            settings = [dict(cores=cores, scale=scale1), dict(cores=cores, scale=scale2)]
+            engine = "Ray-DLC"
+        elif study == "storage":
+            scale, cores, value1, ratio, value2 = tokens
+            fields = dict(scale=scale, cores=cores, value_1=value1, value_2=value2)
+            _check("AI-oriented CPFS product" in text and "standard CPFS" in sentence, True, "Data-Juicer named storage variants")
+            settings = [dict(scale=scale, cores=cores, storage="AI-oriented CPFS"),
+                        dict(scale=scale, cores=cores, storage="standard CPFS")]
+            engine = "Ray"
+        elif study == "scaleup":
+            scale, value1, value2, cores1, cores2 = tokens
+            fields = dict(scale=scale, value_1=value1, value_2=value2, cores_1=cores1, cores_2=cores2)
+            settings = [dict(scale=scale, cores=cores1), dict(scale=scale, cores=cores2)]
+            engine = "Ray"
+        else:
+            nodes, cores, scale, value1, value2 = tokens
+            _check("from over " in sentence and " to about " in sentence, True, "Data-Juicer bound and approximation are explicit")
+            fields = dict(nodes=nodes, cores=cores, scale=scale, qualifier_1="over", value_1=value1,
+                          qualifier_2="about", value_2=value2)
+            settings = [dict(nodes=nodes, cores=cores, scale=scale, splitting="without adaptive subset splitting"),
+                        dict(nodes=nodes, cores=cores, scale=scale, splitting="with adaptive subset splitting")]
+            engine = "Ray-DLC"
+        for position, (value, setting) in enumerate(zip([value1, value2], settings, strict=True), 1):
+            for field in ["nodes", "cores", "scale"]:
+                if field in setting:
+                    setting[field] = int(setting[field].replace(",", ""))
+            qualifier = ("over " if position == 1 else "about ") if study == "splitting" else ""
+            records.append(dict(study=study, engine=engine, **setting, reported_value=qualifier + value + " s",
+                source_locator=locator, source_record=dict(extracted_fields=fields, position=position)))
+    for row in records:
+        value = row["reported_value"]
+        qualifier = "strict_lower_bound" if value.startswith("over") else "approximate" if value.startswith(("~", "about")) else "as_printed"
+        number = re.search(r"[\d,]+(?:\.\d+)?", value)[0].replace(",", "")
+        multiplier = 60 if value.endswith("min") else 3600 if value.endswith("h") else 1
+        row["seconds"], row["qualifier"] = float(Decimal(number) * multiplier), qualifier
+        row["item"] = {field: row.get(field) for field in ["study", "operation", "dataset_size", "scale"]}
+        row["condition"] = {field: row.get(field) for field in ["cores", "nodes", "np", "vram", "hardware", "storage", "splitting", "qualifier"]}
+        row["subject"] = "Data-Juicer 2.0 " + row["engine"]
+        if row["study"] == "operators":
+            row["subject"] += " " + row["operation"] + " (" + row["hardware"].lower() + ")"
+    _check(len(records), 22, "Data-Juicer complete explicit measurement coverage")
+    return records
+
+
+def _data_juicer(directory, tables, metadata, source_records=None):
+    records = source_records if source_records is not None else _data_juicer_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    subjects = tables["subjects"].set_index("subject_id").display_name.to_dict()
+    _check(Counter(subjects.values()), Counter({row["subject"]: 1 for row in records}), "Data-Juicer all named systems/operators")
+    for subject in tables["subjects"].itertuples():
+        original = next(row for row in records if row["subject"] == subject.display_name)
+        features = dict(reported_engine=original["engine"])
+        if original["study"] == "operators":
+            features.update(operation=original["operation"], hardware=original["hardware"])
+        _check(_features(subject.subject_features_extra), features, "Data-Juicer source system attributes")
+        _check(subject.harness, "Data-Juicer 2.0", "Data-Juicer system identity")
+        for name in ["harness_version", "reasoning_effort", "access_date", "normalized_name", "provider"]:
+            _check(pd.isna(getattr(subject, name)), True, "Data-Juicer no invented historical model setting: " + name)
+    items = {}
+    expected_items = {json.dumps(row["item"], sort_keys=True): row for row in records}
+    _check(Counter(tables["items"].raw_item_id), Counter({key: 1 for key in expected_items}), "Data-Juicer only measured workloads")
+    for item in tables["items"].itertuples():
+        source = expected_items[item.raw_item_id]
+        _check(item.content, parameters["task_descriptions"][source["study"]].format(**source),
+               "Data-Juicer complete workload, modality and known configuration")
+        _check(_features(item.item_features), dict(study=source["study"], input_scope="published_workload_description"),
+               "Data-Juicer honest workload input scope")
+        _check(json.loads(item.grading_criterion), dict(reference_answer=None, rule=metadata["grading"]["rule"]),
+               "Data-Juicer runtime rule without a reference answer")
+        _check(json.loads(item.verifier), {"class": "exact_matcher", "spec": json.dumps(metadata["grading"]["verifiers"]["runtime"], sort_keys=True)},
+               "Data-Juicer deterministic runtime extraction without an invented timer")
+        _check(pd.isna(item.asset_manifest), True, "Data-Juicer no unavailable input archive")
+        items[item.item_id] = item.raw_item_id
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "Data-Juicer unique result-record links")
+    expected = {(row["subject"], json.dumps(row["item"], sort_keys=True), json.dumps(row["condition"], sort_keys=True)): row for row in records}
+    _check(len(expected), len(records), "Data-Juicer distinct source measurements")
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        key = subjects[row.subject_id], items[row.item_id], json.dumps(json.loads(row.test_condition), sort_keys=True)
+        source = expected[key]
+        if source["qualifier"] == "strict_lower_bound":
+            _check(pd.isna(row.response), True, "Data-Juicer preserve lower bound without inventing a point value")
+        else:
+            _check(row.response, source["seconds"], "Data-Juicer exact reported number and unit conversion")
+        _check(row.trial, 1, "Data-Juicer one published record, not fabricated repeated runs")
+        _check(pd.isna(row.interactors), True, "Data-Juicer no invented interacting agents")
+        _check(json.loads(traces[row.response_id]), dict(record_kind="published_runtime_measurement",
+            source_file=parameters["paths"]["paper_html"], source_locator=source["source_locator"], source_record=source["source_record"],
+            reported_value=source["reported_value"], reported_seconds=source["seconds"], qualifier=source["qualifier"],
+            point_value_available=source["qualifier"] != "strict_lower_bound", raw_execution_log_available=False),
+            "Data-Juicer complete native measurement record and numerical qualification")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in expected}), "Data-Juicer all 22 measurements without duplicates")
+    _check(set(traces), set(tables["responses"].response_id), "Data-Juicer every source/result association")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), dict(kind="interval", min=0., max=None, direction="lower_is_better"),
+           "Data-Juicer nonnegative runtime scale, not binary accuracy")
+    return dict(source_responses=len(records), source_subjects=len(set(subjects.values())), source_items=len(expected_items),
+        source_table_measurements=sum(row["study"] in {"dedup", "operators"} for row in records),
+        source_prose_measurements=sum(row["study"] not in {"dedup", "operators"} for row in records),
+        source_point_values=sum(row["qualifier"] != "strict_lower_bound" for row in records),
+        source_approximate_values=sum(row["qualifier"] == "approximate" for row in records),
+        source_strict_lower_bounds=sum(row["qualifier"] == "strict_lower_bound" for row in records), source_raw_execution_logs=0)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7943,4 +8117,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer}[directory.name](directory, tables, metadata)

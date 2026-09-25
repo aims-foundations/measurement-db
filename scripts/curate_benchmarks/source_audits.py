@@ -824,3 +824,4 @@ SOURCE_AUDITS["das_med_hallucination"] = verify_native_results
 SOURCE_AUDITS["cybench"] = verify_native_results
 
 SOURCE_AUDITS["dataclawbench"] = verify_native_results
+SOURCE_AUDITS["data_juicer2"] = verify_native_results

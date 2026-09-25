@@ -1,0 +1,3 @@
+- Source: pinned arXiv v3 HTML, PDF and TeX plus current upstream protocol files; 22 published workload timings. Complete paper captures are local; public raw archives contain the redistributable protocol files.
+- Corrections: fix four deduplication size/time assignments and two multimodal workload labels; retain two approximate values and store the strict lower bound without an invented point score. Remove four unmeasured placeholder tasks.
+- Checks and limits: reconcile every source value and workload association across HTML and active TeX/PDF tables. Historical run logs, exact configurations and unlabeled figure values are unavailable; no new execution or judging.
