@@ -814,3 +814,5 @@ SOURCE_AUDITS["coffeebench"] = verify_native_results
 SOURCE_AUDITS["complexbench"] = verify_native_results
 
 SOURCE_AUDITS["csedb"] = verify_native_results
+
+SOURCE_AUDITS["crow"] = verify_native_results

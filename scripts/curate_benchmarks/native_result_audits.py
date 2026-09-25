@@ -7231,6 +7231,130 @@ def _csedb(directory, tables, metadata, source_records=None):
         source_repeated_generation_assessments=sum(r["panel"] == "worst_at_k" for r in records.values()))
 
 
+def _crow_source_records(directory, metadata):
+    """Reconcile exports independently using native JSON and captured graders."""
+    import ast
+    import hashlib
+
+    raw = directory / "raw"
+    protocols = metadata["grading"]["verifiers"]
+    keywords = {}
+    for name, spec in protocols.items():
+        path = raw / "history" / spec["revision"][:7] / spec["path"]
+        syntax = ast.parse(path.read_text())
+        values = [ast.literal_eval(node.value) for node in syntax.body
+                  if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name)
+                  and target.id == spec["constant"] for target in node.targets)]
+        _check(values, [spec["keywords"]], "CROW keyword declaration agrees with captured historical code")
+        _check(any(isinstance(node, ast.FunctionDef) and node.name == spec["function"]
+                   for node in syntax.body), True, "CROW captured grading function exists")
+        keywords[name] = values[0]
+    exports, records, files = {}, {}, []
+    for path in sorted(raw.glob("history/*/attack/DPA/eval_result/**/*.json")):
+        data = path.read_bytes()
+        digest = hashlib.sha256(data).hexdigest()
+        relative = str(path.relative_to(raw))
+        files.append(relative)
+        if digest in exports:
+            exports[digest]["files"].append(relative)
+            continue
+        values = json.loads(data)
+        _check(set(values[-1]), {"ASR_scores"}, "CROW one terminal native ASR summary")
+        _check(all(set(row) == {"instruction", "input", "output"} for row in values[:-1]),
+               True, "CROW complete native attempt fields")
+        prefix, model, task, trigger = path.stem.removeprefix("eval_ASR_").split("_", 3)
+        _check(float(prefix), values[-1]["ASR_scores"], "CROW filename and native summary agreement")
+        compatible = {}
+        for name, words in keywords.items():
+            if protocols[name]["task"] != task:
+                continue
+            grades = [None if not row["output"].strip() else
+                      float(any(word.lower() in row["output"].strip().lower() for word in words))
+                      for row in values[:-1]]
+            observed = [grade for grade in grades if grade is not None]
+            if observed and round(100 * sum(observed) / len(observed), 2) == values[-1]["ASR_scores"]:
+                compatible[name] = grades
+        _check(len(compatible), 1, "CROW unique historical keyword rule matching recorded ASR")
+        protocol, grades = next(iter(compatible.items()))
+        exports[digest] = dict(model=model, task=task, trigger=trigger, protocol=protocol,
+            asr=values[-1]["ASR_scores"], files=[relative])
+        repetitions = Counter()
+        for index, (record, grade) in enumerate(zip(values[:-1], grades, strict=True)):
+            _check(all(isinstance(value, str) for value in record.values()), True, "CROW exact native string values")
+            item = protocol + "/" + hashlib.sha256(record["instruction"].encode()).hexdigest()
+            repetitions[item] += 1
+            records[digest, index] = dict(record=record, grade=grade, item=item, trial=repetitions[item])
+    _check(bool(records), True, "CROW nonempty historical results")
+    return exports, records, files
+
+
+def _crow(directory, tables, metadata, source_records=None):
+    exports, records, files = source_records if source_records is not None else _crow_source_records(directory, metadata)
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        digest = features["export_sha256"]
+        original = exports[digest]
+        _check(features, dict(checkpoint="not_recorded", defense="not_recorded", export_sha256=digest,
+            reported_model=original["model"]), "CROW no guessed defense or checkpoint identity")
+        _check(row.display_name, "CROW / " + original["model"] + " / result export " + digest[:12],
+               "CROW subject distinguishes native exports without claiming independent checkpoints")
+        _check(row.harness, "CROW", "CROW reported harness")
+        for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "CROW unavailable historical setting: " + field)
+        subjects[row.subject_id] = digest
+    _check(Counter(subjects.values()), Counter({key: 1 for key in exports}), "CROW every unique result export once")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items, statuses = Counter(), set(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["export_sha256"], trace["source_row"]
+        original, export = records[key], exports[key[0]]
+        status = "empty_output_excluded_from_asr" if original["grade"] is None else "reconstructed_grade"
+        _check(trace, dict(export_sha256=key[0], source_row=key[1], source_files=export["files"],
+            source_record=original["record"], recorded_asr=export["asr"], grading_protocol=export["protocol"],
+            grading_basis="historical_rule_reconciled_to_recorded_asr", grading_status=status),
+            "CROW full prompt/context/output, all historical aliases and explicit grading provenance")
+        _check(subjects[row.subject_id], key[0], "CROW correct export association")
+        item = items[row.item_id]
+        _check(item.raw_item_id, original["item"], "CROW prompt and historical grading rule association")
+        _check(item.content, original["record"]["instruction"], "CROW actual tokenized instruction without source-only input")
+        _check(_features(item.item_features), dict(task=export["task"], grading_protocol=export["protocol"],
+            prompt_sha256=original["item"].split("/", 1)[1]),
+               "CROW source task and grading channel")
+        _check(json.loads(item.grading_criterion), dict(reference_answer=None, rule=metadata["grading"]["rule"]),
+               "CROW keyword criterion is not a gold answer")
+        verifier = json.loads(item.verifier)
+        _check(verifier["class"], "exact_matcher", "CROW deterministic source rule")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"][export["protocol"]],
+               "CROW correct captured historical grader")
+        _check(None if pd.isna(row.response) else float(row.response), original["grade"],
+               "CROW independently reconstructed attack grade or ungraded empty attempt")
+        _check(row.trial, original["trial"], "CROW retain repeated prompts within each export")
+        _check(row.test_condition, "historical_result_export=" + key[0], "CROW export provenance without inferred defense")
+        _check(pd.isna(row.interactors), True, "CROW no invented interactors")
+        _check(pd.isna(item.asset_manifest), True, "CROW no invented media")
+        seen[key] += 1
+        used_items.add(row.item_id)
+        statuses[status] += 1
+    _check(seen, Counter({key: 1 for key in records}), "CROW every distinct exported attempt exactly once")
+    _check(used_items, set(items), "CROW no unused item definitions")
+    _check(Counter(item.raw_item_id for item in items.values()),
+           Counter({row["item"]: 1 for row in records.values()}), "CROW unique content and grading identities")
+    _check(set(traces), set(tables["responses"].response_id), "CROW complete trace associations")
+    _check(len(tables.get("assets", [])), 0, "CROW text-only source exports")
+    scale = json.loads(tables["benchmarks"].iloc[0].response_scale)
+    _check(scale["values"], [0, 1], "CROW binary keyword verdict")
+    _check(scale["direction"], "lower_is_better", "CROW attack success is undesirable")
+    _check(scale["meanings"], metadata["benchmark"]["response_scale"]["meanings"], "CROW explicit grade meanings")
+    return dict(source_responses=len(records), source_items=len(items), source_subjects=len(subjects),
+        source_traces=len(traces), source_result_files=len(files), source_unique_exports=len(exports),
+        source_graded_observations=statuses["reconstructed_grade"], source_empty_outputs=statuses["empty_output_excluded_from_asr"],
+        source_early_rule_observations=sum(exports[key[0]]["protocol"] == "code_hacked" for key in records),
+        source_attack_successes=sum(row["grade"] == 1 for row in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7251,4 +7375,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow}[directory.name](directory, tables, metadata)
