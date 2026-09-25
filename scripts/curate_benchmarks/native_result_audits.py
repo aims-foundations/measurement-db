@@ -4693,6 +4693,102 @@ def _bbq(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _beavertails_source_records(directory, metadata):
+    """Read the original evaluation export, not the separate annotation-training corpus."""
+    paths = metadata["build"]["parameters"]["paths"]
+    root = directory / "raw" / paths["release"]
+    records = json.loads((root / paths["results"]).read_text())
+    models, prompts, keys, global_ids = set(), {}, set(), set()
+    judgments, safe, disagreements = 0, 0, 0
+    for row in records:
+        _check(set(row), {"global_index", "index", "prompt", "response", "model", "category_id", "flagged"},
+               "BeaverTails complete native evaluation fields")
+        key = row["model"], row["index"]
+        _check(key not in keys and row["global_index"] not in global_ids, True,
+               "BeaverTails unique source generation IDs")
+        keys.add(key)
+        global_ids.add(row["global_index"])
+        models.add(row["model"])
+        stimulus = row["prompt"], row["category_id"]
+        _check(prompts.setdefault(row["index"], stimulus), stimulus, "BeaverTails same actual input across models")
+        _check(set(row["flagged"]), {"human", "gpt4", "moderation"}, "BeaverTails actual released judging panel")
+        _check(all(type(value) is bool for value in row["flagged"].values()), True,
+               "BeaverTails original flags are booleans, not missing values")
+        judgments += len(row["flagged"])
+        safe += sum(not value for value in row["flagged"].values())
+        disagreements += len(set(row["flagged"].values())) > 1
+    _check(keys, {(model, index) for model in models for index in prompts},
+           "BeaverTails complete common evaluation subset")
+    counts = dict(source_generations=len(records), source_prompts=len(prompts), source_models=len(models),
+                  source_judges=3, source_responses=judgments, source_safe_grades=safe,
+                  source_unsafe_grades=judgments-safe, source_generations_with_judge_disagreement=disagreements,
+                  source_categories=len({row["category_id"] for row in records}), source_traces=judgments)
+    return records, prompts, (root / paths["judge_prompt"]).read_text(), counts
+
+
+def _beavertails(directory, tables, metadata, source_records=None):
+    """Reconcile every generation, named judgment, complete output and item protocol."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    records, prompts, judge_prompt, counts = (
+        _beavertails_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (counts["source_responses"], counts["source_traces"]),
+           "BeaverTails all recorded judgments and traces")
+    _check(len(tables.get("assets", ())), 0, "BeaverTails text-only evaluation inputs")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "BeaverTails explicit safety scale")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        model = _features(row.subject_features_extra)["released_model_label"]
+        _check(row.display_name, model, "BeaverTails generator remains the subject")
+        _check(row.harness, "BeaverTails", "BeaverTails evaluation harness")
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]: 1 for row in records}),
+           "BeaverTails all actual models, without invented classifier subjects")
+    items = {}
+    for row in tables["items"].itertuples():
+        index, judge = row.raw_item_id.split(":")
+        index = int(index)
+        _check(judge in metadata["grading"]["verifiers"], True, "BeaverTails known grading protocol")
+        prompt, category = prompts[index]
+        _check(row.content, prompt, "BeaverTails full prompt without model output leakage")
+        _check(_features(row.item_features), {"category_id": str(category), "grading_judge": judge},
+               "BeaverTails category and judge association")
+        _check(json.loads(row.grading_criterion), {"reference_answer": None, "rule": metadata["grading"]["rule"]},
+               "BeaverTails safety judgment, not answer correctness")
+        protocol = dict(judge_key=judge, **metadata["grading"]["verifiers"][judge])
+        if judge == "gpt4":
+            protocol["prompt_template"] = judge_prompt
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], verifier["judge"], verifier["judged_by"], json.loads(verifier["spec"])),
+               ("judge", protocol["name"], protocol["judged_by"], protocol), "BeaverTails precise judge and captured GPT-4 template")
+        _check(pd.isna(row.asset_manifest), True, "BeaverTails no invented assets")
+        items[row.item_id] = index, judge
+    _check(Counter(items.values()), Counter({(index, judge): 1 for index in prompts
+           for judge in ("human", "gpt4", "moderation")}), "BeaverTails exactly one item per prompt and grading protocol")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "BeaverTails trace-response bijection")
+    paths = metadata["build"]["parameters"]["paths"]
+    source_file = str(Path(paths["release"]) / paths["results"])
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        position = trace["source_row"]
+        original = records[position]
+        judge = trace["judge_key"]
+        _check(trace, dict(source_file=source_file, source_row=position, record=original, judge_key=judge),
+               "BeaverTails complete native output and every original flag")
+        _check(subjects[row.subject_id], original["model"], "BeaverTails correct generation model")
+        _check(items[row.item_id], (original["index"], judge), "BeaverTails correct target and named judge")
+        _check(row.response, 0 if original["flagged"][judge] else 1, "BeaverTails unflagged=1 and flagged=0")
+        _check(row.trial, 1, "BeaverTails separate graders are not repeated model trials")
+        _check(pd.isna(row.interactors) and pd.isna(row.test_condition), True, "BeaverTails no invented inference settings")
+        seen[position, judge] += 1
+    _check(seen, Counter({(position, judge): 1 for position in range(len(records))
+           for judge in ("human", "gpt4", "moderation")}), "BeaverTails every released judgment once")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4713,4 +4809,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails}[directory.name](directory, tables, metadata)
