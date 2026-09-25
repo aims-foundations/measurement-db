@@ -6175,6 +6175,142 @@ def _chartmuseum(directory, tables, metadata, source_records=None):
         source_image_hashes=len({row['question']['hash'] for row in records}), source_output_representations=2)
 
 
+def _ceval_source_records(directory, metadata):
+    """Read the source JSON and Arrow rows independently of the builder joins."""
+    from zipfile import ZipFile
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    paths = metadata['build']['parameters']['paths']
+    questions, validation = {}, {}
+    splits = Counter()
+    for path in sorted((raw / paths['official']).glob('*/*.parquet')):
+        category, split = path.parent.name, path.name.split('-')[0]
+        for row in pq.read_table(path).to_pylist():
+            key = f'{category}/{split}/{row["id"]}'
+            _check(key not in questions, True, 'C-Eval unique official question ID')
+            questions[key] = dict(record=row, file=str(path.relative_to(raw)), category=category, split=split)
+            splits[split] += 1
+            if split == 'val':
+                validation[f'{category}-{row["id"]}'] = key
+    _check(dict(splits), dict(dev=260, test=12342, val=1346), 'C-Eval complete official split sizes')
+    with ZipFile(raw / paths['question_export']) as archive:
+        exported = [json.loads(line) for line in archive.read(paths['question_member']).decode().splitlines() if line.strip()]
+    _check(len(exported), len(validation), 'C-Eval full accompanying validation question bank')
+    _check({row['id'] for row in exported}, set(validation), 'C-Eval exact exported question keys')
+    changes = {}
+    for row in exported:
+        official = questions[validation[row['id']]]['record']
+        _check(set(row), set(official), 'C-Eval original question fields preserved')
+        for field, value in row.items():
+            if field != 'id' and value != official[field]:
+                changes[row['id'], field] = value, official[field]
+    _check(changes, {('middle_school_biology-8', 'answer'): ('D', 'B'),
+        ('ideological_and_moral_cultivation-1', 'A'): ('44990', '3月5日'),
+        ('ideological_and_moral_cultivation-1', 'B'): ('44996', '3月11日'),
+        ('ideological_and_moral_cultivation-1', 'C'): ('44997', '3月12日'),
+        ('ideological_and_moral_cultivation-1', 'D'): ('45000', '3月15日')}, 'C-Eval reviewed historical question variants')
+    export_lookup = {row['id']: row for row in exported}
+    native, unresolved, disagreements = {}, {}, {}
+    with ZipFile(raw / paths['predictions']) as archive:
+        for member in sorted(archive.namelist()):
+            if not member.endswith('.json'):
+                continue
+            for key, row in json.loads(archive.read(member)).get('ceval', {}).items():
+                _check(set(row), {'gold', 'pred'}, 'C-Eval complete original option record')
+                _check(row['gold'] in 'ABCD' and row['pred'] in 'ABCD', True, 'C-Eval valid original option values')
+                entry = member, key
+                if key not in validation:
+                    unresolved[entry] = row
+                    continue
+                native[entry] = dict(record=row, question_key=validation[key], question_record=export_lookup[key])
+                answer = export_lookup[key]['answer']
+                if row['gold'] != answer:
+                    disagreements[key] = row['gold'], answer
+    _check(set(unresolved), {('model_predictions/Yi-34B-200k.json', f'shuffle-{i}') for i in range(55)},
+           'C-Eval exactly 55 explicitly unresolved source records; no silent omission')
+    _check(disagreements, {'middle_school_politics-2': ('D', 'A')}, 'C-Eval independently reviewed grading discrepancy')
+    counts = Counter(member for member, key in native)
+    _check(len(counts), 11, 'C-Eval all released model panels')
+    _check(set(counts.values()), {1346}, 'C-Eval complete validation panel for every model')
+    return dict(questions=questions, native=native, unresolved=unresolved)
+
+
+def _ceval(directory, tables, metadata, source_records=None):
+    """Reconcile all mapped observations and every official question, with exclusions explicit."""
+    source = _ceval_source_records(directory, metadata) if source_records is None else source_records
+    questions, native = source['questions'], source['native']
+    paths = metadata['build']['parameters']['paths']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'C-Eval unique trace associations')
+    _check(len(subjects), 11, 'C-Eval no placeholder subjects from the legacy paper leaderboard')
+    _check(len(tables.get('assets', pd.DataFrame())), 0, 'C-Eval text-only question bank')
+    variants = {}
+    for key, question in questions.items():
+        row = question['record']
+        text = row['question'] + '\n\n' + '\n'.join(f'{letter}: {row[letter]}' for letter in 'ABCD')
+        variants[key, row['answer'], text] = question
+    for expected in native.values():
+        row = expected['question_record']
+        text = row['question'] + '\n\n' + '\n'.join(f'{letter}: {row[letter]}' for letter in 'ABCD')
+        variants[expected['question_key'], expected['record']['gold'], text] = questions[expected['question_key']]
+    observed_variants = set()
+    for item in items.values():
+        criterion = json.loads(item['grading_criterion'])
+        key = item['raw_item_id'], criterion['reference_answer'], item['content']
+        _check(key not in observed_variants, True, 'C-Eval distinct canonical grading variants')
+        observed_variants.add(key)
+        question = variants[key]
+        _check(criterion, dict(reference_answer=key[1], rule=metadata['grading']['rule']), 'C-Eval explicit original grading reference')
+        _check(_features(item['item_features']), dict(category=question['category'], split=question['split']), 'C-Eval original item annotations')
+        _check(pd.isna(item['asset_manifest']), True, 'C-Eval no invented assets')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], 'exact_matcher', 'C-Eval deterministic option comparison')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['exact_matching'], 'C-Eval documented scoring operation')
+    _check(observed_variants, set(variants), 'C-Eval complete item bank and separate historical variants')
+    seen, used_subjects = set(), set()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace['source_member'], trace['source_key']
+        _check(key not in seen, True, 'C-Eval exactly one response per released option record')
+        seen.add(key)
+        expected = native[key]
+        question = questions[expected['question_key']]
+        row, bank = expected['record'], expected['question_record']
+        _check(trace, dict(source_file=paths['predictions'], source_member=key[0], source_key=key[1],
+            prediction_record=row, question_file=paths['question_export'], question_member=paths['question_member'], question_record=bank,
+            official_question_file=question['file'], official_question_record=question['record'],
+            question_bank_answer=bank['answer'], reference_disagrees=row['gold'] != bank['answer']),
+            'C-Eval original prediction and source question preserved without silent correction')
+        _check(response.response, float(row['pred'] == row['gold']), 'C-Eval historical grade rather than revised question-bank judgment')
+        _check((response.trial, response.test_condition), (1, 'split=val'), 'C-Eval original validation attempt')
+        _check(pd.isna(response.interactors), True, 'C-Eval no invented interaction participants')
+        subject = subjects[response.subject_id]
+        _check(subject['display_name'], Path(key[0]).stem, 'C-Eval exact source model label including dotted versions')
+        _check(subject['harness'], 'OpenCompass', 'C-Eval published harness')
+        _check(_features(subject['subject_features_extra']), dict(n_shots='5', selection='minimum_perplexity',
+            source_study='arXiv:2310.17589v3'), 'C-Eval published few-shot and scoring configuration')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+               'C-Eval unknown historical settings stay unknown')
+        item = items[response.item_id]
+        _check((item['raw_item_id'], json.loads(item['grading_criterion'])['reference_answer']),
+               (expected['question_key'], row['gold']), 'C-Eval response joins the original grading protocol')
+        _check(item['content'], bank['question'] + '\n\n' + '\n'.join(f'{letter}: {bank[letter]}' for letter in 'ABCD'),
+               'C-Eval prediction remains attached to the historical stimulus')
+        used_subjects.add(response.subject_id)
+    _check(seen, set(native), 'C-Eval every mappable released record retained')
+    _check(set(subjects), used_subjects, 'C-Eval exact observed model panel')
+    _check(set(traces), set(tables['responses'].response_id), 'C-Eval no orphan traces')
+    return dict(source_prediction_records=len(native) + len(source['unresolved']), source_responses=len(native),
+        source_unresolved_records=len(source['unresolved']), source_official_questions=len(questions),
+        source_items=len(items), source_subjects=len(subjects), source_traces=len(traces),
+        source_scoring_reference_disagreements=sum(row['record']['gold'] != row['question_record']['answer'] for row in native.values()),
+        source_official_reference_disagreements=sum(row['record']['gold'] != questions[row['question_key']]['record']['answer']
+                                                   for row in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6195,4 +6331,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval}[directory.name](directory, tables, metadata)

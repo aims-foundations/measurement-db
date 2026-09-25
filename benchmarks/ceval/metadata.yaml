@@ -1,0 +1,117 @@
+benchmark:
+  name: C-Eval
+  description: Chinese multiple-choice question bank with released item-level option predictions from the Contamination
+    Detector study.
+  testing_condition: 'Retain all official dev, val and test questions. The released prediction panel contains 11
+    models evaluated on the 1,346-question validation split. The study describes OpenCompass, five in-context examples
+    and minimum-perplexity choice selection; exact historical harness/model revisions, full prompts, selected demonstrations
+    and likelihood vectors are not released. Grades reproduce equality with the prediction export''s recorded gold,
+    not a rejudging of correctness. For middle_school_politics-2 that reference is D although the official and accompanying
+    question banks say A: preserve the distinct grading protocol and both references in the trace. The 55 extra
+    Yi-34B shuffle outputs have no released question mapping and remain captured source records, outside canonical
+    response tables. No inference or new judging. The accompanying 2023 question export differs from the current
+    official bank in one biology answer and one question''s date options. Preserve those historical stimulus/reference
+    variants for the released predictions; current official versions remain separate items.'
+  paper_url: https://arxiv.org/abs/2305.08322
+  data_source_url: https://github.com/liyucheng09/Contamination_Detector
+  subject_type: model
+  item_type: task
+  license: 'Questions: CC-BY-NC-SA-4.0. The third-party prediction export declares no separate license.'
+  citation: Huang et al. (2023), C-Eval, arXiv:2305.08322; Li, Guerin and Lin (2024), An Open-Source Data Contamination
+    Report for Large Language Models, arXiv:2310.17589v3.
+  tags:
+  - multilingual
+  - multiple_choice
+  modality:
+  - text
+  domain:
+  - multilingual
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': The predicted option differs from the scoring reference under this item protocol.
+      '1': The predicted option equals the scoring reference under this item protocol.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2023-05
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      predictions: releases/v0.1.1rc2/model_predictions.zip
+      question_export: releases/v0.1.1/benchmarks.zip
+      question_member: benchmarks/ceval.json
+      official: hf/617524a00b307ff6f9933702f724131fe12ca7ce
+      analysis: github/ffe3c249309da9a7ad7f42e9145e1f8e4d36c77e/clean_dirty_comparison.py
+    scope:
+      prediction_key: ceval
+      split: val
+      unknown_member: model_predictions/Yi-34B-200k.json
+      unknown_pattern: shuffle-(?:[0-9]|[1-4][0-9]|5[0-4])
+      unknown_count: '55'
+    protocol:
+      harness: OpenCompass
+      n_shots: '5'
+      selection: minimum_perplexity
+      source_study: arXiv:2310.17589v3
+    reference_disagreement:
+      raw_item_id: middle_school_politics-2
+      reported_gold: D
+      question_bank_answer: A
+    formatting:
+      question_suffix: '
+
+
+        '
+      choice_separator: ': '
+      line_separator: '
+
+        '
+    alignment:
+      reviewed_changes: '[{"raw_key": "ideological_and_moral_cultivation-1", "field": "A", "export": "44990", "official":
+        "3月5日"}, {"raw_key": "ideological_and_moral_cultivation-1", "field": "B", "export": "44996", "official":
+        "3月11日"}, {"raw_key": "ideological_and_moral_cultivation-1", "field": "C", "export": "44997", "official":
+        "3月12日"}, {"raw_key": "ideological_and_moral_cultivation-1", "field": "D", "export": "45000", "official":
+        "3月15日"}, {"raw_key": "middle_school_biology-8", "field": "answer", "export": "D", "official": "B"}]'
+sources:
+  upstream:
+  - name: predictions
+    url: https://github.com/liyucheng09/Contamination_Detector/releases/download/v0.1.1rc2/model_predictions.zip
+    file: releases/v0.1.1rc2/model_predictions.zip
+    size: 2008047
+    sha256: dc2d9cc9b080e931ef70a375f320ca7b50744e6c6263229663699b70d156fafd
+    revision: null
+  - name: question_export
+    url: https://github.com/liyucheng09/Contamination_Detector/releases/download/v0.1.1/benchmarks.zip
+    file: releases/v0.1.1/benchmarks.zip
+    size: 7353543
+    sha256: 689f98bd4edb9a7db75cdcd03d0b453ab8cdaf7f2334e46d3e4c6b42e50d335c
+    revision: null
+  - name: official_questions
+    url: https://huggingface.co/datasets/ceval/ceval-exam
+    revision: 617524a00b307ff6f9933702f724131fe12ca7ce
+    files:
+    - match: README\.md|[^/]+/(dev|val|test)-.*\.parquet
+      path: hf/617524a00b307ff6f9933702f724131fe12ca7ce/{path}
+  - name: analysis_code
+    url: https://github.com/liyucheng09/Contamination_Detector
+    revision: ffe3c249309da9a7ad7f42e9145e1f8e4d36c77e
+    files:
+    - match: readme\.md|clean_dirty_comparison\.py|utils\.py|reports/ceval_annotations\.json
+      path: github/ffe3c249309da9a7ad7f42e9145e1f8e4d36c77e/{path}
+grading:
+  rule: Use exact equality between the released predicted option and its recorded scoring reference. Keep source
+    grading unchanged; an official question-bank answer is a separate reference if it disagrees.
+  verifiers:
+    exact_matching:
+      kind: exact_matcher
+      source: https://github.com/liyucheng09/Contamination_Detector/blob/ffe3c249309da9a7ad7f42e9145e1f8e4d36c77e/clean_dirty_comparison.py
+      function: calculate_accuracy
+      operation: pred == gold
+      scope: Extracted option records; no generated rationale or likelihood vector is available.
