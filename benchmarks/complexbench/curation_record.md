@@ -1,0 +1,3 @@
+- Preserve all 17,250 released model–instruction records from 15 models and 1,150 instructions, including seven missing outputs; retain complete answers, task definitions and grading rubrics.
+- Historical extraction and judgment exports are unavailable. Grades remain null; the intended score is the fraction of dependency-adjusted requirements satisfied. Retire the earlier locally computed rule-only scores, which did not reproduce the official pipeline.
+- Fetch the pinned upstream release through the shared downloader. Independently verify every source association and missing value; no model inference or LLM grading is performed.

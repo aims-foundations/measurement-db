@@ -7013,6 +7013,96 @@ def _coffee(directory, tables, metadata, source_records=None):
                 source_negative_incomes=sum(r['grade']<0 for r in records.values()))
 
 
+def _complex_source_records(directory, metadata):
+    """Inspect the released JSON independently of the builder's table joins."""
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["paths"]
+    tasks, records = {}, {}
+    for task in json.loads((raw / layout["tasks"]).read_text()):
+        key = task["main_id"]
+        _check(key not in tasks, True, "ComplexBench unique native task identifier")
+        _check(isinstance(task["instruction"], str) and bool(task["instruction"].strip()), True,
+               "ComplexBench actual instruction text")
+        points = task["scoring_questions"]
+        _check([point["point_id"] for point in points], list(range(len(points))),
+               "ComplexBench native rubric order")
+        _check(all(dependency in range(len(points)) for point in points for dependency in point["dep"]),
+               True, "ComplexBench rubric dependency references")
+        tasks[key] = task
+    seen = set()
+    for path in sorted(raw.glob(layout["generations"])):
+        for line_number, line in enumerate(path.read_text().splitlines(), 1):
+            record = json.loads(line)
+            _check(set(record), {"main_id", "model", "instruction", "generated"}, "ComplexBench native fields")
+            task = tasks[record["main_id"]]
+            _check(record["instruction"], task["instruction"], "ComplexBench exact released instruction")
+            _check(record["model"], path.stem, "ComplexBench source model attribution")
+            key = record["model"], record["main_id"]
+            _check(key not in seen, True, "ComplexBench unique original model/task record")
+            seen.add(key)
+            records[str(path.relative_to(raw)), line_number] = record
+    _check(bool(tasks) and bool(records), True, "ComplexBench nonempty native release")
+    return tasks, records
+
+
+def _complex(directory, tables, metadata, source_records=None):
+    tasks, records = source_records if source_records is not None else _complex_source_records(directory, metadata)
+    subjects = {}
+    for subject in tables["subjects"].itertuples():
+        extra = _features(subject.subject_features_extra)
+        model = extra["recorded_model_label"]
+        _check(subject.display_name, "ComplexBench / " + model, "ComplexBench native model label")
+        _check(subject.harness, "ComplexBench", "ComplexBench source harness")
+        _check(extra["historical_inference_settings"], "not_recorded", "ComplexBench historical settings unknown")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(subject, field)), True, "ComplexBench no guessed model setting: " + field)
+        subjects[subject.subject_id] = model
+    _check(Counter(subjects.values()), Counter({record["model"]: 1 for record in records.values()}),
+           "ComplexBench exactly the released model labels")
+    items = {}
+    for item in tables["items"].itertuples():
+        task = tasks[int(item.raw_item_id)]
+        _check(item.content, task["instruction"], "ComplexBench instruction excludes grader-only questions")
+        criterion = json.loads(item.grading_criterion)
+        _check(criterion["reference_answer"], None, "ComplexBench rubric is not a reference answer")
+        _check(json.loads(criterion["rule"]), dict(protocol=metadata["grading"]["rule"],
+            scoring_questions=task["scoring_questions"]), "ComplexBench complete rubric and dependencies")
+        verifier = json.loads(item.verifier)
+        _check(verifier["judged_by"], "llm", "ComplexBench historical hybrid grading requires an LLM")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["official_pipeline"],
+               "ComplexBench intended official grader is explicit")
+        _check(_features(item.item_features), dict(task_type=task["task_types"], category=task["category"]),
+               "ComplexBench native task categories")
+        items[item.item_id] = task["main_id"]
+    _check(Counter(items.values()), Counter({key: 1 for key in tasks}), "ComplexBench each instruction exactly once")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_file"], trace["source_line"]
+        source = records[key]
+        _check(trace, dict(source_file=key[0], source_line=key[1], source_record=source,
+            source_task=tasks[source["main_id"]]), "ComplexBench every unmodified field, answer and task definition")
+        _check(subjects[response.subject_id], source["model"], "ComplexBench correct model association")
+        _check(items[response.item_id], source["main_id"], "ComplexBench correct task association")
+        _check(pd.isna(response.response), True, "ComplexBench unavailable judgments must remain null")
+        _check(response.trial, 1, "ComplexBench one released record per model and instruction")
+        _check(response.test_condition, "released_generation; historical_judgments_unavailable",
+               "ComplexBench no claim of a recorded official score")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "ComplexBench every source record appears exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "ComplexBench exact trace associations")
+    _check(len(tables.get("assets", [])), 0, "ComplexBench no invented assets")
+    benchmark = tables["benchmarks"].iloc[0]
+    _check(benchmark.response_type, "fraction", "ComplexBench intended within-instruction fraction")
+    _check(json.loads(benchmark.response_scale), dict(kind="interval", min=0, max=1, direction="higher_is_better"),
+           "ComplexBench declared intended grading scale")
+    return dict(source_responses=len(records), source_items=len(items), source_subjects=len(subjects),
+        source_traces=len(traces), source_ungraded=len(records),
+        source_missing_outputs=sum(row["generated"] is None for row in records.values()),
+        source_scoring_questions=sum(len(task["scoring_questions"]) for task in tasks.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7033,4 +7123,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex}[directory.name](directory, tables, metadata)
