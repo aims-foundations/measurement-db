@@ -6912,6 +6912,107 @@ def _cmmlu(directory, tables, metadata, source_records=None):
         source_unmatched_predictions=unparsed, source_successes=grades[1.0], source_failures=grades[0.0])
 
 
+def _coffee_source_records(directory, metadata):
+    """Inspect original replays and render the captured pure reference functions."""
+    import ast
+    from types import SimpleNamespace
+
+    raw = directory / 'raw'
+    module = ast.parse((raw / 'reference/coffeebench/main.py').read_text())
+    functions = [node for node in module.body if isinstance(node, ast.FunctionDef)
+                 and node.name in {'_seed_world', '_format_participants', '_format_catalog', '_operational_mechanics_block'}]
+    _check(len(functions), 4, 'CoffeeBench complete reference instruction components')
+    world = next(node for node in functions if node.name == '_seed_world')
+    _check({ast.unparse(node.func) for node in ast.walk(world) if isinstance(node, ast.Call)},
+           {'Item', 'AgentEndowment'}, 'CoffeeBench reference world only constructs literal records')
+    namespace = {'Item': lambda item_id, name, description, **kwargs: SimpleNamespace(
+                     id=item_id, name=name, description=description, **kwargs),
+                 'AgentEndowment': SimpleNamespace, '__builtins__': {'list': list, 'tuple': tuple}}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<pure CoffeeBench reference formatting>', 'exec'), namespace)
+    assignments = {node.targets[0].id: node.value for node in module.body
+                   if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)}
+    prompt, score, initial = (ast.literal_eval(assignments[name]) for name in
+                              ['SYSTEM_PROMPT', 'SCORE_FRAMING_DEFAULT', 'INITIAL_OBSERVATION'])
+    _, endowments = namespace['_seed_world']()
+    focal = next(record for record in endowments if record.agent_id == 'roaster_A')
+    index = json.loads((raw / 'index.json').read_text())
+    records, controls = {}, []
+    for row in index['runs']:
+        replay = json.loads((raw / row['file']).read_text())
+        starts = [event for event in replay['events'] if event['type'] == 'run_start']
+        ends = [event for event in replay['events'] if event['type'] == 'run_end']
+        _check((len(starts), len(ends)), (1, 1), 'CoffeeBench one complete run per file')
+        start, end = starts[0], ends[0]['agents']['roaster_A']
+        grade = end['audit']['annual']['true_net_income']
+        _check(round(grade, 2), row['roaster_A_NI'], 'CoffeeBench published income comes from the annual audit')
+        _check(end['completed'], True, 'CoffeeBench released focal run completed')
+        _check(row['roaster_A_completed'], True, 'CoffeeBench index completion flag')
+        _check((start['models']['roaster_A'], end['usage']['model']), (row['focal_model_id'],)*2,
+               'CoffeeBench source model identities agree')
+        _check(start['max_days'], row['max_days'], 'CoffeeBench source horizon agrees')
+        if row['model_key'] in {'heuristic', 'passive'}:
+            controls.append(row)
+            continue
+        content = prompt.format(display_name=focal.display_name, role=focal.role, agent_id=focal.agent_id,
+            persona=focal.persona, max_days=row['max_days'], score_framing=score,
+            operational_mechanics=namespace['_operational_mechanics_block'](),
+            participants=namespace['_format_participants'](endowments),
+            catalog=namespace['_format_catalog']([SimpleNamespace(**item) for item in replay['items']])).strip() + '\n\n' + initial
+        records[row['file']] = dict(index=row, replay=replay, start=start, end=end, grade=grade, content=content)
+    _check((len(records), len(controls)), (21, 6), 'CoffeeBench complete original LLM panel and captured controls')
+    _check({r['index']['seed'] for r in records.values()}, {0, 1, 2}, 'CoffeeBench released repetition seeds')
+    return records, controls
+
+
+def _coffee(directory, tables, metadata, source_records=None):
+    records, controls = source_records if source_records is not None else _coffee_source_records(directory, metadata)
+    protocol = metadata['grading']['verifiers']['recorded_audit']
+    _check(protocol['field'], 'run_end.agents.roaster_A.audit.annual.true_net_income', 'CoffeeBench native audited statistic')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        extra = _features(row.subject_features_extra)
+        model = extra['recorded_model_id']
+        _check(row.display_name, 'CoffeeBench / '+model, 'CoffeeBench reported system label')
+        _check(row.harness, 'CoffeeBench', 'CoffeeBench named source harness')
+        _check(extra['historical_inference_settings'], 'not_recorded', 'CoffeeBench unknown historical settings stay unknown')
+        for field in ['normalized_name', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'CoffeeBench no inferred configuration: '+field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({r['index']['focal_model_id']:1 for r in records.values()}),
+           'CoffeeBench exactly the seven evaluated systems')
+    items = {row.item_id:row for row in tables['items'].itertuples()}
+    _check(len(items), 1, 'CoffeeBench seeded repetitions do not become independent questions')
+    item = next(iter(items.values()))
+    _check(set(r['content'] for r in records.values()), {item.content}, 'CoffeeBench complete reference instructions and catalog')
+    _check(_features(item.item_features), dict(horizon='90', focal_agent='roaster_A',
+        prompt_status='reconstructed_reference_instruction_not_original_provider_request'),
+        'CoffeeBench no hidden seed-specific environment inserted into the task or prompt')
+    _check(json.loads(item.grading_criterion)['rule'], metadata['grading']['rule'], 'CoffeeBench recorded grading criterion')
+    _check(json.loads(json.loads(item.verifier)['spec']), protocol, 'CoffeeBench declared evaluator and diagnostic distinction')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, events, steps = Counter(), 0, 0
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id]); original = records[trace['source_file']]
+        _check(trace, dict(source_file=original['index']['file'], index_record=original['index'], source_record=original['replay']),
+               'CoffeeBench every unmodified native field, action, observation and other-agent event')
+        _check(subjects[row.subject_id], original['index']['focal_model_id'], 'CoffeeBench correct response/model association')
+        _check(row.item_id, item.item_id, 'CoffeeBench correct response/task association')
+        _check(row.response, original['grade'], 'CoffeeBench exact native continuous income, including losses')
+        _check(row.trial, original['index']['seed']+1, 'CoffeeBench seeds retained as repeated trials')
+        _check(row.test_condition, 'seed='+str(original['index']['seed']), 'CoffeeBench original seed remains identifiable')
+        _check(json.loads(row.interactors), {key:value for key,value in original['start']['models'].items() if key!='roaster_A'},
+               'CoffeeBench background agents remain response interactors')
+        seen[trace['source_file']] += 1
+        events += len(original['replay']['events'])
+        steps += sum(e['type']=='agent_step' and e['agent_id']=='roaster_A' for e in original['replay']['events'])
+    _check(seen, Counter({key:1 for key in records}), 'CoffeeBench every original LLM run appears exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'CoffeeBench complete trace associations')
+    _check(len(tables.get('assets', [])), 0, 'CoffeeBench no fabricated media assets')
+    return dict(source_responses=len(records), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+                source_events=events, source_focal_steps=steps, source_captured_control_runs=len(controls),
+                source_negative_incomes=sum(r['grade']<0 for r in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6932,4 +7033,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee}[directory.name](directory, tables, metadata)

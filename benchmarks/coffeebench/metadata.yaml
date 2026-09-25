@@ -1,0 +1,101 @@
+benchmark:
+  description: Recorded net income of language-model agents managing a coffee roaster in a 90-day multi-agent economy.
+  testing_condition: 'Retain all 21 focal LLM runs from seven reported model identifiers in three seeded repetitions
+    of the same 90-day business task. Seeds are response trial conditions, not separate questions. The six scripted-control
+    runs remain captured source data. Import audit.annual.true_net_income in USD without thresholding or recomputation;
+    the run-end equity delta is a separate diagnostic. Preserve complete released event streams, including other
+    agents and native run summaries. Reference instructions are reconstructed from the pinned harness and actual
+    item catalog; original provider requests and the exact historical harness revision are unavailable. The original
+    system prompt does not disclose seed-specific retailer loyalty: retain this stochastic environmental context
+    in the complete run trace, not in the prompt or item identity. Do not infer historical temperature or reasoning
+    settings from reference configuration files. All released runs completed; no inference, simulator execution
+    or new judging is performed.'
+  paper_url: https://arxiv.org/abs/2606.16613
+  data_source_url: https://pub.sakana.ai/coffeebench/trajectories.html
+  subject_type: model
+  item_type: task
+  license: 'Reference code: Apache-2.0. The trajectory website does not state a separate data license.'
+  citation: "@article{sugiura2026coffeebench,\n  title={CoffeeBench: Benchmarking Long-Horizon LLM Agents in Heterogeneous\
+    \ Multi-Agent Economies},\n  author={Sugiura, Issa and Hattori, Daichi and Araragi, Kazuo and Ogawa, Keita and\
+    \ Onose, Shota and Makino, Taro and Usuki, Teppei and Ishida, Takashi},\n  journal={arXiv preprint arXiv:2606.16613},\n\
+    \  year={2026},\n  url={https://arxiv.org/abs/2606.16613},\n}"
+  tags:
+  - agents
+  - multi_agent
+  - long_horizon
+  - economics
+  - business
+  - tool_use
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  - finance
+  - reasoning
+  response_type: continuous_unbounded
+  response_scale:
+    kind: interval
+    min: null
+    max: null
+    direction: higher_is_better
+  categorical: false
+  release_date: 2026-06
+  name: CoffeeBench
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      index: index.json
+      reference: reference/coffeebench/main.py
+    excluded_controls:
+      heuristic: Scripted heuristic roaster
+      passive: Scripted idle roaster
+    source_symbols:
+      prompt: SYSTEM_PROMPT
+      score: SCORE_FRAMING_DEFAULT
+      initial: INITIAL_OBSERVATION
+      persona: roaster_persona
+    labels:
+      focal_agent: roaster_A
+      subject_prefix: 'CoffeeBench / '
+      prompt_status: reconstructed_reference_instruction_not_original_provider_request
+      mechanics_function: _operational_mechanics_block
+sources:
+  upstream:
+  - name: index
+    url: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    revision: null
+    file: index.json
+    size: 9221
+    sha256: 93a98b5f4279748a3facdc69cabadf71396e6f2c4f964cfd9939aaa33f749bdc
+  - name: replays
+    url: https://pub.sakana.ai/coffeebench/data/replay/
+    revision: null
+    json_index:
+      source: index
+      records:
+      - runs
+      path: '{file}'
+    tree_sha256: d2654bf291bf54d1176c83392a5f1f72da940cb0585efebed0c1f581ee4edb76
+    files:
+    - match: '[^/]+_seed[0-9]+\.json'
+      path: '{path}'
+  - name: reference
+    url: https://github.com/SakanaAI/CoffeeBench
+    revision: 9e2f3950b5812c8753de81ede9c68babc024b5c8
+    files:
+    - match: coffeebench/.*\.py|experiments/.*\.toml|README\.md|LICENSE|pyproject\.toml
+      path: reference/{path}
+grading:
+  rule: Import the focal agent's recorded run_end.agents.roaster_A.audit.annual.true_net_income in USD. Larger values
+    indicate more income; retain negative values and exact recorded precision. Do not use net_income (the separate
+    equity-delta diagnostic) or replace income with the indicator of positive profit.
+  verifiers:
+    recorded_audit:
+      kind: rule_based
+      source: https://github.com/SakanaAI/CoffeeBench/blob/9e2f3950b5812c8753de81ede9c68babc024b5c8/coffeebench/environment.py
+      function: Environment._compute_audit_for
+      field: run_end.agents.roaster_A.audit.annual.true_net_income
+      assessment_status: recorded_upstream_grade
+      units: USD

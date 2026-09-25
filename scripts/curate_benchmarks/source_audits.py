@@ -808,3 +808,5 @@ SOURCE_AUDITS["chi_bench"] = verify_native_results
 SOURCE_AUDITS["chipbench"] = verify_native_results
 
 SOURCE_AUDITS["classroom_ai"] = verify_native_results
+
+SOURCE_AUDITS["coffeebench"] = verify_native_results
