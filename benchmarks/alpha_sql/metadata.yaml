@@ -1,0 +1,94 @@
+benchmark:
+  name: Alpha-SQL (BIRD dev)
+  description: Released final SQL queries from Alpha-SQL, a Monte Carlo tree-search system
+    using Qwen2.5-Coder-32B-Instruct, on the BIRD development questions.
+  testing_condition: Preserve all 1,534 released predictions, their original questions,
+    database files, schema and column descriptions. Derive execution-match grades locally;
+    the release does not provide individual official judgments or intermediate search traces.
+    Compare complete result sets, following BIRD's execution criterion. Retain the previous
+    curation's 60-second allowance per query; the upstream BIRD wrapper instead defaults to
+    30 seconds for the combined prediction/reference execution. A failed or timed-out reference
+    remains ungraded; a failed predicted query scores zero when its reference is executable.
+    These are explicitly derived curation grades, not the paper's reported 69.7 percent result.
+    Capture the released system configuration and prompt templates; exact historical intermediate
+    model requests and retrieval outputs remain unavailable. No models or agents are run.
+  paper_url: https://arxiv.org/abs/2502.17248
+  data_source_url: https://github.com/HKUSTDial/Alpha-SQL
+  subject_type: model
+  item_type: text_question
+  license: 'Alpha-SQL code and prediction release: MIT. BIRD data: CC-BY-SA-4.0,
+    as declared by the authors on 2024-04-27.'
+  citation: 'Li, B. et al. (2025). Alpha-SQL: Zero-Shot Text-to-SQL using Monte Carlo
+    Tree Search. ICML. Li, J. et al. (2023). Can LLM Already Serve as A Database
+    Interface? A BIg Bench for Large-Scale Database Grounded Text-to-SQLs. NeurIPS.'
+  tags: [text_to_sql, databases, monte_carlo_tree_search]
+  modality: [text]
+  domain: [software_engineering]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings: {'0': different_result_or_failed_predicted_query, '1': equal_complete_result_sets}
+    direction: higher_is_better
+  categorical: true
+  release_date: '2025-02'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      predictions: release/216e61fc86467591fa1dc5b7031ca536577b4d21/results/dev_pred_sqls.json
+      configuration: release/216e61fc86467591fa1dc5b7031ca536577b4d21/config/qwen32b_bird_dev.yaml
+      tasks: bird/cdd6d19faeb45a23970b98d3ef6c40a87987c95459c2cf12076897a60cf5a630/dev.zip
+      questions: dev_20240627/dev.json
+      schemas: dev_20240627/dev_tables.json
+      databases: dev_20240627/dev_databases.zip
+      database_pattern: '^dev_databases/([^/]+)/'
+    subject:
+      harness: Alpha-SQL
+      harness_version: 216e61fc86467591fa1dc5b7031ca536577b4d21
+      model_identifier: Qwen/Qwen2.5-Coder-32B-Instruct
+sources:
+  upstream:
+  - name: alpha_sql
+    url: https://github.com/HKUSTDial/Alpha-SQL
+    revision: 216e61fc86467591fa1dc5b7031ca536577b4d21
+    files:
+    - match: results/dev_pred_sqls\.json|config/qwen32b_bird_dev\.yaml|alphasql/.*\.(?:py|txt)|script/.*\.sh|README\.md|LICENSE|requirements\.txt
+      path: release/216e61fc86467591fa1dc5b7031ca536577b4d21/{path}
+  - name: bird_dev
+    url: https://bird-bench.oss-cn-beijing.aliyuncs.com/dev.zip
+    revision: '2024-06-27; sha256:cdd6d19faeb45a23970b98d3ef6c40a87987c95459c2cf12076897a60cf5a630'
+    file: bird/cdd6d19faeb45a23970b98d3ef6c40a87987c95459c2cf12076897a60cf5a630/dev.zip
+    size: 346207293
+    sha256: cdd6d19faeb45a23970b98d3ef6c40a87987c95459c2cf12076897a60cf5a630
+  - name: bird_grading
+    url: https://github.com/AlibabaResearch/DAMO-ConvAI
+    revision: 188835d4f9948563a6b9c8ac50cd0f3ae4021ed6
+    files:
+    - match: bird/README\.md|bird/llm/src/evaluation\.py|bird/llm/run/run_evaluation\.sh
+      path: grading/188835d4f9948563a6b9c8ac50cd0f3ae4021ed6/{path}
+  - name: bird_license
+    url: https://github.com/bird-bench/bird-bench.github.io
+    revision: 734b11a1759ae4239603e04f9e4e019327c8ea4c
+    files:
+    - match: index\.html
+      path: bird-license/734b11a1759ae4239603e04f9e4e019327c8ea4c/{path}
+grading:
+  rule: Execute the recorded SQL prediction and reference SQL against the same original
+    SQLite database in read-only mode. Compare their complete sets of result rows, retaining
+    tuple column order while ignoring duplicate rows and row order. Equal sets score 1;
+    unequal sets or an unexecutable prediction score 0 when the reference executes successfully.
+    A reference error or timeout leaves the attempt ungraded. Every attempt and complete SQL
+    prediction is retained. This curation uses a 60-second allowance for each distinct query;
+    runtime-dependent timeouts can vary across machines.
+  verifiers:
+    execution:
+      kind: sqlite_result_set_comparison
+      source: https://github.com/AlibabaResearch/DAMO-ConvAI/blob/188835d4f9948563a6b9c8ac50cd0f3ae4021ed6/bird/llm/src/evaluation.py
+      function: execute_sql
+      timeout_per_query_seconds: 60
+      connection: read_only
+      reference_execution_failure: null_grade
+      predicted_execution_failure: zero_when_reference_executes
+      origin: derived_during_curation

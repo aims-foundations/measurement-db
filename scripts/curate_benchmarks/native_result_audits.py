@@ -3201,6 +3201,150 @@ def _ai2d_test(directory, tables, metadata, source_records=None):
     return dict(counts)
 
 
+def _alpha_sql_source_records(directory, metadata):
+    """Read original JSON/archive records and independently execute the released SQL."""
+    import concurrent.futures
+    import hashlib
+    import io
+    import sqlite3
+    import tempfile
+    import time
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    predictions = json.loads((raw / layout["predictions"]).read_text())
+    configuration = yaml.safe_load((raw / layout["configuration"]).read_text())
+    payloads, file_lists = {}, {}
+    with ZipFile(raw / layout["tasks"]) as archive:
+        questions = {str(row["question_id"]): row for row in json.loads(archive.read(layout["questions"]))}
+        schemas = {row["db_id"]: row for row in json.loads(archive.read(layout["schemas"]))}
+        with ZipFile(io.BytesIO(archive.read(layout["databases"]))) as databases:
+            for db in {row["db_id"] for row in questions.values()}:
+                prefix = f"dev_databases/{db}/"
+                names = [name for name in databases.namelist()
+                         if name.startswith(prefix) and name.endswith((".csv", ".sqlite"))]
+                file_lists[db] = names
+                for name in names:
+                    payloads[name] = databases.read(name)
+    _check(set(predictions), set(questions), "Alpha-SQL every released query matches one BIRD question")
+    _check((len(questions), len(schemas)), (1534, 11), "Alpha-SQL complete original task/database census")
+    _check(all(isinstance(value, str) and value for value in predictions.values()), True,
+           "Alpha-SQL original predictions are complete SQL strings")
+    timeout = float(metadata["grading"]["verifiers"]["execution"]["timeout_per_query_seconds"])
+
+    with tempfile.TemporaryDirectory(prefix=".alpha-sql-audit-", dir=directory.parent) as temporary:
+        temporary = Path(temporary)
+        for db in file_lists:
+            (temporary / (db + ".sqlite")).write_bytes(payloads[f"dev_databases/{db}/{db}.sqlite"])
+
+        def execute(task):
+            key, question = task
+            connection = sqlite3.connect((temporary / (question["db_id"] + ".sqlite")).as_uri() + "?mode=ro", uri=True)
+            connection.execute("PRAGMA query_only = ON")
+            outcomes, rows = {}, {}
+            try:
+                # This scalar checker uses SQLite's progress callback, independently
+                # of the builder's timer and query-table joins.
+                for kind, query in (("prediction", predictions[key]), ("gold", question["SQL"])):
+                    deadline = time.monotonic() + timeout
+                    connection.set_progress_handler(lambda: time.monotonic() >= deadline, 1000)
+                    try:
+                        rows[kind] = set(connection.execute(query).fetchall())
+                        outcomes[kind + "_status"], outcomes[kind + "_error"] = "ok", None
+                    except sqlite3.Error as error:
+                        rows[kind] = None
+                        outcomes[kind + "_status"] = "timeout" if error.sqlite_errorcode == sqlite3.SQLITE_INTERRUPT else "error"
+                        outcomes[kind + "_error"] = str(error)
+                    outcomes[kind + "_distinct_rows"] = None if rows[kind] is None else len(rows[kind])
+            finally:
+                connection.close()
+            grade = None if rows["gold"] is None else float(rows["prediction"] is not None and rows["prediction"] == rows["gold"])
+            outcomes["sqlite_version"] = sqlite3.sqlite_version
+            return key, {"grade": grade, "execution": outcomes}
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+            executions = dict(pool.map(execute, questions.items()))
+    return predictions, questions, schemas, configuration, payloads, file_lists, executions
+
+
+def _alpha_sql(directory, tables, metadata, source_records=None):
+    """Check all source-to-table links, binary grades, SQL text, and database bytes."""
+    import hashlib
+
+    predictions, questions, schemas, configuration, payloads, file_lists, executions = (
+        _alpha_sql_source_records(directory, metadata) if source_records is None else source_records)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    _check(len(subjects), 1, "Alpha-SQL one released system configuration")
+    model = configuration["mcts_model_kwargs"]
+    expected_features = {key: str(value) for key, value in model.items() if key not in ("model", "temperature")}
+    expected_features.update({key: str(configuration[key]) for key in ("max_rollout_steps", "max_depth", "exploration_constant")})
+    expected_features["model_identifier"] = model["model"]
+    subject = next(iter(subjects.values()))
+    _check(_features(subject["subject_features_extra"]), expected_features, "Alpha-SQL exact released inference and search settings")
+    _check(subject["harness"], "Alpha-SQL", "Alpha-SQL scaffold is part of subject identity")
+    _check(subject["harness_version"], "216e61fc86467591fa1dc5b7031ca536577b4d21", "Alpha-SQL captured harness revision")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    source_hashes = {name: hashlib.sha256(data).hexdigest() for name, data in payloads.items()}
+    actual_hashes = {key: hashlib.sha256(row["data"]).hexdigest() for key, row in assets.items()}
+    _check(set(actual_hashes.values()), set(source_hashes.values()), "Alpha-SQL exact complete database and description assets")
+    item_keys, seen_items, used_assets = {}, Counter(), set()
+    for item_id, item in items.items():
+        key = item["raw_item_id"]
+        question = questions[key]
+        db = question["db_id"]
+        _check(json.loads(item["content"]), {"question": question["question"], "evidence": question["evidence"],
+            "database_id": db, "schema": schemas[db], "input_files": file_lists[db]},
+            "Alpha-SQL full original question, evidence, schema and database inputs")
+        _check(_features(item["item_features"]), {"database_id": db, "difficulty": question["difficulty"]},
+               "Alpha-SQL original database and difficulty")
+        _check(json.loads(item["grading_criterion"]), {"reference_answer": question["SQL"], "rule": metadata["grading"]["rule"]},
+               "Alpha-SQL complete original reference query and grading rule")
+        _check(json.loads(json.loads(item["verifier"])["spec"]), metadata["grading"]["verifiers"]["execution"],
+               "Alpha-SQL explicit derived grading protocol")
+        links = json.loads(item["asset_manifest"])
+        _check([link["path"] for link in links], file_lists[db], "Alpha-SQL exact input-file association and order")
+        for ordinal, link in enumerate(links, 1):
+            name = link["path"]
+            _check(actual_hashes[link["asset_id"]], source_hashes[name], "Alpha-SQL unmodified corresponding database/description bytes")
+            _check((link["media_type"], link["role"], link["ordinal"]),
+                   ("application/vnd.sqlite3" if name.endswith(".sqlite") else "text/csv", "input", ordinal),
+                   "Alpha-SQL typed input attachment")
+            used_assets.add(link["asset_id"])
+        item_keys[item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in questions}), "Alpha-SQL every complete task exactly once")
+    _check(set(assets), used_assets, "Alpha-SQL no missing or orphaned assets")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, counts = Counter(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_key"]
+        _check(trace, {"source_file": metadata["build"]["parameters"]["layout"]["predictions"],
+            "source_key": key, "prediction": predictions[key], "native_question": questions[key],
+            "configuration": configuration, "derived_execution": executions[key]["execution"]},
+            "Alpha-SQL full original SQL, task record, configuration and independently checked execution")
+        _check(item_keys[response.item_id], key, "Alpha-SQL matching original question, never positional zip")
+        _check(response.subject_id in subjects, True, "Alpha-SQL correct evaluated system")
+        expected = executions[key]["grade"]
+        if expected is None:
+            _check(pd.isna(response.response), True, "Alpha-SQL failed reference remains an ungraded attempt")
+            counts["source_ungraded"] += 1
+        else:
+            _check(response.response, expected, "Alpha-SQL complete execution result-set comparison")
+            counts["source_successes"] += expected == 1
+        _check(response.trial, 1, "Alpha-SQL exactly one recorded final prediction per task")
+        _check(response.test_condition, "temperature=" + str(model["temperature"]), "Alpha-SQL recorded sampling temperature")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in predictions}), "Alpha-SQL complete released attempts without duplication or omission")
+    _check(len(traces), len(predictions), "Alpha-SQL complete trace coverage")
+    counts.update(source_responses=len(predictions), source_items=len(questions), source_subjects=1,
+                  source_traces=len(predictions), source_databases=len(schemas),
+                  source_input_files=len(payloads), source_assets=len(set(source_hashes.values())))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3216,4 +3360,4 @@ def verify_native_results(directory, tables_directory=None):
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
-            "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test}[directory.name](directory, tables, metadata)
+            "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql}[directory.name](directory, tables, metadata)

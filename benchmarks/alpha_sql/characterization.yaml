@@ -1,0 +1,93 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1534
+    logical_sha256: c623fbb6cf1d81217ecd2e665d931e4b6855380a5139aa59a11a50fab1c0f1f3
+  subjects:
+    rows: 1
+    logical_sha256: 66d3b0a8fe69acd9f59a1e6d6177bfe80ab889c2578eaa415611db3738959ee4
+  responses:
+    rows: 1534
+    logical_sha256: 018216ae6413c4ea198e1eb2d655f7bc9c9679def243cdc8b53c06e5605c447b
+  assets:
+    rows: 86
+    logical_sha256: 8a4827b23e59b655948b1b4a807946962f6e17843691befc9f9531bcd437a256
+  items:
+    rows: 1534
+    logical_sha256: 07c3be470be114381ae7b207f875fd8105513a406a57495bc16ef91b26d92247
+  benchmarks:
+    rows: 1
+    logical_sha256: 0252fd6a8f1c3fe64846add66a33b9571ba86cd441b934b3fa073c61f7fc847f
+source_claims:
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1065
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1534
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1534
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 1534
+  source_databases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 11
+  source_input_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 86
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/Alpha-SQL/tree/216e61fc86467591fa1dc5b7031ca536577b4d21
+    locator: results/dev_pred_sqls.json; BIRD dev_20240627/dev.json, dev_tables.json and dev_databases.zip
+    scope: All released final SQL predictions. Grades are derived with the documented read-only curation protocol;
+      no intermediate search traces or other systems are inferred.
+    expected: 86
