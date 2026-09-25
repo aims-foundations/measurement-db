@@ -3741,6 +3741,172 @@ def _arena(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _atmossci_source_records(directory, metadata):
+    """Reconcile native attempts, historical stimuli and applied grading independently."""
+    import math
+    import unicodedata
+
+    raw = directory / "raw"
+    release = raw / metadata["build"]["parameters"]["layout"]["release"]
+    bank, native, items, subjects, counts = {}, {}, {}, {}, Counter()
+    for path in sorted((release / "data/jsonl").glob("*.jsonl")):
+        for line in path.read_text().split("\n"):
+            if line.strip():
+                task = json.loads(line)
+                key = path.stem, task["id"]
+                _check(key not in bank, True, "AtmosSci unique question-bank IDs within each set")
+                bank[key] = task, str(path.relative_to(raw))
+    for path in sorted((release / "output").glob("*/*/*/response.jsonl")):
+        folder = path.parent
+        kind, subset = folder.parent.parent.name, folder.parent.name
+        run = str(folder.relative_to(release))
+        lines = [(i, line) for i, line in enumerate(path.read_text().split("\n")) if line.strip()]
+        if not lines:
+            continue
+        counts["source_nonempty_runs"] += 1
+        meta = json.loads((folder / "metadata.json").read_text())
+        model = dict(meta["model"])
+        model["details"] = {k: v for k, v in model["details"].items() if k != "gpu"}
+        configuration = json.dumps(dict(model=model, parameters={k: meta["parameters"][k]
+            for k in ["max_tokens", "retries", "no_fallback"]}), sort_keys=True)
+        subject = folder.name, configuration
+        subjects[subject] = dict(provider=model["base"], api_model=model["details"]["model_name"])
+        evaluation_file = folder / "evaluation.jsonl"
+        judgments = {}
+        if evaluation_file.exists():
+            for position, text in enumerate(evaluation_file.read_text().split("\n")):
+                if not text.strip():
+                    continue
+                judgment = json.loads(text, parse_constant=str)
+                task_id = judgment["id"]
+                counts["source_judgment_rows"] += 1
+                if task_id in judgments:
+                    _check(text, judgments[task_id][0], "AtmosSci repeated judgment is an exact record copy")
+                    judgments[task_id][2].append(position)
+                    counts["source_duplicate_judgments"] += 1
+                else:
+                    judgments[task_id] = text, judgment, [position]
+        seen = set()
+        for position, text in lines:
+            generation = json.loads(text, parse_constant=str)
+            task_id = generation["id"]
+            _check(task_id not in seen, True, "AtmosSci unique generation IDs per run")
+            seen.add(task_id)
+            key = run + "/" + task_id
+            _check(key not in native, True, "AtmosSci unique original attempt")
+            _check((generation["model"], generation["base"]), (model["name"], model["base"]), "AtmosSci per-record model matches metadata")
+            released_task, question_file = bank[subset, task_id]
+            if kind == "MCQ":
+                task = generation["question"]
+                _check((isinstance(task, dict), task["id"]), (True, task_id), "AtmosSci recorded MCQ task identity")
+                content = task["problem"].strip() + "\n\nOptions:\n" + "\n".join(
+                    chr(65 + i) + ". " + option for i, option in enumerate(task["options"]))
+                if task.get("knowledge"):
+                    content += "\n\nKnowledge:\n" + task["knowledge"]
+                    counts["source_prompts_with_knowledge"] += 1
+                counts["source_changed_question_text"] += task["problem"] != released_task["problem"]
+                counts["source_changed_options"] += task["options"] != released_task["options"]
+            else:
+                _check(kind, "OEQ", "AtmosSci supported recorded question type")
+                task = released_task
+                _check(generation["question"], task["problem"], "AtmosSci OEQ stimulus exactly matches reference-bank problem")
+                content = generation["question"].strip()
+            content = unicodedata.normalize("NFC", content).strip()
+            judgment_text, judgment, positions = judgments.get(task_id, (None, None, []))
+            if judgment is None:
+                grade = None
+                reference = {"a": task["correct_option"]} if kind == "MCQ" else task["answer"]
+                counts["source_ungraded_attempts"] += 1
+            else:
+                _check(judgment["question"], task["problem"], "AtmosSci judged the recorded stimulus")
+                _check(judgment["response"], generation["response"], "AtmosSci judged the recorded generation, including NaN tokens")
+                grade = judgment["score"]
+                _check(isinstance(grade, (float, int)) and math.isfinite(grade) and 0 <= grade <= 1, True, "AtmosSci finite published fractional grade")
+                details = judgment["evaluation"]
+                _check(bool(details), True, "AtmosSci nonempty detailed subanswer judgments")
+                _check(all(d["is_correct"] in (True, False, None) for d in details), True, "AtmosSci native subanswer outcome vocabulary")
+                _check(grade, sum(d["is_correct"] is True for d in details) / len(details), "AtmosSci published score agrees with detailed flags")
+                reference = judgment["expected_answers"]
+                counts["source_null_subjudgments"] += sum(d["is_correct"] is None for d in details)
+                counts["source_stale_total_count"] += len(details) != judgment["total_count"]
+                counts["source_inconsistent_count_ratio"] += judgment["total_count"] > 0 and grade != judgment["correct_count"] / judgment["total_count"]
+                counts["source_fractional_grades"] += 0 < grade < 1
+                counts["source_graded_attempts"] += 1
+                if kind == "MCQ":
+                    _check(grade in (0, 1), True, "AtmosSci binary MCQ judgments")
+                    _check(reference, {"a": released_task["correct_option"]}, "AtmosSci applied key matches grading-time bank")
+                    counts["source_changed_grading_key"] += reference != {"a": task["correct_option"]}
+            spec = {**metadata["grading"]["verifiers"][kind],
+                "recorded_configuration": {k: (meta.get("evaluation") or {}).get(k) for k in ["tolerance", "evaluators", "disabled_evaluators"]},
+                "reference_origin": "published_judgment" if judgment else "question_reference_without_judgment"}
+            signature = _digest(json.dumps([content, reference, spec, kind], ensure_ascii=False, sort_keys=True))
+            items[signature] = dict(content=content, reference=reference, spec=spec, kind=kind)
+            trace = dict(source_file=str(path.relative_to(raw)), source_row=position, generation_json=text,
+                evaluation_file=str(evaluation_file.relative_to(raw)) if judgment else None,
+                evaluation_rows=positions, evaluation_json=judgment_text,
+                metadata_file=str((folder / "metadata.json").relative_to(raw)), metadata=meta,
+                question_file=question_file, question_bank_record=released_task)
+            native[key] = dict(subject=subject, item=signature, response=grade, trace=trace)
+            counts["source_" + subset.replace("-", "_")] += 1
+            counts["source_nonfinite_generation"] += isinstance(json.loads(text)["response"], float)
+        _check(set(judgments) <= seen, True, "AtmosSci every judgment has a native generation")
+    counts.update(source_responses=len(native), source_traces=len(native), source_items=len(items), source_subjects=len(subjects))
+    _check((len(native), counts["source_graded_attempts"], counts["source_duplicate_judgments"]),
+           (37421, 36929, 663), "AtmosSci complete pinned result census")
+    return native, items, subjects, dict(counts)
+
+
+def _atmossci(directory, tables, metadata, source_records=None):
+    """Check every model, input variant, applied key, grade and complete native trace."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, expected_items, expected_subjects, counts = (
+        _atmossci_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "AtmosSci one observation and trace per original attempt")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "AtmosSci fractional response scale")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features["model_identifier"], features["inference_configuration"]
+        _check(key in expected_subjects, True, "AtmosSci source model alias and full recorded configuration")
+        _check({k: features[k] for k in ["provider", "api_model"]}, expected_subjects[key], "AtmosSci native backend and API model")
+        _check(row.harness, "AtmosSci-Bench", "AtmosSci recorded evaluation harness")
+        _check(pd.isna(row.harness_version), True, "AtmosSci historical harness revision is unknown")
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in expected_subjects}), "AtmosSci complete distinct subject configurations")
+    items, seen_items = {}, Counter()
+    for row in tables["items"].itertuples():
+        kind = _features(row.item_features)["question_type"]
+        criterion, verifier = json.loads(row.grading_criterion), json.loads(row.verifier)
+        _check(criterion["rule"], metadata["grading"]["rule"], "AtmosSci unchanged original-grade interpretation")
+        reference, spec = json.loads(criterion["reference_answer"]), json.loads(verifier["spec"])
+        signature = _digest(json.dumps([row.content, reference, spec, kind], ensure_ascii=False, sort_keys=True))
+        _check(signature in expected_items, True, "AtmosSci actual input, optional knowledge and applied answer key")
+        _check(verifier["class"], "exact_matcher" if kind == "MCQ" else "judge", "AtmosSci deterministic MCQ versus hybrid OEQ grading")
+        _check(row.raw_item_id in native and native[row.raw_item_id]["item"] == signature, True, "AtmosSci retained native item source identity")
+        items[row.item_id] = signature
+        seen_items[signature] += 1
+    _check(seen_items, Counter({key: 1 for key in expected_items}), "AtmosSci complete distinct stimulus and grading combinations")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "AtmosSci exact trace-to-response links")
+    seen, trials = Counter(), {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        run = str(Path(trace["source_file"]).parent.relative_to(metadata["build"]["parameters"]["layout"]["release"]))
+        key = run + "/" + json.loads(trace["generation_json"])["id"]
+        source = native[key]
+        _check(trace, source["trace"], "AtmosSci complete native JSON, precision, NaN tokens, metadata and duplicate aliases")
+        _check((subjects[row.subject_id], items[row.item_id]), (source["subject"], source["item"]), "AtmosSci correct model and historical input association")
+        _check(None if pd.isna(row.response) else row.response, source["response"], "AtmosSci original fractional score or explicit ungraded attempt")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "AtmosSci no invented conditions or interactors")
+        seen[key] += 1
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+    _check(seen, Counter({key: 1 for key in native}), "AtmosSci no missing, duplicated or mismatched attempts")
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True, "AtmosSci consecutive trials after canonical item resolution")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3758,4 +3924,4 @@ def verify_native_results(directory, tables_directory=None):
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
-            "arena_140k": _arena}[directory.name](directory, tables, metadata)
+            "arena_140k": _arena, "atmossci_bench": _atmossci}[directory.name](directory, tables, metadata)

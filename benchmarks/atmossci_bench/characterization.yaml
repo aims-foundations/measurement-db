@@ -1,0 +1,207 @@
+format_version: 1
+tables:
+  traces:
+    rows: 37421
+    logical_sha256: 2c7c155d7bd9de1275f04b29ed5af4d5f4f0a131f68be6ef3d83f488b63e1cf8
+  subjects:
+    rows: 54
+    logical_sha256: 7a8b795888aba1352cc3194260a9ee23af692d2ffad89b613330905f4e0cddb0
+  responses:
+    rows: 37421
+    logical_sha256: 96e2ac884bb728fc5c93c2bf0434539057c27a149faf561b4ccacf81eb35bda8
+  items:
+    rows: 2802
+    logical_sha256: 312989834e29d4f823ceb681692dc64d87a6a07f4646a14a7b425004c7e74933
+  benchmarks:
+    rows: 1
+    logical_sha256: 3318b5443645d63598a1244d2c82c5f2ff2c57fce0128f4a8f7db71bc45eddd4
+source_claims:
+  source_nonempty_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 73
+  source_judgment_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 37592
+  source_changed_question_text:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 26136
+  source_changed_options:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 3707
+  source_null_subjudgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 23
+  source_stale_total_count:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 4482
+  source_inconsistent_count_ratio:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 449
+  source_fractional_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 589
+  source_graded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 36929
+  source_changed_grading_key:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 306
+  source_extra_1_10:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 3840
+  source_nonfinite_generation:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 210
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 492
+  source_main_1_10:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 27464
+  source_prompts_with_knowledge:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 140
+  source_oeq:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 6117
+  source_duplicate_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 663
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 37421
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 37421
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 2802
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    locator: All native response/evaluation JSONL and companion metadata at revision 1b7ce9d9db58593752cf07979f33f59f35d7b7ab;
+      decoded independently of the builder.
+    scope: Main MCQ, extra MCQ and OEQ attempts, preserving historical stimuli, applied references, full records
+      and ungraded attempts.
+    expected: 54

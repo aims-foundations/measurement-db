@@ -1,0 +1,82 @@
+benchmark:
+  name: AtmosSci-Bench
+  description: Recorded language-model attempts on multiple-choice and open-ended atmospheric-science problems.
+  testing_condition: >-
+    One observation is one recorded model attempt in the main MCQ, extra MCQ or OEQ set.
+    Use the problem, options and optional knowledge captured with each MCQ generation;
+    these often differ from the later question bank. OEQ generation text matches the bank.
+    Subject identity retains the native model alias, backend, model name, token limit and
+    recorded retry/fallback settings. Exact historical API requests, decoding settings
+    and harness revisions are not recorded. Import each original judgment, including
+    fractional OEQ credit, without running models or judges. Preserve unjudged attempts
+    with null grades and collapse only identical repeated judgment records. The applied
+    references and evaluator configuration belong to the item grading protocol; do not
+    replace them with a different answer key. Some applied MCQ keys differ from the keys
+    stored with the original questions. Full native generation/evaluation JSON is stored
+    as text inside valid JSON traces so upstream NaN tokens and numerical precision survive.
+    Metadata, question-bank records and all duplicate judgment row positions remain in traces.
+  paper_url: https://openreview.net/forum?id=vDm8VWYYuX
+  data_source_url: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+  subject_type: model
+  item_type: task
+  license: >-
+    Dataset: CC-BY-NC-4.0, as declared in the upstream Croissant metadata.
+    Code: MIT. Model outputs remain subject to the providers' terms identified
+    in doc/sources_license.md.
+  citation: >-
+    Li, Chenyue, Wen Deng, Mengqian Lu, and Binhang Yuan (2025).
+    AtmosSci-Bench: Evaluating the Recent Advance of Large Language Model for
+    Atmospheric Science. NeurIPS Datasets and Benchmarks.
+  tags: [atmospheric_science, scientific_reasoning, mcq, open_ended]
+  modality: [text]
+  domain: [science, reasoning]
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release/1b7ce9d9db58593752cf07979f33f59f35d7b7ab
+    subject:
+      harness: AtmosSci-Bench
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/Relaxed-System-Lab/AtmosSci-Bench
+    revision: 1b7ce9d9db58593752cf07979f33f59f35d7b7ab
+    files:
+    - match: 'README\.md|LICENSE|data/jsonl/.*\.jsonl|(?:src|scripts)/.*\.(?:py|sh|yaml|yml)|output/(?:MCQ|OEQ)/[^/]+/[^/]+/(?:evaluation\.jsonl|response\.jsonl|metadata\.json|results\.json|result2\.json)|doc/(?:settings|sources_license)\.md|doc/croissant/atmossci-bench-metadata\.json'
+      path: release/1b7ce9d9db58593752cf07979f33f59f35d7b7ab/{path}
+grading:
+  rule: >-
+    Import the published per-question score: the fraction of detailed subanswer
+    judgments marked correct. MCQ scores are 0 or 1; OEQ scores can be fractional.
+    Preserve the expected_answers used by the recorded grader, including discrepancies
+    with the generation-time question reference. Do not rejudge, infer correctness from
+    the answer text or recompute scores from stale total_count fields. An attempt with
+    no judgment has a null grade. Question references for those attempts describe the
+    available grading target, not a newly observed outcome.
+  verifiers:
+    MCQ:
+      kind: released_multiple_choice_judgment
+      source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench/blob/1b7ce9d9db58593752cf07979f33f59f35d7b7ab/src/evaluate/evaluators/mcq_evaluator.py
+      logic: >-
+        The captured grader extracts an answer letter using its ordered regular expressions
+        and compares it with the expected letter. Import its recorded result unchanged.
+        A captured source revision documents the implementation; it does not establish
+        which historical commit ran each evaluation.
+    OEQ:
+      kind: released_hybrid_subanswer_judgment
+      source: https://github.com/Relaxed-System-Lab/AtmosSci-Bench/blob/1b7ce9d9db58593752cf07979f33f59f35d7b7ab/src/evaluate/evaluate.py
+      logic: >-
+        The captured grader extracts subanswers and evaluates them using numerical/unit
+        comparison, symbolic equivalence and optional LLM fallback. Run metadata records
+        available evaluator names, tolerance and judge model. Missing settings remain
+        unknown. Import the final detailed judgments and partial-credit score unchanged.
