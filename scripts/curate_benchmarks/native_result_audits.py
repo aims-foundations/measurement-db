@@ -5970,6 +5970,112 @@ def _ceobench(directory, tables, metadata, source_records=None):
             row["trajectory"]["raw_final_cash"] != row["manifest"]["final_cash"] for row in native.values()))
 
 
+def _drift_source_records(directory, metadata):
+    """Read source cells with csv and apply the published rules independently."""
+    import csv
+    import re
+    import string
+
+    def yes_no(text):
+        bracketed = ' '.join('[' + token + ']' for token in text.replace(',', ' ').replace('.', ' ').split()).lower()
+        return 'yes' if '[yes]' in bracketed else 'no' if '[no]' in bracketed else 'undetermined'
+
+    def normalize(text):
+        value = ''.join(char for char in text.lower() if char not in string.punctuation)
+        return ' '.join(re.sub(r'\b(a|an|the)\b', ' ', value).split())
+
+    protocols = {'prime': 'prime', 'composite': 'prime', 'counthappynumber': 'happy_count',
+        'hotpotqa': 'exact_match', 'arc': 'exact_match', 'usmlefullzeroshot': 'multiple_choice',
+        'opinionqa': 'survey', 'leetcode_easy': 'code', 'sensitiveq': 'sensitive'}
+    native = {}
+    paths = sorted((directory / 'raw' / metadata['build']['parameters']['paths']['generations']).glob('*_EVAL.csv'))
+    for path in paths:
+        with path.open(newline='') as stream:
+            for position, row in enumerate(csv.DictReader(stream)):
+                protocol = protocols[row['dataset']]
+                answer, reference = row['answer'], row['ref_answer']
+                if protocol == 'prime':
+                    grade = yes_no(answer) == yes_no(reference)
+                elif protocol == 'happy_count':
+                    gold = re.findall(r'boxed{([^}]*)}', reference.lower())
+                    prediction = re.findall(r'boxed{([^}]*)}', answer.lower())
+                    _check(bool(gold), True, 'LLMDrift boxed reference exists')
+                    grade = bool(prediction) and prediction[0] == gold[0]
+                elif protocol == 'exact_match':
+                    grade = normalize(answer) == normalize(reference)
+                elif protocol == 'multiple_choice':
+                    grade = 'the answer is ' + reference.lower() in answer.lower()
+                elif protocol == 'survey':
+                    grade = not re.search(r'\([A-Za-z]\)\. Refused', answer) and bool(re.search(r'\([A-Za-z]\)', answer))
+                elif protocol == 'code':
+                    grade = 'Accepted' in row['Code_Submit']
+                    _check(int(row['Directly Usable']), int(grade), 'LLMDrift original code verdict')
+                else:
+                    grade = int(row['Response Rate'])
+                    _check(grade in (0, 1), True, 'LLMDrift recorded sensitive-question judgment')
+                _check(row['trail'], '0', 'LLMDrift original trial field')
+                source = str(path.relative_to(directory / 'raw')), position
+                native[source] = dict(record=row, protocol=protocol, grade=float(grade))
+    _check((len(paths), len(native)), (8, 46832), 'LLMDrift complete released CSV scope')
+    return native
+
+
+def _drift(directory, tables, metadata, source_records=None):
+    """Reconcile every attempt, complete CSV record, protocol and configuration."""
+    native = _drift_source_records(directory, metadata) if source_records is None else source_records
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'LLMDrift unique trace links')
+    measures = metadata['grading']['verifiers']['measures']
+    seen, used_subjects, used_items, trials = set(), set(), set(), {}
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(key not in seen, True, 'LLMDrift no duplicated source attempt')
+        seen.add(key)
+        expected = native[key]
+        row, protocol = expected['record'], expected['protocol']
+        _check(trace, dict(source_file=key[0], source_row=key[1], record=row), 'LLMDrift complete original CSV record')
+        _check(response.response, expected['grade'], 'LLMDrift original task grading')
+        _check(response.test_condition, 'recorded_date=' + row['date'] + ';temperature=' + row['temperature'], 'LLMDrift original date and temperature')
+        _check(pd.isna(response.interactors), True, 'LLMDrift no invented interactors')
+        subject = subjects[response.subject_id]
+        prefix, label = row['model'].split('/', 1)
+        _check(subject['display_name'], label, 'LLMDrift original API snapshot')
+        _check(subject['harness'], 'LLMDrift/' + prefix, 'LLMDrift correct provider/agent path')
+        _check(_features(subject['subject_features_extra']), dict(source_model=row['model'], recorded_max_tokens=row['max_tokens']), 'LLMDrift recorded model settings')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True, 'LLMDrift unknown historical settings stay unknown')
+        item = items[response.item_id]
+        _check(item['content'], row['query'], 'LLMDrift complete original input')
+        _check(_features(item['item_features']), dict(dataset=row['dataset']), 'LLMDrift original task family')
+        _check(pd.isna(item['asset_manifest']), True, 'LLMDrift text-only task input')
+        reference = row['ref_answer'] if protocol in {'prime', 'happy_count', 'exact_match', 'multiple_choice'} else None
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=reference,
+            rule=measures[protocol]['rule'], response_scale=measures[protocol]['scale']), 'LLMDrift correct reference, outcome meaning and scale')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], 'judge' if protocol == 'sensitive' else 'exact_matcher', 'LLMDrift correct verifier type')
+        _check(json.loads(verifier['spec']), dict(**metadata['grading']['verifiers']['protocol'], **measures[protocol]['verifier']), 'LLMDrift explicit original grading specification')
+        if protocol == 'sensitive':
+            _check(verifier.get('judge') is None and verifier.get('judged_by') is None, True, 'LLMDrift unavailable historical judge identity')
+        used_subjects.add(response.subject_id); used_items.add(response.item_id)
+        trials.setdefault((response.subject_id, response.item_id, response.test_condition), []).append((key, response.trial))
+    _check(seen, set(native), 'LLMDrift every released attempt retained')
+    _check(set(subjects), used_subjects, 'LLMDrift exact subject panel')
+    _check(set(items), used_items, 'LLMDrift exact item panel')
+    _check(set(traces), set(tables['responses'].response_id), 'LLMDrift no orphan trace')
+    for values in trials.values():
+        _check([trial for _, trial in sorted(values)], list(range(1, len(values) + 1)), 'LLMDrift canonical repeats preserve source order')
+    return dict(source_files=8, source_responses=len(native), source_traces=len(traces),
+        source_items=len(items), source_subject_configurations=len(subjects),
+        source_empty_outputs=sum(row['record']['answer'] == '' for row in native.values()),
+        source_sensitive_judgments=sum(row['protocol'] == 'sensitive' for row in native.values()),
+        source_code_attempts=sum(row['protocol'] == 'code' for row in native.values()),
+        source_survey_attempts=sum(row['protocol'] == 'survey' for row in native.values()),
+        source_agent_attempts=sum(row['record']['model'].startswith('agent_openai/') for row in native.values()),
+        source_repeated_input_attempts=sum(len(values) - 1 for values in trials.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5990,4 +6096,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift}[directory.name](directory, tables, metadata)

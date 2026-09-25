@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 46832
+    logical_sha256: ebe088dc96aeb872fc0fd6b29596f521157db91c5ade6ccb3de51d738768e9b6
+  subjects:
+    rows: 12
+    logical_sha256: dc47bd278b033e868c19b7e030c908a9c818b939e6517e22781896db00d133a0
+  responses:
+    rows: 46832
+    logical_sha256: 5b638ae8f8296018d63cf439e944587fc57030aaa9fb19c1b6a8c0dd5461d14e
+  items:
+    rows: 11479
+    logical_sha256: 49c630e7216368b33719df178eca4c4d172b2dcfbce96299d5ad7784608208b8
+  benchmarks:
+    rows: 1
+    logical_sha256: 168dd426903eaa5f23a2ed8dcb5ab9d8015aa6f12f67dd02714646edf7b23b9f
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 8
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 46832
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 46832
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 11479
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 12
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 1
+  source_sensitive_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 400
+  source_code_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 200
+  source_survey_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 6024
+  source_agent_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 29620
+  source_repeated_input_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lchen001/LLMDrift
+    locator: All eight generation/*_EVAL.csv files and src/analysis/utils.py; Intro.ipynb selects the task metrics.
+    scope: Independent CSV traversal and the reviewed pure upstream graders reconcile every original record, prompt,
+      reference, output, score and configuration. No inference or generated-code execution.
+    expected: 916

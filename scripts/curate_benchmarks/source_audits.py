@@ -795,3 +795,5 @@ SOURCE_AUDITS["bridging_gap"] = verify_native_results
 SOURCE_AUDITS["care_enzymes"] = verify_native_results
 
 SOURCE_AUDITS["ceobench"] = verify_native_results
+
+SOURCE_AUDITS["chatgpt_drift"] = verify_native_results
