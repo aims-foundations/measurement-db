@@ -1,0 +1,109 @@
+benchmark:
+  name: ChartMuseum
+  description: Chart question answering with the 162 released Claude 3.7 Sonnet development outputs and their original
+    images.
+  testing_condition: The released development examples are ordered to match the frozen HF development table. Full
+    and answer-only exports are two representations of the same 162 attempts, not independent trials. The source
+    hash identifies an image and is shared by multiple questions; raw item locators therefore use split and row
+    position. The authors demonstrate a development accuracy of 0.6296, but do not include the corresponding per-question
+    judge labels in the reviewed release. Every response remains null; the aggregate is never assigned to an individual
+    question. Generation temperature, token budget, system prompt and exact historical inference harness are unavailable.
+    No inference or new judging.
+  paper_url: https://arxiv.org/abs/2505.13444
+  data_source_url: https://github.com/Liyan06/ChartMuseum
+  subject_type: model
+  item_type: task
+  license: CC-BY-SA-4.0; code Apache-2.0; chart copyright remains with the original sources.
+  citation: 'Tang et al. (2025). ChartMuseum: Testing Visual Reasoning Capabilities of Large Vision-Language Models.
+    NeurIPS Datasets and Benchmarks.'
+  tags:
+  - chart
+  - visual_reasoning
+  - vlm
+  modality:
+  - text
+  - image
+  domain:
+  - general
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': The upstream judge considers the predicted answer incorrect.
+      '1': The upstream judge considers the predicted answer correct.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2025-05
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      full_output: github/c3feaea144fecae71508add5570222dfc83ede6b/example_outputs/claude-3-7-sonnet-20250219-dev-full-output.json
+      short_output: github/c3feaea144fecae71508add5570222dfc83ede6b/example_outputs/claude-3-7-sonnet-20250219-dev-answer-only.json
+      questions: hf/462d46deb187d8a40c5a9de4e69e14f1df982e58/data/dev-00000-of-00001-6dfc215b35b5fc35.parquet
+      dataset: hf/462d46deb187d8a40c5a9de4e69e14f1df982e58
+    subject:
+      label: claude-3-7-sonnet-20250219
+      harness: ChartMuseum
+    scope:
+      split: dev
+    prompts:
+      question: "Please answer the question using the chart image.\n\nQuestion: [QUESTION]\n\nPlease first generate\
+        \ your reasoning process and then provide the user with the answer. Use the following format:\n\n<think>\
+        \ \n... your thinking process here ... \n</think> \n<answer> \n... your final answer (entity(s) or number)\
+        \ ...\n</answer>"
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/Liyan06/ChartMuseum
+    revision: c3feaea144fecae71508add5570222dfc83ede6b
+    files:
+    - match: README\.md|LICENSE|evaluate\.py|prompt\.py|requirements\.txt|example_outputs/.*\.json
+      path: github/c3feaea144fecae71508add5570222dfc83ede6b/{path}
+  - name: questions_and_images
+    url: https://huggingface.co/datasets/lytang/ChartMuseum
+    revision: 462d46deb187d8a40c5a9de4e69e14f1df982e58
+    files:
+    - match: README\.md|data/dev-.*\.parquet|images/.*
+      path: hf/462d46deb187d8a40c5a9de4e69e14f1df982e58/{path}
+  - name: leaderboard_context
+    url: https://github.com/chartmuseum-leaderboard/chartmuseum-leaderboard.github.io
+    revision: a6605cc055d6133e71ea07b1d62aeac2759e3773
+    files:
+    - match: scores_data\.json
+      path: leaderboard/a6605cc055d6133e71ea07b1d62aeac2759e3773/{path}
+grading:
+  rule: Compare the extracted short answer with the released reference using the original LLM equivalence protocol.
+    Published per-question judgments are unavailable in the captured examples, so grades stay null; exact matching
+    and leaderboard averages are not substitutes.
+  verifiers:
+    equivalence:
+      kind: judge
+      source: https://github.com/Liyan06/ChartMuseum/blob/c3feaea144fecae71508add5570222dfc83ede6b/evaluate.py
+      model: gpt-4.1-mini-2025-04-14
+      temperature: 0
+      answer_pattern: <answer>(.*?)</answer>
+      answer_extraction: Append a closing answer tag; use the first DOTALL match and strip whitespace, or an empty
+        string when absent.
+      comparison_prompt: "You are provided with a question and two answers. Please determine if these answers are\
+        \ equivalent. Follow these guidelines:\n\n1. Numerical Comparison:\n   - For decimal numbers, consider them\
+        \ as equivalent if their relative difference is sufficiently small. \n   For example, the following pairs\
+        \ are equivalent:\n    - 32.35 and 32.34\n    - 90.05 and 90.00\n    - 83.3% and 83.2%\n    - 31 and 31%\n\
+        \   The following pairs are not equivalent:\n   - 32.35 and 35.25\n   - 90.05 and 91.05\n   - 83.3% and\
+        \ 45.2%\n\n   Note that if the question asks for years or dates, please do the exact match with no error\
+        \ tolerance.\n\n2. Unit Handling:\n   - If only one answer includes units (e.g. '$', '%', '-', etc.), ignore\
+        \ the units and compare only the numerical values\n   For example, the following pairs are equivalent:\n\
+        \   - 305 million and 305 million square meters\n   - 0.75 and 0.75%\n   - 0.6 and 60%\n   - $80 and 80\n\
+        \   The following pairs are not equivalent:\n   - 305 million and 200 million square meters\n   - 0.75 and\
+        \ 0.90%\n\n3. Text Comparison:\n   - Ignore differences in capitalization\n   - Treat mathematical expressions\
+        \ in different but equivalent forms as the same (e.g., \"2+3\" = \"5\")\n\nQuestion: [QUESTION]\nAnswer\
+        \ 1: [ANSWER1]\nAnswer 2: [ANSWER2]\n\nPlease respond with:\n- \"Yes\" if the answers are equivalent\n-\
+        \ \"No\" if the answers are different"
+      verdict_rule: 1 if the judge response contains yes after lowercasing, otherwise 0.
+      availability: Protocol specification only; individual judge outputs and labels for the example attempts are
+        not published.

@@ -6076,6 +6076,105 @@ def _drift(directory, tables, metadata, source_records=None):
         source_repeated_input_attempts=sum(len(values) - 1 for values in trials.values()))
 
 
+def _chartmuseum_source_records(directory, metadata):
+    """Read the original arrays and Arrow rows without the builder's joins."""
+    import ast
+    import re
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    paths = metadata['build']['parameters']['paths']
+    full = json.loads((raw / paths['full_output']).read_text())
+    short = json.loads((raw / paths['short_output']).read_text())
+    questions = pq.read_table(raw / paths['questions']).to_pylist()
+    source = raw / Path(paths['full_output']).parent.parent / 'prompt.py'
+    prompts = {node.targets[0].id: ast.literal_eval(node.value)
+               for node in ast.parse(source.read_text()).body if isinstance(node, ast.Assign)}
+    _check(metadata['build']['parameters']['prompts']['question'], prompts['QA_PROMPT'], 'ChartMuseum original task prompt')
+    _check(metadata['grading']['verifiers']['equivalence']['comparison_prompt'], prompts['COMPARE_ANSWER_PROMPT'],
+           'ChartMuseum original judge prompt')
+    _check((len(full), len(short), len(questions)), (162, 162, 162), 'ChartMuseum complete released development arrays')
+    records = []
+    for question, output, answer_only in zip(questions, full, short):
+        extracted = re.search(r'<answer>(.*?)</answer>', output + '</answer>', re.DOTALL)
+        projection = re.search(r'<answer>(.*?)</answer>', answer_only + '</answer>', re.DOTALL)
+        answer = extracted.group(1).strip() if extracted else ''
+        _check(answer, projection.group(1).strip() if projection else '', 'ChartMuseum both output forms represent the same answer')
+        encoded = ''.join(char if char.isascii() and (char.isalnum() or char in '._/-') else f'_x{ord(char):02x}_'
+                          for char in question['image'])
+        data = (raw / paths['dataset'] / encoded).read_bytes()
+        records.append(dict(question=question, output=output, answer_only=answer_only, answer=answer, data=data,
+                            prompt=prompts['QA_PROMPT'].replace('[QUESTION]', question['question'])))
+    return records
+
+
+def _chartmuseum(directory, tables, metadata, source_records=None):
+    """Reconcile every question, image and output while preserving unavailable grades."""
+    import hashlib
+    import mimetypes
+    from urllib.parse import unquote
+
+    records = _chartmuseum_source_records(directory, metadata) if source_records is None else source_records
+    paths = metadata['build']['parameters']['paths']
+    protocol = metadata['grading']['verifiers']['equivalence']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    _check(len(subjects), 1, 'ChartMuseum one released model configuration')
+    subject = next(iter(subjects.values()))
+    _check(subject['display_name'], 'claude-3-7-sonnet-20250219', 'ChartMuseum original dated model identifier')
+    _check(subject['harness'], 'ChartMuseum', 'ChartMuseum original harness name')
+    _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+           'ChartMuseum unavailable historical inference settings stay unknown')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'ChartMuseum unique trace links')
+    seen, used_items, used_assets = set(), set(), set()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        index = trace['source_row']
+        _check(index not in seen, True, 'ChartMuseum one observation per original output')
+        seen.add(index)
+        row = records[index]
+        question = row['question']
+        _check(trace, dict(source_file=paths['full_output'], source_row=index, question_file=paths['questions'],
+            question_record=question, full_output=row['output'], answer_only_file=paths['short_output'],
+            answer_only=row['answer_only'], extracted_answer=row['answer'], grade_status='upstream_judgment_unavailable'),
+            'ChartMuseum complete original output and exact question association')
+        _check(pd.isna(response.response), True, 'ChartMuseum missing verdict is not a failure or aggregate accuracy')
+        _check(response.subject_id in subjects, True, 'ChartMuseum observation belongs to the released model')
+        _check((response.trial, response.test_condition), (1, 'split=dev'), 'ChartMuseum original development attempt')
+        _check(pd.isna(response.interactors), True, 'ChartMuseum no invented interaction participants')
+        item = items[response.item_id]
+        _check(item['raw_item_id'], 'dev/' + str(index), 'ChartMuseum separate questions sharing the same image hash')
+        media_type = mimetypes.guess_type(question['image'])[0]
+        _check(json.loads(item['content']), {'multimedia_elements': [
+            {'content_type': media_type, 'location': question['image']},
+            {'content_type': 'text/plain', 'text': row['prompt']}]}, 'ChartMuseum exact question prompt and chart')
+        features = _features(item['item_features'])
+        features['image_source'] = unquote(features['image_source'])
+        _check(features, dict(split='dev', reasoning_type=question['reasoning_type'],
+            image_source=question['source'], source_image_hash=question['hash']), 'ChartMuseum original item annotations')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=question['answer'], rule=metadata['grading']['rule']),
+               'ChartMuseum original reference and grading rule')
+        _check(json.loads(item['verifier']), dict(**{'class': 'judge'}, spec=json.dumps(protocol, sort_keys=True),
+            judge='gpt-4.1-mini-2025-04-14', judged_by='llm'), 'ChartMuseum declared upstream judge rather than exact matching')
+        links = json.loads(item['asset_manifest'])
+        _check(len(links), 1, 'ChartMuseum one input chart per question')
+        link = links[0]
+        _check({key: link[key] for key in ['path', 'media_type', 'role', 'ordinal']},
+               dict(path=question['image'], media_type=media_type, role='input', ordinal=1), 'ChartMuseum correct image attachment')
+        _check(hashlib.sha256(assets[link['asset_id']]['data']).hexdigest(), hashlib.sha256(row['data']).hexdigest(),
+               'ChartMuseum exact unmodified image bytes')
+        used_items.add(response.item_id); used_assets.add(link['asset_id'])
+    _check(seen, set(range(len(records))), 'ChartMuseum every released attempt retained')
+    _check(set(items), used_items, 'ChartMuseum exact item panel')
+    _check(set(assets), used_assets, 'ChartMuseum no missing or orphan assets')
+    _check(set(traces), set(tables['responses'].response_id), 'ChartMuseum no orphan traces')
+    return dict(source_responses=len(records), source_items=len(items), source_traces=len(traces),
+        source_subjects=len(subjects), source_assets=len(assets), source_ungraded_observations=len(records),
+        source_image_hashes=len({row['question']['hash'] for row in records}), source_output_representations=2)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6096,4 +6195,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum}[directory.name](directory, tables, metadata)
