@@ -1,0 +1,64 @@
+benchmark:
+  name: Arena 140K
+  description: Human preferences between paired language-model conversations from Arena's released text-only votes.
+  testing_condition: >-
+    Each released vote yields one observation for each participating model.
+    The opponent is an interactor, and displayed side is a response condition. Preserve every
+    distinct feedback ID, including repeated session/order values and self-comparisons. Item text
+    retains current user turns and all released earlier conversation context, without the current
+    replies being judged. Earlier context can contain replies from different models; it is not
+    attributed to the current subject. Items describe the released conversation episode rather
+    than an exact API request: system prompts, generation settings, prior model identities and
+    request payloads are unavailable. Multi-turn user follow-ups may depend on earlier replies.
+    Complete native records, both current conversations, votes and metadata remain in the traces.
+    No new model inference or judging is performed.
+  paper_url: https://arxiv.org/abs/2403.04132
+  data_source_url: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+  subject_type: model
+  item_type: conversation
+  license: 'User prompts: CC-BY-4.0. Model outputs remain subject to their respective
+    providers terms, as stated in the upstream dataset card.'
+  citation: 'Chiang, W.-L., et al. (2024). Chatbot Arena: An Open Platform for Evaluating
+    LLMs by Human Preference. arXiv:2403.04132. LMArena (2025). Arena human preference 140K.'
+  tags: [preference, pairwise, human_judgment]
+  modality: [text]
+  domain: [general]
+  response_type: win_rate
+  response_scale:
+    kind: discrete
+    values: [0, 0.5, 1]
+    meanings: {'0': loss or mutual rejection, '0.5': tie, '1': win}
+    direction: higher_is_better
+  categorical: true
+  release_date: null
+  multi_single_turn: multi_turn, single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release/6322995ab34d7c2693e3f47dd13fa5caa0789a74
+    subject:
+      harness: Arena human preference voting
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    revision: 6322995ab34d7c2693e3f47dd13fa5caa0789a74
+    files:
+    - match: 'data/train-\d{5}-of-00007\.parquet|README\.md'
+      path: release/6322995ab34d7c2693e3f47dd13fa5caa0789a74/{path}
+grading:
+  rule: Import the recorded human pairwise preference for the current conversation.
+    The winning side receives 1 and the losing side 0; a tie gives each side 0.5;
+    both_bad gives each side 0. These are preferences against the recorded opponent,
+    not judgments of factual correctness. Preserve both_bad separately in each native
+    trace and do not reinterpret it as an ordinary tie.
+  verifiers:
+    human_vote:
+      kind: released_human_pairwise_preference
+      source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k/blob/6322995ab34d7c2693e3f47dd13fa5caa0789a74/README.md
+      field: winner
+      judge_identity: not released
+      scores:
+        model_a: {model_a: 1, model_b: 0, tie: 0.5, both_bad: 0}
+        model_b: {model_a: 0, model_b: 1, tie: 0.5, both_bad: 0}

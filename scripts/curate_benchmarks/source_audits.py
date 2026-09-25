@@ -769,3 +769,4 @@ SOURCE_AUDITS["ai2d_test"] = verify_native_results
 SOURCE_AUDITS["alpha_sql"] = verify_native_results
 SOURCE_AUDITS["alignment_faking"] = verify_native_results
 SOURCE_AUDITS["arcagi"] = verify_native_results
+SOURCE_AUDITS["arena_140k"] = verify_native_results

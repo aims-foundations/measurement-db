@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 271268
+    logical_sha256: 77d8d01b83b8c4fe6ae3a6a8007f17b3ad80179483d41aed56907eaf40f56042
+  subjects:
+    rows: 53
+    logical_sha256: 125711f5e25211fe32a5f1126bbdbce32518bc581d3532911edb12e9b6e400f3
+  responses:
+    rows: 271268
+    logical_sha256: e1516f7227dbbfe3f3c9187a7499371352c70ccea900a24acc7055bb396794f2
+  items:
+    rows: 130465
+    logical_sha256: 1c88b0e873857c44b592fe51ace474cc5b4a676ceb54881fda4e6be32746ab47
+  benchmarks:
+    rows: 1
+    logical_sha256: 3ad1ba851fb12088c9278799d19af1733b9603d22e4e5e18e4fbca6c3668cdc4
+source_claims:
+  source_battles:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 135634
+  source_model_a:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 48563
+  source_prior_context_battles:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 27319
+  source_multiturn_battles:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 19201
+  source_self_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 10
+  source_empty_assistant_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 200
+  source_tie:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 21532
+  source_both_bad:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 15754
+  source_model_b:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 49785
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 271268
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 271268
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 130465
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 53
+  source_repeated_session_orders:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lmarena-ai/arena-human-preference-140k
+    locator: All rows of seven native Parquet shards at revision 6322995ab34d7c2693e3f47dd13fa5caa0789a74;
+      independently decoded with Arrow.
+    scope: One vote becomes two model-side observations; preserve all distinct feedback IDs, full histories,
+      judgments and metadata.
+    expected: 15

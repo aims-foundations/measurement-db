@@ -3641,6 +3641,106 @@ def _arcagi(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _arena_source_records(directory, metadata):
+    """Read every native vote and its context independently of the table transforms."""
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    release = raw / metadata["build"]["parameters"]["layout"]["release"]
+    native, contexts, models, counts, sessions = {}, {}, set(), Counter(), Counter()
+    for path in sorted((release / "data").glob("*.parquet")):
+        position = 0
+        for batch in pq.ParquetFile(path).iter_batches(batch_size=1024):
+            for record in batch.to_pylist():
+                key = record["id"]
+                _check(isinstance(key, str) and key not in native, True, "Arena unique native feedback IDs")
+                _check(record["winner"] in {"model_a", "model_b", "tie", "both_bad"}, True, "Arena native outcome vocabulary")
+                a, b = record["conversation_a"], record["conversation_b"]
+                _check([m["role"] for m in a], ["user", "assistant"] * (len(a) // 2), "Arena complete alternating conversation A")
+                _check([m["role"] for m in b], ["user", "assistant"] * (len(b) // 2), "Arena complete alternating conversation B")
+                user_turns = [m["content"] for m in a if m["role"] == "user"]
+                _check(bool(user_turns), True, "Arena nonempty user-turn sequence")
+                _check(user_turns, [m["content"] for m in b if m["role"] == "user"], "Arena same user input on both sides")
+                full = record["full_conversation"]
+                _check(len(full) >= len(user_turns), True, "Arena earlier context is present")
+                prefix, tail = full[:-len(user_turns)], full[-len(user_turns):]
+                for i, turn in enumerate(tail):
+                    _check(turn["user"]["content"], a[2*i]["content"], "Arena current user turns match context suffix")
+                    _check(turn["model_side_a"]["content"], a[2*i+1]["content"], "Arena current A replies match context suffix")
+                    _check(turn["model_side_b"]["content"], b[2*i+1]["content"], "Arena current B replies match context suffix")
+                content = dict(prior_context=prefix, user_turns=user_turns)
+                context = json.dumps([content, record["language"]], ensure_ascii=False, sort_keys=True)
+                contexts[context] = content
+                if record["timestamp"] is not None:
+                    record["timestamp"] = pd.Timestamp(record["timestamp"]).isoformat(timespec="nanoseconds")
+                native[key] = dict(record=record, source_file=str(path.relative_to(raw)), source_row=position, context=context)
+                models.update([record["model_a"], record["model_b"]])
+                sessions[record["evaluation_session_id"], record["evaluation_order"]] += 1
+                counts["source_battles"] += 1
+                counts["source_" + record["winner"]] += 1
+                counts["source_prior_context_battles"] += bool(prefix)
+                counts["source_multiturn_battles"] += len(user_turns) > 1
+                counts["source_self_comparisons"] += record["model_a"] == record["model_b"]
+                counts["source_empty_assistant_messages"] += sum(not m["content"] for m in a + b if m["role"] == "assistant")
+                position += 1
+    counts.update(source_responses=2*len(native), source_traces=2*len(native), source_items=len(contexts),
+                  source_subjects=len(models), source_repeated_session_orders=sum(n-1 for n in sessions.values()))
+    _check((len(native), len(models)), (135634, 53), "Arena complete pinned release census")
+    return native, contexts, models, dict(counts)
+
+
+def _arena(directory, tables, metadata, source_records=None):
+    """Verify every vote, model pairing, context, full record and trace association."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, contexts, models, counts = _arena_source_records(directory, metadata) if source_records is None else source_records
+    _check((len(tables["responses"]), len(tables["traces"])), (2*len(native), 2*len(native)), "Arena two observations per native vote")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "Arena discrete preference scale")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        subjects[row.subject_id] = _features(row.subject_features_extra)["model_identifier"]
+        _check(row.harness, "Arena human preference voting", "Arena source harness")
+        _check(pd.isna(row.harness_version), True, "Arena unknown historical harness revision")
+    _check(Counter(subjects.values()), Counter({model: 1 for model in models}), "Arena uncollapsed source model identities")
+    items, seen_items = {}, Counter()
+    for row in tables["items"].itertuples():
+        content = json.loads(row.content)
+        context = json.dumps([content, _features(row.item_features)["lang"]], ensure_ascii=False, sort_keys=True)
+        _check(context in contexts, True, "Arena complete earlier context and current prompts without current replies")
+        _check(row.raw_item_id in native and native[row.raw_item_id]["context"] == context, True, "Arena retained item source identity")
+        _check(json.loads(row.grading_criterion), {"reference_answer": None, "rule": metadata["grading"]["rule"]}, "Arena preference rule without invented gold answer")
+        verifier = json.loads(row.verifier)
+        _check(verifier["judged_by"], "human", "Arena human rather than model judge")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["human_vote"], "Arena exact declared vote interpretation")
+        items[row.item_id] = context
+        seen_items[context] += 1
+    _check(seen_items, Counter({context: 1 for context in contexts}), "Arena complete distinct conversation stimuli")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "Arena one-to-one trace associations")
+    seen, trials = Counter(), {}
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        source = native[trace["record"]["id"]]
+        side = trace["side"]
+        _check(side in {"model_a", "model_b"}, True, "Arena native side identity")
+        record = source["record"]
+        _check(trace, dict(source_file=source["source_file"], source_row=source["source_row"], side=side, record=record),
+               "Arena full native record without lost context, metadata, precision or empty replies")
+        _check((subjects[response.subject_id], items[response.item_id]), (record[side], source["context"]), "Arena correct model and conversational context")
+        expected_grade = 0.5 if record["winner"] == "tie" else float(record["winner"] == side)
+        _check(response.response, expected_grade, "Arena original winner, tie and mutual-rejection mapping")
+        opponent = record["model_b" if side == "model_a" else "model_a"]
+        _check(response.interactors, "opponent=" + opponent, "Arena correct original opponent")
+        _check(response.test_condition, "side=" + side, "Arena displayed side preserved as a condition")
+        group = response.subject_id, response.item_id, response.interactors, response.test_condition
+        trials.setdefault(group, []).append(response.trial)
+        seen[record["id"], side] += 1
+    _check(seen, Counter({(key, side): 1 for key in native for side in ["model_a", "model_b"]}), "Arena no omitted or duplicated votes")
+    _check(all(sorted(values) == list(range(1, len(values)+1)) for values in trials.values()), True, "Arena consecutive trials after canonical item resolution")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3657,4 +3757,5 @@ def verify_native_results(directory, tables_directory=None):
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
-            "alignment_faking": _alignment_faking, "arcagi": _arcagi}[directory.name](directory, tables, metadata)
+            "alignment_faking": _alignment_faking, "arcagi": _arcagi,
+            "arena_140k": _arena}[directory.name](directory, tables, metadata)
