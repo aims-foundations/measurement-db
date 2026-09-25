@@ -1,0 +1,92 @@
+benchmark:
+  name: BigFinanceBench
+  description: Financial-research agent runs with independent model judgments of final answers and analyst rubrics.
+    Evaluation-only data; do not use for training.
+  testing_condition: The public 50-question release contains 1,500 scheduled agent runs and 4,500 assessments by
+    three recorded judges. Two additional API-error trace records share trial keys with subsequent runs. Preserve
+    all trace candidates and mark the three assessments whose null final answers do not identify one trace uniquely.
+    Import both final-answer correctness and earned/possible rubric points as distinct item grading protocols. Items
+    retain the recorded initial question, system prompt and tool specifications; full later tool results and outputs
+    remain in traces. Model labels, resolved identifiers and harness versions are recorded, but exact historical
+    sampling settings and invocation revisions are unavailable. Human workpapers are reference evidence, not model
+    input assets. Preserve the author evaluation-only, do-not-train and contamination-canary signals. No inference
+    or new grading.
+  paper_url: https://arxiv.org/abs/2606.03829
+  data_source_url: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+  subject_type: agent
+  item_type: task
+  license: CC-BY-4.0 for the released data; Apache-2.0 for the harness. The author marks benchmark records evaluation-only
+    and do-not-train.
+  citation: 'Wang et al. (2026). BigFinanceBench: A Workflow-Grounded Benchmark for Financial-Research Agents. arXiv:2606.03829.'
+  tags:
+  - finance
+  - agent
+  - rubric
+  - evaluation_only
+  modality:
+  - text
+  domain:
+  - finance
+  - agents_and_tool_use
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: '2026-06-02'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      release: hf/139d5a18fe3ae3203332e1ffd173dfd525e96e31
+    tables:
+      tasks: big_finance_subset.jsonl
+      runs: traces/*.traces.jsonl
+      grades: grades/*.grades.*.jsonl
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    revision: 139d5a18fe3ae3203332e1ffd173dfd525e96e31
+    files:
+    - match: .*
+      path: hf/139d5a18fe3ae3203332e1ffd173dfd525e96e31/{path}
+  - name: harness
+    url: https://github.com/Rogo-Technologies/big-finance-benchmark
+    revision: d794a65fe583edc6852b44c817b0a2aef33ca831
+    files:
+    - match: (?!(?:grades|human_workpapers)/)(?!.*\.jsonl$).*
+      path: github/d794a65fe583edc6852b44c817b0a2aef33ca831/{path}
+grading:
+  rule: Import the recorded judge assessment; do not call a new judge. Final-answer correctness and point-weighted
+    rubric coverage are separate measures of the same agent run.
+  verifiers:
+    protocol:
+      rule: Import the recorded judge assessment; do not call a new judge. Final-answer correctness and point-weighted
+        rubric coverage are separate measures of the same agent run.
+      reference_implementation: https://github.com/Rogo-Technologies/big-finance-benchmark/blob/d794a65fe583edc6852b44c817b0a2aef33ca831/big_finance_harness/grader.py
+      historical_invocation: The record supplies the judge label. Exact historical requests, alias overrides and
+        harness source revisions were not released.
+      trace_scope: Preserve full released traces; reference grader caps its judge context, not the archived traces.
+        Ambiguous retry links remain explicit.
+    measures:
+      final_answer_correct:
+        rule: 'The released final_answer_correct Boolean: true=1, false=0. Missing final-answer text does not imply
+          missing grading.'
+        scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          meanings:
+            '0': The recorded judge marked the final answer incorrect.
+            '1': The recorded judge marked the final answer correct.
+          direction: higher_is_better
+      rubric_fraction:
+        rule: Sum points for rubric lines marked earned and divide by all possible rubric points. Preserve the original
+          judge decisions and explanations.
+        scale:
+          kind: interval
+          min: 0
+          max: 1
+          direction: higher_is_better

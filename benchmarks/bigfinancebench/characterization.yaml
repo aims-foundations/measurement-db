@@ -1,0 +1,114 @@
+format_version: 1
+tables:
+  traces:
+    rows: 9000
+    logical_sha256: a7c247938083c8e1809067bc8e9d9d6a3e5c510c85ea388ea18dad8a61cdb87b
+  subjects:
+    rows: 10
+    logical_sha256: 1ab247f4942d4bfe29ced7d8d2a1bb66afbe4f385a93a16fdbc387ad005988ff
+  responses:
+    rows: 9000
+    logical_sha256: 3c6de2d8ec49c121159db6a46994da1af18d3c11145f31c9fc1af01641b613bf
+  items:
+    rows: 600
+    logical_sha256: 66b5fc940a1dd0a747538238666ade1173827cbc1ab756754388bc5c6c89510e
+  benchmarks:
+    rows: 1
+    logical_sha256: 6a64ed782131f212dbc0aeaa022890ab8e694170f736b81e7b3f8302fefdf5bb
+source_claims:
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 50
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 10
+  source_scheduled_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 1500
+  source_trace_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 1502
+  source_judge_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 4500
+  source_judges:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 3
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 9000
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 9000
+  source_correct_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 1495
+  source_ambiguous_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 3
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 600
+  source_api_error_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RogoAI/big-finance-benchmark
+    locator: 'Physical JSONL records in the pinned 50-question release: big_finance_subset.jsonl, grades/ and traces/.'
+    scope: All three recorded judges; both correctness and rubric fraction, with complete retry records and explicit
+      ambiguous trace associations.
+    expected: 2

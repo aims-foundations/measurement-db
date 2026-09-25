@@ -5043,6 +5043,129 @@ def _bedd(directory, tables, metadata, source_records=None):
     return dict(counts)
 
 
+def _bigfinance_source_records(directory, metadata):
+    """Read physical JSONL records independently of the builder's pandas reader."""
+    from collections import defaultdict
+
+    raw = directory / 'raw'
+    release = raw / metadata['build']['parameters']['paths']['release']
+    tasks, runs, grades, models = {}, defaultdict(list), {}, {}
+    for path in sorted(release.glob('**/*.jsonl')):
+        with path.open() as stream:
+            for position, line in enumerate(stream):
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                source = dict(source_file=str(path.relative_to(raw)), source_row=position, record=record)
+                if path.name == 'big_finance_subset.jsonl':
+                    _check(record['id'] not in tasks, True, 'BigFinance unique native task')
+                    tasks[record['id']] = record
+                elif path.name.endswith('.traces.jsonl'):
+                    runs[record['model'], record['question_id'], record['trial_idx']].append(source)
+                    if record['resolved_model'] is not None:
+                        config = dict(resolved_model=record['resolved_model'], harness_version=record['harness_version'])
+                        _check(models.setdefault(record['model'], config), config, 'BigFinance consistent resolved model configuration')
+                elif '.grades.' in path.name:
+                    key = record['model'], record['question_id'], record['trial_idx'], record['judge']
+                    _check(key not in grades, True, 'BigFinance unique native judge assessment')
+                    grades[key] = source
+    counts = Counter(source_questions=len(tasks), source_models=len(models), source_scheduled_runs=len(runs),
+        source_trace_records=sum(map(len, runs.values())), source_judge_assessments=len(grades),
+        source_judges=len({key[3] for key in grades}), source_responses=2*len(grades), source_traces=2*len(grades))
+    expected_items = set()
+    for key, source in grades.items():
+        grade, task = source['record'], tasks[key[1]]
+        candidates = runs[key[:3]]
+        _check(grade['reference_answer'], task['reference_answer'], 'BigFinance exact native grade reference')
+        _check([(line['text'], line['points']) for line in grade['rubric_lines']],
+               [(line['text'], line['points']) for line in task['rubric']], 'BigFinance original rubric line correspondence')
+        _check(all(isinstance(line['earned'], bool) for line in grade['rubric_lines']), True, 'BigFinance original Boolean rubric decisions')
+        _check(grade['rubric_points_earned'], sum(line['points'] for line in grade['rubric_lines'] if line['earned']), 'BigFinance native earned point total')
+        _check(grade['rubric_points_possible'], sum(line['points'] for line in task['rubric']), 'BigFinance native possible point total')
+        _check(grade['rubric_lines_earned'], sum(line['earned'] for line in grade['rubric_lines']), 'BigFinance native earned line total')
+        _check(grade['rubric_lines_possible'], len(task['rubric']), 'BigFinance native line denominator')
+        _check(isinstance(grade['final_answer_correct'], bool), True, 'BigFinance original Boolean correctness')
+        counts['source_correct_assessments'] += grade['final_answer_correct']
+        contexts = set()
+        for candidate in candidates:
+            run = candidate['record']
+            _check((run['question'], run['reference_answer']), (task['query'], task['reference_answer']), 'BigFinance trace task and reference')
+            contexts.add(json.dumps(dict(system_prompt=run['system_prompt'], question=run['question'], tool_specs=run['tool_specs']), sort_keys=True, ensure_ascii=False))
+        _check(len(contexts), 1, 'BigFinance retries share original initial input')
+        matches = [index for index, candidate in enumerate(candidates) if candidate['record']['final_answer'] == grade['final_answer']]
+        _check(bool(matches), True, 'BigFinance published grade has a matching final answer')
+        counts['source_ambiguous_assessments'] += len(matches) > 1
+        for metric in ['final_answer_correct', 'rubric_fraction']:
+            expected_items.add((key[1], next(iter(contexts)), key[3], metric))
+    counts['source_items'] = len(expected_items)
+    counts['source_api_error_records'] = sum(source['record']['stop_reason'] == 'error' for group in runs.values() for source in group)
+    return tasks, runs, grades, models, expected_items, dict(counts)
+
+
+def _bigfinance(directory, tables, metadata, source_records=None):
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    tasks, runs, grades, models, expected_items, counts = (_bigfinance_source_records(directory, metadata)
+        if source_records is None else source_records)
+    _check((len(tables['responses']), len(tables['traces'])), (2*len(grades), 2*len(grades)), 'BigFinance all native measures and traces')
+    _check(len(tables.get('assets', ())), 0, 'BigFinance reference workpapers are not input assets')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), {'kind': 'mixed'}, 'BigFinance explicit per-metric scale')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['model_identifier']
+        _check((row.display_name, row.harness), (model, 'BigFinanceBench'), 'BigFinance literal requested model and harness')
+        _check(features, dict(model_identifier=model, resolved_model=models[model]['resolved_model']), 'BigFinance recorded resolved model without guessed settings')
+        _check(row.harness_version, models[model]['harness_version'], 'BigFinance recorded harness version')
+        _check(pd.isna(row.reasoning_effort), True, 'BigFinance historical reasoning setting remains unknown')
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({model: 1 for model in models}), 'BigFinance every recorded model once')
+    items = {}
+    grading = metadata['grading']['verifiers']
+    for row in tables['items'].itertuples():
+        criterion, verifier = json.loads(row.grading_criterion), json.loads(row.verifier)
+        definition = json.loads(criterion['rule'])
+        task, metric, content = tasks[row.raw_item_id], definition['metric'], json.loads(row.content)
+        _check(content['question'], task['query'], 'BigFinance full native task input')
+        _check(definition, dict(metric=metric, rubric=task['rubric'], interpretation=grading['measures'][metric]['rule']), 'BigFinance exact reference rubric and measure')
+        _check(criterion, dict(reference_answer=task['reference_answer'], rule=criterion['rule'],
+            response_scale=json.loads(canonical_response_scale(grading['measures'][metric]['scale']))), 'BigFinance grading reference and score domain')
+        _check((verifier['class'], verifier['judged_by']), ('judge', 'llm'), 'BigFinance recorded model judge')
+        _check(json.loads(verifier['spec']), grading['protocol'], 'BigFinance explicit historical procedure limits')
+        _check(_features(row.item_features), dict(source_question_id=row.raw_item_id,
+            evaluation_only=str(task['evaluation_only']), do_not_train=str(task['do_not_train']),
+            benchmark_canary=task['benchmark_canary']), 'BigFinance native use restrictions and canary')
+        _check(pd.isna(row.asset_manifest), True, 'BigFinance no reference evidence as model input assets')
+        items[row.item_id] = (row.raw_item_id, json.dumps(content, sort_keys=True, ensure_ascii=False), verifier['judge'], metric)
+    _check(Counter(items.values()), Counter({key: 1 for key in expected_items}), 'BigFinance complete input and grading protocol identities')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'BigFinance trace/response bijection')
+    used = set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        grade = trace['grade_record']
+        key = grade['model'], grade['question_id'], grade['trial_idx'], grade['judge']
+        metric = trace['metric']
+        _check((key, metric) not in used, True, 'BigFinance no duplicated assessment measure'); used.add((key, metric))
+        source = grades[key]
+        original = source['record']
+        records = runs[key[:3]]
+        matches = [index for index, candidate in enumerate(records) if candidate['record']['final_answer'] == original['final_answer']]
+        expected_trace = dict(source_file=source['source_file'], source_row=source['source_row'], metric=metric,
+            grade_record=original, task_record=tasks[key[1]], run_records=records, matching_run_indices=matches,
+            trace_association='unique_final_answer_match' if len(matches) == 1 else 'ambiguous_final_answer_match')
+        _check(trace, expected_trace, 'BigFinance complete original grades, outputs, accounting and retry evidence')
+        first = records[0]['record']
+        content = json.dumps(dict(question=first['question'], system_prompt=first['system_prompt'], tool_specs=first['tool_specs']), sort_keys=True, ensure_ascii=False)
+        _check((subjects[row.subject_id], items[row.item_id]), (key[0], (key[1], content, key[3], metric)), 'BigFinance correct subject/input/judge/metric association')
+        expected = float(original['final_answer_correct']) if metric == 'final_answer_correct' else original['rubric_points_earned']/original['rubric_points_possible']
+        _check(row.response, expected, 'BigFinance recorded correctness or point-weighted rubric score')
+        _check((row.trial, row.test_condition), (key[2]+1, 'judge='+key[3]+';metric='+metric), 'BigFinance original trial and grading context')
+        _check(pd.isna(row.interactors), True, 'BigFinance no invented interacting subject')
+    _check(used, {(key, metric) for key in grades for metric in ['final_answer_correct', 'rubric_fraction']}, 'BigFinance all original measures exactly once')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5063,4 +5186,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance}[directory.name](directory, tables, metadata)
