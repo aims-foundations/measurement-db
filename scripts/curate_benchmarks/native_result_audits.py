@@ -7103,6 +7103,134 @@ def _complex(directory, tables, metadata, source_records=None):
         source_scoring_questions=sum(len(task["scoring_questions"]) for task in tasks.values()))
 
 
+def _csedb_source_records(directory, metadata):
+    """Inspect each native clinical assessment without using the pandas builder."""
+    import re
+    raw = directory / "raw"
+    models = ("mg", "ds", "o3", "gemini", "qwen", "claude")
+    items, records = {}, {}
+    for path in sorted(raw.glob(metadata["build"]["parameters"]["paths"]["results"])):
+        filename = str(path.relative_to(raw))
+        panel = path.parent.name
+        trial = int(re.fullmatch(r"e(\d+)_wp\.json", path.name)[1])
+        seen = set()
+        for group_index, group in enumerate(json.loads(path.read_text())):
+            design = group["设计的考题内容"]
+            context = {key: value for key, value in group.items() if key != "设计的考题内容"}
+            context["设计的考题内容"] = {key: value for key, value in design.items() if key != "最具代表性的测试case"}
+            for case_index, case in enumerate(design["最具代表性的测试case"]):
+                case_id = case["case_id"]
+                _check(case_id not in seen, True, "CSEDB unique case ID in each assessment file")
+                seen.add(case_id)
+                definition = dict(content=case["输入 case"], criterion=group["考点"],
+                    design_principles=design["考点场景测试case设计原则"],
+                    rules={key: case[key] for key in ("pass 判定", "fail 情形", "规则判断列表") if key in case},
+                    features=dict(clinical_system=case["系统"], disease=case["使用疾病"], complexity=case["复杂度级别"]))
+                _check(items.setdefault(case_id, definition), definition, "CSEDB stable clinical question and grading across panels")
+                for model in models:
+                    grade, status = None, "missing_judgment"
+                    # Native process_json_file selects the first nonempty result
+                    # in non-grouped evaluation fields, preserving source order.
+                    for field, value in case.items():
+                        if not field.endswith("_eval") or "group" in field:
+                            continue
+                        try:
+                            judgment = json.loads(re.sub(r"\s*```$", "", re.sub(r"^```json\s*", "", value.strip())))
+                        except (ValueError, AttributeError):
+                            continue
+                        results = next((value for key, value in judgment.items() if model + "判断结果" in key.lower()), [])
+                        if not results:
+                            continue
+                        kind = judgment.get("考点评估类型", group["考点"]["考点评估类型"])
+                        if kind in ("动态评分型", "动态评估型"):
+                            weights = [point.get("分数", 0) for point in case["规则判断列表"]]
+                            if len(results) != len(weights) or not weights or sum(weights) == 0:
+                                status = "invalid_rubric_alignment"
+                            else:
+                                grade = min(int(sum(w for w, r in zip(weights, results) if r == "yes") / sum(weights) * 10000) / 10000, 1.0)
+                                status = "released_grade"
+                        else:
+                            _check(len(results), 1, "CSEDB binary judgment has one decision")
+                            grade, status = float(results[0] == "yes"), "released_grade"
+                        break
+                    _check(case[model + "_score"], grade if grade is not None else 0.0,
+                           "CSEDB exact released score including explicitly identified parser fallbacks")
+                    _check(isinstance(case[model + "_res"], str) and bool(case[model + "_res"]), True,
+                           "CSEDB full native model answer")
+                    subject = "ds_structured" if panel == "sampled_deepseek-r1-old" and model == "mg" else model
+                    key = filename, group_index, case_index, model
+                    records[key] = dict(record=case, context=context, case_id=case_id, panel=panel,
+                        trial=trial, grade=grade, status=status, subject=subject)
+    _check(bool(records), True, "CSEDB nonempty source release")
+    return items, records
+
+
+def _csedb(directory, tables, metadata, source_records=None):
+    tasks, records = source_records if source_records is not None else _csedb_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    labels = dict(parameters["models"], ds_structured=parameters["optimized"]["raw_label"])
+    _check(len(set(labels.values())), 7, "CSEDB optimized DeepSeek is distinct from MedGPT")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        subject = next(key for key, value in labels.items() if value == row.display_name)
+        prompt = parameters["optimized"]["prompt_configuration"] if subject == "ds_structured" else parameters["labels"]["original_prompt"]
+        _check(_features(row.subject_features_extra), dict(prompt_configuration=prompt,
+            historical_request_settings="not_recorded"), "CSEDB explicit prompt variant and unknown historical settings")
+        _check(row.harness, "CSEDB", "CSEDB harness")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "CSEDB no guessed setting: " + field)
+        subjects[row.subject_id] = subject
+    _check(Counter(subjects.values()), Counter({record["subject"]: 1 for record in records.values()}),
+           "CSEDB exact released model configurations")
+    items = {}
+    for row in tables["items"].itertuples():
+        task = tasks[row.raw_item_id]
+        _check(row.content, task["content"], "CSEDB complete clinical input without grader-only content")
+        _check(_features(row.item_features), task["features"], "CSEDB clinical attributes")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion["reference_answer"], None, "CSEDB rubric is not a reference answer")
+        _check(json.loads(criterion["rule"]), dict(protocol=metadata["grading"]["rule"],
+            criterion=task["criterion"], design_principles=task["design_principles"], rules=task["rules"]),
+            "CSEDB complete grading rubric, weights and case-design context")
+        verifier = json.loads(row.verifier)
+        _check(verifier["judged_by"], "llm", "CSEDB historical LLM grading")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["released_judge"], "CSEDB released grading protocol")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in tasks}), "CSEDB each clinical case exactly once")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, statuses = Counter(), Counter()
+    panels = {"deepseek-r1-old": "main_reassessment", "sampled_deepseek-r1-old": "prompt_optimization_reassessment",
+              "worst_at_k": "repeated_generation"}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_group"], trace["source_case"], trace["model_field"]
+        original = records[key]
+        _check(trace, dict(source_file=key[0], source_group=key[1], source_case=key[2], model_field=key[3],
+            source_record=original["record"], source_context=original["context"], grading_status=original["status"]),
+            "CSEDB every native field, full answer and judgment remains intact")
+        _check(subjects[row.subject_id], original["subject"], "CSEDB correct model and optimization assignment")
+        _check(items[row.item_id], original["case_id"], "CSEDB correct clinical case association")
+        _check(None if pd.isna(row.response) else float(row.response), original["grade"], "CSEDB exact native grade or unavailable assessment")
+        _check(row.trial, original["trial"], "CSEDB assessment file index")
+        _check(row.test_condition, "panel=" + original["panel"] + "; assessment=" + panels[original["panel"]]
+            + "; grading=" + original["status"], "CSEDB separate panel and grading status")
+        seen[key] += 1
+        statuses[original["status"]] += 1
+    _check(seen, Counter({key: 1 for key in records}), "CSEDB every native assessment exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "CSEDB exact trace associations")
+    _check(len(tables.get("assets", [])), 0, "CSEDB no fabricated media")
+    benchmark = tables["benchmarks"].iloc[0]
+    _check(benchmark.response_type, "fraction", "CSEDB partial credit is supported")
+    _check(json.loads(benchmark.response_scale), dict(kind="interval", min=0, max=1, direction="higher_is_better"),
+           "CSEDB declared grade range and direction")
+    return dict(source_responses=len(records), source_items=len(tasks), source_subjects=len(subjects), source_traces=len(traces),
+        source_partial_credit=sum(r["grade"] is not None and 0 < r["grade"] < 1 for r in records.values()),
+        source_invalid_rubric_alignment=statuses["invalid_rubric_alignment"], source_missing_judgment=statuses["missing_judgment"],
+        source_main_assessments=sum(r["panel"] == "deepseek-r1-old" for r in records.values()),
+        source_prompt_optimization_assessments=sum(r["panel"] == "sampled_deepseek-r1-old" for r in records.values()),
+        source_repeated_generation_assessments=sum(r["panel"] == "worst_at_k" for r in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7123,4 +7251,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb}[directory.name](directory, tables, metadata)
