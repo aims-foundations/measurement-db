@@ -4060,6 +4060,143 @@ def _auditing_sabotage(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _autoresearch_source_records(directory, metadata):
+    """Decode each native pass and associate the independent grading export."""
+    import math
+    import re
+    import unicodedata
+
+    parameters = metadata["build"]["parameters"]
+    release = directory / "raw" / parameters["layout"]["release"]
+    native, inputs, counts = {}, {}, Counter()
+    for family, stem in parameters["runs"].items():
+        inference_path = release / "output_data" / (stem + ".jsonl")
+        evaluation_path = release / "output_data" / (stem + parameters["evaluation_suffixes"][family])
+        document = json.loads(evaluation_path.read_text())
+        records = document["detailed_results" if family == "deep" else "per_record_results"]
+        judgments = {}
+        for index, record in enumerate(records):
+            question = record["input_data"]["question"] if family == "deep" else record["question"]
+            passes = record["inference_results"] if family == "deep" else record["pass_results"]
+            if family == "deep":
+                _check(len(passes), len(record["evaluation"]["pass_scores"]), "AutoResearch aligned pass scores")
+            for position, attempt in enumerate(passes):
+                key = question, attempt["pass_id"]
+                _check(key not in judgments, True, "AutoResearch unique native judgment")
+                score = record["evaluation"]["pass_scores"][position] if family == "deep" else attempt["iou"]
+                _check(math.isfinite(score) and 0 <= score <= 1, True, "AutoResearch finite recorded grade")
+                judgments[key] = index, record, attempt, score
+        seen = Counter()
+        with inference_path.open() as stream:
+            for source_row, line in enumerate(stream):
+                record = json.loads(line)
+                for attempt in record["inference_results"]:
+                    key = record["input_data"]["question"], attempt["pass_id"]
+                    evaluation_row, evaluated, graded_pass, score = judgments[key]
+                    if family == "deep":
+                        _check(record["input_data"], evaluated["input_data"], "AutoResearch exact inference/judgment input association")
+                        _check({k: v for k, v in attempt.items() if k != "final_candidates"},
+                               {k: v for k, v in graded_pass.items() if k != "final_candidates"},
+                               "AutoResearch same complete pass outside grader-normalized candidate metadata")
+                        reference = evaluated["input_data"]["answer"]
+                        counts["source_candidate_metadata_simplified_by_grader"] += attempt["final_candidates"] != graded_pass["final_candidates"]
+                    else:
+                        _check(evaluated["line_num"], source_row + 1, "AutoResearch Wide original line number")
+                        reference = graded_pass["gt_arxiv_ids"]
+                        ground_truth, prediction = set(reference), set(graded_pass["predicted_arxiv_ids"])
+                        normalized = []
+                        for value in record["input_data"]["arxiv_id"]:
+                            value = re.sub(r"(?i)arxiv:", "", str(value)).strip()
+                            match = re.search(r"(\d{4}\.\d{4,5})", value)
+                            normalized.append(match.group(1) if match else value)
+                        _check(ground_truth, set(normalized), "AutoResearch applied external answer key agrees with captured input references")
+                        normalized = []
+                        for candidate in attempt["final_candidates"]:
+                            value = re.sub(r"(?i)arxiv:", "", str(candidate.get("arxiv_id", ""))).strip()
+                            match = re.search(r"(\d{4}\.\d{4,5})", value)
+                            if value:
+                                normalized.append(match.group(1) if match else value)
+                        _check(prediction, set(normalized), "AutoResearch Wide predictions from original candidates")
+                        overlap, union = ground_truth & prediction, ground_truth | prediction
+                        _check(score, round(len(overlap) / len(union), 6) if union else 1.0, "AutoResearch independently checked set IoU")
+                        _check((graded_pass["gt_count"], graded_pass["predicted_count"], graded_pass["hit_count"]),
+                               (len(ground_truth), len(prediction), len(overlap)), "AutoResearch Wide set counts are not grades")
+                    messages = attempt["messages"][:2]
+                    _check([message["role"] for message in messages], ["system", "user"], "AutoResearch actual initial prompt roles")
+                    _check(record["input_data"]["question"] in messages[1]["content"], True, "AutoResearch actual user question")
+                    content = unicodedata.normalize("NFC", json.dumps(messages, ensure_ascii=False, sort_keys=True)).strip()
+                    item_key = family, source_row
+                    item = dict(content=content, reference=reference, family=family)
+                    _check(inputs.get(item_key, item), item, "AutoResearch same stimulus and grading for repeated passes")
+                    inputs[item_key] = item
+                    source_file = str(inference_path.relative_to(directory / "raw"))
+                    source_key = source_file, source_row, attempt["pass_id"]
+                    _check(source_key not in native, True, "AutoResearch unique captured attempt")
+                    native[source_key] = dict(model=stem.split("_academic_")[0], item=item_key, response=score,
+                        trace=dict(source_file=source_file, source_row=source_row, input_data=record["input_data"],
+                            native_pass=attempt, evaluation_file=str(evaluation_path.relative_to(directory / "raw")),
+                            evaluation_row=evaluation_row, evaluation_record=evaluated))
+                    seen[key] += 1
+                    counts["source_" + family + "_attempts"] += 1
+        _check(seen, Counter({key: 1 for key in judgments}), "AutoResearch every inference has exactly one recorded judgment")
+    counts.update(source_responses=len(native), source_traces=len(native), source_items=len(inputs),
+                  source_models=len({row["model"] for row in native.values()}))
+    return native, inputs, dict(counts)
+
+
+def _autoresearch(directory, tables, metadata, source_records=None):
+    """Check all source associations, original scores, prompt messages and full passes."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, inputs, counts = _autoresearch_source_records(directory, metadata) if source_records is None else source_records
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "AutoResearch complete response and trace counts")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "AutoResearch fractional score scale")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["model_identifier"]
+        _check(features, dict(model_identifier=model, model_evidence=metadata["build"]["parameters"]["subject"]["model_evidence"]),
+               "AutoResearch original model label and qualified historical identity")
+        _check((row.display_name, row.harness), (model, "AutoResearchBench"), "AutoResearch original model label and harness")
+        _check(all(pd.isna(getattr(row, name)) for name in ["harness_version", "reasoning_effort", "access_date"]),
+               True, "AutoResearch no invented historical execution settings")
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]: 1 for row in native.values()}), "AutoResearch exact source subjects")
+    items, seen_items = {}, Counter()
+    for row in tables["items"].itertuples():
+        family, source_row = row.raw_item_id.split(":")
+        key = family, int(source_row)
+        original = inputs[key]
+        protocol = metadata["grading"]["verifiers"][family]
+        _check(row.content, original["content"], "AutoResearch actual initial messages without answer-key leakage")
+        _check(_features(row.item_features), {"research_task": family}, "AutoResearch task family")
+        criterion, verifier = json.loads(row.grading_criterion), json.loads(row.verifier)
+        _check(json.loads(criterion["reference_answer"]), original["reference"], "AutoResearch applied reference answer")
+        _check(criterion["rule"], protocol["logic"], "AutoResearch source grading interpretation")
+        _check((verifier["class"], json.loads(verifier["spec"])),
+               ("judge" if family == "deep" else "exact_matcher", protocol), "AutoResearch original recorded evaluator")
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in inputs}), "AutoResearch complete unique released inputs")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "AutoResearch exact trace/response links")
+    seen, trials = Counter(), {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["native_pass"]["pass_id"]
+        original = native[key]
+        _check(trace, original["trace"], "AutoResearch unchanged original pass, search messages and evaluation context")
+        _check((subjects[row.subject_id], items[row.item_id], row.response),
+               (original["model"], original["item"], original["response"]), "AutoResearch correct model, question, pass and recorded grade")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "AutoResearch no invented response settings")
+        seen[key] += 1
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+    _check(seen, Counter({key: 1 for key in native}), "AutoResearch no missing or duplicated native passes")
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True, "AutoResearch consecutive trials after item resolution")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4078,4 +4215,5 @@ def verify_native_results(directory, tables_directory=None):
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
             "arena_140k": _arena, "atmossci_bench": _atmossci,
-            "auditing_sabotage_bench": _auditing_sabotage}[directory.name](directory, tables, metadata)
+            "auditing_sabotage_bench": _auditing_sabotage,
+            "autoresearchbench": _autoresearch}[directory.name](directory, tables, metadata)
