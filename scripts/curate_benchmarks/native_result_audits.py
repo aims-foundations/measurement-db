@@ -6666,6 +6666,149 @@ def _chipbench(directory, tables, metadata, source_records=None):
         source_resource_only_attempts=len(set(source['resources'])-set(source['main'])), source_assets=len(assets), **counts)
 
 
+def _classroom_source_records(directory, metadata):
+    """Use the captured classifier functions and a line reader, independently of pandas."""
+    import ast
+    import re
+
+    raw = directory / 'raw'
+    code = raw / metadata['build']['parameters']['paths']['classifier']
+    # Only the reviewed pure category/voting functions are loaded. The original
+    # module's command-line driver, file access and inference code are not executed.
+    names = {'process_val_all', 'process_val_flesch', 'process_gunning_fog',
+             'process_val_dale_chall', 'get_vote', 'majority_voting', 'voting'}
+    functions = [node for node in ast.parse(code.read_text()).body
+                 if isinstance(node, ast.FunctionDef) and node.name in names]
+    _check({node.name for node in functions}, names, 'Classroom AI captured pure classifier functions')
+    namespace = {}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), str(code), 'exec'), namespace)
+    processors = {'Flesh_kincaid': ('fk', 'process_val_all'), 'Flesch': ('f', 'process_val_flesch'),
+        'Gunning Fog': ('gf', 'process_gunning_fog'), 'Coleman': ('c', 'process_val_all'),
+        'Dale Chall': ('dc', 'process_val_dale_chall'), 'Linsear': ('l', 'process_val_all'), 'Spache': ('s', 'process_val_all')}
+    levels = {(1,2):1, (3,4):2, (5,6):3, (7,8,9):4, (10,11,12):5, (13,):6}
+    native = {}
+    question_order = None
+    numbering_restarts = 0
+    for path in sorted(raw.glob('*.txt')):
+        # A header is an observation delimiter, never a join key: GPT-4o restarts at zero.
+        blocks, current = [], None
+        for line in path.read_text().splitlines(keepends=True):
+            header = re.fullmatch(r'(\d+)th question\n', line)
+            if header:
+                if current is not None:
+                    blocks.append(current)
+                current = [int(header[1]), []]
+            elif current is None:
+                _check(line.strip(), '', 'Classroom AI no skipped file prefix')
+            else:
+                current[1].append(line)
+        if current is not None:
+            blocks.append(current)
+        questions = []
+        for position, (printed, lines) in enumerate(blocks):
+            block = ''.join(lines)
+            question, separator, answer_and_metrics = block.partition('\nModel Response: ')
+            _check(bool(separator) and question.startswith('Q: '), True, 'Classroom AI full question boundary')
+            question = question.removeprefix('Q: ')
+            answer, separator, metrics = answer_and_metrics.partition('\n\nMetric Analysis\n')
+            _check(bool(separator), True, 'Classroom AI full answer boundary')
+            estimates = {}
+            for line in metrics.splitlines():
+                if not line.strip():
+                    continue
+                name, value = line.split(': score: ', 1)
+                _check(name not in estimates, True, 'Classroom AI unique original metric')
+                estimates[name] = value
+            _check(set(estimates), set(processors) | {'Ari'}, 'Classroom AI complete eight-metric record')
+            candidates = {}
+            for name, (key, function) in processors.items():
+                marker = 'grade_levels:' if name in {'Flesch','Dale Chall'} else 'grade_level:'
+                value = estimates[name].split(marker, 1)[1]
+                candidates[key] = namespace[function](value)
+            grade = None if len(answer.split(' ')) < 20 else levels[tuple(namespace['voting'](candidates))]
+            key = path.name, position
+            _check(key not in native, True, 'Classroom AI unique original occurrence')
+            native[key] = dict(question=question, answer=answer, metrics=metrics, block=block,
+                printed_number=printed, subject=path.stem, grade=grade)
+            questions.append(question)
+            if position and printed < blocks[position-1][0]:
+                numbering_restarts += 1
+        if question_order is None:
+            question_order = questions
+        else:
+            _check(questions, question_order, 'Classroom AI exact question sequence across subjects')
+    _check(len(native), 10360, 'Classroom AI complete released evaluation')
+    _check((len(question_order), len(set(question_order)), numbering_restarts), (740,734,1),
+        'Classroom AI repeated questions and the printed-number restart')
+    return dict(native=native, question_order=question_order, numbering_restarts=numbering_restarts)
+
+
+def _classroom_ai(directory, tables, metadata, source_records=None):
+    """Compare every question, model variant, grade and complete trace to the native record."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = source_records if source_records is not None else _classroom_source_records(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features['source_model_label']
+        _check(row.display_name, parameters['subject_labels'][label], 'Classroom AI reported model variant')
+        _check(features['target_grade'], parameters['subject_targets'][label], 'Classroom AI reported target grade')
+        _check(row.harness, 'ClassroomAI', 'Classroom AI harness')
+        _check(features['historical_config'], 'not_recorded', 'Classroom AI unknown historical requests')
+        for field in ['normalized_name','release_date','access_date','harness_version','reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'Classroom AI no inferred historical or fine-tune configuration: '+field)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({row['subject']:1 for row in source['native'].values()}),
+        'Classroom AI exact source subject coverage')
+    items = {row.item_id:row for row in tables['items'].itertuples()}
+    _check(Counter(row.content for row in items.values()), Counter({q:1 for q in source['question_order']}),
+        'Classroom AI complete distinct questions with no positional duplication')
+    protocol = metadata['grading']['verifiers']['integrated_readability']
+    for item in items.values():
+        _check(json.loads(item.grading_criterion), {'reference_answer':None, 'rule':metadata['grading']['rule']}, 'Classroom AI reading-level criterion')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Classroom AI deterministic classifier')
+        _check(json.loads(verifier['spec']), protocol, 'Classroom AI exact grading algorithm and label mapping')
+        _check([] if pd.isna(item.asset_manifest) else json.loads(item.asset_manifest), [], 'Classroom AI no invented input assets')
+    benchmark = tables['benchmarks'].iloc[0]
+    _check(benchmark.response_scale, canonical_response_scale(metadata['benchmark']['response_scale']),
+        'Classroom AI original six-category reading-level scale')
+    _check(json.loads(benchmark.response_scale)['direction'], 'unordered', 'Classroom AI reading level is not a success score')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, grades = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = source['native'][key]
+        _check(subjects[row.subject_id], original['subject'], 'Classroom AI answer/model association')
+        _check(items[row.item_id].content, original['question'], 'Classroom AI answer/question association')
+        _check(trace['question_number'], original['printed_number'], 'Classroom AI unmodified printed question number')
+        _check(trace['source_record'], original['block'], 'Classroom AI complete original response block')
+        _check(trace['model_answer'], original['answer'], 'Classroom AI complete answer without clipping')
+        _check(trace['metric_record'], original['metrics'], 'Classroom AI complete eight-metric output')
+        actual = None if pd.isna(row.response) else row.response
+        _check(actual, original['grade'], 'Classroom AI native classifier grade for every observation')
+        _check(trace['grade_status'], 'integrated_from_released_metrics' if actual is not None else 'unavailable_under_source_rule',
+            'Classroom AI explicit grade provenance')
+        target = parameters['subject_targets'][original['subject']]
+        _check(row.test_condition, 'target_grade='+parameters['target_labels'].get(target,'none'), 'Classroom AI target condition')
+        _check(trace['reference_configuration'], dict(parameters['reference_settings'], system_prompt=parameters['reference_system_prompts'][target]),
+            'Classroom AI reference settings clearly separated from historical requests')
+        seen[key] += 1
+        grades[actual] += 1
+    _check(seen, Counter({key:1 for key in source['native']}), 'Classroom AI every original attempt exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Classroom AI exact trace links')
+    repeated = tables['responses'].groupby(['subject_id','item_id']).size()
+    _check(int((repeated-1).sum()), 84, 'Classroom AI repeated attempts retained across all subjects')
+    _check(len(tables.get('assets', [])), 0, 'Classroom AI text-only inputs')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_question_occurrences=len(source['question_order']), source_repeated_attempts=84,
+        source_printed_number_restarts=source['numbering_restarts'], source_ungraded=grades[None],
+        **{'source_level_'+str(level):grades[level] for level in range(1,7)})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6686,4 +6829,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai}[directory.name](directory, tables, metadata)

@@ -1,0 +1,197 @@
+benchmark:
+  description: Readability of educational answers from base, grade-prompted and grade-finetuned GPT models. Preserve
+    the released DGPT answers and integrate their recorded readability estimates with the authors' classifier.
+  testing_condition: All 14 released result files contain 740 question occurrences, representing 734 distinct questions.
+    The GPT-4o file restarts its printed numbering after 140 records; use source position and question text for
+    alignment. Retain repeated questions as separate trials, with the complete answer and all eight recorded readability
+    measurements in each trace. The response is the integrated six-category reading level, not correctness or target-alignment
+    success. The classifier combines seven metrics; ARI is an independent held-out metric. Preserve the released
+    classifier's label handling, including its college fallback for Gunning Fog grade 6. Exact historical model
+    endpoints, fine-tuning IDs and run-time configurations are unavailable. Captured inference settings describe
+    reference code, not verified historical requests. The separately linked training corpus and paper-wide aggregates
+    are not evaluation attempts. No model inference, readability recomputation or new judging is performed.
+  paper_url: https://arxiv.org/abs/2601.06225
+  data_source_url: https://github.com/harryoh99/ClassroomAI
+  subject_type: model
+  item_type: question
+  license: No explicit license accompanies the released code or result files.
+  citation: "@article{oh2026classroom,\n  title={Classroom AI: Large Language Models as Grade-Specific Teachers},\n\
+    \  author={Oh, Jio and Whang, Steven Euijong and Evans, James and Wang, Jindong},\n  journal={npj Artificial\
+    \ Intelligence},\n  year={2026}\n}"
+  tags:
+  - education
+  - readability
+  - grade-level
+  - age-appropriate
+  - content-generation
+  - finetuning
+  - llm-teacher
+  modality:
+  - text
+  domain:
+  - education
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values: [1, 2, 3, 4, 5, 6]
+    meanings:
+      '1': Lower elementary (grades 1–2).
+      '2': Middle elementary (grades 3–4).
+      '3': Upper elementary (grades 5–6).
+      '4': Middle school (grades 7–9).
+      '5': High school (grades 10–12).
+      '6': College or adult (grade 13 and above).
+    direction: unordered
+  categorical: true
+  release_date: 2026-01
+  name: Classroom AI
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      result_glob: '*.txt'
+      reference: reference/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+      classifier: reference/a8993b5aaba4abaa4a34b1d515551b9b09a80c99/src/classify_results_dataset.py
+    parsing:
+      records: (?ms)^(?P<question_number>\d+)th question\n(?P<record>.*?)(?=^\d+th question\n|\Z)
+      fields: '(?s)\AQ: (?P<question>.*?)\nModel Response: (?P<answer>.*?)\n\nMetric Analysis\n(?P<metrics>.*)\Z'
+      measurements: '(?m)^(?P<metric>[^\n:]+): score: (?P<score>[^,\n]+), .*?grade_levels?: (?P<label>[^\n]+)$'
+    subject_labels:
+      finetuned_gpt4o_mini_primary-low: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: lower elementary)'
+      finetuned_gpt4o_mini_primary-middle: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: middle elementary)'
+      finetuned_gpt4o_mini_primary-high: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: upper elementary)'
+      finetuned_gpt4o_mini_middle: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: middle school)'
+      finetuned_gpt4o_mini_high: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: high school)'
+      finetuned_gpt4o_mini_adult: 'Classroom AI / GPT-4o-mini (finetuned, grade-specific: college/adult)'
+      gpt4o_mini: Classroom AI / GPT-4o-mini (base)
+      gpt4o: Classroom AI / GPT-4o (base)
+      gpt4o_mini_base_target_primary-low_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: lower elementary)'
+      gpt4o_mini_base_target_primary-middle_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: middle elementary)'
+      gpt4o_mini_base_target_primary-high_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: upper elementary)'
+      gpt4o_mini_base_target_middle_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: middle school)'
+      gpt4o_mini_base_target_high_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: high school)'
+      gpt4o_mini_base_target_adult_prompt: 'Classroom AI / GPT-4o-mini (prompt-based, target: college/adult)'
+    subject_targets:
+      finetuned_gpt4o_mini_primary-low: '1'
+      finetuned_gpt4o_mini_primary-middle: '2'
+      finetuned_gpt4o_mini_primary-high: '3'
+      finetuned_gpt4o_mini_middle: '4'
+      finetuned_gpt4o_mini_high: '5'
+      finetuned_gpt4o_mini_adult: '6'
+      gpt4o_mini: none
+      gpt4o: none
+      gpt4o_mini_base_target_primary-low_prompt: '1'
+      gpt4o_mini_base_target_primary-middle_prompt: '2'
+      gpt4o_mini_base_target_primary-high_prompt: '3'
+      gpt4o_mini_base_target_middle_prompt: '4'
+      gpt4o_mini_base_target_high_prompt: '5'
+      gpt4o_mini_base_target_adult_prompt: '6'
+    target_labels:
+      '1': lower_elementary
+      '2': middle_elementary
+      '3': upper_elementary
+      '4': middle_school
+      '5': high_school
+      '6': college_adult
+    metric_groups:
+      Dale Chall: word
+      Spache: word
+      Flesh_kincaid: length
+      Flesch: length
+      Coleman: length
+      Gunning Fog: syllables
+      Linsear: syllables
+    metric_families:
+      Dale Chall: dale_chall
+      Spache: numeric
+      Flesh_kincaid: numeric
+      Flesch: flesch
+      Coleman: numeric
+      Gunning Fog: fog
+      Linsear: numeric
+    harness:
+      name: ClassroomAI
+      result_scope: DGPT
+      historical_config: not_recorded
+    reference_settings:
+      temperature: '0'
+      max_tokens: '800'
+      status: reference_code_only
+    reference_system_prompts:
+      '1': Answer the question for elementary school 1st and 2nd graders.
+      '2': Answer the question for elementary school 3rd and 4th graders.
+      '3': Answer the question for elementary school 5th and 6th graders.
+      '4': Answer the question for middle school students (7th to 9th graders).
+      '5': Answer the question for high school students (10th to 12th graders).
+      '6': Answer the question for adults.
+      none: ''
+sources:
+  upstream:
+  - name: released_records
+    url: https://github.com/harryoh99/ClassroomAI
+    revision: a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    files:
+    - match: src/example_results/results_finetuned_ppl/(?P<filename>[^/]+\.txt)
+      path: '{filename}'
+  - name: reference_code
+    url: https://github.com/harryoh99/ClassroomAI
+    revision: a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    files:
+    - match: src/(?:classify_results_dataset\.py|test_inference_gpt4omini\.py|utils\.py|compute_seven_dim_value\.py|compute_ari\.py|environment\.yaml|data_grade/link_to_data\.txt|metrics/readability/.*\.(?:py|txt))
+      path: reference/a8993b5aaba4abaa4a34b1d515551b9b09a80c99/{path}
+grading:
+  rule: 'Integrate the seven recorded grade estimates: intersect the candidate US grades within each word-, length-
+    and syllable-based group; when an intersection is empty, choose the minimum of the union. Map the minimum candidate
+    to one of six reading levels, then take the median of the three group votes (equivalent to majority vote with
+    a middle-level tie break). Apply the original <20 space-delimited-token exclusion as null. This describes reading
+    level, not answer accuracy; ARI does not participate in the integrated grade.'
+  verifiers:
+    integrated_readability:
+      kind: rule_based
+      source: https://github.com/harryoh99/ClassroomAI/blob/a8993b5aaba4abaa4a34b1d515551b9b09a80c99/src/classify_results_dataset.py
+      functions:
+      - process_val_all
+      - process_val_flesch
+      - process_gunning_fog
+      - process_val_dale_chall
+      - voting
+      - majority_voting
+      native_numeric_domain: [1, 30]
+      us_grade_bins:
+      - [1, 2]
+      - [3, 4]
+      - [5, 6]
+      - [7, 8, 9]
+      - [10, 11, 12]
+      - [13]
+      categorical_candidates:
+        flesch:
+          "['10', '11', '12']": [10, 11, 12]
+          "['5']": [1, 2, 3, 4, 5, 6]
+          "['6']": [5, 6]
+          "['7']": [7, 8, 9]
+          "['8', '9']": [7, 8, 9]
+          "['college']": [13]
+          "['college_graduate']": [13]
+        fog:
+          "'10'": [10, 11, 12]
+          "'11'": [10, 11, 12]
+          "'12'": [10, 11, 12]
+          "'6'": [13]
+          "'7'": [7, 8, 9]
+          "'8'": [7, 8, 9]
+          "'9'": [7, 8, 9]
+          "'na'": [1, 2, 3, 4, 5, 6]
+          "'college'": [13]
+          "'college_graduate'": [13]
+        dale_chall:
+          "['1', '2', '3', '4']": [1, 2, 3, 4]
+          "['5', '6']": [5, 6]
+          "['7', '8']": [7, 8, 9]
+          "['9', '10']": [10, 11, 12]
+          "['11', '12']": [10, 11, 12]
+          "['college']": [13]
+          "['college_graduate']": [13]
+      ungraded_policy: Retain attempts with unavailable metric estimates or an answer shorter than 20 space-delimited
+        tokens, with response null. Reject unrecognized metric labels instead of guessing.

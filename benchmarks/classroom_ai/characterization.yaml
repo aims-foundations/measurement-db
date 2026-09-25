@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 10360
+    logical_sha256: 404392f0b7861f5e5e8df66dd97a93b054aec5a8d94091a40132db3770146774
+  subjects:
+    rows: 14
+    logical_sha256: cbbd2051470ca299e94348851e740a4e762a38a3a7a2363dd171b220c999309e
+  responses:
+    rows: 10360
+    logical_sha256: 8c71c309769f4a5990a177f21dcdc9d832114d4a288258764d5434b797c86553
+  items:
+    rows: 734
+    logical_sha256: 1f0fe2a8eafbce5648bc3c47881c201ec63815113ba14b1fc55980531b8e2cf4
+  benchmarks:
+    rows: 1
+    logical_sha256: 97ce0a5895660f8007bff9bc6156774c31af38795a70c573edbef81312c85428
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 10360
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 14
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 734
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 10360
+  source_question_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 740
+  source_repeated_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 84
+  source_printed_number_restarts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 1
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 0
+  source_level_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 547
+  source_level_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 1257
+  source_level_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 2061
+  source_level_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 3348
+  source_level_5:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 2033
+  source_level_6:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/harryoh99/ClassroomAI/tree/a8993b5aaba4abaa4a34b1d515551b9b09a80c99
+    locator: src/example_results/results_finetuned_ppl/*.txt and src/classify_results_dataset.py
+    scope: Independently read every native question/answer block and compute its level with the original pure classifier
+      functions. Compare all 10,360 grades, model variants, repeated trials and complete traces; treat printed question
+      numbers as source metadata.
+    expected: 1114
