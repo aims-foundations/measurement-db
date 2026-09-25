@@ -777,3 +777,5 @@ SOURCE_AUDITS["averimatec"] = verify_native_results
 SOURCE_AUDITS["babilong"] = verify_native_results
 SOURCE_AUDITS["bbq"] = verify_native_results
 SOURCE_AUDITS["beavertails"] = verify_native_results
+
+SOURCE_AUDITS["benger"] = verify_native_results

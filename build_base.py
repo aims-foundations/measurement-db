@@ -280,7 +280,7 @@ class BenchmarkBuild(ABC):
 
         req = urllib.request.Request(
             url,
-            headers={"User-Agent": "Mozilla/5.0", **(request_headers or {})},
+            headers={"User-Agent": "measurement-db", **(request_headers or {})},
         )
         dest.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None

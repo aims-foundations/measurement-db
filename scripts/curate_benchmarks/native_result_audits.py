@@ -4789,6 +4789,131 @@ def _beavertails(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _benger_source_records(directory,metadata):
+    import ast
+    import re
+    from zipfile import ZipFile
+
+    parameters=metadata['build']['parameters'];native={};counts=Counter()
+    # Execute only the reviewed, pure decision functions from the captured author code.
+    code=directory/'raw/github/d31a3ffe33f6e6bc32821272cc1111b0cf749a59/publications/Benchmark_EMNLP/scripts/_gp_decision.py'
+    module=ast.parse(code.read_text())
+    functions=[node for node in module.body if isinstance(node,ast.FunctionDef)
+        and node.name in ('normalise_decision','model_decision','decision_accuracy')]
+    _check(len(functions),3,'BenGER captured normalized decision functions')
+    namespace={'json':json,'re':re}
+    exec(compile(ast.Module(body=functions,type_ignores=[]),'captured_benger_decision_rule','exec'),namespace)
+    with ZipFile(directory/'raw'/parameters['paths']['archive']) as archive:
+        for corpus,member in parameters['exports'].items():
+            with archive.open(member) as stream:document=json.load(stream)
+            for task in document['tasks']:
+                if corpus=='zjs' and task['data']['ip_cleared'] is not True:
+                    counts['source_excluded_zjs_tasks']+=1
+                    continue
+                counts['source_'+corpus+'_tasks']+=1
+                if corpus=='zjs':
+                    _check(task['data']['Aufgabe'].startswith(('http://','https://')),False,'BenGER actual cleared ZJS task text')
+                    _check(task['data']['Musterlösung'].startswith(('http://','https://')),False,'BenGER actual cleared reference solution')
+                for generation in task['generations']:
+                    key=corpus,generation['id']
+                    _check(key not in native,True,'BenGER unique original generations')
+                    selected=[e for e in generation['evaluations'] if
+                        e['field_name'].split('|',1)[0]==parameters['grading_fields'][corpus]]
+                    _check(len(selected)<=1,True,'BenGER one selected grading pass, not three repeated judge calls')
+                    evaluation=selected[0] if selected else None
+                    if corpus=='grundprinzipien':
+                        grade=namespace['decision_accuracy'](generation['response_content'],task['data']['binary_solution'])
+                        pred=evaluation['prediction']['value']
+                        parsed=namespace['normalise_decision'](pred)
+                        gold=namespace['normalise_decision'](task['data']['binary_solution'])
+                        _check(float(parsed==gold),grade,'BenGER original parsed values agree with independent author matcher')
+                    elif evaluation is None:
+                        grade=None;counts['source_missing_evaluation']+=1
+                    else:
+                        metric=evaluation['metrics']['llm_judge_falloesung']
+                        details=metric.get('details') or {}
+                        passed=details.get('passed')
+                        _check(evaluation['judge_model'],metadata['grading']['verifiers'][corpus]['judge'],'BenGER actual recorded grading model')
+                        if passed is None:
+                            _check(bool(metric.get('error')),True,'BenGER absent rubric grade has an explicit native grading error')
+                            grade=None;counts['source_grading_errors']+=1
+                        else:
+                            _check(type(passed) is bool,True,'BenGER actual pass/fail Boolean')
+                            _check(passed,details['grade_points']>=4,'BenGER native pass threshold after upstream grade conversion')
+                            _check(evaluation['passed'],passed,'BenGER recorded grade fields agree')
+                            grade=float(passed)
+                    settings=json.loads(generation['response_metadata'])
+                    instruction=settings.get('instruction_prompt')
+                    if instruction:
+                        content=dict(messages=[dict(role='system',content=settings.get('system_prompt')),
+                            dict(role='user',content=instruction)])
+                        scope='recorded_prompt'
+                    else:
+                        content=dict(task=task['data'][parameters['fallback_inputs'][corpus]],
+                            scope='Published task text; the historical prompt was not recorded.')
+                        scope='published_task_only';counts['source_missing_historical_prompt']+=1
+                    features={'model_identifier':generation['model_id']}
+                    for field in parameters['subject_settings'].values():
+                        if settings.get(field) is not None:features[field]=str(settings[field]).strip()
+                    condition='corpus='+corpus
+                    if settings.get('temperature') is not None:condition+=';temperature='+format(float(settings['temperature']),'g')
+                    if settings.get('seed') is not None:condition+=';seed='+str(settings['seed'])
+                    native[key]=dict(task_id=task['id'],task_data=task['data'],task_metadata=task['meta'],
+                        generation=generation,member=member,evaluation_id=None if evaluation is None else evaluation['id'],
+                        grade=grade,features=features,condition=condition,content=content,input_scope=scope)
+                    counts['source_'+corpus+'_generations']+=1
+                    counts['source_ungraded' if grade is None else 'source_graded']+=1
+                    counts['source_correct_or_passed']+=grade==1
+    counts.update(source_responses=len(native),source_traces=len(native),
+        source_native_models=len({row['generation']['model_id'] for row in native.values()}))
+    return native,dict(counts)
+
+
+def _benger(directory,tables,metadata,source_records=None):
+    from collections import defaultdict
+
+    native,counts=_benger_source_records(directory,metadata) if source_records is None else source_records
+    _check((len(tables['responses']),len(tables['traces'])),(len(native),len(native)),'BenGER complete recorded attempts and traces')
+    _check(len(tables.get('assets',())),0,'BenGER recorded text inputs; source PDFs are not invented model inputs')
+    subjects={row.subject_id:row for row in tables['subjects'].itertuples()}
+    items={row.item_id:row for row in tables['items'].itertuples()}
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces),set(tables['responses'].response_id),'BenGER trace/response bijection')
+    seen,used_subjects,used_items=set(),set(),set();trials=defaultdict(list)
+    paths=metadata['build']['parameters'];protocols=metadata['grading']['verifiers']
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);corpus=next(name for name,member in paths['exports'].items() if member==trace['source_member'])
+        key=corpus,trace['generation']['id']
+        _check(key not in seen,True,'BenGER each original generation exactly once');seen.add(key)
+        original=native[key];subject=subjects[row.subject_id];item=items[row.item_id]
+        used_subjects.add(row.subject_id);used_items.add(row.item_id)
+        _check(subject.display_name,original['generation']['model_id'],'BenGER literal model without paper-level aliases')
+        _check(subject.harness,'BenGER','BenGER recorded evaluation framework')
+        _check(_features(subject.subject_features_extra),original['features'],'BenGER exact observed token limits and output configuration')
+        _check(row.test_condition,original['condition'],'BenGER corpus and temperature remain observation conditions')
+        _check(pd.isna(row.response) if original['grade'] is None else row.response==original['grade'],True,'BenGER source-correct grade or explicit missing grade')
+        _check(pd.isna(row.interactors),True,'BenGER no invented interaction participant')
+        _check(json.loads(item.content),original['content'],'BenGER complete actual input or explicit historical-prompt limitation')
+        _check(item.raw_item_id,corpus+':'+original['task_id'],'BenGER source task association')
+        _check(_features(item.item_features),dict(corpus=corpus,source_task_id=original['task_id'],input_scope=original['input_scope']),'BenGER correct corpus and input coverage')
+        criterion=dict(reference_answer=original['task_data'][paths['reference_fields'][corpus]],rule=protocols[corpus]['rule'])
+        _check(json.loads(item.grading_criterion),criterion,'BenGER complete released reference and actual grading rule')
+        verifier=json.loads(item.verifier)
+        _check((verifier['class'],verifier['judge'],verifier.get('judged_by'),json.loads(verifier['spec'])),
+            ('judge',protocols[corpus]['judge'],protocols[corpus]['judged_by'],protocols[corpus]),'BenGER specific known grader, not a substitute endpoint')
+        _check(pd.isna(item.asset_manifest),True,'BenGER no invented assets')
+        _check(trace,dict(source_archive=paths['paths']['archive'],source_member=original['member'],
+            task_id=original['task_id'],task_data=original['task_data'],task_metadata=original['task_metadata'],
+            generation=original['generation'],selected_evaluation_id=original['evaluation_id']),
+            'BenGER complete native generation, judgments and original prompt metadata')
+        trials[row.subject_id,row.item_id,row.test_condition].append(row.trial)
+    _check(seen,set(native),'BenGER every eligible native generation, including grading failures')
+    _check(used_subjects,set(subjects),'BenGER no orphaned subject configurations')
+    _check(used_items,set(items),'BenGER no orphaned item definitions')
+    _check(all(sorted(values)==list(range(1,len(values)+1)) for values in trials.values()),True,'BenGER consecutive repeated trials per source input and condition')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4809,4 +4934,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger}[directory.name](directory, tables, metadata)

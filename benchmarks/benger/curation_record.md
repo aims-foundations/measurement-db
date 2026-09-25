@@ -1,0 +1,3 @@
+- Curate 9,328 released attempts: 6,366 Grundprinzipien, 259 Benchathon and 2,703 on permission-cleared ZJS cases. Preserve 26 unavailable grades as nulls and retain complete native outputs and grading records.
+- Keep native model identifiers, recorded configuration and full prompts; mark the 78 Benchathon attempts whose historical prompts were not recorded. ZJS uses its actual archived GPT-5-nano grader; repeated judge passes are not new model attempts.
+- Apply the author's corrected Ja/Nein rule and retain original flags in traces. All 6,574 previously curated attempts remain traceable; 16 grades and 15 aliased model labels are explicitly corrected. Schema checks and independent source audits cover every attempt; no models or judges are rerun.
