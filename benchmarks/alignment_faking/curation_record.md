@@ -1,0 +1,4 @@
+- Import all 2,138,969 records from 155 pinned native Parquet files; distinguish all 4,278 run/checkpoint configurations and preserve repeated attempts.
+- Correct 45,120 missing judgments previously coerced to zero. Keep the 2,093,849 published boolean judgments unchanged; the outcome denotes detected alignment faking, not correctness.
+- Restore the two published system-prompt variants, including all example sections. Preserve the user tier and explicitly unknown prompt context in the 13 files without a variant; exact historical API messages remain unavailable.
+- Retain complete original records and encoded transcripts with their canaries, following the authors' request. No model inference, transcript decoding for publication, or new grading is performed.

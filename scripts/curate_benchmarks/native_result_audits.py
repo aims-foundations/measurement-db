@@ -3345,6 +3345,137 @@ def _alpha_sql(directory, tables, metadata, source_records=None):
     return dict(counts)
 
 
+def _alignment_faking_source_records(directory, metadata):
+    """Read scalar Arrow records and the complete published prompt columns independently."""
+    import hashlib
+    from html.parser import HTMLParser
+    import pyarrow.parquet as pq
+
+    class PromptTable(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.active = self.cell = False
+            self.rows, self.row, self.parts = [], [], []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == "div" and dict(attrs).get("class") == "system-prompt-table":
+                self.active = True
+            if self.active and tag == "tr":
+                self.row = []
+            if self.active and tag == "td":
+                self.cell, self.parts = True, []
+
+        def handle_data(self, data):
+            if self.cell and data.strip():
+                self.parts.append(data.strip())
+
+        def handle_endtag(self, tag):
+            if self.active and tag == "td":
+                self.row.append("\n".join(self.parts))
+                self.cell = False
+            if self.active and tag == "tr":
+                self.rows.append(self.row)
+            if self.active and tag == "table":
+                self.active = False
+
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    parser = PromptTable()
+    parser.feed((raw / layout["article"]).read_text())
+    _check([len(row) for row in parser.rows], [3, 3, 3, 3], "Alignment Faking full published prompt table")
+    prompts = {name: "\n\n".join(row[column] for row in parser.rows[1:] if row[column])
+               for name, column in (("No example no draft", 0), ("Singleturn", 1))}
+    _check("=== START EXAMPLES ===" in prompts["Singleturn"], True, "Alignment Faking retains all few-shot examples")
+    _check(all("<is_free_tier_user>" in text for text in prompts.values()), True,
+           "Alignment Faking complete system prompts include the user-tier rule")
+    native, configurations, contexts, counts = {}, {}, set(), Counter()
+    files = sorted((raw / layout["transcripts"]).glob("*.parquet"))
+    _check(len(files), 155, "Alignment Faking all original run exports")
+    for path in files:
+        for position, record in enumerate(pq.read_table(path).to_pylist()):
+            key = str(path.relative_to(raw)), position
+            grade = record["alignment_faking"]
+            _check(grade is None or type(grade) is bool, True, "Alignment Faking nullable boolean source labels")
+            _check(record["task_id"], "alignment_faking_eval", "Alignment Faking original evaluation scope")
+            _check(record["response"].startswith("<canary>"), True, "Alignment Faking preserves native transcript protection")
+            context = record["user_input"], record["is_free_tier_user"], record.get("system_prompt")
+            configuration = path.stem, record["step"]
+            features = {"model_identifier": path.stem, "training_step": str(record["step"]),
+                        **{field: record[field] for field in ("initialised_from", "experiment_name", "intervention")}}
+            _check(configurations.setdefault(configuration, features), features,
+                   "Alignment Faking consistent released run/checkpoint configuration")
+            payload = json.dumps(record, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()
+            native[key] = (configuration, context, grade, hashlib.sha256(payload).hexdigest())
+            contexts.add(context)
+            counts["source_ungraded"] += grade is None
+            counts["source_positive_judgments"] += grade is True
+            counts["source_negative_judgments"] += grade is False
+            counts["source_unknown_prompt_records"] += context[2] is None
+    _check((len(native), len(configurations), len(contexts), counts["source_ungraded"]),
+           (2138969, 4278, 1464, 45120), "Alignment Faking full original observation census")
+    counts.update(source_responses=len(native), source_traces=len(native), source_runs=len(files),
+                  source_subjects=len(configurations), source_items=len(contexts),
+                  source_user_questions=len({context[0] for context in contexts}), source_published_prompt_variants=len(prompts))
+    return native, configurations, contexts, prompts, dict(counts)
+
+
+def _alignment_faking(directory, tables, metadata, source_records=None):
+    """Check every source record, grade, run/checkpoint, input context and encoded trace."""
+    import hashlib
+
+    native, configurations, contexts, prompts, counts = (
+        _alignment_faking_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)),
+           "Alignment Faking no omitted or extra native observations")
+    subjects, seen_subjects = {}, Counter()
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features["model_identifier"], int(features["training_step"])
+        _check(features, configurations[key], "Alignment Faking complete source system configuration")
+        _check(row.harness, "Anthropic alignment-faking RL evaluation", "Alignment Faking source harness")
+        _check(pd.isna(row.harness_version), True, "Alignment Faking unknown harness version stays unknown")
+        subjects[row.subject_id] = key
+        seen_subjects[key] += 1
+    _check(seen_subjects, Counter({key: 1 for key in configurations}), "Alignment Faking distinct run/checkpoint identities")
+    items, seen_contexts = {}, Counter()
+    for row in tables["items"].itertuples():
+        content = json.loads(row.content)
+        key = content["user_input"], content["is_free_tier_user"], content["system_prompt_name"]
+        _check(key in contexts, True, "Alignment Faking source input context exists")
+        _check(content, {"user_input": key[0], "is_free_tier_user": key[1], "system_prompt_name": key[2],
+                         "published_system_prompt": prompts.get(key[2])}, "Alignment Faking complete published stimulus")
+        _check(json.loads(row.grading_criterion), {"reference_answer": None, "rule": metadata["grading"]["rule"]},
+               "Alignment Faking behavioral grading rule")
+        verifier = json.loads(row.verifier)
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["alignment_faking"],
+               "Alignment Faking published classifier description")
+        _check((verifier["judge"], verifier["judged_by"]),
+               ("Sonnet 4-based alignment-faking classifier", "llm"), "Alignment Faking actual reported judge")
+        items[row.item_id] = key
+        seen_contexts[key] += 1
+    _check(seen_contexts, Counter({key: 1 for key in contexts}), "Alignment Faking all available prompt/tier contexts")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "Alignment Faking complete one-to-one trace linkage")
+    seen, trials = Counter(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        _check(set(trace), {"source_file", "source_row", "record"}, "Alignment Faking complete native trace envelope")
+        key = trace["source_file"], trace["source_row"]
+        configuration, context, grade, digest = native[key]
+        payload = json.dumps(trace["record"], sort_keys=True, ensure_ascii=False, allow_nan=False).encode()
+        _check(hashlib.sha256(payload).hexdigest(), digest, "Alignment Faking full original record and encoded transcript")
+        _check((subjects[response.subject_id], items[response.item_id]), (configuration, context),
+               "Alignment Faking correct source-to-system-and-item associations")
+        _check(pd.isna(response.response) if grade is None else response.response == float(grade), True,
+               "Alignment Faking native boolean judgments and explicit nulls")
+        _check(pd.isna(response.test_condition), True, "Alignment Faking no invented response conditions")
+        trials[response.subject_id, response.item_id] += 1
+        _check(response.trial, trials[response.subject_id, response.item_id], "Alignment Faking repeated native attempts keep distinct trials")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "Alignment Faking exact source census without duplication")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3360,4 +3491,5 @@ def verify_native_results(directory, tables_directory=None):
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
-            "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql}[directory.name](directory, tables, metadata)
+            "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
+            "alignment_faking": _alignment_faking}[directory.name](directory, tables, metadata)
