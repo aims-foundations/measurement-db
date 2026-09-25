@@ -5506,6 +5506,241 @@ def _braveguard(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _bridging_gap_source_records(directory, metadata):
+    """Read CSV/JSON evidence independently of the builder's pandas joins."""
+    import ast
+    import csv
+    import io
+
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw'
+    paths = {key: raw / value for key, value in parameters['paths'].items()}
+    master, configurations, observed = [], {}, set()
+    with paths['responses'].open(newline='') as stream:
+        for row in csv.DictReader(stream):
+            key = row['Model.Unique Identifier'] + ':' + row['Fine-Tuning.Dataset ID']
+            configuration = {parameters['response_columns'][name]: row[name] for name in list(parameters['response_columns'])[:9]}
+            _check(configurations.setdefault(key, configuration), configuration, 'Bridging consistent native configuration')
+            item = row['Evaluation.Question ID']; observed.add(item)
+            _check(row['Evaluation.Model Response Was Correct'] in {'True', 'False'}, True, 'Bridging binary native verdict')
+            master.append((key, item, int(row['Evaluation.Trial Number']), row['Evaluation.Correct Answer'],
+                float(row['Evaluation.Model Response Was Correct'] == 'True'), row['Evaluation.Model Response'],
+                _digest(json.dumps(row, sort_keys=True, ensure_ascii=False))))
+    with paths['items'].open(newline='') as stream:
+        bank = {row['Evaluation.Question ID']: row for row in csv.DictReader(stream) if row['Evaluation.Question ID'] in observed}
+    _check(set(bank), observed, 'Bridging all observed items have released definitions')
+    repairs = set()
+    for language, label in parameters['languages'].items():
+        suffix = '' if language == 'en' else '_' + language
+        # The originals contain unquoted literal CR bytes inside fields. Only LF
+        # delimits records. Protect CR while using Python's independent CSV parser.
+        data = (paths['human_winogrande'] / f'winogrande{suffix}.csv').read_bytes().decode('utf-8')
+        _check('\x00' in data, False, 'Bridging reserved CSV parsing sentinel is absent')
+        originals = {row['qID']: {key: value.replace('\x00', '\r') for key, value in row.items()}
+            for row in csv.DictReader(io.StringIO(data.replace('\r', '\x00'), newline=''))}
+        for key, row in bank.items():
+            if row['Evaluation.Data'] != 'winogrande' or row['Evaluation.Target Language'] != language:
+                continue
+            if all(row[column] for column in ['Evaluation.Answer Option 1', 'Evaluation.Answer Option 2', 'Evaluation.Correct Answer']):
+                continue
+            source = originals[row['Evaluation.Winogrande Question ID']]
+            row.update({'Evaluation.Question': source[label + ' Sentence'], 'Evaluation.Answer Option 1': source[label + ' Option 1'],
+                'Evaluation.Answer Option 2': source[label + ' Option 2'], 'Evaluation.Correct Answer': source['Answer']})
+            repairs.add(key)
+
+    def identify(custom_id, prefix=''):
+        left, gold = custom_id.rsplit('-answer-', 1)
+        model, rest = left.split('-on-', 1)
+        language, rest = rest.split('-', 1)
+        family, index = rest.rsplit('-', 1)
+        if family.startswith('mmlu-'):
+            key = f'mmlu-{prefix}{language}-{family[5:]}-test-{index}'
+        elif family == 'winogrande':
+            key = f'winogrande-{prefix}{language}-test-{index}'
+        else:
+            key = f'{family}-{prefix}{language}-{index}'
+        return model, key, language, family, gold
+
+    pin = parameters['harness']['revision']
+    script = raw / 'github' / pin / 'scripts/llm_evaluation/create_evaluation_batch_full.py'
+    tree = ast.parse(script.read_text())
+    format_string = next(ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'belebele_base_prompt' for target in node.targets))
+    complete, missing = {}, []
+    for key, row in bank.items():
+        if row['Evaluation.Data'] != 'belebele':
+            continue
+        fields = dict(passage=row['Evaluation.Belebele Passage'], query=row['Evaluation.Question'],
+            **{letter: row[f'Evaluation.Answer Option {index}'] for index, letter in enumerate('abcd', 1)})
+        locale = '-'.join(key.split('-')[:-1])
+        token = locale, format_string.format(**fields)
+        _check(token not in complete, True, 'Bridging unique complete Belebele task')
+        complete[token] = key
+        if any(not fields[letter] for letter in 'abcd'):
+            missing.append((key, locale, fields))
+    definitions, template_ids, remapped = {}, {}, 0
+    for collection, relative in parameters['templates'].items():
+        prefix = parameters['template_prefixes'][collection]
+        for line in (raw / relative).open():
+            record = json.loads(line)
+            _, original, language, family, gold = identify(record['custom_id'], prefix)
+            messages = record['body']['messages']
+            _check(len(messages), 1, 'Bridging released request has one user message')
+            text = messages[0]['content']; key = original
+            if family == 'belebele':
+                locale = '-'.join(original.split('-')[:-1])
+                token = locale, text
+                if token not in complete:
+                    choices = text.split('\n###\nChoices:\n', 1)[1].split('\n###\nAnswer:', 1)[0]
+                    values = {}
+                    for index, letter in enumerate('ABCD'):
+                        tail = choices.split(f'({letter}) ', 1)[1]
+                        values[letter.lower()] = tail.split(f'\n({"ABCD"[index + 1]}) ', 1)[0] if index < 3 else tail
+                    candidates = [(candidate, fields) for candidate, group, fields in missing if group == locale and
+                        format_string.format(**{**fields, **{letter: values[letter] for letter in 'abcd' if not fields[letter]}}) == text]
+                    _check(len(candidates), 1, 'Bridging missing literal option has one independently matched source')
+                    key, fields = candidates[0]
+                    for index, letter in enumerate('abcd', 1):
+                        if not fields[letter]: bank[key][f'Evaluation.Answer Option {index}'] = values[letter]
+                    repairs.add(key); complete[token] = key
+                key = complete[token]
+            row = bank[key]
+            _check(row['Evaluation.Correct Answer'], gold, 'Bridging template reference matches original item')
+            if family == 'winogrande':
+                expected = f"Sentence: {row['Evaluation.Question']}\nOption1: {row['Evaluation.Answer Option 1']}\nOption2: {row['Evaluation.Answer Option 2']}\nCorrect Option:\n"
+                _check(text.endswith(expected), True, 'Bridging complete Winogrande target')
+            elif family.startswith('mmlu-'):
+                expected = f"Question: {row['Evaluation.Question']}\n" + ''.join(
+                    f"{letter}. {row[f'Evaluation.Answer Option {index}']}\n" for index, letter in enumerate('ABCD', 1)) + 'Answer:\n'
+                _check(text.endswith(expected), True, 'Bridging complete clinical MMLU target')
+            _check(key not in definitions, True, 'Bridging one complete template for each original task')
+            definitions[key] = dict(messages=messages, template_id=original, template_file=relative)
+            template_ids[original] = key; remapped += original != key
+    _check(set(definitions), set(bank), 'Bridging complete observed task coverage')
+
+    matrices = {}
+    for path in sorted(paths['legacy_verdicts'].glob('wino_evaluation_results_*.csv')):
+        trial = int(path.stem.rsplit('_', 1)[1]) + 1
+        with path.open(newline='') as stream:
+            for number, row in enumerate(csv.DictReader(stream), 2):
+                for column, grade in row.items():
+                    if column in {'id', 'answer'}: continue
+                    model, language = column.rsplit('_', 1)
+                    model = parameters['legacy_model_aliases'][model]
+                    matrices[model, language, row['id'], trial] = dict(grade=float(grade), gold=row['answer'],
+                        verdict=dict(kind='legacy_matrix', file=str(path.relative_to(raw)), row=number, column=column))
+    native, first, completion_ids = {}, {}, set()
+    sources = [(p, 'paper') for p in sorted(paths['paper_runs'].glob('*.jsonl'))]
+    sources += [(p, 'auxiliary_example') for p in sorted(paths['examples'].glob('*.json*'))]
+    for path, collection in sources:
+        if path.suffix == '.jsonl':
+            records = [json.loads(line) for line in path.open()]
+        else:
+            records = [dict(custom_id=key, output=value) for key, value in json.loads(path.read_text()).items()]
+        for number, record in enumerate(records, 1):
+            model, item, language, family, gold = identify(record['custom_id'])
+            model = parameters['model_aliases'].get(model, model)
+            if collection != 'paper': item = template_ids[item]
+            trial = int(path.stem.rsplit('_', 1)[1]) + 1 if collection == 'paper' else 1
+            if path.suffix == '.jsonl':
+                body = record['response']['body']
+                _check((record['response']['status_code'], record['error']), (200, None), 'Bridging successful released provider record')
+                _check(body['id'] not in completion_ids, True, 'Bridging no duplicated provider completion'); completion_ids.add(body['id'])
+                _check(body['model'], model, 'Bridging exact recorded provider model version')
+                output = body['choices'][0]['message']['content']
+            else:
+                output = record['output']
+            _check(bank[item]['Evaluation.Correct Answer'], gold, 'Bridging native run and original reference correspondence')
+            protocol = 'winogrande' if family == 'winogrande' else 'multiple_choice'
+            grade = float(gold in output and str(3 - int(gold)) not in output) if family == 'winogrande' else float(
+                output.strip().replace('(', '').replace(')', '').upper()[:1] == gold)
+            verdict = dict(kind='released_answer_parser', protocol=protocol)
+            if family == 'winogrande' and collection == 'paper':
+                matrix = matrices[model, language, bank[item]['Evaluation.Winogrande Question ID'], trial]
+                _check(matrix['gold'], gold, 'Bridging legacy matrix reference'); grade = matrix['grade']
+                verdict, protocol = matrix['verdict'], 'legacy_winogrande'
+            source_key = str(path.relative_to(raw)), number
+            native[source_key] = dict(subject=model + ':', item=item, trial=trial, grade=grade, gold=gold,
+                output=output, protocol=protocol, collection=collection, verdict=verdict,
+                trace=dict(file=source_key[0], row=number, record=record))
+            if collection == 'paper' and trial == 1:
+                _check((model + ':', item) not in first, True, 'Bridging unique first-run restoration')
+                first[model + ':', item] = source_key
+    return dict(master=master, configurations=configurations, bank=bank, definitions=definitions,
+                native=native, first=first, repairs=repairs, remapped=remapped)
+
+
+def _bridging_gap(directory, tables, metadata, source_records=None):
+    """Check every source record, outcome, model, input and unshortened output."""
+    source = source_records or _bridging_gap_source_records(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_model_identifier'] + ':' + features.get('training_id', '')
+        expected = source['configurations'][key]
+        extra = dict(source_model_identifier=expected['model'], training_dataset_source=parameters['paths']['training'],
+            **{name: value for name, value in expected.items() if name != 'model' and value})
+        _check(features, extra, 'Bridging all original model/training attributes')
+        _check((row.harness, row.harness_version), (parameters['harness']['name'], parameters['harness']['revision']), 'Bridging source harness attribution')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'Bridging all model configurations once')
+    items = {}
+    for row in tables['items'].itertuples():
+        key, protocol = row.raw_item_id.rsplit(':', 1)
+        original = source['bank'][key]; definition = source['definitions'][key]
+        _check(json.loads(row.content), definition['messages'], 'Bridging complete task and released context')
+        _check(_features(row.item_features), dict(source_item_id=key, family=original['Evaluation.Data'],
+            source_language=original['Evaluation.Source Language'], target_language=original['Evaluation.Target Language'],
+            translation=original['Evaluation.Translation Approach'], partition=original['Evaluation.Data Partition'],
+            template_id=definition['template_id'], template_file=definition['template_file']), 'Bridging exact task metadata and reordered-template mapping')
+        spec = metadata['grading']['verifiers'][protocol]
+        _check(json.loads(row.grading_criterion), dict(reference_answer=original['Evaluation.Correct Answer'], rule=spec['rule']), 'Bridging original answer and grading protocol')
+        _check(json.loads(json.loads(row.verifier)['spec']), spec, 'Bridging parser variants remain distinct')
+        items[row.item_id] = (key, protocol)
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Bridging unique trace association')
+    _check(set(traces), set(tables['responses'].response_id), 'Bridging trace/response bijection')
+    seen_master, seen_native, used_items, correct = set(), set(), set(), 0
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        if trace['consolidated'] is not None:
+            original = trace['consolidated']; number = original['row']
+            _check(number not in seen_master, True, 'Bridging no duplicated consolidated row'); seen_master.add(number)
+            subject, item, trial, gold, grade, output, digest = source['master'][number - 2]
+            _check((original['file'], _digest(json.dumps(original['record'], sort_keys=True, ensure_ascii=False))),
+                (parameters['paths']['responses'], digest), 'Bridging every original consolidated field and value')
+            _check(gold, source['bank'][item]['Evaluation.Correct Answer'], 'Bridging original consolidated reference')
+            protocol = 'winogrande' if source['bank'][item]['Evaluation.Data'] == 'winogrande' else 'multiple_choice'
+            source_key = source['first'].get((subject, item)) if trial == 1 else None
+            expected_trace = None
+            if source_key is not None:
+                native = source['native'][source_key]
+                _check((output, gold, grade), (native['output'][:12], native['gold'], native['grade']), 'Bridging lossless verified restoration of clipped upstream output')
+                expected_trace, protocol = native['trace'], native['protocol']; seen_native.add(source_key)
+            _check(trace, dict(consolidated=original, native=expected_trace), 'Bridging correct complete native trace restoration')
+            condition = 'collection=paper'
+        else:
+            native_trace = trace['native']; source_key = native_trace['file'], native_trace['row']
+            _check(source_key not in seen_native, True, 'Bridging no duplicated native observation'); seen_native.add(source_key)
+            native = source['native'][source_key]
+            subject, item, trial, grade, protocol = (native[name] for name in ['subject', 'item', 'trial', 'grade', 'protocol'])
+            _check(trace, dict(consolidated=None, native=native['trace'], verdict=native['verdict']), 'Bridging complete additional run and original or explicit derived verdict')
+            condition = 'collection=' + native['collection']
+        _check((subjects[row.subject_id], items[row.item_id], row.trial, row.response, row.test_condition),
+            (subject, (item, protocol), trial, grade, condition), 'Bridging source-to-response correspondence')
+        _check(pd.isna(row.interactors), True, 'Bridging no invented interacting system')
+        used_items.add(items[row.item_id]); correct += grade
+    _check(seen_master, set(range(2, len(source['master']) + 2)), 'Bridging complete paper coverage')
+    _check(seen_native, set(source['native']), 'Bridging complete genuine native run coverage')
+    _check(Counter(items.values()), Counter({key: 1 for key in used_items}), 'Bridging exact item/protocol inventory')
+    return dict(source_responses=len(tables['responses']), source_traces=len(traces), source_correct=int(correct),
+        source_consolidated_rows=len(source['master']), source_native_records=len(source['native']),
+        source_restored_first_run_outputs=len(source['first']), source_subject_configurations=len(subjects),
+        source_items=len(items), source_unique_tasks=len(source['bank']), source_repaired_inputs=len(source['repairs']),
+        source_remapped_template_ids=source['remapped'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5526,4 +5761,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap}[directory.name](directory, tables, metadata)

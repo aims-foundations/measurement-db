@@ -789,3 +789,5 @@ SOURCE_AUDITS["bountybench"] = verify_native_results
 SOURCE_AUDITS["bird_sql"] = verify_native_results
 
 SOURCE_AUDITS["braveguard"] = verify_native_results
+
+SOURCE_AUDITS["bridging_gap"] = verify_native_results

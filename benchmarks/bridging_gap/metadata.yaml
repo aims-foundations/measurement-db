@@ -1,0 +1,200 @@
+benchmark:
+  name: Bridging-the-Gap African Languages
+  description: Published multilingual question-answering results on Winogrande, Belebele and three clinical MMLU
+    sections, with base and fine-tuned models.
+  testing_condition: Import the complete 4,392,870-row paper response table and genuine auxiliary native model runs.
+    Restore complete first-run GPT outputs only after matching all original prefixes and references. Keep additional
+    paper runs and auxiliary example evaluations distinguishable. Synthetic always-A fine-tuning example files are
+    not measurements. Match changed Belebele template ordering by the full question, passage and choices, and repair
+    four incomplete bank items from released inputs. Preserve all supplied verdicts and distinguish the legacy Winogrande
+    grader from its later variant. Exact historical requests, resolved HF weight revisions and full outputs for
+    most consolidated rows are not supplied. Recorded consolidated outputs are already clipped upstream to 12 characters;
+    this builder adds no truncation. Published request templates supply full task text and context, but their settings
+    are not asserted to be the actual historical API settings. No model inference or new subjective judging.
+  paper_url: https://arxiv.org/abs/2412.12417
+  data_source_url: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+  subject_type: model
+  item_type: text_question
+  license: MIT for the repository and MMLU, Apache-2.0 for Winogrande, and the separately released CC-BY-NC-4.0/CC-BY-SA-4.0
+    Belebele terms.
+  citation: 'Alhanai et al. (2025). Bridging the Gap: Enhancing LLM Performance for Low-Resource African Languages
+    with New Benchmarks, Fine-Tuning, and Cultural Adjustments. AAAI; arXiv:2412.12417.'
+  tags:
+  - multilingual
+  - fine_tuning
+  - commonsense_reasoning
+  modality:
+  - text
+  domain:
+  - multilingual
+  - medical_knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The released or explicitly specified answer parser marks the response incorrect.
+      '1': The released or explicitly specified answer parser marks the response correct.
+  release_date: 2024-12
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      responses: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/data/translations_and_llm_responses/5._x20_LLM_x20_Responses.csv
+      items: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/data/translations_and_llm_responses/6._x20_Evaluation_x20_Data.csv
+      training: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/data/translations_and_llm_responses/7._x20_Fine-Tuning_x20_Datasets.csv
+      paper_runs: github/9af6ce2f5df8171a64d58ced2032761396bfb2ad/data/gpt_performance
+      legacy_verdicts: github/9af6ce2f5df8171a64d58ced2032761396bfb2ad/results/gpt_performance
+      examples: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/results/out-of-the-box
+      human_winogrande: github/9af6ce2f5df8171a64d58ced2032761396bfb2ad/data/evaluation_benchmarks_afr_release/winogrande_s
+    response_columns:
+      Model.Unique Identifier: model
+      Model.Was Fine-Tuned: fine_tuned
+      Fine-Tuning.Dataset ID: training_id
+      Fine-Tuning.Data: training_data
+      Fine-Tuning.Language: training_language
+      Fine-Tuning.Data Partition: training_partition
+      Fine-Tuning.Data Partition.Data Quality: training_quality
+      Fine-Tuning.Data Partition.Data Quality.Percent Used: training_fraction
+      Fine-Tuning.Data Partition.Sample Size Used: training_size
+      Evaluation.Question ID: item_key
+      Evaluation.Data: family
+      Evaluation.Source Language: source_language
+      Evaluation.Target Language: language
+      Evaluation.Translation Approach: translation
+      Evaluation.Data Partition: partition
+      Evaluation.Correct Answer: gold
+      Evaluation.Model Response: output
+      Evaluation.Model Response Was Correct: correct
+      Evaluation.Trial Number: trial
+    item_columns:
+      Evaluation.Question ID: item_key
+      Evaluation.Data: family
+      Evaluation.Source Language: source_language
+      Evaluation.Target Language: language
+      Evaluation.Translation Approach: translation
+      Evaluation.Data Partition: partition
+      Evaluation.Correct Answer: gold
+      Evaluation.Winogrande Key: winogrande_key
+      Evaluation.Winogrande Question ID: winogrande_id
+      Evaluation.Belebele Link: belebele_link
+      Evaluation.Belebele Question Number: belebele_number
+      Evaluation.Belebele Passage: passage
+      Evaluation.Question: question
+      Evaluation.Answer Option 1: option1
+      Evaluation.Answer Option 2: option2
+      Evaluation.Answer Option 3: option3
+      Evaluation.Answer Option 4: option4
+    languages:
+      en: English
+      af: Afrikaans
+      am: Amharic
+      bm: Bambara
+      ig: Igbo
+      nso: Sepedi
+      sn: Shona
+      st: Sesotho
+      tn: Setswana
+      ts: Tsonga
+      xh: Xhosa
+      zu: Zulu
+    matrix_columns:
+      id: winogrande_id
+      answer: matrix_reference
+    templates:
+      human: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/results/llm_evaluation/evaluation_batch_full.jsonl
+      machine: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/results/llm_evaluation/evaluation_batch_full_mt.jsonl
+      backtranslation: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/results/llm_evaluation/evaluation_batch_full_bt.jsonl
+    template_prefixes:
+      human: ''
+      machine: gt-
+      backtranslation: bt-
+    patterns:
+      custom_id: ^(?P<model>.*?)-on-(?P<language>[a-z]+)-(?P<family>.+?)-(?P<index>\d+)-answer-(?P<gold>.+)$
+      belebele: (?s)^.*?\n###\nPassage:\n(?P<passage>.*?)\n###\nQuery:\n(?P<question>.*?)\n###\nChoices:\n\(A\)
+        (?P<option1>.*?)\n\(B\) (?P<option2>.*?)\n\(C\) (?P<option3>.*?)\n\(D\) (?P<option4>.*?)\n###\nAnswer:\n?$
+    target_templates:
+      winogrande: 'Sentence: {question}
+
+        Option1: {option1}
+
+        Option2: {option2}
+
+        Correct Option:
+
+        '
+      mmlu: 'Question: {question}
+
+        A. {option1}
+
+        B. {option2}
+
+        C. {option3}
+
+        D. {option4}
+
+        Answer:
+
+        '
+    model_aliases:
+      llama3-8b-instruct_EXAMPLE: unsloth/llama-3-8b-Instruct-bnb-4bit
+    legacy_model_aliases:
+      gpt-3.5: gpt-3.5-turbo-1106
+      gpt-4: gpt-4-turbo-2024-04-09
+      gpt-4o: gpt-4o-2024-05-13
+    harness:
+      name: Bridging-the-Gap paper evaluation
+      revision: 9af6ce2f5df8171a64d58ced2032761396bfb2ad
+      reference: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages/blob/9af6ce2f5df8171a64d58ced2032761396bfb2ad/scripts/README.md
+      historical_settings: Exact executed requests and resolved HF model or fine-tuning weight revisions are not
+        released.
+    source_notes:
+      consolidated_output: Outputs in the master CSV are already limited upstream to 12 characters.
+      template_order: Belebele Afrikaans and Sesotho, including backtranslations, have changed row order. Match
+        the full task content.
+      synthetic_examples: scripts/README.md explicitly identifies fine-tuning_experiments outputs as artificial
+        always-A examples.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    revision: 9af6ce2f5df8171a64d58ced2032761396bfb2ad
+    files:
+    - match: (?:.*\.py|(?:.*/)?README\.md|LICENSE[^/]*|data/gpt_performance/[^/]+|results/gpt_performance/[^/]+|data/evaluation_benchmarks_afr_release/winogrande_s/[^/]+\.csv|(?:data/translations_and_llm_responses/(?:1\.
+        Data Dictionary\.pdf|5\. LLM Responses\.csv|6\. Evaluation Data\.csv|7\. Fine-Tuning Datasets\.csv)|results/llm_evaluation/evaluation_batch_full(?:_mt|_bt)?\.jsonl|results/out-of-the-box/generations_(?:gpt-3\.5-turbo-1106_EXAMPLE\.jsonl|llama3-8b-instruct_EXAMPLE\.json)))
+      path: github/9af6ce2f5df8171a64d58ced2032761396bfb2ad/{path}
+  - name: large_files
+    url: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    revision: 9af6ce2f5df8171a64d58ced2032761396bfb2ad
+    git_lfs: true
+    files:
+    - match: (?:data/translations_and_llm_responses/(?:1\. Data Dictionary\.pdf|5\. LLM Responses\.csv|6\. Evaluation
+        Data\.csv|7\. Fine-Tuning Datasets\.csv)|results/llm_evaluation/evaluation_batch_full(?:_mt|_bt)?\.jsonl|results/out-of-the-box/generations_(?:gpt-3\.5-turbo-1106_EXAMPLE\.jsonl|llama3-8b-instruct_EXAMPLE\.json))
+      path: github-lfs/9af6ce2f5df8171a64d58ced2032761396bfb2ad/{path}
+grading:
+  rule: Retain each supplied binary correctness verdict. Additional native outputs use the explicitly declared released
+    parser; no model-based rejudging.
+  verifiers:
+    multiple_choice:
+      kind: multiple_choice_answer_parser
+      rule: Remove surrounding whitespace and parentheses, uppercase the output, and compare its first character
+        with the reference letter. Preserve the original consolidated verdict where supplied; derive this verdict
+        only for additional native runs.
+      reference_implementation: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages/blob/9af6ce2f5df8171a64d58ced2032761396bfb2ad/utils/useful_functions.py
+      function: check_mc_answer
+    winogrande:
+      kind: exclusive_winogrande_digit_parser
+      rule: The output must contain the correct digit (1 or 2) and must not contain the other digit. Preserve the
+        original consolidated verdict where supplied; derive this verdict only for additional native runs.
+      reference_implementation: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages/blob/9af6ce2f5df8171a64d58ced2032761396bfb2ad/utils/useful_functions.py
+      function: check_winogrande_answer
+    legacy_winogrande:
+      kind: recorded_legacy_winogrande_verdict
+      rule: Preserve the binary verdict in wino_evaluation_results_0, 1 or 2.csv. The associated legacy parser chooses
+        digit 1 whenever present, otherwise digit 2, then compares with the reference. Two released successes contain
+        both digits and differ from the later exclusive-digit parser.
+      reference_implementation: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages/blob/9af6ce2f5df8171a64d58ced2032761396bfb2ad/scripts/gpt_performance/parse_gpt_performance_results.py
