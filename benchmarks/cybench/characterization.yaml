@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1020
+    logical_sha256: 1519b9d2be8d576c01aad64c9842305ff18a597ec8d6904d8f3e7d322ac3cee8
+  subjects:
+    rows: 11
+    logical_sha256: d6d339b0e8c9e7b2af4400743f7ce59e855c209610bc55702f38d9a025cb4ecb
+  responses:
+    rows: 1021
+    logical_sha256: 5604faabb85b890a7479879cf7c58fdf62317383c854eaf4b08f75b0e0080d9e
+  items:
+    rows: 157
+    logical_sha256: bc5e40eb3574ca4381de32fdfb6a610b1e135c39e9e4f864f59954e49704e935
+  benchmarks:
+    rows: 1
+    logical_sha256: dfdb632497e7d2f98f462410e9ac34e8225225fdb12527456f48221703cbfe90
+source_claims:
+  source_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 689
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 1021
+  source_paper_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 960
+  source_extra_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 61
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 157
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 40
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 1020
+  source_unavailable_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 1
+  source_paper_native_matches:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 959
+  source_recovered_without_submission:
+    kind: count
+    origin: derived_from_data
+    source: https://cybench.github.io/
+    locator: arXiv 2408.08926v4 Tables 10–12 and the linked data_by_challenges Drive release.
+    scope: Reconcile every original paper cell and accessible native run, exact deployment, actual first request,
+      source grading rule and complete trace. Record the single unavailable log explicitly.
+    expected: 10

@@ -7629,6 +7629,165 @@ def _das_med_hallucination(directory, tables, metadata, source_records=None):
         source_empty_outputs=sum(not row["response"] for row in generations.values()), source_stale_summary_files=len(stale))
 
 
+def _cybench_source_records(directory, metadata):
+    """Independently reconcile the paper's cells with native recorded runs."""
+    import re
+    from bs4 import BeautifulSoup
+
+    raw = directory / "raw"
+    paper = BeautifulSoup((raw / "paper/cybench-v4.html").read_text(), "html.parser")
+    expected, native, published = {}, {}, {}
+    for mode, table_id in metadata["build"]["parameters"]["paper_tables"].items():
+        table = paper.find(id=table_id).find("table")
+        rows = [[cell.get_text(" ", strip=True) for cell in row.find_all(["th", "td"], recursive=False)]
+                for row in table.find_all("tr")]
+        models = rows[0][4:]
+        _check(len(models), 8, "Cybench original paper model columns")
+        count = 0
+        for cells in rows[1:]:
+            _check(len(cells), 12, "Cybench complete unmerged paper row")
+            if not cells[1]:
+                continue
+            task = re.sub("[^a-z0-9]", "", cells[0].lower())
+            for model, text in zip(models, cells[4:], strict=True):
+                deployment = metadata["build"]["parameters"]["paper_models"][model]
+                if text in {"X", "✓"}:
+                    grade = float(text == "✓")
+                else:
+                    numerator, denominator = map(int, text.split("/"))
+                    _check(mode, "subtask_fractional", "Cybench fractions only in the subtask table")
+                    _check(0 <= numerator <= denominator and denominator > 0, True, "Cybench valid original subtask fraction")
+                    grade = numerator / denominator
+                key = deployment, task, mode
+                _check(key not in published, True, "Cybench unique paper cell")
+                published[key] = dict(table=table_id, task=cells[0], model=model, value=text)
+                expected[key] = dict(grade=grade, published=True)
+                count += 1
+        _check(count, 320, "Cybench complete original paper matrix")
+
+    references, definitions = {}, {}
+    covered, recovered_without_submission = 0, 0
+    for path in sorted((raw / "logs").glob("*/*.json")):
+        record = json.loads(path.read_text())
+        task = record.get("task", record.get("challenge"))
+        run_input = record.get("task_run_input", record.get("challenge_run_input"))
+        configuration = run_input.get("task_run_config", run_input.get("challenge_run_config"))
+        name = re.sub(r"^\[.*?\]\s*|^\d+[-_]", "", task["name"])
+        name = re.sub("[^a-z0-9]", "", name.lower())
+        model = run_input["agent_config"]["deployment_name"]
+        _check(set(run_input["agent_config"]), {"deployment_name"}, "Cybench no discarded agent configuration")
+        _check(record["status"], "complete", "Cybench original run completion status")
+        subtasks = list(record["subtask_completions"].values())
+        scores = [subtask["score"] for subtask in subtasks]
+        _check(all(score in {0, 1} for score in scores), True, "Cybench native binary subtask verdicts")
+        _check(sum(scores), record["num_correct_subtasks"], "Cybench original successful-subtask summary")
+        _check(len(subtasks), record["num_subtasks"], "Cybench original subtask denominator")
+        flag = task["subtasks"][-1]["answer"]
+        body = re.search(r"\{(.*)\}", flag)
+        _check(body is not None, True, "Cybench braced original reference flag")
+        recovered = any(body[1] in (iteration.get("execution_output") or {}).get("stdout", "")
+            for iteration in subtasks[-1]["iterations"])
+        recovered_without_submission += bool(recovered and not scores[-1])
+        first = next(iteration["model_input"]["value"] for subtask in subtasks for iteration in subtask["iterations"])
+        _check(isinstance(first, str) and bool(first.strip()), True, "Cybench full recorded first request")
+        condition = {key: value for key, value in configuration.items() if key != "start_time_in_ms"}
+        relative = str(path.relative_to(raw))
+        _check(relative not in native, True, "Cybench unique raw log path")
+        native[relative] = record
+        references.setdefault(name, set()).add(flag)
+        definitions.setdefault(name, set()).add(json.dumps({field: task[field] for field in ["easy_prompt", "challenging_prompt"]}, sort_keys=True))
+        grades = {"subtask_guided" if configuration["run_with_subtasks"] else "unguided": float(recovered)}
+        if configuration["run_with_subtasks"]:
+            grades["subtask_fractional"] = sum(scores) / len(scores)
+        for mode, grade in grades.items():
+            key = model, name, mode
+            if key in expected:
+                _check("source_file" not in expected[key], True, "Cybench exactly one original run per model/task/mode")
+                _check(expected[key]["grade"], grade, "Cybench all overlapping paper/native verdicts")
+                covered += 1
+            expected[key] = dict(grade=grade, source_file=relative, content=first, configuration=condition,
+                reference=flag, subtasks=[subtask["subtask"] for subtask in subtasks],
+                input_scope="captured_first_request", published=key in published)
+    missing = [key for key, value in expected.items() if "source_file" not in value]
+    absent = metadata["build"]["parameters"]["unavailable_log"]
+    _check(missing, [(absent["subject_key"], absent["task_key"], absent["mode"])], "Cybench one explicitly unavailable upstream trace")
+    for key in missing:
+        _check(len(references[key[1]]), 1, "Cybench unambiguous authored reference for unavailable log")
+        _check(len(definitions[key[1]]), 1, "Cybench authored task variants agree across captured runs")
+        expected[key].update(content=next(iter(definitions[key[1]])), reference=next(iter(references[key[1]])),
+            subtasks=None, configuration=None, input_scope="authored_task_variants_with_unknown_actual_request")
+    return expected, native, published, recovered_without_submission
+
+
+def _cybench(directory, tables, metadata, source_records=None):
+    expected, native, published, recovered_without_submission = (
+        source_records if source_records is not None else _cybench_source_records(directory, metadata))
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["deployment_name"]
+        _check(features, {"deployment_name": model}, "Cybench exact recorded deployment identity")
+        _check(row.display_name, model.split("/", 1)[1], "Cybench exact recorded model label")
+        _check(row.harness, "Cybench structured bash", "Cybench declared source harness")
+        for field in ["reasoning_effort", "harness_version", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "Cybench no invented historical setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({key[0]: 1 for key in expected}), "Cybench all original and additional deployments")
+    expected_items = set()
+    for key, source in expected.items():
+        protocol = metadata["grading"]["verifiers"][key[2]]
+        criterion = dict(reference_answer=source["reference"] if key[2] != "subtask_fractional" else None,
+            rule=json.dumps(dict(rule=protocol["rule"], subtasks=source["subtasks"] if key[2] == "subtask_fractional" else None), sort_keys=True))
+        expected_items.add((source["content"], json.dumps(criterion, sort_keys=True), json.dumps(protocol, sort_keys=True)))
+    actual_items = Counter((row.content, json.dumps(json.loads(row.grading_criterion), sort_keys=True),
+        json.dumps(json.loads(json.loads(row.verifier)["spec"]), sort_keys=True)) for row in tables["items"].itertuples())
+    _check(actual_items, Counter({key: 1 for key in expected_items}), "Cybench one item per complete input/grading identity")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    expected_trace_ids, seen, used_items = set(), Counter(), set()
+    for row in tables["responses"].itertuples():
+        item = items[row.item_id]
+        features = _features(item["item_features"])
+        condition = json.loads(row.test_condition)
+        key = subjects[row.subject_id], features["task"], condition["mode"]
+        source = expected[key]
+        _check(row.response, source["grade"], "Cybench every original and derived source grade")
+        _check(row.trial, 1, "Cybench one original run per deployment/task/mode")
+        _check(condition, dict(mode=key[2], configuration=source["configuration"]), "Cybench complete recorded run configuration")
+        _check(item["content"], source["content"], "Cybench full actual first request or explicitly unobserved variant")
+        _check(item["raw_item_id"], key[1] + ":" + key[2], "Cybench correct task/measurement association")
+        _check(features, dict(task=key[1], mode=key[2], input_scope=source["input_scope"]), "Cybench item input provenance")
+        protocol = metadata["grading"]["verifiers"][key[2]]
+        rule = json.dumps(dict(rule=protocol["rule"], subtasks=source["subtasks"] if key[2] == "subtask_fractional" else None), sort_keys=True)
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=source["reference"] if key[2] != "subtask_fractional" else None,
+            rule=rule), "Cybench exact grading reference and measurement rule")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "exact_matcher", "Cybench deterministic source-rule verifier")
+        _check(json.loads(verifier["spec"]), protocol, "Cybench recorded grading protocol")
+        _check(pd.isna(item["asset_manifest"]), True, "Cybench no invented runtime filesystem snapshot")
+        _check(pd.isna(row.interactors), True, "Cybench no invented model interactors")
+        if "source_file" in source:
+            trace = json.loads(traces[row.response_id])
+            _check(trace, dict(source_file=source["source_file"], record=native[source["source_file"]],
+                measurement=key[2], paper_cell=published.get(key)), "Cybench complete original log and exact paper-cell provenance")
+            expected_trace_ids.add(row.response_id)
+        else:
+            _check(row.response_id not in traces, True, "Cybench unavailable log has no invented trace")
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in expected}), "Cybench complete paper and additional native populations")
+    _check(set(traces), expected_trace_ids, "Cybench exact response-to-trace associations")
+    _check(len(traces), len(expected_trace_ids), "Cybench no duplicate traces")
+    _check(set(items), used_items, "Cybench no unused request variants")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), dict(kind="interval", min=0., max=1., direction="higher_is_better"),
+        "Cybench declared flag/fraction scale direction")
+    return dict(source_logs=len(native), source_responses=len(expected), source_paper_scores=len(published),
+        source_extra_scores=len(expected)-len(published), source_subjects=len(subjects), source_items=len(expected_items),
+        source_tasks=len({key[1] for key in expected}), source_traces=len(traces), source_unavailable_logs=1,
+        source_paper_native_matches=sum("source_file" in expected[key] for key in published),
+        source_recovered_without_submission=recovered_without_submission)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7649,4 +7808,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench}[directory.name](directory, tables, metadata)
