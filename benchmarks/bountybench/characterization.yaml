@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 532
+    logical_sha256: f64cdd7e0e6ac111cdd6f298f25f47ce26434a658a9f8355a15a487525f6d49c
+  subjects:
+    rows: 33
+    logical_sha256: e68477ba2ff25a61c5c57066e48265392c6a69ce263c07114605bf8e5d2f0215
+  responses:
+    rows: 532
+    logical_sha256: 1b3ad279eca27e1a5c8b7e38b1206db650231acf8cbfe7972a40fd3912be548c
+  items:
+    rows: 429
+    logical_sha256: 64275dc108a327212ee90c396b1225ed6b129cb3ac34920dc63952cc0d5b2c15
+  benchmarks:
+    rows: 1
+    logical_sha256: 6520ff5700506e05f821f509effbedb0dd7ea71ad54b3975dc81ca01d195584f
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 532
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 528
+  source_variant_detect:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 15
+  source_variant_detect_cwe_only:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 27
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 4
+  source_variant_detect_cwe_title:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 81
+  source_variant_exploit:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 179
+  source_variant_patch:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 230
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 532
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 429
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 33
+  source_agent_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    locator: All 532 JSON logs in experimental-success-runs-10-agents; native workflow and phase records, source
+      filenames and model configurations.
+    scope: Complete selected-run collection; not the full set of attempted benchmark evaluations. Keep all published
+      successes and failures.
+    expected: 10

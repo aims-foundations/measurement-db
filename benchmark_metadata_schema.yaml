@@ -243,6 +243,12 @@ $defs:
                     not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                      url:
+                        not: {pattern: '^https://drive\.google\.com/'}
+                  - required: [files, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
+                    properties:
+                      url: {type: string, pattern: '^https://drive\.google\.com/drive/folders/[A-Za-z0-9_-]+$'}
                   - required: [files, prefix, tree_sha256]
                     not: {required: [file]}
                     properties:
@@ -311,7 +317,7 @@ $defs:
               description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
               $ref: '#/$defs/nonempty_string'
             tree_sha256:
-              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML indexes include linked paths, sizes and SHA-256 content hashes.
+              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML indexes include linked paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes.
               type: string
               pattern: '^[0-9a-f]{64}$'
             html_index:

@@ -5166,6 +5166,108 @@ def _bigfinance(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _bounty_source_records(directory, metadata):
+    """Check native workflow records without using the pandas transformation."""
+    import re
+
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw'
+    native, definitions, configurations = {}, {}, {}
+    counts = Counter()
+    for path in sorted((raw / parameters['paths']['runs']).glob('*/*/*.json')):
+        record = json.loads(path.read_text())
+        filename = str(path.relative_to(raw))
+        variant = path.parts[-3]
+        workflow = record['workflow_metadata']['workflow_name']
+        prefix = path.name.split('_'+workflow+'_', 1)[0]
+        label = re.sub(r'_20\d\d-\d\d-\d\d$', '', prefix)
+        phases = record['phase_messages']
+        _check(len(phases), 1, 'BountyBench one original workflow phase')
+        messages = phases[0]['agent_messages']
+        prompts = [message['message'] for message in messages if message['agent_id'] == 'system']
+        _check(len(prompts), 1, 'BountyBench exactly one initial prompt')
+        _check(bool(prompts[0].strip()), True, 'BountyBench nonempty initial prompt')
+        agents = {message['agent_id'] for message in messages}
+        harness = parameters['harnesses']['codex' if 'codex' in agents else 'claude_code' if 'claude_code' in agents else 'default']
+        config = record['resources_used'].get('model', {}).get('config', {})
+        features = dict(harness=harness, harness_version=record['codebase_version'], source_agent_label=label,
+            reasoning_effort=parameters['reasoning_effort'].get(label),
+            declared_model_configuration=json.dumps(config, sort_keys=True), max_phase_iterations=phases[0]['max_iterations'])
+        subject = json.dumps(features, sort_keys=True)
+        configurations[subject] = features
+        task = record['workflow_metadata']['task']
+        repository, bounty = task['task_dir'].split('/')[-1], str(task['bounty_number'])
+        data = record['additional_metadata']
+        commit = record['resources_used']['init_files']['vulnerable_commit']
+        _check(commit, data['bounty_metadata']['vulnerable_commit'], 'BountyBench input and grader target the same recorded revision')
+        content = dict(system_prompt=prompts[0], repository=repository, vulnerable_commit=commit,
+            target_host=data['repo_metadata'].get('target_host'))
+        criterion = dict(reference_answer=None, rule=json.dumps(dict(rule=metadata['grading']['rule'], workflow=workflow,
+            source_variant=variant, bounty_metadata=data['bounty_metadata'], repo_metadata=data['repo_metadata']), sort_keys=True, ensure_ascii=False))
+        verifier = dict(**metadata['grading']['verifiers']['recorded_workflow'], codebase_version=record['codebase_version'], task_codebase_version=record['task_codebase_version'])
+        definition = json.dumps(dict(content=content, criterion=criterion, verifier=verifier), sort_keys=True, ensure_ascii=False)
+        item_features = dict(repository=repository, bounty=bounty, source_variant=variant, source_collection=parameters['collection']['name'])
+        definitions[definition] = dict(content=content, criterion=criterion, verifier=verifier, raw_item_id=repository+':'+bounty, features=item_features)
+        flag = record['workflow_metadata']['workflow_summary']['success']
+        _check(isinstance(flag, bool), True, 'BountyBench original Boolean workflow outcome')
+        _check(flag, phases[0]['success'], 'BountyBench phase and workflow outcomes agree')
+        native[filename] = dict(record=record, subject=subject, definition=definition, grade=float(flag))
+        counts['source_responses'] += 1
+        counts['source_successes' if flag else 'source_failures'] += 1
+        counts['source_variant_'+variant.replace('-', '_')] += 1
+    counts.update(source_traces=len(native), source_items=len(definitions), source_subject_configurations=len(configurations),
+        source_agent_labels=len({row['source_agent_label'] for row in configurations.values()}))
+    return native, definitions, configurations, dict(counts)
+
+
+def _bounty(directory, tables, metadata, source_records=None):
+    native, definitions, configurations, counts = (_bounty_source_records(directory, metadata)
+        if source_records is None else source_records)
+    _check((len(tables['responses']), len(tables['traces'])), (len(native), len(native)), 'BountyBench complete released workflows and traces')
+    _check(len(tables.get('assets', ())), 0, 'BountyBench no invented historical environment assets')
+    models = metadata['build']['parameters']['models']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        extra = _features(row.subject_features_extra)
+        features = dict(harness=row.harness, harness_version=row.harness_version, source_agent_label=extra['source_agent_label'],
+            reasoning_effort=None if pd.isna(row.reasoning_effort) else row.reasoning_effort,
+            declared_model_configuration=extra['declared_model_configuration'], max_phase_iterations=int(extra['max_phase_iterations']))
+        _check(set(extra), {'source_agent_label', 'declared_model_configuration', 'max_phase_iterations'}, 'BountyBench only recorded extra subject features')
+        key = json.dumps(features, sort_keys=True)
+        _check(features, configurations[key], 'BountyBench original agent configuration and harness revision')
+        _check(row.display_name, models[features['source_agent_label']], 'BountyBench documented agent/model label')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), 'BountyBench all recorded subject configurations once')
+    items = {}
+    for row in tables['items'].itertuples():
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'BountyBench deterministic recorded-verdict protocol')
+        spec = json.loads(verifier['spec'])
+        content, criterion = json.loads(row.content), json.loads(row.grading_criterion)
+        key = json.dumps(dict(content=content, criterion=criterion, verifier=spec), sort_keys=True, ensure_ascii=False)
+        definition = definitions[key]
+        _check(row.raw_item_id, definition['raw_item_id'], 'BountyBench original repository and bounty alias')
+        _check(_features(row.item_features), definition['features'], 'BountyBench native hint condition and selected collection')
+        _check(pd.isna(row.asset_manifest), True, 'BountyBench environment identifiers are not fabricated input files')
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), 'BountyBench complete initial inputs and distinct grading protocols')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'BountyBench trace/response bijection')
+    used = set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file']
+        _check(key not in used, True, 'BountyBench each published log once'); used.add(key)
+        expected = native[key]
+        _check(trace, dict(source_file=key, record=expected['record']), 'BountyBench complete original log including tool and grader observations')
+        _check((subjects[row.subject_id], items[row.item_id]), (expected['subject'], expected['definition']), 'BountyBench exact subject/task/workflow association')
+        _check(row.response, expected['grade'], 'BountyBench original workflow verdict, including released failures')
+        _check((row.trial, row.test_condition), (1, 'workflow_id='+str(expected['record']['workflow_id'])), 'BountyBench original workflow identity without fabricated attempt number')
+        _check(pd.isna(row.interactors), True, 'BountyBench no fabricated interacting subject')
+    _check(used, set(native), 'BountyBench every released workflow accounted for')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5186,4 +5288,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty}[directory.name](directory, tables, metadata)

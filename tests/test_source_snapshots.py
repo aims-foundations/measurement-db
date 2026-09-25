@@ -495,4 +495,73 @@ class SnapshotTests(unittest.TestCase):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
 
+    def test_public_drive_folder_pins_membership_contents_and_cached_inputs(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        child = 'https://drive.google.com/embeddedfolderview?id=child456'
+        download = 'https://drive.usercontent.google.com/download?id=file789&export=download'
+        pages = {root: b'<a href="https://drive.google.com/drive/folders/child456">task &amp; run</a>',
+                 child: b'<a href="https://drive.google.com/file/d/file789/view?usp=drive_web">result.json</a>',
+                 download: PAYLOAD}
+        identity = [dict(path='task & run/result.json', drive_id='file789', size=len(PAYLOAD),
+                         digest=hashlib.sha256(PAYLOAD).hexdigest())]
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='drive/{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_header('Accept-encoding'), 'identity')
+            return io.BytesIO(pages[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts([source], ('runs',))
+        self.assertEqual(len(artifacts), 1)
+        artifact = artifacts[0]
+        self.assertEqual(artifact['file'], 'drive/task_x20__x26__x20_run/result.json')
+        self.assertEqual(artifact['url'], download)
+        target = self.raw / artifact['file']
+        target.parent.mkdir(parents=True)
+        target.write_bytes(PAYLOAD)
+        pages.pop(download)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            self.assertEqual(upstream_artifacts([source], ('runs',), raw_dir=self.raw), artifacts)
+            target.write_bytes(PAYLOAD + b' ')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('runs',), raw_dir=self.raw)
+            target.write_bytes(PAYLOAD)
+            pages[child] = b'<a href="https://drive.google.com/file/d/otherID/view">result.json</a>'
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('runs',), raw_dir=self.raw)
+        del source['tree_sha256']
+        self.metadata['sources']['upstream'] = [source]
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_public_drive_rejects_incomplete_unsafe_and_cyclic_trees(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        from urllib.error import HTTPError
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+                      tree_sha256='0'*64, files=[dict(match='.*', path='drive/{path}')])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=HTTPError(root, 403, 'Forbidden', None, None)):
+            with self.assertRaises(HTTPError):
+                upstream_artifacts([source], ('runs',))
+        for page, error in [
+            (b'<a href="https://drive.google.com/drive/folders/root123">loop</a>', 'cycle'),
+            (b'<a href="https://drive.google.com/file/d/file789/view">../outside.json</a>', 'unsafe Drive filename'),
+            (b'<a href="https://drive.google.com/file/d/file789/view">same.json</a><a href="https://drive.google.com/file/d/file123/view">same.json</a>', 'duplicate Drive path'),
+            (b'<html>Login page instead of a file listing</html>', 'pinned tree'),
+        ]:
+            with self.subTest(error=error), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=lambda *a, **k: io.BytesIO(page)):
+                with self.assertRaisesRegex(SourceDataError, error):
+                    upstream_artifacts([source], ('runs',))
+        source['files'][0]['path'] = '../outside.json'
+        page = b'<a href="https://drive.google.com/file/d/file789/view">result.json</a>'
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=lambda *a, **k: io.BytesIO(page)):
+            with self.assertRaisesRegex(SourceDataError, 'unsafe raw destination'):
+                upstream_artifacts([source], ('runs',))
+
+
 if __name__=='__main__': unittest.main()

@@ -1,0 +1,96 @@
+benchmark:
+  name: BountyBench
+  description: Recorded cybersecurity-agent workflows for vulnerability detection, exploitation and patching.
+  testing_condition: The public experimental-success-runs-10-agents folder is a selected-run release, not all attempted
+    evaluations. Import every released log, including its four recorded failures; never treat an absent log as a
+    failed trial. Success rates over this collection are selection-biased and do not reproduce the paper leaderboard.
+    Keep all three detection hint conditions, exploit and patch runs distinct. Items contain the actual initial
+    prompt and recorded environment identifiers, with native grading metadata separate. Subjects distinguish recorded
+    harness revision, model configuration and phase limit. Claude Code records do not identify a backing model.
+    Complete logs retain original timestamps, outputs, tool observations, verifier messages and outcomes. Workflow
+    IDs identify released runs; original attempt numbers are unavailable. The historical project files, service
+    state and complete execution environments are not reconstructed. No inference or execution.
+  paper_url: https://arxiv.org/abs/2505.15216
+  data_source_url: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+  subject_type: agent
+  item_type: task
+  license: Apache-2.0 for the harness; the selected Drive logs do not supply a separate data license.
+  citation: 'Zhang et al. (2025). BountyBench: Dollar Impact of AI Agent Attackers and Defenders on Real-World Cybersecurity
+    Systems. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - cybersecurity
+  - agent
+  - selected_runs
+  modality:
+  - text
+  domain:
+  - cybersecurity
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': The recorded workflow verdict is failure.
+      '1': The recorded workflow verdict is success.
+    direction: higher_is_better
+  release_date: 2025-05
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      runs: drive-selected-20260925
+    patterns:
+      agent: ^(.*?)_(?:Detect|Exploit|Patch)Workflow_
+      dated_alias: _20\d\d-\d\d-\d\d$
+    harnesses:
+      default: BountyBench C-Agent
+      codex: OpenAI Codex CLI
+      claude_code: Claude Code
+    collection:
+      name: experimental-success-runs-10-agents
+    models:
+      claude-code: Claude Code
+      codex_o3-high: o3
+      codex_o4-mini: o4-mini
+      openai-o3-2025-04-16-high-reasoning-effort: o3
+      openai-gpt-4.1-2025-04-14: GPT-4.1
+      google-gemini-2.5-pro-preview-03-25: Gemini 2.5 Pro
+      anthropic-claude-3-7-sonnet-20250219-extended-thinking: Claude 3.7 Sonnet
+      Qwen-Qwen3-235B-A22B-fp8-tput: Qwen3 235B A22B
+      meta-llama-Llama-4-Maverick-17B-128E-Instruct-FP8: Llama 4 Maverick
+      deepseek-ai-DeepSeek-R1: DeepSeek-R1
+    reasoning_effort:
+      codex_o3-high: high
+      openai-o3-2025-04-16-high-reasoning-effort: high
+sources:
+  upstream:
+  - name: selected_runs
+    url: https://drive.google.com/drive/folders/1hj0d05euBe60R1LngKHTTGfL8GbkUaGn
+    revision: null
+    tree_sha256: 02f0e1e122c7dccb78a5f9d19ce246624e61d7267b73f030e1749c33cebdb1bd
+    files:
+    - match: (?:detect|detect_cwe-only|detect_cwe-title|exploit|patch)/[^/]+/[^/]+\.json
+      path: drive-selected-20260925/{path}
+  - name: protocol
+    url: https://github.com/bountybench/bountybench
+    revision: 8ece6aab0b954f7c85b5705e69f0142eeaf2c5d1
+    files:
+    - match: (?:workflows/.*|phases/.*|agents/(?:detect_agent|exploit_agent|patch_agent)/.*|resources/.*)\.py|LICENSE|README\.md
+      path: github/8ece6aab0b954f7c85b5705e69f0142eeaf2c5d1/{path}
+grading:
+  rule: Import workflow_metadata.workflow_summary.success as 1/0. Detection and exploitation require the recorded
+    behavioral success; patching requires the recorded patch verification and invariants. Preserve the published
+    verdict, complete grading messages and embedded grading metadata; do not execute code, judge anew or infer missing
+    attempts.
+  verifiers:
+    recorded_workflow:
+      kind: recorded_behavioral_workflow_verdict
+      field: workflow_metadata.workflow_summary.success
+      reference_implementation: https://github.com/bountybench/bountybench/tree/8ece6aab0b954f7c85b5705e69f0142eeaf2c5d1
+      interpretation: The complete native log supplies the observed verdict and grading messages. Recorded code
+        and task versions identify the historical protocol; the captured current harness documents its structure,
+        not a reconstruction of every historical environment.

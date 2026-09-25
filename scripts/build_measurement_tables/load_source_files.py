@@ -164,6 +164,98 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
     return entries
 
 
+def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Pin public Drive folder membership and bytes without a per-file YAML inventory."""
+    name = source['name']
+    match = re.fullmatch(r'https://drive\.google\.com/drive/folders/([A-Za-z0-9_-]+)', source['url'])
+    if match is None:
+        raise SourceDataError(f'{name}: expected a public Google Drive folder URL')
+
+    def read(url):
+        with urlopen(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}), timeout=120) as response:
+            return response.read()
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.links, self.href, self.text = [], None, []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                self.href, self.text = dict(attrs).get('href'), []
+
+        def handle_data(self, data):
+            if self.href is not None:
+                self.text.append(data)
+
+        def handle_endtag(self, tag):
+            if tag == 'a' and self.href is not None:
+                self.links.append((self.href, ''.join(self.text).strip()))
+                self.href, self.text = None, []
+
+    def children(entry):
+        folder, prefix = entry
+        parser = Links()
+        parser.feed(read('https://drive.google.com/embeddedfolderview?id=' + folder).decode('utf-8'))
+        rows = []
+        for href, label in parser.links:
+            folder_match = re.fullmatch(r'https://drive\.google\.com/drive/folders/([A-Za-z0-9_-]+)(?:\?.*)?', href)
+            file_match = re.fullmatch(r'https://drive\.google\.com/file/d/([A-Za-z0-9_-]+)/view(?:\?.*)?', href)
+            if folder_match is None and file_match is None:
+                continue
+            if not label or label in {'.', '..'} or '/' in label or '\\' in label:
+                raise SourceDataError(f'{name}: unsafe Drive filename')
+            rows.append(dict(id=(folder_match or file_match)[1], path=prefix + label,
+                             kind='folder' if folder_match else 'file'))
+        return rows
+
+    pending, folders, files = [(match[1], '')], set(), {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        while pending:
+            for folder, prefix in pending:
+                if folder in folders:
+                    raise SourceDataError(f'{name}: repeated folder or cycle in Drive tree')
+                folders.add(folder)
+            pages = list(executor.map(children, pending))
+            pending = []
+            for page in pages:
+                for row in page:
+                    if row['kind'] == 'folder':
+                        pending.append((row['id'], row['path'] + '/'))
+                    elif row['path'] in files:
+                        raise SourceDataError(f'{name}: ambiguous duplicate Drive path')
+                    else:
+                        files[row['path']] = row['id']
+
+    selected = {}
+    for relative, file_id in files.items():
+        for rule in source['files']:
+            if match := re.fullmatch(rule['match'], relative):
+                destination = rule['path'].format(path=relative, **match.groupdict())
+                destination = re.sub(r'[^A-Za-z0-9._/-]', lambda m: f'_x{ord(m[0]):02x}_', destination)
+                if Path(destination).is_absolute() or '..' in Path(destination).parts or destination in {'', '.'}:
+                    raise SourceDataError(f'{name}: unsafe raw destination {destination}')
+                selected[relative] = (file_id, destination)
+
+    def inspect(relative):
+        file_id, destination = selected[relative]
+        path = raw_dir / destination if raw_dir is not None else None
+        if path is not None and not path.resolve().is_relative_to(raw_dir.resolve()):
+            raise SourceDataError(f'{name}: unsafe raw destination {destination}')
+        url = 'https://drive.usercontent.google.com/download?' + urlencode(dict(id=file_id, export='download'))
+        content = path.read_bytes() if path is not None and path.exists() else read(url)
+        return dict(path=relative, drive_id=file_id, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                    hash_kind='sha256', url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(selected)))
+    identity = [{key: entry[key] for key in ('path', 'drive_id', 'size', 'digest')} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not entries or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'{name}: Drive files differ from the pinned tree ({fingerprint})')
+    return entries
+
+
 def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: Path | None = None) -> list[dict]:
     """Resolve named upstream selections to pinned files and verify their inventory.
 
@@ -195,6 +287,8 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
             entries = []
             if "html_index" in source:
                 entries = html_index_entries(source, named, raw_dir)
+            elif location.netloc == "drive.google.com":
+                entries = google_drive_entries(source, raw_dir)
             elif location.netloc == "storage.googleapis.com" and "prefix" in source:
                 bucket, prefix = location.path.strip("/"), source["prefix"]
                 if not re.fullmatch(r"[a-z0-9._-]+", bucket):
@@ -260,7 +354,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if "html_index" in source:
+            if "html_index" in source or location.netloc == "drive.google.com":
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")

@@ -117,6 +117,12 @@ from a separately pinned HTML index. The `files` patterns select pages, and
 `tree_sha256` pins their paths, sizes and SHA-256 content hashes. The downloader
 checks the complete selection, including cached files, before building tables.
 
+Public Google Drive folder URLs support the same `files` rules. Their
+`tree_sha256` pins selected relative paths, Drive file IDs, sizes and SHA-256
+content hashes. The shared loader visits the complete folder tree and checks
+cached bytes as well as downloads; unavailable folders or a changed selection
+stop the build. No per-file URL list or Google login is needed for public folders.
+
 The shared downloader creates `raw/`, verifies files against the upstream repository's
 hashes or the declared HTTP checksum, and fetches missing inputs. Existing raw files
 with different contents cause an error rather than being overwritten. `self.source_files`

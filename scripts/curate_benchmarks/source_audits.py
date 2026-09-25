@@ -783,3 +783,5 @@ SOURCE_AUDITS["benger"] = verify_native_results
 SOURCE_AUDITS["bedd_basalt"] = verify_native_results
 
 SOURCE_AUDITS["bigfinancebench"] = verify_native_results
+
+SOURCE_AUDITS["bountybench"] = verify_native_results
