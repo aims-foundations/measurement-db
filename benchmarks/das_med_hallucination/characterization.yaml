@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1965
+    logical_sha256: a8bbb44de904fd431c98b86b0ea2b447ca06cc3028ceb0a02a931275e1f01a2f
+  subjects:
+    rows: 15
+    logical_sha256: e46cf5360eedb91df78e5300b28f9f474ac516a594c30e3b43ebc9842f8a0d79
+  responses:
+    rows: 1965
+    logical_sha256: 78e34be4ef0cd0a5ea91c6190932a0057501799f16dfd548b5598a9a291ac603
+  items:
+    rows: 108
+    logical_sha256: 9253a3e23aeedb59a638db4d054e326a004acaa2284219161e78470b4e212006
+  benchmarks:
+    rows: 1
+    logical_sha256: 4dc1ede81a1a8582eea4c99d61c0fbb402074da4022221b8312dbbea3a2565d5
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1965
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 108
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 15
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1965
+  source_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1918
+  source_clean:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 561
+  source_uncertain:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 99
+  source_detected:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1258
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 47
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1
+  source_stale_summary_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JZPeterPan/DAS-Medical-Red-Teaming-Agents/tree/3f67da30708ae90a6ee1653924f13a5ca1dc7f62/artifacts/hallucination
+    locator: manifest.json, all 15 generated-response files and all 15 generated-response detector files.
+    scope: Reconcile every complete generation, exact-matched detector judgment, prompt, source model alias,
+      sampling setting and repeated trial. Missing grades remain null.
+    expected: 1

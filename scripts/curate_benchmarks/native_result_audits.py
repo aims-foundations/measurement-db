@@ -7505,6 +7505,130 @@ def _cruxeval(directory, tables, metadata, source_records=None):
         source_successes=successes, source_failures=len(expected)-successes, source_empty_outputs=empty)
 
 
+def _das_source_records(directory, metadata):
+    """Read native attempts independently of the builder's table joins."""
+    import hashlib
+
+    bundle = directory / "raw/release/artifacts/hallucination"
+    manifest = json.loads((bundle / "manifest.json").read_text())
+    generations, judgments, lookup, stale_statistics = {}, {}, {}, []
+    for entry in sorted(manifest["files"], key=lambda row: row["path"]):
+        path = bundle / entry["path"]
+        data = path.read_bytes()
+        _check(len(data), entry["size_bytes"], "DAS native manifest byte count")
+        _check(hashlib.sha256(data).hexdigest(), entry["sha256"], "DAS native manifest content hash")
+        if not entry["path"].startswith("generated_responses/"):
+            continue
+        source = json.loads(data)
+        _check(len(source["results"]), entry["row_count"], "DAS full manifest generation coverage")
+        lengths = [len(row["response"]) for row in source["results"] if isinstance(row["response"], str)]
+        if source["statistics"]["response_length_stats"]["max"] != max(lengths):
+            stale_statistics.append(entry["path"])
+        for index, row in enumerate(source["results"]):
+            key = entry["path"], index
+            identity = row["prompt"], row["response"], json.dumps(row["metadata"], sort_keys=True), row.get("error")
+            _check(identity not in lookup, True, "DAS unique captured generation identity")
+            lookup[identity] = key
+            generations[key] = row
+    for entry in sorted(manifest["files"], key=lambda row: row["path"]):
+        if not entry["path"].startswith("generated_response_detection/openai_gpt4o_o3/"):
+            continue
+        rows = json.loads((bundle / entry["path"]).read_text())
+        _check(len(rows), entry["row_count"], "DAS full manifest detector coverage")
+        for index, row in enumerate(rows):
+            identity = row["prompt"], row["response"], json.dumps(row["metadata"], sort_keys=True), row.get("error")
+            _check(identity in lookup, True, "DAS judgment identifies an exact captured response")
+            key = lookup[identity]
+            _check(key not in judgments, True, "DAS one recorded judgment per captured attempt")
+            tokens = row["merged_codes"] if isinstance(row["merged_codes"], list) else [row["merged_codes"]]
+            _check(all(token in {"0", "0.5", "1", "2", "3", "4", "5", "6", "7"} for token in tokens),
+                   True, "DAS released root-code vocabulary")
+            grade = 1. if any(token in {"1", "2", "3", "4", "5", "6", "7"} for token in tokens) else (
+                .5 if "0.5" in tokens else 0.)
+            judgments[key] = entry["path"], index, row, grade
+    _check(len(generations), manifest["totals"]["generated_response_rows_total"], "DAS all released generations")
+    _check(len(judgments), manifest["totals"]["generated_response_detection_rows_total"], "DAS all released verdicts")
+    for name, declared in manifest["generated_response_detection_denominators"].items():
+        covered = sum(Path(value[0]).parent.name == name for value in judgments.values())
+        _check(covered, declared["actual_evaluation_denominator"], "DAS each original model denominator")
+    return generations, judgments, stale_statistics
+
+
+def _das_med_hallucination(directory, tables, metadata, source_records=None):
+    import hashlib
+
+    generations, judgments, stale = source_records if source_records is not None else _das_source_records(directory, metadata)
+    _check(len(tables["responses"]), len(generations), "DAS complete response population")
+    _check(len(tables["traces"]), len(generations), "DAS complete native trace population")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["reported_model"]
+        _check(row.display_name, model, "DAS recorded model alias")
+        _check(features, {"reported_model": model}, "DAS no invented historical model settings")
+        _check(row.harness, "DAS Medical Hallucination", "DAS recorded evaluation framework")
+        for field in ["reasoning_effort", "harness_version", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "DAS unavailable historical setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["metadata"]["model"]: 1 for row in generations.values()}),
+           "DAS exact source model coverage")
+    prompts = {hashlib.sha256(row["prompt"].encode()).hexdigest(): row["prompt"] for row in generations.values()}
+    items = {}
+    for row in tables["items"].itertuples():
+        original = prompts[row.raw_item_id]
+        _check(row.content, original, "DAS complete presented prompt")
+        _check(_features(row.item_features), {"prompt_sha256": row.raw_item_id}, "DAS exact prompt identity")
+        _check(json.loads(row.grading_criterion), {"reference_answer": None, "rule": metadata["grading"]["rule"]}, "DAS recorded detector criterion")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "judge", "DAS LLM grading, not an exact-answer correctness test")
+        _check(verifier["judged_by"], "llm", "DAS native detector type")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["detector"], "DAS complete captured grading protocol")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({digest: 1 for digest in prompts}), "DAS every actual prompt variant")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DAS response-trace associations")
+    expected_trials, trial_counts = {}, Counter()
+    for key, source in generations.items():
+        condition = {k: v for k, v in source["metadata"].items() if k not in {"model", "timestamp", "response_time"}}
+        group = source["metadata"]["model"], source["prompt"], json.dumps(condition, sort_keys=True)
+        trial_counts[group] += 1
+        expected_trials[key] = trial_counts[group]
+    seen, counts = Counter(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["generation_file"], trace["generation_row"]
+        source = generations[key]
+        judgment = judgments.get(key)
+        expected = dict(generation_file=key[0], generation_row=key[1], generation=source,
+            judgment_file=judgment[0] if judgment else None, judgment_row=judgment[1] if judgment else None,
+            judgment=judgment[2] if judgment else None, trace_scope="released_generation_and_detector_record")
+        _check(trace, expected, "DAS complete native output, judgment, settings and provenance")
+        if judgment:
+            _check(row.response, judgment[3], "DAS each original categorical verdict")
+            counts[str(judgment[3])] += 1
+        else:
+            _check(pd.isna(row.response), True, "DAS missing judgments remain ungraded")
+            counts["ungraded"] += 1
+        _check(subjects[row.subject_id], source["metadata"]["model"], "DAS correct observed model association")
+        _check(items[row.item_id], hashlib.sha256(source["prompt"].encode()).hexdigest(), "DAS correct presented prompt association")
+        condition = {k: v for k, v in source["metadata"].items() if k not in {"model", "timestamp", "response_time"}}
+        _check(json.loads(row.test_condition), condition, "DAS all recorded inference settings")
+        _check(row.trial, expected_trials[key], "DAS repeated prompts retain distinct trials in source order")
+        _check(pd.isna(row.interactors), True, "DAS no invented model interactors")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in generations}), "DAS each generation exactly once")
+    scale = json.loads(tables["benchmarks"].iloc[0].response_scale)
+    _check(scale["values"], [0., .5, 1.], "DAS uncertainty is a preserved category")
+    _check(scale["direction"], "unordered", "DAS detector uncertainty is not fractional correctness")
+    verifier = metadata["grading"]["verifiers"]["detector"]
+    _check(verifier["prompts_sha256"], hashlib.sha256((directory / "raw/release/src/med_red_team/hallucination/prompts.py").read_bytes()).hexdigest(),
+           "DAS captured supporting grading prompts")
+    return dict(source_responses=len(generations), source_items=len(prompts), source_subjects=len(subjects),
+        source_traces=len(traces), source_judgments=len(judgments), source_clean=counts["0.0"],
+        source_uncertain=counts["0.5"], source_detected=counts["1.0"], source_ungraded=counts["ungraded"],
+        source_empty_outputs=sum(not row["response"] for row in generations.values()), source_stale_summary_files=len(stale))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7525,4 +7649,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination}[directory.name](directory, tables, metadata)

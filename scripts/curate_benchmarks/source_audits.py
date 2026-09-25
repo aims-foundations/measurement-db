@@ -818,3 +818,5 @@ SOURCE_AUDITS["csedb"] = verify_native_results
 SOURCE_AUDITS["crow"] = verify_native_results
 
 SOURCE_AUDITS["cruxeval"] = verify_native_results
+
+SOURCE_AUDITS["das_med_hallucination"] = verify_native_results
