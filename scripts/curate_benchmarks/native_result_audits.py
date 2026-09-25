@@ -5880,6 +5880,96 @@ def _care(directory, tables, metadata, source_records=None):
         source_maximum_ranks=max(entry["ranks"] for entry in native.values()))
 
 
+def _ceobench_source_records(directory, metadata):
+    """Read each manifest/native pair directly, independently of the table joins."""
+    raw = directory / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    manifest = json.loads((raw / paths["manifest"]).read_text())
+    native = {}
+    for model in manifest["models"]:
+        for position, row in enumerate(model["runs"], 1):
+            run_id = row["run_id"]
+            _check(run_id not in native, True, "CEO unique released run identifier")
+            path = paths["trajectories"] + "/" + run_id + ".json"
+            record = json.loads((raw / path).read_text())
+            _check(record["model"], model["model"], "CEO original panel association")
+            for field in ["run_id", "model_display", "bankrupt", "cash", "status", "dnf", "action_count"]:
+                _check(record[field], row[field], "CEO manifest/native consistency: " + field)
+            _check(type(row["bankrupt"]) is bool and type(record["bankrupt"]) is bool, True, "CEO explicit bankruptcy Boolean")
+            _check(row["status"], "bankrupt" if row["bankrupt"] else "complete", "CEO terminal recorded outcome")
+            _check(row["dnf"] or record.get("hidden", False) or bool(record.get("weeks_index")), False, "CEO complete visible trajectory scope")
+            _check(record["cash"], row["final_cash"], "CEO published final cash")
+            _check(row["final_cash"] >= 0, True, "CEO nonnegative published cash statistic")
+            native[run_id] = dict(panel=model["model"], display=model["model_display"], manifest=row,
+                trajectory=record, source_file=path, position=position)
+    _check((len(manifest["models"]), len(native)), (18, 54), "CEO full captured release panel")
+    return native, (raw / paths["instructions"]).read_text().strip()
+
+
+def _ceobench(directory, tables, metadata, source_records=None):
+    """Check every complete history, score, input and explicitly known setting."""
+    native, instruction = source_records or _ceobench_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "CEO one trace per response")
+    measures = metadata["grading"]["verifiers"]["measures"]
+    protocols = {}
+    for key, item in items.items():
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "exact_matcher", "CEO deterministic recorded-outcome verifier")
+        spec = json.loads(verifier["spec"])
+        metric = spec.pop("metric")
+        _check(spec, metadata["grading"]["verifiers"]["protocol"], "CEO explicit source grading specification")
+        _check(item["content"], instruction, "CEO complete published task instructions")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=measures[metric]["rule"], response_scale=measures[metric]["scale"]), "CEO metric-specific rule and scale")
+        _check(pd.isna(item["item_features"]) and pd.isna(item["asset_manifest"]), True, "CEO no outcome-derived task features")
+        protocols[key] = metric
+    _check(Counter(protocols.values()), Counter({metric: 1 for metric in measures}), "CEO separate grading identities")
+    seen, used_subjects, trials = set(), set(), {}
+    for row in tables["responses"].itertuples():
+        metric = protocols[row.item_id]
+        trace = json.loads(traces[row.response_id])
+        run_id = trace["manifest"]["run_id"]
+        source = native[run_id]
+        _check((run_id, metric) not in seen, True, "CEO no repeated source observation/metric")
+        seen.add((run_id, metric))
+        _check(trace, {name: source[name] for name in ["manifest", "source_file", "trajectory"]}, "CEO every released history field preserved")
+        record = source["trajectory"]
+        subject = subjects[row.subject_id]
+        expected = {"source_model": source["panel"]}
+        for feature, field in [("api_model", "model_id"), ("source_provider", "provider"),
+                               ("simulator_provider", "simulator_llm")]:
+            if record.get(field) is not None:
+                expected[feature] = str(record[field])
+        _check(_features(subject["subject_features_extra"]), expected, "CEO original model/configuration association")
+        _check(subject["display_name"], source["display"], "CEO original model label")
+        _check(subject["harness"], "CEO-Bench", "CEO known evaluation harness")
+        _check(pd.isna(subject["harness_version"]), True, "CEO historical harness revision remains unknown")
+        actual_effort = None if pd.isna(subject["reasoning_effort"]) else subject["reasoning_effort"]
+        _check(actual_effort, record.get("reasoning_effort"), "CEO only explicitly recorded reasoning effort")
+        expected_grade = {"reported_final_cash": source["manifest"]["final_cash"],
+            "survived": float(not source["manifest"]["bankrupt"]),
+            "above_starting_cash": float(source["manifest"]["final_cash"] > 1_000_000)}[metric]
+        _check((row.response, row.test_condition), (expected_grade, "outcome=" + metric), "CEO recorded score and correct threshold")
+        _check(pd.isna(row.interactors), True, "CEO no inferred simulator model identity")
+        trials.setdefault((row.subject_id, metric), []).append((source["position"], row.trial))
+        used_subjects.add(row.subject_id)
+    _check(seen, {(run_id, metric) for run_id in native for metric in measures}, "CEO every run represented under each grading protocol")
+    _check(set(traces), set(tables["responses"].response_id), "CEO no orphan trace")
+    _check(set(subjects), used_subjects, "CEO exact subject panel")
+    for attempts in trials.values():
+        _check([trial for _, trial in sorted(attempts)], list(range(1, len(attempts) + 1)), "CEO manifest-order trials")
+    return dict(source_runs=len(native), source_responses=len(seen), source_traces=len(traces),
+        source_subject_configurations=len(subjects), source_grading_protocols=len(protocols),
+        source_survived=sum(not row["manifest"]["bankrupt"] for row in native.values()),
+        source_above_starting_cash=sum(row["manifest"]["final_cash"] > 1_000_000 for row in native.values()),
+        source_history_entries=sum(len(day.get("actions", [])) for row in native.values() for day in row["trajectory"]["days"].values()),
+        source_explicit_api_settings=sum("model_id" in row["trajectory"] for row in native.values()),
+        source_ledger_display_differences=sum(row["trajectory"].get("raw_final_cash") is not None and
+            row["trajectory"]["raw_final_cash"] != row["manifest"]["final_cash"] for row in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5900,4 +5990,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench}[directory.name](directory, tables, metadata)

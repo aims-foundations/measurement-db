@@ -1,0 +1,118 @@
+format_version: 1
+tables:
+  traces:
+    rows: 162
+    logical_sha256: 41dd1a864bf7daf5a74dfba77c8400965301f53b3f063fa8b00f0730b845f670
+  subjects:
+    rows: 18
+    logical_sha256: 10eae96271a597f3459f6d0dd335a2866174c6089507a60ce3052e9b30459bbd
+  responses:
+    rows: 162
+    logical_sha256: 640da80f6b016118ea14a08fd48d37591c22908400814e09274682c122ff24bb
+  items:
+    rows: 3
+    logical_sha256: 57b934ebafff17154a3bcb64f370adf8de88c15dab288e7b11d53c38beaf6f9d
+  benchmarks:
+    rows: 1
+    logical_sha256: 24a4da1efd1b1c9d57630518d3672e8b0b1739d9cf90986c66771f17baf0debc
+source_claims:
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 54
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 162
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 162
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 18
+  source_grading_protocols:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 3
+  source_survived:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 26
+  source_above_starting_cash:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 5
+  source_history_entries:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 69351
+  source_explicit_api_settings:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 6
+  source_ledger_display_differences:
+    kind: count
+    origin: derived_from_data
+    source: https://ceobench.com/trajectory-viewer/
+    locator: Pinned manifest models[].runs[], all 54 matching native run JSONs, their days[].actions histories and
+      the pinned public_sources/README.md.
+    scope: Independent traversal reconciles every run, three grading protocols, complete released histories, original
+      subjects and explicitly recorded settings. Final cash uses the published statistic; separate ledger values
+      remain in the trace.
+    expected: 4

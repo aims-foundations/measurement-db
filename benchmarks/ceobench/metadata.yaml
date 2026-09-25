@@ -1,0 +1,137 @@
+benchmark:
+  name: CEO-Bench
+  description: Language-model agents manage a simulated startup; retain published outcomes and complete released
+    trajectories.
+  testing_condition: The captured public viewer has 54 terminal runs for 18 model labels. Retain reported final
+    cash and the two prior binary outcomes as distinct item grading protocols. The published task asks for 500 simulated
+    days from $1M; the viewer normalizes some 497/504-day weekly endpoints to 500. Preserve both manifest and native
+    fields without treating output-derived endpoints as task inputs. Four native ledger balances differ from displayed
+    cash, including two zeroed bankrupt balances; both remain in traces. Items contain the published agent instructions,
+    byte-identical to the earlier captured release. Exact historical system prompts, harness revisions, and most
+    provider/inference settings are unavailable. Record only explicitly supplied settings. The website describes
+    the updated quota mechanics. No simulator execution, new inference or regrading.
+  paper_url: https://arxiv.org/abs/2606.18543
+  data_source_url: https://ceobench.com/trajectory-viewer/
+  subject_type: agent
+  item_type: task
+  license: No explicit data license found in the reviewed viewer or source repository.
+  citation: 'Chen, Narasimhan and Liu (2026). CEO-Bench: Can Agents Play the Long Game? arXiv:2606.18543.'
+  tags:
+  - agent
+  - simulation
+  - long_horizon
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  - finance
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2026-06
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      manifest: website/manifest.json
+      trajectories: website/runs
+      instructions: github/d2b7b32e5301a571b77f5f68bd1032adbcd5b464/public_sources/README.md
+    scenario:
+      raw_item_id: novamind_ceo_nominal_500_days
+      nominal_horizon: '500'
+      starting_cash: '1000000'
+    settings:
+      api_model: model_id
+      source_provider: provider
+      reasoning_effort: reasoning_effort
+      simulator_provider: simulator_llm
+sources:
+  upstream:
+  - name: manifest
+    url: https://ceobench.com/trajectory-viewer/data/runs/manifest.json
+    revision: null
+    file: website/manifest.json
+    size: 34436
+    sha256: 62aba21a7b0684cd3286c06b83cab8950fb22ffacaf1d5633d83de09cd367de5
+  - name: trajectories
+    url: https://ceobench.com/trajectory-viewer/data/runs/
+    revision: null
+    json_index:
+      source: manifest
+      records:
+      - models
+      - runs
+      path: '{run_id}.json'
+    tree_sha256: a67d48f7290b449e7b046d1d9489d246f1def8cc9b9a35757ee4d0dd2b1407b1
+    files:
+    - match: '[a-f0-9]{8}\.json'
+      path: website/runs/{path}
+  - name: harness
+    url: https://github.com/zlab-princeton/ceobench-src
+    revision: d2b7b32e5301a571b77f5f68bd1032adbcd5b464
+    files:
+    - match: (?:.*\.(?:py|md|txt|toml|json|sh)|LICENSE)
+      path: github/d2b7b32e5301a571b77f5f68bd1032adbcd5b464/{path}
+  - name: website
+    url: https://ceobench.com/
+    revision: null
+    file: website/home.html
+    size: 70834
+    sha256: 014ef33e0d63d07567a2089f9aee564501bf6693e5b570166e7357b8425d20c4
+  - name: viewer_index
+    url: https://ceobench.com/trajectory-viewer/
+    revision: null
+    file: website/index.html
+    size: 3952
+    sha256: 968200776b1b5114cfec50bc0b56888f183bcd25100f797ffc941ddbdd5d93bf
+  - name: viewer_page
+    url: https://ceobench.com/trajectory-viewer/run.html
+    revision: null
+    file: website/run.html
+    size: 3203
+    sha256: a7ee26faaa0b5e91b04c7e2c93011347467b9bae3c2503295d3743766398a5a8
+  - name: viewer_script
+    url: https://ceobench.com/trajectory-viewer/js/render.js
+    revision: null
+    file: website/render.js
+    size: 33884
+    sha256: 66254a619e5486615b9c95c68d7f6f1ec1ac05ce6689748e541d0aab4c2fa733
+grading:
+  rule: Import the published terminal run outcomes without rerunning the simulation. Each metric is a distinct grading
+    protocol; histories are shared evidence, not additional trials.
+  verifiers:
+    protocol:
+      kind: recorded_simulator_outcome
+      source: https://ceobench.com/trajectory-viewer/
+      scoring_reference: https://github.com/zlab-princeton/ceobench-src/blob/d2b7b32e5301a571b77f5f68bd1032adbcd5b464/docs/analyze_trajectory.md
+      scope: Cash uses the published manifest statistic; native ledger values and release-display normalization
+        are preserved separately.
+    measures:
+      reported_final_cash:
+        rule: The manifest final_cash value in dollars, as published in the official viewer. Bankrupt runs are displayed
+          as zero. Preserve separate raw/ledger cash values in the trace; do not substitute them for this published
+          statistic.
+        scale:
+          kind: interval
+          min: 0
+          max: null
+          direction: higher_is_better
+      survived:
+        rule: 'Use the released bankrupt Boolean: true gives 0 and false gives 1. Require a terminal complete or
+          bankrupt run; do not infer survival from a partial cash history.'
+        scale: &id001
+          kind: discrete
+          values:
+          - 0
+          - 1
+          meanings:
+            '0': The specified outcome was not achieved.
+            '1': The specified outcome was achieved.
+          direction: higher_is_better
+      above_starting_cash:
+        rule: 'Use the source-defined $1,000,000 starting balance: 1 if published final_cash is strictly greater,
+          otherwise 0.'
+        scale: *id001

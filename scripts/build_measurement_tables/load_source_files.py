@@ -164,6 +164,71 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
     return entries
 
 
+def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve a JSON manifest to same-site files and pin the complete selection."""
+    name, selector = source["name"], source["json_index"]
+    index = named.get(selector["source"], {})
+    if not {"url", "file", "size", "sha256"} <= index.keys():
+        raise SourceDataError(f"{name}: JSON index must name a pinned HTTP source")
+
+    def read(url, destination):
+        if raw_dir is not None:
+            path = raw_dir / destination
+            if not path.resolve().is_relative_to(raw_dir.resolve()):
+                raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+            if path.exists():
+                return path.read_bytes()
+        with urlopen(Request(url, headers={"User-Agent": "measurement-db", "Accept-Encoding": "identity"}), timeout=120) as response:
+            return response.read()
+
+    payload = read(index["url"], index["file"])
+    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
+        raise SourceDataError(f"{name}: JSON index differs from its declared bytes")
+    records = [json.loads(payload)]
+    for field in selector["records"]:
+        nested = []
+        for record in records:
+            if not isinstance(record, dict) or field not in record:
+                raise SourceDataError(f"{name}: JSON index lacks records field {field}")
+            value = record[field]
+            nested.extend(value if isinstance(value, list) else [value])
+        records = nested
+    base = source["url"].rstrip("/") + "/"
+    paths = {}
+    for record in records:
+        if not isinstance(record, dict):
+            raise SourceDataError(f"{name}: JSON index records must be objects")
+        try:
+            relative = selector["path"].format_map(record)
+        except (KeyError, ValueError, TypeError, AttributeError, IndexError) as exc:
+            raise SourceDataError(f"{name}: invalid JSON index path template") from exc
+        if not re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", relative) or any(
+                part in {".", ".."} for part in relative.split("/")):
+            raise SourceDataError(f"{name}: unsafe indexed source path {relative!r}")
+        for rule in source["files"]:
+            if match := re.fullmatch(rule["match"], relative):
+                destination = rule["path"].format(path=relative, **match.groupdict())
+                if Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                    raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+                if relative in paths:
+                    raise SourceDataError(f"{name}: duplicate indexed source path {relative}")
+                paths[relative] = destination
+
+    def inspect(relative):
+        url = urljoin(base, relative)
+        data = read(url, paths[relative])
+        return dict(path=relative, size=len(data), digest=hashlib.sha256(data).hexdigest(),
+                    hash_kind="sha256", url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(paths)))
+    identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"{name}: JSON-indexed contents differ from the pinned tree ({fingerprint})")
+    return entries
+
+
 def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict]:
     """Pin public Drive folder membership and bytes without a per-file YAML inventory."""
     name = source['name']
@@ -285,7 +350,9 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
         else:
             location = urlparse(url)
             entries = []
-            if "html_index" in source:
+            if "json_index" in source:
+                entries = json_index_entries(source, named, raw_dir)
+            elif "html_index" in source:
                 entries = html_index_entries(source, named, raw_dir)
             elif location.netloc == "drive.google.com":
                 entries = google_drive_entries(source, raw_dir)
@@ -354,7 +421,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if "html_index" in source or location.netloc == "drive.google.com":
+            if "html_index" in source or "json_index" in source or location.netloc == "drive.google.com":
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")

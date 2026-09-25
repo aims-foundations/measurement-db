@@ -495,6 +495,64 @@ class SnapshotTests(unittest.TestCase):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
 
+    def test_json_index_verifies_nested_records_and_complete_cached_contents(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        index_bytes = b'{"models":[{"runs":[{"run_id":"a"},{"run_id":"b"}]}]}'
+        pages = {'a.json': b'{"result":0}', 'b.json': b'{"result":1}'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='site/manifest.json', size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path=name, size=len(data), digest=hashlib.sha256(data).hexdigest()) for name, data in pages.items()]
+        source = dict(name='runs', url='https://provider.example/runs/', revision=None,
+                      json_index=dict(source='manifest', records=['models', 'runs'], path='{run_id}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[ab]\.json', path='site/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            content = {index['url']: index_bytes, **{'https://provider.example/runs/' + name: data for name, data in pages.items()}}
+            return io.BytesIO(content[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch) as download:
+            artifacts = upstream_artifacts([index, source], ('manifest', 'runs'))
+        self.assertEqual(download.call_count, 3)
+        self.assertEqual([row['file'] for row in artifacts], ['site/a.json', 'site/b.json', 'site/manifest.json'])
+        (self.raw / 'site').mkdir()
+        (self.raw / 'site/manifest.json').write_bytes(index_bytes)
+        for name, data in pages.items():
+            (self.raw / 'site' / name).write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts([index, source], ('manifest', 'runs'), raw_dir=self.raw), artifacts)
+            (self.raw / 'site/b.json').write_bytes(b'{"result":0}')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('runs',), raw_dir=self.raw)
+            (self.raw / 'site/b.json').write_bytes(pages['b.json'])
+            (self.raw / 'site/manifest.json').write_bytes(index_bytes + b' ')
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('runs',), raw_dir=self.raw)
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_json_index_rejects_unsafe_duplicate_and_missing_paths(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        source = dict(name='runs', url='https://provider.example/runs/',
+                      json_index=dict(source='manifest', records=['runs'], path='{id}.json'),
+                      tree_sha256='0' * 64, files=[dict(match=r'.*', path='site/{path}')])
+        for records, message in [([{'id': '../outside'}], 'unsafe indexed source path'),
+                                 ([{'id': 'https://elsewhere.example/a'}], 'unsafe indexed source path'),
+                                 ([{'id': 'same'}, {'id': 'same'}], 'duplicate indexed source path'),
+                                 ([{}], 'invalid JSON index path template'),
+                                 ([None], 'records must be objects')]:
+            payload = json.dumps({'runs': records}).encode()
+            index = dict(name='manifest', url='https://provider.example/manifest.json', file='index.json',
+                         size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+            with self.subTest(records=records), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                    return_value=io.BytesIO(payload)) as download:
+                with self.assertRaisesRegex(SourceDataError, message):
+                    upstream_artifacts([index, source], ('runs',))
+                self.assertEqual(download.call_count, 1)
+
     def test_public_drive_folder_pins_membership_contents_and_cached_inputs(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         root = 'https://drive.google.com/embeddedfolderview?id=root123'
