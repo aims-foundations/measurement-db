@@ -1,0 +1,113 @@
+benchmark:
+  name: ARC-AGI
+  description: ARC Prize's released model attempts on the public evaluation tasks of
+    ARC-AGI-1 and ARC-AGI-2, which test the inference of transformations from example grids.
+  testing_condition: One response is one model-configuration/task evaluation, with up
+    to two candidate answers for each test grid. Preserve published fractional task scores;
+    otherwise derive exact-grid-match scores only when every test grid is represented.
+    An incomplete export without a published score remains ungraded. Byte-identical copies
+    of the same task record count once, with every source path retained in its trace.
+    Subjects preserve the released configuration label, actual API model, provider and
+    request parameters; temperature is a response condition. Item text contains complete
+    training examples and test inputs, while test outputs occur only in the grading criterion.
+    The April 14, 2025 ARC-AGI-2 runs use the task definitions from the preceding April 4
+    revision; all other released ARC-AGI-2 runs occur after the final May 15 task update.
+    This task-version association is reconstructed from recorded run times and public Git
+    history, not an explicit historical checkout identifier. Six tasks changed between
+    those releases. Exact historical request messages and harness versions are unavailable;
+    the separately captured harness documents the grading rule and published prompt template.
+    No new model inference is performed.
+  paper_url: https://arxiv.org/abs/1911.01547
+  data_source_url: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+  subject_type: model
+  item_type: task
+  license: 'ARC task definitions: Apache-2.0. ARC Prize result datasets and captured
+    benchmarking harness: MIT.'
+  citation: 'Chollet, F. (2019). On the Measure of Intelligence. arXiv:1911.01547.
+    ARC Prize Foundation (2025–2026). ARC-AGI public evaluation model results.'
+  tags: [reasoning, abstraction, grid_transformations]
+  modality: [grid]
+  domain: [reasoning]
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: '2019-11'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    results:
+      v1: results/v1/3e9c9d1a8402aff82356815c106cecaea65cb7d9
+      v2: results/v2/026789c1c12a4c34580a32e84dcaf5630d7e8f31
+    tasks:
+      v1: tasks/v1/399030444e0ab0cc8b4e199870fb20b863846f34
+      v2: tasks/v2/f3283f727488ad98fe575ea6a5ac981e4a188e49
+      v2_20250414: tasks/v2/6726759ffd41b9087095796e1e11acd865a56066
+    history:
+      v2_cutoff: '2025-04-17T17:36:10Z'
+    subject:
+      harness: ARC Prize benchmarking
+sources:
+  upstream:
+  - name: results_v1
+    url: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    revision: 3e9c9d1a8402aff82356815c106cecaea65cb7d9
+    files:
+    - match: '[^/]+/(?:[0-9a-f]{8}|results)\.json|README\.md'
+      path: results/v1/3e9c9d1a8402aff82356815c106cecaea65cb7d9/{path}
+  - name: results_v2
+    url: https://huggingface.co/datasets/arcprize/arc_agi_v2_public_eval
+    revision: 026789c1c12a4c34580a32e84dcaf5630d7e8f31
+    files:
+    - match: '[^/]+/(?:[0-9a-f]{8}|results)\.json|README\.md'
+      path: results/v2/026789c1c12a4c34580a32e84dcaf5630d7e8f31/{path}
+  - name: tasks_v1
+    url: https://github.com/fchollet/ARC-AGI
+    revision: 399030444e0ab0cc8b4e199870fb20b863846f34
+    files:
+    - match: 'data/evaluation/[0-9a-f]{8}\.json|README\.md|LICENSE'
+      path: tasks/v1/399030444e0ab0cc8b4e199870fb20b863846f34/{path}
+  - name: tasks_v2
+    url: https://github.com/arcprize/ARC-AGI-2
+    revision: f3283f727488ad98fe575ea6a5ac981e4a188e49
+    files:
+    - match: 'data/evaluation/[0-9a-f]{8}\.json|readme\.md|LICENSE|changelog\.md'
+      path: tasks/v2/f3283f727488ad98fe575ea6a5ac981e4a188e49/{path}
+  - name: tasks_v2_20250414
+    url: https://github.com/arcprize/ARC-AGI-2
+    revision: 6726759ffd41b9087095796e1e11acd865a56066
+    files:
+    - match: 'data/evaluation/[0-9a-f]{8}\.json|readme\.md|LICENSE'
+      path: tasks/v2/6726759ffd41b9087095796e1e11acd865a56066/{path}
+  - name: harness
+    url: https://github.com/arcprize/arc-agi-benchmarking
+    revision: 28e67d54b05df5be10281892243c509a42a874f1
+    files:
+    - match: 'README\.md|LICENSE\.md|main\.py|src/arc_agi_benchmarking/(?:scoring/scoring\.py|schemas\.py|models\.yml|prompts/(?:prompt_manager\.py|system_prompt\.txt)|tests/(?:test_scoring|test_correct_field)\.py)'
+      path: harness/28e67d54b05df5be10281892243c509a42a874f1/{path}
+grading:
+  rule: For each test grid, either of the two candidate grids may match the reference
+    output exactly. The task score is the fraction of all original test grids solved.
+    Preserve results.json task_results[task_id].score when provided, including partial
+    credit. Otherwise derive this score only from a complete, unambiguously indexed task
+    export; missing test-grid records leave the task ungraded. Use explicit metadata.pair_index
+    when available, falling back to list position for older records. Null attempt slots
+    within a present pair provide no successful candidate. Never round a fractional task
+    score or grade a missing task as failure.
+  verifiers:
+    grid_match:
+      kind: exact_grid_match
+      source: https://github.com/arcprize/arc-agi-benchmarking/blob/28e67d54b05df5be10281892243c509a42a874f1/src/arc_agi_benchmarking/scoring/scoring.py
+      function: ARCScorer.score_task
+      logic: Any exact candidate-grid match solves a test pair; average solved pairs over
+        the original number of test pairs. Preserve published judgments where available.
+      curation_difference: The reference scorer gives no credit to absent pairs. When no
+        published task judgment exists, this curation instead leaves incomplete exports
+        ungraded because the release does not establish the outcomes of missing pairs.
+      historical_limitations: The captured harness explains the rule but is not asserted
+        to be the code revision used for every recorded run. Explicit source indices take
+        precedence over list position; schema defaults must not invent a missing index.

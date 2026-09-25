@@ -3476,6 +3476,171 @@ def _alignment_faking(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _arcagi_source_records(directory, metadata):
+    """Reconcile native JSON files, task history and scalar grid comparisons."""
+    import hashlib
+    import re
+    from datetime import datetime, timezone
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    tasks, native, summaries, counts = {}, {}, {}, Counter()
+    for snapshot, folder in parameters["tasks"].items():
+        for path in sorted((raw / folder / "data/evaluation").glob("*.json")):
+            puzzle = json.loads(path.read_text())
+            _check({"train", "test"} <= puzzle.keys() and not (puzzle.keys() - {"train", "test", "name"}),
+                   True, "ARC complete source task structure")
+            _check(puzzle.get("name", path.stem), path.stem, "ARC optional native task alias")
+            tasks[snapshot, path.stem] = str(path.relative_to(raw)), dict(train=puzzle["train"], test=puzzle["test"])
+    for version, folder in parameters["results"].items():
+        for path in sorted((raw / folder).glob("*/results.json")):
+            for task_id, result in json.loads(path.read_text())["task_results"].items():
+                summaries[version, path.parent.name, task_id] = dict(source_file=str(path.relative_to(raw)), record=result)
+        for path in sorted((raw / folder).glob("*/*.json")):
+            if not re.fullmatch("[0-9a-f]{8}", path.stem):
+                continue
+            payload = path.read_bytes()
+            key = version, path.stem, hashlib.sha256(payload).hexdigest()
+            entry = native.setdefault(key, dict(record=json.loads(payload), files=[], judgments=[], model=path.parent.name))
+            _check(entry["record"], json.loads(payload), "ARC exact duplicate record agreement")
+            entry["files"].append(str(path.relative_to(raw)))
+            judgment = summaries.get((version, path.parent.name, path.stem))
+            if judgment is not None:
+                entry["judgments"].append(judgment)
+            counts["source_result_files"] += 1
+
+    configs, item_contexts = {}, {}
+    for (version, task_id, digest), entry in native.items():
+        configurations, temperatures, dates = {}, set(), []
+        for pair in entry["record"]:
+            for attempt in pair.values():
+                if attempt is None:
+                    continue
+                recorded = attempt["metadata"]
+                _check(recorded.get("task_id", task_id), task_id, "ARC recorded task identifier")
+                request = dict(recorded["kwargs"])
+                temperatures.add(request.pop("temperature", None))
+                config = dict(model_identifier=entry["model"], api_model=recorded["model"],
+                              provider=recorded["provider"], generation_parameters=request)
+                configurations[json.dumps(config, sort_keys=True)] = config
+                timestamp = datetime.fromisoformat(recorded["start_timestamp"])
+                dates.append(timestamp.replace(tzinfo=timezone.utc) if timestamp.tzinfo is None else timestamp)
+                counts["source_candidate_attempts"] += 1
+        _check((len(configurations), len(temperatures)), (1, 1), "ARC one recorded configuration and temperature per task")
+        configuration, features = next(iter(configurations.items()))
+        configs[configuration] = features
+        entry["configuration"], entry["temperature"] = configuration, next(iter(temperatures))
+        snapshot = version
+        if version == "v2" and min(dates) < datetime.fromisoformat(parameters["history"]["v2_cutoff"]):
+            _check({date.date().isoformat() for date in dates}, {"2025-04-14"}, "ARC historical source matching is limited to the released April run")
+            snapshot = "v2_20250414"
+            counts["source_historical_task_associations"] += 1
+        elif version == "v2":
+            _check(min(dates).date().isoformat() >= "2025-07-22", True, "ARC later runs postdate all recorded task changes")
+        task_file, puzzle = tasks[snapshot, task_id]
+        entry["task_file"] = task_file
+        entry["item"] = json.dumps([version, puzzle], sort_keys=True)
+        item_contexts[entry["item"]] = version, puzzle
+        covered, solved = set(), set()
+        for position, pair in enumerate(entry["record"]):
+            indices = {a["metadata"]["pair_index"] for a in pair.values()
+                       if a is not None and a["metadata"].get("pair_index") is not None}
+            _check(len(indices) <= 1, True, "ARC attempts agree on test-pair identity")
+            index = next(iter(indices)) if indices else position
+            _check(type(index) is int and 0 <= index < len(puzzle["test"]), True, "ARC recorded pair exists in the dated task")
+            _check(index not in covered, True, "ARC no duplicated test-grid records")
+            covered.add(index)
+            for attempt in pair.values():
+                if attempt is None:
+                    continue
+                matched = attempt["answer"] == puzzle["test"][index]["output"]
+                if attempt.get("correct") is not None:
+                    _check(attempt["correct"], matched, "ARC published candidate flag matches the exact grid")
+                if matched:
+                    solved.add(index)
+        judgments = {row["record"]["score"] for row in entry["judgments"]}
+        _check(len(judgments) <= 1, True, "ARC identical copies have the same published judgment")
+        if judgments:
+            entry["grade"] = next(iter(judgments))
+            entry["origin"] = "published_task_judgment"
+            _check(abs(entry["grade"] - len(solved) / len(puzzle["test"])) < 1e-12, True,
+                   "ARC every published task judgment agrees with native grid matching")
+        elif covered == set(range(len(puzzle["test"]))):
+            entry["grade"] = len(solved) / len(puzzle["test"])
+            entry["origin"] = "derived_exact_grid_match"
+        else:
+            entry["grade"], entry["origin"] = None, "ungraded_incomplete_export"
+        counts["source_" + entry["origin"]] += 1
+        counts["source_fractional_grades"] += entry["grade"] is not None and entry["grade"] not in (0, 1)
+        counts["source_published_fractional_grades"] += bool(judgments) and entry["grade"] not in (0, 1)
+        counts["source_duplicate_copies"] += len(entry["files"]) - 1
+    _check((counts["source_result_files"], len(native), len(configs), len(item_contexts)),
+           (35659, 35260, 80, 526), "ARC full release census and distinct task/configuration identities")
+    counts.update(source_responses=len(native), source_subjects=len(configs), source_items=len(item_contexts), source_traces=len(native))
+    return native, configs, item_contexts, dict(counts)
+
+
+def _arcagi(directory, tables, metadata, source_records=None):
+    """Check every released attempt, grade, source alias, task definition and setting."""
+    import ast
+
+    native, configurations, contexts, counts = (
+        _arcagi_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "ARC complete unique observation coverage")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           dict(kind="interval", min=0, max=1, direction="higher_is_better"), "ARC preserves its fractional scoring scale")
+    subjects, seen_subjects = {}, Counter()
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        features["generation_parameters"] = ast.literal_eval(features["generation_parameters"])
+        key = json.dumps(features, sort_keys=True)
+        _check(key in configurations, True, "ARC exact native model/provider/request configuration")
+        _check(row.harness, "ARC Prize benchmarking", "ARC source harness identity")
+        _check(pd.isna(row.harness_version), True, "ARC unknown historical harness stays unknown")
+        subjects[row.subject_id] = key
+        seen_subjects[key] += 1
+    _check(seen_subjects, Counter({key: 1 for key in configurations}), "ARC no collapsed model configurations")
+    items, seen_items = {}, Counter()
+    for row in tables["items"].itertuples():
+        content = json.loads(row.content)
+        _check(set(content), {"train", "test"}, "ARC full stimulus structure")
+        _check(all(set(pair) == {"input"} for pair in content["test"]), True, "ARC test solutions never enter stimulus text")
+        criterion = json.loads(row.grading_criterion)
+        references = json.loads(criterion["reference_answer"])
+        _check(criterion["rule"], metadata["grading"]["rule"], "ARC correct grading rule")
+        _check(len(references), len(content["test"]), "ARC one reference grid per test input")
+        version = _features(row.item_features)["split"]
+        puzzle = dict(train=content["train"], test=[dict(input=pair["input"], output=answer)
+                     for pair, answer in zip(content["test"], references, strict=True)])
+        key = json.dumps([version, puzzle], sort_keys=True)
+        _check(key in contexts, True, "ARC dated public task stimulus and reference definition")
+        _check(json.loads(json.loads(row.verifier)["spec"]), metadata["grading"]["verifiers"]["grid_match"], "ARC exact-grid verifier description")
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in contexts}), "ARC complete distinct historical task contexts")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "ARC one-to-one response/trace associations")
+    by_file = {name: key for key, row in native.items() for name in row["files"]}
+    seen, trials = Counter(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = by_file[trace["source_files"][0]]
+        source = native[key]
+        _check(trace, dict(source_files=source["files"], record=source["record"], published_results=source["judgments"],
+                           task_file=source["task_file"], grade_origin=source["origin"]), "ARC full original record, aliases, published judgments and task-version provenance")
+        _check((subjects[response.subject_id], items[response.item_id]), (source["configuration"], source["item"]), "ARC correct model/task association")
+        _check(pd.isna(response.response) if source["grade"] is None else response.response == source["grade"], True, "ARC published or complete derived fractional grade")
+        temperature = source["temperature"]
+        condition = None if temperature is None else "temperature=" + str(float(temperature))
+        _check(pd.isna(response.test_condition) if condition is None else response.test_condition == condition, True, "ARC original sampling temperature")
+        repeat = response.subject_id, response.item_id, condition
+        trials[repeat] += 1
+        _check(response.trial, trials[repeat], "ARC independent repeated observations have consecutive trials")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "ARC exact source census without duplicated copies or omitted attempts")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3492,4 +3657,4 @@ def verify_native_results(directory, tables_directory=None):
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
-            "alignment_faking": _alignment_faking}[directory.name](directory, tables, metadata)
+            "alignment_faking": _alignment_faking, "arcagi": _arcagi}[directory.name](directory, tables, metadata)

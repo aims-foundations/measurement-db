@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 35260
+    logical_sha256: 6eca73f140121d6808bcf2f1de346411df24fffab036e5ccd2fe5f12c0e04560
+  subjects:
+    rows: 80
+    logical_sha256: 282bf47f9cb76b19b191bac973133f5e59720a72d5c4e2433d589a1815aa5bb4
+  responses:
+    rows: 35260
+    logical_sha256: b9633593866259ec4e94d00dabd2d7aeb5f2629a619e2087af6c8d3608fb2887
+  items:
+    rows: 526
+    logical_sha256: 400e86350062154cb011f70d85c957bdf73562149a336d00a5709f4669d16f48
+  benchmarks:
+    rows: 1
+    logical_sha256: 1a156f0566c7cbce20dfd6e8585d765f54cc33d06c1f310dbf84e25d1c290333
+source_claims:
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 35659
+  source_candidate_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 78640
+  source_derived_exact_grid_match:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 19671
+  source_fractional_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 549
+  source_published_fractional_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 323
+  source_duplicate_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 399
+  source_published_task_judgment:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 15565
+  source_historical_task_associations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 360
+  source_ungraded_incomplete_export:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 24
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 35260
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 80
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 526
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/arcprize/arc_agi_v1_public_eval
+    locator: Pinned ARC Prize v1 and v2 public evaluation JSON files, dated official task definitions and scoring
+      implementation; exact revisions in metadata.yaml.
+    scope: All released task records; exact duplicate copies count once with aliases retained. Complete derived
+      grades remain distinct from published judgments.
+    expected: 35260
