@@ -8097,6 +8097,155 @@ def _data_juicer(directory, tables, metadata, source_records=None):
         source_strict_lower_bounds=sum(row["qualifier"] == "strict_lower_bound" for row in records), source_raw_execution_logs=0)
 
 
+def _dbpa_source_records(directory, metadata):
+    """Read original JSON records and literal definitions without running DBPA."""
+    import ast
+    import hashlib
+    import math
+    import re
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    definitions = {}
+    for node in ast.parse((raw / parameters["paths"]["definitions"]).read_text()).body:
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+            if node.targets[0].id in ("model_ids", "other_prompts"):
+                definitions[node.targets[0].id] = ast.literal_eval(node.value)
+    models = {name.rsplit("/", 1)[-1]: name for name in definitions["model_ids"]}
+    prompts = definitions["other_prompts"]
+    _check((len(models), len(prompts)), (9, 8), "DBPA released model and perturbation definitions")
+    groups = {}
+    for study in ("prompt", "alignment", "persona"):
+        folder = raw / parameters["directories"][study]
+        for path in sorted(folder.glob("Act*.json" if study == "persona" else "raw_*.json")):
+            data = json.loads(path.read_text())
+            if study == "persona":
+                data = {"samples": data}
+            for key, values in data.items():
+                _check(isinstance(values, list) and len(values) == 20 and all(isinstance(v, str) for v in values),
+                       True, "DBPA complete twenty-generation native collection")
+                source = str(path.relative_to(raw))
+                groups[source, key] = dict(source_file=source, key=key, samples=values,
+                    collection_sha256=hashlib.sha256(json.dumps(values, ensure_ascii=False).encode()).hexdigest())
+    bases = {}
+    marker = "provide recommendations on CVD guidelines based on NICE for this person"
+    for (source, key), group in groups.items():
+        filename = Path(source).name
+        if filename.startswith("raw_gpt2_prompt_robust_") and key == "base":
+            seed = filename.removeprefix("raw_gpt2_prompt_robust_").removesuffix(".json")
+            prefixes = set()
+            for text in group["samples"]:
+                before, delimiter, _ = text.partition(marker)
+                _check(bool(delimiter), True, "DBPA full echoed final instruction present")
+                prefixes.add(before + delimiter)
+            _check(len(prefixes), 1, "DBPA consistent base prefix across twenty original generations")
+            bases[seed] = prefixes.pop()
+    records = {}
+    for study in ("prompt", "alignment", "persona"):
+        folder = raw / parameters["directories"][study]
+        paths = [folder / parameters["paths"]["persona_results"]] if study == "persona" else sorted(folder.glob("*.json"))
+        for path in paths:
+            if path.name.startswith("raw_"):
+                continue
+            source = str(path.relative_to(raw))
+            data = json.loads(path.read_text())
+            if study == "persona":
+                data = {row["prefix"]: row for row in data}
+                seed = token = None
+            else:
+                token, seed = path.stem.rsplit("_prompt_robust_" if study == "prompt" else "_alignment_", 1)
+            for comparison, native in data.items():
+                _check(math.isfinite(native["p_value"]) and 0 <= native["p_value"] <= 1, True, "DBPA valid recorded p-value")
+                model = models[token] if study == "prompt" else comparison if study == "alignment" else parameters["subject"]["unknown_persona_model"]
+                base = bases[seed] if seed is not None else None
+                target = prompts[int(comparison)] if study == "prompt" else base
+                inputs = dict(study=study, reference_prompt=base, target_prompt=target,
+                    reference_model=token if study == "alignment" else None,
+                    prefix=comparison if study == "persona" else None, input_scope=parameters["input_scopes"][study])
+                raw_file = str(path.with_name("raw_" + path.name).relative_to(raw))
+                if study == "persona":
+                    filename = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", comparison) + ".json"
+                    raw_file = str((folder / filename).relative_to(raw))
+                target_group = groups.get((raw_file, "samples" if study == "persona" else comparison))
+                reference_group = groups.get((raw_file, "base"))
+                if study != "persona":
+                    _check(target_group is not None and reference_group is not None, True, "DBPA both source distributions available")
+                    if "/" in model:
+                        _check(all(text.startswith(target) for text in target_group["samples"]), True, "DBPA target generations echo their assigned input")
+                        if study == "prompt":
+                            _check(all(text.startswith(base) for text in reference_group["samples"]), True, "DBPA reference generations echo their assigned input")
+                item = f"alignment/{seed}" if study == "alignment" else f"{study}/{seed or ''}/{comparison}"
+                records[source, comparison] = dict(model=model, item=item, inputs=inputs, seed=seed,
+                    trace=dict(record_kind="released_distribution_test", source_file=source, comparison=comparison,
+                        source_record=native, reference_group=reference_group, target_group=target_group,
+                        historical_configuration_available=False))
+    _check(Counter(row["inputs"]["study"] for row in records.values()), Counter(prompt=360, alignment=35, persona=14),
+           "DBPA full released comparison population")
+    _check((len(bases), len(groups), sum(len(group["samples"]) for group in groups.values())), (5, 453, 9060),
+           "DBPA complete prompt and generation inventory")
+    return records, groups
+
+
+def _dbpa(directory, tables, metadata, source_records=None):
+    records, groups = source_records if source_records is not None else _dbpa_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    subjects = tables["subjects"].set_index("subject_id").display_name.to_dict()
+    _check(Counter(subjects.values()), Counter({row["model"]: 1 for row in records.values()}), "DBPA source model labels without guessed deployments")
+    for row in tables["subjects"].itertuples():
+        unknown = row.display_name == parameters["subject"]["unknown_persona_model"]
+        features = dict(identity_scope="unreported_persona_deployment" if unknown else "released_model_label")
+        if not unknown:
+            features["reported_model_id"] = row.display_name
+        _check(_features(row.subject_features_extra), features, "DBPA model provenance scope")
+        _check(row.harness, "DBPA", "DBPA original evaluation framework")
+        for field in ("harness_version", "reasoning_effort", "access_date"):
+            _check(pd.isna(getattr(row, field)), True, "DBPA no invented historical setting")
+    expected_items = {row["item"]: row["inputs"] for row in records.values()}
+    _check(Counter(tables["items"].raw_item_id), Counter({key: 1 for key in expected_items}), "DBPA distinct paired inputs and personas")
+    items = {}
+    for item in tables["items"].itertuples():
+        inputs = expected_items[item.raw_item_id]
+        _check(json.loads(item.content), inputs, "DBPA complete supported comparison inputs without invented persona prompts")
+        _check(_features(item.item_features), dict(study=inputs["study"], input_scope=inputs["input_scope"]), "DBPA honest input scope")
+        _check(json.loads(item.grading_criterion), dict(reference_answer=None, rule=metadata["grading"]["rule"]), "DBPA statistical decision, not a reference solution")
+        verifier = dict(**metadata["grading"]["verifiers"]["decision"], comparison_kind=inputs["study"], reference_model=inputs["reference_model"])
+        _check(json.loads(item.verifier), {"class": "exact_matcher", "spec": json.dumps(verifier, sort_keys=True)}, "DBPA recorded-test decision without retrospective evaluator assignment")
+        _check(pd.isna(item.asset_manifest), True, "DBPA no invented attachments")
+        items[item.item_id] = item.raw_item_id
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "DBPA unique result-record associations")
+    seen, used_groups = Counter(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["comparison"]
+        original = records[key]
+        _check(trace, original["trace"], "DBPA exact native statistics and full ordered generation collections")
+        _check(subjects[row.subject_id], original["model"], "DBPA result-model association")
+        _check(items[row.item_id], original["item"], "DBPA result-input association")
+        _check(row.response, float(trace["source_record"]["p_value"] >= 0.05), "DBPA original alpha decision including non-rejection boundary")
+        _check(row.trial, 1, "DBPA comparisons are not invented repeated generations")
+        _check(json.loads(row.test_condition), dict(study=original["inputs"]["study"], source_seed=original["seed"],
+            observation_unit="distribution_test", alpha=0.05), "DBPA recorded seed and statistical observation unit")
+        _check(pd.isna(row.interactors), True, "DBPA no invented interaction agents")
+        for field in ("target_group", "reference_group"):
+            if trace[field] is not None:
+                used_groups.add((trace[field]["source_file"], trace[field]["key"]))
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "DBPA every native comparison exactly once")
+    _check(used_groups, set(groups), "DBPA every released generation collection retained")
+    _check(set(traces), set(tables["responses"].response_id), "DBPA complete observation-trace links")
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])),
+           "DBPA non-rejection is not a correctness or robustness ordering")
+    return dict(source_responses=len(records), source_subjects=len(subjects), source_items=len(items),
+        source_prompt_comparisons=360, source_alignment_comparisons=35, source_persona_comparisons=14,
+        source_generation_strings=sum(len(group["samples"]) for group in groups.values()),
+        source_sample_collections=len(groups), source_distinct_sample_collections=len({group["collection_sha256"] for group in groups.values()}),
+        source_unavailable_target_collections=sum(row["trace"]["target_group"] is None for row in records.values()),
+        source_unavailable_reference_collections=sum(row["trace"]["reference_group"] is None for row in records.values()),
+        source_zero_p_values=sum(row["trace"]["source_record"]["p_value"] == 0 for row in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8117,4 +8266,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa}[directory.name](directory, tables, metadata)

@@ -1,0 +1,3 @@
+- Source: 409 native comparisons and 9,060 generation strings from the complete pinned release; result JSON files match the initial commit. Preserve original statistics, sample order and reuse.
+- Changes: retain all prior decisions, add 35 alignment and 14 persona records, recover the supported base-prompt ending, and include both comparison inputs. Non-rejection is not proof of robustness; prompt variants change patient attributes.
+- Checks and limits: reconcile every result and sample association. Persona model/full inputs, six target collections, all persona baselines and exact historical execution settings remain unknown. No new inference or statistical tests.

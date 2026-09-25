@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 409
+    logical_sha256: d509801f7bf037da88c249d8eba8f9104baefa1a0ed2224b455cf42e22eee59a
+  subjects:
+    rows: 10
+    logical_sha256: aec8b3be8e98c947a41ac7782ece40dd1c2c79ee1e804b8bbdfa2ddc523e69bd
+  responses:
+    rows: 409
+    logical_sha256: 2039d3c41fbbb079dd3966b2e4ee1874c1f9bf1774511d6a8c363adc3c7655a9
+  items:
+    rows: 59
+    logical_sha256: 2f77346299374bc5c9b542e54f94c6f2407002b67149db7db142de42eabeafdc
+  benchmarks:
+    rows: 1
+    logical_sha256: 9d92bf532b5a223a02d2767aa4b2a05b647d383c69f18764e0cbdfc29bafe049
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 409
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 10
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 59
+  source_prompt_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 360
+  source_alignment_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 35
+  source_persona_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 14
+  source_generation_strings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 9060
+  source_sample_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 453
+  source_distinct_sample_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 416
+  source_unavailable_target_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 6
+  source_unavailable_reference_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 14
+  source_zero_p_values:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/vanderschaarlab/dbpa/tree/c33f295b2fec983fbdf0e3267bab72a6c7cc1164/exps/SFLLM
+    locator: 4.2-Table2 and 4.3-Table3 result/raw JSON pairs; 4.1-Figure3/cvd_guidelines_results.json and eight
+      persona sample files.
+    scope: Reconcile every native distribution comparison, original scalar statistic and full ordered sample
+      association. These are distribution-test decisions, not answer-correctness grades; retain reused samples
+      and explicitly missing persona inputs/configuration.
+    expected: 16
