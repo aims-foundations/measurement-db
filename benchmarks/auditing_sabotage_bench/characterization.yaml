@@ -1,0 +1,147 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1869
+    logical_sha256: 5e9f57f005e0e6a89422ec08a85e43066a33cbe9ab7acb2af01538266a144aec
+  subjects:
+    rows: 18
+    logical_sha256: d427e841eb0ef7a7987b34aabdcaeacef22523c06fd6a039c18f774dddb17e90
+  responses:
+    rows: 1869
+    logical_sha256: 7978567af50298f19f340db62f7d7cfc8460fc0b5bbf62c3410fc4b442134957
+  assets:
+    rows: 6147
+    logical_sha256: db26fd5e3a25faf44fa0dd5e1b53e9e92dadf4d90c8645b0deb8205d490bb474
+  items:
+    rows: 68
+    logical_sha256: a589bd957a75f7a704d7cd310b529f3fc2a0d4cf2e692a43bbdf70fecbcda795
+  benchmarks:
+    rows: 1
+    logical_sha256: aeeafd1c480c6b47f91857bcf7d9aa5f762fda227f93309a711bc4c1db8d210f
+source_claims:
+  source_csv_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 19
+  source_uncertain_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 28
+  source_verdict_credence_discrepancies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 6
+  source_human_audits_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 90
+  source_inherited_papers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 3
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 1869
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 1869
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 18
+  source_model_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 10
+  source_task_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 31
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 68
+  source_input_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 71
+  source_workspace_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 8114
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ejcgan/auditing-sabotage-bench
+    locator: Every ground-truth CSV, task rubric and referenced workspace in release f8efd6834aa72ee91fe9042eaab852724873167a,
+      independently decoded and hashed.
+    scope: Recorded AI audits, full native records and reconstructed released inputs. Human audits are excluded;
+      no new model or judge calls.
+    expected: 6147

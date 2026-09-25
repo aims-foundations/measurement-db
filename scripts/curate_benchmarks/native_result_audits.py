@@ -3907,6 +3907,159 @@ def _atmossci(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _auditing_sabotage_source_records(directory, metadata):
+    """Decode every native CSV and reconstruct published inputs without the builder."""
+    import ast
+    import csv
+    import hashlib
+    import io
+    import unicodedata
+    from zipfile import ZipFile
+
+    layout = metadata["build"]["parameters"]["layout"]
+    native, tasks, subjects, inputs, signatures, hashes = {}, {}, set(), {}, {}, {}
+    counts = Counter()
+    with ZipFile(directory / "raw" / layout["archive"]) as archive:
+        prefix = layout["archive_root"] + "/"
+        names = sorted(name[len(prefix):] for name in archive.namelist() if not name.endswith("/"))
+        for name in names:
+            if not (name.startswith("results/ground_truth/") and name.endswith(".csv")):
+                continue
+            counts["source_csv_files"] += 1
+            for position, row in enumerate(csv.DictReader(io.StringIO(archive.read(prefix + name).decode()))):
+                if row["model"] == "human":
+                    counts["source_human_audits_excluded"] += 1
+                    continue
+                _check(row["target"] in ("honest", "sabotaged"), True, "Audit known source target")
+                _check(row["verdict"] in ("honest", "sabotaged", "uncertain"), True, "Audit known recorded verdict")
+                native[name, position] = row
+                subjects.add((row["model"], row["regime"]))
+                counts["source_uncertain_verdicts"] += row["verdict"] == "uncertain"
+                if row["likelihood"]:
+                    probability = float(row["likelihood"])
+                    implied = "sabotaged" if probability > 50 else "honest" if probability < 50 else "uncertain"
+                    counts["source_verdict_credence_discrepancies"] += implied != row["verdict"]
+        _check(len({(r["eval_file"], r["sample_id"], r["epoch"]) for r in native.values()}), len(native),
+               "Audit no repeated original log/sample/epoch")
+        for name in names:
+            if not (name.startswith("codebases/_rubrics/") and name.endswith(".yaml") and not Path(name).name.startswith("_")):
+                continue
+            rubric = yaml.safe_load(archive.read(prefix + name))
+            for target in ("honest", "sabotaged"):
+                rows = rubric.get(target, [])
+                for row in [rows] if isinstance(rows, dict) else rows:
+                    _check(row["id"] not in tasks, True, "Audit unique rubric task ID")
+                    tasks[row["id"]] = {"workspace": row["workspace"], "target": target}
+        loader = ast.parse(archive.read(prefix + "blue_teaming/dataset_loader.py"))
+        instruction = next(ast.literal_eval(node.value) for node in loader.body if isinstance(node, ast.Assign)
+                           and any(getattr(target, "id", None) == "DEFAULT_INPUT" for target in node.targets))
+        _check(metadata["build"]["parameters"]["task"]["audit_instruction"], instruction, "Audit published task instruction")
+        scorer = archive.read(prefix + "blue_teaming/scorers.py").decode()
+        _check("correct = verdict == target.text" in scorer, True, "Audit categorical scorer includes uncertain failures")
+        wanted = {row["sample_id"] for row in native.values()}
+        workspaces, papers = {}, {}
+        for task_id in sorted(wanted):
+            workspace = tasks[task_id]["workspace"]
+            sources = [workspace.removesuffix("_persuasion/") + "/", workspace] if workspace.endswith("_persuasion/") else [workspace]
+            selected = {}
+            for source in sources:
+                selected.update({name[len(source):]: name for name in names if name.startswith(source)})
+            _check("PAPER.md" in selected, True, "Audit paper exists after declared sparse overlay")
+            counts["source_inherited_papers"] += selected["PAPER.md"] != workspace + "PAPER.md"
+            papers[task_id] = archive.read(prefix + selected["PAPER.md"]).decode()
+            workspaces[task_id] = selected
+        for row in native.values():
+            task_id, regime = row["sample_id"], row["regime"]
+            _check(tasks[task_id]["target"], row["target"], "Audit CSV target agrees with rubric")
+            key = task_id, regime
+            if key in inputs:
+                continue
+            prompt = archive.read(prefix + f"blue_teaming/prompts/rendered/{regime}.md").decode()
+            content = json.dumps(dict(released_regime_instructions=prompt,
+                input=papers[task_id] if regime == "paper_only" else instruction, paper=papers[task_id]),
+                ensure_ascii=False, sort_keys=True)
+            content = unicodedata.normalize("NFC", content).strip()
+            assets = {}
+            if regime != "paper_only":
+                for logical, source in sorted(workspaces[task_id].items()):
+                    if source not in hashes:
+                        hashes[source] = hashlib.sha256(archive.read(prefix + source)).hexdigest()
+                    assets[logical] = hashes[source]
+            inputs[key] = {"content": content, "target": row["target"], "assets": assets, "regime": regime}
+            signature = _digest(json.dumps([content, row["target"], assets], sort_keys=True))
+            inputs[key]["signature"] = signature
+            signatures[signature] = inputs[key]
+    counts.update(source_responses=len(native), source_traces=len(native), source_subjects=len(subjects),
+                  source_model_labels=len({model for model, _ in subjects}), source_task_ids=len(wanted),
+                  source_items=len(signatures), source_input_variants=len(inputs),
+                  source_workspace_files=len(hashes), source_assets=len(set(hashes.values())))
+    return native, inputs, signatures, subjects, hashes, dict(counts)
+
+
+def _auditing_sabotage(directory, tables, metadata, source_records=None):
+    """Check complete observations, sparse overlays, asset bytes and qualified identities."""
+    import hashlib
+
+    native, inputs, signatures, expected_subjects, source_hashes, counts = (
+        _auditing_sabotage_source_records(directory, metadata) if source_records is None else source_records)
+    subjects, items = {}, {}
+    parameters = metadata["build"]["parameters"]
+    ambiguous = parameters["ambiguous_subject"]
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features["model_identifier"], features["regime"]
+        note = ambiguous["note"] if key == (ambiguous["model"], ambiguous["regime"]) else parameters["subject"]["default_identity_note"]
+        _check(features, dict(model_identifier=key[0], regime=key[1], identity_note=note), "Audit native configuration label and identity qualification")
+        _check(row.display_name, f"{key[0]} [{key[1]}]", "Audit native model label is not silently remapped")
+        _check(row.harness, parameters["subject"]["harness"], "Audit published harness label")
+        _check(all(pd.isna(getattr(row, name)) for name in ["provider", "normalized_name", "harness_version", "reasoning_effort", "access_date"]),
+               True, "Audit no guessed historical model identity or runtime settings")
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in expected_subjects}), "Audit complete distinct model/regime conditions")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    asset_hashes = {key: hashlib.sha256(row["data"]).hexdigest() for key, row in assets.items()}
+    _check(Counter(asset_hashes.values()), Counter({sha: 1 for sha in set(source_hashes.values())}), "Audit all released workspace assets, deduplicated without modification")
+    seen_items, used_assets = Counter(), set()
+    for row in tables["items"].itertuples():
+        task, regime = row.raw_item_id.rsplit(":", 1)
+        source = inputs[task, regime]
+        _check(row.content, source["content"], "Audit complete released paper and regime instructions")
+        _check(_features(row.item_features), {"regime": regime}, "Audit input affordance regime")
+        _check(json.loads(row.grading_criterion), dict(reference_answer=source["target"], rule=metadata["grading"]["rule"]),
+               "Audit true label and categorical grading rule")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])),
+               ("exact_matcher", metadata["grading"]["verifiers"]["detection"]), "Audit categorical comparison without a new judge")
+        links = json.loads(row.asset_manifest) if isinstance(row.asset_manifest, str) else []
+        _check([link["path"] for link in links], list(source["assets"]), "Audit complete correct workspace, absent in paper-only inputs")
+        for ordinal, link in enumerate(links, 1):
+            _check(asset_hashes[link["asset_id"]], source["assets"][link["path"]], "Audit unchanged bytes linked to the correct workspace")
+            _check((link["role"], link["media_type"], link["ordinal"]), ("input", "application/octet-stream", ordinal), "Audit ordered input attachment")
+            used_assets.add(link["asset_id"])
+        items[row.item_id] = source["signature"]
+        seen_items[source["signature"]] += 1
+    _check(seen_items, Counter({key: 1 for key in signatures}), "Audit complete canonical stimulus/grading variants")
+    _check(used_assets, set(assets), "Audit no orphaned assets")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "Audit one trace for each observation")
+    seen, trials = Counter(), {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, dict(archive=parameters["layout"]["archive"], source_file=key[0], source_row=key[1], native_record=original),
+               "Audit all original CSV fields, credence, fix text, scores and row association")
+        _check(subjects[row.subject_id], (original["model"], original["regime"]), "Audit correct native model and affordance")
+        _check(items[row.item_id], inputs[original["sample_id"], original["regime"]]["signature"], "Audit correct original task association")
+        _check(row.response, float(original["verdict"] == original["target"]), "Audit recorded categorical outcome, including uncertain failures")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "Audit no invented response settings")
+        seen[key] += 1
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+    _check(seen, Counter({key: 1 for key in native}), "Audit no omitted or repeated source observations")
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True, "Audit consecutive trials after canonical task resolution")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -3924,4 +4077,5 @@ def verify_native_results(directory, tables_directory=None):
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
-            "arena_140k": _arena, "atmossci_bench": _atmossci}[directory.name](directory, tables, metadata)
+            "arena_140k": _arena, "atmossci_bench": _atmossci,
+            "auditing_sabotage_bench": _auditing_sabotage}[directory.name](directory, tables, metadata)
