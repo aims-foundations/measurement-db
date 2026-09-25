@@ -4537,6 +4537,162 @@ def _babilong(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _bbq_source_records(directory, metadata):
+    """Read native JSONL/CSV independently and implement the captured R choice parser."""
+    import csv
+    import math
+    import re
+
+    raw = directory / "raw"
+    root = raw / metadata["build"]["parameters"]["paths"]["release"]
+    definitions, generations = {}, {}
+    for folder, bank in [(root / "data", definitions), (root / "results/UnifiedQA", generations)]:
+        for path in sorted(folder.glob("*.jsonl")):
+            with path.open() as stream:
+                for index, line in enumerate(stream):
+                    record = json.loads(line)
+                    key = record["category"], record["example_id"]
+                    _check(key not in bank, True, "BBQ unique category/item key")
+                    bank[key] = dict(file=path.relative_to(raw).as_posix(), row=index, record=record)
+    _check(set(definitions), set(generations), "BBQ complete input/result correspondence")
+    formats = {"unifiedqa-t5-11b_pred_race": "question_options_context",
+               "unifiedqa-t5-11b_pred_arc": "context_question_options",
+               "unifiedqa-t5-11b_pred_qonly": "question_only"}
+    native, counts = {}, Counter()
+
+    def decode(prediction, record):
+        if prediction is None:
+            return None
+        text = re.sub("pantsu$", "pantsuit", prediction)
+        text = re.sub(r"\.$", "", text).replace("o'brien", "obrien").lower()
+        for index in range(3):
+            answer = re.sub(r"\.$", "", record[f"ans{index}"].replace("}", "")).lower()
+            if text.strip(" \t\r\n") == answer.strip(" \t\r\n"):
+                return index
+        for index in range(3):
+            words = record["answer_info"][f"ans{index}"][0].lower().split(" ")
+            if len(words) >= 2 and re.search(" ".join(words[:2]), text):
+                return index
+        return None
+
+    for key, source in generations.items():
+        record = source["record"]
+        definition = definitions[key]["record"]
+        for column in ["context", "question", "ans0", "ans1", "ans2", "label"]:
+            _check(record[column], definition[column], "BBQ unchanged input/reference component")
+        counts["source_annotation_version_differences"] += record["answer_info"] != definition["answer_info"]
+        for model in formats:
+            counts["source_export_predictions"] += 1
+            if model.endswith("_qonly") and record["context_condition"] == "disambig":
+                continue
+            copy = None
+            if model.endswith("_qonly"):
+                _check(record["example_id"] % 2, 0, "BBQ question-only pair origin")
+                copy = generations[key[0], key[1] + 1]
+                _check(copy["record"]["context_condition"], "disambig", "BBQ baseline copy context")
+                for column in ["question", "ans0", "ans1", "ans2", "question_index", "question_polarity", model]:
+                    _check(record[column], copy["record"][column], "BBQ identical question-only copy")
+                counts["source_question_only_copies"] += 1
+            choice = decode(record[model], record)
+            native[source["file"], source["row"], model] = dict(
+                key=key, model=model, source=source, copy=copy, choice=choice)
+    path = root / "results/RoBERTa_and_DeBERTaV3/df_bbq.csv"
+    with path.open(newline="") as stream:
+        for index, record in enumerate(csv.DictReader(stream)):
+            key, model = (record["cat"], int(record["index"])), record["model"]
+            _check(key in generations, True, "BBQ encoder category/item correspondence")
+            scores = [float(record[f"ans{option}"]) for option in range(3)]
+            _check(all(math.isfinite(value) for value in scores), True, "BBQ finite source logits")
+            winner = scores.index(max(scores)) if scores.count(max(scores)) == 1 else None
+            prediction = generations[key]["record"][f"ans{winner}"].lower() if winner is not None else None
+            choice = decode(prediction, generations[key]["record"])
+            source = dict(file=path.relative_to(raw).as_posix(), row=index, record=record)
+            native[source["file"], index, model] = dict(key=key, model=model, source=source, copy=None, choice=choice)
+            formats[model] = "per_option_encoder"
+            counts["source_encoder_responses"] += 1
+            counts["source_export_predictions"] += 1
+    _check(formats, metadata["build"]["parameters"]["formats"], "BBQ documented source input formats")
+    for row in native.values():
+        row["format"] = formats[row["model"]]
+        row["grade"] = float(row["choice"] == generations[row["key"]]["record"]["label"]) if row["choice"] is not None else None
+        counts["source_graded_responses"] += row["grade"] is not None
+        counts["source_correct_responses"] += row["grade"] == 1
+        counts["source_ungraded_responses"] += row["grade"] is None
+    counts.update(source_responses=len(native), source_traces=len(native), source_item_definitions=len(definitions),
+                  source_subject_configurations=len(formats))
+    return definitions, generations, native, dict(counts)
+
+
+def _bbq(directory, tables, metadata, source_records=None):
+    """Check every grade, stimulus, native logit/output, annotation version and copy link."""
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    definitions, generations, native, counts = (
+        _bbq_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "BBQ every retained attempt and trace")
+    _check(len(tables.get("assets", ())), 0, "BBQ text-only source inputs")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "BBQ original binary correctness scale")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["source_model"]
+        _check(row.harness, "BBQ", "BBQ native evaluation harness")
+        _check(features["input_format"], metadata["build"]["parameters"]["formats"][model], "BBQ subject prompting condition")
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]: 1 for row in native.values()}), "BBQ seven distinct source conditions")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "BBQ trace/response bijection")
+    seen, used_items, signatures, trials = Counter(), set(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        model = subjects[row.subject_id]
+        source = trace["source"]
+        key = source["file"], source["row"], model
+        _check(key in native, True, "BBQ actual source model and row")
+        expected = native[key]
+        record = generations[expected["key"]]["record"]
+        _check(trace, dict(source=expected["source"], definition=definitions[expected["key"]],
+               grading_input=generations[expected["key"]], question_only_copy=expected["copy"],
+               parsed_choice=expected["choice"]), "BBQ full native records and copy associations")
+        actual_grade = None if pd.isna(row.response) else row.response
+        _check(actual_grade, expected["grade"], "BBQ original R answer-matching grade, including nulls")
+        content = dict(question=record["question"], options=[record[f"ans{option}"] for option in range(3)],
+                       input_format=expected["format"])
+        if expected["format"] != "question_only":
+            content["context"] = record["context"]
+        features = dict(category=record["category"], question_polarity=record["question_polarity"],
+                        context_condition="not_provided" if expected["format"] == "question_only" else record["context_condition"])
+        rule = json.dumps(dict(description=metadata["grading"]["rule"], correct_option_index=record["label"],
+                          matching_names=[record["answer_info"][f"ans{option}"][0] for option in range(3)]), ensure_ascii=False, sort_keys=True)
+        criterion = dict(reference_answer=record[f"ans{record['label']}"], rule=rule)
+        signature = (json.dumps(content, ensure_ascii=False, sort_keys=True), json.dumps(features, sort_keys=True),
+                     json.dumps(criterion, ensure_ascii=False, sort_keys=True))
+        if row.item_id in signatures:
+            _check(signature, signatures[row.item_id], "BBQ no conflation of source input or grading conditions")
+        else:
+            item = items[row.item_id]
+            _check(item["content"], unicodedata.normalize("NFC", signature[0]).strip(), "BBQ complete input without grading leakage")
+            _check(_features(item["item_features"]), features, "BBQ original item conditions")
+            _check(json.loads(item["grading_criterion"]), criterion, "BBQ correct reference and original annotation-based matcher")
+            verifier = json.loads(item["verifier"])
+            _check((verifier["class"], json.loads(verifier["spec"])),
+                   ("exact_matcher", metadata["grading"]["verifiers"]["answer"]), "BBQ captured verifier protocol")
+            _check(pd.isna(item["asset_manifest"]), True, "BBQ no invented assets")
+            signatures[row.item_id] = signature
+        _check(pd.isna(row.interactors) and pd.isna(row.test_condition), True, "BBQ no invented response settings")
+        seen[key] += 1
+        used_items.add(row.item_id)
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+    _check(seen, Counter({key: 1 for key in native}), "BBQ every original attempt once")
+    _check(used_items, set(items), "BBQ no orphaned item definitions")
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True,
+           "BBQ repeated native attempts preserve consecutive trials")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4556,4 +4712,5 @@ def verify_native_results(directory, tables_directory=None):
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
-            "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong}[directory.name](directory, tables, metadata)
+            "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
+            "bbq": _bbq}[directory.name](directory, tables, metadata)

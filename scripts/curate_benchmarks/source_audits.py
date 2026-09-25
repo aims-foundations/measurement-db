@@ -775,3 +775,4 @@ SOURCE_AUDITS["auditing_sabotage_bench"] = verify_native_results
 SOURCE_AUDITS["autoresearchbench"] = verify_native_results
 SOURCE_AUDITS["averimatec"] = verify_native_results
 SOURCE_AUDITS["babilong"] = verify_native_results
+SOURCE_AUDITS["bbq"] = verify_native_results
