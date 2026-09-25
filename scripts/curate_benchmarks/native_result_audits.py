@@ -6463,6 +6463,209 @@ def _chi_bench(directory, tables, metadata, source_records=None):
         source_subjects=len(subjects), source_traces=len(traces), **counts)
 
 
+def _chip_source_records(directory, metadata):
+    """Read the printed numbers by geometric word positions, without table extraction."""
+    import hashlib
+    import re
+    import pymupdf
+
+    parameters = metadata['build']['parameters']
+    paths, parsing = parameters['paths'], parameters['parsing']
+    raw = directory / 'raw'
+    designs = {path.name for path in (raw / paths['designs']).iterdir() if path.is_dir()}
+    methods = parsing['methods'].split(',')
+    metrics = parsing['metrics'].split(',')
+    number = re.compile(r'[-+]?\d+(?:\.\d+)?')
+    main, resources, other = {}, {}, {}
+
+    def numeric_row(words, label, width):
+        y = (label[1] + label[3]) / 2
+        values = [word for word in words if word[0] > label[2] and abs((word[1]+word[3])/2-y)<1
+                  and number.fullmatch(word[4])]
+        values.sort(key=lambda word: word[0])
+        _check(len(values), width, 'ChiPBench printed numeric cell count')
+        return [word[4] for word in values]
+
+    with pymupdf.open(raw / paths['paper']) as paper:
+        for page_number in map(int, parsing['placement_pages'].split(',')):
+            words = paper[page_number].get_text('words')
+            labels = sorted([word for word in words if word[4] in methods], key=lambda word: word[1])
+            _check(len(labels), 64, 'ChiPBench all method rows on the placement page')
+            for start in range(0, len(labels), len(methods)):
+                group = labels[start:start+len(methods)]
+                _check([word[4] for word in group], methods, 'ChiPBench source algorithm order')
+                names = [word[4] for word in words if word[4] in designs and word[0]<min(row[0] for row in group)
+                         and group[0][1] <= (word[1]+word[3])/2 <= group[-1][3]]
+                _check(len(names), 1, 'ChiPBench circuit label spans exactly one algorithm group')
+                for label in group:
+                    key = names[0], label[4]
+                    _check(key not in main, True, 'ChiPBench unique printed placement row')
+                    main[key] = dict(values=numeric_row(words, label, len(metrics)), page=page_number+1)
+        page = paper[int(parsing['resource_page'])]
+        words = page.get_text('words')
+        headers = sorted([word for word in words if word[4] == 'WireMask-EA'], key=lambda word: word[1])
+        _check(len(headers), 2, 'ChiPBench time and memory table headers')
+        for label in words:
+            if label[4] not in designs or label[0]>=headers[0][0]:
+                continue
+            name = 'evaluation_minutes' if label[1] < headers[1][1] else 'peak_memory_mb'
+            values = numeric_row(words, label, len(methods)-1)
+            for method, value in zip(methods[:-1], values):
+                resources.setdefault((label[4], method), {})[name] = value
+        page = paper[int(parsing['commercial_page'])]
+        words = page.get_text('words')
+        end = page.search_for(parsing['commercial_end'])[0].y0
+        for label in words:
+            if label[4] in designs and label[1]<end:
+                other['macro_placement', label[4], 'Synopsys commercial placer'] = dict(
+                    values=dict(zip(metrics, numeric_row(words, label, len(metrics)))), page=page.number+1)
+        page = paper[int(parsing['synthesis_page'])]
+        words = page.get_text('words')
+        for label in words:
+            if label[4] not in designs:
+                continue
+            values = numeric_row(words, label, 10)
+            for offset, method in enumerate(['Yosys', 'Synopsys-DC']):
+                other['logic_synthesis', label[4], method] = dict(
+                    values=dict(zip(['wns', 'tns', 'nvp', 'power', 'area'], values[offset::2])), page=page.number+1,
+                    all_values=values)
+    _check((len(designs), len(main), len(resources), len(other)), (20, 128, 119, 18), 'ChiPBench complete final-paper scope')
+    native = {}
+    for design, method in sorted(set(main) | set(resources)):
+        record = main.get((design, method))
+        values = dict(zip(metrics, record['values'])) if record else dict.fromkeys(metrics)
+        for metric, value in values.items():
+            native['macro_placement', design, method, metric] = dict(value=value, values=values,
+                page=record['page'] if record else None, resources=resources.get((design, method)))
+    for (stage, design, method), record in other.items():
+        for metric, value in record['values'].items():
+            native[stage, design, method, metric] = dict(value=value, **record)
+    files = {}
+    for stage, design in {(stage, design) for stage, design, _, _ in native} | {('macro_placement', design) for design in designs}:
+        selected = sorted((raw / paths['designs'] / design).rglob('*'))
+        if stage == 'logic_synthesis':
+            for name in parameters['synthesis_rtl'][design].split('|'):
+                root = raw / paths['reference'] / name
+                _check(root.is_dir(), True, 'ChiPBench declared reference RTL directory exists')
+                selected.extend(sorted(root.rglob('*')))
+        values = []
+        for path in selected:
+            if not path.is_file():
+                continue
+            with path.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            values.append(dict(path=str(path.relative_to(raw)), sha256=digest, bytes=path.stat().st_size,
+                role='baseline_placement' if path.name=='macro_placed.def' else
+                     'reference_rtl' if path.is_relative_to(raw / paths['reference']) else 'published_design_kit'))
+        files[stage, design] = values
+    return dict(native=native, designs=designs, files=files, resources=resources, main=main)
+
+
+def _chipbench(directory, tables, metadata, source_records=None):
+    """Check every printed value, resource-only attempt, input file and grading direction."""
+    import hashlib
+    from urllib.parse import unquote
+
+    source = _chip_source_records(directory, metadata) if source_records is None else source_records
+    parameters = metadata['build']['parameters']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(subjects), len(tables['subjects']), 'ChiPBench unique subjects')
+    _check(len(items), len(tables['items']), 'ChiPBench unique items')
+    _check(len(traces), len(tables['traces']), 'ChiPBench unique traces')
+    _check(len(assets), len(tables['assets']), 'ChiPBench unique assets')
+    asset_checks = {}
+    for key, value in assets.items():
+        asset_checks[key] = hashlib.sha256(value['data']).hexdigest(), len(value['data'])
+    variants = {}
+    used_assets = set()
+    for key, item in items.items():
+        info = _features(item['item_features'])
+        stage, design, metric = info['stage'], info['design'], info['grading_channel']
+        variant = stage, design, metric
+        _check(variant not in variants, True, 'ChiPBench each circuit/protocol exactly once')
+        variants[variant] = key
+        _check(info['reported_unit'], parameters['reported_units'][metric], 'ChiPBench unit label is preserved')
+        _check(item['raw_item_id'], ':'.join(variant), 'ChiPBench explicit stage/design/metric identity')
+        expected_files = source['files'][stage, design]
+        manifest = json.loads(item['asset_manifest'])
+        _check(len(manifest), len(expected_files), 'ChiPBench complete released design and RTL file set')
+        for link, expected in zip(manifest, expected_files):
+            _check((link['path'], link['role'], link['media_type']), (expected['path'], expected['role'], 'text/plain'),
+                   'ChiPBench exact file paths and truthful asset roles')
+            _check(asset_checks[link['asset_id']], (expected['sha256'], expected['bytes']), 'ChiPBench exact immutable design bytes')
+            used_assets.add(link['asset_id'])
+        _check(json.loads(item['content']), dict(design=design, stage=stage,
+            released_files=[dict(path=row['path'], role=row['role']) for row in expected_files]), 'ChiPBench full structured design input')
+        expected_scale = dict(kind='interval', min=None if metric in {'wns', 'tns'} else 0, max=None,
+            direction='higher_is_better' if metric in {'wns', 'tns'} else 'lower_is_better')
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion, dict(reference_answer=None, rule=metadata['grading']['rule']+' '+parameters['metric_rules'][metric],
+            response_scale=expected_scale), 'ChiPBench native metric direction and unbounded physical scale')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], 'exact_matcher', 'ChiPBench numerical metric import, not invented LLM grading')
+        _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['native_metric'], metric=metric,
+            stage=stage, reported_unit=parameters['reported_units'][metric]), 'ChiPBench complete metric protocol')
+    expected_variants = {('macro_placement', design, metric) for design in source['designs'] for metric in parameters['parsing']['metrics'].split(',')}
+    expected_variants |= {(stage, design, metric) for stage, design, _, metric in source['native'] if stage=='logic_synthesis'}
+    _check(set(variants), expected_variants, 'ChiPBench all released designs, including ones without observations')
+    _check(used_assets, set(assets), 'ChiPBench no orphan or fabricated assets')
+    seen, used_subjects, counts = set(), {}, Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace['stage'], trace['design'], trace['method'], trace['metric']
+        _check(key not in seen, True, 'ChiPBench one observation per published cell or evidenced missing grade')
+        seen.add(key)
+        expected = source['native'][key]
+        value = float(expected['value']) if expected['value'] is not None else None
+        _check(None if pd.isna(response.response) else response.response, value, 'ChiPBench exact printed value or native absence')
+        _check(response.item_id, variants[key[0], key[1], key[3]], 'ChiPBench correct design and metric association')
+        _check(trace['source_file'], parameters['paths']['paper'], 'ChiPBench source paper provenance')
+        _check(trace['record_kind'], 'published_measurement', 'ChiPBench no fabricated algorithm-output trace')
+        _check(trace['grade_status'], 'not_reported' if value is None else 'published_value', 'ChiPBench explicit missing metric')
+        record = trace['native_record']
+        if key[0]=='logic_synthesis':
+            _check(record['source_line'].split(), [key[1], *expected['all_values']], 'ChiPBench full original synthesis row')
+            columns = parameters['parsing']['synthesis_columns'].split(',')[1:]
+            _check({name:record[name] for name in columns}, dict(zip(columns, expected['all_values'])), 'ChiPBench all paired synthesis values')
+        elif key[2]=='Synopsys commercial placer':
+            _check(record['source_line'].split(), [key[1], *expected['values'].values()], 'ChiPBench full commercial row')
+            _check({name:record[name] for name in expected['values']}, expected['values'], 'ChiPBench all commercial metric values')
+        else:
+            _check({name:record[name] for name in expected['values']}, expected['values'], 'ChiPBench all original placement fields')
+            if value is not None:
+                _check(record['source_line'].split(), [key[2], *expected['values'].values()], 'ChiPBench full printed placement row')
+            else:
+                _check(record['source_line'], None, 'ChiPBench does not fabricate an absent placement row')
+            for name in ['evaluation_minutes', 'peak_memory_mb']:
+                _check(record[name], expected['resources'][name] if expected['resources'] else None, 'ChiPBench exact backend resource statistic')
+        _check(record['source_page'], expected['page'], 'ChiPBench exact source page or resource-only provenance')
+        subject = subjects[response.subject_id]
+        _check(subject['display_name'], key[2], 'ChiPBench original algorithm or tool identity')
+        _check(subject['harness'], parameters['subject']['harness'], 'ChiPBench declared evaluation flow')
+        extra = _features(subject['subject_features_extra'])
+        expected_extra = dict(study=parameters['subject']['study'], source_component=key[0])
+        if key[2] in parameters['reported_settings']:
+            _check(unquote(extra.pop('reported_settings')), parameters['reported_settings'][key[2]], 'ChiPBench documented algorithm settings')
+        _check(extra, expected_extra, 'ChiPBench placement and synthesis subjects remain distinct')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['access_date']), True, 'ChiPBench unknown historical configuration remains unknown')
+        _check((response.trial, pd.isna(response.test_condition), pd.isna(response.interactors)), (1, True, True), 'ChiPBench no fabricated repetitions')
+        used_subjects[response.subject_id] = key[0], key[2]
+        counts['source_ungraded_observations'] += value is None
+        counts['source_graded_observations'] += value is not None
+        counts['source_negative_values'] += value is not None and value < 0
+    _check(seen, set(source['native']), 'ChiPBench every placement/commercial/synthesis measurement retained')
+    _check(set(traces), set(tables['responses'].response_id), 'ChiPBench exact trace associations')
+    _check(set(subjects), set(used_subjects), 'ChiPBench no placeholder subjects')
+    expected_subjects = {(stage, method) for stage, _, method, _ in source['native']}
+    _check(Counter(used_subjects.values()), Counter({key:1 for key in expected_subjects}), 'ChiPBench exact component/algorithm configurations')
+    return dict(source_responses=len(seen), source_items=len(items), source_subjects=len(subjects), source_traces=len(traces),
+        source_designs=len(source['designs']), source_designs_with_ppa=len({design for design,_ in source['main']}),
+        source_resource_only_attempts=len(set(source['resources'])-set(source['main'])), source_assets=len(assets), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6483,4 +6686,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench}[directory.name](directory, tables, metadata)

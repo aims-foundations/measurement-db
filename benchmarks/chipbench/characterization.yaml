@@ -1,0 +1,131 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1470
+    logical_sha256: ad728a78eb82a7ebc3c5e5f16cd74e5137e4d536c6679a43729fa1829091ef30
+  subjects:
+    rows: 11
+    logical_sha256: 84b1fcfda4c21751f1bcf2988dcb5d0198dca7e73a2f435e4e2949a16e346e5f
+  responses:
+    rows: 1470
+    logical_sha256: 66f1160748ae4fe4a1b01ad02e77f06b4407bc8b7d2e50bb0204a4789f84feff
+  assets:
+    rows: 277
+    logical_sha256: 9d43cd40553ce254bcace359577e0e45e4675eb78a0c2e42b3b984ccc4dd2553
+  items:
+    rows: 230
+    logical_sha256: ebbb19b563ec4959e1ed6573906c4dbdb05296258a758aa8f778904456c573f8
+  benchmarks:
+    rows: 1
+    logical_sha256: 1f2c631a9a0fc0f97cd9ab48a02ad18986f3645d95e2843cff3a6fcb4745c105
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 1470
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 230
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 11
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 1470
+  source_designs:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 20
+  source_designs_with_ppa:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 16
+  source_resource_only_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 7
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 277
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 70
+  source_graded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 1400
+  source_negative_values:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    locator: Final paper Tables 6 and 7 (placement), Table 8 (commercial placer), Table 11 (synthesis), and Tables
+      4 and 5 (resources); released HF design directories.
+    scope: Read every numeric cell independently from PDF word coordinates, match circuit and method labels, preserve
+      native scales/nulls and compare every attached source-file byte. Published measurements may be dependent;
+      no seed-level runs are invented.
+    expected: 292
