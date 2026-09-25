@@ -7355,6 +7355,156 @@ def _crow(directory, tables, metadata, source_records=None):
         source_attack_successes=sum(row["grade"] == 1 for row in records.values()))
 
 
+def _cruxeval_source_records(directory, metadata):
+    """Read the released verdict arrays without executing generated programs."""
+    import ast
+    import math
+    from zipfile import ZipFile
+
+    raw = directory / "raw" / "release"
+    bank_rows = [json.loads(line) for line in (raw / "data/cruxeval.jsonl").read_text().splitlines()]
+    bank = {row["id"]: row for row in bank_rows}
+    _check(len(bank), len(bank_rows), "CRUXEval unique native function IDs")
+    exports = {}
+    with ZipFile(raw / "samples/evaluation_results.zip") as scored, ZipFile(raw / "samples/model_generations.zip") as generated:
+        for member in sorted(scored.namelist()):
+            if not member.endswith(".json"):
+                continue
+            configuration = Path(member).stem
+            model_temperature, task = configuration.rsplit("_", 1)
+            model, temperature = model_temperature.rsplit("_temp", 1)
+            source = json.loads(scored.read(member))
+            generations = json.loads(generated.read("model_generations/" + configuration + "/generations.json"))
+            _check(generations, source["raw_generations"], "CRUXEval both released archives contain identical outputs")
+            _check(set(source["raw_generations"]), set(bank), "CRUXEval full task coverage in each export")
+            _check(set(source["raw_scored_generations"]), set(bank), "CRUXEval full verdict coverage")
+            pass1, pass5 = [], []
+            for sample, scores in source["raw_scored_generations"].items():
+                outputs = source["raw_generations"][sample]
+                _check(len(scores), len(outputs), "CRUXEval positional output-verdict alignment")
+                _check(all(type(value) is bool for value in scores), True, "CRUXEval original boolean verdicts")
+                _check(all(isinstance(value, str) for value in outputs), True, "CRUXEval original generation strings")
+                n, c = len(scores), sum(scores)
+                pass1.append(c / n)
+                pass5.append(1. if n - c < 5 else 1 - math.comb(n - c, 5) / math.comb(n, 5))
+                for output, grade in zip(outputs, scores, strict=True):
+                    excluded = (task == "input" and "f(" not in output) or (
+                        task == "output" and "f(" + bank[sample]["input"] + ")" in output)
+                    if excluded:
+                        _check(grade, False, "CRUXEval original deterministic rejection keeps the generation position")
+            _check(abs(100 * sum(pass1) / len(pass1) - source["pass_at_1"]) < 1e-10,
+                   True, "CRUXEval all published pass-at-one summaries")
+            _check(abs(100 * sum(pass5) / len(pass5) - source["pass_at_5"]) < 1e-10,
+                   True, "CRUXEval all published combinatorial pass-at-five summaries")
+            exports[member] = dict(configuration=configuration, model=model, temperature=temperature, task=task, source=source)
+    for path in sorted((raw / "samples/evaluation_results").glob("*.json")):
+        member = "evaluation_results/" + path.stem.removeprefix("sample_scored_") + ".json"
+        _check(json.loads(path.read_text()), exports[member]["source"], "CRUXEval unpacked demo is a duplicate, not extra trials")
+    syntax = ast.parse((raw / "prompts.py").read_text())
+    names = dict(direct_input="make_direct_input_prompt", cot_input="make_cot_input_prompt",
+                 direct_output="make_direct_output_prompt", cot_output="make_cot_output_prompt",
+                 phind_output="make_direct_output_prompt_phind")
+    prompts = {}
+    for variant, name in names.items():
+        function = next(node for node in syntax.body if isinstance(node, ast.FunctionDef) and node.name == name)
+        value = next(node.value for node in function.body if isinstance(node, ast.Return))
+        _check(isinstance(value, ast.JoinedStr), True, "CRUXEval reviewed literal source prompt")
+        prompts[variant] = value.values
+    api = ast.parse((raw / "openai/openai_prompt.py").read_text())
+    system_prompt = next(ast.literal_eval(node.value) for node in ast.walk(api) if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "system_prompt" for target in node.targets))
+    return bank, exports, prompts, system_prompt
+
+
+def _cruxeval(directory, tables, metadata, source_records=None):
+    import ast
+
+    bank, exports, prompts, system_prompt = source_records if source_records is not None else _cruxeval_source_records(directory, metadata)
+    total = sum(len(grades) for export in exports.values() for grades in export["source"]["raw_scored_generations"].values())
+    _check(len(tables["responses"]), total, "CRUXEval complete observation count before checking associations")
+    _check(len(tables["traces"]), total, "CRUXEval complete trace count before checking associations")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["reported_model"]
+        _check(row.display_name, model.removesuffix("+cot"), "CRUXEval native model label")
+        _check(row.harness, "CRUXEval", "CRUXEval declared harness")
+        _check(features, dict(reported_model=model, prompting="cot" if model.endswith("+cot") else "direct",
+            api_system_prompt=system_prompt if model.startswith("gpt-") else "not_applicable"),
+            "CRUXEval prompting and source API system message, without temperature in subject identity")
+        for field in ["reasoning_effort", "harness_version", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "CRUXEval unavailable historical setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({export["model"]: 1 for export in exports.values()}),
+           "CRUXEval all released model/prompting variants")
+    items = {}
+    for row in tables["items"].itertuples():
+        variant, sample = row.raw_item_id.split("/", 1)
+        original = bank[sample]
+        task = "input" if variant.endswith("input") else "output"
+        parts = []
+        for node in prompts[variant]:
+            if isinstance(node, ast.Constant):
+                parts.append(node.value)
+            else:
+                _check(isinstance(node, ast.FormattedValue) and isinstance(node.value, ast.Name),
+                       True, "CRUXEval source prompt interpolates only native task fields")
+                parts.append(original[node.value.id])
+        _check(row.content, "".join(parts), "CRUXEval complete native task template including examples and whitespace")
+        _check(_features(row.item_features), dict(task=task, source_task_id=sample, prompt_variant=variant,
+            prompt_source="reconstructed_from_released_template"), "CRUXEval explicit prompt reconstruction")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion["reference_answer"], "f(" + original["input"] + ")" if task == "input" else original["output"],
+               "CRUXEval original reference call or output, including zero-argument functions")
+        _check(json.loads(criterion["rule"]), dict(protocol=metadata["grading"]["verifiers"][task]["rule"],
+            code=original["code"], reference_input=original["input"], reference_output=original["output"]),
+            "CRUXEval full executable grading context, with nonunique valid inputs allowed")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "exact_matcher", "CRUXEval deterministic historical execution grader")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"][task], "CRUXEval original release grading protocol")
+        _check(pd.isna(row.asset_manifest), True, "CRUXEval no invented media")
+        items[row.item_id] = variant, sample
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items = Counter(), set()
+    empty, successes = 0, 0
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        member, sample, index = trace["source_member"], trace["sample_id"], trace["generation_index"]
+        export = exports[member]
+        source = export["source"]
+        grade, generation = source["raw_scored_generations"][sample][index], source["raw_generations"][sample][index]
+        _check(trace, dict(source_archive="release/samples/evaluation_results.zip", source_member=member,
+            sample_id=sample, generation_index=index, generation=generation, recorded_verdict=grade,
+            recorded_pass_at_1=source["pass_at_1"], recorded_pass_at_5=source["pass_at_5"],
+            trace_scope="released_postprocessed_generation"), "CRUXEval exact recorded generation, verdict and summary provenance")
+        _check(row.response, float(grade), "CRUXEval every original execution verdict")
+        _check(subjects[row.subject_id], export["model"], "CRUXEval correct native model/prompting association")
+        variant = ("cot" if export["model"].endswith("+cot") else "direct") + "_" + export["task"]
+        if export["model"] == "phind" and export["task"] == "output":
+            variant = "phind_output"
+        _check(items[row.item_id], (variant, sample), "CRUXEval correct task and native prompt variant")
+        _check(row.trial, index + 1, "CRUXEval preserved generation order")
+        _check(row.test_condition, "temperature=" + export["temperature"] + "; source_configuration=" + export["configuration"],
+               "CRUXEval observed sampling temperature and export identity")
+        _check(pd.isna(row.interactors), True, "CRUXEval no invented interactors")
+        seen[member, sample, index] += 1
+        used_items.add(row.item_id)
+        empty += not generation.strip()
+        successes += grade
+    expected = Counter({(member, sample, index): 1 for member, export in exports.items()
+        for sample, grades in export["source"]["raw_scored_generations"].items() for index in range(len(grades))})
+    _check(seen, expected, "CRUXEval every source generation exactly once, without counting demo duplicates")
+    _check(used_items, set(items), "CRUXEval no unused prompt variants")
+    _check(len(traces), len(expected), "CRUXEval exact trace coverage")
+    _check(set(traces), set(tables["responses"].response_id), "CRUXEval correct response-trace associations")
+    scale = json.loads(tables["benchmarks"].iloc[0].response_scale)
+    _check(scale, dict(kind="discrete", values=[0, 1], direction="higher_is_better",
+        meanings=metadata["benchmark"]["response_scale"]["meanings"]), "CRUXEval binary execution outcome semantics")
+    return dict(source_responses=len(expected), source_items=len(items), source_subjects=len(subjects),
+        source_traces=len(traces), source_functions=len(bank), source_configurations=len(exports),
+        source_successes=successes, source_failures=len(expected)-successes, source_empty_outputs=empty)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7375,4 +7525,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval}[directory.name](directory, tables, metadata)

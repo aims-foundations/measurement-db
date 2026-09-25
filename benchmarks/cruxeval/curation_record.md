@@ -1,0 +1,3 @@
+- Import all 992,000 released execution verdicts from 124 configurations, retaining their complete postprocessed generations and recorded trial order. Match both source archives and exclude the two duplicate demonstration exports.
+- Reconstruct the five published prompt variants, including examples, chain-of-thought instructions and Phind formatting. Keep temperature as an observation condition; preserve the zero-argument reference call `f()` and all 148 failed empty outputs.
+- Pin the original result release and its grader, before the later parsing change. Independently check every source association and all pass@1/pass@5 summaries; generated programs are not executed, and reconstructed prompts are not presented as captured request logs.
