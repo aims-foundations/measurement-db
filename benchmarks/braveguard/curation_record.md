@@ -1,0 +1,3 @@
+- Import all three historical guard exports (536 decisions), preserving the original harmful/non-harmful response scale, author correctness fields and complete outputs. Repeated copies of one Git blob are not new trials.
+- Restore the actual trajectories and documented mode-3 inputs. Their recorded backend is GPT-5.2; the previous GPT-5.5 attribution and objective-only item content were incorrect. Keep full source records despite the upstream prompt formatter’s argument shortening.
+- These are development checkpoints, with training/evaluation overlap in the associated commands, not the final paper evaluation. Exact weights and tokenizer-formatted requests remain unknown; no agents or safety judges are rerun.

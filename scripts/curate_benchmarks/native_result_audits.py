@@ -5392,6 +5392,120 @@ def _bird(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _braveguard_source_records(directory, metadata):
+    """Read native CSV/JSONL and use only the reviewed, pure upstream prompt formatter."""
+    import ast
+    import csv
+    from typing import Optional
+
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw'
+    trajectories, annotations, native, definitions = {}, {}, {}, {}
+    for collection, relative in parameters['collections'].items():
+        with (raw / relative / 'results.csv').open(newline='') as stream:
+            for row in csv.DictReader(stream):
+                key = collection, row['id']
+                _check(key not in annotations, True, 'BraveGuard unique source trajectory annotation')
+                _check(row['harmful'].lower() in {'true', 'false'}, True, 'BraveGuard original binary safety reference')
+                annotations[key] = row
+        for path in sorted((raw / relative).glob('session_item-*.jsonl')):
+            key = collection, path.stem.split('-')[1]
+            trajectory = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            models = [row for row in trajectory if row.get('type') == 'model_change']
+            _check(len(models), 1, 'BraveGuard recorded trajectory backend exactly once')
+            _check((models[0]['provider'], models[0]['modelId']), ('Idealab', 'gpt-5.2-1211-global'),
+                'BraveGuard original backend, not the legacy GPT-5.5 assumption')
+            trajectories[key] = dict(source_trajectory=str(path.relative_to(raw)), trajectory=trajectory)
+    _check(set(annotations), set(trajectories), 'BraveGuard full trajectory/annotation correspondence')
+    for subject, relative in parameters['results'].items():
+        revision = parameters['subject_' + subject]['source_revision']
+        root = raw / 'github' / revision
+        tree = ast.parse((root / 'evaluator/prompt_builder.py').read_text())
+        definitions_ast = [node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == 'PromptBuilder']
+        _check(len(definitions_ast), 1, 'BraveGuard reviewed pure prompt formatter present')
+        namespace = dict(json=json, Dict=dict, List=list, Optional=Optional)
+        exec(compile(ast.Module(body=definitions_ast, type_ignores=[]), 'captured_braveguard_prompt_formatter', 'exec'), namespace)
+        cls = namespace['PromptBuilder']
+        formatter = cls(prompt_style='sft_flat', system_prompt=cls.DEFAULT_SYSTEM_PROMPT)
+        training = yaml.safe_load((root / 'sft_runs/qwen3_guard_8b/train.yaml').read_text())
+        features = parameters['subject_' + subject]
+        for field, source in [('training_epochs', 'num_train_epochs'), ('lora_rank', 'lora_rank'), ('learning_rate', 'learning_rate')]:
+            _check(features[field], str(training[source]), 'BraveGuard documented checkpoint configuration')
+        with (raw / relative).open(newline='') as stream:
+            for position, record in enumerate(csv.DictReader(stream), 2):
+                key = subject, record['session_id']
+                trajectory_key = parameters['result_collections'][subject], record['session_id']
+                _check(key not in native, True, 'BraveGuard each published guard prediction once')
+                _check(record['expected_harmful'].lower(), annotations[trajectory_key]['harmful'].lower(),
+                    'BraveGuard matching trajectory safety reference')
+                _check(record['correct'], str(record['harmful'] == record['expected_harmful']),
+                    'BraveGuard author correctness retained with original classification')
+                _check(record['error'], '', 'BraveGuard every captured export has a parsed guard output')
+                trace = dict(source_file=relative, source_row=position, record=record, **trajectories[trajectory_key])
+                definition = ':'.join([subject, *trajectory_key])
+                messages = formatter.build_messages(mode=3, trajectory=trace['trajectory'])
+                definitions[definition] = dict(content=messages, reference='harmful' if record['expected_harmful']=='True' else 'non-harmful',
+                    features=dict(collection=trajectory_key[0], session_id=record['session_id'],
+                        source_trajectory=trace['source_trajectory'], prompt_revision=subject,
+                        trajectory_provider='Idealab', trajectory_model='gpt-5.2-1211-global'))
+                native[key] = dict(trace=trace, definition=definition, response=float(record['harmful']=='True'),
+                    condition='temperature=' + parameters['inference']['temperature'] + ';mode=3;collection=' + trajectory_key[0])
+    _check((len(native), len(trajectories), len(definitions)), (536, 273, 536), 'BraveGuard all three historical result exports')
+    counts = dict(source_responses=len(native), source_traces=len(native), source_items=len(definitions),
+        source_trajectory_inputs=len(trajectories), source_subjects=len(parameters['results']),
+        source_harmful=sum(int(row['response']) for row in native.values()),
+        source_correct=sum(row['trace']['record']['correct']=='True' for row in native.values()),
+        source_trajectory_records=sum(len(row['trajectory']) for row in trajectories.values()))
+    return native, definitions, counts
+
+
+def _braveguard(directory, tables, metadata, source_records=None):
+    native, definitions, counts = _braveguard_source_records(directory, metadata) if source_records is None else source_records
+    parameters = metadata['build']['parameters']
+    _check((len(tables['responses']), len(tables['traces'])), (len(native), len(native)), 'BraveGuard complete observations and traces')
+    _check(len(tables.get('assets', ())), 0, 'BraveGuard no invented runtime environments')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        subject = row.harness_version[:7]
+        expected = parameters['subject_' + subject]
+        _check(row.harness_version, expected['source_revision'], 'BraveGuard exact historical guard configuration')
+        _check(row.harness, expected['harness'], 'BraveGuard native harness')
+        _check(row.display_name, parameters['models'][subject], 'BraveGuard guard checkpoint label')
+        _check(_features(row.subject_features_extra), {k:v for k,v in expected.items() if k not in {'harness', 'harness_version'}},
+            'BraveGuard complete documented checkpoint settings and limitations')
+        _check(pd.isna(row.normalized_name) and pd.isna(row.reasoning_effort), True, 'BraveGuard exact weight version and unsupported reasoning setting remain unknown')
+        subjects[row.subject_id] = subject
+    _check(Counter(subjects.values()), Counter({key:1 for key in parameters['results']}), 'BraveGuard each distinct guard export configuration once')
+    items = {}
+    for row in tables['items'].itertuples():
+        definition = definitions[row.raw_item_id]
+        _check(json.loads(row.content), definition['content'], 'BraveGuard exact upstream messages before tokenizer formatting')
+        _check(_features(row.item_features), definition['features'], 'BraveGuard original trajectory and prompt-version association')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=definition['reference'], rule=metadata['grading']['rule']),
+            'BraveGuard released safety reference separate from predictor input')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'BraveGuard recorded classification interpretation')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['recorded_decision'], 'BraveGuard decision is not accuracy')
+        _check(pd.isna(row.asset_manifest), True, 'BraveGuard no fabricated runtime assets')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), 'BraveGuard all input and protocol variants')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'BraveGuard trace/response bijection')
+    used = set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = subjects[row.subject_id], trace['record']['session_id']
+        _check(key not in used, True, 'BraveGuard one observation per original export row'); used.add(key)
+        expected = native[key]
+        _check(trace, expected['trace'], 'BraveGuard every output field and complete unshortened trajectory')
+        _check(items[row.item_id], expected['definition'], 'BraveGuard correct guard/input association')
+        _check(row.response, expected['response'], 'BraveGuard original harmful decision unchanged')
+        _check((row.trial, row.test_condition), (1, expected['condition']), 'BraveGuard original condition without invented repeated trials')
+        _check(pd.isna(row.interactors), True, 'BraveGuard no fabricated interacting subject')
+    _check(used, set(native), 'BraveGuard every published prediction accounted for')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5412,4 +5526,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard}[directory.name](directory, tables, metadata)
