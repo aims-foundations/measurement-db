@@ -6809,6 +6809,109 @@ def _classroom_ai(directory, tables, metadata, source_records=None):
         **{'source_level_'+str(level):grades[level] for level in range(1,7)})
 
 
+def _cmmlu_source_records(directory, metadata):
+    """Read native JSON records and execute only the captured pure parser function."""
+    import ast
+    import re
+
+    raw = directory / 'raw'
+    paths = metadata['build']['parameters']['paths']
+    protocol = metadata['grading']['verifiers']['reconstructed_option_accuracy']
+    config = ast.parse((raw / paths['reference_config']).read_text())
+    patterns = [node.value.value for node in ast.walk(config)
+                if isinstance(node, ast.keyword) and node.arg == 'answer_pattern'
+                and isinstance(node.value, ast.Constant)]
+    _check(patterns, [protocol['answer_pattern']], 'CMMLU pattern matches captured upstream configuration')
+    code = ast.parse((raw / paths['reference_parser']).read_text())
+    functions = [node for node in code.body if isinstance(node, ast.FunctionDef)
+                 and node.name == 'match_answer_pattern']
+    _check(len(functions), 1, 'CMMLU captured pure parser function')
+    functions[0].decorator_list = []
+    namespace = {'re': re}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<captured CMMLU parser>', 'exec'), namespace)
+    native, trials, seen_prompts = {}, Counter(), set()
+    for path in sorted(raw.glob(paths['prediction_glob'])):
+        records = json.loads(path.read_text())
+        category = path.parent.name.removeprefix('cmmlu-')
+        for index, record in enumerate(records):
+            _check(set(record), {'origin_prompt', 'prediction', 'gold'}, 'CMMLU exact native record fields')
+            _check(len(record['origin_prompt']), 1, 'CMMLU complete single-message prompt')
+            message = record['origin_prompt'][0]
+            _check(set(message), {'role','prompt'}, 'CMMLU prompt message fields')
+            _check(message['role'], 'HUMAN', 'CMMLU recorded prompt role')
+            _check(record['gold'] in 'ABCD' and len(record['gold']) == 1, True, 'CMMLU explicit reference option')
+            answer = namespace['match_answer_pattern'](record['prediction'], patterns[0])
+            prompt = message['prompt']
+            repetition = path.stem, prompt.strip(), record['gold']
+            trials[repetition] += 1
+            key = str(path.relative_to(raw)), index
+            native[key] = dict(record=record, prompt=prompt, subject=path.stem, category=category,
+                extracted_answer=answer, grade=float(answer == record['gold']), trial=trials[repetition],
+                prompt_condition='cot' if '请在回答之前一步步思考.' in prompt else 'nocot')
+            seen_prompts.add((prompt.strip(), record['gold']))
+    _check((len(native), len({row['subject'] for row in native.values()}),
+            len({row['category'] for row in native.values()})), (254804,22,67), 'CMMLU full released scope')
+    return dict(native=native, distinct_items=seen_prompts, repeated_attempts=sum(n-1 for n in trials.values()))
+
+
+def _cmmlu(directory, tables, metadata, source_records=None):
+    """Check every prompt, prediction, reference, model, grade and repeated attempt."""
+    source = source_records if source_records is not None else _cmmlu_source_records(directory, metadata)
+    parameters = metadata['build']['parameters']
+    protocol = metadata['grading']['verifiers']['reconstructed_option_accuracy']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features['source_model_label']
+        _check(row.display_name, 'CMMLU / '+label, 'CMMLU exact reported system, including backend suffix')
+        _check(row.harness, 'OpenCompass', 'CMMLU source harness')
+        _check(features['historical_config'], 'not_recorded', 'CMMLU unknown historical configuration')
+        _check(features['model_identifier_status'], 'upstream_filename_only', 'CMMLU no inferred checkpoint identity')
+        for field in ['normalized_name','release_date','access_date','harness_version','reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'CMMLU no invented subject configuration: '+field)
+        subjects[row.subject_id] = label, features['prompt_condition']
+    _check(Counter(label for label, _ in subjects.values()),
+        Counter({row['subject']:1 for row in source['native'].values()}), 'CMMLU complete reported system coverage')
+    items = {row.item_id:row for row in tables['items'].itertuples()}
+    actual_items = []
+    for item in items.values():
+        criterion = json.loads(item.grading_criterion)
+        actual_items.append((item.content, criterion['reference_answer']))
+        _check(criterion['rule'], metadata['grading']['rule'], 'CMMLU explicit reconstructed grading criterion')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], 'exact_matcher', 'CMMLU deterministic reference evaluation')
+        _check(json.loads(verifier['spec']), protocol, 'CMMLU precise pinned parser and assessment provenance')
+        _check([] if pd.isna(item.asset_manifest) else json.loads(item.asset_manifest), [], 'CMMLU text-only inputs')
+    _check(Counter(actual_items), Counter({key:1 for key in source['distinct_items']}),
+        'CMMLU exact prompts remain distinct when instructions or formatting differ')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, grades, blank, unparsed = Counter(), Counter(), 0, 0
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = source['native'][key]
+        _check(subjects[row.subject_id], (original['subject'],original['prompt_condition']), 'CMMLU prediction/system association')
+        item = items[row.item_id]
+        _check(item.content, original['prompt'].strip(), 'CMMLU complete model-facing prompt with only outer whitespace trimmed')
+        _check(json.loads(item.grading_criterion)['reference_answer'], original['record']['gold'], 'CMMLU recorded reference preserved')
+        _check(trace['source_record'], original['record'], 'CMMLU complete unmodified source record')
+        _check(trace['extracted_answer'], original['extracted_answer'], 'CMMLU captured parser result')
+        _check(trace['grade_status'], 'reconstructed_with_pinned_reference_protocol', 'CMMLU no historical-grade claim')
+        _check(row.response, original['grade'], 'CMMLU exact reference-protocol grade for every attempt')
+        _check(row.trial, original['trial'], 'CMMLU repeated native attempts are separate trials')
+        _check(row.test_condition, 'prompt='+original['prompt_condition'], 'CMMLU recorded prompt condition')
+        seen[key] += 1
+        grades[row.response] += 1
+        blank += original['record']['prediction'] == ''
+        unparsed += original['extracted_answer'] == ''
+    _check(seen, Counter({key:1 for key in source['native']}), 'CMMLU every released attempt exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'CMMLU complete trace associations, including empty answers')
+    _check(len(tables.get('assets', [])), 0, 'CMMLU no invented multimedia')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_categories=67, source_repeated_attempts=source['repeated_attempts'], source_empty_predictions=blank,
+        source_unmatched_predictions=unparsed, source_successes=grades[1.0], source_failures=grades[0.0])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6829,4 +6932,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu}[directory.name](directory, tables, metadata)

@@ -801,6 +801,7 @@ SOURCE_AUDITS["chatgpt_drift"] = verify_native_results
 SOURCE_AUDITS["chartmuseum"] = verify_native_results
 
 SOURCE_AUDITS["ceval"] = verify_native_results
+SOURCE_AUDITS["cmmlu"] = verify_native_results
 
 SOURCE_AUDITS["chi_bench"] = verify_native_results
 

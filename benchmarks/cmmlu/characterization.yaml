@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 254804
+    logical_sha256: 37446655ba4b5a305e4c934124e606d4982d58edb537722342f1f375b35e365b
+  subjects:
+    rows: 22
+    logical_sha256: 0ca65a6c546a798d870863ca099eea9af83fe447ba7012f7afef8eed23744ce3
+  responses:
+    rows: 254804
+    logical_sha256: f35b2f4d747d2b2856f3d03fe97a1e609b366bc2462886bf9974cdcbd910e24b
+  items:
+    rows: 23160
+    logical_sha256: 486f6cf47c6e5b48e7444e28cd411289b07b4abe36f8ae767c881c8293c26b72
+  benchmarks:
+    rows: 1
+    logical_sha256: 0c9280046ee66f2e4ff45f5ab72270ccada0c9a9d6e88f3aee9b39f37712a765
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 254804
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 22
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 23160
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 254804
+  source_categories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 67
+  source_repeated_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 44
+  source_empty_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 3
+  source_unmatched_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 15683
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 180870
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/opencompass/compass_academic_predictions/tree/5622641c535418314afa7790ca1f87fd520c8ae7
+    locator: results_stations/cmmlu-*/*.json; captured OpenCompass reference parser/configuration
+    scope: Read every native JSON record independently; compare complete prompts and outputs, source references,
+      reported systems, repeated trials and reconstructed reference-protocol grades. These grades are not original
+      leaderboard results.
+    expected: 73934
