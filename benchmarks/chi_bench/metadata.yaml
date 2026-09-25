@@ -1,0 +1,95 @@
+benchmark:
+  description: Healthcare workflow agents evaluated in a managed-care simulator; retain released per-trial rewards,
+    configurations and complete trajectories.
+  testing_condition: Capture all 46 published submission packets, including third-party systems under their reported
+    model identities. The 7,750 result files contain 7,700 distinct run UUIDs; 50 byte-identical runs were resubmitted
+    and count once. Keep all 33 missing per-trial rewards null, even though the upstream leaderboard aggregator
+    imputes failures. Preserve the reported agent settings, harness version, provider route, per-packet grading
+    revision and judge model. Only the 75 single-domain tasks have released observations. Simulator access and the
+    separately gated managed-care handbook are execution dependencies, not downloaded for this curation. Capture
+    source manifests and all available trajectories, reward files and scorecards without truncation. No evaluation
+    or judging is rerun.
+  paper_url: https://arxiv.org/abs/2605.16679
+  data_source_url: https://github.com/actava-ai/leaderboard
+  subject_type: agent
+  item_type: task
+  license: Apache-2.0
+  citation: "@misc{chibench2026,\n  title={$\\chi$-Bench: Can AI Agents Automate End-to-End, Long-Horizon, Policy-Rich\
+    \ Healthcare Workflows?},\n  author={The Actava Team},\n  year={2026},\n  eprint={2605.16679},\n  archivePrefix={arXiv},\n\
+    }"
+  tags:
+  - agent
+  - healthcare
+  - workflow
+  - mcp
+  - harness
+  modality:
+  - text
+  domain:
+  - medicine
+  - agents_and_tool_use
+  multi_single_turn: multi_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': The recorded trial reward is failure.
+      '1': The recorded trial reward is success.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2026-05
+  name: CHI-Bench
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      leaderboard: leaderboard-07b551add455864490dc3a93a42ec98c793ce9a8
+      packets: leaderboard-07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+      tasks: hf/tasks.jsonl
+      tasks_root: hf
+    scope:
+      families: prior_auth_provider|prior_auth_um|care_management
+      version_prefix_pattern: ^(Hermes Agent |OpenClaw |deepagents-cli )
+    subject:
+      agent_fields: '["name", "import_path", "model_name", "override_timeout_sec", "override_setup_timeout_sec",
+        "max_timeout_sec", "kwargs"]'
+      functional_env_fields: '["ANTHROPIC_BASE_URL", "ANTHROPIC_DEFAULT_HAIKU_MODEL", "ANTHROPIC_DEFAULT_OPUS_MODEL",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL", "ANTHROPIC_MODEL", "CLAUDE_CODE_SUBAGENT_MODEL", "CLAUDE_CODE_EFFORT_LEVEL",
+        "GEMINI_CLI_TRUST_WORKSPACE"]'
+    artifacts:
+      trajectory: agent/trajectory.jsonl.zst
+      scorecard: verifier/scorecard.json
+      reward: verifier/reward.json
+sources:
+  upstream:
+  - name: leaderboard
+    url: https://github.com/actava-ai/leaderboard
+    revision: 07b551add455864490dc3a93a42ec98c793ce9a8
+    files:
+    - match: README\.md|LICENSE|benchmarks/chi-bench/.*
+      path: leaderboard-07b551add455864490dc3a93a42ec98c793ce9a8/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/actava/chi-bench
+    revision: 58f604db17198fd3ab3f6dcea1303802480ef84c
+    files:
+    - match: tasks\.jsonl|README\.md|(?:prior_auth_provider|prior_auth_um|care_management)/tasks/[^/]+/(?:instruction\.md|task\.toml)
+      path: hf/{path}
+  - name: grader_reference
+    url: https://github.com/actava-ai/chi-bench
+    revision: 2395e9e2ae7d42cdf2750dc3e67daeb0e672b910
+    files:
+    - match: README\.md|LICENSE|pyproject\.toml|docs/(?:judge|submission-packet)\.md|src/chi_bench/aggregator\.py|src/chi_bench/verifier/.*
+      path: grader-reference/2395e9e2ae7d42cdf2750dc3e67daeb0e672b910/{path}
+grading:
+  rule: 'Retain the published per-trial binary reward: all applicable deterministic checks and workspace-judge checks
+    must pass. The item records its expected terminal status and verifier contract. Unavailable per-trial rewards
+    remain null.'
+  verifiers:
+    workspace:
+      kind: external_judge
+      reference_source: https://github.com/actava-ai/chi-bench/tree/2395e9e2ae7d42cdf2750dc3e67daeb0e672b910/src/chi_bench/verifier
+      logic: Binary AND over applicable deterministic and workspace-judge checks. Per-packet provenance identifies
+        the reported evaluation revision and judge model; absent or dirty historical code remains explicitly recorded.

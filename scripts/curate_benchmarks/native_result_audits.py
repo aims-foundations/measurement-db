@@ -6311,6 +6311,158 @@ def _ceval(directory, tables, metadata, source_records=None):
                                                    for row in native.values()))
 
 
+def _chi_source_records(directory, metadata):
+    """Traverse every published run independently of the builder's table joins."""
+    import hashlib
+    import re
+    import zstandard
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    packets = raw / parameters['paths']['packets']
+    tasks = {}
+    for line in (raw / parameters['paths']['tasks']).read_text().splitlines():
+        task = json.loads(line)
+        if task['family'] in parameters['scope']['families'].split('|'):
+            _check(task['task_id'] not in tasks, True, 'CHI unique native task identity')
+            tasks[task['task_id']] = task
+    manifests = {path.parent.name: json.loads(path.read_text()) for path in sorted(packets.glob('*/submission.json'))}
+    native, physical, contexts = {}, 0, {}
+    for path in sorted(packets.glob('*/trials/*/*/result.json')):
+        physical += 1
+        record = json.loads(path.read_text())
+        manifest = manifests[path.relative_to(packets).parts[0]]
+        provenance = manifest['provenance']
+        protocol = dict(metadata['grading']['verifiers']['workspace'],
+            reported_harness_revision=provenance.get('chi_bench_git_sha'),
+            reported_code_dirty=provenance.get('code_dirty'), judge_model=provenance.get('judge_model'),
+            dataset_version=manifest['dataset']['version'], task_checksum=record.get('task_checksum'))
+        key = record['id']
+        if key in native:
+            _check(record, native[key]['record'], 'CHI duplicate UUID must have identical original contents')
+            _check(protocol, native[key]['protocol'], 'CHI duplicate UUID must have the same grading context')
+        else:
+            agent, config = record.get('agent_info') or {}, record['config']['agent']
+            model = agent.get('model_info') or {}
+            version = agent.get('version')
+            if version is not None:
+                version = re.sub(parameters['scope']['version_prefix_pattern'], '', version.split('\n')[0]).strip()
+            settings = {name: config.get(name) for name in json.loads(parameters['subject']['agent_fields'])}
+            settings['functional_env'] = {name: value for name, value in (config.get('env') or {}).items()
+                if name in json.loads(parameters['subject']['functional_env_fields'])}
+            subject = dict(label=model.get('name') or config['model_name'], harness=agent.get('name') or config['name'],
+                version=version, provider=model.get('provider'), settings=settings)
+            identity = json.dumps(subject, sort_keys=True)
+            native[key] = dict(record=record, source_files=[], artifacts={}, protocol=protocol,
+                task=record['task_name'].split('/')[-1], subject=subject, subject_key=identity)
+            _check(native[key]['task'] in tasks, True, 'CHI every native run has a full task definition')
+            date = record['started_at'][:10]
+            contexts[identity] = min(date, contexts.get(identity, date))
+        native[key]['source_files'].append(str(path.relative_to(raw)))
+        for relative in parameters['artifacts'].values():
+            artifact = path.parent / relative
+            if not artifact.is_file():
+                continue
+            if artifact.suffix == '.zst':
+                with artifact.open('rb') as stream, zstandard.ZstdDecompressor().stream_reader(stream) as reader:
+                    digest = hashlib.sha256()
+                    size = 0
+                    while chunk := reader.read(4 * 1024 * 1024):
+                        digest.update(chunk)
+                        size += len(chunk)
+                    value = dict(sha256=digest.hexdigest(), bytes=size)
+            else:
+                content = artifact.read_bytes()
+                value = dict(sha256=hashlib.sha256(content).hexdigest(), bytes=len(content))
+            native[key]['artifacts'][str(artifact.relative_to(raw))] = value
+    _check((len(manifests), physical, len(native), len(tasks)), (46, 7750, 7700, 75), 'CHI complete pinned source inventory')
+    trials, counters = {}, Counter()
+    for key in sorted(native, key=lambda value: (native[value]['record']['started_at'], value)):
+        row = native[key]
+        context = row['subject_key'], row['task'], json.dumps(row['protocol'], sort_keys=True)
+        counters[context] += 1
+        trials[key] = counters[context]
+    return dict(native=native, tasks=tasks, contexts=contexts, trials=trials, physical=physical, packets=len(manifests))
+
+
+def _chi_bench(directory, tables, metadata, source_records=None):
+    """Check all original runs, aliases, grades, model settings and complete evidence."""
+    from urllib.parse import unquote
+
+    source = _chi_source_records(directory, metadata) if source_records is None else source_records
+    native, tasks = source['native'], source['tasks']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'CHI unique canonical ' + name)
+    _check((len(tables['responses']), len(traces)), (len(native), len(native)), 'CHI every distinct run and trace exactly once')
+    _check(len(tables.get('assets', pd.DataFrame())), 0, 'CHI no invented simulator or handbook assets')
+    seen, used_subjects, variants, counts = set(), {}, {}, Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        _check(set(trace), {'source_files', 'result', 'artifacts'}, 'CHI explicit source evidence wrapper')
+        key = trace['result']['id']
+        _check(key not in seen, True, 'CHI one observation per native UUID')
+        seen.add(key)
+        expected = native[key]
+        record, subject = expected['record'], expected['subject']
+        _check(trace['result'], record, 'CHI complete unmodified original run record')
+        _check(trace['source_files'], expected['source_files'], 'CHI all resubmitted source aliases preserved')
+        actual_artifacts = {name: dict(sha256=_digest(value), bytes=len(value.encode('utf-8')))
+                            for name, value in trace['artifacts'].items()}
+        _check(actual_artifacts, expected['artifacts'], 'CHI exact untruncated trajectory, scorecard and reward contents')
+        grade = ((record.get('verifier_result') or {}).get('rewards') or {}).get('reward')
+        _check(None if pd.isna(response.response) else response.response, grade, 'CHI original grade; unavailable reward stays null')
+        _check(response.trial, source['trials'][key], 'CHI chronological repeat index within model and grading protocol')
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, 'CHI no invented response settings')
+        actual = subjects[response.subject_id]
+        _check(actual['display_name'], subject['label'], 'CHI complete original model identifier and route')
+        _check(actual['harness'], subject['harness'], 'CHI original agent scaffold')
+        _check(None if pd.isna(actual['harness_version']) else actual['harness_version'], subject['version'], 'CHI reported scaffold version')
+        _check(actual['access_date'], source['contexts'][expected['subject_key']], 'CHI earliest recorded access date per configuration')
+        settings = subject['settings']
+        effort = (settings.get('kwargs') or {}).get('reasoning_effort')
+        _check(None if pd.isna(actual['reasoning_effort']) else actual['reasoning_effort'], effort or None, 'CHI reported reasoning effort')
+        features = _features(actual['subject_features_extra'])
+        _check(json.loads(unquote(features.pop('agent_configuration'))), settings, 'CHI complete configured model, kwargs and functional environment')
+        extra = dict(source_model=subject['label'])
+        if subject['provider']:
+            extra['source_provider'] = subject['provider']
+        _check(features, extra, 'CHI source model and provider preserved without credentials in identity')
+        used_subjects[response.subject_id] = expected['subject_key']
+        item = items[response.item_id]
+        task = tasks[expected['task']]
+        _check(item['raw_item_id'], expected['task'], 'CHI response links to original task')
+        protocol = json.loads(item['verifier'])
+        _check((protocol['class'], protocol.get('judge'), protocol.get('judged_by')),
+               ('judge', expected['protocol']['judge_model'], 'llm'), 'CHI original recorded judge identity')
+        _check(json.loads(protocol['spec']), expected['protocol'], 'CHI grading revision, dirty state, dataset version and task checksum')
+        if response.item_id not in variants:
+            instruction = directory / 'raw' / metadata['build']['parameters']['paths']['tasks_root'] / task['path'] / 'instruction.md'
+            _check(item['content'], instruction.read_bytes().decode('utf-8'), 'CHI full native task instructions')
+            _check(_features(item['item_features']), {name: task[name] for name in ['family', 'task_kind', 'task_actor']}, 'CHI exact task annotations')
+            rule = metadata['grading']['rule'] + f" Expected terminal status: {task['expected_target_status']}. Verifier contract: {task['verifier_contract']}."
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=rule), 'CHI recorded grading rule without invented reference solution')
+            _check(pd.isna(item['asset_manifest']), True, 'CHI no fabricated environment assets')
+            variants[response.item_id] = expected['task'], json.dumps(expected['protocol'], sort_keys=True)
+        counts['source_ungraded_observations'] += grade is None
+        counts['source_passes'] += grade == 1
+        counts['source_failures'] += grade == 0
+        counts['source_runs_with_trajectory'] += any(name.endswith('trajectory.jsonl.zst') for name in expected['artifacts'])
+        counts['source_trace_artifacts'] += len(expected['artifacts'])
+    _check(seen, set(native), 'CHI every released UUID retained, including third-party systems')
+    _check(set(traces), set(tables['responses'].response_id), 'CHI trace and observation associations')
+    _check(set(subjects), set(used_subjects), 'CHI no unused subject placeholders')
+    _check(Counter(used_subjects.values()), Counter({value: 1 for value in source['contexts']}), 'CHI no collapsed or invented model configurations')
+    expected_variants = {(row['task'], json.dumps(row['protocol'], sort_keys=True)) for row in native.values()}
+    _check(Counter(variants.values()), Counter({value: 1 for value in expected_variants}), 'CHI every distinct grading variant exactly once')
+    _check(set(items), set(variants), 'CHI no unobserved item variants')
+    return dict(source_packets=source['packets'], source_physical_records=source['physical'], source_responses=len(native),
+        source_duplicate_aliases=source['physical']-len(native), source_tasks=len(tasks), source_items=len(items),
+        source_subjects=len(subjects), source_traces=len(traces), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -6331,4 +6483,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench}[directory.name](directory, tables, metadata)
