@@ -1,0 +1,214 @@
+benchmark:
+  name: BABILong
+  description: Released language-model answers to bAbI reasoning questions embedded in long distractor passages.
+  testing_condition: Curate all individual CSV predictions in the pinned HF release and the later GitHub release.
+    Preserve each recorded prompt and generation configuration, including fine-tuned model labels. Overlapping identical
+    release files and the Gemini export with refusals removed are copies, not independent attempts; retain the complete
+    original attempts and source-copy associations. A complete run must match the ordered question, target and index
+    in exactly one released input bank. Full matched passages are attached as UTF-8 context.txt assets. The content
+    field retains the question and source prompt configuration. Seven Gemini 1.5 Pro 002 exports (700 attempts at
+    1M/2M) have unresolved context correspondence; preserve their outputs and label input_context_status=released_context_unresolved,
+    with no invented passage or input link. Published configuration and matched benchmark stimuli do not establish
+    historical tokenizer serialization or endpoint revisions. Grades use the captured deterministic substring-label
+    metric, including its normalization quirks. No model inference or new judge calls.
+  paper_url: https://arxiv.org/abs/2406.10149
+  data_source_url: https://huggingface.co/datasets/RMT-team/babilong_evals
+  subject_type: model
+  item_type: question
+  license: 'Upstream code and PG-19: Apache-2.0. Underlying bAbI tasks: BSD; see the captured upstream license statements.'
+  citation: 'Kuratov et al. (2024). BABILong: Testing the Limits of LLMs with Long Context Reasoning-in-a-Haystack.
+    NeurIPS.'
+  tags:
+  - long_context
+  - reasoning
+  - retrieval
+  - haystack
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': Answer fails the upstream substring-label comparison.
+      '1': Answer passes the upstream substring-label comparison.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2024-06
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    results:
+      hf: predictions/0121bf563ee62de9e75ecb4eb0fe4eaebab2b357
+      github: code/7a6efee29f5cac03c3c410e6799c80fd2ffe3610/babilong_evals
+    inputs:
+      samples_100: input_banks/RMT-team--babilong/ee0d588794c7ac098062ee0d247c733d62e94fe2
+      samples_1000: input_banks/RMT-team--babilong-1k-samples/fc4d1a584dfc498c37578753bee4cdd91b987ae2
+    copied_models:
+      google/gemini-1.5-pro-002 (w\o rejections): google/gemini-1.5-pro-002
+    limitations:
+      unmapped_runs: google/gemini-1\.5-pro-002/(?:qa[12]_1M|qa[1-5]_2M)_instruction_yes_examples_yes_post_prompt_yes_chat_template_no\.csv
+sources:
+  upstream:
+  - name: predictions
+    url: https://huggingface.co/datasets/RMT-team/babilong_evals
+    revision: 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357
+    files:
+    - match: .+\.(csv|json)|README\.md
+      path: predictions/0121bf563ee62de9e75ecb4eb0fe4eaebab2b357/{path}
+  - name: code_and_recent_results
+    url: https://github.com/booydar/babilong
+    revision: 7a6efee29f5cac03c3c410e6799c80fd2ffe3610
+    files:
+    - match: babilong_evals/.+\.(csv|json)|babilong/(metrics|prompts|collect_results)\.py|README\.md|LICENSE
+      path: code/7a6efee29f5cac03c3c410e6799c80fd2ffe3610/{path}
+  - name: hundred_sample_inputs
+    url: https://huggingface.co/datasets/RMT-team/babilong
+    revision: ee0d588794c7ac098062ee0d247c733d62e94fe2
+    files:
+    - match: data/(?:qa[1-5]/(?:0k|1k|2k|4k|8k|16k|32k|64k|128k|512k|1M)|qa(?:[6-9]|1\d|20)/0k)\.json|README\.md
+      path: input_banks/RMT-team--babilong/ee0d588794c7ac098062ee0d247c733d62e94fe2/{path}
+  - name: thousand_sample_inputs
+    url: https://huggingface.co/datasets/RMT-team/babilong-1k-samples
+    revision: fc4d1a584dfc498c37578753bee4cdd91b987ae2
+    files:
+    - match: (?:0k/qa\d+|(?:1k|2k|4k|8k|16k|32k|64k|128k)/qa[1-5])-\d+-of-\d+\.parquet|README\.md
+      path: input_banks/RMT-team--babilong-1k-samples/fc4d1a584dfc498c37578753bee4cdd91b987ae2/{path}
+grading:
+  rule: Lowercase the output, then keep its prefix before '.', '<context>', '<example>' and literal 'Question',
+    in that order. Find task labels by substring and remove labels mentioned in the question. For a comma-containing
+    target longer than three characters, require every comma-separated target and exactly that many detected labels.
+    Otherwise require the whole target as the sole detected label. Empty outputs and refusals fail. Preserve the
+    upstream uppercase-'Question' split after lowercasing and other substring-matching behavior.
+  verifiers:
+    answer:
+      kind: upstream_label_match
+      source: https://github.com/booydar/babilong/blob/7a6efee29f5cac03c3c410e6799c80fd2ffe3610/babilong/metrics.py
+      function: compare_answers
+      task_labels:
+        qa1:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa2:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa3:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa4:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa5:
+        - Bill
+        - Fred
+        - Jeff
+        - Mary
+        - apple
+        - football
+        - milk
+        qa6:
+        - 'no'
+        - 'yes'
+        qa7:
+        - none
+        - one
+        - three
+        - two
+        qa8:
+        - apple
+        - football
+        - milk
+        - nothing
+        qa9:
+        - 'no'
+        - 'yes'
+        qa10:
+        - maybe
+        - 'no'
+        - 'yes'
+        qa11:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa12:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa13:
+        - bathroom
+        - bedroom
+        - garden
+        - hallway
+        - kitchen
+        - office
+        qa14:
+        - bedroom
+        - cinema
+        - kitchen
+        - office
+        - park
+        - school
+        qa15:
+        - cat
+        - mouse
+        - sheep
+        - wolf
+        qa16:
+        - gray
+        - green
+        - white
+        - yellow
+        qa17:
+        - 'no'
+        - 'yes'
+        qa18:
+        - 'no'
+        - 'yes'
+        qa19:
+        - e,e
+        - e,n
+        - e,s
+        - n,e
+        - n,n
+        - n,w
+        - s,e
+        - s,s
+        - s,w
+        - w,n
+        - w,s
+        - w,w
+        qa20:
+        - bedroom
+        - bored
+        - garden
+        - hungry
+        - kitchen
+        - thirsty
+        - tired

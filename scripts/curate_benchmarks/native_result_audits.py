@@ -4321,6 +4321,222 @@ def _averimatec(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _babilong_source_records(directory, metadata):
+    """Decode original CSV records and match full runs without using builder output."""
+    import ast
+    import csv
+    import hashlib
+    import re
+    import unicodedata
+    from collections import defaultdict
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    code = raw / parameters["results"]["github"]
+    metric = ast.parse((code.parent / "babilong/metrics.py").read_text())
+    labels = ast.literal_eval(metric.body[0].value)
+    _check(labels, metadata["grading"]["verifiers"]["answer"]["task_labels"], "BABILong original label vocabulary")
+    banks = defaultdict(list)
+    for bank, folder in parameters["inputs"].items():
+        for path in sorted((raw / folder).rglob("*")):
+            if path.suffix == ".json":
+                document = json.loads(path.read_text())
+                rows = document if isinstance(document, list) else [
+                    dict(zip(document, values)) for values in zip(*document.values(), strict=True)]
+                task, length = path.parent.name, path.stem
+            elif path.suffix == ".parquet":
+                rows = pq.read_table(path).to_pylist()
+                task, length = path.stem.split("-")[0], path.parent.name
+            else:
+                continue
+            for index, row in enumerate(rows):
+                banks[bank, task, length].append(dict(
+                    question=row["question"], target=row["target"],
+                    context_sha256=hashlib.sha256(row["input"].encode()).hexdigest(),
+                    source=dict(file=path.relative_to(raw).as_posix(), row=index, bank=bank)))
+
+    runs, originals = [], {}
+    counts = Counter()
+    for release, folder in parameters["results"].items():
+        for path in sorted((raw / folder).rglob("*.csv")):
+            source_path = re.sub(r"_x([0-9a-f]{2})_", lambda match: chr(int(match[1], 16)),
+                                 path.relative_to(raw / folder).as_posix())
+            model, filename = source_path.rsplit("/", 1)
+            canonical_model = parameters["copied_models"].get(model, model)
+            task, length = filename.split("_")[:2]
+            with path.open(newline="") as stream:
+                rows = list(csv.DictReader(stream))
+            index_column = "" if "" in rows[0] else "Unnamed: 0"
+            rows = [dict(native_index=row[index_column], target=row["target"],
+                         output=row["output"], question=row["question"]) for row in rows]
+            run = dict(source_path=source_path, file=path.relative_to(raw).as_posix(),
+                       canonical_file=canonical_model + "/" + filename, model=canonical_model,
+                       task=task, length=length, rows=rows,
+                       configuration=json.loads(path.with_suffix(".json").read_text()))
+            runs.append(run)
+            counts["source_export_records"] += len(rows)
+            if model == canonical_model:
+                if source_path in originals:
+                    _check((rows, run["configuration"]),
+                           (originals[source_path]["rows"], originals[source_path]["configuration"]),
+                           "BABILong identical overlapping release files")
+                else:
+                    originals[source_path] = run
+
+    native, items, assets, lookups, subjects = {}, {}, set(), {}, set()
+    for source_path, run in originals.items():
+        rows = run["rows"]
+        task, length = run["task"], run["length"]
+        matches = []
+        for bank in parameters["inputs"]:
+            candidates = banks.get((bank, task, length), [])
+            if all(0 <= int(row["native_index"]) < len(candidates) and
+                   (row["question"], row["target"]) ==
+                   (candidates[int(row["native_index"])]["question"], candidates[int(row["native_index"])]["target"])
+                   for row in rows):
+                matches.append(bank)
+        _check(len(matches) <= 1, True, "BABILong unique complete-run input correspondence")
+        if not matches:
+            _check(bool(re.fullmatch(parameters["limitations"]["unmapped_runs"], source_path)), True,
+                   "BABILong explicit scope of unresolved context")
+        bank = matches[0] if matches else None
+        prompt = run["configuration"]["prompt"]
+        prompt_digest = hashlib.sha256(json.dumps(prompt, sort_keys=True).encode()).hexdigest()
+        subject = dict(model_identifier=run["model"], generation_parameters=run["configuration"]["generate_kwargs"],
+                       chat_template=prompt.get("chat_template"), system_prompt=prompt.get("system_prompt"))
+        subject_key = json.dumps(subject, ensure_ascii=False, sort_keys=True)
+        subjects.add(subject_key)
+        occurrence, lookup = Counter(), {}
+        for position, row in enumerate(rows):
+            key = (run["file"], position)
+            index = int(row["native_index"])
+            source_input = banks[bank, task, length][index] if bank else None
+            state = "released_context_matched" if bank else "released_context_unresolved"
+            item_key = (bank, task, length, index, prompt_digest) if bank else key
+            content = json.dumps(dict(question=row["question"], prompt_configuration=prompt,
+                                      context={"asset_path": "context.txt"} if bank else None),
+                                 ensure_ascii=False, sort_keys=True)
+            item = dict(content=unicodedata.normalize("NFC", content).strip(),
+                        features=dict(task=task, context_length=length, input_context_status=state,
+                                      **({"unresolved_input_record": key[0] + ":" + str(key[1])} if not bank else {})),
+                        target=row["target"], context_hash=source_input["context_sha256"] if bank else None)
+            if item_key in items:
+                _check(item, items[item_key], "BABILong consistent source item definition")
+            items[item_key] = item
+            if bank:
+                assets.add(source_input["context_sha256"])
+            answer = row["output"].lower()
+            for delimiter in [".", "<context>", "<example>", "Question"]:
+                answer = answer.partition(delimiter)[0]
+            vocabulary = {label.lower() for label in labels[task]}
+            actual = {label for label in vocabulary if label in answer}
+            actual -= {label for label in vocabulary if label in row["question"].lower()}
+            target = row["target"].lower()
+            required = target.split(",") if "," in target and len(target) > 3 else [target]
+            grade = float(len(actual) == len(required) and all(label in actual for label in required))
+            native[key] = dict(item=item_key, subject=subject_key, grade=grade,
+                               trace=dict(exports=[], configuration=run["configuration"],
+                                          input_context_status=state, input_source=source_input["source"] if bank else None))
+            identity = tuple(row.values())
+            lookup[identity, occurrence[identity]] = key
+            occurrence[identity] += 1
+            counts["source_correct_answers"] += int(grade)
+            counts["source_unresolved_context_attempts"] += not bool(bank)
+            counts["source_explicit_refusals"] += row["output"] in {"Refused to answer", "Prohibited answer"}
+        lookups[source_path] = lookup
+
+    for run in runs:
+        original = originals[run["canonical_file"]]
+        _check(run["configuration"], original["configuration"], "BABILong unchanged copied-run configuration")
+        occurrence = Counter()
+        for position, row in enumerate(run["rows"]):
+            identity = tuple(row.values())
+            key = lookups[run["canonical_file"]].get((identity, occurrence[identity]))
+            _check(key is not None, True, "BABILong every source-copy row matches an original observation")
+            native[key]["trace"]["exports"].append(dict(source_file=run["file"], source_row=position, record=row))
+            occurrence[identity] += 1
+    counts.update(source_responses=len(native), source_traces=len(native), source_assets=len(assets),
+                  source_subject_configurations=len(subjects), source_result_files=len(runs),
+                  source_original_run_files=len(originals),
+                  source_copied_records=counts["source_export_records"] - len(native))
+    return native, items, assets, dict(counts)
+
+
+def _babilong(directory, tables, metadata, source_records=None):
+    """Check all attempts, original grades/configurations, copied records, and full passage bytes."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, source_items, source_assets, counts = (
+        _babilong_source_records(directory, metadata) if source_records is None else source_records)
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "BABILong complete original observations")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "BABILong binary upstream metric")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        configuration = json.loads(features["released_configuration"])
+        _check(features["model_identifier"], configuration["model_identifier"], "BABILong actual source model identifier")
+        _check(row.harness, "BABILong", "BABILong recorded harness")
+        subjects[row.subject_id] = json.dumps(configuration, ensure_ascii=False, sort_keys=True)
+    _check(Counter(subjects.values()), Counter({row["subject"]: 1 for row in native.values()}),
+           "BABILong distinct recorded generation configurations")
+    assets = {row.asset_id: hashlib.sha256(row.data).hexdigest() for row in tables["assets"].itertuples()}
+    _check(Counter(assets.values()), Counter({digest: 1 for digest in source_assets}), "BABILong exact complete input passages")
+
+    item_rows = tables["items"].set_index("item_id").to_dict("index")
+    trace_rows = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(trace_rows), set(tables["responses"].response_id), "BABILong one trace per response")
+    seen, used_items, checked_items, used_assets = Counter(), set(), {}, set()
+    observed_trials = {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(trace_rows[row.response_id])
+        first = trace["exports"][0]
+        key = first["source_file"], first["source_row"]
+        _check(key in native, True, "BABILong original response source")
+        source = native[key]
+        _check(trace, source["trace"], "BABILong complete native output/configuration and copy associations")
+        _check((subjects[row.subject_id], row.response), (source["subject"], source["grade"]),
+               "BABILong correct source model and original label metric")
+        item = item_rows[row.item_id]
+        expected = source_items[source["item"]]
+        signature = (expected["content"], json.dumps(expected["features"], sort_keys=True),
+                     expected["target"], expected["context_hash"])
+        if row.item_id in checked_items:
+            _check(signature, checked_items[row.item_id], "BABILong no item conflation across source contexts")
+        else:
+            _check(item["content"], expected["content"], "BABILong full source prompt configuration and question")
+            _check(_features(item["item_features"]), expected["features"], "BABILong task, length and context availability")
+            _check(json.loads(item["grading_criterion"]),
+                   dict(reference_answer=expected["target"], rule=metadata["grading"]["rule"]),
+                   "BABILong correct original reference and grading protocol")
+            verifier = json.loads(item["verifier"])
+            _check((verifier["class"], json.loads(verifier["spec"])),
+                   ("exact_matcher", metadata["grading"]["verifiers"]["answer"]), "BABILong source label comparison")
+            links = [] if pd.isna(item["asset_manifest"]) else json.loads(item["asset_manifest"])
+            if expected["context_hash"] is None:
+                _check(links, [], "BABILong no invented unresolved input context")
+            else:
+                _check(len(links), 1, "BABILong one complete context asset")
+                link = links[0]
+                _check((assets[link["asset_id"]], link["path"], link["media_type"], link["role"], link["ordinal"]),
+                       (expected["context_hash"], "context.txt", "text/plain", "input", 1),
+                       "BABILong correct untruncated passage for this item")
+                used_assets.add(link["asset_id"])
+            checked_items[row.item_id] = signature
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "BABILong no invented response settings")
+        observed_trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in native}), "BABILong every original attempt exactly once")
+    _check(used_items, set(item_rows), "BABILong no orphaned items")
+    _check(used_assets, set(assets), "BABILong no orphaned context passages")
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in observed_trials.values()),
+           True, "BABILong consistent repeated-attempt numbering")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4340,4 +4556,4 @@ def verify_native_results(directory, tables_directory=None):
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
-            "autoresearchbench": _autoresearch, "averimatec": _averimatec}[directory.name](directory, tables, metadata)
+            "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong}[directory.name](directory, tables, metadata)
