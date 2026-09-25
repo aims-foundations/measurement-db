@@ -4914,6 +4914,135 @@ def _benger(directory,tables,metadata,source_records=None):
     return counts
 
 
+def _bedd_source_records(directory, metadata):
+    import ast
+    import re
+    from zipfile import ZipFile
+
+    paths = metadata['build']['parameters']['paths']
+    raw = directory / 'raw'
+    with ZipFile(raw / paths['judgments']) as archive:
+        records = json.loads(archive.read(paths['answers_member']))
+        banned = {row['workerId'] for row in json.loads(archive.read(paths['banned_member']))}
+    with ZipFile(raw / paths['videos']) as archive:
+        videos = {entry.filename: dict(archive=paths['videos'], member=entry.filename,
+            byte_size=entry.file_size, crc32=entry.CRC) for entry in archive.infolist() if entry.filename.endswith('.mp4')}
+    ui = (raw / paths['task_instructions']).read_text()
+    body = ui.split('function get_description_items(task)', 1)[1].split('function get_description(task)', 1)[0]
+    goals = {task: '\n'.join(ast.literal_eval(literal)) for task, literal in
+        re.findall(r'(?:if|else if)\(task === "([^"]+)"\).*?return\s*(\[.*?\])', body, flags=re.S)}
+    _check(goals, metadata['build']['parameters']['task_goals'], 'BEDD complete author task instructions')
+    config = ast.parse((raw / paths['environment_config']).read_text())
+    config_class = next(node for node in config.body if isinstance(node, ast.ClassDef) and node.name == 'Config')
+    declaration = next(node for node in config_class.body if isinstance(node, ast.Assign)
+        and any(isinstance(t, ast.Name) and t.id == 'BASALT_ENV_NAME_TO_TASK' for t in node.targets))
+    environments = {task: environment for environment, task in ast.literal_eval(declaration.value).items()}
+    _check(environments, metadata['build']['parameters']['environments'], 'BEDD actual named environments')
+    expected, definitions, counts, episode_ids, agents, workers, annotation_ids = {}, {}, Counter(), set(), set(), set(), set()
+    for index, record in enumerate(records):
+        _check(record['hash'] not in annotation_ids, True, 'BEDD unique native comparison IDs')
+        annotation_ids.add(record['hash'])
+        if record['worker_id'] in banned:
+            counts['source_excluded_comparisons'] += 1
+            continue
+        counts['source_accepted_comparisons'] += 1
+        workers.add(record['worker_id'])
+        detail = record['result']['eval_metadata']
+        winner = detail['win_player']
+        _check(winner in ('p1', 'p2', 'draw'), True, 'BEDD actual preference values')
+        _check(record['result']['is_draw'], winner == 'draw', 'BEDD overall draw agreement')
+        _check(len(record['episodes']), 2, 'BEDD two compared saved videos')
+        for position, episode in enumerate(record['episodes']):
+            opponent = record['episodes'][1-position]
+            _check((episode['task'], episode['seed']), (opponent['task'], opponent['seed']), 'BEDD paired world inputs')
+            _check(episode['task'], record['task'], 'BEDD annotation task matches the episode')
+            if episode['agent_name'] in ('Human1', 'Human2'):
+                continue
+            agents.add(episode['agent_name']); episode_ids.add(episode['hash'])
+            ratings = [('overall', 0, metadata['grading']['verifiers']['human']['overall_question'], winner)]
+            ratings += [('direct', q, answer['question'], answer['player_'+str(position+1)])
+                        for q, answer in enumerate(detail['responses']['direct_question'])]
+            ratings += [('comparison', q, answer['question'], answer['answer'])
+                        for q, answer in enumerate(detail['responses']['comparisons'])]
+            for metric, q, question, answer in ratings:
+                if metric == 'direct':
+                    _check(answer in ('true', 'false'), True, 'BEDD literal direct answer')
+                    grade = 1.0 if answer == 'true' else 0.0
+                else:
+                    _check(answer in ('p1', 'p2', 'draw', 'na'), True, 'BEDD literal comparative answer')
+                    grade = None if answer == 'na' else 0.5 if answer == 'draw' else float(answer == 'p'+str(position+1))
+                counts['source_'+metric+'_ratings'] += 1
+                counts['source_ungraded' if grade is None else 'source_graded'] += 1
+                key = index, position, metric, q
+                item_key = ':'.join(map(str, (episode['task'], episode['seed'], metric, q, record['worker_id'], opponent['hash'], position)))
+                own_path = f"agent_videos/{episode['agent_name']}/{episode['task']}/seed_{episode['seed']}.mp4"
+                reference_path = f"agent_videos/{opponent['agent_name']}/{opponent['task']}/seed_{opponent['seed']}.mp4"
+                definition = dict(episode_task=episode['task'], seed=episode['seed'], metric=metric, question=question,
+                    worker=record['worker_id'], position=position, opponent=opponent,
+                    reference_video=videos[reference_path])
+                _check(definitions.setdefault(item_key, definition), definition, 'BEDD consistent item grading definition')
+                expected[key] = dict(record=record, episode=episode, item_key=item_key, grade=grade, video=videos[own_path])
+    counts.update(source_comparisons=len(records), source_banned_workers=len(banned), source_workers=len(workers),
+        source_models=len(agents), source_ai_episodes=len(episode_ids), source_responses=len(expected),
+        source_traces=len(expected), source_items=len(definitions), source_video_files=len(videos))
+    return expected, definitions, goals, environments, counts
+
+
+def _bedd(directory, tables, metadata, source_records=None):
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, definitions, goals, environments, counts = (_bedd_source_records(directory, metadata)
+        if source_records is None else source_records)
+    _check((len(tables['responses']), len(tables['traces'])), (len(native), len(native)), 'BEDD complete ratings and traces')
+    _check(len(tables.get('assets', ())), 0, 'BEDD videos are outputs, not fabricated input assets')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), {'kind': 'mixed'}, 'BEDD mixed question-specific scales')
+    models = {}
+    for subject in tables['subjects'].itertuples():
+        model = _features(subject.subject_features_extra)['source_agent']
+        _check(subject.display_name, metadata['build']['parameters']['options']['subject_prefix']+model, 'BEDD literal native agent label')
+        _check(subject.harness, 'MineRL BASALT', 'BEDD known harness without guessed model checkpoint')
+        models[subject.subject_id] = model
+    _check(Counter(models.values()), Counter({row['episode']['agent_name']: 1 for row in native.values()}), 'BEDD exactly the recorded AI agents')
+    items, used = {}, set()
+    grading = metadata['grading']['verifiers']['human']
+    for item in tables['items'].itertuples():
+        expected = definitions[item.raw_item_id]
+        task, seed, metric = expected['episode_task'], expected['seed'], expected['metric']
+        _check(json.loads(item.content), dict(task=task, world_seed=seed, environment=environments[task], task_goals=goals[task]), 'BEDD input goals and world without output leakage')
+        _check(_features(item.item_features), dict(task=task, world_seed=str(seed)), 'BEDD source task/seed features')
+        scale = metric if metric != 'direct' else 'direct_negative' if expected['question'] in grading['negative_questions'] else 'direct_positive'
+        criterion = dict(reference_answer=None, response_scale=json.loads(canonical_response_scale(grading['scales'][scale])),
+            rule=json.dumps(dict(metric=metric, question=expected['question'], interpretation=grading['rules'][metric]), ensure_ascii=False, sort_keys=True))
+        _check(json.loads(item.grading_criterion), criterion, 'BEDD literal question and correct score direction')
+        verifier = json.loads(item.verifier)
+        _check((verifier['class'], verifier['judge'], verifier['judged_by']),
+            ('judge', 'BEDD anonymous worker '+expected['worker'], 'human'), 'BEDD original anonymous human grader')
+        _check(json.loads(verifier['spec']), dict(protocol=grading['protocol'], worker_id=expected['worker'],
+            player_position=expected['position'], reference_agent=expected['opponent']['agent_name'],
+            reference_episode=expected['opponent']['hash'], reference_video=expected['reference_video']), 'BEDD exact displayed reference and grader context')
+        _check(pd.isna(item.asset_manifest), True, 'BEDD no output video inserted as an input asset')
+        items[item.item_id] = item.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), 'BEDD every native grading definition once')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'BEDD trace/response bijection')
+    paths = metadata['build']['parameters']['paths']
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['player_position'], trace['metric'], trace['question_index']
+        _check(key not in used, True, 'BEDD no duplicated native rating'); used.add(key)
+        original = native[key]
+        _check(models[row.subject_id], original['episode']['agent_name'], 'BEDD correct evaluated agent')
+        _check(items[row.item_id], original['item_key'], 'BEDD correct task and rating protocol')
+        _check(pd.isna(row.response) if original['grade'] is None else row.response == original['grade'], True, 'BEDD grade mapping including null not-applicable')
+        _check((row.trial, row.test_condition), (1, 'episode='+original['episode']['hash']+';annotation='+original['record']['hash']), 'BEDD recorded episode and annotation are not new generations')
+        _check(pd.isna(row.interactors), True, 'BEDD no invented interacting agent')
+        _check(trace, dict(source_archive=paths['judgments'], source_member=paths['answers_member'], source_row=key[0],
+            record=original['record'], player_position=key[1], metric=key[2], question_index=key[3],
+            model_output_video=original['video']), 'BEDD complete original answer, justification and exact output video')
+    _check(used, set(native), 'BEDD every accepted native rating exactly once')
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4934,4 +5063,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd}[directory.name](directory, tables, metadata)

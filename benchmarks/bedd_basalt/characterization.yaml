@@ -1,0 +1,162 @@
+format_version: 1
+tables:
+  traces:
+    rows: 50951
+    logical_sha256: c39d2e2e3a16d88412051f83819e6443153553fbbf437e397d68c7cc7ccd6612
+  subjects:
+    rows: 15
+    logical_sha256: 94007945582f42b37508379fd16ff7230abe38551e9e0556c50a12b555dcca1b
+  responses:
+    rows: 50951
+    logical_sha256: 6058e01db9e99541f9dc2282e0a4f85269361e33eef75da3aaacb269ed3def02
+  items:
+    rows: 46266
+    logical_sha256: 5ed48affc1b3643d6f078ef1bda9e0b29e294aed53f71c04babbfd305ab68ced
+  benchmarks:
+    rows: 1
+    logical_sha256: 98e123c2e2038da1138eb2b98d0471679145960803f99146bfadf9df6fb859c2
+source_claims:
+  source_accepted_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 3049
+  source_overall_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 5571
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 46368
+  source_direct_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 15023
+  source_comparison_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 30357
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 4583
+  source_excluded_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 267
+  source_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 3316
+  source_banned_workers:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 6
+  source_workers:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 65
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 15
+  source_ai_episodes:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 660
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 50951
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 50951
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 46266
+  source_video_files:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8021960
+    locator: Original human_answers.json, banned_workers.json and complete agent_videos.zip; count each retained
+      native rating.
+    scope: All recorded AI-agent judgments after the author banned-worker exclusion; not-applicable judgments retained
+      as null.
+    expected: 748
