@@ -1,0 +1,131 @@
+format_version: 1
+tables:
+  traces:
+    rows: 152
+    logical_sha256: c61f48254637d5a9d6afad6ea3e8bf201df2566bf6bd84e9751b083f61d341df
+  subjects:
+    rows: 1
+    logical_sha256: 2e11613a3dc8763dae0915caa433ff13a04a5f95f14070c288b9f011d99eaa34
+  responses:
+    rows: 152
+    logical_sha256: 053dd668e4f43c1d6372cb02308380801a5ee82b657963bc29dec7ceae382824
+  assets:
+    rows: 198
+    logical_sha256: 1c79483cd2c43066fc758d1e7e738a4ed60346acbe5de98cd06c4c316ed4f326
+  items:
+    rows: 152
+    logical_sha256: 809c7f3397883edddccdc269243451537222c6a77eea993c3b40465b6068cce9
+  benchmarks:
+    rows: 1
+    logical_sha256: 4e0ddbba97b64cbece8d6ba91d20b62c5c73c451b8d0074158dc54ebbfee6724
+source_claims:
+  source_double_question_prefixes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 1
+  source_evidence_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 1509
+  source_correct_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 121
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 152
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 152
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 152
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 1
+  source_notebook_prediction_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 304
+  source_duplicate_prediction_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 152
+  source_claim_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 210
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    locator: Every saved prediction in _ref_eval.ipynb and _ref_eval_copy.ipynb at Git revision 1547401bb76f2008f67b7351b7d30a13be02e0af,
+      joined independently to HF val.json and exact claim images at 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0.
+    scope: One released AIC CTU development submission, with copied evidence variants retained but not counted
+      as independent trials. Only the upstream deterministic verdict_score component is computed; no model
+      or judge calls.
+    expected: 198

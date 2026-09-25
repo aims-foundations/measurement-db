@@ -773,3 +773,4 @@ SOURCE_AUDITS["arena_140k"] = verify_native_results
 SOURCE_AUDITS["atmossci_bench"] = verify_native_results
 SOURCE_AUDITS["auditing_sabotage_bench"] = verify_native_results
 SOURCE_AUDITS["autoresearchbench"] = verify_native_results
+SOURCE_AUDITS["averimatec"] = verify_native_results

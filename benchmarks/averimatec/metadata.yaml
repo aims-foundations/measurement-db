@@ -1,0 +1,78 @@
+benchmark:
+  name: AVerImaTeC
+  description: Released AIC CTU development predictions for image-text claim verification, measured by the upstream verdict-correctness component.
+  testing_condition: >-
+    Curate 152 complete development predictions preserved in public participant notebook
+    outputs. The two exports contain identical claims, questions, verdicts and justifications;
+    the second prefixes questions and image markers to evidence text. Count one prediction
+    per claim and preserve both complete variants. Recompute only the deterministic
+    verdict_score component using the captured evaluator's label comparison. This component
+    is not the evidence-conditioned shared-task score; complete per-claim evidence and
+    justification judge results are unavailable, and no new judge calls are made.
+    Items contain released claim text, date, speaker, original claim URL and exact claim
+    image bytes. Gold evidence, fact-check articles, labels and refutation annotations are
+    excluded from input content. Historical internal prompts and the exact model/runtime
+    configuration are not established by these exports; identify the subject by the
+    published AIC CTU submission artifact without guessing an LLM identity. This subset
+    does not represent all systems or the held-out shared-task test results.
+  paper_url: https://arxiv.org/abs/2505.17978
+  data_source_url: https://github.com/heruberuto/AVerImaTec_Shared_Task
+  subject_type: model
+  item_type: question
+  license: No explicit license is recorded in the captured claim-bank README or participant result repository.
+  citation: Cao et al. (2025). AVerImaTeC, A Dataset for Automatic Verification of Image-Text Claims with Evidence from the Web. NeurIPS Datasets and Benchmarks.
+  tags: [fact_checking, multimodal, web_evidence, verdict_correctness]
+  modality: [text, image]
+  domain: [general, reasoning]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings:
+      '0': Predicted verdict differs from the reference under the upstream comparison.
+      '1': Predicted verdict matches the reference under the upstream comparison.
+    direction: higher_is_better
+  categorical: true
+  release_date: '2025-05'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      claims: claim_bank/7e77fb26a1ba86159ff5ba27b59f373b450d6fd0/val.json
+      images: claim_bank/7e77fb26a1ba86159ff5ba27b59f373b450d6fd0/images.zip
+      cell: '1'
+      output: '0'
+    exports:
+      original: source_review/heruberuto--AVerImaTec_Shared_Task/1547401bb76f2008f67b7351b7d30a13be02e0af/notebooks/_ref_eval.ipynb
+      reformatted: source_review/heruberuto--AVerImaTec_Shared_Task/1547401bb76f2008f67b7351b7d30a13be02e0af/notebooks/_ref_eval_copy.ipynb
+    subject:
+      label: AIC CTU development submission.json notebook export
+      harness: AIC CTU AVerImaTeC
+      identity_note: Published prediction artifact. The exact historical model and runtime configuration are unrecorded.
+sources:
+  upstream:
+  - name: predictions
+    url: https://github.com/heruberuto/AVerImaTec_Shared_Task
+    revision: 1547401bb76f2008f67b7351b7d30a13be02e0af
+    files:
+    - match: 'README\.md|notebooks/(_ref_eval|_ref_eval_copy|insights)\.ipynb|prepare_submission/eval_offline\.py'
+      path: source_review/heruberuto--AVerImaTec_Shared_Task/1547401bb76f2008f67b7351b7d30a13be02e0af/{path}
+  - name: claims
+    url: https://huggingface.co/datasets/Rui4416/AVerImaTeC
+    revision: 7e77fb26a1ba86159ff5ba27b59f373b450d6fd0
+    files:
+    - match: 'val\.json|images\.zip|README\.md'
+      path: claim_bank/7e77fb26a1ba86159ff5ba27b59f373b450d6fd0/{path}
+grading:
+  rule: >-
+    Use the source evaluator's deterministic verdict_score: 1 when the predicted verdict,
+    lowercased and stripped of surrounding whitespace, equals the lowercased reference
+    label; otherwise 0. This is unconditional verdict correctness, not the evidence-conditioned
+    shared-task score. Preserve original verdict spelling in the trace.
+  verifiers:
+    verdict:
+      kind: upstream_verdict_component
+      source: https://github.com/heruberuto/AVerImaTec_Shared_Task/blob/1547401bb76f2008f67b7351b7d30a13be02e0af/prepare_submission/eval_offline.py
+      component: verdict_score
+      logic: Compare pred_verdict.lower().strip() with gt_verdict.lower(); no new inference or judging.

@@ -4197,6 +4197,130 @@ def _autoresearch(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _averimatec_source_records(directory, metadata):
+    """Read saved literal displays and claim-image bytes without executing notebook code."""
+    import ast
+    import hashlib
+    import unicodedata
+    from zipfile import ZipFile
+
+    parameters = metadata["build"]["parameters"]
+    layout = parameters["layout"]
+    claims = json.loads((directory / "raw" / layout["claims"]).read_text())
+    exports, contexts = {}, {}
+    for variant, filename in parameters["exports"].items():
+        notebook = json.loads((directory / "raw" / filename).read_text())
+        output = notebook["cells"][int(layout["cell"])]["outputs"][int(layout["output"])]
+        predictions = ast.literal_eval("".join(output["data"]["text/plain"]))
+        exports[variant] = {}
+        for source_row, prediction in enumerate(predictions):
+            key = prediction["id"]
+            _check(key not in exports[variant], True, "AVerImaTeC unique prediction IDs")
+            _check(prediction["claim"], claims[key]["claim_text"], "AVerImaTeC exact claim correspondence")
+            exports[variant][key] = prediction
+            contexts.setdefault(key, []).append(dict(source_file=filename, source_row=source_row,
+                notebook_cell=int(layout["cell"]), notebook_output=int(layout["output"]),
+                variant=variant, prediction=prediction))
+        _check(set(exports[variant]), set(range(len(claims))), "AVerImaTeC complete development export")
+    counts = Counter()
+    native, images = {}, {}
+    with ZipFile(directory / "raw" / layout["images"]) as archive:
+        for key, claim in enumerate(claims):
+            original, copy = exports["original"][key], exports["reformatted"][key]
+            _check({k: v for k, v in original.items() if k != "evidence"},
+                   {k: v for k, v in copy.items() if k != "evidence"},
+                   "AVerImaTeC copied predictions are not independent attempts")
+            _check(len(original["evidence"]), len(copy["evidence"]), "AVerImaTeC complete evidence copy")
+            _check(len(original["evidence"]), len(original["questions"]), "AVerImaTeC question/evidence alignment")
+            for question, left, right in zip(original["questions"], original["evidence"], copy["evidence"], strict=True):
+                _check({k: v for k, v in left.items() if k != "text"},
+                       {k: v for k, v in right.items() if k != "text"}, "AVerImaTeC unchanged evidence URLs and image links")
+                marker = " [IMG_1]" if left["images"] else ""
+                options = [question + " " + left["text"] + marker,
+                           question + " " + question + " " + left["text"] + marker]
+                _check(right["text"] in options, True, "AVerImaTeC only documented evidence-text reformatting")
+                counts["source_double_question_prefixes"] += right["text"] == options[1]
+                counts["source_evidence_records"] += 1
+            content = json.dumps(dict(claim_text=claim["claim_text"], claim_date=claim["date"],
+                claim_images=["images/" + name for name in claim["claim_images"]],
+                speaker=claim["metadata"]["speaker"], original_claim_url=claim["metadata"]["original_claim_url"]),
+                ensure_ascii=False, sort_keys=True)
+            paths = []
+            for name in claim["claim_images"]:
+                path = "images/" + name
+                data = archive.read(path)
+                _check(data.startswith(b"\xff\xd8\xff"), True, "AVerImaTeC captured JPEG payload")
+                images[path] = hashlib.sha256(data).hexdigest()
+                paths.append(path)
+            response = float(original["verdict"].lower().strip() == claim["label"].lower())
+            native[key] = dict(content=unicodedata.normalize("NFC", content).strip(), reference=claim["label"],
+                assets=paths, response=response, trace=dict(claim_file=layout["claims"], claim_row=key, exports=contexts[key]))
+            counts["source_correct_verdicts"] += int(response)
+    counts.update(source_responses=len(native), source_traces=len(native), source_items=len(native),
+                  source_subjects=1, source_notebook_prediction_records=sum(map(len, exports.values())),
+                  source_duplicate_prediction_copies=len(native), source_claim_images=len(images),
+                  source_assets=len(set(images.values())))
+    return native, images, dict(counts)
+
+
+def _averimatec(directory, tables, metadata, source_records=None):
+    """Check every original prediction, its component grade, and exact claim-image association."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, source_images, counts = _averimatec_source_records(directory, metadata) if source_records is None else source_records
+    _check((len(tables["responses"]), len(tables["traces"])), (len(native), len(native)), "AVerImaTeC one observation per original prediction")
+    subjects = tables["subjects"]
+    _check(len(subjects), 1, "AVerImaTeC one published historical prediction artifact")
+    subject = subjects.iloc[0]
+    setting = metadata["build"]["parameters"]["subject"]
+    _check((subject.display_name, subject.harness), (setting["label"], setting["harness"]), "AVerImaTeC source artifact identity")
+    _check(_features(subject.subject_features_extra), {k: v for k, v in setting.items() if k != "harness"},
+           "AVerImaTeC explicit historical identity limitation")
+    _check(all(pd.isna(subject[name]) for name in ["provider", "normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]),
+           True, "AVerImaTeC no invented model or runtime configuration")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "AVerImaTeC verdict-component scale")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    hashes = {key: hashlib.sha256(value["data"]).hexdigest() for key, value in assets.items()}
+    _check(Counter(hashes.values()), Counter({value: 1 for value in source_images.values()}), "AVerImaTeC complete unchanged image bytes")
+    items, seen_items, used_assets = {}, Counter(), set()
+    for row in tables["items"].itertuples():
+        split, index = row.raw_item_id.split(":")
+        _check(split, "val", "AVerImaTeC observed development split")
+        key = int(index)
+        source = native[key]
+        _check(row.content, source["content"], "AVerImaTeC released claim input without gold annotation leakage")
+        _check(_features(row.item_features), {"split": "val"}, "AVerImaTeC original input partition")
+        _check(json.loads(row.grading_criterion), dict(reference_answer=source["reference"], rule=metadata["grading"]["rule"]),
+               "AVerImaTeC true label and unconditional verdict component")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])),
+               ("exact_matcher", metadata["grading"]["verifiers"]["verdict"]), "AVerImaTeC captured deterministic comparison")
+        links = json.loads(row.asset_manifest)
+        _check([link["path"] for link in links], source["assets"], "AVerImaTeC complete ordered claim images")
+        for ordinal, link in enumerate(links, 1):
+            _check(hashes[link["asset_id"]], source_images[link["path"]], "AVerImaTeC correct image bytes for each claim")
+            _check((link["role"], link["media_type"], link["ordinal"]), ("input", "image/jpeg", ordinal), "AVerImaTeC input-image attachment")
+            used_assets.add(link["asset_id"])
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in native}), "AVerImaTeC every development claim exactly once")
+    _check(used_assets, set(assets), "AVerImaTeC no orphaned images")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "AVerImaTeC exact trace-to-response links")
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        key = items[row.item_id]
+        _check((row.subject_id, row.trial, row.response), (subject.subject_id, 1, native[key]["response"]),
+               "AVerImaTeC original subject, one attempt and exact verdict score")
+        _check(json.loads(traces[row.response_id]), native[key]["trace"], "AVerImaTeC both complete output variants and source positions")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "AVerImaTeC no invented response settings")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "AVerImaTeC no duplicated or omitted observations")
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -4216,4 +4340,4 @@ def verify_native_results(directory, tables_directory=None):
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
-            "autoresearchbench": _autoresearch}[directory.name](directory, tables, metadata)
+            "autoresearchbench": _autoresearch, "averimatec": _averimatec}[directory.name](directory, tables, metadata)
