@@ -5741,6 +5741,145 @@ def _bridging_gap(directory, tables, metadata, source_records=None):
         source_remapped_template_ids=source['remapped'])
 
 
+def _care_source_records(directory, metadata):
+    """Read native CSV rows and bank identities without using the builder joins."""
+    import csv
+    import html
+    import re
+
+    raw = directory / "raw"
+    release = raw / metadata["build"]["parameters"]["paths"]["release"]
+    historical = raw / metadata["build"]["parameters"]["paths"]["historical"]
+    descriptions = {}
+    with (release / "processed_data/text2EC.csv").open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            _check(row["EC number"] not in descriptions, True, "CARE unique EC description")
+            descriptions[row["EC number"]] = row["Text"]
+    banks = {}
+    for root, collection in [(release, "paper"), (historical, "legacy_20240604")]:
+        for path in sorted((root / "splits").glob("*/*_test.csv")):
+            task = path.parent.name
+            split, unit = path.stem.removesuffix("_test").rsplit("_", 1)
+            identity = "Entry" if unit == "protein" else "Reaction"
+            with path.open(newline="") as stream:
+                for position, row in enumerate(csv.DictReader(stream), 2):
+                    key = collection, task, split, row[identity], row["EC number"]
+                    _check(key not in banks, True, "CARE unique source bank key")
+                    banks[key] = row, str(path.relative_to(raw)), position
+    native, published = {}, {}
+    for path in sorted(release.glob("task*_baselines/results_summary/*/*_test_results_df.csv")):
+        task = path.relative_to(release).parts[0].removesuffix("_baselines")
+        method = path.parent.name
+        split, unit = path.stem.removesuffix("_test_results_df").rsplit("_", 1)
+        legacy = task == "task2" and unit == "protein"
+        collection = "legacy_20240604" if legacy else "paper"
+        identity = "Entry" if unit == "protein" else "Reaction"
+        with path.open(newline="") as stream:
+            reader = csv.DictReader(stream)
+            ranks = [name for name in reader.fieldnames if name.isdigit()]
+            _check(ranks, [str(index) for index in range(len(ranks))], "CARE complete ordered rank columns")
+            for position, row in enumerate(reader, 2):
+                _check(None not in row and all(value is not None for value in row.values()), True, "CARE complete CSV record")
+                reference = row["EC number"]
+                bank, bank_file, bank_row = banks[collection, task, split, row[identity], reference]
+                for field in ["Sequence", "Reaction Text", "Text"]:
+                    if field in row and not legacy:
+                        value = descriptions[reference] if field == "Text" else bank[field]
+                        _check(row[field], value, "CARE native field matches its original bank")
+                if legacy:
+                    mode, fields, training = "historical_prompt_unresolved", ["Reaction", "Reaction Text"], "unresolved"
+                elif task == "task1":
+                    mode, fields, training = "protein_sequence", ["Sequence"], "shared"
+                else:
+                    mode, fields = {
+                        "CLIPZyme": ("reaction_smiles", ["Reaction"]),
+                        "CREEP": ("reaction_smiles", ["Reaction"]),
+                        "CREEP_text": ("reaction_smiles_and_description", ["Reaction", "Text"]),
+                        "ChatGPT": ("reaction_text", ["Reaction Text"]),
+                        "ChatGPT_text": ("reaction_text_and_description", ["Reaction Text", "Text"]),
+                        "Similarity": ("reaction_smiles", ["Reaction"]),
+                        "random": ("reaction_smiles", ["Reaction"]),
+                    }[method]
+                    training = split if method in {"CLIPZyme", "CREEP", "CREEP_text", "Similarity"} else "shared"
+                inputs = {field: descriptions[reference] if field == "Text" else bank[field] for field in fields}
+                top = row["0"] or "0.0.0.0"
+                delimiter = None if legacy else "; " if method in {"BLAST", "Foldseek"} else "," if method == "Pika" or "ChatGPT" in method else None
+                candidates = top.split(delimiter) if delimiter is not None else [top]
+                candidates = [value if value.count(".") == 3 else "0.0.0.0" for value in candidates]
+                gold = reference.split(";")
+                grade = sum(value in candidates for value in gold) / len(gold)
+                key = str(path.relative_to(raw)), position
+                _check(key not in native, True, "CARE unique source observation")
+                native[key] = dict(record=row, bank_file=bank_file, bank_row=bank_row,
+                    inputs=inputs, reference=reference, grade=grade, task=task, method=method,
+                    split=split, collection=collection, training=training, mode=mode,
+                    revision=historical.name if legacy else release.name, ranks=len(ranks))
+    notebook = json.loads((release / "performance_evaluation.ipynb").read_text())
+    for index, task in [(4, "task1"), (6, "task1"), (9, "task2")]:
+        for output in notebook["cells"][index].get("outputs", []):
+            markup = "".join(output.get("data", {}).get("text/html", []))
+            for row in re.findall(r"<tr[^>]*>(.*?)</tr>", markup, re.S):
+                values = [html.unescape(re.sub(r"<[^>]+>", "", cell)).strip()
+                          for cell in re.findall(r"<td[^>]*>(.*?)</td>", row, re.S)]
+                if values:
+                    method, split, budget, score = values[:4]
+                    _check(budget, "1", "CARE saved paper table uses k=1")
+                    published[task, method, split] = float(score)
+    _check((len(native), len(published)), (16817, 45), "CARE full released and saved paper scope")
+    return native, published
+
+
+def _care(directory, tables, metadata, source_records=None):
+    """Reconcile every observation, complete ranking, input and subject condition."""
+    native, published = source_records or _care_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "CARE one trace per response")
+    seen, used_subjects, used_items, trials, scores = set(), set(), set(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        _check(key not in seen, True, "CARE no duplicated source observation")
+        seen.add(key)
+        source = native[key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], bank_file=source["bank_file"],
+            bank_row=source["bank_row"], record=source["record"]), "CARE every source cell and rank retained")
+        subject, item = subjects[row.subject_id], items[row.item_id]
+        features = _features(subject["subject_features_extra"])
+        _check(features, dict(source_method=source["method"], source_task=source["task"],
+            training_split=source["training"], collection=source["collection"],
+            input_modality=source["mode"]), "CARE original method, training bank and input condition")
+        _check((subject["harness"], subject["harness_version"]), ("CARE", source["revision"]), "CARE source harness revision")
+        _check(json.loads(item["content"]), source["inputs"], "CARE original inputs and only permitted description signal")
+        _check(_features(item["item_features"]), dict(task=source["task"], input_modality=source["mode"]), "CARE item modality")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=source["reference"], rule=metadata["grading"]["rule"]), "CARE complete reference and native grading rule")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "exact_matcher", "CARE deterministic verifier")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["rank_zero_level_four"], "CARE source grading specification")
+        condition = f"collection={source['collection']};task={source['task']};split={source['split']};metric=k1_ec_level4"
+        _check((row.response, row.test_condition), (source["grade"], condition), "CARE native fractional grade and condition")
+        _check(pd.isna(row.interactors) and pd.isna(item["asset_manifest"]), True, "CARE no invented interactions or structures")
+        trials.setdefault((row.subject_id, row.item_id, condition), []).append((key, row.trial))
+        used_subjects.add(row.subject_id); used_items.add(row.item_id)
+        if source["collection"] == "paper":
+            scores.setdefault((source["task"], source["method"], source["split"]), []).append(row.response)
+    _check(seen, set(native), "CARE complete source coverage including missing predictions")
+    _check(set(traces), set(tables["responses"].response_id), "CARE no orphan traces")
+    _check((used_subjects, used_items), (set(subjects), set(items)), "CARE exact subject and item inventories")
+    for attempts in trials.values():
+        _check([trial for _, trial in sorted(attempts)], list(range(1, len(attempts) + 1)), "CARE contiguous source-order trials for identical canonical items")
+    for key, grades in scores.items():
+        _check(round(sum(grades) / len(grades) * 100, 1), published[key], "CARE matches independently saved paper score: " + str(key))
+    _check(set(scores), set(published), "CARE all 45 paper method/split scores checked")
+    return dict(source_responses=len(native), source_traces=len(traces), source_items=len(items),
+        source_subject_configurations=len(subjects), source_paper_scores=len(scores),
+        source_missing_predictions=sum(not entry["record"]["0"] for entry in native.values()),
+        source_fractional_grades=sum(0 < entry["grade"] < 1 for entry in native.values()),
+        source_legacy_observations=sum(entry["collection"] != "paper" for entry in native.values()),
+        source_maximum_ranks=max(entry["ranks"] for entry in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5761,4 +5900,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care}[directory.name](directory, tables, metadata)
