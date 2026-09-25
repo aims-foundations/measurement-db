@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 43200
+    logical_sha256: bda1c13f1f2481f2ab4697d82aa050bd34fa193fe906c02d7bc04255b78c1ce4
+  subjects:
+    rows: 120
+    logical_sha256: 5764ea33ddfaa8ea1bd9044d1a565e012e2da9cf16daaab580450ac5dd5daf92
+  responses:
+    rows: 43200
+    logical_sha256: b4f032410a2e4d067c6ab1eb37e369f8b3f01b0ef6f4026a1f30d24256f2eaec
+  items:
+    rows: 360
+    logical_sha256: b59935da507c88f3f61be63f7fc6dc9a46fb8167a237386e2e35505511327f04
+  benchmarks:
+    rows: 1
+    logical_sha256: d8fcf17ecf2ca0d66d944f26ff6026a59a5f566aa3dc800c82f8dfda9a4ad08b
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 43200
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 43200
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 360
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 3830
+  source_difficulty_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 3
+  source_records_without_timestamps:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 3399
+  source_incorrect:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 39370
+  source_question_encoding_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 120
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 120
+  source_model_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 21
+  source_model_provider_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 24
+  source_databases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/petavue/NL2SQL-Benchmark/tree/0637e2593739f82961d38a14d0d80df2b20e3060
+    locator: Every row and column in Inference Level Dataset.xlsx, independently parsed from native XML, joined
+      to bird_equal_split_360.csv by question/database/reference.
+    scope: All released Petavue zero-shot inference rows; a third-party BIRD subset using the published Petavue
+      grader. Preserve source disagreements.
+    expected: 11

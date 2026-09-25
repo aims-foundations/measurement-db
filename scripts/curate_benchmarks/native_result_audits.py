@@ -5268,6 +5268,130 @@ def _bounty(directory, tables, metadata, source_records=None):
     return counts
 
 
+def _bird_source_records(directory, metadata):
+    """Read every original workbook cell with XML, independently of xlsx2csv/pandas."""
+    import csv
+    import xml.etree.ElementTree as ET
+    from zipfile import ZipFile
+
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw'
+    ns = {'s': 'http://purl.oclc.org/ooxml/spreadsheetml/main'}
+    with ZipFile(raw / parameters['paths']['results']) as archive:
+        strings = [''.join(node.itertext()) for node in ET.fromstring(archive.read('xl/sharedStrings.xml'))]
+        sheet = ET.fromstring(archive.read('xl/worksheets/sheet1.xml'))
+    _check(sheet.findall('.//s:f', ns), [], 'BIRD recorded values without spreadsheet formulas')
+    native = {}
+    headers = None
+    for row in sheet.find('s:sheetData', ns):
+        values = dict.fromkeys('ABCDEFGHIJKLMNOPQRS', '')
+        for cell in row:
+            value = cell.find('s:v', ns)
+            _check(cell.get('t') in {None, 's', 'd'}, True, 'BIRD supported native cell types')
+            if value is not None:
+                values[cell.attrib['r'].rstrip('0123456789')] = (
+                    strings[int(value.text)] if cell.get('t') == 's' else value.text)
+        position = int(row.attrib['r'])
+        if position == 1:
+            headers = [value or f'Unnamed: {index}' for index, value in enumerate(values.values())]
+            _check(headers, ['Unnamed: 0', 'Given Question', 'Given Query', 'Question Hardness', 'Quest DbID',
+                'Environement', 'Model', 'Shot Size', 'Instruction Size', 'LLM generated response', 'LLM SQL',
+                'Is SQL present', 'Start Time', 'End Time', 'Input Tokens', 'Output Tokens', 'Throughput',
+                'Time taken', 'Is match'], 'BIRD complete native worksheet columns')
+            continue
+        _check(position in native, False, 'BIRD unique original Excel row')
+        record = dict(zip(headers, values.values(), strict=True))
+        _check(record['Unnamed: 0'], str(position - 2), 'BIRD original source row identifier')
+        _check(record['Is match'] in {'0', '1'}, True, 'BIRD original binary execution verdict')
+        native[position] = record
+    with (raw / parameters['paths']['tasks']).open(newline='') as stream:
+        tasks = list(csv.DictReader(stream))
+    bank = {(row['db_id'], row['question'], row['sql_query']): row for row in tasks}
+    _check(len(bank), len(tasks), 'BIRD unambiguous input-bank definition')
+    associations, configurations = {}, set()
+    counts = Counter(source_responses=len(native), source_traces=len(native), source_items=len(tasks))
+    for position, record in native.items():
+        question = record['Given Question']
+        key = record['Quest DbID'], question, record['Given Query']
+        if key not in bank:
+            # Verify the recorded encoding defect directly, not just the builder's alias declaration.
+            corrected = question.encode('mac_roman').decode('utf-8')
+            _check(parameters['question_aliases'].get(question), corrected, 'BIRD documented source encoding alias')
+            key = record['Quest DbID'], corrected, record['Given Query']
+            counts['source_question_encoding_aliases'] += 1
+        task = bank[key]
+        associations[position] = task
+        configurations.add((record['Model'], record['Environement'], int(record['Instruction Size']), int(record['Shot Size'])))
+        counts['source_correct' if record['Is match'] == '1' else 'source_incorrect'] += 1
+        counts['source_difficulty_disagreements'] += record['Question Hardness'] != task['difficulty']
+        counts['source_records_without_timestamps'] += not record['Start Time'] or not record['End Time']
+    _check({task['index_in_original'] for task in associations.values()},
+        {task['index_in_original'] for task in tasks}, 'BIRD complete evaluated input bank')
+    counts.update(source_subject_configurations=len(configurations),
+        source_model_labels=len({key[0] for key in configurations}),
+        source_model_provider_pairs=len({key[:2] for key in configurations}),
+        source_databases=len({row['db_id'] for row in tasks}))
+    return native, tasks, associations, configurations, dict(counts)
+
+
+def _bird(directory, tables, metadata, source_records=None):
+    native, tasks, associations, configurations, counts = (_bird_source_records(directory, metadata)
+        if source_records is None else source_records)
+    parameters = metadata['build']['parameters']
+    _check((len(tables['responses']), len(tables['traces'])), (len(native), len(native)), 'BIRD every released inference and full trace')
+    _check(len(tables.get('assets', ())), 0, 'BIRD no invented historical database snapshots')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        _check(set(features), {'source_model', 'serving_environment', 'instruction_size', 'shot_size', 'protocol_reference'},
+            'BIRD only source-supported extra subject features')
+        configuration = (features['source_model'], features['serving_environment'],
+            int(features['instruction_size']), int(features['shot_size']))
+        _check(configuration in configurations, True, 'BIRD original model/provider/prompt configuration')
+        _check(row.display_name, parameters['models'][configuration[0]], 'BIRD documented native model alias')
+        _check((row.harness, features['protocol_reference']),
+            (parameters['harness']['name'], parameters['harness']['reference']), 'BIRD recorded protocol reference')
+        _check(pd.isna(row.harness_version) and pd.isna(row.reasoning_effort), True, 'BIRD unknown historical inference settings remain unknown')
+        subjects[row.subject_id] = configuration
+    _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), 'BIRD each subject configuration exactly once')
+    bank = {row['db_id'] + ':' + row['index_in_original']: row for row in tasks}
+    items = {}
+    for row in tables['items'].itertuples():
+        task = bank[row.raw_item_id]
+        _check(json.loads(row.content), dict(question=task['question'], database_id=task['db_id'],
+            schema=task['schema'], evidence=task['evidence']), 'BIRD complete input-bank question, schema and hint')
+        _check(_features(row.item_features), dict(database_id=task['db_id'], difficulty=task['difficulty'],
+            source_question_index=task['index_in_original']), 'BIRD original task provenance and difficulty')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=task['sql_query'], rule=metadata['grading']['rule']),
+            'BIRD original reference SQL and recorded grading interpretation')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'BIRD original deterministic execution verdict')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['recorded_execution'], 'BIRD exact recorded grader protocol')
+        _check(pd.isna(row.asset_manifest), True, 'BIRD no fabricated input assets')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in bank}), 'BIRD input-bank items exactly once')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'BIRD trace/response bijection')
+    used = set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        position = trace['source_row']
+        _check(position in used, False, 'BIRD original inference imported once')
+        used.add(position)
+        record, task = native[position], associations[position]
+        _check(trace, dict(source_file=parameters['paths']['results'], sheet=parameters['workbook']['sheet_name'],
+            source_row=position, record=record), 'BIRD every native workbook cell including complete provider output')
+        _check(subjects[row.subject_id], (record['Model'], record['Environement'], int(record['Instruction Size']), int(record['Shot Size'])),
+            'BIRD correct subject/provider/prompt association')
+        _check(items[row.item_id], task['db_id'] + ':' + task['index_in_original'], 'BIRD correct original task association')
+        _check(row.response, float(record['Is match']), 'BIRD published execution verdict unchanged')
+        condition = f"instruction_size={record['Instruction Size']};environment={record['Environement']};shot={record['Shot Size']}"
+        _check((row.trial, row.test_condition), (1, condition), 'BIRD original condition without invented repeats')
+        _check(pd.isna(row.interactors), True, 'BIRD no fabricated interacting subject')
+    _check(used, set(native), 'BIRD complete native inference inventory')
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -5288,4 +5412,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird}[directory.name](directory, tables, metadata)
