@@ -7788,6 +7788,141 @@ def _cybench(directory, tables, metadata, source_records=None):
         source_recovered_without_submission=recovered_without_submission)
 
 
+def _dataclaw_source_records(directory, metadata):
+    """Read original task specifications and every published task score."""
+    import hashlib
+    import re
+
+    raw = directory / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    page = (raw / paths["leaderboard"]).read_text()
+    payload = json.JSONDecoder().raw_decode(page.partition("const D =")[2].lstrip())[0]
+    tasks, assets, records, models, asset_ids = {}, {}, {}, {}, {}
+    for path in sorted((raw / paths["tasks"]).glob("*.md")):
+        lines = path.read_text().splitlines()
+        _check(lines[0], "---", "DataClaw original task frontmatter")
+        end = lines.index("---", 1)
+        definition = yaml.safe_load("\n".join(lines[1:end]))
+        sections, name, content = {}, None, []
+        for line in lines[end + 1:]:
+            header = re.fullmatch(r"##\s+(.+)", line)
+            if header:
+                if name is not None:
+                    sections[name] = "\n".join(content).strip()
+                name, content = header[1], []
+                _check(name not in sections, True, "DataClaw no repeated task section")
+            else:
+                content.append(line)
+        sections[name] = "\n".join(content).strip()
+        _check(set(sections), {"Prompt", "Expected Behavior", "Grading Criteria", "LLM Judge Rubric"},
+               "DataClaw full input and grading sections")
+        _check(definition["id"], path.stem, "DataClaw filename and task identity")
+        _check(definition["id"] not in tasks, True, "DataClaw unique source task")
+        gold = json.loads((raw / paths["assets"] / definition["gold_file"]).read_text())
+        _check(gold["metadata"]["category"], definition["category"], "DataClaw gold/task category association")
+        _check(bool(sections["Prompt"]) and isinstance(gold["answer"], str), True, "DataClaw complete prompt and reference")
+        attachments = []
+        for ordinal, entry in enumerate(definition["workspace_files"], 1):
+            if entry["source"] not in asset_ids:
+                data = (raw / paths["assets"] / entry["source"]).read_bytes()
+                digest = hashlib.sha256(data).hexdigest()
+                assets[digest] = data
+                asset_ids[entry["source"]] = digest
+            digest = asset_ids[entry["source"]]
+            attachments.append(dict(asset_id=digest, path=entry["dest"],
+                media_type={".csv": "text/csv", ".json": "application/json"}[Path(entry["dest"]).suffix],
+                role="input", ordinal=ordinal))
+        tasks[definition["id"]] = dict(definition=definition, sections=sections, gold=gold, attachments=attachments)
+
+    summary_matches = 0
+    for model in payload["models"]:
+        name = model["model"]
+        _check(name not in models, True, "DataClaw unique reported model")
+        models[name] = {key: value for key, value in model.items() if key != "tasks"}
+        _check({row["task_id"] for row in model["tasks"]}, set(tasks), "DataClaw complete task population per model")
+        _check(round(sum(row["score"] for row in model["tasks"]) / len(model["tasks"]), 4), model["acc"],
+               "DataClaw native scores reproduce published model accuracy")
+        summary_matches += 1
+        for category, summary in model["category_scores"].items():
+            scores = [row["score"] for row in model["tasks"] if row["category"] == category]
+            _check(len(scores), summary["count"], "DataClaw published category count")
+            _check(round(sum(scores) / len(scores), 4), summary["acc"], "DataClaw published category accuracy")
+            summary_matches += 1
+        for row in model["tasks"]:
+            key = name, row["task_id"]
+            _check(key not in records, True, "DataClaw unique original model/task result")
+            _check(row["category"], tasks[key[1]]["definition"]["category"], "DataClaw original result/task association")
+            _check(0 <= row["score"] <= 1, True, "DataClaw explicit bounded native score")
+            if 0 < row["score"] < 1:
+                _check("Multi-answer Correctness" in tasks[key[1]]["sections"]["LLM Judge Rubric"], True,
+                       "DataClaw partial credit belongs to a multi-answer task")
+            records[key] = row
+    _check(len(tasks), payload["total_tasks"], "DataClaw published task-bank coverage")
+    return payload, tasks, assets, records, models, summary_matches
+
+
+def _dataclaw(directory, tables, metadata, source_records=None):
+    expected = source_records if source_records is not None else _dataclaw_source_records(directory, metadata)
+    payload, tasks, source_assets, records, models, summary_matches = expected
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["reported_model_id"]
+        _check(features, dict(reported_model_id=model), "DataClaw unmodified reported model identity")
+        _check(row.display_name, model, "DataClaw exact model label")
+        _check(row.harness, "OpenClaw", "DataClaw declared agent harness")
+        for field in ["harness_version", "reasoning_effort", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "DataClaw no invented historical setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({model: 1 for model in models}), "DataClaw all eight reported agents")
+    assets = tables["assets"]
+    _check(Counter(assets.asset_id), Counter({key: 1 for key in source_assets}), "DataClaw all exact unique workspace assets")
+    for row in assets.itertuples():
+        _check(row.data, source_assets[row.asset_id], "DataClaw every original workspace byte")
+        _check(row.byte_size, len(source_assets[row.asset_id]), "DataClaw exact workspace byte sizes")
+    items = {}
+    _check(Counter(tables["items"].raw_item_id), Counter({key: 1 for key in tasks}), "DataClaw all original task identities once")
+    for row in tables["items"].itertuples():
+        task = tasks[row.raw_item_id]
+        _check(row.content, task["sections"]["Prompt"], "DataClaw full original user prompt")
+        _check(_features(row.item_features), dict(category=task["definition"]["category"],
+            difficulty=task["gold"]["metadata"]["level"], input_scope="released_task_specification"),
+            "DataClaw source task attributes and input scope")
+        criterion = dict(reference_answer=task["gold"]["answer"], rule=json.dumps(dict(
+            expected_behavior=task["sections"]["Expected Behavior"], grading_criteria=task["sections"]["Grading Criteria"],
+            llm_judge_rubric=task["sections"]["LLM Judge Rubric"]), ensure_ascii=False, sort_keys=True))
+        _check(json.loads(row.grading_criterion), criterion, "DataClaw full reference and authored grading rule")
+        _check(json.loads(row.verifier), {"class": "judge", "judged_by": "llm", "spec": json.dumps(
+            metadata["grading"]["verifiers"]["accuracy"], sort_keys=True)}, "DataClaw original LLM protocol without invented judge identity")
+        _check(json.loads(row.asset_manifest), task["attachments"], "DataClaw exact workspace paths, roles and order")
+        items[row.item_id] = row.raw_item_id
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "DataClaw unique result-record associations")
+    context = {key: value for key, value in payload.items() if key != "models"}
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        key = subjects[row.subject_id], items[row.item_id]
+        _check(row.response, records[key]["score"], "DataClaw every original score including released partial credit")
+        _check(row.trial, 1, "DataClaw one recorded result per model/task")
+        _check(json.loads(row.test_condition), dict(measurement="final_answer_accuracy",
+            reported_benchmark_version=payload["benchmark_version"], configuration_scope="released_leaderboard"),
+            "DataClaw reported protocol version and honest configuration scope")
+        _check(pd.isna(row.interactors), True, "DataClaw no invented interaction agents")
+        _check(json.loads(traces[row.response_id]), dict(record_kind="released_task_score",
+            source_file=metadata["build"]["parameters"]["paths"]["leaderboard"], record=records[key],
+            model_summary=models[key[0]], release_context=context, agent_transcript_available=False),
+            "DataClaw complete original score, process/cost fields and source context")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "DataClaw complete source population without duplicate trials")
+    _check(set(traces), set(tables["responses"].response_id), "DataClaw complete result records for every observation")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), dict(kind="interval", min=0., max=1., direction="higher_is_better"),
+           "DataClaw native fractional accuracy scale")
+    return dict(source_responses=len(records), source_subjects=len(models), source_items=len(tasks), source_assets=len(source_assets),
+        source_partial_credit=sum(0 < row["score"] < 1 for row in records.values()), source_accuracy_summaries=summary_matches,
+        source_multi_answer_tasks=sum("Multi-answer Correctness" in task["sections"]["LLM Judge Rubric"] for task in tasks.values()),
+        source_result_records=len(traces), source_agent_transcripts=0)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -7808,4 +7943,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw}[directory.name](directory, tables, metadata)
