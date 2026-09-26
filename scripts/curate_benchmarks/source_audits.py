@@ -874,3 +874,4 @@ SOURCE_AUDITS["igakuqa119"] = verify_native_results
 SOURCE_AUDITS["ineqmath"] = verify_native_results
 SOURCE_AUDITS["jailbreakbench"] = verify_native_results
 SOURCE_AUDITS["jetts"] = verify_native_results
+SOURCE_AUDITS["judgetuning"] = verify_native_results

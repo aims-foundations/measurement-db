@@ -1,0 +1,3 @@
+- Sources: pin the seven named JudgeTuning LMSys evaluations, human annotations and harness. These are measurements on existing LMSys tasks.
+- Transform: decode the native CSV escaping, join full instructions and both candidate answers, and preserve all 39000 games in 21000 judge–battle observations. Apply the original mean-preference agreement rule.
+- Correction: restore 19 previously unmatched tasks (133 observations), retain empty completions and full prompt/trace fields, and identify the three released tuned presets. Ours-tiny's base model remains unknown.

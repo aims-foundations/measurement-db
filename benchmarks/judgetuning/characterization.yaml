@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 21000
+    logical_sha256: 459c2614635be127f49674c7a2a34f4e79a2e48884452bde59a74b1781f014e0
+  subjects:
+    rows: 7
+    logical_sha256: 8d6e3f8bf9b5cfaee97d9fc354fd9dfb222756fae63e38131f531533d556ac75
+  responses:
+    rows: 21000
+    logical_sha256: 9324982ee3d66fcab5f519fa092161756c5672ad2c9f07e985cd3fe90230120f
+  items:
+    rows: 3000
+    logical_sha256: 848a0e49c161bc73cc3d7c21d948f3c296f83577abc90dccf39c7e62d792c3a4
+  benchmarks:
+    rows: 1
+    logical_sha256: 1f1f4772f3ddfe358a051b0752db7aea826fd5bc5e9a5852caf8d73378903005
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 21000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 7
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 3000
+  source_empty_completions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 475
+  source_games:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 39000
+  source_positive_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 9483
+  source_all_empty_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 222
+  source_arena_hard_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1497
+  source_judgelm_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1273
+  source_ours_large_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1477
+  source_ours_medium_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1412
+  source_ours_small_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1368
+  source_ours_tiny_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1322
+  source_pandalm_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    locator: The seven LLM judge exports in annotations-lmsys at the pinned HF revision, joined to instructions
+      and human battles.
+    scope: Every recorded game contributes to one judge-battle decision under the published mean-preference agreement
+      rule. No absent games are fabricated.
+    expected: 1134

@@ -1,0 +1,119 @@
+benchmark:
+  name: JudgeTuning LMSys human agreement
+  description: Released evaluations of seven named LLM judges on 3000 LMSys paired-answer comparisons.
+  testing_condition: Each observation evaluates one judge system on an existing LMSys battle using the published
+    mean-over-games protocol. Six judges have two recorded answer orderings and Ours-medium has one. All 39000 recorded
+    games contribute to 21000 observations. Preserve the instruction, both candidate answers, original human preference,
+    saved prompts and completions. Empty completions retain their upstream parser-fallback preference. The official
+    top_judge.csv identifies three tuned presets; Ours-tiny's base model and exact configuration are not released.
+    Other runtime settings and immutable model checkpoints are not inferred from class defaults. PandaLM saves the
+    instruction as its prompt field rather than its complete tokenized request, and applies upstream prompt truncation.
+    The human-grade comparison uses all recorded outputs without new inference. This is a measurement collection
+    on LMSys, not a new independent task set. Separate scaling experiments, validation matrices and Arena-Hard/AlpacaEval
+    reference annotations are outside this seven-judge release. Length and random are non-LLM controls and are not
+    subjects.
+  paper_url: https://arxiv.org/abs/2501.17178
+  data_source_url: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+  subject_type: model
+  item_type: paired_answer_comparison
+  license: Apache-2.0 for JudgeTuning code. Original LMSys data retain their upstream terms.
+  citation: Salinas, Swelam and Hutter. Tuning LLM Judge Design Decisions for 1/1000 of the Cost. ICML 2025.
+  tags:
+  - llm_as_judge
+  - human_agreement
+  - lmsys
+  modality:
+  - text
+  domain:
+  - preference_evaluation
+  response_type: binary
+  categorical: true
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Judge preference disagrees with the human preference
+      '1': Judge preference agrees with the human preference
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      instructions: release/instructions/lmsys-kaggle.csv
+      humans: release/judge_annotations/lmsys-kaggle.parquet
+      annotations: release/annotations-lmsys
+      harness: upstream.tar.gz
+    models:
+      Arena-Hard: gpt-4o-mini
+      JudgeLM: BAAI/JudgeLM-7B-v1.0
+      Ours-large: neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8
+      Ours-medium: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
+      Ours-small: google/gemma-2-9b-it
+      Ours-tiny: not released for Ours-tiny
+      PandaLM: WeOpenML/PandaLM-7B-v1
+    labels:
+      Arena-Hard: gpt-4o-mini
+      JudgeLM: BAAI/JudgeLM-7B-v1.0
+      Ours-large: neuralmagic/Meta-Llama-3.1-70B-Instruct-FP8
+      Ours-medium: Qwen/Qwen2.5-32B-Instruct-GPTQ-Int8
+      Ours-small: google/gemma-2-9b-it
+      Ours-tiny: JudgeTuning Ours-tiny
+      PandaLM: WeOpenML/PandaLM-7B-v1
+    configuration_sources:
+      Arena-Hard: https://arxiv.org/html/2501.17178v2#S5.SS6
+      JudgeLM: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/judge/judge_lm.py
+      Ours-large: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/script/top_judge.csv
+      Ours-medium: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/script/top_judge.csv
+      Ours-small: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/script/top_judge.csv
+      Ours-tiny: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/results_scripts/table2.py
+      PandaLM: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/judge/judge_pandalm.py
+    temperatures:
+      Arena-Hard: not_recorded
+      JudgeLM: not_recorded
+      Ours-large: '0.0001'
+      Ours-medium: '0.0'
+      Ours-small: '0.1'
+      Ours-tiny: not_recorded
+      PandaLM: not_recorded
+    subject_features:
+      harness: JudgeTuning
+      harness_source: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548
+      configuration_scope: Official named judge preset. Missing historical request settings and checkpoint revisions
+        are not reconstructed.
+    item_features:
+      component: LMSys Chatbot Arena
+      input_scope: Complete released instruction and both candidate answers. Recorded judge-specific prompts remain
+        in the trace.
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/judge-arena/judge-arena-dataset
+    revision: 004c4a992956eeefffd36b63ade470f32fd0a582
+    files:
+    - match: annotations-lmsys/[^/]+\.csv\.zip|instructions/lmsys-kaggle\.csv|judge_annotations/lmsys-kaggle\.parquet
+      path: release/{path}
+  - name: harness
+    url: https://codeload.github.com/geoalgo/judgetuning/tar.gz/f6b9cc5304837214dd927f4bdd52761f633b1548
+    revision: f6b9cc5304837214dd927f4bdd52761f633b1548
+    file: upstream.tar.gz
+    size: 96601
+    sha256: 2c96e29867afa96d521081a76d6f1a28ab24252400dee6df523843e092461db5
+grading:
+  rule: Average the recorded judge preferences within each named judge and LMSys battle, then compare whether that
+    mean and the human preference are below 0.5, equal to 0.5, or above 0.5. Return 1 for agreement and 0 otherwise.
+    Preferences are already oriented to original output1/output2; do not invert swapped games again. The recorded
+    parser fallback of 0.5 is retained, including empty completions. This measures agreement with the human preference,
+    not correctness of either candidate answer.
+  verifiers:
+    human_agreement:
+      kind: preference_side_agreement
+      source: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/script/evaluate_human_agreement.py
+      function: error_judgement
+      aggregation: Arithmetic mean of saved games within one named judge and instruction_index
+      reference: Original LMSys human preference. 0 prefers output1, 0.5 is a tie, 1 prefers output2.
+      csv_serialization: https://github.com/geoalgo/judgetuning/blob/f6b9cc5304837214dd927f4bdd52761f633b1548/judgetuning/experiment_tracker.py
+      execution: Reconstruct the published deterministic agreement rule. Do not regenerate answers or judge completions.

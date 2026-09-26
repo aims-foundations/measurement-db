@@ -12235,6 +12235,137 @@ def _jetts(directory, tables, metadata, source=None):
         source_exports=len({key[0] for key in native}), source_absent_nominal_slots=10*len(native)-len(expected), **counts)
 
 
+def _judgetuning_source_records(directory, metadata):
+    """Read native CSV cells independently and verify them against human battles."""
+    import csv
+    import io
+    import math
+    import tarfile
+    import zipfile
+    from collections import defaultdict
+    import pyarrow.parquet as pq
+
+    paths = metadata["build"]["parameters"]["paths"]
+    raw = directory / "raw"
+    with (raw / paths["instructions"]).open(newline="") as stream:
+        instructions = {row["instruction_index"]: row["instruction"] for row in csv.DictReader(stream)}
+    humans = {}
+    for row in pq.read_table(raw / paths["humans"]).to_pylist():
+        humans.setdefault(row["instruction_index"], row)
+    with tarfile.open(raw / paths["harness"]) as archive:
+        member = next(member for member in archive if member.name.endswith("/judgetuning/script/top_judge.csv"))
+        presets = {row["name"]: row for row in csv.DictReader(io.StringIO(archive.extractfile(member).read().decode()))}
+    native, definitions = {}, {}
+    names = ["Arena-Hard", "JudgeLM", "Ours-large", "Ours-medium", "Ours-small", "Ours-tiny", "PandaLM"]
+    _check(set(metadata["build"]["parameters"]["models"]), set(names), "JudgeTuning exact seven-LLM release scope")
+    for name in names:
+        path = raw / paths["annotations"] / (name + ".csv.zip")
+        groups = defaultdict(list)
+        with zipfile.ZipFile(path) as archive:
+            files = [value for value in archive.namelist() if value.endswith(".csv")]
+            _check(len(files), 1, "JudgeTuning unambiguous native annotation CSV")
+            with archive.open(files[0]) as handle:
+                for position, cells in enumerate(csv.DictReader(io.TextIOWrapper(handle, newline=""), escapechar="\\")):
+                    row = dict(cells)
+                    for field in ["preference", "cost", "time", "n_prompt_token", "n_token_decoder", "human_preference"]:
+                        if row[field] != "":
+                            row[field] = float(row[field])
+                            _check(math.isfinite(row[field]), True, "JudgeTuning finite native numeric field")
+                    _check(row["swap"] in ["True", "False"], True, "JudgeTuning native answer-order flag")
+                    row["swap"] = row["swap"] == "True"
+                    key = row["instruction_index"]
+                    human = humans[key]
+                    _check(tuple(row[field] for field in ["model1", "model2", "output1", "output2", "human_preference"]),
+                        tuple(human[field] for field in ["model1", "model2", "output1", "output2", "preference"]),
+                        "JudgeTuning each decoded annotation matches the original human battle")
+                    _check(instructions[key] in row["prompt"], True, "JudgeTuning native prompt contains the unaltered instruction")
+                    _check(0 <= row["preference"] <= 1, True, "JudgeTuning original preference probability")
+                    groups[key].append(dict(source_row=position, annotation=row))
+                    definitions[key] = dict(instruction=instructions[key], **human)
+        for key, games in groups.items():
+            _check([game["annotation"]["swap"] for game in games], [False] if name == "Ours-medium" else [False, True],
+                "JudgeTuning actual recorded game order, without an invented second medium game")
+            native[name, key] = dict(source_file=str(path.relative_to(raw)), games=games)
+    _check((len(native), len(definitions), sum(len(value["games"]) for value in native.values())),
+        (21000, 3000, 39000), "JudgeTuning complete seven-judge evaluation, including escaped task IDs")
+    return native, definitions, presets
+
+
+def _judgetuning(directory, tables, metadata, source=None):
+    """Reconcile every battle, human reference, judge game and aggregate grade."""
+    import math
+
+    native, definitions, presets = _judgetuning_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    for name, preset in presets.items():
+        _check(parameters["models"][name], preset["model"], "JudgeTuning released base-model and quantization identity")
+        _check(float(parameters["temperatures"][name]), float(preset["temperature"]), "JudgeTuning released preset temperature")
+    _check(parameters["models"]["Ours-tiny"], "not released for Ours-tiny", "JudgeTuning no guessed tiny model")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        name = features["named_judge"]
+        _check(row.display_name, parameters["labels"][name], "JudgeTuning original named system label")
+        _check(row.harness, "JudgeTuning", "JudgeTuning subject is a judge rather than a candidate-answer model")
+        _check(pd.isna(row.harness_version), True, "JudgeTuning current source revision is not a historical run version")
+        expected = dict(named_judge=name, model_identifier=parameters["models"][name],
+            configuration_source=parameters["configuration_sources"][name],
+            **{key:value for key,value in parameters["subject_features"].items() if key != "harness"})
+        _check(features, expected, "JudgeTuning documented configuration and explicit unknowns")
+        subjects[row.subject_id] = name
+    _check(Counter(subjects.values()), Counter({name:1 for name, _ in native}), "JudgeTuning every original LLM judge exactly once")
+    items = {row.item_id:row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "JudgeTuning one complete trace for each observation, including empty completions")
+    seen, checked_items, counts = Counter(), set(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        name, key = subjects[row.subject_id], trace["instruction_index"]
+        entry = native[name, key]
+        expected_trace = dict(source_file=entry["source_file"], instruction_index=key, games=entry["games"])
+        _check((trace["source_file"], trace["instruction_index"], len(trace["games"])),
+            (expected_trace["source_file"], key, len(entry["games"])), "JudgeTuning exact source file, task and game count")
+        _check(set(trace), set(expected_trace), "JudgeTuning complete trace envelope")
+        for actual, original in zip(trace["games"], entry["games"], strict=True):
+            _check(actual["source_row"], original["source_row"], "JudgeTuning original CSV record position")
+            _check(set(actual), set(original), "JudgeTuning game envelope")
+            _check(set(actual["annotation"]), set(original["annotation"]), "JudgeTuning all native annotation fields")
+            _check(actual["annotation"], original["annotation"], "JudgeTuning every native cell without text or numeric changes")
+            counts["source_empty_completions"] += original["annotation"]["judge_completion"] == ""
+        preferences = [game["annotation"]["preference"] for game in entry["games"]]
+        mean = math.fsum(preferences) / len(preferences)
+        definition = definitions[key]
+        human = definition["preference"]
+        grade = float((mean < .5 and human < .5) or (mean == .5 and human == .5) or (mean > .5 and human > .5))
+        _check(row.response, grade, "JudgeTuning original agreement rule applied once to the actual mean preference")
+        _check(row.trial, 1, "JudgeTuning games are components of one system decision, not independent trials")
+        _check(row.test_condition, "temperature=" + parameters["temperatures"][name], "JudgeTuning source preset temperature or explicit unknown")
+        _check(pd.isna(row.interactors), True, "JudgeTuning no fabricated interaction partner")
+        item = items[row.item_id]
+        _check(item.raw_item_id, key, "JudgeTuning original decoded task ID")
+        if row.item_id not in checked_items:
+            _check(json.loads(item.content), {field:definition[field] for field in ["instruction", "output1", "output2"]},
+                "JudgeTuning complete instruction and both compared answers without a leaked human label")
+            _check(_features(item.item_features), dict(candidate_model1=definition["model1"], candidate_model2=definition["model2"],
+                **parameters["item_features"]), "JudgeTuning original candidate identity and input scope")
+            _check(json.loads(item.grading_criterion), dict(reference_answer={0.0:"output1", .5:"tie", 1.0:"output2"}[human],
+                rule=metadata["grading"]["rule"]), "JudgeTuning original human reference and deterministic agreement criterion")
+            verifier = json.loads(item.verifier)
+            _check(verifier["class"], "exact_matcher", "JudgeTuning correctness is deterministic human-side agreement")
+            _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["human_agreement"], "JudgeTuning source-grounded grading protocol")
+            _check(pd.isna(item.asset_manifest), True, "JudgeTuning no invented multimodal input")
+            checked_items.add(row.item_id)
+        seen[name, key] += 1
+        counts["source_games"] += len(preferences)
+        counts["source_positive_observations"] += grade == 1
+        counts["source_all_empty_observations"] += all(game["annotation"]["judge_completion"] == "" for game in entry["games"])
+        counts["source_" + name.lower().replace("-", "_") + "_positives"] += grade == 1
+    _check(seen, Counter({key:1 for key in native}), "JudgeTuning every original judge-battle decision imported once")
+    _check(checked_items, set(items), "JudgeTuning all and only the 3000 evaluated comparisons")
+    _check(len(tables.get("assets", [])), 0, "JudgeTuning no source media assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12248,7 +12379,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
