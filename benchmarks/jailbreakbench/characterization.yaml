@@ -1,0 +1,162 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3074
+    logical_sha256: de02540e6024f8c633664de95417daa50817db92c9e79c887469e00fffeb5c24
+  subjects:
+    rows: 10
+    logical_sha256: 231ed14e5c6094d43af0e537a7d07bd56a9eb84af012a8d8ea9487c9a5101737
+  responses:
+    rows: 3074
+    logical_sha256: 10778d969f7fe754ad5a2b173c3688ead6e47946783850832ac1598ed763aaa7
+  items:
+    rows: 2001
+    logical_sha256: d0581195df6ee593164513a5bcab8ea20328c6637c5ddb988da53eb428c5b115
+  benchmarks:
+    rows: 1
+    logical_sha256: 9f05c5fa43c27fedb946fa653b489f8e881b69ee54d595dcf0e77b2938e9cf3f
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 3074
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 10
+  source_model_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 2001
+  source_artifacts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 18
+  source_behavior_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 1800
+  source_dsn_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 200
+  source_primary_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 1637
+  source_primary_positive:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 937
+  source_stale_total_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 13
+  source_target_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 1637
+  source_historical_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 1437
+  source_historical_positive:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 765
+  source_unsubmitted_placeholders:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 163
+  source_fixture_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 3
+  source_behavior_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/JailbreakBench/artifacts
+    locator: All 18 non-fixture artifact JSONs, original DSN evaluation/submission logs and the upstream submission
+      writer.
+    scope: Actual final target outputs only. Preserve primary and available historical judgments separately; retain
+      unsubmitted slots in raw data.
+    expected: 107

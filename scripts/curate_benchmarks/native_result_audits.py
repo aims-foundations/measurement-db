@@ -11998,6 +11998,128 @@ def _ineqmath(directory, tables, metadata, source=None):
         source_export_records=source_count, source_duplicate_records=source_count - len(native))
 
 
+def _jailbreakbench_source_records(directory, metadata):
+    """Read actual target calls, published judge fields and original DSN logs."""
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        files = {member.name.split("/", 1)[1]: member for member in archive if member.isfile()}
+        submission = json.load(archive.extractfile(files[paths["dsn_submission"]]))
+        evaluation = json.load(archive.extractfile(files[paths["dsn_evaluation"]]))
+        records, omitted, fixtures, counts, definitions = {}, {}, [], Counter(), set()
+        for name, member in sorted(files.items()):
+            parts = name.split("/")
+            if len(parts) != 4 or parts[0] != "attack-artifacts" or not name.endswith(".json"):
+                continue
+            document = json.load(archive.extractfile(member))
+            if parts[1] == "test-artifact":
+                fixtures.extend(document["jailbreaks"])
+                continue
+            parameters = document["parameters"]
+            _check(parts[-1].removesuffix(".json"), parameters["model"], "JailbreakBench exact final target-model attribution")
+            _check(parts[2], parameters["attack_type"], "JailbreakBench declared attack type")
+            counts["source_artifacts"] += 1
+            submitted = 0
+            for position, record in enumerate(document["jailbreaks"]):
+                _check(type(record["jailbroken"]), bool, "JailbreakBench native Boolean primary verdict")
+                counts["source_behavior_slots"] += 1
+                definitions.add((record["index"], record["goal"], record["behavior"], record["category"]))
+                native_log = None
+                if record["prompt"] is None:
+                    _check((record["response"], record["jailbroken"], record.get("jailbroken_llama_guard1", False)),
+                           (None, False, False), "JailbreakBench unsubmitted slot is an evaluator placeholder")
+                    omitted[name, position] = record
+                    continue
+                _check(isinstance(record["prompt"], str) and bool(record["prompt"]) and isinstance(record["response"], str),
+                       True, "JailbreakBench complete final target input and output")
+                submitted += 1
+                if parts[1] == "DSN":
+                    model, behavior = parameters["model"], record["behavior"]
+                    _check(submission["summaries"][model]["jailbreaks"][position], record, "JailbreakBench DSN summary is the same recorded evaluation")
+                    _check(evaluation[model][behavior], {key: record[key] for key in ["prompt", "response", "jailbroken"]},
+                           "JailbreakBench DSN evaluation and artifact agree")
+                    native_log = submission["eval_logs"][model][behavior]
+                    calls = [call for timestamp, queries in native_log for call in queries]
+                    _check(len(calls), 1, "JailbreakBench one released DSN final target call")
+                    _check((calls[0]["prompt"], calls[0]["response"]), (record["prompt"], record["response"]),
+                           "JailbreakBench DSN timestamped log association")
+                    counts["source_dsn_logs"] += 1
+                for field in ("jailbroken", "jailbroken_llama_guard1"):
+                    if field not in record:
+                        continue
+                    _check(type(record[field]), bool, "JailbreakBench each historical verdict is an actual Boolean")
+                    key = name, position, field
+                    records[key] = dict(parameters=parameters, record=record, log=native_log)
+                    counts["source_primary_judgments" if field == "jailbroken" else "source_historical_judgments"] += 1
+                    counts["source_primary_positive" if field == "jailbroken" else "source_historical_positive"] += record[field]
+            _check(parameters["number_of_submitted_prompts"], submitted, "JailbreakBench native submitted-prompt count")
+            total = sum(row["jailbroken"] for row in document["jailbreaks"])
+            _check(parameters["attack_success_rate"], total / len(document["jailbreaks"]), "JailbreakBench source rates include unsubmitted slots")
+            counts["source_stale_total_fields"] += parameters["total_number_of_jailbreaks"] != total
+            counts["source_target_outputs"] += submitted
+    counts.update(source_unsubmitted_placeholders=len(omitted), source_fixture_records=len(fixtures),
+                  source_behavior_definitions=len(definitions))
+    return records, omitted, counts
+
+
+def _jailbreakbench(directory, tables, metadata, source=None):
+    """Keep target outputs, judges, configurations and placeholder semantics distinct."""
+    native, omitted, counts = _jailbreakbench_source_records(directory, metadata) if source is None else source
+    _check(metadata["benchmark"]["response_scale"]["direction"], "lower_is_better", "JailbreakBench one remains vulnerability, not target success")
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        _check(row.display_name, features["model_identifier"], "JailbreakBench original target label")
+        _check(row.harness, parameters["subject_features"]["harness"], "JailbreakBench declared evaluation harness")
+        key = features["model_identifier"], features["evaluation_backend"], features["defense"]
+        _check(features, dict(configuration_scope=parameters["subject_features"]["configuration_scope"],
+            model_identifier=key[0], evaluation_backend=key[1], defense=key[2]), "JailbreakBench preserved execution configuration")
+        subjects[row.subject_id] = key
+    expected_subjects = {(value["parameters"]["model"], value["parameters"]["evaluation_llm_provider"],
+        value["parameters"]["defense"] or "none") for value in native.values()}
+    _check(Counter(subjects.values()), Counter({key: 1 for key in expected_subjects}), "JailbreakBench every named target/backend configuration")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "JailbreakBench full trace for each native judgment")
+    seen, used_items, source_inputs = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["judgment_field"]
+        original = native[key]
+        record, settings = original["record"], original["parameters"]
+        _check(trace, dict(source_file=key[0], source_row=key[1], judgment_field=key[2], parameters=settings,
+            source_record=record, native_eval_log=original["log"]), "JailbreakBench unchanged full output, parameters, counters and timestamped log")
+        _check(subjects[row.subject_id], (settings["model"], settings["evaluation_llm_provider"], settings["defense"] or "none"),
+               "JailbreakBench exact response-to-target configuration")
+        _check(row.response, float(record[key[2]]), "JailbreakBench original verdict for the selected judge")
+        _check(row.trial, 1, "JailbreakBench search query count is not a number of independent final responses")
+        _check(row.interactors, "attacker=" + settings["method"], "JailbreakBench exact source attacker name")
+        _check(row.test_condition, "attack_type=" + settings["attack_type"] + ";artifact=" + key[0], "JailbreakBench source attack condition and release provenance")
+        item = items[row.item_id]
+        _check(item.raw_item_id, str(record["index"]), "JailbreakBench original behavior index")
+        _check(item.content, record["prompt"], "JailbreakBench exact submitted prompt, not a goal-only substitute")
+        _check(_features(item.item_features), dict(behavior=record["behavior"], category=record["category"],
+            input_scope=parameters["observation"]["input_scope"]), "JailbreakBench native behavior-definition version")
+        criterion = json.loads(item.grading_criterion)
+        _check((set(criterion), criterion.get("reference_answer")), ({"rule", "reference_answer"}, None), "JailbreakBench no invented gold response")
+        _check(json.loads(criterion["rule"]), dict(description=metadata["grading"]["rule"], behavior_goal=record["goal"],
+            behavior=record["behavior"], category=record["category"], judgment_field=key[2]), "JailbreakBench distinct original grading protocol and behavior goal")
+        verifier = json.loads(item.verifier)
+        _check(verifier["class"], "judge", "JailbreakBench published LLM judge")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"][key[2]], "JailbreakBench primary versus historical judge association")
+        _check(pd.isna(item.asset_manifest), True, "JailbreakBench no invented media inputs")
+        source_inputs.add((record["prompt"], record["goal"], record["behavior"], record["category"], key[2]))
+        used_items.add(row.item_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "JailbreakBench every real final-output judgment exactly once and no unsubmitted placeholders")
+    _check((used_items, len(items)), (set(items), len(source_inputs)), "JailbreakBench source input and grading identities")
+    _check(len(tables.get("assets", [])), 0, "JailbreakBench no source multimedia assets")
+    return dict(source_responses=len(native), source_subject_configurations=len(subjects), source_model_aliases=len({key[0] for key in expected_subjects}),
+        source_items=len(items), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12011,7 +12133,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

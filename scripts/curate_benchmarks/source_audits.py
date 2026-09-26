@@ -872,3 +872,4 @@ SOURCE_AUDITS["hivmedqa"] = verify_native_results
 SOURCE_AUDITS["hle"] = verify_native_results
 SOURCE_AUDITS["igakuqa119"] = verify_native_results
 SOURCE_AUDITS["ineqmath"] = verify_native_results
+SOURCE_AUDITS["jailbreakbench"] = verify_native_results
