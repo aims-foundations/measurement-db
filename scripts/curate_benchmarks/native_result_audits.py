@@ -12868,6 +12868,161 @@ def _kormedmcqa(directory, tables, metadata, source=None):
         **{"source_" + key:value for key,value in counts.items()})
 
 
+def _kris_source_records(directory, metadata):
+    """Read the original task/image bank and every archived score independently."""
+    import hashlib
+    import math
+    import tarfile
+
+    raw = directory / "raw"
+    bank, assets, outputs, native, counts = {}, {}, {}, {}, Counter()
+    for path in sorted((raw / "source/KRIS_Bench").glob("*/annotation.json")):
+        for identifier, record in json.loads(path.read_text()).items():
+            key = path.parent.name, identifier
+            _check(key not in bank, True, "KRIS unique original task coordinate")
+            inputs = record["ori_img"] if isinstance(record["ori_img"], list) else [record["ori_img"]]
+            slots = [("input", filename) for filename in inputs]
+            if record.get("gt_img"):
+                slots.append(("grading", record["gt_img"]))
+            links = []
+            for ordinal, (role, filename) in enumerate(slots, 1):
+                payload = (path.parent / filename).read_bytes()
+                digest = hashlib.sha256(payload).hexdigest()
+                if payload.startswith(b"\x89PNG\r\n\x1a\n"):
+                    mime = "image/png"
+                elif payload.startswith(b"\xff\xd8\xff"):
+                    mime = "image/jpeg"
+                else:
+                    _check((payload[:4], payload[8:12]), (b"RIFF", b"WEBP"), "KRIS actual image format")
+                    mime = "image/webp"
+                assets[digest] = len(payload)
+                links.append(dict(asset_id=digest, path=f"{role}/{key[0]}/{filename}",
+                    media_type=mime, role=role, ordinal=ordinal))
+            bank[key] = dict(annotation_file=str(path.relative_to(raw)), annotation=record, images=links, inputs=inputs)
+
+    for path in sorted((raw / "results").glob("*.tar.gz")):
+        model = path.name.removesuffix(".tar.gz")
+        records = []
+        with tarfile.open(path, "r|gz") as archive:
+            for member in archive:
+                name = Path(member.name)
+                if not member.isfile() or name.name.startswith("."):
+                    continue
+                if name.name in ("metrics.json", "metrics_qwen.json"):
+                    judge = "gpt" if name.name == "metrics.json" else "qwen"
+                    for identifier, record in json.load(archive.extractfile(member)).items():
+                        records.append((name.parent.name, identifier, judge, member.name, record))
+                elif name.suffix.lower() in (".jpg", ".jpeg", ".png", ".webp"):
+                    identifier = name.stem.split("-")[0]
+                    task = bank[name.parent.name, identifier]
+                    if name.stem != identifier:
+                        _check(name.name, task["inputs"][0], "KRIS output filename aliases the first input frame")
+                        counts["suffixed_output_names"] += 1
+                    with archive.extractfile(member) as stream:
+                        digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                    key = model, name.parent.name, identifier
+                    _check(key not in outputs, True, "KRIS one associated output image per model/task")
+                    outputs[key] = dict(source_file=str(path.relative_to(raw)), member=member.name,
+                        bytes=member.size, sha256=digest)
+        for category, identifier, judge, member, record in records:
+            task = bank[category, identifier]
+            output = outputs[model, category, identifier]
+            instruction = record.get("ins_en", record.get("instruction"))
+            explanation = record.get("explain_en", record.get("explain"))
+            _check(isinstance(instruction, str) and bool(instruction), True, "KRIS complete recorded instruction")
+            _check(isinstance(explanation, str), True, "KRIS recorded grading explanation")
+            counts["judge_records"] += 1
+            counts["task_wording_differs_from_annotation"] += instruction != task["annotation"]["ins_en"]
+            for metric in ("consistency_score", "instruction_score", "quality_score", "knowledge_score"):
+                if metric not in record:
+                    continue
+                value = record[metric]
+                if value is None:
+                    status, grade = "missing_upstream_score", None
+                else:
+                    _check(type(value) in (int, float) and math.isfinite(value), True, "KRIS finite native numeric rating")
+                    status = "recorded" if value in (1, 2, 3, 4, 5) else "invalid_upstream_score"
+                    grade = float(value) if status == "recorded" else None
+                counts[status] += 1
+                key = str(path.relative_to(raw)), member, identifier, metric
+                _check(key not in native, True, "KRIS source score occurs once")
+                trace = dict(source_file=key[0], member=member, source_id=identifier, judge=judge, metric=metric,
+                    native_record=record, grade_status=status, annotation_file=task["annotation_file"],
+                    annotation=task["annotation"], output=output)
+                identity = category, identifier, instruction, explanation, judge, metric
+                native[key] = dict(model=model, identity=identity, grade=grade, trace=trace, task=task)
+    counts.update(task_rows=len(bank), generated_images=len(outputs))
+    return native, assets, counts
+
+
+def _kris(directory, tables, metadata, source=None):
+    """Reconcile every source rating, historical task, image role and full trace."""
+    import hashlib
+
+    native, original_assets, counts = _kris_source_records(directory, metadata) if source is None else source
+    settings = metadata["build"]["parameters"]
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(tables["traces"]), len(traces), "KRIS distinct response traces")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "KRIS full trace-response bijection")
+    _check(metadata["benchmark"]["response_scale"], dict(kind="discrete", values=[1,2,3,4,5], direction="higher_is_better"), "KRIS original ordinal rating scale")
+    assets = {}
+    for row in tables["assets"].itertuples():
+        _check(hashlib.sha256(row.data).hexdigest(), row.asset_id, "KRIS unchanged image bytes")
+        _check(len(row.data), original_assets[row.asset_id], "KRIS original image size")
+        assets[row.asset_id] = len(row.data)
+    _check(assets, original_assets, "KRIS all and only original input/reference images")
+    _check(len(tables["assets"]), len(assets), "KRIS unique image content addresses")
+    models = {record["model"] for record in native.values()}
+    mapped_subjects = {}
+    for identifier, row in subjects.items():
+        features = _features(row["subject_features_extra"])
+        model = features["source_model"]
+        expected = {key:value for key,value in settings["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model=model), "KRIS no guessed model settings")
+        _check(row["display_name"], settings["labels"]["subject_prefix"] + model, "KRIS original archive model label")
+        _check(row["harness"], settings["subject_features"]["harness"], "KRIS source harness")
+        for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
+            _check(pd.isna(row[field]), True, "KRIS unknown historical " + field)
+        mapped_subjects[identifier] = model
+    _check(Counter(mapped_subjects.values()), Counter({model:1 for model in models}), "KRIS one identity per released model")
+    seen, checked_items, identities = Counter(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["member"], trace["source_id"], trace["metric"]
+        original = native[key]
+        _check(trace, original["trace"], "KRIS complete native record and original output association")
+        _check(mapped_subjects[row.subject_id], original["model"], "KRIS source model association")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "KRIS original rating or explicit unavailable grade")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "KRIS one recorded rating per grading protocol")
+        if row.item_id in checked_items:
+            _check(checked_items[row.item_id], original["identity"], "KRIS no task/version/judge/dimension collapse")
+        else:
+            category, identifier, instruction, explanation, judge, metric = original["identity"]
+            item = items[row.item_id]
+            links = original["task"]["images"]
+            _check(item["raw_item_id"], category + "::" + identifier, "KRIS unchanged source task coordinate")
+            expected_content = dict(multimedia_elements=[dict(content_type="text/plain", text=instruction)]
+                + [dict(content_type=link["media_type"], location=link["path"]) for link in links if link["role"] == "input"])
+            _check(json.loads(item["content"]), expected_content, "KRIS full historical instruction and ordered input images")
+            _check(json.loads(item["asset_manifest"]), links, "KRIS reference/output assets do not enter predictive inputs")
+            _check(_features(item["item_features"]), dict(category=category, input_scope=settings["labels"]["input_scope"]), "KRIS no outcome-derived item attributes")
+            criterion = dict(reference_answer=explanation or None,
+                rule=metadata["grading"]["rule"] + "\nDimension: " + settings["score_fields"][metric])
+            _check(json.loads(item["grading_criterion"]), criterion, "KRIS original explanation and dimension-specific grading rule")
+            _check(json.loads(item["verifier"]), dict(**{"class":"judge"}, judged_by="llm",
+                spec=json.dumps(dict(metadata["grading"]["verifiers"][judge], metric=metric), sort_keys=True)), "KRIS documented judge family without inferred snapshot")
+            _check(original["identity"] not in identities, True, "KRIS no duplicated canonical task protocol")
+            identities[original["identity"]] = row.item_id
+            checked_items[row.item_id] = original["identity"]
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "KRIS every explicit rating field, including nulls and invalid scores")
+    _check(set(checked_items), set(items), "KRIS no unused or missing task definitions")
+    return dict(source_responses=len(native), source_subjects=len(models), source_items=len(items), source_assets=len(assets),
+        **{"source_"+key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12881,7 +13036,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
