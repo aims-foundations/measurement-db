@@ -9459,6 +9459,135 @@ def _egoschema(directory, tables, metadata, source=None):
         source_unparsed=sum(record["pred"] == -1 for record in native.values()), source_demonstration_overlap=overlap)
 
 
+def _edu_circuit_source_records(directory, metadata):
+    """Read original split, image, Markdown and judge records independently."""
+    import csv
+    import io
+    import re
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    settings = metadata["build"]["parameters"]
+    judgments = {}
+    for path in sorted(raw.glob(settings["layout"]["results"])):
+        model = path.name.removeprefix("Recognition_Detection_").removesuffix("_obsetf_gemini-2.5-pro.csv")
+        with path.open(encoding="utf-8-sig", newline="") as stream:
+            for index, row in enumerate(csv.DictReader(stream)):
+                key = tuple(row[column] for column in ["Homework ID", "Student ID", "Question ID"])
+                _check((model, key) not in judgments, True, "Circuit unique native model/sample judgment")
+                judgments[model, key] = dict(judge_file=str(path.relative_to(raw)), judge_row=index, judge_record=row)
+    native, references, images, corrected = {}, {}, {}, 0
+    with ZipFile(raw / settings["layout"]["archive"]) as archive:
+        with archive.open(settings["layout"]["split"]) as stream:
+            split = list(csv.DictReader(io.TextIOWrapper(stream, encoding="utf-8-sig")))
+        samples = [tuple(row[column] for column in ["Homework ID", "Student ID", "Question ID"]) for row in split]
+        _check((len(samples), len(set(samples))), (513, 513), "Circuit original observation split")
+        folders = {}
+        for name in archive.namelist():
+            if name.endswith("_markdown.md") and "/Compare/" in name:
+                folders.setdefault(name.rsplit("/", 1)[0], []).append(name)
+
+        def documents(prefix, question):
+            pattern = re.compile(rf"^{re.escape(question)}(?:_[1-9])?_markdown\.md$")
+            return [dict(path=name, markdown=archive.read(name).decode("utf-8"))
+                for name in sorted(folders.get(prefix, [])) if pattern.fullmatch(name.rsplit("/", 1)[1])]
+
+        for key in samples:
+            homework, student, question = key
+            relative = f"Homework_collected_database_trial_{homework}_{student}/models/"
+            reference = documents("EDU-CIRCUIT-HW_v1/Rectified_recognized_markdown_done_Anon/Final_4_LLM_judge/"
+                + relative + "gemini-2.5-pro/Compare", question)
+            corrected += bool(reference)
+            if not reference:
+                reference = documents("EDU-CIRCUIT-HW_v1/Observationset_Final/v6_Gemini_2p5/"
+                    + relative + "gemini-2.5-pro/Compare", question)
+            _check(bool(reference), True, "Circuit expert-verified reference available")
+            references[key] = reference
+            image_prefix = f"EDU-CIRCUIT-HW_v1/Screenshot_output_anon/{homework}/{student}/"
+            image_stem = question.replace("_", ".", 1)
+            paths = [name for name in archive.namelist() if name.startswith(image_prefix)
+                and re.fullmatch(re.escape(image_stem) + r"(?:_\(\d+\))?\.png", name.removeprefix(image_prefix))]
+            _check(len(paths), 1, "Circuit every observed sample has its original image")
+            images[key] = [(name, archive.read(name)) for name in sorted(paths)]
+            for folder, model in settings["model_folders"].items():
+                source = documents("EDU-CIRCUIT-HW_v1/Observationset_Final/" + folder + "/"
+                    + relative + model + "/Compare", question)
+                _check(bool(source), True, "Circuit each model's archived transcription is present")
+                native[model, key] = source
+    _check((len(native), len(judgments), corrected), (3078, 2894, 293), "Circuit full model-attempt and reference scope")
+    _check(set(judgments) <= set(native), True, "Circuit every judgment belongs to a captured attempt")
+    return native, judgments, references, images
+
+
+def _edu_circuit(directory, tables, metadata, source=None):
+    """Validate every attempt, grading absence, reference and original image byte."""
+    import unicodedata
+
+    native, judgments, references, images = source if source is not None else _edu_circuit_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(tables["traces"])), (3078, 3078), "Circuit all attempts and traces")
+    _check(set(traces), set(tables["responses"].response_id), "Circuit trace-response bijection")
+    _check(Counter(_features(row["subject_features_extra"])["model_identifier"] for row in subjects.values()),
+        Counter({model: 1 for model, key in native}), "Circuit all six recognizers")
+    seen, checked, used_assets, counts = Counter(), set(), set(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = tuple(trace["item_key"].split("::"))
+        model = trace["model"]
+        judgment = judgments.get((model, key))
+        status = "judgment_not_released" if judgment is None else "released_judgment"
+        grade = None
+        if judgment is not None:
+            text = judgment["judge_record"]["Recognition Errors"]
+            if text.startswith("Error:"):
+                status = "judge_api_exception"
+            else:
+                grade = float(text.strip().lower().startswith("no significant errors found"))
+        _check(trace, dict(model=model, item_key="::".join(key), documents=native[model, key], reference_documents=references[key],
+            **(judgment or dict(judge_file=None, judge_row=None, judge_record=None)), grade_status=status),
+            "Circuit complete model/reference Markdown and original judgment association")
+        _check(None if pd.isna(row.response) else row.response, grade, "Circuit published judgment or explicit absence")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "Circuit one archived attempt without invented settings")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], parameters["model_labels"][model], "Circuit recognizer identity")
+        _check(subject["harness"], parameters["subject_features"]["harness"], "Circuit harness")
+        _check(_features(subject["subject_features_extra"]), dict(model_identifier=model,
+            configuration_scope=parameters["subject_features"]["configuration_scope"]), "Circuit honest configuration scope")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], "::".join(key), "Circuit original homework/student/question key")
+        if row.item_id not in checked:
+            content = dict(multimedia_elements=[dict(content_type="text/plain", text=parameters["task"]["instruction"])]
+                + [dict(content_type="image/png", location=name) for name, data in images[key]])
+            _check(json.loads(item["content"]), content, "Circuit original image input without judge-derived excerpts")
+            reference = "".join("\n".join(document["markdown"].split("\n")[1:]) for document in references[key])
+            reference = unicodedata.normalize("NFC", reference)
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=reference, rule=metadata["grading"]["rule"]),
+                "Circuit correct expert-reference priority and complete comparison text")
+            _check(json.loads(item["verifier"]), {"class": "judge", "spec": json.dumps(metadata["grading"]["verifiers"]["recognition"], sort_keys=True)}, "Circuit published recognition judge")
+            _check(_features(item["item_features"]), dict(input_scope=parameters["input_scope"]["description"]), "Circuit unavailable textbook context is explicit")
+            links = json.loads(item["asset_manifest"])
+            _check([link["path"] for link in links], [name for name, data in images[key]], "Circuit original image association")
+            for link, (name, data) in zip(links, images[key], strict=True):
+                _check(assets[link["asset_id"]]["data"], data, "Circuit byte-identical PNG rather than resized JPEG")
+                used_assets.add(link["asset_id"])
+            checked.add(row.item_id)
+        seen[model, key] += 1
+        counts[status] += 1
+        counts["successes"] += grade == 1
+    _check(seen, Counter({key: 1 for key in native}), "Circuit every model/sample attempt exactly once")
+    _check(checked, set(items), "Circuit evaluated observation samples only")
+    _check(used_assets, set(assets), "Circuit all and only original input assets")
+    _check((len(items), counts["judge_api_exception"], counts["judgment_not_released"]), (513, 8, 184), "Circuit reviewed missing-grade corrections")
+    return dict(source_responses=len(native), source_judgments=len(judgments), source_subjects=len(subjects), source_items=len(items),
+        source_assets=len(assets), source_graded=counts["released_judgment"], source_judge_api_exceptions=counts["judge_api_exception"],
+        source_unjudged=counts["judgment_not_released"], source_successes=counts["successes"], source_corrected_references=293,
+        source_reviewed_references=220)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9471,7 +9600,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

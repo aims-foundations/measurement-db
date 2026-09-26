@@ -840,3 +840,5 @@ SOURCE_AUDITS["edumath"] = verify_native_results
 SOURCE_AUDITS["eduguardbench"] = verify_native_results
 
 SOURCE_AUDITS["egoschema"] = verify_native_results
+
+SOURCE_AUDITS["edu_circuit_hw"] = verify_native_results

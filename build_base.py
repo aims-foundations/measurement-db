@@ -21,6 +21,7 @@ from abc import ABC
 import copy
 import argparse
 import hashlib
+from http.client import IncompleteRead
 import json
 from numbers import Integral
 import os
@@ -29,6 +30,7 @@ import shutil
 import sys
 import tempfile
 import urllib.request
+from urllib.error import URLError
 from pathlib import Path, PurePosixPath
 
 # Quiet the notice spam from the HuggingFace libraries.
@@ -249,6 +251,7 @@ class BenchmarkBuild(ABC):
         expected_size: int | None = None,
         expected_sha256: str | None = None,
         request_headers: dict[str, str] | None = None,
+        chunk_size: int = 256 * 1024 * 1024,
     ) -> Path:
         """Download and optionally verify one cached source artifact.
 
@@ -256,7 +259,8 @@ class BenchmarkBuild(ABC):
         that threshold applies only to existing caches. A pinned caller can
         instead provide an exact byte count and/or SHA-256, which applies to both
         cached and newly fetched files. Invalid caches are replaced only after a
-        pinned temporary file verifies.
+        pinned temporary file verifies. Large pinned files use bounded HTTP
+        ranges, resuming interrupted transfers before checking the final hash.
         """
         has_pinned_integrity = (
             expected_size is not None or expected_sha256 is not None
@@ -278,23 +282,48 @@ class BenchmarkBuild(ABC):
                     print(f"[{self.slug}] cached {dest}")
                 return dest
 
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "measurement-db", **(request_headers or {})},
-        )
+        headers = {"User-Agent": "measurement-db", **(request_headers or {})}
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
         dest.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                with tempfile.NamedTemporaryFile(
-                    mode="wb",
-                    dir=dest.parent,
-                    prefix=f".{dest.name}.",
-                    suffix=".tmp",
-                    delete=False,
-                ) as temporary:
-                    temporary_path = Path(temporary.name)
-                    shutil.copyfileobj(response, temporary)
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=dest.parent, prefix=f".{dest.name}.",
+                suffix=".tmp", delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                if expected_size is None or expected_size <= chunk_size:
+                    request = urllib.request.Request(url, headers=headers)
+                    with urllib.request.urlopen(request, timeout=timeout) as response:
+                        shutil.copyfileobj(response, temporary)
+                else:
+                    failures = 0
+                    while temporary.tell() < expected_size:
+                        offset = temporary.tell()
+                        end = min(offset + chunk_size, expected_size) - 1
+                        request = urllib.request.Request(url, headers={**headers, "Range": f"bytes={offset}-{end}"})
+                        try:
+                            with urllib.request.urlopen(request, timeout=timeout) as response:
+                                if response.status == 206:
+                                    expected_range = f"bytes {offset}-{end}/{expected_size}"
+                                    if response.headers.get("Content-Range") != expected_range:
+                                        raise _source_files.SourceDataError("Upstream returned an unexpected byte range")
+                                elif response.status == 200 and offset == 0:
+                                    # Servers without Range support may send the complete file.
+                                    end = expected_size - 1
+                                else:
+                                    raise _source_files.SourceDataError("Upstream did not honor a resumed byte range")
+                                shutil.copyfileobj(response, temporary)
+                            if temporary.tell() > end + 1:
+                                raise _source_files.SourceDataError("Upstream exceeded the requested byte range")
+                            if temporary.tell() != end + 1:
+                                raise OSError("Upstream transfer ended before the requested byte range")
+                            failures = 0
+                        except (OSError, URLError, IncompleteRead):
+                            failures += 1
+                            if failures >= 3:
+                                raise
             if has_pinned_integrity:
                 try:
                     _source_files.verify_file(

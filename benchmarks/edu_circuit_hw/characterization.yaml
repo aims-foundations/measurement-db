@@ -1,0 +1,109 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3078
+    logical_sha256: 8eb144fb71ecb3dc63ad1c90adcc9ef4184921229d38b9928bd2267ffb8efdc0
+  subjects:
+    rows: 6
+    logical_sha256: a778d6262bef4680ff3f27de1dc13ae00dbeaf09899af2e4c97e376aa8cedfa6
+  responses:
+    rows: 3078
+    logical_sha256: 7e669ab36ccb79bda9ea8d20e383c1b607d7f8b0abe32a1213a255c42d3db604
+  assets:
+    rows: 513
+    logical_sha256: 79e31f0f679dffb7f2abad353e40a3114059394577044d89bc4a4b05c87f8ab9
+  items:
+    rows: 513
+    logical_sha256: fea91621b9a1f5bb7bc2d1b6b1a3ddcc7cf4141bbdba608e47628761de8921a5
+  benchmarks:
+    rows: 1
+    logical_sha256: 7ba8104411b3c7b57b02e59af297dffa40f5d3c95f2543d38efa1e6f263e186a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 3078
+  source_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 2894
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 6
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 513
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 513
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 2886
+  source_judge_api_exceptions:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 8
+  source_unjudged:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 184
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 1038
+  source_corrected_references:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 293
+  source_reviewed_references:
+    kind: count
+    origin: derived_from_data
+    source: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    locator: Observation split, six original transcription directories, expert-corrected references and six pinned
+      GitHub recognition CSVs.
+    scope: 513 observation-set samples. Grade absence is explicit; no inference or new grading.
+    expected: 220

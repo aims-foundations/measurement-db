@@ -36,6 +36,11 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = b'{"released":true}\n'
 
 
+class DownloadFixture(BenchmarkBuild):
+    def build_tables(self):
+        return {}
+
+
 class SnapshotTests(unittest.TestCase):
     def setUp(self):
         self.metadata = yaml.safe_load((ROOT / 'benchmarks/real_webagents/metadata.yaml').read_text())
@@ -49,6 +54,85 @@ class SnapshotTests(unittest.TestCase):
         self.metadata_path.write_text(yaml.safe_dump(self.metadata))
         self.artifact = dict(file='source.json', size=len(PAYLOAD), hash_kind='sha256',
                              digest=hashlib.sha256(PAYLOAD).hexdigest(), url='https://example.org/source')
+
+    def test_large_pinned_download_resumes_interrupted_ranges(self):
+        payload = b'abcdefghijklm'
+        requested = []
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                if self.tell():
+                    raise ConnectionError('interrupted upstream transfer')
+                return super().read(2)
+
+        def fetch(request, **kwargs):
+            start, end = map(int, request.get_header('Range').removeprefix('bytes=').split('-'))
+            requested.append((start, end))
+            response = (Interrupted if len(requested) == 1 else io.BytesIO)(payload[start:end + 1])
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes {start}-{end}/{len(payload)}'}
+            return response
+
+        destination = self.raw / 'archive.zip'
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        with patch('urllib.request.urlopen', side_effect=fetch):
+            builder._download('https://example.org/archive', destination,
+                expected_size=len(payload), expected_sha256=hashlib.sha256(payload).hexdigest(), chunk_size=5)
+        self.assertEqual(destination.read_bytes(), payload)
+        self.assertEqual(requested, [(0, 4), (2, 6), (7, 11), (12, 12)])
+        self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_resumed_download_rejects_wrong_ranges_and_preserves_existing_file(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for status, content_range in [(206, 'bytes 1-5/13'), (206, 'bytes 0-4/99')]:
+            with self.subTest(status=status, content_range=content_range):
+                destination = self.raw / 'archive.zip'
+                destination.write_bytes(b'previous bytes')
+                response = io.BytesIO(b'abcde')
+                response.status = status
+                response.headers = {'Content-Range': content_range}
+                with patch('urllib.request.urlopen', return_value=response):
+                    with self.assertRaisesRegex(SourceDataError, 'unexpected byte range'):
+                        builder._download('https://example.org/archive', destination,
+                            expected_size=13, expected_sha256='0' * 64, chunk_size=5)
+                self.assertEqual(destination.read_bytes(), b'previous bytes')
+                self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_large_download_accepts_complete_response_but_still_checks_hash(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for valid in [True, False]:
+            with self.subTest(valid=valid):
+                destination = self.raw / ('valid.zip' if valid else 'corrupt.zip')
+                response = io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD))
+                response.status, response.headers = 200, {}
+                with patch('urllib.request.urlopen', return_value=response):
+                    arguments = dict(expected_size=len(PAYLOAD),
+                        expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=5)
+                    if valid:
+                        builder._download('https://example.org/archive', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://example.org/archive', destination, **arguments)
+                        self.assertFalse(destination.exists())
+
+    def test_large_download_stops_after_repeated_empty_transfers(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'absent.zip'
+
+        def fetch(*args, **kwargs):
+            response = io.BytesIO()
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes 0-4/{len(PAYLOAD)}'}
+            return response
+
+        with patch('urllib.request.urlopen', side_effect=fetch) as download:
+            with self.assertRaisesRegex(OSError, 'ended before'):
+                builder._download('https://example.org/archive', destination,
+                    expected_size=len(PAYLOAD), chunk_size=5)
+        self.assertEqual(download.call_count, 3)
+        self.assertFalse(destination.exists())
+        self.assertFalse(list(self.raw.glob('*.tmp')))
 
     def test_compact_metadata_and_unknown_upstream_revision(self):
         load_benchmark_metadata(self.metadata_path)
