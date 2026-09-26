@@ -12120,6 +12120,121 @@ def _jailbreakbench(directory, tables, metadata, source=None):
         source_items=len(items), **counts)
 
 
+def _jetts_source_records(directory, metadata):
+    """Read every original JSONL record independently of the pandas loader."""
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    native, definitions, files = {}, {}, set()
+    with tarfile.open(directory / "raw" / paths["pool"], mode="r|gz") as archive:
+        for member in archive:
+            if not member.isfile() or not member.name.endswith(".jsonl") or Path(member.name).name.startswith("._"):
+                continue
+            component, model = Path(member.name).stem.split("_", 1)
+            _check(component in metadata["grading"]["verifiers"], True, "JETTS every released component has a declared grading protocol")
+            files.add(member.name)
+            for index, line in enumerate(archive.extractfile(member)):
+                _check(bool(line.strip()), True, "JETTS native record offsets have no empty lines")
+                record = json.loads(line)
+                _check(set(record), {"query", "responses"}, "JETTS full native record structure")
+                query = record["query"]
+                fields = query["metadata"]
+                source_id = fields.get("task_id", fields.get("problem_id", fields.get("key", index)))
+                raw_id = component + ":" + str(source_id)
+                if raw_id in definitions:
+                    _check(definitions[raw_id], query, "JETTS task definitions agree across generator exports")
+                definitions[raw_id] = query
+                _check(1 <= len(record["responses"]) <= 10, True, "JETTS actual pool sizes, without inventing missing attempts")
+                native[member.name, index] = dict(record=record, component=component, model=model, raw_id=raw_id)
+    _check(len(files), 44, "JETTS complete pinned response-pool release")
+    return native, definitions
+
+
+def _jetts(directory, tables, metadata, source=None):
+    """Reconcile all generator inputs, outputs, scalar grades and source positions."""
+    native, definitions = _jetts_source_records(directory, metadata) if source is None else source
+    parameters, protocols = metadata["build"]["parameters"], metadata["grading"]["verifiers"]
+    reference_fields = dict(gsm8k=["input_correct_responses"], math=["input_correct_responses", "solution"],
+        champ=["problem_answer"], humaneval=[], mbpp=[], bigcodebench=[], ifeval=[], alpacaeval=[])
+    for component, fields in reference_fields.items():
+        _check(protocols[component]["reference_fields"], fields, "JETTS reference metadata is complete and task-appropriate")
+        _check(protocols[component]["constraint_fields"], ["instruction_id_list", "kwargs"] if component == "ifeval" else [],
+            "JETTS instruction constraints are retained as grading rules")
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["model_identifier"]
+        _check(row.display_name, model, "JETTS exact generator alias, not a judge model")
+        _check(row.harness, parameters["subject_features"]["harness"], "JETTS generator-pool harness")
+        _check(features, dict(model_identifier=model, **{key:value for key,value in parameters["subject_features"].items() if key != "harness"}),
+            "JETTS source model and explicit limits on request configuration")
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "JETTS all and only the eight source generators")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "JETTS one complete trace per recorded output")
+    expected = {(name, index, position) for (name, index), entry in native.items()
+                for position in range(len(entry["record"]["responses"]))}
+    _check(len(tables["responses"]), len(expected), "JETTS no omitted or additional response slots")
+    seen, checked_items, checked_definitions, observations, counts = Counter(), set(), set(), {}, Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["response_position"]
+        entry = native[key[:2]]
+        record, component = entry["record"], entry["component"]
+        original = record["responses"][key[2]]
+        _check(trace, dict(source_file=key[0], source_row=key[1], response_position=key[2],
+            query=record["query"], response=original), "JETTS complete native query/output/auxiliary metadata and exact source association")
+        _check(subjects[row.subject_id], entry["model"], "JETTS response associated with its original generator")
+        _check(row.response, original["metadata"]["score"], "JETTS native scalar grade unchanged, including fractional preferences")
+        mode = "greedy" if key[2] == 0 else "sampled"
+        condition = "decoding=" + mode + ";temperature=" + parameters["temperatures"][mode] + ";top_p=" + parameters["top_p"][mode]
+        _check(row.test_condition, condition, "JETTS decoding conditions remain attached to the correct recorded position")
+        _check(pd.isna(row.interactors), True, "JETTS no fabricated interaction partner")
+        observations[key] = (entry["model"], row.item_id, row.test_condition), row.trial
+        item = items[row.item_id]
+        _check(item.content, record["query"]["content"], "JETTS original input without leaked answer or omitted context")
+        if (row.item_id, entry["raw_id"]) not in checked_definitions:
+            _check(item.raw_item_id in definitions, True, "JETTS original component-qualified task alias")
+            _check(item.raw_item_id.split(":", 1)[0], component, "JETTS original component benchmark")
+            # Identical tasks may share a canonical item; their other native aliases stay in traces.
+            _check(definitions[item.raw_item_id]["content"], item.content, "JETTS retained raw alias matches its canonical input")
+            _check(_features(item.item_features), dict(component=component, component_name=protocols[component]["component"],
+                **parameters["observation"]), "JETTS explicit component and input scope")
+            fields = record["query"]["metadata"]
+            reference = {key:fields[key] for key in reference_fields[component]}
+            constraints = {key:fields[key] for key in ["instruction_id_list", "kwargs"]} if component == "ifeval" else {}
+            _check(json.loads(item.grading_criterion), dict(
+                reference_answer=json.dumps(reference, sort_keys=True, ensure_ascii=False) if reference else None,
+                rule=protocols[component]["rule"] + ("\n" + json.dumps(constraints, sort_keys=True, ensure_ascii=False) if constraints else ""),
+                response_scale=protocols[component]["response_scale"]), "JETTS full references, constraints and effective grading scale")
+            verifier = json.loads(item.verifier)
+            _check(verifier["class"], "judge" if component in {"champ", "alpacaeval"} else "exact_matcher",
+                "JETTS original LLM-assisted versus executable grading protocol")
+            _check(verifier.get("judged_by"), "llm" if component in {"champ", "alpacaeval"} else None,
+                "JETTS only actual LLM grading protocols are described as judgments")
+            _check(json.loads(verifier["spec"]), protocols[component], "JETTS declared component verifier and source")
+            _check(pd.isna(item.asset_manifest), True, "JETTS no invented multimedia input")
+            checked_items.add(row.item_id)
+            checked_definitions.add((row.item_id, entry["raw_id"]))
+        seen[key] += 1
+        counts["source_" + component + "_responses"] += 1
+        counts["source_" + mode + "_responses"] += 1
+        counts["source_binary_positives"] += component != "alpacaeval" and row.response == 1
+        counts["source_fractional_scores"] += row.response not in (0, 1)
+    _check(seen, Counter({key:1 for key in expected}), "JETTS every recorded output imported exactly once")
+    ordinals = Counter()
+    for key in sorted(expected):
+        group, trial = observations[key]
+        ordinals[group] += 1
+        _check(trial, ordinals[group], "JETTS trial order follows original source exports, rows and response positions")
+    _check(checked_items, set(items), "JETTS no extra or missing canonical tasks")
+    _check(len(tables.get("assets", [])), 0, "JETTS response pool has no multimodal resources")
+    return dict(source_responses=len(expected), source_subjects=len(subjects), source_items=len(items),
+        source_query_records=len(native), source_native_query_keys=len(definitions),
+        source_exports=len({key[0] for key in native}), source_absent_nominal_slots=10*len(native)-len(expected), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12133,7 +12248,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

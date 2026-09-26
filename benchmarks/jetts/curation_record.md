@@ -1,0 +1,3 @@
+- Sources: pin the complete JETTS response pool and harness. Preserve original component names, task metadata, model aliases and published decoding conditions.
+- Transform: normalize 44 JSONL exports into 328685 observations, with full outputs and grading context. Retain each stored score and actual response-list position.
+- Correction: restore 31981 fractional AlpacaEval scores omitted by the old binary-only builder, retain complete references and unsanitized code, and do not turn 855 absent sample slots into failures. These are generator measurements, not judge leaderboard scores.

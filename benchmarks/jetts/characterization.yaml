@@ -1,0 +1,189 @@
+format_version: 1
+tables:
+  traces:
+    rows: 328685
+    logical_sha256: 65aafa274edcaf484be3299628004ffd30a5e462d58e0f406052922484680b86
+  subjects:
+    rows: 8
+    logical_sha256: e45278e2e8166eb1b974fafd8728ef8dc933571e058916e14042f95def3bdb10
+  responses:
+    rows: 328685
+    logical_sha256: ea86bf7e5040d61cfa32d8e26f6374234b24cb45896898d9d9358fe66db7fe0a
+  items:
+    rows: 5940
+    logical_sha256: c5e1ce4ea375f10626e415d063736021a75a46d4ed435738db23e32b2fb86843
+  benchmarks:
+    rows: 1
+    logical_sha256: 7cc0088a0aa47c21b8091f86fcaf48f3340dc29751ccde7bc35db9ce6c9886c1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 328685
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 5940
+  source_query_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 32954
+  source_native_query_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 5941
+  source_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 44
+  source_absent_nominal_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 855
+  source_alpacaeval_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 31981
+  source_greedy_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 32954
+  source_binary_positives:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 176977
+  source_fractional_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 31980
+  source_sampled_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 295731
+  source_bigcodebench_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 68400
+  source_champ_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 16200
+  source_gsm8k_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 79001
+  source_humaneval_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 9840
+  source_ifeval_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 21159
+  source_math_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 79424
+  source_mbpp_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SalesforceAIResearch/jetts-benchmark
+    locator: All 44 JSONL exports in the pinned reranking_and_refinement.tar.gz; records, response lists and metadata.score
+      fields.
+    scope: Import every actual generator output and native score, including fractional AlpacaEval scores. No nominal
+      missing slots or judge leaderboard rows are observations.
+    expected: 22680
