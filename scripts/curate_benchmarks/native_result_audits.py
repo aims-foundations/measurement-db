@@ -8905,6 +8905,119 @@ def _dtap(directory, tables, metadata, *, source=None):
         source_copied_verdict_files=sum(max(len(group["judges"]) - 1, 0) for group in groups.values()))
 
 
+def _dpai_source_records(directory):
+    """Read author dictionaries directly, without the builder's table operations."""
+    raw = directory / "raw"
+    bank = json.loads((raw / "ee-dataset/datasets/java-spring-ee-dataset.json").read_text())
+    tasks = {row["instance_id"]: row for row in bank}
+    _check(len(tasks), len(bank), "DPAI unique released task identifiers")
+    reports = {str(path.relative_to(raw)): json.loads(path.read_text())
+               for path in sorted((raw / "reports").glob("*/*.json"))}
+    return tasks, reports
+
+
+def _dpai(directory, tables, metadata, *, source=None):
+    """Check all grades, task mappings, subject configurations and complete logs."""
+    import math
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    bank, reports = _dpai_source_records(directory) if source is None else source
+    settings = metadata["build"]["parameters"]
+    protocol = yaml.safe_load((directory / "raw/ee-bench-specs/jvm/dpaia-jvm-evaluation.yaml").read_text())
+    author_scales = {row["id"]: row["scoring"]["normalize"] for row in protocol["evaluations"]}
+    _check(author_scales, dict(blind=100, informed=50), "DPAI author phase-specific normalization")
+    for phase, maximum in author_scales.items():
+        verifier = metadata["grading"]["verifiers"][phase]
+        _check(verifier["tests_visible"], phase == "informed", "DPAI test information condition")
+        _check(verifier["response_scale"], dict(kind="interval", min=0, max=maximum,
+            direction="higher_is_better"), "DPAI original partial-credit scale")
+    expected, statuses, configurations, zero_max = {}, Counter(), set(), 0
+    for filename, report in reports.items():
+        _check(report["report_type"], "evaluation", "DPAI original evaluation report")
+        for task, phases in report["results"].items():
+            _check(set(phases), set(author_scales), "DPAI both published evaluation phases")
+            for phase, record in phases.items():
+                prediction = record["evaluations"]["collect_prediction"]["data"]["prediction_result"]
+                _check(record["instance_id"], task, "DPAI report task key")
+                _check(prediction["instance_id"], task, "DPAI prediction task key")
+                for field in ("repo", "base_commit", "problem_statement"):
+                    _check(record[field], bank[task][field], "DPAI report matches released " + field)
+                filename_agent = prediction["source"].rsplit("/", 1)[1].removesuffix(f"-{phase}-predictions.json")
+                agent = prediction.get("agent_name") or filename_agent
+                _check(agent, filename_agent, "DPAI native CLI name and source filename agree")
+                subject = prediction["configured_model"], agent, prediction.get("agent_version")
+                expected[filename, task, phase] = record, subject
+                configurations.add(subject)
+                statuses[prediction["status"]] += 1
+                _check(math.isfinite(record["score"]["normalized_score"]), True, "DPAI finite published score")
+                maximum = record["score"]["normalized_max_score"]
+                _check(maximum in (0, author_scales[phase]), True, "DPAI native score maximum")
+                if maximum == 0:
+                    _check(record["evaluations"]["apply_prediction"]["status"], "failed", "DPAI zero-scoring patch failure")
+                    _check(record["score"]["normalized_score"], 0, "DPAI preserved failed-pipeline score")
+                    zero_max += 1
+                if prediction["status"] == "skipped":
+                    _check(prediction["content"], "", "DPAI skipped collector means empty patch")
+                    _check(prediction["agent_result"]["duration"] > 0, True, "DPAI skipped collector retains executed agent")
+                    _check(prediction["agent_result"]["exit_code"], 0, "DPAI completed empty-patch run")
+    responses = tables["responses"]
+    _check(len(responses), len(expected), "DPAI no dropped or invented attempts")
+    _check(len(tables["traces"]), len(expected), "DPAI every native log retained")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(responses.response_id), "DPAI trace-response bijection")
+    _check(len(subjects), len(configurations), "DPAI separate known and unknown CLI versions")
+    seen, used_items, used_subjects, checked_items = Counter(), set(), set(), set()
+    for row in responses.itertuples():
+        trace = json.loads(traces[row.response_id])
+        filename, task, phase = (trace[key] for key in ("source_file", "task_id", "phase"))
+        record, configuration = expected[filename, task, phase]
+        _check(trace, dict(source_file=filename, run_id=reports[filename]["run_id"], task_id=task,
+            phase=phase, record=record), "DPAI complete native patch, logs and evaluator results")
+        _check(row.response, record["score"]["normalized_score"], "DPAI exact published partial-credit score")
+        _check(row.trial, 1, "DPAI individual report occurrence")
+        _check(row.test_condition, "source_file=" + filename + ";phase=" + phase, "DPAI source-run provenance")
+        _check(pd.isna(row.interactors), True, "DPAI no invented interacting agent")
+        subject = subjects[row.subject_id]
+        features = _features(subject["subject_features_extra"])
+        _check((subject["display_name"], subject["harness"], features.get("cli_version")),
+            configuration, "DPAI exact model and per-attempt CLI attribution")
+        _check(features.get("configuration_scope"), settings["subject"]["scope"], "DPAI honest configuration scope")
+        item, native = items[row.item_id], bank[task]
+        _check(item["raw_item_id"], task + ":" + phase, "DPAI task and phase identity")
+        if row.item_id not in checked_items:
+            test_info = {key: native[key] for key in ("FAIL_TO_PASS", "PASS_TO_PASS")} if phase == "informed" else None
+            _check(json.loads(item["content"]), dict(problem_statement=native["problem_statement"],
+                repo=native["repo"], base_commit=native["base_commit"], phase=phase,
+                test_information=test_info), "DPAI full issue and correct information condition")
+            rule = metadata["grading"]["rule"] + "\n" + json.dumps(dict(task_id=task, phase=phase,
+                test_patch=native["test_patch"], FAIL_TO_PASS=native["FAIL_TO_PASS"],
+                PASS_TO_PASS=native["PASS_TO_PASS"]), ensure_ascii=False)
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=native["patch"], rule=rule,
+                response_scale=json.loads(canonical_response_scale(metadata["grading"]["verifiers"][phase]["response_scale"]))),
+                "DPAI full reference patch, grading tests and phase scale")
+            _check(json.loads(item["verifier"]), dict(**{"class": "exact_matcher"},
+                spec=json.dumps(metadata["grading"]["verifiers"][phase]["implementation"], sort_keys=True)),
+                "DPAI published grading provenance")
+            _check(_features(item["item_features"]), dict(input_scope=settings["tasks"]["scope"]), "DPAI honest input scope")
+            checked_items.add(row.item_id)
+        used_items.add(row.item_id)
+        used_subjects.add(row.subject_id)
+        seen[filename, task, phase] += 1
+    _check(seen, Counter({key: 1 for key in expected}), "DPAI complete source-result bijection")
+    _check(used_items, set(items), "DPAI only evaluated task/phase inputs")
+    _check(used_subjects, set(subjects), "DPAI only observed configurations")
+    return dict(source_reports=len(reports), source_task_bank=len(bank),
+        source_evaluated_tasks=len({key[1] for key in expected}), source_items=len(items),
+        source_responses=len(expected), source_subjects=len(configurations),
+        source_timeouts=statuses["timeout"], source_empty_patch_attempts=statuses["skipped"],
+        source_zero_evaluator_failures=zero_max,
+        source_unknown_cli_versions=sum(subject[2] is None for _, subject in expected.values()),
+        source_partial_credit=sum(0 < record["score"]["normalized_score"] < author_scales[key[2]]
+            for key, (record, _) in expected.items()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8915,7 +9028,7 @@ def verify_native_results(directory, tables_directory=None):
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
-            "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench,
+            "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

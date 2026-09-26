@@ -1,0 +1,3 @@
+- Source: Fifteen public TeamCity reports linked by the DPAI leaderboard, with pinned author task definitions and grading specifications. Capture hashes are declared in metadata. The older report links return 404.
+- Mapping: Preserve all 4,590 evaluations, full native logs and partial-credit scores. Blind and informed conditions use separate items and scales. Empty-patch and timeout attempts remain observations; unknown CLI versions remain unknown.
+- Checks and limits: Independently reconcile every result with its source and task definition. Historical execution revisions and full API inputs are not asserted. The source reports do not state a data redistribution license. No new inference or grading.

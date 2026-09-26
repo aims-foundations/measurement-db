@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4590
+    logical_sha256: 3639b8c356cea488d0082c27b470e87e0937baff642a4d2cf08e005401cbdde4
+  subjects:
+    rows: 26
+    logical_sha256: 604e0659230c68415e8dcd94455dfcf3df0dc8353171775141bd46fab7b1d198
+  responses:
+    rows: 4590
+    logical_sha256: 3c70dbfaa1d7d0b8dd8287a3680f1b24f0a87809f29553b4320fb0d3bee12f8f
+  items:
+    rows: 306
+    logical_sha256: b82d75d5599b06b30e7cb3a9e3afe3d2a511d22c99faf04e48fbf0cdfdcff8a7
+  benchmarks:
+    rows: 1
+    logical_sha256: efc88b1a1acfa9bd3dda42436eaa90670f3601fd9d8e5a569fa994da658cfcfd
+source_claims:
+  source_reports:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 15
+  source_task_bank:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 154
+  source_evaluated_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 153
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 306
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 4590
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 26
+  source_timeouts:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 49
+  source_empty_patch_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 21
+  source_zero_evaluator_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 1
+  source_unknown_cli_versions:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 49
+  source_partial_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://dpaia.dev/
+    locator: The fifteen linked native TeamCity merged_standard_153x_report.json files pinned by hash in metadata,
+      joined to the released task bank.
+    scope: Individual blind/informed records with complete native evidence. Preserve partial credit, timeout and
+      empty-patch attempts. Unknown CLI versions remain unknown.
+    expected: 411

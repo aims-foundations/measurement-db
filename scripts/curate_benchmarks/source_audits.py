@@ -834,3 +834,4 @@ SOURCE_AUDITS["dqvis"] = verify_native_results
 SOURCE_AUDITS["disco"] = verify_native_results
 SOURCE_AUDITS["doris_mae"] = verify_native_results
 SOURCE_AUDITS["dtap_bench"] = verify_native_results
+SOURCE_AUDITS["dpai"] = verify_native_results
