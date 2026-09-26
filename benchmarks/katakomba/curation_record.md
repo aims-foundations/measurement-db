@@ -1,0 +1,3 @@
+- Sources: pin the public W&B final-checkpoint arrays, configurations, run code and summaries, plus the Katakomba task and scoring implementation.
+- Transform: preserve all 28600 episode scores, returns and depths for 572 trained policies on 38 procedural tasks, using episode completion order as the within-policy trial index.
+- Corrections and limits: distinguish trained policies and actual seeds, retain the unbounded ratio scale, and do not treat episode slots as shared game worlds. Outcome records are available, but full rollouts and exact starting states are not.

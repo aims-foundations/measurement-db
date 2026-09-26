@@ -12366,6 +12366,113 @@ def _judgetuning(directory, tables, metadata, source=None):
     return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), **counts)
 
 
+def _katakomba_source_records(directory, metadata):
+    """Read native arrays and the source's reference constants without builder joins."""
+    import ast
+    import hashlib
+    import tarfile
+    import numpy as np
+
+    raw = directory / "raw"
+    with tarfile.open(raw / metadata["build"]["parameters"]["paths"]["harness"]) as archive:
+        files = {member.name.split("/", 1)[1]: member for member in archive if member.isfile()}
+        roles = ast.parse(archive.extractfile(files["katakomba/utils/roles.py"]).read())
+        scores = ast.parse(archive.extractfile(files["katakomba/utils/scores.py"]).read())
+    codes = {}
+    for node in roles.body:
+        if isinstance(node, ast.ClassDef):
+            for assignment in node.body:
+                if isinstance(assignment, ast.Assign):
+                    codes[node.name, assignment.targets[0].id] = ast.literal_eval(assignment.value)
+    assignment = next(node for node in scores.body if isinstance(node, ast.Assign)
+        and node.targets[0].id == "MEAN_SCORES_AUTOASCEND")
+    normalizers = {"-".join(codes[value.value.id, value.attr] for value in key.elts): ast.literal_eval(score)
+        for key, score in zip(assignment.value.keys, assignment.value.values, strict=True)}
+    _check({key:float(value) for key,value in metadata["build"]["parameters"]["normalizers"].items()},
+           normalizers, "Katakomba reference means independently read from the pinned source")
+    policies, native, missing = {}, {}, 0
+    root = raw / metadata["build"]["parameters"]["paths"]["experiments"]
+    for config_path in sorted(root.glob("*/config.yaml")):
+        config = yaml.safe_load(config_path.read_text())
+        config = {key:value["value"] for key,value in config.items() if isinstance(value, dict) and "value" in value}
+        paths = sorted(config_path.parent.glob("*_normalized_scores.npy"))
+        if not paths:
+            missing += 1
+            continue
+        _check(len(paths), 1, "Katakomba only one selected checkpoint per policy")
+        path = paths[0]
+        run, step = path.parent.name, int(path.stem.split("_")[0])
+        arrays = {name:np.load(path.parent / f"{step}_{name}.npy", allow_pickle=False)
+            for name in ["normalized_scores", "returns", "depths"]}
+        _check({array.shape for array in arrays.values()}, {(config["eval_episodes"],)}, "Katakomba complete aligned episode arrays")
+        for array in arrays.values():
+            _check(bool(np.isfinite(array).all()), True, "Katakomba finite native outcomes")
+        code = path.parent / config["_wandb"]["code_path"]
+        policies[run] = dict(config=config, step=step, code_sha256=hashlib.sha256(code.read_bytes()).hexdigest())
+        for index in range(len(arrays["normalized_scores"])):
+            score, episode_return, depth = (float(arrays[name][index]) for name in ["normalized_scores", "returns", "depths"])
+            _check(score, episode_return / normalizers[config["character"]], "Katakomba original ratio without clipping or percentage rescaling")
+            native[run, index] = dict(kind="episode_outcome_record", source_file=str(path.relative_to(raw)),
+                source_position=index, checkpoint_step=step, normalized_score=score, episode_return=episode_return, depth=depth)
+    _check((len(policies), len(native), missing), (572, 28600, 166), "Katakomba full captured final-checkpoint coverage")
+    return policies, native, normalizers, missing
+
+
+def _katakomba(directory, tables, metadata, source=None):
+    """Reconcile every policy, procedural task, trial and unmodified native outcome."""
+    policies, native, normalizers, missing = _katakomba_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        run = features["training_run"]
+        policy = policies[run]
+        config, step = policy["config"], policy["step"]
+        expected = dict(training_run=run, algorithm=parameters["algorithms"][config["name"].split("-")[0]],
+            training_character=config["character"], training_seed=str(config["train_seed"]), checkpoint_step=str(step),
+            code_sha256=policy["code_sha256"], training_configuration=json.dumps(
+                {key:value for key,value in config.items() if key != "_wandb"}, sort_keys=True))
+        _check(features, expected, "Katakomba exact run configuration, actual training seed and code identity")
+        _check(row.display_name, "Katakomba " + config["name"] + " step " + str(step), "Katakomba distinct trained-policy label")
+        _check(row.harness, "Katakomba", "Katakomba recorded evaluation harness")
+        _check(pd.isna(row.harness_version), True, "Katakomba no guessed historical Git revision")
+        subjects[row.subject_id] = run
+    _check(Counter(subjects.values()), Counter({run:1 for run in policies}), "Katakomba all trained policies exactly once")
+    items = {row.item_id:row for row in tables["items"].itertuples()}
+    _check(Counter(row.raw_item_id for row in items.values()), Counter({key:1 for key in normalizers}), "Katakomba 38 procedural tasks rather than invented world IDs")
+    for item in items.values():
+        character = item.raw_item_id
+        _check(json.loads(item.content), dict(character=character, **parameters["task"]), "Katakomba complete declared task definition with explicit episode-state limitation")
+        _check(_features(item.item_features), parameters["item_features"], "Katakomba procedural task and trial interpretation")
+        criterion = json.loads(item.grading_criterion)
+        _check(criterion["reference_answer"], None, "Katakomba no fabricated reference trajectory")
+        _check(json.loads(criterion["rule"]), dict(rule=metadata["grading"]["rule"], autoascend_mean=normalizers[character]), "Katakomba task-specific source normalizer")
+        verifier = json.loads(item.verifier)
+        _check(verifier["class"], "exact_matcher", "Katakomba deterministic native score interpretation")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["normalized_return"], "Katakomba original normalization protocol")
+        _check(pd.isna(item.asset_manifest), True, "Katakomba no invented episode media")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "Katakomba one complete outcome record per trial")
+    seen, negative = Counter(), 0
+    for row in tables["responses"].itertuples():
+        run = subjects[row.subject_id]
+        config = policies[run]["config"]
+        key = run, row.trial - 1
+        original = native[key]
+        _check(json.loads(traces[row.response_id]), original, "Katakomba original array position, path, score, return and depth")
+        _check(row.response, original["normalized_score"], "Katakomba unchanged episode grade")
+        _check(items[row.item_id].raw_item_id, config["character"], "Katakomba trained policy evaluated on its actual character task")
+        _check(row.test_condition, f'eval_seed={config["eval_seed"]};eval_processes={config["eval_processes"]}', "Katakomba source evaluation seed and vector environment count")
+        _check(pd.isna(row.interactors), True, "Katakomba no invented interaction partner")
+        negative += row.response < 0
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "Katakomba every native episode exactly once")
+    _check(len(tables.get("assets", [])), 0, "Katakomba no released rollout assets")
+    return dict(source_responses=len(native), source_subjects=len(policies), source_items=len(normalizers),
+        source_finished_runs_without_arrays=missing, source_negative_scores=negative,
+        source_long_training_runs=sum(policy["step"] == 6600000 for policy in policies.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12379,7 +12486,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

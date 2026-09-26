@@ -240,7 +240,7 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
                       url:
@@ -257,6 +257,10 @@ $defs:
                     not: {anyOf: [{required: [file]}, {required: [prefix]}]}
                   - required: [files, json_index, tree_sha256]
                     not: {anyOf: [{required: [file]}, {required: [prefix]}]}
+                  - required: [files, wandb_runs, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
+                    properties:
+                      url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
             - if:
                 anyOf:
                   - required: [files]
@@ -293,6 +297,13 @@ $defs:
                 required: [files]
                 properties:
                   url: {type: string, pattern: '^https://github\.com/[^/]+/[^/]+$'}
+            - if:
+                required: [wandb_runs]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
+                properties:
+                  url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -324,13 +335,25 @@ $defs:
               description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
               $ref: '#/$defs/nonempty_string'
             tree_sha256:
-              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML and JSON indexes include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes.
+              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML and JSON indexes include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes; W&B includes run-relative paths, sizes and provider MD5 hashes.
               type: string
               pattern: '^[0-9a-f]{64}$'
             html_index:
               description: Name of a pinned HTML source whose same-site links are selected by files patterns.
               type: string
               pattern: '^[a-z][a-z0-9_]*$'
+            wandb_runs:
+              description: Select public W&B runs by state. Optionally keep step_files only at the maximum latest_step match per run; both expressions must capture the numeric step in a named group.
+              type: object
+              additionalProperties: false
+              required: [state]
+              dependentRequired:
+                latest_step: [step_files]
+                step_files: [latest_step]
+              properties:
+                state: {$ref: '#/$defs/nonempty_string'}
+                latest_step: {$ref: '#/$defs/nonempty_string'}
+                step_files: {$ref: '#/$defs/nonempty_string'}
             json_index:
               description: Select same-site files from records in a pinned JSON manifest; expand nested object/list fields in records order, then format path using each record.
               type: object

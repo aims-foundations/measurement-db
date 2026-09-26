@@ -321,6 +321,86 @@ def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict
     return entries
 
 
+def wandb_entries(source: dict) -> list[dict]:
+    """Pin selected public W&B run files using stable URLs and provider checksums."""
+    match = re.fullmatch(r"https://wandb\.ai/([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)", source["url"])
+    if match is None:
+        raise SourceDataError("wandb_runs requires a public W&B project URL")
+    entity, project = match.groups()
+    selector = source["wandb_runs"]
+    reference = re.compile(selector["latest_step"]) if "latest_step" in selector else None
+    step_files = re.compile(selector["step_files"]) if reference else None
+    if reference and ("step" not in reference.groupindex or "step" not in step_files.groupindex):
+        raise SourceDataError("W&B checkpoint patterns must capture a named step group")
+
+    def query(text, variables):
+        request = Request("https://api.wandb.ai/graphql", data=json.dumps(dict(query=text,
+            variables=dict(p=project, e=entity, **variables))).encode(),
+            headers={"Content-Type":"application/json", "User-Agent":"measurement-db"})
+        with urlopen(request, timeout=120) as response:
+            result = json.load(response)
+        if result.get("errors") or not result.get("data", {}).get("project"):
+            raise SourceDataError("W&B project query failed or is not publicly accessible")
+        return result["data"]["project"]
+
+    runs_query = """query R($p:String!,$e:String!,$c:String){project(name:$p,entityName:$e){
+        runs(first:500,after:$c){pageInfo{hasNextPage endCursor}edges{node{name state}}}}}"""
+    files_query = """query F($p:String!,$e:String!,$r:String!,$c:String){project(name:$p,entityName:$e){
+        run(name:$r){files(first:500,after:$c){pageInfo{hasNextPage endCursor}edges{node{name sizeBytes md5}}}}}}"""
+    runs, cursor, cursors = {}, None, set()
+    while True:
+        page = query(runs_query, dict(c=cursor))["runs"]
+        for edge in page["edges"]:
+            run = edge["node"]
+            if run["name"] in runs:
+                raise SourceDataError("W&B run inventory contains duplicate IDs")
+            runs[run["name"]] = run
+        if not page["pageInfo"]["hasNextPage"]: break
+        cursor = page["pageInfo"]["endCursor"]
+        if not cursor or cursor in cursors: raise SourceDataError("W&B run pagination did not advance")
+        cursors.add(cursor)
+
+    def files(run):
+        nodes, cursor, cursors = {}, None, set()
+        while True:
+            page = query(files_query, dict(r=run["name"], c=cursor))["run"]["files"]
+            for edge in page["edges"]:
+                entry = edge["node"]
+                if entry["name"] in nodes: raise SourceDataError("W&B file inventory contains duplicate paths")
+                nodes[entry["name"]] = entry
+            if not page["pageInfo"]["hasNextPage"]: break
+            cursor = page["pageInfo"]["endCursor"]
+            if not cursor or cursor in cursors: raise SourceDataError("W&B file pagination did not advance")
+            cursors.add(cursor)
+        steps = [int(match["step"]) for path in nodes if reference and (match := reference.fullmatch(path))]
+        latest = max(steps) if steps else None
+        selected = []
+        for path, entry in nodes.items():
+            if step_files and (step := step_files.fullmatch(path)) and int(step["step"]) != latest:
+                continue
+            relative = run["name"] + "/" + path
+            if not any(re.fullmatch(rule["match"], relative) for rule in source["files"]): continue
+            if any(part in ("", ".", "..") for part in relative.split("/")) or "\\" in relative:
+                raise SourceDataError("W&B file path is not a safe relative path")
+            try: digest = base64.b64decode(entry["md5"], validate=True)
+            except (TypeError, ValueError) as exc: raise SourceDataError("W&B selected file lacks a valid checksum") from exc
+            if len(digest) != 16 or not isinstance(entry["sizeBytes"], int) or entry["sizeBytes"] < 0:
+                raise SourceDataError("W&B selected file has an invalid checksum or size")
+            selected.append(dict(path=relative, size=entry["sizeBytes"], hash_kind="md5", digest=digest.hex(),
+                url=f"https://api.wandb.ai/files/{entity}/{project}/" + quote(relative, safe="/")))
+        return selected
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = [entry for group in executor.map(files, [run for run in runs.values()
+            if run["state"] == selector["state"]]) for entry in group]
+    entries.sort(key=lambda entry: entry["path"])
+    identity = [{key:entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"W&B selected files differ from the pinned tree ({fingerprint})")
+    return entries
+
+
 def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: Path | None = None) -> list[dict]:
     """Resolve named upstream selections to pinned files and verify their inventory.
 
@@ -350,7 +430,9 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
         else:
             location = urlparse(url)
             entries = []
-            if "json_index" in source:
+            if "wandb_runs" in source:
+                entries = wandb_entries(source)
+            elif "json_index" in source:
                 entries = json_index_entries(source, named, raw_dir)
             elif "html_index" in source:
                 entries = html_index_entries(source, named, raw_dir)
@@ -421,7 +503,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if "html_index" in source or "json_index" in source or location.netloc == "drive.google.com":
+            if "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc == "drive.google.com":
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")

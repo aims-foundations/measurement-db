@@ -476,6 +476,62 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaises(BenchmarkMetadataError):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
+    def test_public_wandb_pagination_latest_checkpoint_and_content_pin(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        digest = hashlib.md5(PAYLOAD).hexdigest()
+        def entry(name):
+            return dict(name=name, sizeBytes=len(PAYLOAD), md5=base64.b64encode(bytes.fromhex(digest)).decode())
+        files = [entry('10_normalized_scores.npy'), entry('10_returns.npy'), entry('20_normalized_scores.npy'),
+                 entry('20_returns.npy'), entry('config.yaml')]
+        selected = ['run1/20_normalized_scores.npy', 'run1/20_returns.npy', 'run1/config.yaml']
+        identity = [dict(path=path, size=len(PAYLOAD), digest=digest) for path in selected]
+        source = dict(name='results', url='https://wandb.ai/team/project', revision=None,
+            wandb_runs=dict(state='finished', latest_step=r'(?P<step>[0-9]+)_normalized_scores\.npy',
+                            step_files=r'(?P<step>[0-9]+)_(normalized_scores|returns)\.npy'),
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'[^/]+/(config\.yaml|[0-9]+_(normalized_scores|returns)\.npy)', path='runs/{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        requests = []
+        def fetch(request, **kwargs):
+            query = json.loads(request.data); variables=query['variables']; requests.append(variables)
+            if 'r' not in variables:
+                first = variables['c'] is None
+                nodes = [dict(name='run1', state='finished')] if first else [dict(name='run2', state='failed')]
+                data = dict(runs=dict(edges=[dict(node=node) for node in nodes],
+                    pageInfo=dict(hasNextPage=first, endCursor='run-next' if first else None)))
+            else:
+                self.assertEqual(variables['r'], 'run1')
+                first = variables['c'] is None
+                data = dict(run=dict(files=dict(edges=[dict(node=node) for node in (files[:2] if first else files[2:])],
+                    pageInfo=dict(hasNextPage=first, endCursor='file-next' if first else None))))
+            return io.BytesIO(json.dumps(dict(data=dict(project=data))).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertEqual([row['file'] for row in artifacts], ['runs/'+path for path in selected])
+        self.assertEqual(len(requests), 4)
+        self.assertTrue(all(row['url'].startswith('https://api.wandb.ai/files/team/project/run1/') for row in artifacts))
+        self.assertTrue(all('?' not in row['url'] for row in artifacts))
+        target=self.raw/'source.bin';target.write_bytes(PAYLOAD);verify_snapshot_file(target,artifacts[0])
+        target.write_bytes(b'x'*len(PAYLOAD))
+        with self.assertRaisesRegex(SourceDataError,'content differs'):verify_snapshot_file(target,artifacts[0])
+        files[2]['md5']=base64.b64encode(b'x'*16).decode()
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            with self.assertRaisesRegex(SourceDataError,'pinned tree'):upstream_artifacts([source],('results',))
+        for changed in [dict(source,tree_sha256=None),dict(source,url='https://other.example/project'),
+                        dict(source,wandb_runs=dict(state='finished',latest_step='.*')),
+                        dict(source,file='input.json',size=1,sha256='a'*64)]:
+            self.metadata['sources']['upstream']=[changed]
+            with self.assertRaises(BenchmarkMetadataError):validate_benchmark_metadata(self.metadata,path=self.metadata_path)
+
+    def test_public_wandb_does_not_accept_access_errors_or_invalid_checkpoint_patterns(self):
+        from scripts.build_measurement_tables.load_source_files import wandb_entries
+        source=dict(url='https://wandb.ai/team/project',wandb_runs=dict(state='finished'),files=[dict(match='.*',path='{path}')],tree_sha256='a'*64)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',return_value=io.BytesIO(b'{"errors":[{"message":"denied"}]}')):
+            with self.assertRaisesRegex(SourceDataError,'not publicly accessible'):wandb_entries(source)
+        source['wandb_runs'].update(latest_step='([0-9]+).npy',step_files='([0-9]+).npy')
+        with self.assertRaisesRegex(SourceDataError,'named step'):wandb_entries(source)
+
     def test_gcs_download_requests_original_gzip_representation(self):
         encoded = gzip.compress(PAYLOAD, mtime=0)
         class FixtureBuild(BenchmarkBuild):
