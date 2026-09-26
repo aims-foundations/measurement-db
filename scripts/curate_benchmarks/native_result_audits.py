@@ -12629,6 +12629,131 @@ def _kernelbench(directory, tables, metadata, source=None):
         **{"source_" + key:value for key,value in counts.items()})
 
 
+def _kmmlu_source_records(directory, metadata):
+    """Read CSV records independently of the builder's positional table join."""
+    import csv
+    import unicodedata
+    from collections import defaultdict
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    banks, definitions, subjects, native, counts = {}, {}, set(), {}, Counter()
+    for path in sorted(raw.glob(parameters["paths"]["tasks"])):
+        category = path.stem.removesuffix("-test").lower().replace("-", "_")
+        _check(category not in banks, True, "KMMLU unique task-bank category")
+        with path.open(newline="", encoding="utf-8-sig") as handle:
+            rows = list(csv.DictReader(handle))
+        banks[category] = []
+        for index, row in enumerate(rows):
+            content = (row["question"] + "\n\n" + "\n".join(f"{letter}: {row[letter]}" for letter in "ABCD")).strip()
+            gold = parameters["answer_labels"][row["answer"]]
+            identity = unicodedata.normalize("NFC", content), gold
+            definition = dict(content=content, gold=gold, raw_item_id=f"{category}/{index}")
+            definitions.setdefault(identity, definition)
+            banks[category].append(dict(identity=identity, bank_file=str(path.relative_to(raw)), bank_row=index))
+            counts["task_rows"] += 1
+
+    trials = Counter()
+    for path in sorted(raw.glob(parameters["paths"]["results"])):
+        with path.open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            _check(reader.fieldnames, ["category", "answer", "pred", "response"], "KMMLU native export schema")
+            rows = list(reader)
+        counts["raw_responses"] += len(rows)
+        groups = defaultdict(list)
+        for index, row in enumerate(rows):
+            category = row["category"].lower().replace("-", "_")
+            groups[category].append((index, row))
+        complete_file = set(groups) == set(banks) and all(len(group) == len(banks[category]) for category, group in groups.items())
+        for category, group in groups.items():
+            bank = banks[category]
+            complete = len(group) == len(bank)
+            ordered = complete and all(row["answer"] == definition["identity"][1] for (_, row), definition in zip(group, bank))
+            if not ordered:
+                counts["held_blocks"] += 1
+                counts["held_responses"] += len(group)
+                counts["reordered_complete_blocks"] += complete
+                continue
+            counts["verified_category_blocks"] += 1
+            for (index, row), definition in zip(group, bank):
+                source_file = str(path.relative_to(raw))
+                key = source_file, index
+                trial_key = path.stem, category, definition["identity"]
+                trials[trial_key] += 1
+                failed = row["pred"] == parameters["labels"]["ungraded_marker"]
+                grade = None if failed else float(row["pred"] == row["answer"])
+                trace = dict(source_file=source_file, source_row=index,
+                    bank_file=definition["bank_file"], bank_row=definition["bank_row"], source_record=row,
+                    grade_status="ungraded_source_failure" if failed else "derived_from_recorded_prediction")
+                native[key] = dict(subject=path.stem, item=definition["identity"], category=category,
+                    trial=trials[trial_key], grade=grade, trace=trace)
+                subjects.add(path.stem)
+                counts["restored_from_partial_files"] += not complete_file
+                counts["ungraded_source_failures"] += failed
+                counts["blank_predictions"] += row["pred"] == ""
+                counts["filtered_predictions"] += row["pred"] == "FILTERED"
+                counts["repeated_question_attempts"] += trials[trial_key] > 1
+    used = {row["item"] for row in native.values()}
+    definitions = {key:value for key,value in definitions.items() if key in used}
+    counts["repeated_task_rows"] = counts["task_rows"] - len(definitions)
+    _check(len(native) + counts["held_responses"], counts["raw_responses"], "KMMLU every source row retained or explicitly held")
+    return native, subjects, definitions, counts
+
+
+def _kmmlu(directory, tables, metadata, source=None):
+    """Check every retained original question, prediction, grade and complete trace."""
+    native, configurations, definitions, counts = _kmmlu_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features["source_model_label"]
+        _check(label in configurations, True, "KMMLU source-supported model label")
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        expected.update(source_model_label=label,
+            prompt_condition=label.rsplit("-", 1)[-1] if label.endswith(("-0shot", "-5shot")) else "not_recorded")
+        _check(features, expected, "KMMLU only recorded model and explicit prompt-condition labels")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "KMMLU unaltered source configuration label")
+        _check(row.harness, parameters["subject_features"]["harness"], "KMMLU actual source harness")
+        for column in ["harness_version", "reasoning_effort", "release_date", "access_date", "provider", "normalized_name"]:
+            _check(pd.isna(getattr(row, column)), True, "KMMLU no guessed " + column)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({key:1 for key in configurations}), "KMMLU complete distinct source configurations")
+    for row in tables["items"].itertuples():
+        import unicodedata
+        criterion = json.loads(row.grading_criterion)
+        key = unicodedata.normalize("NFC", row.content).strip(), criterion["reference_answer"]
+        original = definitions[key]
+        _check(row.content, original["content"], "KMMLU complete original question and all choices")
+        _check(row.raw_item_id, original["raw_item_id"], "KMMLU first source alias retained on the canonical item")
+        _check(criterion, dict(reference_answer=original["gold"], rule=metadata["grading"]["rule"]), "KMMLU correct gold and original matcher policy")
+        _check(_features(row.item_features), dict(input_scope=parameters["labels"]["input_scope"]), "KMMLU no human-accuracy leakage or invented prompt attributes")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("exact_matcher", metadata["grading"]["verifiers"]["recorded_option_match"]), "KMMLU versioned source grading implementation")
+        _check(pd.isna(row.asset_manifest), True, "KMMLU no invented input assets")
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), "KMMLU identical question/grading pairs share one item")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "KMMLU complete one-to-one trace links")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, original["trace"], "KMMLU complete native record and exact original task-bank position")
+        _check(subjects[row.subject_id], original["subject"], "KMMLU correct model/configuration association")
+        _check(items[row.item_id], original["item"], "KMMLU correct original question and reference")
+        _check(row.trial, original["trial"], "KMMLU repeated source questions retain separate attempts")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "KMMLU exact saved-prediction grade and unavailable failure preservation")
+        _check(row.test_condition, "category=" + original["category"], "KMMLU source category retained per attempt")
+        _check(pd.isna(row.interactors), True, "KMMLU no invented interacting system")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "KMMLU every accepted source row exactly once")
+    _check(len(tables.get("assets", [])), 0, "KMMLU no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(configurations), source_items=len(definitions),
+        **{"source_" + key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12642,7 +12767,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

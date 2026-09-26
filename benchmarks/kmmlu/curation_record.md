@@ -1,0 +1,3 @@
+- Sources: pinned official KMMLU questions and all 30 independent result exports; captured historical writers document ordering and grading.
+- Mapping: retain verified complete categories, including those in partial files; keep ambiguous blocks in raw. Preserve repeated questions and source aliases.
+- Fidelity: complete recorded text, original parsed choices and unknown settings; FAILED grades stay null. No new model calls or invented prompts.
