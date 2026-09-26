@@ -11547,6 +11547,198 @@ def _hivmedqa(directory, tables, metadata, source=None):
         reference_paraphrasing_runs=sum(row["task_role"] == "reference_paraphrasing" for row in answers.values()), **counts)
 
 
+def _hle_source_records(directory, metadata):
+    """Traverse the original releases independently of the builder's table joins."""
+    import ast
+    import base64
+    import csv
+    import hashlib
+    import io
+    import tarfile
+    from collections import defaultdict
+    import pyarrow.parquet as pq
+
+    paths = metadata["build"]["parameters"]["paths"]
+    raw = directory / "raw"
+    with tarfile.open(raw / paths["supai_archive"]) as archive:
+        published = json.load(archive.extractfile(paths["supai_root"] + "/" + paths["judged"]))
+        for filename, constant, declared in [
+            ("src/run_model.py", "SYSTEM_PROMPT", metadata["build"]["parameters"]["supai"]["system_prompt"]),
+            ("src/run_judge.py", "JUDGE_PROMPT", metadata["grading"]["verifiers"]["supai"]["rubric"]),
+        ]:
+            code = ast.parse(archive.extractfile(paths["supai_root"] + "/" + filename).read())
+            captured = next(ast.literal_eval(node.value) for node in code.body if isinstance(node, ast.Assign)
+                and any(isinstance(target, ast.Name) and target.id == constant for target in node.targets))
+            _check(declared, captured, "HLE verbatim captured model/judge prompt")
+
+    bank = {row["id"]: row for row in pq.read_table(raw / paths["questions"], columns=["id", "question", "answer", "image"]).to_pylist()}
+    evidence_types = {"thinking", "text", "web-search-call", "web-search-result", "fetch-url-call", "fetch-url-result", "error"}
+    _check(set(metadata["build"]["parameters"]["execution_events"]), evidence_types, "HLE declared execution evidence")
+    native, questions, images, counts = {}, {}, {}, Counter()
+    with tarfile.open(raw / paths["supai_archive"], "r|gz") as archive:
+        for member in archive:
+            prefix = paths["supai_root"] + "/" + paths["streams"]
+            if not member.isfile() or not member.name.startswith(prefix):
+                continue
+            question_id = Path(member.name).stem
+            events, indices, kinds, pieces, shared = defaultdict(list), defaultdict(list), defaultdict(set), {}, []
+            for position, event in enumerate(json.load(archive.extractfile(member))):
+                actor = event.get("_source", {}).get("key")
+                if actor is None:
+                    shared.append(dict(position=position, record=event))
+                    continue
+                events[actor].append(event)
+                indices[actor].append(position)
+                kinds[actor].add(event["type"])
+                if event["type"] == "text-start":
+                    pieces[actor] = []
+                elif event["type"] == "text" and actor in pieces:
+                    pieces[actor].append(event["text"])
+            released = published.get(question_id, {})
+            _check(set(released.get("judge_response", {})) <= set(events), True, "HLE every published judge has a recorded actor")
+            _check(set(released.get("response", {})) <= set(events), True, "HLE every published answer has a recorded actor")
+            _check(len(events), 10, "HLE nine component actors and one main episode in each captured stream")
+            question = bank[question_id]
+            questions["supai", question_id] = dict(question=question["question"], answer=question["answer"], image=None)
+            if question["image"]:
+                header, encoded = question["image"].split(",", 1)
+                _check(header.startswith("data:") and header.endswith(";base64"), True, "HLE complete original question image")
+                data = base64.b64decode(encoded, validate=True)
+                path = "images/" + hashlib.sha256(data).hexdigest()
+                images[path] = data
+                questions["supai", question_id]["image"] = dict(path=path, media_type=header[5:-7])
+                counts["source_image_questions"] += 1
+            for actor in events:
+                final = "".join(pieces[actor]) if actor in pieces else None
+                output = released.get("response", {}).get(actor)
+                judgment = released.get("judge_response", {}).get(actor)
+                if output is not None:
+                    _check(final, output, "HLE independently replayed final answer matches native summary")
+                grade = None
+                if judgment is not None:
+                    _check(judgment["correct"] in {"yes", "no"}, True, "HLE native binary verdict")
+                    grade = float(judgment["correct"] == "yes")
+                    _check(judgment.get("reference_answer", judgment.get("correct_answer")), question["answer"], "HLE judge used the captured reference answer")
+                status = "ungraded_recorded_episode" if grade is None else "published_judgment_without_full_answer" if final is None else "published_judgment"
+                evidence = sorted(kinds[actor] & evidence_types)
+                trace = dict(source="supai", question_id=question_id, actor=actor,
+                    source_file=member.name.split("/", 1)[1], event_indices=indices[actor], events=events[actor], shared_events=shared,
+                    final_output=final, summary_present=question_id in published, published_output=output, judgment=judgment,
+                    grading_status=status, execution_status="recorded_activity" if evidence else "completion_metadata_only", execution_evidence=evidence)
+                key = "supai", question_id, actor
+                _check(key not in native, True, "HLE unique released actor episode")
+                native[key] = dict(grade=grade, trace_digest=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)))
+                counts["supai_episodes"] += 1
+                counts["supai_published_grades"] += grade is not None
+                counts["supai_correct_grades"] += grade == 1
+                counts["supai_no_grade"] += grade is None
+                counts["supai_ungraded_full_outputs"] += grade is None and final is not None
+                counts["supai_ungraded_without_output"] += grade is None and final is None
+                counts["supai_graded_without_full_answer"] += grade is not None and final is None
+                counts["supai_completion_metadata_only"] += not evidence
+                counts["source_stream_events"] += len(events[actor])
+            counts["source_shared_events"] += len(shared)
+            counts["supai_question_streams"] += 1
+    _check(set(published) <= {key[1] for key in native}, True, "HLE all released summary questions retained")
+
+    with tarfile.open(raw / paths["deepwriter_archive"]) as archive:
+        handle = archive.extractfile(paths["deepwriter_root"] + "/" + paths["deepwriter_csv"])
+        for position, row in enumerate(csv.DictReader(io.TextIOWrapper(handle, encoding="utf-8"))):
+            question_id = row["id"]
+            if question_id in {"", "Totals:"}:
+                continue
+            grade = float(row["score"])
+            _check(grade in {0, 1} and row["result"] in {"pass", "fail"}, True, "HLE DeepWriter native binary records")
+            discrepancy = grade != float(row["result"] == "pass")
+            trace = dict(source="deepwriter", source_file=paths["deepwriter_csv"], source_row=position,
+                native_record=row, grading_status="published_numeric_score", score_result_disagreement=discrepancy)
+            key = "deepwriter", question_id, "deepwriter"
+            _check(key not in native, True, "HLE unique DeepWriter saved run")
+            native[key] = dict(grade=grade, trace_digest=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)))
+            questions["deepwriter", question_id] = dict(question=row["question"], answer=row["answer"], image=None)
+            counts["deepwriter_episodes"] += 1
+            counts["deepwriter_correct_grades"] += grade == 1
+            counts["deepwriter_score_result_disagreements"] += discrepancy
+            counts["deepwriter_overlaps_supai_gemini"] += ("supai", question_id, "google/gemini-3-pro-preview") in native and native["supai", question_id, "google/gemini-3-pro-preview"]["grade"] is not None
+            counts["deepwriter_questions_absent_current_bank"] += question_id not in bank
+    return native, questions, images, dict(counts)
+
+
+def _hle(directory, tables, metadata, source=None, trace_cache=None):
+    """Check every source association, full trace, original question and input image."""
+    import hashlib
+    from urllib.parse import quote
+
+    native, questions, images, counts = source if source is not None else _hle_source_records(directory, metadata)
+    params = metadata["build"]["parameters"]
+    trace_cache = {} if trace_cache is None else trace_cache
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        protocol = "deepwriter" if row.harness == "DeepWriter Abraxas 1.5" else "supai"
+        system = params[protocol]
+        actor = "deepwriter" if protocol == "deepwriter" else features["model_identifier"]
+        _check(row.harness, system["harness"], "HLE distinct execution system")
+        _check(row.display_name, system["label"] if protocol == "deepwriter" else params["model_labels"][actor], "HLE source model label")
+        expected = dict(model_identifier=system["model_identifier"] if protocol == "deepwriter" else actor, execution_scope=system["execution_scope"])
+        if protocol == "supai":
+            expected["system_prompt"] = quote(system["system_prompt"], safe=" /-._")
+        _check(features, expected, "HLE source configuration without invented per-call settings")
+        subjects[row.subject_id] = protocol, actor
+    _check(Counter(subjects.values()), Counter({(key[0], key[2]): 1 for key in native}), "HLE all model/harness combinations exactly once")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    _check(len(traces), len(tables["traces"]), "HLE unique trace associations")
+    _check(set(traces), set(tables["responses"].response_id), "HLE trace for each recorded episode")
+    seen, item_aliases, asset_ids = Counter(), {}, set()
+    for row in tables["responses"].itertuples():
+        encoded = traces[row.response_id]
+        if encoded not in trace_cache:
+            trace = json.loads(encoded)
+            key = ("supai", trace["question_id"], trace["actor"]) if trace["source"] == "supai" else ("deepwriter", trace["native_record"]["id"], "deepwriter")
+            trace_cache[encoded] = key, _digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False))
+        key, digest = trace_cache[encoded]
+        original = native[key]
+        _check(digest, original["trace_digest"], "HLE complete native events, event positions, output and grading preserved")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "HLE original score; missing grades remain null")
+        _check(subjects[row.subject_id], (key[0], key[2]), "HLE response linked to its actual model and harness")
+        _check(row.trial, 1, "HLE internal retries are not new independent trials")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "HLE no inferred per-run settings")
+        item = items[row.item_id]
+        question = questions[key[0], key[1]]
+        parts = [dict(content_type="text/plain", text=question["question"])]
+        if question["image"]:
+            parts.append(dict(content_type=question["image"]["media_type"], location=question["image"]["path"]))
+        _check(json.loads(item["content"]), dict(multimedia_elements=parts), "HLE original source question and image without reference leakage")
+        _check(_features(item["item_features"]), dict(source_protocol=key[0], input_scope=params["presentation"][key[0] + "_scope"]), "HLE actual source question version")
+        protocol = metadata["grading"]["verifiers"][key[0]]
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=question["answer"], rule=metadata["grading"]["rule"] + "\n" + protocol["protocol"]), "HLE source-specific reference answer and criterion")
+        verifier = json.loads(item["verifier"])
+        _check(verifier.get("judge"), "gpt-5.1" if key[0] == "supai" else None, "HLE original judge identity; unreleased judge remains unknown")
+        _check(verifier["judged_by"], "llm", "HLE source judgment type")
+        _check(json.loads(verifier["spec"]), protocol, "HLE retained released grading procedure")
+        if row.item_id not in item_aliases:
+            links = json.loads(item["asset_manifest"]) if isinstance(item["asset_manifest"], str) else []
+            _check(len(links), int(question["image"] is not None), "HLE only original question inputs attached")
+            if links:
+                link = links[0]
+                _check({k: link[k] for k in ["path", "media_type", "role", "ordinal"]}, dict(**question["image"], role="input", ordinal=1), "HLE image input association")
+                data = images[link["path"]]
+                _check(link["asset_id"], hashlib.sha256(data).hexdigest(), "HLE original asset identity")
+                _check(assets[link["asset_id"]]["data"], data, "HLE lossless source image bytes")
+                asset_ids.add(link["asset_id"])
+            item_aliases[row.item_id] = set()
+        item_aliases[row.item_id].add(key[1])
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "HLE every original episode exactly once")
+    _check(set(item_aliases), set(items), "HLE every retained task has source observations")
+    _check(asset_ids, set(assets), "HLE no omitted or unreferenced input assets")
+    for item_id, aliases in item_aliases.items():
+        _check(items[item_id]["raw_item_id"] in aliases, True, "HLE original source question identifier")
+    return dict(source_responses=sum(seen.values()), source_subjects=len(subjects), source_items=len(items), source_assets=len(assets), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11560,7 +11752,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
