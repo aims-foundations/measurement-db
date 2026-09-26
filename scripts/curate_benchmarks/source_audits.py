@@ -866,3 +866,4 @@ SOURCE_AUDITS["hallusionbench"] = verify_native_results
 
 SOURCE_AUDITS["haiid"] = verify_native_results
 SOURCE_AUDITS["harmbench"] = verify_native_results
+SOURCE_AUDITS["healthadminbench"] = verify_native_results

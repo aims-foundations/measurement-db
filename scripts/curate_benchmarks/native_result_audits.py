@@ -11194,6 +11194,143 @@ def _harmbench(directory, tables, metadata, source=None):
         archived_multimodal_validation_records=validation["multimodal"])
 
 
+def _healthadmin_source_records(directory, metadata):
+    """Independently reconcile CSV judgments, task checks and website evaluator records."""
+    import csv
+    import io
+    import math
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    tasks, flags, native, website = {}, {}, {}, {}
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        root = paths["root"] + "/"
+        for member in archive:
+            if member.isfile() and member.name.startswith(root + paths["tasks"]) and member.name.endswith(".json"):
+                path = member.name.removeprefix(root + paths["tasks"])
+                _check(path not in tasks, True, "HealthAdminBench unique task paths")
+                tasks[path] = json.load(archive.extractfile(member))
+        with io.TextIOWrapper(archive.extractfile(root + paths["removed"]), encoding="utf-8", newline="") as stream:
+            for row in csv.DictReader(stream):
+                path, index = row["task_path"], int(row["eval_idx"])
+                _check(index not in flags.setdefault(path, {}), True, "HealthAdminBench unique removed-check positions")
+                task = tasks[path]
+                check = task["evals"][index]
+                _check((row["task_id"], row["type"], row["description"]),
+                       (task["id"], check["type"], check["description"]), "HealthAdminBench removal audit matches original check")
+                _check(row["source"], check["query"] if check["type"] == "jmespath" else check["student_answer"], "HealthAdminBench removed source expression")
+                flags[path][index] = row
+        with io.TextIOWrapper(archive.extractfile(root + paths["runs"]), encoding="utf-8", newline="") as stream:
+            for index, row in enumerate(csv.DictReader(stream)):
+                _check(row["run_name"] not in native, True, "HealthAdminBench unique released run names")
+                path = row["domain"] + "/" + row["task_id"] + ".json"
+                _check(row["task_id"], tasks[path]["id"], "HealthAdminBench task ID association")
+                _check(row["run_name"].split("/"), [row["model"], row["input_type"], row["prompt_type"], row["domain"], row["task_id"], row["seed"]], "HealthAdminBench parsed run configuration")
+                total, passed, kept, passed_kept = [int(row[key]) for key in ["n_total", "n_passed", "n_kept", "n_passed_kept"]]
+                _check((total, kept), (len(tasks[path]["evals"]), len(tasks[path]["evals"]) - len(flags.get(path, {}))), "HealthAdminBench strict and retained task-check counts")
+                _check(0 <= passed <= total and 0 <= passed_kept <= kept and kept > 0, True, "HealthAdminBench valid check counts")
+                _check((float(row["pass_orig"]), float(row["pass_new"])), (float(passed == total), float(passed_kept == kept)), "HealthAdminBench native binary aggregation")
+                for key, expected in [("subtask_acc_orig", passed / total), ("subtask_acc_new", passed_kept / kept),
+                                      ("subtask_acc_delta", passed_kept / kept - passed / total),
+                                      ("pass_delta", float(row["pass_new"]) - float(row["pass_orig"]))]:
+                    _check(math.isclose(float(row[key]), expected, abs_tol=1e-12), True, "HealthAdminBench native derived statistic: " + key)
+                _check(row["desc_mismatches"], "0", "HealthAdminBench source reports matching check descriptions")
+                native[row["run_name"]] = dict(index=index, record=row, path=path)
+    counts = Counter()
+    payload = json.loads((directory / "raw" / paths["website"]).read_text())
+    for group in payload["data"]:
+        for row in group["results"]:
+            name = row["run_name"]
+            _check(name not in website, True, "HealthAdminBench unique website run names")
+            original = native[name]
+            record, path = original["record"], original["path"]
+            _check((group["agent_name"], group["agent_provider"], row["domain"], row["task_id"], row["prompt_strategy"], row["observation_mode"]),
+                (record["model"], row["model_provider"], record["domain"], record["task_id"], record["prompt_type"], record["input_type"]), "HealthAdminBench website run configuration")
+            _check(float(row["score"] == row["max_score"]), float(record["pass_orig"]), "HealthAdminBench weighted summary agrees with original strict pass")
+            _check(row["seed"], 42, "HealthAdminBench published website seed distinct from replicate suffix")
+            if row["trajectory_json"]:
+                evaluator = json.loads(row["trajectory_json"])
+                _check(set(evaluator), {"evaluation_result"}, "HealthAdminBench evaluator-only record, not an agent action trajectory")
+                results = evaluator["evaluation_result"]["eval_results"]
+                kept = [value for i, value in enumerate(results) if i not in flags.get(path, {})]
+                _check((len(results), sum(value["success"] for value in results), len(kept), sum(value["success"] for value in kept)),
+                    tuple(int(record[key]) for key in ["n_total", "n_passed", "n_kept", "n_passed_kept"]), "HealthAdminBench all original evaluator verdicts reconcile")
+                for i, value in enumerate(results):
+                    spec = tasks[path]["evals"][i]
+                    _check((value["type"], type(value["success"])), (spec["type"], bool), "HealthAdminBench native evaluator type and boolean verdict")
+                    if value.get("description"):
+                        _check(" ".join(value["description"].split()), " ".join(spec["description"].split()), "HealthAdminBench evaluator position matches task check")
+                    counts["evaluator_records"] += 1
+                    counts["llm_evaluator_records"] += value["type"] == "llm_judge"
+                _check((sum(value["points"] for value in results), sum(value["max_points"] for value in results)),
+                    (row["score"], row["max_score"]), "HealthAdminBench weighted point totals are not unweighted check counts")
+                counts["runs_with_evaluator_records"] += 1
+            else:
+                _check(row["trajectory_json"], "", "HealthAdminBench original absent evaluator record")
+                counts["runs_without_evaluator_records"] += 1
+            website[name] = row
+    _check(set(website), set(native), "HealthAdminBench full website/CSV run correspondence")
+    return native, tasks, flags, website, dict(counts)
+
+
+def _healthadmin(directory, tables, metadata, source=None):
+    """Check every imported judgment, full source record and protocol-specific input."""
+    native, tasks, flags, website, counts = source if source is not None else _healthadmin_source_records(directory, metadata)
+    params, paths = metadata["build"]["parameters"], metadata["build"]["parameters"]["paths"]
+    scale = metadata["benchmark"]["response_scale"]
+    _check((scale["values"], scale["direction"]), ([0, 1], "higher_is_better"), "HealthAdminBench binary task-success scale")
+    _check(params["protocols"], dict(pass_orig="strict_all", pass_new="without_process_checks"), "HealthAdminBench distinct original and revised grading rules")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    models = {}
+    for subject_id, row in subjects.items():
+        features = _features(row["subject_features_extra"])
+        model = features["source_model"]
+        _check(model not in models, True, "HealthAdminBench distinct native agent configurations")
+        _check((row["display_name"], row["harness"]), (params["model_labels"][model], params["model_features"]["harness"]), "HealthAdminBench declared model labels and harness")
+        _check(features, dict(source_model=model, configuration_scope=params["model_features"]["configuration_scope"]), "HealthAdminBench no invented historical model configuration")
+        models[model] = subject_id
+    _check(set(models), {entry["record"]["model"] for entry in native.values()}, "HealthAdminBench all source agents")
+    _check(set(traces), set(tables["responses"].response_id), "HealthAdminBench all judgments have complete source traces")
+    seen, used_items = Counter(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        name, field = trace["source_record"]["run_name"], trace["source_field"]
+        entry = native[name]
+        record, path = entry["record"], entry["path"]
+        _check(field in {"pass_orig", "pass_new"}, True, "HealthAdminBench native grading variant")
+        _check(trace, dict(source_row=entry["index"], source_field=field, source_record=record, website_record=website[name],
+            task_path=path, task_record=tasks[path], removed_checks=list(flags.get(path, {}).values()), source_file=paths["runs"]), "HealthAdminBench lossless original CSV, website JSON and task records")
+        _check((row.subject_id, row.response, row.trial, row.test_condition, pd.isna(row.interactors)),
+            (models[record["model"]], float(record[field]), 1, "obs=" + record["input_type"] + ";prompt=" + record["prompt_type"], True), "HealthAdminBench native model, binary judgment, single run and configuration")
+        task, item, protocol = tasks[path], items[row.item_id], params["protocols"][field]
+        elements = [dict(content_type="text/plain", text=task["goal"]), dict(content_type="text/plain", text=params["presentation"]["start"].format(
+            configuration=json.dumps(dict(website=task["website"], config=task["config"]), ensure_ascii=False)))]
+        if record["prompt_type"] == "task_specific":
+            elements.append(dict(content_type="text/plain", text=params["presentation"]["guide"].format(steps="\n".join(task["metadata"]["step_by_step"]))))
+        _check(json.loads(item["content"]), dict(multimedia_elements=elements), "HealthAdminBench full goal and condition-appropriate guidance only")
+        _check(item["raw_item_id"], record["domain"] + "/" + record["task_id"], "HealthAdminBench original task identity")
+        _check(_features(item["item_features"]), dict(domain=record["domain"], difficulty=task["difficulty"], input_scope=params["presentation"]["input_scope"]), "HealthAdminBench inputs exclude expected outcomes and grading flags")
+        selected = [value for i, value in enumerate(task["evals"]) if field == "pass_orig" or i not in flags.get(path, {})]
+        rule = metadata["grading"]["rule"] + "\n" + json.dumps(dict(protocol=protocol, evals=selected), ensure_ascii=False)
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=rule), "HealthAdminBench exact check set for the corresponding judgment")
+        verifier = {"class": "exact_matcher", "spec": json.dumps(dict(aggregation=metadata["grading"]["verifiers"][protocol], task_evaluator=metadata["grading"]["verifiers"]["task_evaluator"]), sort_keys=True)}
+        if any(value["type"] == "llm_judge" for value in selected):
+            verifier.update({"class": "judge", "judged_by": "llm"})
+        _check(json.loads(item["verifier"]), verifier, "HealthAdminBench mechanical versus judged checks and exact aggregation protocol")
+        _check(pd.isna(item["asset_manifest"]), True, "HealthAdminBench no invented per-run GUI assets")
+        seen[name, field] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({(name, field): 1 for name in native for field in ["pass_orig", "pass_new"]}), "HealthAdminBench every released run and both judgments exactly once")
+    _check(used_items, set(items), "HealthAdminBench all task/protocol variants have observations")
+    _check(len(tables.get("assets", [])), 0, "HealthAdminBench no unreleased screenshot assets")
+    return dict(source_runs=len(native), source_responses=sum(seen.values()), source_tasks=len(tasks), source_subjects=len(models),
+        removed_checks=sum(map(len, flags.values())), strict_successes=sum(float(entry["record"]["pass_orig"]) == 1 for entry in native.values()),
+        revised_successes=sum(float(entry["record"]["pass_new"]) == 1 for entry in native.values()),
+        changed_judgments=sum(entry["record"]["pass_orig"] != entry["record"]["pass_new"] for entry in native.values()), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11207,6 +11344,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
+            "healthadminbench": _healthadmin,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

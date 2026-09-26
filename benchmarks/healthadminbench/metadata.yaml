@@ -1,0 +1,114 @@
+benchmark:
+  name: HealthAdminBench
+  description: Computer-use agent results on 135 synthetic healthcare-administration tasks, with original strict
+    and process-check-removed judgments.
+  testing_condition: Preserve 3510 published runs, with both pass_orig (all task checks) and pass_new (selected
+    process checks removed) as distinct grading protocols, not independent agent attempts. The old curation incorrectly
+    described pass_new as strict success. Original task checks and the 473-row removal audit define the two criteria.
+    Observation mode and prompting strategy remain response conditions; task-specific step-by-step guidance is included
+    only for that strategy. Item inputs contain the released goal and start configuration, not task metadata containing
+    expected outcomes. The raw archive retains the portal implementation and synthetic data, but per-run screenshots,
+    accessibility trees, actions and final environment states are not published here. The website's trajectory_json
+    contains evaluation records for 3240 runs and is blank for 270 Gemini screenshot runs; it is not an agent interaction
+    trajectory. Keep all run-level grades and the complete available evaluator records, including original judge
+    text. CSV seed is the parsed run-name suffix, while the website seed is 42; preserve both without equating them.
+    Exact historical model snapshots, inference settings and complete system prompts are not established by the
+    current reference implementation. Native task pass remains binary; subtask counts, fractions, weighted point
+    totals and timings remain in source traces. No new evaluations or API calls.
+  paper_url: https://arxiv.org/abs/2604.09937
+  data_source_url: https://github.com/som-shahlab/health-admin-bench
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: 'Bedi et al. (2026). HealthAdminBench: Evaluating Computer-Use Agents on Healthcare Administration Tasks.
+    arXiv:2604.09937.'
+  tags:
+  - computer_use
+  - healthcare_administration
+  - gui_agent
+  modality:
+  - text
+  - image
+  domain:
+  - medicine
+  - agents_and_tool_use
+  response_type: binary
+  categorical: true
+  release_date: 2026-04
+  multi_single_turn: multi_turn
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': At least one check required by this scoring protocol did not pass
+      '1': All checks required by this scoring protocol passed
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: release.tar.gz
+      root: health-admin-bench-cdc0703c43cae78c2dea8a7254512d1430664888
+      runs: analysis/process_subevals/recomputed_accuracy_runs.csv
+      removed: analysis/process_subevals/flagged_process_subevals.csv
+      tasks: benchmark/v2/tasks/
+      website: website_ready_results.json
+    model_labels:
+      anthropic-cua: Claude Opus 4.6 CUA
+      openai-cua: GPT-5.4 CUA
+      claude-opus-4-6: Claude Opus 4.6
+      gpt-5.4: GPT-5.4
+      gemini-3.1: Gemini 3.1 Pro
+      kimi-k2-5: Kimi K2.5
+      qwen-3: Qwen 3.5
+    model_features:
+      harness: HealthAdminBench published agent configurations
+      configuration_scope: Released agent key retained, distinguishing native CUA from the standard harness. Labels
+        follow the paper. Exact model checkpoint and runtime settings are not recorded per run.
+    protocols:
+      pass_orig: strict_all
+      pass_new: without_process_checks
+    presentation:
+      guide: 'Published task-specific step-by-step guidance:
+
+        {steps}'
+      start: 'Published initial task configuration:
+
+        {configuration}'
+      input_scope: Released task goal and start configuration, plus published step-by-step guidance for task_specific
+        only. Full system prompts and per-run GUI observations are unavailable.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/som-shahlab/health-admin-bench/tar.gz/cdc0703c43cae78c2dea8a7254512d1430664888
+    revision: cdc0703c43cae78c2dea8a7254512d1430664888
+    file: release.tar.gz
+    size: 27032178
+    sha256: 7804ce1941c532bd5b5b201ae0b54953315312649b9b68b7f34343f8ad6a1364
+  - name: website
+    url: https://som-shahlab.github.io/health-admin-bench-website/data/website_ready_results.json
+    revision: null
+    file: website_ready_results.json
+    size: 38691675
+    sha256: ef04994ff8e63dab9cd418ed580b2c7f47a99f40499cc863eee08042171be945
+grading:
+  rule: Preserve the source binary judgment. Success means every evaluation selected by this protocol passed. Preserve
+    evaluator errors and failures as released; do not rerun judges or infer success from the agent's prose.
+  verifiers:
+    strict_all:
+      source: https://github.com/som-shahlab/health-admin-bench/blob/cdc0703c43cae78c2dea8a7254512d1430664888/scripts/recompute_accuracy_without_process_checks.py
+      field: pass_orig
+      protocol: '_per_run_metrics: n_total > 0 and n_passed == n_total. Include every task eval, including process
+        checks. Do not substitute the process-check-removed pass_new result.'
+    without_process_checks:
+      source: https://github.com/som-shahlab/health-admin-bench/blob/cdc0703c43cae78c2dea8a7254512d1430664888/scripts/recompute_accuracy_without_process_checks.py
+      field: pass_new
+      protocol: '_per_run_metrics: n_kept > 0 and n_passed_kept == n_kept. Remove exactly the task/index entries
+        in flagged_process_subevals.csv; retain the other checks in their original order.'
+    task_evaluator:
+      source: https://github.com/som-shahlab/health-admin-bench/blob/cdc0703c43cae78c2dea8a7254512d1430664888/harness/evaluators/llm_evaluator.py
+      protocol: Tasks combine deterministic JMESPath state checks and LLM-judge rubrics. The captured evaluator
+        implementation selects gpt-5, but exported rows do not establish the historical judge invocation/checkpoint.
+        Preserve native boolean verdicts and available raw judge outputs without regrading.
