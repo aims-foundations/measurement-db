@@ -9859,6 +9859,106 @@ def _emoji(directory, tables, metadata, source=None):
         source_original_outputs=sum(isinstance(row["record"].get("source_target_responses"), str) for row in native.values()))
 
 
+
+def _enginemt_source_records(directory, metadata):
+    """Match original JSON records independently of the builder's table joins."""
+    import h5py
+    import numpy as np
+
+    raw = directory / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    questions, lookup = {}, {}
+    for line, text in enumerate((raw / paths["questions"]).read_text().splitlines()):
+        record = json.loads(text)
+        questions[line] = record
+        turns = record["conversations"]
+        _check(len(turns) % 2, 0, "EngineMT paired original turns")
+        for i in range(0, len(turns), 2):
+            prompt, answer = turns[i:i + 2]
+            _check((prompt["from"], answer["from"]), ("human", "gpt"), "EngineMT question/reference order")
+            key = line, int(prompt["stage"]), answer["value"].strip()
+            lookup.setdefault(key, {}).setdefault(prompt["value"], i // 2)
+    dump = json.loads((raw / paths["results"]).read_text())
+    lengths = [len(dump[key]) for key in ("predictions", "labels", "stages", "index")]
+    _check(lengths, [10608] * 4, "EngineMT complete released answer arrays")
+    native, inputs = {}, {}
+    with h5py.File(raw / paths["sensors"], "r") as sensors:
+        _check(sensors["seq_data"].shape, (118921, 600, 33), "EngineMT original sensor archive shape")
+        _check(np.array_equal(sensors["data_ID"][:], np.arange(1, 118922)), True, "EngineMT one-based source sensor IDs")
+        for position in range(lengths[0]):
+            pred, gold, stage, line = (dump[key][position] for key in ("predictions", "labels", "stages", "index"))
+            if stage not in (2, 3) or gold.strip() not in tuple("abcdef"):
+                continue
+            matches = lookup.get((line, stage, gold.strip()), {})
+            if len(matches) != 1:
+                continue
+            question, pair = next(iter(matches.items()))
+            tokens = {word.lower() for word in pred.split() if word.lower() in "abcdef" and len(word) == 1}
+            native[position] = dict(record=dict(predictions=pred, labels=gold, stages=stage, index=line, source_position=position),
+                line=line, pair=pair, question=question, stage=stage, gold=gold.strip(), grade=float(tokens == set(gold.split())))
+            if line not in inputs:
+                identifiers = questions[line]["id"]
+                if isinstance(identifiers, str):
+                    values = sensors["seq_data"][int(identifiers) - 1]
+                else:
+                    _check(len(identifiers), 10, "EngineMT ten-cycle input")
+                    values = np.vstack([sensors["seq_data"][int(value) - 1, :60, :] for value in identifiers])
+                inputs[line] = values
+    _check((len(native), len(inputs), sum(row["grade"] for row in native.values())), (676, 446, 525), "EngineMT selected source scope")
+    return native, questions, inputs
+
+
+def _enginemt(directory, tables, metadata, source=None):
+    """Check each answer, question, grade and every attached sensor value."""
+    import io
+    import numpy as np
+
+    native, questions, inputs = source if source is not None else _enginemt_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects)), (676, 676, 1), "EngineMT complete retained attempts")
+    _check(set(traces), set(tables["responses"].response_id), "EngineMT response-trace bijection")
+    parameters = metadata["build"]["parameters"]
+    seen, checked, used_assets = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        record = json.loads(traces[row.response_id])
+        expected = native[record["source_position"]]
+        _check(record, expected["record"], "EngineMT complete released answer and source coordinate")
+        _check(row.response, expected["grade"], "EngineMT historical option-set exact-match grade")
+        stage = {2: "perception", 3: "reasoning"}[expected["stage"]]
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)), (1, "task=" + stage, True), "EngineMT one recorded attempt per question")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], "ITFormer released run (checkpoint unspecified)", "EngineMT no inferred 0.5B checkpoint")
+        _check(subject["harness"], "ITFormer", "EngineMT source framework")
+        _check(_features(subject["subject_features_extra"]), {k: v for k, v in parameters["subject_features"].items() if k != "harness"}, "EngineMT unrecorded model configuration")
+        item = items[row.item_id]
+        line, pair = expected["line"], expected["pair"]
+        _check((item["raw_item_id"], item["content"]), (f"test_qa.jsonl:{line}:{pair}", expected["question"]), "EngineMT unique original question association")
+        if row.item_id not in checked:
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=expected["gold"], rule=metadata["grading"]["rule"]), "EngineMT original reference and historical rule")
+            _check(json.loads(item["verifier"]), {"class": "exact_matcher", "spec": json.dumps(metadata["grading"]["verifiers"]["exact_match"], sort_keys=True)}, "EngineMT pinned original metric")
+            features = dict(source_line=str(line), pair=str(pair), sensor_ids=str(questions[line]["id"]), sensor_files=str(questions[line]["name"]), stage=stage, **parameters["input_features"])
+            _check(_features(item["item_features"]), features, "EngineMT input identifiers and disclosure")
+            links = json.loads(item["asset_manifest"])
+            _check(len(links), 1, "EngineMT single assembled sequence attachment")
+            link = links[0]
+            _check((link["path"], link["role"], link["media_type"]), (f"sensors/line_{line}.npy", "input", "application/x-npy"), "EngineMT input asset association")
+            values = np.load(io.BytesIO(assets[link["asset_id"]]["data"]), allow_pickle=False)
+            original = inputs[line]
+            _check((values.shape, str(values.dtype)), (original.shape, str(original.dtype)), "EngineMT original sensor shape and precision")
+            _check(values.tobytes() == original.tobytes(), True, "EngineMT exact original sensor values and ordering")
+            used_assets.add(link["asset_id"])
+            checked.add(row.item_id)
+        seen[record["source_position"]] += 1
+    _check(seen, Counter({key: 1 for key in native}), "EngineMT every eligible source record once")
+    _check((checked, used_assets), (set(items), set(assets)), "EngineMT no unused items or sensor assets")
+    return dict(source_responses=676, source_items=len(items), source_subjects=1, source_assets=len(assets),
+        source_correct=525, source_export_records=10608, source_sensor_sequences=446,
+        source_perception=sum(row["stage"] == 2 for row in native.values()),
+        source_reasoning=sum(row["stage"] == 3 for row in native.values()))
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9871,7 +9971,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
