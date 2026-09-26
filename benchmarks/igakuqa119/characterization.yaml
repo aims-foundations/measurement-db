@@ -1,0 +1,141 @@
+format_version: 1
+tables:
+  traces:
+    rows: 400
+    logical_sha256: 3ff22374d541d33ebe580d6c0da655ca2f70bc34c19e976a4aa4dcf3bd50fd64
+  subjects:
+    rows: 1
+    logical_sha256: 2e0534c1730d9813a3b91d7338707d119933d2a5e8ef0ca129d57a4a3b506fac
+  responses:
+    rows: 400
+    logical_sha256: 53bf27dd253c8196b0e7e347aa8db8ea6af0087201fc4327f2698915eb79340c
+  assets:
+    rows: 142
+    logical_sha256: 72de194726d8372c935e430ce6e3de090a81d1315f2e23e7b6603e8a6e50ce1b
+  items:
+    rows: 400
+    logical_sha256: 93cc978e9d9e4c334789e8ad3a6df7cbd5d308d0e0c3b31bd3b42791daa4b0c6
+  benchmarks:
+    rows: 1
+    logical_sha256: 1d70ae47a7a35a7f1a55286db8fe27ce758000e11c5dd6addf9e1e25b1595a23
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 400
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 400
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 142
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 314
+  source_weighted_correct_points:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 398
+  source_possible_points:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 500
+  source_no_image_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 241
+  source_image_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 103
+  source_missing_question_text:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 1
+  corrected_legacy_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 4
+  source_image_links:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/naoto-iwase/IgakuQA119
+    locator: Independent traversal of all six answers/demo JSON files, questions/correct_answers.csv, original image
+      resources and the pinned grade.py. Leaderboard.json independently confirms the correctness and weighted-score
+      totals.
+    scope: 400 released OpenRouter Qwen2.5-72B-Instruct answers. 150 original image files contain 142 distinct byte
+      payloads. Image delivery and any internal retries were not recorded.
+    expected: 150

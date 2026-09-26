@@ -1,0 +1,3 @@
+- Sources: pin the complete IgakuQA119 release and verify every archive member against Git, including all 400 answer records and 150 original exam images.
+- Transform: join native answers, references and image resources with table operations; preserve full parsed outputs, source question versions and the published initial text template. Image resources do not imply that this text-default run received images.
+- Review: correct three numeric-answer false positives and the accepted alternative for 119E28. Preserve 119C18's blank exported question text explicitly, verify every observation, and reproduce the published 314/400 correctness and 398/500 weighted points.

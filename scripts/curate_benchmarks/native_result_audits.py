@@ -11739,6 +11739,161 @@ def _hle(directory, tables, metadata, source=None, trace_cache=None):
     return dict(source_responses=sum(seen.values()), source_subjects=len(subjects), source_items=len(items), source_assets=len(assets), **counts)
 
 
+def _igakuqa119_source_records(directory, metadata):
+    """Read every native answer and independently apply the pinned source grader."""
+    import ast
+    import csv
+    import hashlib
+    import io
+    import tarfile
+    import textwrap
+
+    paths = metadata["build"]["parameters"]["paths"]
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        prefix = paths["root"] + "/"
+        files = {member.name.removeprefix(prefix): archive.extractfile(member).read()
+                 for member in archive if member.isfile()}
+    solve = ast.parse(files["solve.py"].decode())
+    system = next(textwrap.dedent(ast.literal_eval(node.value.args[0])) for node in solve.body
+        if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "SYSTEM_PROMPT" for target in node.targets))
+    solve_question = next(node for node in solve.body if isinstance(node, ast.FunctionDef) and node.name == "solve_question")
+    prompt = next(node.value for node in solve_question.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "prompt" for target in node.targets))
+    fragments = [node.value for node in prompt.values if isinstance(node, ast.Constant)]
+    _check(len(fragments), 3, "IgakuQA119 source prompt has two interpolated input fields")
+    grader = ast.parse(files["grade.py"].decode())
+    normalize = next(node for node in grader.body if isinstance(node, ast.FunctionDef) and node.name == "normalize_answer")
+    removed = next(ast.literal_eval(node.iter) for node in normalize.body if isinstance(node, ast.For))
+    compare = next(node for node in grader.body if isinstance(node, ast.FunctionDef) and node.name == "is_correct_answer")
+    special = next(node for node in compare.body if isinstance(node, ast.If) and isinstance(node.test, ast.Compare))
+    special_id = ast.literal_eval(special.test.comparators[0])
+    accepted = list(ast.literal_eval(special.body[0].value.comparators[0]))
+    protocol = metadata["grading"]["verifiers"]["answer_match"]
+    _check(protocol["removed_characters"], removed, "IgakuQA119 normalization matches the captured grader")
+    _check(protocol["accepted_alternatives"], {special_id: accepted}, "IgakuQA119 accepted alternatives match source code")
+    _check(metadata["build"]["parameters"]["prompts"],
+           dict(system=system, user=fragments[0] + "{question}" + fragments[1] + "{choices}" + fragments[2]),
+           "IgakuQA119 initial text template matches source code")
+
+    gold = {row["問題番号"]: row["解答"] for row in csv.DictReader(io.StringIO(files[paths["references"]].decode("utf-8-sig")))}
+    bank = {}
+    for name, data in files.items():
+        if name.startswith(paths["questions"]) and name.endswith(".json"):
+            for record in json.loads(data):
+                _check(record["number"] not in bank, True, "IgakuQA119 unique task-bank identifiers")
+                bank[record["number"]] = name, record
+    resources = {}
+    for name, data in sorted(files.items()):
+        if name.startswith(paths["images"]):
+            qid = Path(name).stem.split("-", 1)[0]
+            _check(qid in bank, True, "IgakuQA119 original image-to-question association")
+            resources.setdefault(qid, []).append(dict(path=name, data=data,
+                media_type="image/png" if name.endswith(".png") else "image/jpeg", sha256=hashlib.sha256(data).hexdigest()))
+
+    native = {}
+    for name, data in sorted(files.items()):
+        if not name.startswith(paths["answers"]) or not name.endswith(".json"):
+            continue
+        document = json.loads(data)
+        for position, record in enumerate(document["results"]):
+            qid = record["question_number"]
+            _check(qid in bank and qid in gold, True, "IgakuQA119 native task/reference association")
+            _check(record["choices"], bank[qid][1]["choices"], "IgakuQA119 saved answer options")
+            _check(record["has_image"], bank[qid][1]["has_image"], "IgakuQA119 saved source image flag")
+            user = fragments[0] + record["question_text"] + fragments[1] + "\n".join(record["choices"]) + fragments[2]
+            content = dict(messages=[dict(role="system", content=system), dict(role="user", content=user)])
+            points = 3 if qid[3] in "BE" and 26 <= int(qid[4:]) <= 50 else 1
+            for answer_index, answer in enumerate(record["answers"]):
+                normalized = str(answer["answer"]).strip().lower()
+                reference = gold[qid].strip().lower()
+                for character in removed:
+                    normalized, reference = normalized.replace(character, ""), reference.replace(character, "")
+                normalized, reference = "".join(sorted(normalized)), "".join(sorted(reference))
+                correct = bool(normalized) and (normalized in accepted if qid == special_id else normalized == reference)
+                legacy = "".join(sorted(ch for ch in answer["answer"].lower() if ch in "abcde")) == "".join(sorted(ch for ch in gold[qid].lower() if ch in "abcde"))
+                native[name, position, answer_index] = dict(record=record, answer=answer, qid=qid,
+                    experiment=document["experiment_id"], bank_file=bank[qid][0], bank_record=bank[qid][1],
+                    content=content, reference=gold[qid], grade=float(correct), legacy_grade=float(legacy), points=points)
+    return native, resources, json.loads(files["leaderboard.json"])
+
+
+def _igakuqa119(directory, tables, metadata, source=None):
+    """Check all source associations, full outputs, grading changes and resource bytes."""
+    import hashlib
+
+    native, resources, leaderboard = _igakuqa119_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["model_identifier"]
+        _check(row.display_name, parameters["models"][model], "IgakuQA119 exact model alias")
+        _check(row.harness, parameters["subject_features"]["harness"], "IgakuQA119 source execution system")
+        _check(features, {key: value for key, value in dict(parameters["subject_features"], model_identifier=model).items() if key != "harness"}, "IgakuQA119 explicit unknown configuration")
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({entry["answer"]["model"]: 1 for entry in native.values()}), "IgakuQA119 all source subjects once")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    _check(len(items), len(tables["items"]), "IgakuQA119 unique canonical items")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "IgakuQA119 one full native trace per observation")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    seen, checked_items, used_assets, counts = Counter(), set(), set(), Counter()
+    protocol = metadata["grading"]["verifiers"]["answer_match"]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["answer_index"]
+        original = native[key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], answer_index=key[2],
+            experiment_id=original["experiment"], source_record=original["record"], bank_file=original["bank_file"],
+            bank_record=original["bank_record"], saved_question_text_missing=not bool(original["record"]["question_text"]),
+            image_delivery="not_recorded"), "IgakuQA119 complete native record and explicit input uncertainty")
+        _check(subjects[row.subject_id], original["answer"]["model"], "IgakuQA119 response-to-model association")
+        _check(row.response, original["grade"], "IgakuQA119 original grading including numeric and alternative answers")
+        _check(row.trial, 1, "IgakuQA119 formatting retries are not independent trials")
+        _check(row.test_condition, "experiment=" + original["experiment"], "IgakuQA119 exact experiment provenance")
+        _check(pd.isna(row.interactors), True, "IgakuQA119 no invented interactors")
+        item = items[row.item_id]
+        _check(item.raw_item_id, original["qid"], "IgakuQA119 response-to-question association")
+        _check(json.loads(item.content), original["content"], "IgakuQA119 complete saved source input without gold leakage or retrospective repairs")
+        _check(_features(item.item_features), dict(source_question_has_image=str(original["record"]["has_image"]).lower(),
+            exam_points=str(original["points"]), saved_question_text_missing=str(not original["record"]["question_text"]).lower(),
+            image_delivery="not_recorded", input_scope=parameters["presentation"]["input_scope"]), "IgakuQA119 source item features")
+        _check(json.loads(item.grading_criterion), dict(reference_answer=original["reference"], rule=metadata["grading"]["rule"] +
+            "\nAccepted alternatives for this question: " + json.dumps(protocol["accepted_alternatives"].get(original["qid"]))), "IgakuQA119 exact source grading reference")
+        verifier = json.loads(item.verifier)
+        _check(verifier["class"], "exact_matcher", "IgakuQA119 programmatic verifier identity")
+        _check(json.loads(verifier["spec"]), protocol, "IgakuQA119 pinned programmatic grader")
+        if row.item_id not in checked_items:
+            manifest = json.loads(item.asset_manifest) if isinstance(item.asset_manifest, str) else []
+            source_images = resources.get(original["qid"], [])
+            _check(len(manifest), len(source_images), "IgakuQA119 all source image resources")
+            for ordinal, (link, image) in enumerate(zip(manifest, source_images), start=1):
+                _check(link, dict(asset_id=image["sha256"], path=image["path"], media_type=image["media_type"],
+                    role="benchmark_resource", ordinal=ordinal), "IgakuQA119 ordered image resource association and role")
+                asset = assets[link["asset_id"]]
+                _check(hashlib.sha256(asset["data"]).hexdigest(), image["sha256"], "IgakuQA119 unmodified complete image bytes")
+                _check(asset["byte_size"], len(image["data"]), "IgakuQA119 image byte length")
+                used_assets.add(link["asset_id"])
+                counts["source_image_links"] += 1
+            checked_items.add(row.item_id)
+        counts["source_correct"] += int(original["grade"])
+        counts["source_weighted_correct_points"] += int(original["grade"]) * original["points"]
+        counts["source_possible_points"] += original["points"]
+        counts["source_no_image_correct"] += int(original["grade"]) * (not original["record"]["has_image"])
+        counts["source_image_questions"] += int(original["record"]["has_image"])
+        counts["source_missing_question_text"] += not bool(original["record"]["question_text"])
+        counts["corrected_legacy_grades"] += original["grade"] != original["legacy_grade"]
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "IgakuQA119 every released observation exactly once")
+    _check(checked_items, set(items), "IgakuQA119 no extra or missing task definitions")
+    _check(used_assets, set(assets), "IgakuQA119 no omitted or unreferenced source images")
+    published = leaderboard["Qwen2.5-72B"]
+    _check((counts["source_correct"], counts["source_weighted_correct_points"], counts["source_possible_points"], counts["source_no_image_correct"]),
+           (published["overall_correct"], published["overall_score"], published["overall_possible_score"], published["no_image_correct"]),
+           "IgakuQA119 agreement with independently released leaderboard")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), source_assets=len(assets), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11752,7 +11907,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
