@@ -1,0 +1,3 @@
+- Preserve all 165,144 released labels and complete explanations, including 40 repeated pair records. Restore the full author prompt with the original abstract and requirement text; no inference or new judging.
+- Labels 0/1/2 indicate relevance, not correctness. All seven matching human-test references are preserved with their individual votes; the other 243 human-test pairs have no matching model output in this matrix.
+- Use three pandas stages and pinned upstream inputs. Historical request logs and independent attempt identifiers are unavailable; trial numbers preserve source-occurrence order.

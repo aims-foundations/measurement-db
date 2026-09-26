@@ -8704,6 +8704,82 @@ def _disco(directory, tables, metadata, *, source=None):
         source_correct=sum(int(row["grade"]) for row in native.values()), source_assets=len(assets))
 
 
+def _doris_mae(directory, tables, metadata, *, source=None):
+    """Compare every Anno-GPT row to the released dataset and prompt protocol."""
+    import pickletools
+    settings = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    data = json.loads((raw / settings["paths"]["data"]).read_text()) if source is None else source
+    records = data["Annotation"]
+    documents = {record["abstract_id"]: record for record in data["Corpus"]}
+    _check(len(documents), len(data["Corpus"]), "DORIS-MAE unique abstract identities")
+    humans = {(str(row["aspect_id"]), row["abstract_id"]): row["human_annotation"] for row in data["Test_set"]}
+    _check(len(humans), len(data["Test_set"]), "DORIS-MAE unique human-test pairs")
+    # Read only pickle string literals; never execute the upstream pickle.
+    strings = [value for op, value, _ in pickletools.genops(
+        (raw / "protocol/gpt_annotation/prompt_config/prompt_config.pickle").read_bytes())
+        if op.name in {"UNICODE", "BINUNICODE", "SHORT_BINUNICODE", "BINUNICODE8"}]
+    prompt = strings[strings.index("initial") + 1]
+    _check(settings["prompt"]["template"], prompt, "DORIS-MAE complete author prompt")
+    _check(len(tables["responses"]), len(records), "DORIS-MAE every annotation occurrence")
+    _check(len(tables["traces"]), len(records), "DORIS-MAE every complete explanation")
+    _check(len(tables["subjects"]), 1, "DORIS-MAE released annotation model only")
+    subject = tables["subjects"].iloc[0]
+    _check(subject.display_name, "gpt-3.5-turbo-0301", "DORIS-MAE exact documented model snapshot")
+    _check(subject.harness, settings["subject"]["harness"], "DORIS-MAE annotation harness")
+    _check(_features(subject.subject_features_extra), settings["subject_features"], "DORIS-MAE reported harness settings")
+    scale = json.loads(tables["benchmarks"].iloc[0].response_scale)
+    _check(scale.get("direction"), None, "DORIS-MAE relevance is not a performance direction")
+    _check(scale["values"], [0, 1, 2], "DORIS-MAE ordinal relevance categories")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DORIS-MAE trace-response bijection")
+    trial, occurrences = {}, Counter()
+    for index, record in enumerate(records):
+        key = str(record["aspect_id"]), record["abstract_id"]
+        occurrences[key] += 1
+        trial[index] = occurrences[key]
+    _check(len(items), len(occurrences), "DORIS-MAE one input per aspect/abstract pair")
+    seen, used_items, matched_humans = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        position = trace["source_row"]
+        record = records[position]
+        aspect_id, abstract_id = str(record["aspect_id"]), record["abstract_id"]
+        votes = humans.get((aspect_id, abstract_id))
+        _check(trace, dict(source_file=settings["paths"]["data"], source_row=position, record=record,
+            human_annotation=votes), "DORIS-MAE complete native record and human votes")
+        _check(row.subject_id, subject.subject_id, "DORIS-MAE output-model association")
+        _check(row.response, float(record["score"]), "DORIS-MAE published relevance label unchanged")
+        _check(row.trial, trial[position], "DORIS-MAE repeated record ordering preserved")
+        _check(pd.isna(row.test_condition), True, "DORIS-MAE no invented trial conditions")
+        _check(pd.isna(row.interactors), True, "DORIS-MAE no invented interacting agent")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], aspect_id + "__" + str(abstract_id), "DORIS-MAE exact pair identity")
+        _check(item["content"], prompt.format(req=data["aspect_id2aspect"][aspect_id],
+            abstract=documents[abstract_id]["original_abstract"]), "DORIS-MAE original abstract and full instruction")
+        _check(_features(item["item_features"]), dict(input_scope=settings["input_scope"]["note"]), "DORIS-MAE honest input scope")
+        reference = None
+        if votes:
+            count = Counter(votes.values())
+            majority = [value for value, n in count.items() if n >= 2]
+            reference = str(majority[0]) if majority else None
+            matched_humans.add((aspect_id, abstract_id))
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=reference, rule=metadata["grading"]["rule"]),
+            "DORIS-MAE supplementary human reference without invented tie breaking")
+        _check(json.loads(item["verifier"]), dict(**{"class": "exact_matcher"},
+            spec=json.dumps(metadata["grading"]["verifiers"]["released"], sort_keys=True)), "DORIS-MAE published grading provenance")
+        seen[position] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({position: 1 for position in range(len(records))}), "DORIS-MAE complete record bijection")
+    _check(used_items, set(items), "DORIS-MAE all and only annotated inputs")
+    labels = Counter(record["score"] for record in records)
+    return dict(source_responses=len(records), source_items=len(occurrences), source_subjects=1,
+        source_repeated_pair_records=len(records) - len(occurrences), source_corpus_abstracts=len(documents),
+        source_human_test_pairs=len(humans), source_matching_human_pairs=len(matched_humans),
+        **{"source_label_" + str(label): n for label, n in labels.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8724,4 +8800,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco, "doris_mae": _doris_mae}[directory.name](directory, tables, metadata)

@@ -832,3 +832,4 @@ SOURCE_AUDITS["decodingtrust"] = verify_native_results
 
 SOURCE_AUDITS["dqvis"] = verify_native_results
 SOURCE_AUDITS["disco"] = verify_native_results
+SOURCE_AUDITS["doris_mae"] = verify_native_results
