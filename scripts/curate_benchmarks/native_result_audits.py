@@ -8478,6 +8478,93 @@ def _decodingtrust(directory, tables, metadata, source_records=None):
                 **{"source_" + key: value for key, value in counts.items()})
 
 
+def _dqvis(directory, tables, metadata):
+    """Reconcile every expert review with the native export and corpus row."""
+    import pyarrow as pa
+    import pyarrow.parquet as pq
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    raw = directory / "raw"
+    settings = metadata["build"]["parameters"]
+    paths = settings["paths"]
+    native = json.loads((raw / paths["reviews"]).read_text())
+    schemas = {row["udi:name"]: row for row in json.loads((raw / paths["schemas"]).read_text())}
+    _check(len({(row["reviewer"], row["id"]) for row in native}), len(native), "DQVis unique reviewer-local IDs")
+    columns = ["query_template", "constraints", "spec_template", "query_type", "creation_method", "query_base",
+               "spec", "solution", "dataset_schema", "query", "expertise", "formality"]
+    positions = {row["original_id"] for row in native}
+    corpus, offset = {}, 0
+    for path in sorted((raw / paths["corpus"]).glob("*.parquet")):
+        count = pq.read_metadata(path).num_rows
+        selected = sorted(position for position in positions if offset <= position < offset + count)
+        if selected:
+            data = pq.read_table(path, columns=columns).take(pa.array([position - offset for position in selected]))
+            corpus.update(zip(selected, data.to_pylist(), strict=True))
+        offset += count
+    _check(set(corpus), positions, "DQVis every original corpus row located")
+    for row in native:
+        for name in columns:
+            original, reviewed = corpus[row["original_id"]][name], row[name]
+            if name in {"constraints", "solution"}:
+                original = json.loads(original) if isinstance(original, str) else original
+                reviewed = json.loads(reviewed) if isinstance(reviewed, str) else reviewed
+            _check(reviewed, original, "DQVis exact corpus association: " + name)
+
+    _check(len(tables["responses"]), len(native), "DQVis every native review retained")
+    _check(len(tables["traces"]), len(native), "DQVis every review has a complete trace")
+    _check(len(tables["subjects"]), 1, "DQVis single documented generation pipeline")
+    subject = tables["subjects"].iloc[0]
+    _check(subject.display_name, "gpt-4o", "DQVis published model label")
+    expected_features = dict(settings["subject_features"])
+    _check(subject.harness, expected_features.pop("harness"), "DQVis pipeline is not a bare-model evaluation")
+    _check(_features(subject.subject_features_extra), expected_features, "DQVis documented and unavailable inference settings")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "DQVis ordinal scale and meanings")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    definitions = {(row["query_base"], row["dataset_schema"], row["reviewer"]) for row in native}
+    _check(len(items), len(definitions), "DQVis each input and reviewer protocol once")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DQVis trace-response bijection")
+    seen, used_items = Counter(), set()
+    grading = metadata["grading"]["verifiers"]["human"]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        position = trace["source_row"]
+        original = native[position]
+        _check(trace, dict(source_file=paths["reviews"], source_row=position, record=original),
+            "DQVis complete output, comments, issue categories and reviewer identity")
+        _check(row.subject_id, subject.subject_id, "DQVis result-pipeline association")
+        _check(row.response, float({"bad": 0, "improve": 1, "good": 2}[original["review_status"]]),
+            "DQVis individual ordinal rating without averaging or binarization")
+        _check(row.trial, 1, "DQVis individual recorded judgment, not an invented model rerun")
+        _check(json.loads(row.test_condition), dict(data_id=original["data_id"], reviewer=original["reviewer"],
+            review_id=original["id"], observation_unit="human_rating"), "DQVis exact reviewed output and rating key")
+        _check(pd.isna(row.interactors), True, "DQVis no invented interacting agent")
+        item = items[row.item_id]
+        _check(json.loads(item["content"]), dict(query_base=original["query_base"],
+            dataset_schema=schemas[original["dataset_schema"]]), "DQVis complete generation input, not the generated query")
+        _check(_features(item["item_features"]), dict(dataset_schema=original["dataset_schema"],
+            input_scope=settings["options"]["input_scope"]), "DQVis honest input scope")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=metadata["grading"]["rule"]),
+            "DQVis human rating has no invented gold answer")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "judge", "DQVis human judge class")
+        _check(verifier["judged_by"], "human", "DQVis human rather than automated judging")
+        _check(verifier["judge"], "DQVis anonymous reviewer " + original["reviewer"], "DQVis correct reviewer protocol")
+        _check(json.loads(verifier["spec"]), dict(protocol=grading["protocol"], source=grading["source"],
+            reviewer=original["reviewer"]), "DQVis complete grading provenance")
+        seen[position] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({index: 1 for index in range(len(native))}), "DQVis every individual review exactly once")
+    _check(used_items, set(items), "DQVis no extra unused items")
+    counts = Counter(row["review_status"] for row in native)
+    return dict(source_responses=len(native), source_subjects=1, source_items=len(definitions),
+        source_reviewed_triplets=len({row["data_id"] for row in native}),
+        source_generation_inputs=len({(row["query_base"], row["dataset_schema"]) for row in native}),
+        source_reviewers=len({row["reviewer"] for row in native}),
+        source_corpus_rows=offset, **{"source_" + key + "_ratings": value for key, value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8498,4 +8585,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis}[directory.name](directory, tables, metadata)

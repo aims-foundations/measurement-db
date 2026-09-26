@@ -1,0 +1,97 @@
+benchmark:
+  name: DQVis expert-reviewed generations
+  description: Published expert judgments of generated natural-language queries and associated biomedical visualization
+    specifications.
+  testing_condition: 'Preserve each recorded human judgment independently: bad=0, improve=1, good=2. These are ordered
+    categories, not equally spaced probabilities. Reviewers evaluate whether the generated question and visualization
+    are reasonable together, not the quality of the underlying biomedical data. Repeated reviews refer to the same
+    saved generated triplet and are not new model executions. The curated measurement scope is the complete 357-review
+    release, rather than unreviewed synthetic training examples. Every review preserves its original output, comments,
+    issue categories and anonymous reviewer. Formality and expertise are generated-output annotations; they are
+    not treated as independently assigned requests. Inputs retain the base query and full supplied schema, while
+    missing historical prompt/API details remain explicit. The captured generation code removes overlap metadata
+    from schemas before prompting. The full released schema is retained here as input context, without claiming
+    a byte-identical historical API request.'
+  paper_url: https://openreview.net/forum?id=AnJaRzEZZs
+  data_source_url: https://huggingface.co/datasets/HIDIVE/DQVis
+  subject_type: agent
+  item_type: task
+  license: MIT, as declared by the pinned Hugging Face dataset card.
+  citation: 'Lange, Sui, Gao, Zitnik and Gehlenborg (2025). DQVis Dataset: Natural Language to Biomedical Visualization.
+    NeurIPS Datasets and Benchmarks.'
+  tags:
+  - visualization
+  - biomedical
+  - human_evaluation
+  - paraphrasing
+  modality:
+  - text
+  domain:
+  - medicine
+  - science
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    - 2
+    direction: higher_is_better
+    meanings:
+      '0': 'Bad: significant issue with the query/visualization pair.'
+      '1': 'Improve: the visualization answers the question but could be improved.'
+      '2': 'Good: the query and visualization are reasonable together.'
+  categorical: true
+  release_date: null
+  multi_single_turn: single_turn
+  version: b15671d90e512f2a7706dd9d752db48696229826
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      reviews: dataset/reviews.json
+      schemas: dataset/dataset_schema_list.json
+      corpus: dataset/dqvis
+    subject_features:
+      harness: DQVis template expansion and GPT-4o paraphrasing pipeline
+      reported_model: gpt-4o
+      provider_deployment: Azure OpenAI gpt-4o (published code)
+      exact_model_snapshot: not released
+      inference_settings: not logged with the reviewed records
+    options:
+      raw_label: gpt-4o
+      input_scope: released_base_query_and_full_schema_api_envelope_unrecorded
+sources:
+  upstream:
+  - name: dataset
+    url: https://huggingface.co/datasets/HIDIVE/DQVis
+    revision: b15671d90e512f2a7706dd9d752db48696229826
+    files:
+    - match: .+
+      path: dataset/{path}
+  - name: generation
+    url: https://github.com/hms-dbmi/DQVis-Generation
+    revision: 95f77b5817c4c56772a2d3de74bd16bce9795fee
+    files:
+    - match: (?:README\.md|LICENSE|paraphraser\.py|export_sqlite\.py|main\.py|requirements\.txt)
+      path: generation/{path}
+  - name: review
+    url: https://github.com/hms-dbmi/DQVis-review
+    revision: ca1e956dc007cacc97b71a50e45d4c3146476c09
+    files:
+    - match: (?:README\.md|LICENSE|package\.json|docs/review_instructions\.md|src-electron/electron-main\.ts|src/.*\.vue)
+      path: review/{path}
+grading:
+  rule: 'Preserve each recorded human judgment independently: bad=0, improve=1, good=2. These are ordered categories,
+    not equally spaced probabilities. Reviewers evaluate whether the generated question and visualization are reasonable
+    together, not the quality of the underlying biomedical data. Repeated reviews refer to the same saved generated
+    triplet and are not new model executions.'
+  verifiers:
+    human:
+      labels:
+        bad: 0
+        improve: 1
+        good: 2
+      protocol: Recorded DQVis expert assessment of the generated query and rendered visualization. Preserve the
+        individual rating; do not regrade or average reviewers.
+      source: https://github.com/hms-dbmi/DQVis-review/blob/ca1e956dc007cacc97b71a50e45d4c3146476c09/docs/review_instructions.md

@@ -829,3 +829,5 @@ SOURCE_AUDITS["data_juicer2"] = verify_native_results
 SOURCE_AUDITS["dbpa"] = verify_native_results
 
 SOURCE_AUDITS["decodingtrust"] = verify_native_results
+
+SOURCE_AUDITS["dqvis"] = verify_native_results

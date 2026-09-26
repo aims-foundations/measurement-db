@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 357
+    logical_sha256: 1c7c43bbf8baa9d597509d4bb0f79f6ce68204782293de292e7aa40f86d3c536
+  subjects:
+    rows: 1
+    logical_sha256: c6bdcc8a91fd20ad998a0a218039478d7c150c0bd6201ed711ea22f7d48a7c22
+  responses:
+    rows: 357
+    logical_sha256: 92e0a9a02b7028ff432f27883c173ce0f878953add746aa926c160ada45299f1
+  items:
+    rows: 356
+    logical_sha256: 401804460f6dd3174d72132aad83f860f145c5cc19539d401b0da6a8fcee4297
+  benchmarks:
+    rows: 1
+    logical_sha256: 3644cae2e5793bffc4388b721fc86c2c482e95600c9297a0f30bc220ecd94cd1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 357
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 356
+  source_reviewed_triplets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 274
+  source_generation_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 271
+  source_reviewers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 5
+  source_corpus_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 1075190
+  source_good_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 271
+  source_improve_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 59
+  source_bad_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HIDIVE/DQVis/blob/b15671d90e512f2a7706dd9d752db48696229826/reviews.json
+    locator: All reviews, source corpus positions and the released schema list.
+    scope: Individual human ratings of saved pipeline outputs. Reviewer-local IDs are combined with the reviewer,
+      and every reviewed triplet matches the original corpus across twelve shared fields.
+    expected: 27
