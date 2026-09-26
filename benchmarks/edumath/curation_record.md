@@ -1,0 +1,3 @@
+- **Source:** Pinned author CSV contains 8,360 generations from 11 models, with both native quality labels and full judge reasoning. The shared downloader restores the captured inputs.
+- **Transformation:** Five table stages separate 38 generation conditions from generated outputs, retain 16,720 judgments as repeated trials, and preserve each complete CSV row in traces. The LLM judge and classifier use opposite label directions, declared separately.
+- **Limitations:** Per-row few-shot prompts, exact historical model revisions and raw classifier logits are unavailable. No generation or judging is rerun. The previous item/output conflation and classifier interpretation are corrected; original numerical labels remain unchanged.

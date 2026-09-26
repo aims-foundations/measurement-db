@@ -836,3 +836,4 @@ SOURCE_AUDITS["doris_mae"] = verify_native_results
 SOURCE_AUDITS["dtap_bench"] = verify_native_results
 SOURCE_AUDITS["dpai"] = verify_native_results
 SOURCE_AUDITS["devbench"] = verify_native_results
+SOURCE_AUDITS["edumath"] = verify_native_results

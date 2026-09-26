@@ -9144,6 +9144,91 @@ def _devbench(directory, tables, metadata, *, source=None):
         source_pending_winoground_responses=source["pending_winoground"])
 
 
+def _edumath_source_records(directory):
+    """Read original CSV strings independently of the pandas transformation."""
+    import csv
+
+    with (directory / "raw/release/data/all_model_samples.csv").open(newline="") as stream:
+        return list(csv.DictReader(stream))
+
+
+def _edumath(directory, tables, metadata, *, source=None):
+    """Check each generation, its two native labels and the opposite score meanings."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _edumath_source_records(directory) if source is None else source
+    conditions = ("grade", "standard", "substandard", "math_topic")
+    inputs, expected, trials = {}, {}, Counter()
+    for index, native in enumerate(source):
+        condition = tuple(native[name] for name in conditions)
+        inputs.setdefault(condition, index)
+        # The released LLM parser uses the first Yes./No. token; the classifier's
+        # published training mapping explicitly reverses that quality direction.
+        answer = native["model_reasoning"]
+        yes, no = answer.find("Yes."), answer.find("No.")
+        _check(yes >= 0 or no >= 0, True, "EDUMATH released LLM verdict is present")
+        _check(int(native["model_labels"]), int(yes >= 0 and (no < 0 or yes < no)),
+            "EDUMATH native LLM verdict and recorded label agree")
+        for judge, column in (("llm", "model_labels"), ("classifier", "classifier_labels")):
+            _check(native[column] in {"0", "1"}, True, "EDUMATH native binary label")
+            key = native["model"], condition, judge
+            trials[key] += 1
+            expected[index, column] = native, condition, judge, trials[key]
+    _check(len(tables["responses"]), len(expected), "EDUMATH both labels for every generation")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(tables["traces"]), len(expected), "EDUMATH complete traces for both judgments")
+    _check(set(traces), set(tables["responses"].response_id), "EDUMATH trace-response bijection")
+    _check({row["display_name"] for row in subjects.values()}, {row["model"] for row in source},
+        "EDUMATH original generator labels")
+    settings = metadata["build"]["parameters"]
+    seen, used_items = Counter(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_row"], trace["label_column"]
+        native, condition, judge, trial = expected[key]
+        _check(trace, dict(source_row=key[0], label_column=key[1], native_record=native,
+            source_file="release/data/all_model_samples.csv"), "EDUMATH full unmodified CSV record and coordinates")
+        _check(row.response, float(native[key[1]]), "EDUMATH unchanged native numeric grade")
+        _check(row.trial, trial, "EDUMATH repeated generation order within subject and condition")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, "EDUMATH no invented condition or agent")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], native["model"], "EDUMATH correct generator association")
+        features = dict(settings["subject_features"])
+        _check(subject["harness"], features.pop("harness"), "EDUMATH harness")
+        _check(_features(subject["subject_features_extra"]), features, "EDUMATH honest configuration scope")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], str(inputs[condition]) + "/" + judge, "EDUMATH original condition position")
+        if row.item_id not in used_items:
+            prompt = ("Generate a mathematical word problem and its solution for the following educational conditions."
+                "\n\nGrade: " + native["grade"] + "\n\nStandard: " + native["standard"] + "\n\nSubstandard: "
+                + native["substandard"] + "\n\nMathematical topics:\n" + native["math_topic"])
+            _check(item["content"], prompt, "EDUMATH generation conditions contain no generated solution")
+            protocol = metadata["grading"]["verifiers"][judge]
+            scale = json.loads(canonical_response_scale(protocol["criterion"]["response_scale"]))
+            _check(scale["direction"], "higher_is_better" if judge == "llm" else "lower_is_better",
+                "EDUMATH opposite documented grade directions")
+            _check(scale["values"], [0., 1.], "EDUMATH two original label codes")
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=None,
+                rule=protocol["criterion"]["rule"], response_scale=scale), "EDUMATH rule and scale without fabricated gold solution")
+            _check(json.loads(item["verifier"]), dict(**{"class": "judge" if judge == "llm" else "exact_matcher"},
+                spec=json.dumps(protocol["implementation"], sort_keys=True)), "EDUMATH documented grading instrument")
+            _check(_features(item["item_features"]), dict(grading_protocol=judge,
+                input_scope=settings["input_scope"]["description"]), "EDUMATH available input scope")
+            used_items.add(row.item_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in expected}), "EDUMATH complete source-row and judge bijection")
+    _check(used_items, set(items), "EDUMATH only observed generation conditions")
+    _check(len(items), 2 * len(inputs), "EDUMATH two grading protocols per condition")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), {"kind": "mixed"},
+        "EDUMATH declared per-item score interpretation")
+    return dict(source_generations=len(source), source_responses=len(expected), source_subjects=len(subjects),
+        source_conditions=len(inputs), source_items=len(items),
+        source_llm_high_quality=sum(int(row["model_labels"]) for row in source),
+        source_classifier_high_quality=sum(row["classifier_labels"] == "0" for row in source))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9155,6 +9240,7 @@ def verify_native_results(directory, tables_directory=None):
             "scigym": _scigym, "advprompter": _advprompter,
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
+            "edumath": _edumath,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
