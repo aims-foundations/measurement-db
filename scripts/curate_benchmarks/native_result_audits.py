@@ -9368,6 +9368,97 @@ def _eduguard(directory, tables, metadata, *, source=None):
         source_partial_credit=sum(value["grade"] == 0.5 for key, value in expected.items() if key[2] == "sata_fidelity"))
 
 
+def _egoschema_source_records(directory, metadata):
+    """Decode the native archives and official labels without builder transforms."""
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    labels = json.loads((raw / layout["gold"]).read_text())
+    questions = {row["q_uid"]: row for row in json.loads((raw / "reference/questions.json").read_text())}
+    native, demonstrations = {}, {"none": []}
+    with ZipFile(raw / layout["results"]) as output, ZipFile(raw / layout["inputs"]) as data:
+        examples = json.loads(data.read(layout["examples"]))
+        for mode, archive, name in [("captions", data, layout["example_captions"]),
+                ("summary", output, layout["example_summaries"])]:
+            descriptions = json.loads(archive.read(name))
+            demonstrations[mode] = []
+            for uid, record in examples.items():
+                _check(record["truth"], labels[uid], "EgoSchema demonstration answer agrees with official reference")
+                narration = descriptions[uid]
+                if isinstance(narration, list):
+                    narration = ". ".join(narration)
+                demonstrations[mode].append(dict(uid=uid, **record, narration=narration))
+        for name in sorted(metadata["build"]["parameters"]["configurations"]):
+            bundle = json.loads(output.read(layout["result_prefix"] + name))
+            _check(set(bundle["data"]), set(labels), "EgoSchema exact public-subset coverage")
+            for uid, record in bundle["data"].items():
+                _check((record["uid"], record["truth"]), (uid, labels[uid]), "EgoSchema native question ID and official gold")
+                _check(record["pred"] in [-1, 0, 1, 2, 3, 4], True, "EgoSchema recorded option or unparsed sentinel")
+                _check(record["question"], questions[uid]["question"], "EgoSchema official question text")
+                for index, letter in enumerate("ABCDE"):
+                    _check(record["option" + letter], questions[uid]["option " + str(index)], "EgoSchema original option order")
+                native[name, uid] = record
+            correct = sum(row["pred"] == row["truth"] for row in bundle["data"].values())
+            valid = sum(row["pred"] != -1 for row in bundle["data"].values())
+            _check((bundle["num_total"], bundle["num_valids"], bundle["num_corrects"], bundle["acc"]),
+                (len(labels), valid, correct, correct / len(labels)), "EgoSchema released summaries use original zero-credit rule")
+    _check((len(native), len(labels), len(examples)), (5500, 500, 6), "EgoSchema published scope")
+    return native, demonstrations
+
+
+def _egoschema(directory, tables, metadata, source=None):
+    """Check every input, final choice, model configuration and complete output."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, demonstrations = source if source is not None else _egoschema_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(tables["traces"]), len(native), "EgoSchema one complete native trace per answer")
+    _check(set(traces), set(tables["responses"].response_id), "EgoSchema trace-response bijection")
+    _check(Counter(_features(row["subject_features_extra"])["configuration"] for row in subjects.values()),
+        Counter({key: 1 for key in parameters["configurations"]}), "EgoSchema eleven distinct configurations")
+    seen, used_items, unique_inputs = Counter(), set(), set()
+    overlap = 0
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["uid"]
+        record = native[key]
+        _check(trace, dict(source_file=key[0], uid=key[1], native_record=record), "EgoSchema complete native record, including caption and raw response")
+        _check(row.response, float(record["pred"] == record["truth"]), "EgoSchema final recorded choice equality")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "EgoSchema one released attempt without invented runtime metadata")
+        configuration = parameters[parameters["configurations"][key[0]]]
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], configuration["raw_label"], "EgoSchema source-file model identity")
+        _check(subject["harness"], "LLoVi", "EgoSchema recorded harness")
+        _check(_features(subject["subject_features_extra"]), dict(configuration=key[0],
+            model_identifier=configuration["model"], captioner=configuration["captioner"],
+            configuration_scope=parameters["subject_scope"]["description"]), "EgoSchema prompt/caption variants remain distinct")
+        expected = {field: record[field] for field in ["duration", "narration", "question", "optionA", "optionB", "optionC", "optionD", "optionE", "prompt_template"]}
+        expected["demonstration_records"] = demonstrations[configuration["demonstrations"]]
+        overlap += any(demo["uid"] == key[1] for demo in expected["demonstration_records"])
+        item = items[row.item_id]
+        _check(item["raw_item_id"], key[1], "EgoSchema original question key")
+        _check(json.loads(item["content"]), expected, "EgoSchema full input fields and demonstrations without target output")
+        unique_inputs.add(json.dumps(expected, sort_keys=True))
+        if row.item_id not in used_items:
+            _check(_features(item["item_features"]), dict(input_scope=parameters["input_scope"]["description"]), "EgoSchema explicit caption-stage scope")
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=str(record["truth"]), rule=metadata["grading"]["rule"]), "EgoSchema original target gold and scoring rule")
+            _check(json.loads(item["verifier"]), {"class": "exact_matcher", "spec": json.dumps(metadata["grading"]["verifiers"]["choice"], sort_keys=True)}, "EgoSchema historical scorer provenance")
+            used_items.add(row.item_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "EgoSchema every native model-question record exactly once")
+    _check(used_items, set(items), "EgoSchema no unused input records")
+    _check(len(items), len(unique_inputs), "EgoSchema distinct complete inputs")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "EgoSchema inherited binary scale")
+    _check(overlap, 12, "EgoSchema preserve and disclose six overlapping demonstrations in both few-shot runs")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), source_questions=500,
+        source_correct=sum(record["pred"] == record["truth"] for record in native.values()),
+        source_unparsed=sum(record["pred"] == -1 for record in native.values()), source_demonstration_overlap=overlap)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9380,7 +9471,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard,
+            "eduguardbench": _eduguard, "egoschema": _egoschema,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

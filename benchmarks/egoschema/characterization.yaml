@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5500
+    logical_sha256: 7a0634fda5b537dfaabd5cfd6d1d614d68bcbd460e49b61faa906479dce0a6bf
+  subjects:
+    rows: 11
+    logical_sha256: ea5629c01234f52ead81b4430c0dbcdf3787be41d73f6e87beb36c5b3fb227dc
+  responses:
+    rows: 5500
+    logical_sha256: 8ae6229f33b0bd097b7cf46fb8b1c75d381eb1909e90a1d47f43d9bb4a92209f
+  items:
+    rows: 4500
+    logical_sha256: 1449cce34982ba9102756190fac83a8ff57747fb460c4258eb2cf6fd84f74e1a
+  benchmarks:
+    rows: 1
+    logical_sha256: 2eb30e03f61cee6f907498846aa644c0dc88185b81cf4590649aa3957090f878
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 5500
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 4500
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 500
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 3093
+  source_unparsed:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 34
+  source_demonstration_overlap:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/file/d/1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_/view
+    locator: Eleven output/egoschema result JSON files; original initial-release scorer and official public reference
+      labels.
+    scope: Published LLoVi QA-stage records. Distinct input representations are separate items; 500 underlying questions.
+      Preserve unparsed choices and few-shot overlaps.
+    expected: 12
