@@ -13023,6 +13023,162 @@ def _kris(directory, tables, metadata, source=None):
         **{"source_"+key:value for key,value in counts.items()})
 
 
+def _lambda_source_records(directory, metadata):
+    """Independently read CSV records and task/output filenames; no builder import."""
+    import csv
+    import io
+    import re
+    import unicodedata
+    import zipfile
+    from collections import defaultdict
+
+    parameters = metadata["build"]["parameters"]
+    native, definitions, counts, tasks = {}, {}, Counter(), defaultdict(list)
+    root = parameters["paths"]["prefix"]
+    with zipfile.ZipFile(directory / "raw" / parameters["paths"]["archive"]) as archive:
+        names = set(archive.namelist())
+        for kind, filename in parameters["task_files"].items():
+            with archive.open(root + filename) as stream:
+                records = list(csv.DictReader(io.TextIOWrapper(stream), restval=""))
+            for record in records:
+                if kind == "codegen":
+                    hw = record["Filename"].split("/")[-2]
+                    task = hw + "/q" + record["Question"].split(":")[0].removeprefix("Question ")
+                    task_file = "benchmarks/CodeGen/" + hw + ".txt"
+                elif kind == "explain":
+                    task = f"q{int(record['index']):02d}"
+                    task_file = "benchmarks/Explain/" + task + ".txt"
+                else:
+                    task = record["Filename"].removesuffix(".ml")
+                    category = "Syntax" if kind == "repair_syntax" else "Type"
+                    task_file = f"benchmarks/Repair/{category} Error/" + record["Filename"]
+                tasks[kind, task].append((task_file, filename, record))
+
+        outputs = {}
+        for name in names:
+            relative = name.removeprefix(root)
+            match = re.fullmatch(r"benchmarks/(ExplainOutput/q\d+|RepairOutput/Fixed (?:Type|Syntax) Error)/(.+)_(q\d+|hw\d+_buggy_code_\d+)_answer_(\d+)\.(txt|ml)", relative)
+            if not match:
+                continue
+            directory_name, model, task, attempt, suffix = match.groups()
+            if model not in parameters["model_aliases"]:
+                continue
+            kind = ("explain" if directory_name.startswith("ExplainOutput") else
+                    "repair_type" if "Type" in directory_name else "repair_syntax")
+            key = kind, parameters["model_aliases"][model], task, int(attempt)
+            _check(key not in outputs, True, "Lambda unique output model/task/attempt")
+            outputs[key] = relative
+        occurrences = Counter()
+        for kind, filename in parameters["result_files"].items():
+            with archive.open(root + filename) as stream:
+                records = list(csv.DictReader(io.TextIOWrapper(stream), restval=""))
+            for position, record in enumerate(records):
+                label = record["Model"] if "Model" in record else record["model"]
+                subject = parameters["model_aliases"][label]
+                _check(re.sub(r"[- ]", "", subject).lower(), re.sub(r"[- ]", "", label).lower(), "Lambda aliases change only punctuation/case")
+                if kind == "codegen":
+                    task = record["hw"] + "/" + record["question"]
+                    occurrences[subject, task] += 1
+                    trial, attempt_identity = occurrences[subject, task], "not_recorded"
+                else:
+                    task = (f"q{int(record['index']):02d}" if kind == "explain" else
+                            record["Filename"].replace("_", "_buggy_code_", 1))
+                    trial = int(record["attempt"] if kind == "explain" else record["Attempt"])
+                    attempt_identity = "source_attempt"
+                task_rows = tasks[kind, task]
+                _check(bool(task_rows), True, "Lambda native task definition is present")
+                _check(len({row[:2] for row in task_rows}), 1, "Lambda source task maps to one input file")
+                task_file, task_meta_file, first = task_rows[0]
+                task_record = [row[2] for row in task_rows] if kind in {"codegen", "repair_syntax"} else first
+                if kind in {"explain", "repair_type"}:
+                    _check(len(task_rows), 1, "Lambda unique reference/diagnostic mapping")
+                text = archive.read(root + task_file).decode("utf-8")
+                if kind == "repair_type":
+                    text = "**Error Type in the following code: **Type Error\n***compiler error message(IGNORE position info)**\n" + first["Message"] + "\n**Buggy Code to be fixed**\n" + text
+                elif kind == "repair_syntax":
+                    text = "**Error Type in the following code: **Syntax Error\n**Buggy Code to be fixed**\n" + text
+                if kind == "explain":
+                    _check((record["exam"], record["index"]), (first["question"], first["index"]), "Lambda exact exam/index association")
+                if kind == "repair_syntax":
+                    grade = {"True":1.0, "False":0.0}[record["Fixed"]]
+                    counts["syntax_true_with_recorded_error"] += int(grade == 1 and record["Error Type"] != "None")
+                else:
+                    category = record["performance"] if kind == "explain" else record["Rating"]
+                    grade = float(["Non-gradable", "Beginning", "Developing", "Proficient", "Mastery"].index(category))
+                item = kind + "/" + task
+                criterion = dict(reference_answer=None, rule=metadata["grading"]["verifiers"][kind]["rule"].format(source_task=task),
+                    response_scale=metadata["grading"]["verifiers"][kind]["response_scale"])
+                if kind == "explain" and first["solution(if applicable)"]:
+                    criterion["reference_answer"] = first["solution(if applicable)"]
+                content = text
+                definition = dict(content=content, criterion=criterion, kind=kind, task=task)
+                _check(definitions.setdefault(item, definition), definition, "Lambda stable grading-specific task")
+                output_file = outputs.get((kind, subject, task, trial)) if kind != "codegen" else None
+                output = archive.read(root + output_file).decode("utf-8") if output_file else None
+                trace = dict(source_file=filename, source_row=position, source_record=record,
+                    task_file=task_file, task_metadata_file=task_meta_file, task_record=task_record,
+                    output_file=output_file, output=output, attempt_identity=attempt_identity)
+                native[filename, position] = dict(subject=subject, item=item, grade=grade, trial=trial,
+                    trace=trace, condition="subtask=" + kind)
+                counts[kind+"_records"] += 1
+                counts["associated_outputs"] += int(output is not None)
+                counts["missing_attempt_ids"] += int(attempt_identity == "not_recorded")
+
+        # The purported logical results are an exact copy of the syntax export.
+        logical = archive.read(root + "results/RepairResults/logical_error_results.csv")
+        _check(logical, archive.read(root + "results/RepairResults/syntax_error_results.csv"), "Lambda copied logical table retained only in raw")
+        logical_rows = list(csv.DictReader(io.StringIO(logical.decode())))
+        for row in logical_rows:
+            name = "benchmarks/Repair/Logical Error/" + row["Filename"].replace("_", "_buggy_code_", 1) + ".ml"
+            _check(root + name in names, False, "Lambda copied result has no logical-task match")
+        counts["excluded_copied_logical_records"] = len(logical_rows)
+    _check((len(native), len(definitions), len({row["subject"] for row in native.values()})), (6798, 152, 9), "Lambda complete supported export coverage")
+    return native, definitions, counts
+
+
+def _lambda_fp_course(directory, tables, metadata, source=None):
+    native, definitions, counts = _lambda_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        subject = features["source_model_label"]
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=subject), "Lambda source-supported inference attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + subject, "Lambda original model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "Lambda recorded harness")
+        for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "Lambda unrecorded setting remains unknown: " + field)
+        subjects[row.subject_id] = subject
+    _check(Counter(subjects.values()), Counter({row["subject"]:1 for row in native.values()}), "Lambda all model configurations")
+    for row in tables["items"].itertuples():
+        original = definitions[row.raw_item_id]
+        _check(row.content, original["content"], "Lambda complete original task/diagnostic")
+        _check(json.loads(row.grading_criterion), original["criterion"], "Lambda recorded reference, rubric and scale")
+        _check(_features(row.item_features), dict(subtask=original["kind"], source_task=original["task"], input_scope=parameters["labels"]["input_scope"]), "Lambda no outcome leakage into item attributes")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("judge", metadata["grading"]["verifiers"][original["kind"]]), "Lambda reported grader identity")
+        _check(pd.isna(row.asset_manifest), True, "Lambda no invented assets")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), "Lambda all grading-specific tasks")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "Lambda one complete trace per response")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, original["trace"], "Lambda original record, task association, full output and attempt status")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["subject"], original["item"]), "Lambda exact model and task association")
+        _check((row.response, row.trial, row.test_condition), (original["grade"], original["trial"], original["condition"]), "Lambda original grade, attempt and condition")
+        _check(pd.isna(row.interactors), True, "Lambda no invented interactor")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "Lambda every supported record exactly once")
+    _check(len(tables.get("assets", [])), 0, "Lambda no unassociated asset records")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        **{"source_"+key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13037,6 +13193,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
+            "lambda_fp_course": _lambda_fp_course,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

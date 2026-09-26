@@ -1,0 +1,183 @@
+benchmark:
+  name: Functional Programming Course LLM Evaluation
+  description: Released OCaml course code-generation, program-repair and conceptual-question assessments.
+  testing_condition: Nine released model labels, with API defaults reported in the paper and numeric inference settings
+    unrecorded. Import every CodeGen, Explain, syntax-repair and type-repair result row without inferring missing
+    assessments. CodeGen trials enumerate source-record occurrences because the original writer discarded attempt
+    IDs; generated code cannot be uniquely attached. Other native attempt IDs are preserved and saved outputs are
+    joined by explicit model/task/attempt names when available. Item content preserves source task files, plus the
+    original type-error diagnostic for type repair. Historical system-message versions are not established. CodeGen
+    question IDs remain separate grading units even though the stimulus is shared. The logical-repair CSV is identical
+    to the syntax CSV and none of its IDs match logical tasks; it remains in raw but is excluded from observations.
+    Syntax Fixed flags and published ordinal ratings are source-reported assessments, not independently verified
+    correctness. Aggregate tables and unassociated outputs, including o1 excluded by the authors, remain in raw
+    and are not fabricated into graded responses.
+  paper_url: https://arxiv.org/abs/2603.05646
+  data_source_url: https://github.com/jaylene-zhang/ArtifactProgramming2025
+  subject_type: model
+  item_type: task
+  license: MIT (Zenodo artifact declaration)
+  citation: 'Zhang, Pientka and Si. Evaluating LLMs in the Context of a Functional Programming Course: A Comprehensive
+    Study (2026).'
+  tags:
+  - ocaml
+  - functional_programming
+  - code_generation
+  - program_repair
+  - education
+  modality:
+  - text
+  domain:
+  - education
+  - software_engineering
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: '2026-02-03'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.zip
+      prefix: ArtifactProgramming2025-91c0ac534b86164cae782e5a83f668ce76ba4032/
+    result_files:
+      codegen: results/CodeGenResults/raw_results.csv
+      explain: results/ExplainResults/Explain_raw.csv
+      repair_syntax: results/RepairResults/syntax_error_results.csv
+      repair_type: results/RepairResults/type_error_results.csv
+    task_files:
+      codegen: benchmarks/CodeGen/CodeGen_meta.csv
+      explain: benchmarks/Explain/lambdaExplain_meta.csv
+      repair_syntax: benchmarks/Repair/Syntax_Error_meta.csv
+      repair_type: benchmarks/Repair/Type_Error_meta.csv
+    labels:
+      subject_prefix: 'Lambda FP Course / '
+      input_scope: Saved task and documented original diagnostic. Historical system prompt version not established.
+    prompt_parts:
+      type_prefix: '**Error Type in the following code: **Type Error
+
+        ***compiler error message(IGNORE position info)**
+
+        '
+      code_separator: '
+
+        **Buggy Code to be fixed**
+
+        '
+      syntax_prefix: '**Error Type in the following code: **Syntax Error
+
+        **Buggy Code to be fixed**
+
+        '
+    model_aliases:
+      Claude 3.7 Sonnet: Claude 3.7 Sonnet
+      Claude-3.7-Sonnet: Claude 3.7 Sonnet
+      claude 3.7 sonnet: Claude 3.7 Sonnet
+      claude-3.7-sonnet: Claude 3.7 Sonnet
+      GPT-4o: GPT-4o
+      gpt-4o: GPT-4o
+      GPT-4o-mini: GPT-4o-mini
+      gpt-4o-mini: GPT-4o-mini
+      o3 Mini: o3 Mini
+      o3-Mini: o3 Mini
+      o3 mini: o3 Mini
+      o3-mini: o3 Mini
+      Llama3.1 8B: Llama3.1 8B
+      Llama3.1-8B: Llama3.1 8B
+      llama3.1 8b: Llama3.1 8B
+      llama3.1-8b: Llama3.1 8B
+      Llama3.3 70B: Llama3.3 70B
+      Llama3.3-70B: Llama3.3 70B
+      llama3.3 70b: Llama3.3 70B
+      llama3.3-70b: Llama3.3 70B
+      Gemini 2.0 Flash: Gemini 2.0 Flash
+      Gemini-2.0-Flash: Gemini 2.0 Flash
+      gemini 2.0 flash: Gemini 2.0 Flash
+      gemini-2.0-flash: Gemini 2.0 Flash
+      Gemini 1.5 Flash 8B: Gemini 1.5 Flash 8B
+      Gemini-1.5-Flash-8B: Gemini 1.5 Flash 8B
+      gemini 1.5 flash 8b: Gemini 1.5 Flash 8B
+      gemini-1.5-flash-8b: Gemini 1.5 Flash 8B
+      Qwen2.5 7B: Qwen2.5 7B
+      Qwen2.5-7B: Qwen2.5 7B
+      qwen2.5 7b: Qwen2.5 7B
+      qwen2.5-7b: Qwen2.5 7B
+      GPT4o: GPT-4o
+    ordinal_values:
+      Non-gradable: '0'
+      Beginning: '1'
+      Developing: '2'
+      Proficient: '3'
+      Mastery: '4'
+    subject_features:
+      harness: Functional Programming Course artifact
+      sampling: API defaults reported in paper
+      historical_configuration: numeric_settings_not_recorded
+      model_identifier_status: released_label
+sources:
+  upstream:
+  - name: artifact
+    url: https://codeload.github.com/jaylene-zhang/ArtifactProgramming2025/zip/91c0ac534b86164cae782e5a83f668ce76ba4032
+    revision: 91c0ac534b86164cae782e5a83f668ce76ba4032
+    file: upstream.zip
+    size: 3721945
+    sha256: ca222696f1ce420727bdf98a3107a5fb4760fda745284e3b8586682659d490b8
+grading:
+  rule: Preserve released per-item assessment categories and flags; do not recompute ratings or infer missing grades.
+  verifiers:
+    codegen:
+      kind: reported_assessment
+      source: https://github.com/jaylene-zhang/ArtifactProgramming2025/blob/91c0ac534b86164cae782e5a83f668ce76ba4032/results/CodeGenResults/raw_results.csv
+      rule: Preserve the released Rating for source question {source_task} on its ordinal 0–4 encoding. The stimulus
+        is the entire homework. The source writer discards the generation attempt ID, so occurrence numbers do not
+        establish a correspondence with saved model outputs. The published rating-generation helper contains a random
+        fallback for Beginning versus Developing; do not rerun it or claim independent rubric verification. For
+        hw7/q1, the two function metadata entries share one question key; neither is selected as the sole graded
+        function.
+      response_scale: &id001
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        direction: higher_is_better
+        meanings:
+          '0': Explicit Non-gradable category
+          '1': Beginning
+          '2': Developing
+          '3': Proficient
+          '4': Mastery
+    explain:
+      kind: reported_assessment
+      source: https://github.com/jaylene-zhang/ArtifactProgramming2025/blob/91c0ac534b86164cae782e5a83f668ce76ba4032/results/ExplainResults/Explain_raw.csv
+      rule: Preserve the released performance category for source question {source_task} on its ordinal 0–4 encoding.
+        Paper Table 6 describes conceptual understanding, strategy and explanation quality. Non-gradable is an explicit
+        lowest category, not an absent assessment. Only the released assessment is imported; no new manual or model
+        grading occurs.
+      response_scale: *id001
+    repair_syntax:
+      kind: reported_assessment
+      source: https://github.com/jaylene-zhang/ArtifactProgramming2025/blob/91c0ac534b86164cae782e5a83f668ce76ba4032/results/RepairResults/syntax_error_results.csv
+      rule: 'Preserve the literal released Fixed flag for source task {source_task}: False=0, True=1. Its computation
+        is not supplied and some True records still report syntax or type errors, so this is not a verified compiler-pass
+        or task-success measure. No case-normalization or regrading is applied.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Released Fixed flag is False
+          '1': Released Fixed flag is True
+    repair_type:
+      kind: reported_assessment
+      source: https://github.com/jaylene-zhang/ArtifactProgramming2025/blob/91c0ac534b86164cae782e5a83f668ce76ba4032/results/RepairResults/type_error_results.csv
+      rule: Preserve the released Rating for source task {source_task} on its ordinal 0–4 encoding. Paper Table
+        5 describes localization, repair quality and redundant changes. The supplied original compiler diagnostic
+        is part of the task input. No new code execution or grading occurs.
+      response_scale: *id001

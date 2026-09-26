@@ -1,0 +1,3 @@
+- Sources: pinned author GitHub archive; all task/result files match the original Zenodo release. The original release and paper document mixed grading scales.
+- Mapping: preserve every supported result and full associated output. CodeGen attempt IDs were discarded upstream, so trials identify row occurrences and no generation is guessed.
+- Caveats: exclude the logical-repair CSV copied from syntax repair. Preserve literal syntax flags and ordinal ratings with their documented inconsistencies; aggregates and unassociated outputs remain in raw.
