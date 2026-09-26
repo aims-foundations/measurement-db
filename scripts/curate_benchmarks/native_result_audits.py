@@ -8565,6 +8565,145 @@ def _dqvis(directory, tables, metadata):
         source_corpus_rows=offset, **{"source_" + key + "_ratings": value for key, value in counts.items()})
 
 
+def _disco_source_records(directory, metadata):
+    """Read frame coordinates and spreadsheet cells without the builder's joins."""
+    import ast
+    import hashlib
+    import re
+    from collections import defaultdict
+    from openpyxl import load_workbook
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    settings = metadata["build"]["parameters"]
+    groups = defaultdict(list)
+    for path in sorted(raw.glob(settings["paths"]["frames"])):
+        position = 0
+        for batch in pq.ParquetFile(path).iter_batches(batch_size=64):
+            for record in batch.to_pylist():
+                image = record.pop("Image_File")
+                _check(image["bytes"].startswith(b"\x89PNG\r\n\x1a\n"), True, "DIS-CO original PNG frame")
+                record.update(image_sha256=hashlib.sha256(image["bytes"]).hexdigest(),
+                    source_file=str(path.relative_to(raw)), source_row=position)
+                groups[record["Movie"], record["Frame_Type"].lower(), record["Scene_Number"]].append(record)
+                position += 1
+    frames = {}
+    for group, records in groups.items():
+        _check(len({row["Shot_Number"] for row in records}), len(records), "DIS-CO distinct native shots")
+        for shot, record in enumerate(sorted(records, key=lambda row: row["Shot_Number"]), 1):
+            frames[*group, shot] = record
+
+    # Verify prompt metadata against static source literals without running models.
+    prompts = {}
+    module = ast.parse((raw / "release/Code/movie_guess_utils.py").read_text())
+    for node in ast.walk(module):
+        if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+            name = node.targets[0].id
+            if name in {"image_prompt", "caption_prompt"}:
+                prompts[name] = (ast.literal_eval(node.value) if isinstance(node.value, ast.Constant) else
+                    "".join(value.value if isinstance(value, ast.Constant) else "{caption}" for value in node.value.values))
+    _check(settings["prompts"], prompts, "DIS-CO complete published prompt templates")
+    outputs, blank_cells, files = {}, 0, 0
+    for path in sorted((raw / settings["paths"]["results"]).rglob("*.xlsx")):
+        filename = re.sub(r"_x([0-9a-f]{2})_", lambda match: chr(int(match[1], 16)), path.name)
+        match = re.fullmatch(r"(.+)_results_(main|neutral)_(.+)_(single_image|single_caption)\.xlsx", filename)
+        _check(match is not None, True, "DIS-CO complete result filename")
+        movie, frame_type, model, mode = match.groups()
+        book = load_workbook(path, read_only=True, data_only=True)
+        _check(len(book.worksheets), 1, "DIS-CO one result sheet per file")
+        rows = book.worksheets[0].iter_rows(values_only=True)
+        columns = next(rows)
+        _check(columns[0], "Scene", "DIS-CO source scene column")
+        # The author grader reads these sheets using pandas' default parsing.
+        parsed = pd.read_excel(path)
+        for position, cells in enumerate(rows):
+            scene = cells[0]
+            for column, value in zip(columns[1:], cells[1:], strict=True):
+                if value in (None, ""):
+                    blank_cells += 1
+                    continue
+                shot = int(column.split(" ")[-1])
+                frame = frames[movie, frame_type, scene, shot]
+                grade = float(parsed.at[position, column] in frame["Answer"])
+                _check(grade, float(value in frame["Answer"]), "DIS-CO native values preserve author parsing grades")
+                key = str(path.relative_to(raw)), position, column
+                _check(key not in outputs, True, "DIS-CO each source cell once")
+                outputs[key] = dict(model=model, movie=movie, frame_type=frame_type, scene=scene,
+                    shot=shot, mode=mode, prediction=value, grade=grade, frame=frame)
+        book.close()
+        files += 1
+    return dict(frames=frames, outputs=outputs, blank_cells=blank_cells, files=files, prompts=prompts)
+
+
+def _disco(directory, tables, metadata, *, source=None):
+    """Reconcile every saved prediction, prompt, reference and original frame."""
+    import hashlib
+    source = _disco_source_records(directory, metadata) if source is None else source
+    settings = metadata["build"]["parameters"]
+    native = source["outputs"]
+    _check(len(tables["responses"]), len(native), "DIS-CO all nonempty source cells")
+    _check(len(tables["traces"]), len(native), "DIS-CO complete prediction trace coverage")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    labels = {row["display_name"] for row in subjects.values()}
+    _check(labels, {row["model"] for row in native.values()}, "DIS-CO exact released model identities")
+    _check(len(subjects), len(labels), "DIS-CO no duplicated or invented systems")
+    for row in subjects.values():
+        features = dict(settings["subject_features"])
+        _check(row["harness"], features.pop("harness"), "DIS-CO evaluation harness")
+        _check(_features(row["subject_features_extra"]), features, "DIS-CO honest configuration provenance")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").data.to_dict()
+    _check({digest: hashlib.sha256(value).hexdigest() for digest, value in assets.items()},
+        {digest: digest for digest in assets}, "DIS-CO unchanged embedded image bytes")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DIS-CO trace-response bijection")
+    seen, used_items, used_assets = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["source_column"]
+        original = native[key]
+        frame = original["frame"]
+        _check(trace, dict(source_file=key[0], source_row=key[1], source_column=key[2],
+            scene=original["scene"], prediction=original["prediction"],
+            frame_source_file=frame["source_file"], frame_source_row=frame["source_row"]), "DIS-CO exact source cell and frame association")
+        _check(subjects[row.subject_id]["display_name"], original["model"], "DIS-CO prediction-model association")
+        _check(row.response, original["grade"], "DIS-CO author exact-match grade")
+        condition = dict(movie=original["movie"], frame_type=original["frame_type"], scene=original["scene"],
+            shot=original["shot"], query_mode=original["mode"])
+        _check(json.loads(row.test_condition), condition, "DIS-CO distinct frame and query condition")
+        _check(row.trial, 1, "DIS-CO one saved result per condition")
+        _check(pd.isna(row.interactors), True, "DIS-CO no invented interacting agent")
+        item = items[row.item_id]
+        _check(_features(item["item_features"]), dict(query_mode=original["mode"], frame_type=original["frame_type"],
+            input_scope=settings["input_scope"]["note"]), "DIS-CO input-condition features")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=json.dumps(frame["Answer"], ensure_ascii=False),
+            rule=metadata["grading"]["rule"]), "DIS-CO complete alternative movie titles")
+        _check(json.loads(item["verifier"]), dict(**{"class": "exact_matcher"},
+            spec=json.dumps(metadata["grading"]["verifiers"]["exact"], sort_keys=True)), "DIS-CO deterministic grading provenance")
+        if original["mode"] == "single_image":
+            digest = frame["image_sha256"]
+            path = "images/" + digest + ".png"
+            _check(json.loads(item["content"]), {"multimedia_elements": [
+                {"content_type": "text/plain", "text": source["prompts"]["image_prompt"]},
+                {"content_type": "image/png", "location": path}]}, "DIS-CO complete image question")
+            _check(json.loads(item["asset_manifest"]), [dict(asset_id=digest, path=path, role="input",
+                ordinal=1, media_type="image/png")], "DIS-CO original frame linked to image question")
+            used_assets.add(digest)
+        else:
+            _check(item["content"], source["prompts"]["caption_prompt"].format(caption=frame["Caption"]),
+                "DIS-CO exact caption question")
+            _check(pd.isna(item["asset_manifest"]) or item["asset_manifest"] == "[]", True, "DIS-CO caption-only condition")
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in native}), "DIS-CO every saved cell exactly once")
+    _check(used_items, set(items), "DIS-CO no unused items")
+    _check(used_assets, set(assets), "DIS-CO all and only required original images")
+    return dict(source_responses=len(native), source_subjects=len(labels), source_items=len(items),
+        source_frames=len(source["frames"]), source_spreadsheets=source["files"],
+        source_blank_cells=source["blank_cells"], source_literal_null_outputs=sum(row["prediction"] == "null" for row in native.values()),
+        source_correct=sum(int(row["grade"]) for row in native.values()), source_assets=len(assets))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8585,4 +8724,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco}[directory.name](directory, tables, metadata)

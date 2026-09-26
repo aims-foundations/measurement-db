@@ -1,0 +1,93 @@
+format_version: 1
+tables:
+  traces:
+    rows: 111906
+    logical_sha256: 382e94e53026064a41071a2ea427c9ad5d27bbe2b203255782c3e9b2377cee1b
+  subjects:
+    rows: 4
+    logical_sha256: 320d8447a7bedbfd67c4870eefdc198541f7205af818ce0a72c6ebe25d8321c4
+  responses:
+    rows: 111906
+    logical_sha256: 7dcdc5660587bd05b43c121d43f4b893fe66fed80f214d9aee95dc5043ce4e76
+  assets:
+    rows: 13999
+    logical_sha256: b605068992bf54a0602ee00c032c4d227ab491a3686096372646cf992bb1c5fd
+  items:
+    rows: 28000
+    logical_sha256: 39766c374407eb22f118a6e591623f2806023c527599a000b974959043cd5fc1
+  benchmarks:
+    rows: 1
+    logical_sha256: 474d0cd1a17f6317194eaef11fee8db98c0e470b0c258e4b7202723957b5e4c3
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 111906
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 28000
+  source_frames:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 14000
+  source_spreadsheets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 1600
+  source_blank_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 94
+  source_literal_null_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 5
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 15132
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/avduarte333/DIS-CO/tree/c44f2c53177951bb3207a37d484745b9790726c9/Replicate_Results
+    locator: All 1,600 prediction spreadsheets, mapped to pinned MovieTection frame coordinates.
+    scope: Individual saved title outputs. Literal null strings are observed predictions; blank cells are not inferred
+      attempts. Actual frame bytes and complete caption prompts are distinct input conditions.
+    expected: 13999

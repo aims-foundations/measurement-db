@@ -1,0 +1,98 @@
+benchmark:
+  name: DIS-CO (MovieTection)
+  description: Individual movie-title guesses from four vision-language models, queried with movie frames or their
+    released captions.
+  testing_condition: Reconstruct the published image/caption prompts and preserve all saved spreadsheet cells. Image
+    inputs include the original frame bytes; captions are distinct inputs. Grades use the frozen upstream exact-title
+    membership rule, without additional whitespace normalization. Spreadsheet blanks have no saved output and do
+    not establish attempted responses. Published outputs have already been postprocessed; original API transcripts,
+    run timestamps and use of the optional cleaning model are not recorded per run. Frame identification is the
+    observation here, not an individual copyright-membership verdict.
+  paper_url: https://proceedings.mlr.press/v267/duarte25a.html
+  data_source_url: https://github.com/avduarte333/DIS-CO
+  subject_type: model
+  item_type: frame
+  license: 'MovieTection frames and captions: CC-BY-NC-SA-4.0. DIS-CO code and result repository: Apache-2.0, as
+    declared upstream.'
+  citation: 'Duarte, A. V., Zhao, X., Oliveira, A. L., and Li, L. (2025). DIS-CO: Discovering Copyrighted Content
+    in VLMs Training Data. ICML.'
+  tags:
+  - movie_identification
+  - vision_language
+  - membership_inference
+  modality:
+  - image
+  - text
+  domain:
+  - knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': Saved title does not exactly match an accepted title.
+      '1': Saved title exactly matches an accepted title.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2025-02
+  multi_single_turn: single_turn
+  version: c44f2c53177951bb3207a37d484745b9790726c9
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: release/Replicate_Results
+      frames: dataset/data/*.parquet
+    parsing:
+      filename: ^(?P<movie>.+)_results_(?P<frame_type>main|neutral)_(?P<model>.+)_(?P<mode>single_image|single_caption)\.xlsx$
+      column: ^(?:Image|Caption) (?P<shot>\d+)$
+    prompts:
+      image_prompt: 'The following image is a frame from a scene of a movie.
+
+        Can you name the movie?
+
+        Your guess must be only the movie name.'
+      caption_prompt: 'The following caption describes a scene from a movie.
+
+        Can you name the movie?
+
+        Your guess must be only the movie name.
+
+
+        Caption: {caption}'
+    subject_features:
+      harness: DIS-CO MovieGuessTask
+      configuration_source: Published harness, per-run settings and optional output-cleaning usage not logged
+      trace_scope: Postprocessed spreadsheet movie-title predictions, not complete API conversations
+    input_scope:
+      note: Prompt reconstructed from published harness, frame/caption bytes from the pinned input release
+    filename_escapes:
+      _x26_: '&'
+      _x27_: ''''
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/avduarte333/DIS-CO
+    revision: c44f2c53177951bb3207a37d484745b9790726c9
+    files:
+    - match: (?:Replicate_Results/.*\.xlsx|Code/.*\.py|README\.md|LICENSE|requirements\.txt)
+      path: release/{path}
+  - name: dataset
+    url: https://huggingface.co/datasets/DIS-CO/MovieTection
+    revision: 1276474d1ba77bdb67e7c20911717130444057c4
+    files:
+    - match: (?:data/.*\.parquet|README\.md|\.gitattributes)
+      path: dataset/{path}
+grading:
+  rule: Exact membership of the spreadsheet-parsed movie-title value in the item's released Answer list; preserve
+    case, whitespace and punctuation. Do not use the dataset Label (suspect/clean training membership) as correctness.
+  verifiers:
+    exact:
+      kind: exact_title_membership
+      source: https://github.com/avduarte333/DIS-CO/blob/c44f2c53177951bb3207a37d484745b9790726c9/Code/metrics_utils.py
+      function: calculate_overall_accuracy
+      blank_scope: No saved output; upstream aggregate accuracy may count empty cells in its denominator. No failed
+        model attempt is inferred from an empty cell.
+      grade_origin: derived_from_published_outputs_with_upstream_exact_match_rule
