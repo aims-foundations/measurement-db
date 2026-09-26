@@ -846,3 +846,5 @@ SOURCE_AUDITS["edu_circuit_hw"] = verify_native_results
 SOURCE_AUDITS["ehrflowbench"] = verify_native_results
 
 SOURCE_AUDITS["elicitation_game"] = verify_native_results
+
+SOURCE_AUDITS["emoji_attack"] = verify_native_results

@@ -9778,6 +9778,87 @@ def _elicitation(directory, tables, metadata, source=None):
         source_successes=int(sum(row["grade"] for row in native.values())))
 
 
+
+def _emoji_source_records(directory, metadata):
+    """Read original lines, including records with incomplete input components."""
+    import hashlib
+    import unicodedata
+
+    root = directory / "raw/release/EasyJailbreaking-Results"
+    native, stimuli, repetitions = {}, {}, Counter()
+    for path in sorted(root.glob("*/*.jsonl")):
+        position = 0
+        for line in path.read_text().splitlines():
+            if not line.strip():
+                continue
+            record = json.loads(line)
+            key = str(path.relative_to(root)), position
+            _check((len(record["target_responses"]), len(record["eval_results"])), (1, 1), "Emoji original output/annotation pairing")
+            grade = record["eval_results"][0]
+            _check(type(grade) is bool or type(grade) is str and grade in ("True", "False"), True, "Emoji explicit native binary verdict")
+            content = json.dumps({k: record.get(k) for k in ["query", "jailbreak_prompt", "translated_query"]}, ensure_ascii=False, sort_keys=True, allow_nan=False)
+            normalized = unicodedata.normalize("NFC", content).strip()
+            method = path.parent.name
+            model = "internlm7b" if path.stem == "intern7b" else path.stem
+            stimulus_key = method, normalized
+            if stimulus_key not in stimuli:
+                stimuli[stimulus_key] = dict(raw_id=method + ":" + hashlib.sha256(content.encode()).hexdigest(), content=content)
+            repetitions[model, stimulus_key] += 1
+            _check(key not in native, True, "Emoji unique source coordinate")
+            native[key] = dict(record=record, model=model, method=method, stimulus=stimulus_key,
+                               grade=1.0 if grade is True or grade == "True" else 0.0,
+                               trial=repetitions[model, stimulus_key])
+            position += 1
+    _check((len(native), len(stimuli), len({key[0] for key in native})), (58860, 15153, 109), "Emoji complete original result scope")
+    return native, stimuli
+
+
+def _emoji(directory, tables, metadata, source=None):
+    """Reconcile complete input/output records and the original success flags."""
+    native, stimuli = source if source is not None else _emoji_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (58860, 58860, 10, 15153), "Emoji all attempts and complete input variants")
+    _check(set(traces), set(tables["responses"].response_id), "Emoji trace-response bijection")
+    _check(metadata["benchmark"]["response_scale"]["direction"], "lower_is_better", "Emoji jailbreak success is a target safety failure")
+    parameters = metadata["build"]["parameters"]
+    seen, checked, used_subjects = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        _check(type(key[1]), int, "Emoji integer source position")
+        expected = native[key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], record=expected["record"]), "Emoji all original fields without truncation or invented keys")
+        _check(row.response, expected["grade"], "Emoji original annotation unchanged")
+        _check((row.trial, pd.isna(row.test_condition), row.interactors),
+            (expected["trial"], True, "attacker=" + expected["method"]), "Emoji repeated attempts and attack-family association")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], expected["model"], "Emoji native target model label and reviewed InternLM alias")
+        _check(subject["harness"], parameters["subject_features"]["harness"], "Emoji original attack framework")
+        _check(_features(subject["subject_features_extra"]), {k: v for k, v in parameters["subject_features"].items() if k != "harness"}, "Emoji no invented model configuration")
+        item = items[row.item_id]
+        stimulus = stimuli[expected["stimulus"]]
+        _check((item["raw_item_id"], item["content"]), (stimulus["raw_id"], stimulus["content"]), "Emoji complete input query/prompt/translation association")
+        if row.item_id not in checked:
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=metadata["grading"]["rule"]), "Emoji preserve recorded annotation semantics")
+            protocol = dict(attack_family=expected["method"], **metadata["grading"]["verifiers"]["published"])
+            _check(json.loads(item["verifier"]), {"class": "judge", "spec": json.dumps(protocol, sort_keys=True)}, "Emoji do not invent an unrecorded judge identity")
+            _check(_features(item["item_features"]), parameters["item_features"], "Emoji input-scope disclosure")
+            _check(pd.isna(item["asset_manifest"]), True, "Emoji text-only released input components")
+            checked.add(row.item_id)
+        used_subjects.add(row.subject_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "Emoji every native record exactly once")
+    _check((checked, used_subjects), (set(items), set(subjects)), "Emoji no unused items or subjects")
+    return dict(source_responses=len(native), source_items=len(stimuli), source_subjects=len(subjects),
+        source_result_files=len({key[0] for key in native}), source_attack_families=len({row["method"] for row in native.values()}),
+        source_successes=int(sum(row["grade"] for row in native.values())),
+        source_empty_queries=sum(row["record"]["query"] == "" for row in native.values()),
+        source_empty_prompts=sum(row["record"]["jailbreak_prompt"] == "" for row in native.values()),
+        source_original_outputs=sum(isinstance(row["record"].get("source_target_responses"), str) for row in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9790,7 +9871,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 58860
+    logical_sha256: d755ace048d96003637de4a35861090e31f37f7e42d39aef5105d8a66dbe172c
+  subjects:
+    rows: 10
+    logical_sha256: a85c5688249aaa3effc112b1e77c3fe046c5d2763aea1fa294f491813b3350a7
+  responses:
+    rows: 58860
+    logical_sha256: b8ce19b1ffc5e5275d0c054c055180b446a51460e46b76889375fcd9f5b1fbc4
+  items:
+    rows: 15153
+    logical_sha256: 9fc5d01d6312d37941202199e52b071f7e4d09fcfc86f51cf4e6fca0d7f4665b
+  benchmarks:
+    rows: 1
+    logical_sha256: 77cf5a5227b0fcb989a9f709380b647e79449a3f707383f96017f0b14d6f2131
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 58860
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 15153
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 10
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 109
+  source_attack_families:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 11
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 15737
+  source_empty_queries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 4
+  source_empty_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 2
+  source_original_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zhipeng-wei/EmojiAttack/tree/1a81c327b74f7c23911b7d1c2ec2c537dc29f27a/EasyJailbreaking-Results
+    locator: All 109 result files, independently read line by line and compared with each output's complete input,
+      model, attacker, repeat, native trace and original flag.
+    scope: Released EasyJailbreak attempts redistributed with Emoji Attack. Input variants remain distinct; four
+      empty-query records are preserved.
+    expected: 3600

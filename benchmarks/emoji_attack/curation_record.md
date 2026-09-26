@@ -1,0 +1,3 @@
+- Source: pinned Emoji Attack release, containing 58,860 original EasyJailbreak attempts in 109 files across 11 attack families and ten target-model labels. This is the reused EasyJailbreak result set, not the paper's separate emoji experiment.
+- Mapping: preserve full query/prompt/translation components, all native output fields and original Boolean/string annotations. Keep prompt variants distinct and retain the four formerly omitted empty-query records; original file positions identify every attempt.
+- Scope: 1 denotes recorded jailbreak success. Exact historical request rendering, model checkpoints and grader identity are unrecorded; no new attack, generation or rejudging is performed.
