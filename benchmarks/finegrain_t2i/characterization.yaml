@@ -1,0 +1,118 @@
+format_version: 1
+tables:
+  traces:
+    rows: 12861
+    logical_sha256: baab56d47a11a26609a1add1b1b73c1968753ee35ddc6457ee3cfd9ddfdebfe7
+  subjects:
+    rows: 17
+    logical_sha256: 14b1deeb9fb5c1ef1855fe53f948c626b3475cd387c3624df0479f2e72fecbe7
+  responses:
+    rows: 12861
+    logical_sha256: 744629b65d578d94b76662e975d47aec088d206b1d867f1156b4e3eb121ca9a9
+  items:
+    rows: 760
+    logical_sha256: 9600c72b487350746a6d52018eb79c26c14dbebebab614a88b401bf0039896f4
+  benchmarks:
+    rows: 1
+    logical_sha256: 0c9f59d063025b548914a5b4bde68014850f6ccd1c3d7a60c6d8cceb2fa68921
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 12861
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 17
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 760
+  source_csv_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 27955
+  source_repeated_image_references:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 15094
+  source_human_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 3750
+  source_human_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 1815
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 9111
+  source_missing_original_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 50
+  source_restored_image_paths:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/tree/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    locator: Independently read all current CSV rows and the original human-label CSV at 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0.
+      Reconcile each model/image, original prompt and human grade or null. Verify all generated-image bytes, hashes
+      and native source aliases.
+    scope: Unique released model/image attempts. Only the original five generators have human annotations; later
+      CSV zeros are not grades. Duplicate references to an identical output are counted once.
+    expected: 3800

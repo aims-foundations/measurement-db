@@ -10257,6 +10257,114 @@ def _fetv(directory, tables, metadata, source=None):
         source_negative_umt_scores=sum(key[2] == "UMTScore" and r["grade"] < 0 for key, r in native.items()))
 
 
+def _finegrain_source_records(directory, metadata):
+    """Read the original CSVs independently of the pandas builder and verify image bytes."""
+    import csv
+    import hashlib
+    import re
+    from PIL import Image
+
+    raw = directory / "raw"
+    with (raw / "original/metadata.csv").open(newline="") as stream:
+        original_rows = list(csv.DictReader(stream))
+    with (raw / "dataset/metadata.csv").open(newline="") as stream:
+        current_rows = list(csv.DictReader(stream))
+    original, prompt_ids, outputs = {}, {}, {}
+    for row in original_rows:
+        row["prompt_id"] = int(row["prompt_id"])
+        key = row["model"], row["prompt_text"], row["failure_mode"]
+        _check(key in original, False, "FineGRAIN unique original human-label record")
+        _check(row["human_labels"] in {"", "0.0", "1.0", "0", "1"}, True, "FineGRAIN native binary failure flag")
+        original[key] = row
+        if row["prompt_text"] in prompt_ids:
+            _check(prompt_ids[row["prompt_text"]], (row["prompt_id"], row["failure_mode"]), "FineGRAIN original prompt identity")
+        prompt_ids[row["prompt_text"]] = row["prompt_id"], row["failure_mode"]
+    native = {}
+    for index, row in enumerate(current_rows):
+        row["prompt_id"] = int(row["prompt_id"])
+        old = original.get((row["model"], row["prompt_text"], row["failure_mode"]))
+        if old:
+            _check((row["human_labels"], row["prompt_id"]), (old["human_labels"], old["prompt_id"]), "FineGRAIN unchanged original ratings")
+        else:
+            _check(float(row["human_labels"]), 0.0, "FineGRAIN unannotated extension's placeholder value")
+        path = row["image_filename"] or old["file_name"]
+        grade = 1 - float(old["human_labels"]) if old and old["human_labels"] != "" else None
+        status = "human_graded" if grade is not None else ("human_grade_missing" if old else "not_in_human_annotation_release")
+        if path not in outputs:
+            local_path = "dataset/" + re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", path)
+            file = raw / local_path
+            with file.open("rb") as stream:
+                digest = hashlib.file_digest(stream, "sha256").hexdigest()
+            with Image.open(file) as picture:
+                picture.verify()
+            outputs[path] = dict(file=local_path, upstream_file=path, bytes=file.stat().st_size, sha256=digest)
+        if path in native:
+            _check((row["model"], row["prompt_text"], row["failure_mode"], grade), native[path]["identity"], "FineGRAIN consistent duplicate output reference")
+        else:
+            native[path] = dict(identity=(row["model"], row["prompt_text"], row["failure_mode"], grade),
+                original_record=old, annotation_status=status, source_rows=[], native_records=[], output=outputs[path])
+        native[path]["source_rows"].append(index)
+        native[path]["native_records"].append(row)
+    descriptions = json.loads((raw / "code/data/prompts_by_failure_modes.json").read_text())
+    readme = (raw / "dataset/README.md").read_text()
+    _check("do not have human annotations" in readme, True, "FineGRAIN extension grading availability is documented")
+    _check("1: The failure mode is present" in readme, True, "FineGRAIN native grade direction is documented")
+    _check(metadata["grading"]["verifiers"]["human"]["label_source_revision"], "8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0", "FineGRAIN actual human-label release")
+    return native, prompt_ids, descriptions, len(current_rows)
+
+
+def _finegrain(directory, tables, metadata, source=None):
+    """Check every grade/null, original row, source alias, prompt, model and image hash."""
+    native, prompt_ids, descriptions, source_rows = source if source is not None else _finegrain_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    models = {value["identity"][0] for value in native.values()}
+    _check((len(tables["responses"]), len(traces), len(items), len(subjects)),
+           (len(native), len(native), len(prompt_ids), len(models)), "FineGRAIN unique output and identity coverage")
+    _check(set(traces), set(tables["responses"].response_id), "FineGRAIN one complete trace per response")
+    _check(metadata["benchmark"]["response_scale"], dict(kind="discrete", values=[0, 1], direction="higher_is_better", meanings={"0": "The specified failure mode is present.", "1": "The specified failure mode is absent."}), "FineGRAIN documented success direction")
+    seen, item_associations, subject_associations = Counter(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        path = trace["output"]["upstream_file"]
+        expected = native[path]
+        model, prompt, mode, grade = expected["identity"]
+        _check(trace, dict(source_file="dataset/metadata.csv", source_rows=expected["source_rows"],
+            native_records=expected["native_records"], original_source_file="original/metadata.csv",
+            original_record=expected["original_record"], annotation_status=expected["annotation_status"],
+            output=expected["output"]), "FineGRAIN complete native provenance and exact generated-image association")
+        _check(None if pd.isna(row.response) else row.response, grade, "FineGRAIN genuine human success or ungraded attempt")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "FineGRAIN repeated metadata is not another trial")
+        subject = subjects[row.subject_id]
+        _check((subject["harness"], _features(subject["subject_features_extra"])), ("FineGRAIN", dict(source_model=model,
+            configuration_scope=metadata["build"]["parameters"]["subject_features"]["configuration_scope"])), "FineGRAIN original generator and unknown historical settings")
+        item = items[row.item_id]
+        _check((item["content"], item["raw_item_id"]), (prompt, str(prompt_ids[prompt][0])), "FineGRAIN complete prompt and original ID")
+        _check(_features(item["item_features"]), {"failure_mode": mode}, "FineGRAIN exact failure-mode association")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None,
+            rule=metadata["grading"]["rule"]+"\nFailure mode: "+mode+". "+descriptions[mode]["description"]), "FineGRAIN specific grading rule")
+        _check(json.loads(item["verifier"]), {"class": "judge", "judged_by": "human",
+            "spec": json.dumps(metadata["grading"]["verifiers"]["human"], sort_keys=True)}, "FineGRAIN human verification provenance")
+        _check(pd.isna(item["asset_manifest"]), True, "FineGRAIN generated output is not an input asset")
+        if row.item_id in item_associations:
+            _check(item_associations[row.item_id], prompt, "FineGRAIN no item identity collision")
+        if row.subject_id in subject_associations:
+            _check(subject_associations[row.subject_id], model, "FineGRAIN no generator identity collision")
+        item_associations[row.item_id] = prompt
+        subject_associations[row.subject_id] = model
+        seen[path] += 1
+    _check(seen, Counter({key: 1 for key in native}), "FineGRAIN every unique generated output once")
+    _check((set(item_associations), set(subject_associations)), (set(items), set(subjects)), "FineGRAIN no unused identities")
+    return dict(source_responses=len(native), source_subjects=len(models), source_items=len(prompt_ids),
+        source_csv_rows=source_rows, source_repeated_image_references=source_rows-len(native),
+        source_human_grades=sum(value["identity"][3] is not None for value in native.values()),
+        source_human_failures=sum(value["identity"][3] == 0 for value in native.values()),
+        source_ungraded_attempts=sum(value["identity"][3] is None for value in native.values()),
+        source_missing_original_grades=sum(value["annotation_status"] == "human_grade_missing" for value in native.values()),
+        source_restored_image_paths=sum(value["original_record"] is not None for value in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10269,7 +10377,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

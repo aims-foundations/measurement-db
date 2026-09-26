@@ -493,6 +493,41 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(fetch.call_args.args[0].get_header('User-agent'), 'measurement-db')
         self.assertEqual((self.raw/'new.json.gz').read_bytes(), encoded)
 
+    def test_pinned_hf_cache_avoids_per_file_network_requests(self):
+        cached = Path(self.temp.name) / 'hub-cached'
+        cached.write_bytes(PAYLOAD)
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=str(cached)) as lookup, \
+             patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+            DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        lookup.assert_called_once_with('example/data', 'source.json', repo_type='dataset', revision='a' * 40)
+        self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+
+    def test_corrupt_hf_cache_is_not_installed_or_overwritten(self):
+        cached = Path(self.temp.name) / 'hub-cached'
+        cached.write_bytes(b'x' * len(PAYLOAD))
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=str(cached)), \
+             patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+            with self.assertRaisesRegex(SourceDataError, 'content differs'):
+                DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        self.assertFalse((self.raw / 'source.json').exists())
+        self.assertEqual(cached.read_bytes(), b'x' * len(PAYLOAD))
+
+    def test_missing_hf_cache_downloads_the_pinned_revision(self):
+        downloaded = Path(self.temp.name) / 'downloaded'
+        downloaded.write_bytes(PAYLOAD)
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=None), \
+             patch('huggingface_hub.hf_hub_download', return_value=str(downloaded)) as download:
+            DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        download.assert_called_once_with('example/data', 'source.json', repo_type='dataset', revision='a' * 40,
+                                        headers={'Accept-Encoding': 'identity'})
+        self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+
     def test_helm_release_index_selects_versioned_runs_and_checks_its_bytes(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         payload = json.dumps([
