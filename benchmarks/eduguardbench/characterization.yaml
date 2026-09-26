@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 189873
+    logical_sha256: 21e1046593b9abcfe26cc614c78047c471601d826adb51d2ca25da9560ea9794
+  subjects:
+    rows: 14
+    logical_sha256: 1fd88ea5a41d92dde414c7250271819807868bb1333e443327811c881e6a2540
+  responses:
+    rows: 189873
+    logical_sha256: 645bfaac8545e731615014f0dffe37cf56152898f66ac5d709c23ac097b1262f
+  items:
+    rows: 7494
+    logical_sha256: b04858c03fb0cabe5011e5fbefcd7f7d0db337578e70f3acd6cad3cd820a9563
+  benchmarks:
+    rows: 1
+    logical_sha256: 0ceab642b580fa73cb226aec87d08a3d0624605aa6217e3daaaa5fcbb05f12c6
+source_claims:
+  source_sata_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 36792
+  source_adversarial_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 11214
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 189873
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 14
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 7494
+  source_repeated_exact_sata_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 18
+  source_missing_expert_votes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 18
+  source_invalid_refusal_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 5
+  source_empty_adversarial_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 17
+  source_partial_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/YL1N/EduGuardBench/tree/432e8da2ea33fa63aaa0aa4298723d3e222ed2ae/Results
+    locator: Every original result worksheet, joined to released adversarial inputs by ID. The paper and P1 code
+      document grading interpretation.
+    scope: Preserve repeated source rows without asserting independent runs. Keep original judgments, partial-credit
+      option scores, available expert draws and null grades for invalid applicable refusal categories.
+    expected: 3174
