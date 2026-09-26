@@ -12473,6 +12473,162 @@ def _katakomba(directory, tables, metadata, source=None):
         source_long_training_runs=sum(policy["step"] == 6600000 for policy in policies.values()))
 
 
+def _kernelbench_source_records(directory, metadata):
+    """Read source JSON and historical task code without the builder's table joins."""
+    import tarfile
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    definitions = {}
+    for path in sorted((raw / parameters["paths"]["tasks"]).glob("*.parquet")):
+        for row in pq.read_table(path).to_pylist():
+            key = row["level"], row["problem_id"]
+            _check(key not in definitions, True, "KernelBench unique original task key")
+            definitions[key] = row
+    with tarfile.open(raw / parameters["paths"]["harness"]) as archive:
+        members = {member.name.split("/", 1)[1]: member for member in archive if member.isfile()}
+        for (level, problem), row in definitions.items():
+            name = f'KernelBench/level{level}/{row["name"].removesuffix(".py")}.py'
+            _check(row["code"], archive.extractfile(members[name]).read().decode(), "KernelBench exact original task implementation")
+    _check(len(definitions), 250, "KernelBench original evaluated task bank")
+    task_source = next(source for source in metadata["sources"]["upstream"] if source["name"] == "tasks")
+    _check(parameters["item_features"]["task_version"], task_source["revision"], "KernelBench declared task release")
+
+    native, subjects, counts = {}, {}, Counter()
+    for path in sorted((raw / parameters["paths"]["samples"]).rglob("*.json")):
+        parts = path.relative_to(raw / parameters["paths"]["samples"]).parts
+        method, level = parts[0], int(parts[1].removeprefix("level"))
+        data = json.loads(path.read_text())
+        if path.name == "kernel.json":
+            label, problem, sample = parts[2].lower(), int(parts[3].removeprefix("problem_")), int(parts[4].removeprefix("sample_"))
+            definition = definitions[level, problem]
+            _check((data["level"], data["problem_id"]), (level, problem), "KernelBench source task association")
+            _check(data["problem_name"].removesuffix(".py"), definition["name"].removesuffix(".py"), "KernelBench original task name")
+            feedback, api_id = "", data["model_name"] or None
+            reports, aliases, matches, log_metadata = {"kernel":data}, {}, {}, None
+            for name, evaluation in data["eval_result"].items():
+                if name == "precompile_error":
+                    _check(isinstance(evaluation, str) and data["correct"] is False, True, "KernelBench explicit precompilation failure")
+                    counts["precompile_failure_records"] += 1
+                else:
+                    _check(name, "eval_0", "KernelBench known evaluation record")
+                    _check(evaluation["correct"], data["correct"], "KernelBench recorded single-generation verdict")
+            counts[method + "_records"] += 1
+        else:
+            _check(path.name, "log.json", "KernelBench supported native file")
+            feedback = parameters["feedback_labels"][parts[2]]
+            label, problem, sample = parts[3].lower(), int(parts[4].removeprefix("problem_")), int(parts[5].removeprefix("sample_"))
+            definition = definitions[level, problem]
+            log_metadata, api_id = data["metadata"], None
+            _check((int(log_metadata["problem_id"]), int(log_metadata["sample_id"])), (problem, sample), "KernelBench refinement sample identity")
+            _check(Path(log_metadata["problem"]).stem, definition["name"].removesuffix(".py"), "KernelBench refinement task name")
+            numeric = {key:value for key,value in data.items() if key.isdigit()}
+            first = numeric[min(numeric, key=int)]
+            _check(definition["code"].strip() in first["context"], True, "KernelBench original reference appears in the actual prompt")
+            _check(set(data) - set(numeric) - {"metadata", "result"}, set(), "KernelBench every released report field interpreted")
+            counts["refinement_logs"] += 1
+            counts["empty_log_slots"] += sum(not value for value in numeric.values())
+            reports = {key:value for key,value in numeric.items() if value}
+            aliases, matches = {}, {}
+            if "result" in data:
+                counts["final_reports"] += 1
+                result = data["result"]
+                generation_matches = [key for key,value in reports.items()
+                    if value["model_response"] == result["model_response"] and value["kernel_code"] == result["kernel_code"]]
+                _check(bool(generation_matches), True, "KernelBench final report reuses a recorded generation")
+                exact = sorted([key for key,value in reports.items() if value == result], key=int)
+                if exact:
+                    representative = exact[-1]
+                    aliases[representative], matches[representative] = ["result"], exact
+                    counts["final_aliases"] += 1
+                else:
+                    reports["result"] = result
+                    counts["distinct_final_assessments"] += 1
+            else:
+                counts["logs_without_final_report"] += 1
+        subject = method, feedback, label, api_id
+        subjects[subject] = parameters["model_labels"][label]
+        for key, record in reports.items():
+            if key == "kernel":
+                grade, hardware, run = record["correct"], record["hardware"], record["run_name"]
+                counts["explicit_failure_without_kernel"] += not bool(record["kernel"]) and grade is False
+            else:
+                evaluation = record.get("eval_result") or {}
+                grade = evaluation.get("correctness")
+                hardware, run = evaluation.get("metadata", {}).get("hardware"), log_metadata["run_name"]
+                counts["numeric_assessments"] += key.isdigit()
+            _check(grade is None or type(grade) is bool, True, "KernelBench boolean or unavailable native verdict")
+            source_file = str(path.relative_to(raw))
+            trace = dict(source_file=source_file, report_key=key, source_aliases=aliases.get(key, []),
+                final_exact_matches=matches.get(key, []), log_metadata=log_metadata, record=record)
+            condition = dict(method=method, feedback=feedback, report_key=key,
+                source_aliases=aliases.get(key, []), hardware=hardware, run_name=run)
+            _check((source_file, key) not in native, True, "KernelBench native report key is unique")
+            native[source_file, key] = dict(subject=subject, task=(level, problem), trial=sample + 1,
+                grade=None if grade is None else float(grade), trace=trace, condition=condition)
+            counts["ungraded_assessments"] += grade is None
+    _check((len(native), len(subjects)), (73998, 19), "KernelBench full released assessment/configuration coverage")
+    _check((counts["empty_log_slots"], counts["final_aliases"], counts["final_reports"], counts["ungraded_assessments"]),
+           (359, 298, 2236, 14), "KernelBench distinguish unpopulated slots, copied finals and ungraded reports")
+    return native, subjects, definitions, counts
+
+
+def _kernelbench(directory, tables, metadata, source=None):
+    """Check every historical task, configuration, verdict and complete native trace."""
+    native, configurations, definitions, counts = _kernelbench_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        subject = features["method"], features["feedback"], features["source_model_label"], features.get("api_model_id")
+        method, feedback, label, api_id = subject
+        expected = dict(method=method, feedback=feedback, source_model_label=label,
+            api_identifier_status="recorded" if api_id else "not_recorded")
+        if api_id is not None: expected["api_model_id"] = api_id
+        _check(features, expected, "KernelBench only source-supported method, feedback and API identity")
+        _check(row.display_name, configurations[subject], "KernelBench recorded model family")
+        _check(row.harness, "KernelBench", "KernelBench source harness")
+        _check(pd.isna(row.harness_version), True, "KernelBench no guessed historical runtime commit")
+        subjects[row.subject_id] = subject
+    _check(Counter(subjects.values()), Counter({key:1 for key in configurations}), "KernelBench distinct known and unknown model configurations")
+    items = {}
+    for row in tables["items"].itertuples():
+        features = _features(row.item_features)
+        key = int(features["level"]), int(features["problem_id"])
+        definition = definitions[key]
+        _check(features, dict(level=str(key[0]), problem_id=str(key[1]), name=definition["name"], **parameters["item_features"]), "KernelBench original task identifiers and release")
+        _check(row.raw_item_id, f"level{key[0]}_problem{key[1]}", "KernelBench retained upstream task identity")
+        _check(row.content, definition["code"], "KernelBench complete unchanged original PyTorch source")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=None, rule=metadata["grading"]["rule"]), "KernelBench functional-correctness rule")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "exact_matcher", "KernelBench deterministic recorded verdict")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["functional_correctness"], "KernelBench source evaluator reference")
+        _check(pd.isna(row.asset_manifest), True, "KernelBench no invented evaluation assets")
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), "KernelBench all 250 original tasks once")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "KernelBench complete one-to-one trace links")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["report_key"]
+        original = native[key]
+        _check(trace, original["trace"], "KernelBench complete unchanged code, diagnostics, metadata and final aliases")
+        _check(subjects[row.subject_id], original["subject"], "KernelBench correct model and experimental condition")
+        _check(items[row.item_id], original["task"], "KernelBench correct original task")
+        _check(row.trial, original["trial"], "KernelBench recorded sample index rather than independent refinement trials")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "KernelBench unchanged native verdict and null preservation")
+        _check(json.loads(row.test_condition), original["condition"], "KernelBench report role, aliases and actual hardware")
+        _check(pd.isna(row.interactors), True, "KernelBench no invented interacting system")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "KernelBench every native assessment once after explicit final aliasing")
+    _check(len(tables.get("assets", [])), 0, "KernelBench no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(configurations), source_items=len(definitions),
+        **{"source_" + key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12486,7 +12642,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

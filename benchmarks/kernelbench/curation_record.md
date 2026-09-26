@@ -1,0 +1,3 @@
+- Sources: pin the official sample release and its original 250 PyTorch task definitions, verified against the historical harness and recorded prompts.
+- Transform: join task keys, retain recorded API identities and method/feedback settings, and preserve full verdicts, generations and diagnostics in linked tables.
+- Corrections and limits: use historical tasks, retain unknown settings and null grades, omit empty log placeholders, and alias identical final reports. Refinement assessments are dependent observations, not independent new generations.
