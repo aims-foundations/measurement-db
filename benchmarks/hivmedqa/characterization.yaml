@@ -1,0 +1,168 @@
+format_version: 1
+tables:
+  traces:
+    rows: 52900
+    logical_sha256: 24150833d7a481f13ba9efb8a7afc58638724745d8d80c56d54ff2b455d495c7
+  subjects:
+    rows: 13
+    logical_sha256: 9ab5d82a32f9145f446168757f1f42850c388ad7b3bbf2869f6d2d29148dcff7
+  responses:
+    rows: 52900
+    logical_sha256: d248453e41bc42a442563df005c09e21f1174b68f68934937b6029e3be797e72
+  items:
+    rows: 2570
+    logical_sha256: c48564ecf889aa68845ab078f981775a10a7b0887de66f84bf8d38a86ee80a35
+  benchmarks:
+    rows: 1
+    logical_sha256: 3a5a783f87f8dc576ee9013b55aed667b72a31c11d824668988656d8d5658754
+source_claims:
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 5980
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 52900
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 13
+  question_answering_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 5520
+  reference_paraphrasing_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 460
+  historical_gemini_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://raw.githubusercontent.com/GonzaloCardenalAl/medical_LLM_evaluation/ac4544e14d6416c587731b2fc06f6f2cac79bdb6/deploy_medical_llm_evaluation/evaluation_results/raw_GPT4-score.csv
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 460
+  original_release_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/15868085
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 3465
+  available:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 52153
+  valid_zero_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 268
+  fractional_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 347
+  original_numeric_grades_unchanged:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/15868085
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 17255
+  missing_judge_output:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 500
+  no_json_object:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 245
+  original_parser_zero_defaults_corrected:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/15868085
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 70
+  missing_or_nonnumeric_grade:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/GonzaloCardenalAl/medical_LLM_evaluation/tar.gz/10f30121677f77da867731a41ecc1cc0516a46e0
+    locator: Independent JSON traversal of the pinned author archive plus csv.DictReader of the historical and Zenodo
+      releases; compare every native answer, grading reply and original-release alias.
+    scope: All 5980 saved generations across 13 configurations, including 460 GPT-4o controls given reference answers.
+      The 52900 records are dimension-level judgments, not independent generations. Original parser zero defaults
+      become null only when no judge JSON exists.
+    expected: 2

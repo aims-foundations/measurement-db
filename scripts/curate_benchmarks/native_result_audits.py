@@ -11331,6 +11331,222 @@ def _healthadmin(directory, tables, metadata, source=None):
         changed_judgments=sum(entry["record"]["pass_orig"] != entry["record"]["pass_new"] for entry in native.values()), **counts)
 
 
+def _hivmedqa_source_records(directory, metadata):
+    """Read native files independently, including grading failures and historical aliases."""
+    import csv
+    import io
+    import math
+    import re
+    import tarfile
+
+    params, paths = metadata["build"]["parameters"], metadata["build"]["parameters"]["paths"]
+    records, historical, answers, requests, replies = {}, {}, {}, {}, {}
+    templates, counts = {}, Counter()
+    protocols = {"prompted_model_answers": "reference_guided", "results-GPT-score": "reference_guided",
+        "prompted_unsupervised_model_answers": "reference_free", "results-unsupervised-GPT-score": "reference_free",
+        "prompted_rephrased": "reference_paraphrase_quality", "results-GPT-score-rephrased": "reference_paraphrase_quality"}
+    _check(params["role_protocols"], protocols, "HIVMedQA separate grading conditions")
+
+    def comparable(text):
+        return "".join(character for character in text if not character.isspace() and character not in "\"'")
+
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        root = paths["root"] + "/"
+        for member in archive:
+            if not member.isfile() or not member.name.startswith(root):
+                continue
+            path = member.name[len(root):]
+            control = path.startswith(paths["controls"])
+            if not (control or path.startswith(paths["answers"])) or not path.endswith("_HIV_EQ.json"):
+                continue
+            relative = path[len(paths["controls"] if control else paths["answers"]):]
+            role = relative.split("/")[0]
+            match = re.search(r"_answers_category_(\d+)\.(\d+)_HIV_EQ\.json$", path)
+            _check(match is not None, True, "HIVMedQA source filenames identify category and trial")
+            configuration = params["association"]["control_configuration"] if control else relative.split("/")[-2]
+            for position, record in enumerate(json.load(archive.extractfile(member))):
+                key = (configuration, match[1], match[2], str(position))
+                _check((role, key) not in records, True, "HIVMedQA unique native file/row keys")
+                records[role, key] = dict(file=path, record=record)
+
+        # The current derived CSV agrees with the historical copy except for cleared Gemini answers.
+        with io.TextIOWrapper(archive.extractfile(root + "deploy_medical_llm_evaluation/evaluation_results/raw_GPT4-score.csv"), encoding="utf-8", newline="") as stream:
+            current = {(row["subfolder"], row["category_id"], row["iteration_number"], row["question_index"]): row for row in csv.DictReader(stream)}
+        with (directory / "raw" / paths["historical"]).open(newline="") as stream:
+            for row in csv.DictReader(stream):
+                key = (row["subfolder"], row["category_id"], row["iteration_number"], row["question_index"])
+                _check(key not in historical, True, "HIVMedQA unique historical runs")
+                _check([row[field] for field in ["GPT1", "GPT2", "GPT3", "GPT4", "GPT5"]],
+                    [current[key][field] for field in ["GPT1", "GPT2", "GPT3", "GPT4", "GPT5"]], "HIVMedQA historical/current grade agreement")
+                if key[0] != "Gemini_2.5Pro":
+                    _check([row[field] for field in ["question", "gold_answer", "model_answer"]],
+                        [current[key][field] for field in ["question", "gold_answer", "model_answer"]], "HIVMedQA non-Gemini input and answer agreement")
+                else:
+                    _check([current[key][field] for field in ["question", "gold_answer", "model_answer"]], ["", "", ""], "HIVMedQA historical Gemini text recovery, not invented responses")
+                historical[key] = row
+
+    for (role, key), entry in records.items():
+        if role not in {"raw", "rephrased_true_answers"}:
+            continue
+        record = entry["record"]
+        control = role == "rephrased_true_answers"
+        if control:
+            decoded = json.loads(re.search(r"\{.*\}", record["response"], flags=re.DOTALL)[0])
+            _check(set(decoded), {"question", "true_answer", "true_answer_rephrased"}, "HIVMedQA complete paraphraser output")
+            prompt = records["prompted_to_rephrase", key]
+            _check(comparable(decoded["question"]) in comparable(prompt["record"]["prompt"]), True, "HIVMedQA control receives recorded question")
+            _check(comparable(decoded["true_answer"]) in comparable(prompt["record"]["prompt"]), True, "HIVMedQA control receives reference answer")
+            answer, task_role, input_text = decoded["true_answer_rephrased"], "reference_paraphrasing", prompt["record"]["prompt"]
+        else:
+            decoded, prompt = record, None
+            answer, task_role, input_text = record["answer"], "question_answering", record["question"]
+        answers[key] = dict(source_kind="native_json", source_file=entry["file"], source_record=record,
+            question=decoded["question"], answer=answer, gold=decoded["true_answer"], task_role=task_role,
+            input_text=input_text, retrieval=record.get("rag_sources", []), generation_prompt=prompt, release_aliases=[])
+    for key, row in historical.items():
+        if key not in answers:
+            _check(key[0], "Gemini_2.5Pro", "HIVMedQA historical recovery restricted to empty Gemini native arrays")
+            answers[key] = dict(source_kind="historical_csv", source_file=paths["historical"], source_record=row,
+                question=row["question"], answer=row["model_answer"], gold=row["gold_answer"], task_role="question_answering",
+                input_text=row["question"], retrieval=[], generation_prompt=None, release_aliases=[])
+            counts["historical_gemini_answers"] += 1
+        else:
+            for source_field, field in [("question", "question"), ("model_answer", "answer"), ("gold_answer", "gold")]:
+                _check(comparable(row[source_field]), comparable(answers[key][field]), "HIVMedQA historical/native text association")
+
+    lookup = {}
+    for key, answer in answers.items():
+        if answer["task_role"] == "reference_paraphrasing":
+            label = "Rephrased Gold Answers"
+        elif key in historical:
+            label = params["legacy_models"][historical[key]["model"]]
+        else:
+            continue
+        association = label, comparable(answer["question"]), key[2]
+        _check(association not in lookup, True, "HIVMedQA unambiguous original release association")
+        lookup[association] = key
+    with (directory / "raw" / paths["release"]).open(newline="") as stream:
+        for row in csv.DictReader(stream):
+            key = lookup[row["model"], comparable(row["question"]), row["iteration_number"]]
+            answer = answers[key]
+            for source_field, field in [("question", "question"), ("model_answer", "answer"), ("gold_answer", "gold")]:
+                _check(comparable(row[source_field]), comparable(answer[field]), "HIVMedQA original released text preserved modulo source quotation/whitespace edits")
+            answer["release_aliases"].append(row)
+            counts["original_release_runs"] += 1
+
+    for (role, key), entry in records.items():
+        if role not in protocols:
+            continue
+        protocol = protocols[role]
+        if role.startswith("prompted_"):
+            requests[key, protocol] = entry
+            text = entry["record"]["prompt"]
+            rubric = text[:text.index("Medical student’s answer:")]
+            output_format = text[text.index("Output Format"):]
+            if protocol in templates:
+                _check((rubric, output_format), templates[protocol], "HIVMedQA invariant native grading rubric")
+            templates[protocol] = rubric, output_format
+            _check(comparable(answers[key]["answer"]) in comparable(text), True, "HIVMedQA judge request corresponds to model output")
+        else:
+            replies[key, protocol] = entry
+    for protocol, (rubric, output_format) in templates.items():
+        verifier = metadata["grading"]["verifiers"][protocol]
+        _check((verifier["rubric"], verifier["output_format"]), (rubric, output_format), "HIVMedQA verifier matches all saved grading requests")
+        _check(verifier["judge"], "gpt-4o" if protocol == "reference_paraphrase_quality" else "gpt-4o-2024-08-06", "HIVMedQA actual judge model in source code")
+
+    evaluations = {}
+    for key, protocol in requests.keys() | replies.keys():
+        prompt, reply = requests.get((key, protocol)), replies.get((key, protocol))
+        _check(key in answers, True, "HIVMedQA grading records have recorded inputs and outputs")
+        text = reply["record"]["response"] if reply else ""
+        block = re.search(r"\{.*\}", text, flags=re.DOTALL)
+        decoded = json.loads(block[0]) if block else {}
+        grades, statuses = {}, {}
+        for field in params["dimensions"]:
+            value = decoded.get(field)
+            try:
+                grade = float(value) if value is not None else None
+            except (TypeError, ValueError):
+                grade = None
+            if grade is not None:
+                _check(not isinstance(value, bool) and math.isfinite(grade) and 0 <= grade <= 5, True, "HIVMedQA finite explicit native grade")
+            status = "missing_judge_output" if reply is None else "no_json_object" if block is None else "missing_or_nonnumeric_grade" if grade is None else "available"
+            grades[field], statuses[field] = grade, status
+            counts[status] += 1
+            counts["valid_zero_grades"] += grade == 0
+            counts["fractional_grades"] += grade is not None and grade != int(grade)
+        evaluations[key, protocol] = dict(prompt=prompt, reply=reply, grades=grades, statuses=statuses)
+        if protocol != "reference_free":
+            for alias in answers[key]["release_aliases"]:
+                for number, field in enumerate(params["dimensions"], 1):
+                    old_grade = float(alias[f"MedGPT{number}"])
+                    grade = grades[field]
+                    if grade is not None:
+                        _check(old_grade, grade, "HIVMedQA original and native numeric grades unchanged")
+                        counts["original_numeric_grades_unchanged"] += 1
+                    else:
+                        _check((old_grade, statuses[field]), (0, "no_json_object"), "HIVMedQA original parser's zero default becomes unavailable, not an observed failure")
+                        counts["original_parser_zero_defaults_corrected"] += 1
+    _check({key for key, protocol in evaluations}, set(answers), "HIVMedQA retain every saved generation, including unfinished grading")
+    return answers, evaluations, dict(counts)
+
+
+def _hivmedqa(directory, tables, metadata, source=None):
+    """Check every recorded judgment, full trace and task/subject association."""
+    answers, evaluations, counts = source if source is not None else _hivmedqa_source_records(directory, metadata)
+    params = metadata["build"]["parameters"]
+    _check(metadata["benchmark"]["response_scale"], dict(kind="interval", min=0, max=5, direction="higher_is_better"), "HIVMedQA native 0–5 scale includes fractional grades")
+    subjects, models = tables["subjects"].set_index("subject_id").to_dict("index"), {}
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    for subject_id, row in subjects.items():
+        features = _features(row["subject_features_extra"])
+        configuration = features["source_configuration"]
+        _check(configuration not in models, True, "HIVMedQA each execution configuration once")
+        role = "reference_paraphrasing" if configuration == params["association"]["control_configuration"] else "question_answering"
+        _check((row["display_name"], row["harness"]), (params["model_labels"][configuration], params["subject_features"]["harness"]), "HIVMedQA model and harness labels")
+        _check(features, dict(source_configuration=configuration, task_role=role, configuration_scope=params["subject_features"]["configuration_scope"]), "HIVMedQA recorded task role without invented inference settings")
+        models[configuration] = subject_id
+    _check(set(models), {key[0] for key in answers}, "HIVMedQA all released model configurations")
+    _check(set(traces), set(tables["responses"].response_id), "HIVMedQA complete trace associations")
+    seen, item_aliases = Counter(), {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = tuple(trace[field] for field in ["configuration", "category_id", "iteration_number", "question_index"])
+        protocol, field = trace["protocol"], trace["source_field"]
+        answer, evaluation = answers[key], evaluations[key, protocol]
+        expected = dict(zip(["configuration", "category_id", "iteration_number", "question_index"], key))
+        expected.update({name: answer[name] for name in ["source_kind", "source_file", "source_record", "task_role", "release_aliases"]})
+        for prefix, source_record in [("generation_prompt", answer["generation_prompt"]), ("judge_prompt", evaluation["prompt"]), ("judge_reply", evaluation["reply"])]:
+            expected[prefix + "_file"] = source_record["file"] if source_record else None
+            expected[prefix + "_record"] = source_record["record"] if source_record else None
+        expected.update(protocol=protocol, source_field=field, grading_status=evaluation["statuses"][field])
+        _check(trace, expected, "HIVMedQA complete native records and source aliases without truncation")
+        _check((row.subject_id, None if pd.isna(row.response) else row.response, row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)),
+            (models[key[0]], evaluation["grades"][field], int(key[2]), True, True), "HIVMedQA exact subject, grade, trial and missing conditions")
+        item = items[row.item_id]
+        elements = [dict(content_type="text/plain", text=answer["input_text"])]
+        if answer["retrieval"]:
+            elements.append(dict(content_type="text/plain", text=params["presentation"]["retrieval"].format(references=json.dumps(answer["retrieval"], ensure_ascii=False, sort_keys=True))))
+        _check(json.loads(item["content"]), dict(multimedia_elements=elements), "HIVMedQA complete recorded input with reference supplied only in the control condition")
+        _check(_features(item["item_features"]), dict(task_role=answer["task_role"], input_scope=params["presentation"][answer["task_role"]]), "HIVMedQA distinguish answering from reference paraphrasing")
+        rule = metadata["grading"]["rule"] + "\nClinical dimension: " + params["dimensions"][field] + "\nGrading protocol: " + protocol
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=answer["gold"] if protocol != "reference_free" else None, rule=rule), "HIVMedQA dimension- and protocol-specific grading criterion")
+        verifier = metadata["grading"]["verifiers"][protocol]
+        _check(json.loads(item["verifier"]), {"class": "judge", "judge": verifier["judge"], "judged_by": "llm", "spec": json.dumps(verifier, sort_keys=True)}, "HIVMedQA correct native judge and full rubric")
+        _check(pd.isna(item["asset_manifest"]), True, "HIVMedQA no invented retrieval passages or per-run assets")
+        item_aliases.setdefault(row.item_id, set()).add("category_" + key[1] + ":question_" + key[3])
+        seen[key, protocol, field] += 1
+    _check(seen, Counter({(key, protocol, field): 1 for key, protocol in evaluations for field in params["dimensions"]}), "HIVMedQA every judgment exactly once without duplicate release copies")
+    _check(set(item_aliases), set(items), "HIVMedQA every item has source observations")
+    for item_id, aliases in item_aliases.items():
+        _check(items[item_id]["raw_item_id"] in aliases, True, "HIVMedQA native category and question position")
+    _check(len(tables.get("assets", [])), 0, "HIVMedQA no unrecorded per-run assets")
+    return dict(source_runs=len(answers), source_responses=sum(seen.values()), source_subjects=len(models),
+        question_answering_runs=sum(row["task_role"] == "question_answering" for row in answers.values()),
+        reference_paraphrasing_runs=sum(row["task_role"] == "reference_paraphrasing" for row in answers.values()), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11344,7 +11560,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
