@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 14070
+    logical_sha256: 924c8f444d95fb51f577774a6b3f5eb837f6af8fd8cc61a2353d1af2be4b15ab
+  subjects:
+    rows: 14
+    logical_sha256: 6285d48b89f0d4fbfc9e955d0845d5db9a3002d23a5e6c14af2ab0d515a812e2
+  responses:
+    rows: 14070
+    logical_sha256: aab3bf7ca89f83af0b71d8875215064bae221d9072b5e23b4d8f93e360755c4d
+  items:
+    rows: 2960
+    logical_sha256: e07650356b82efdee8fcbba5e5b861ea5f02c001bdff63fa863c7c57002a7116
+  benchmarks:
+    rows: 1
+    logical_sha256: 0ded6b977381623fb22f00d8e478f8f84bffc624540702558d7b3b4eea71dc52
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 14070
+  source_question_stimuli:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 370
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 2960
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 14
+  source_result_artifacts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 39
+  source_answer_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 1860
+  source_boolean_only:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 12210
+  source_unconfirmed_configuration:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 10
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Felhof/sandbagging-elicitation/tree/b3b2c7f4e31729a6e4840bfaf45c773f91f75997/data/mcqa
+    locator: 33 ordered Boolean arrays and six JSONL answer files; independently read every native entry and compare
+      its question, configuration and grade.
+    scope: Released MCQA result artifacts. Fourteen subject configurations include one unconfirmed partial artifact;
+      2,960 items are question/grading/shot variants of 370 stimuli.
+    expected: 7041

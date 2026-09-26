@@ -9664,6 +9664,120 @@ def _ehrflow(directory, tables, metadata, source=None):
         source_quality_scores=sum(candidate["score"] is not None for question, candidate in native.values()))
 
 
+
+def _elicitation_source_records(directory, metadata):
+    """Read the native MCQA files without invoking the tabular transformation."""
+    import csv
+    import math
+    import re
+    import shlex
+
+    raw = directory / "raw/release"
+    mcqa = raw / "data/mcqa"
+    with (mcqa / "wmdp_test.csv").open() as stream:
+        questions = list(csv.DictReader(stream))
+    configurations = {}
+    for path in sorted((raw / "scripts/anti_refusal_training").glob("evaluate_anti_refusal_sft*.sh")):
+        args = shlex.split(path.read_text().replace("\\\n", " "))
+        model = args[args.index("--model_name") + 1]
+        output = args[args.index("--result_filename") + 1]
+        checkpoint = args[args.index("--model_path") + 1]
+        # This exact author script contains a trailing 'gi' typo. Retain the
+        # script unchanged and use its corresponding released artifact name.
+        if path.name == "evaluate_anti_refusal_sft_mistral-cb.sh":
+            _check(output, "mistral-cb-resultsgi", "Elicitation original launch-script typo")
+            output = "mistral-cb-results"
+        configurations[output + ".jsonl"] = (model, "circuit-broken" if checkpoint.endswith("-cb") else "pw-locked")
+    configurations["gemma-2-9b-it-results.jsonl"] = ("unconfirmed", "unspecified")
+    native = {}
+    for path in sorted(mcqa.glob("*results/*")):
+        relative = str(path.relative_to(mcqa))
+        match = re.fullmatch(r"(prefilling|gcg)_results_(.+)_(pw-locked|circuit-broken)_(\d+)_shot_(\d+)_seed\.json", path.name)
+        if match:
+            technique, model, organism, shots, seed = match.groups()
+            payload = json.loads(path.read_text())
+            _check(len(payload["results"]), len(questions), "Elicitation complete ordered result array")
+            _check(all(type(value) is bool for value in payload["results"]), True, "Elicitation strict source Booleans")
+            _check(math.isclose(sum(payload["results"]) / len(questions), payload["accuracy"], abs_tol=1e-12), True,
+                   "Elicitation original aggregate agrees with item flags")
+            records = payload["results"]
+        elif path.suffix == ".jsonl" and path.parent.name == "anti_refusal_training_results":
+            technique, shots, seed = "anti_refusal", None, None
+            model, organism = configurations[path.name]
+            records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            _check([row["correct_answer"] for row in records], [q["answer"] for q in questions[:len(records)]],
+                   "Elicitation answer-file gold sequence matches the test prefix")
+        else:
+            continue  # Optimization suffix artifacts do not contain attempts.
+        for index, record in enumerate(records):
+            key = relative, index
+            _check(key not in native, True, "Elicitation unique native file/position")
+            grade = float(record) if type(record) is bool else float(record["parsed_answer"].strip() == record["correct_answer"])
+            native[key] = dict(record=record, grade=grade, model=model, organism=organism, technique=technique, shots=shots, seed=seed)
+    _check((len(questions), len(native), len({key[0] for key in native})), (370, 14070, 39), "Elicitation complete reviewed release")
+    return questions, native
+
+
+def _elicitation(directory, tables, metadata, source=None):
+    """Check every grade, native answer, task association and configuration."""
+    import unicodedata
+
+    questions, native = source if source is not None else _elicitation_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (14070, 14070, 14, 2960), "Elicitation table scope")
+    _check(set(traces), set(tables["responses"].response_id), "Elicitation trace-response bijection")
+    seen, checked, used_subjects = Counter(), set(), set()
+    labels = {"mistral": "Mistral-7B-v0.1", "mistral-instruct": "Mistral-7B-Instruct-v0.2",
+              "gemma-2-9b-it": "gemma-2-9b-it", "unconfirmed": "Unconfirmed model"}
+    parameters = metadata["build"]["parameters"]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        _check(type(key[1]), int, "Elicitation integer source position")
+        expected = native[key]
+        question = questions[key[1]]
+        _check(trace, dict(source_file=key[0], source_row=key[1], record=expected["record"]), "Elicitation unmodified complete native record")
+        _check(row.response, expected["grade"], "Elicitation exact original grade without rejudging")
+        condition = "seed=" + expected["seed"] if expected["seed"] is not None else None
+        _check((row.trial, None if pd.isna(row.test_condition) else row.test_condition, pd.isna(row.interactors)),
+               (1, condition, True), "Elicitation original trial context")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], labels[expected["model"]] + " (" + expected["organism"] + ")", "Elicitation source-supported model label")
+        _check(_features(subject["subject_features_extra"]), dict(organism=expected["organism"], technique=expected["technique"],
+            **parameters["subject_features"]), "Elicitation intervention identity without invented historical checkpoints")
+        _check(all(pd.isna(subject[name]) for name in ["normalized_name", "provider", "harness", "reasoning_effort", "harness_version"]), True,
+               "Elicitation source organism label is not an identified unmodified backbone")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], "wmdp_test:" + str(key[1]), "Elicitation correct target-question association")
+        item_features = dict(domain=question["subject"], technique=expected["technique"], **parameters["item_features"])
+        if expected["shots"] is not None:
+            item_features["shot"] = expected["shots"]
+        _check(_features(item["item_features"]), item_features, "Elicitation prompt variant includes its shot count")
+        if row.item_id not in checked:
+            protocol = metadata["grading"]["verifiers"][expected["technique"]]
+            _check(item["content"], unicodedata.normalize("NFC", question["question_prompt"]).strip(), "Elicitation complete target prompt")
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=question["answer"], rule=protocol["rule"]), "Elicitation gold option and original grading rule")
+            verifier = dict(spec=json.dumps(protocol, sort_keys=True))
+            if expected["technique"] == "anti_refusal":
+                verifier.update({"class": "judge", "judge": "google/gemma-2-9b-it", "judged_by": "llm"})
+            else:
+                verifier["class"] = "exact_matcher"
+            _check(json.loads(item["verifier"]), verifier, "Elicitation preserve parser/grader identity")
+            _check(pd.isna(item["asset_manifest"]), True, "Elicitation no fabricated historical prompt assets")
+            checked.add(row.item_id)
+        used_subjects.add(row.subject_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "Elicitation every released file/position exactly once")
+    _check((checked, used_subjects), (set(items), set(subjects)), "Elicitation no unused items or subjects")
+    answers = sum(isinstance(row["record"], dict) for row in native.values())
+    return dict(source_responses=len(native), source_question_stimuli=len(questions), source_items=len(items), source_subjects=len(subjects),
+        source_result_artifacts=len({key[0] for key in native}), source_answer_records=answers, source_boolean_only=len(native) - answers,
+        source_unconfirmed_configuration=sum(row["model"] == "unconfirmed" for row in native.values()),
+        source_successes=int(sum(row["grade"] for row in native.values())))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9676,7 +9790,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

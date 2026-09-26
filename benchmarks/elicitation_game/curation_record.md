@@ -1,0 +1,3 @@
+- Source: pinned author release; 33 correctness arrays and six answer files, totaling 14,070 records on the 370-question WMDP test split.
+- Mapping: retain every original grade and available answer, distinguish experimental configurations, and include the ten-row artifact under an explicitly unconfirmed model identity. Grading protocols remain part of item identity.
+- Scope: target questions are complete, but historical few-shot draws, exact checkpoints and full requests are not recorded. Boolean-only files have no execution trace; JSONL files preserve their original answer text and parser output. No fresh inference or rejudging.
