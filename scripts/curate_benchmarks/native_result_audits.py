@@ -8780,6 +8780,131 @@ def _doris_mae(directory, tables, metadata, *, source=None):
         **{"source_label_" + str(label): n for label, n in labels.items()})
 
 
+def _dtap_source_records(directory):
+    """Read all DTap result folders and resolve only consistent recorded inputs."""
+    from collections import defaultdict
+    groups = defaultdict(lambda: dict(judges=[], histories=[], inputs=set()))
+    for path in sorted((directory / "raw/trajectories").rglob("*.json")):
+        source = str(path.relative_to(directory / "raw"))
+        record = json.loads(path.read_text())
+        folder = source.rsplit("/", 1)[0]
+        group = groups[folder]
+        if "task_success" in record and "attack_success" in record:
+            group["judges"].append((source, record))
+        else:
+            group["histories"].append(dict(source_file=source, record=record))
+            if "traj_info" in record and "trajectory" in record:
+                turns = [step["state"] for step in record["trajectory"] if step.get("role") == "user"]
+                _check(all(isinstance(value, str) for value in turns), True, "DTap native user-turn text")
+                if turns:
+                    content = turns[0] if len(turns) == 1 else json.dumps(turns, ensure_ascii=False)
+                else:
+                    content = record["task_info"].get("original_instruction")
+                content = content or None
+                goal = json.dumps(record["task_info"].get("malicious_instruction"), ensure_ascii=False)
+                group["inputs"].add((content, goal))
+            else:
+                _check(set(record), {"task_info", "attack_config", "attack_result", "attack_trajectory"},
+                    "DTap identified auxiliary attacker record")
+    eligible = {folder: group for folder, group in groups.items()
+                if len(group["inputs"]) == 1 and next(iter(group["inputs"]))[0] is not None}
+    return groups, eligible
+
+
+def _dtap(directory, tables, metadata, *, source=None):
+    """Check every qualified published verdict, input and full related history."""
+    import math
+    import unicodedata
+    groups, eligible = _dtap_source_records(directory) if source is None else source
+    settings = metadata["build"]["parameters"]
+    expected, trials, trial_counts, canonical_inputs = {}, {}, Counter(), {}
+    for metric in metadata["grading"]["verifiers"]:
+        scale = metadata["grading"]["verifiers"][metric]["criterion"]["response_scale"]
+        _check(scale["values"], [0, 1], "DTap binary verdict values")
+        _check(scale["direction"], "higher_is_better" if metric == "task_success" else "lower_is_better",
+            "DTap distinguish defender utility from attacker success")
+        for folder, group in eligible.items():
+            parts = folder.split("/")
+            subject, task, split = "/".join(parts[1:3]), "/".join(parts[3:]), parts[4]
+            if metric == "attack_success" and split != "malicious":
+                continue
+            content, goal = next(iter(group["inputs"]))
+            normalized = unicodedata.normalize("NFC", content).strip()
+            canonical_content = canonical_inputs.setdefault((task, metric, goal, normalized), content)
+            unique = {}
+            for filename, judge in group["judges"]:
+                fingerprint = json.dumps(judge, sort_keys=True)
+                if fingerprint not in unique:
+                    unique[fingerprint] = (judge, [])
+                unique[fingerprint][1].append(filename)
+            for judge, filenames in unique.values():
+                filename = filenames[0]
+                value = judge[metric]
+                _check(value is None or isinstance(value, bool), True, "DTap native boolean/null verdict")
+                key = filename, metric
+                expected[key] = dict(subject=subject, task=task, content=canonical_content, goal=goal,
+                    judge=judge, judge_files=filenames, histories=group["histories"], response=value)
+                trial_key = subject, task, normalized, goal, metric
+                trial_counts[trial_key] += 1
+                trials[key] = trial_counts[trial_key]
+    _check(len(tables["responses"]), len(expected), "DTap all and only qualified verdicts")
+    _check(len(tables["traces"]), len(expected), "DTap complete related histories for every verdict")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    _check(Counter(row["harness"] + "/" + row["display_name"] for row in subjects.values()),
+        Counter({value["subject"]: 1 for value in expected.values()}), "DTap exact released framework/model configurations")
+    for subject in subjects.values():
+        _check(_features(subject["subject_features_extra"]),
+            dict(configuration_scope=settings["subject"]["scope"]), "DTap no invented inference settings")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DTap trace-response bijection")
+    seen, used_items, nulls, checker_errors = Counter(), set(), 0, 0
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        item = items[row.item_id]
+        features = _features(item["item_features"])
+        metric = json.loads(json.loads(item["verifier"])["spec"])["field"]
+        key = trace["judge_file"], metric
+        native = expected[key]
+        seen[key] += 1
+        subject = subjects[row.subject_id]
+        _check(subject["harness"] + "/" + subject["display_name"], native["subject"], "DTap verdict-model association")
+        _check(trace, dict(judge_file=key[0], judge=native["judge"], judge_files=native["judge_files"], related_histories=native["histories"],
+            association=settings["traces"]["association"]), "DTap complete native verdict and histories without invented attempt links")
+        if native["response"] is None:
+            _check(pd.isna(row.response), True, "DTap unavailable verdict remains null")
+            nulls += 1
+        else:
+            _check(math.isfinite(row.response) and row.response == float(native["response"]), True,
+                "DTap published verdict unchanged")
+        checker_errors += str(native["judge"].get(metric.replace("success", "message"), "")).startswith("Error running")
+        _check(row.trial, trials[key], "DTap copied verdict occurrence order")
+        _check(row.test_condition, "source_task=" + native["task"] + ";metric=" + metric, "DTap source task and metric condition")
+        _check(pd.isna(row.interactors), True, "DTap no inferred attacker model identity")
+        _check(item["raw_item_id"], native["task"] + ":" + metric, "DTap source task/metric identity")
+        _check(item["content"], native["content"], "DTap complete recorded user input")
+        _check(features, dict(source_task=native["task"],
+            input_scope=settings["input_scope"]["description"]), "DTap explicit input scope")
+        protocol = metadata["grading"]["verifiers"][metric]
+        criterion = dict(protocol["criterion"], reference_answer=None, rule=protocol["criterion"]["rule"] + "\n" +
+            json.dumps(dict(source_task=native["task"], recorded_attacker_goal=json.loads(native["goal"])), ensure_ascii=False))
+        _check(json.loads(item["grading_criterion"]), criterion, "DTap metric-specific protocol, direction and goal")
+        _check(json.loads(item["verifier"]), {"class": "exact_matcher", "spec": json.dumps(protocol["verifier"], sort_keys=True)},
+            "DTap published verdict provenance")
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in expected}), "DTap qualified verdict bijection")
+    _check(used_items, set(items), "DTap all and only evaluated inputs")
+    excluded = set(groups) - set(eligible)
+    return dict(source_result_folders=len(groups), source_judge_files=sum(len(group["judges"]) for group in groups.values()),
+        source_related_histories=sum(len(group["histories"]) for group in groups.values()),
+        source_unresolved_input_folders=len(excluded),
+        source_unresolved_judge_files=sum(len(groups[folder]["judges"]) for folder in excluded),
+        source_qualified_responses=len(expected), source_qualified_items=len(items), source_subjects=len(subjects),
+        source_null_verdicts=nulls, source_recorded_checker_errors=checker_errors,
+        source_multiple_history_folders=sum(len(group["histories"]) > 1 for group in eligible.values()),
+        source_copied_verdict_files=sum(max(len(group["judges"]) - 1, 0) for group in groups.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -8800,4 +8925,4 @@ def verify_native_results(directory, tables_directory=None):
             "arena_140k": _arena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
-            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco, "doris_mae": _doris_mae}[directory.name](directory, tables, metadata)
+            "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco, "doris_mae": _doris_mae, "dtap_bench": _dtap}[directory.name](directory, tables, metadata)

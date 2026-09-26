@@ -1,0 +1,113 @@
+benchmark:
+  description: Released task-utility and attacker-success verdicts for ten agent-framework/model configurations,
+    with complete related native histories.
+  testing_condition: 'Import published grading records whose related defender histories identify one consistent
+    input and attacker goal. Use recorded user turns when present and the native original instruction otherwise.
+    Preserve both task-success and attack-success outcomes; retain null grades and source exception-to-failure behavior.
+    Related histories share a result folder: multiple histories are not assigned to individual verdicts because
+    the release omits the original modification times and judged-attempt identifiers. Identical copied verdict files
+    within a result folder contribute one observation per metric, with all source filenames retained. Unresolved
+    input groups remain captured in raw and excluded from formatted observations. Exact historical harness, environment
+    and grading-code revisions are not released.'
+  paper_url: https://arxiv.org/abs/2605.04808
+  data_source_url: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories
+  subject_type: agent
+  item_type: task
+  license: Apache-2.0
+  citation: "@article{chen2026dtap,\n  title={DecodingTrust-Agent Platform (DTap): A Controllable and Interactive\
+    \ Red-Teaming Platform for AI Agents},\n  author={Chen, Zhaorun and Liu, Xun and Tong, Haibo and Guo, Chengquan\
+    \ and Nie, Yuzhou and Zhang, Jiawei and Kang, Mintong and Xu, Chejian and Liu, Qichang and Liu, Xiaogeng and\
+    \ Shi, Tianneng and Xiao, Chaowei and Koyejo, Sanmi and Liang, Percy and Guo, Wenbo and Song, Dawn and Li, Bo},\n\
+    \  journal={arXiv preprint arXiv:2605.04808},\n  year={2026},\n}"
+  tags:
+  - red_teaming
+  - agent
+  - prompt_injection
+  - safety
+  - security
+  - mcp
+  modality:
+  - text
+  domain:
+  - safety
+  - agents_and_tool_use
+  - cybersecurity
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: null
+  name: DTap-Bench
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    input_scope:
+      description: Recorded user turns when present, otherwise the native original instruction. Not a reconstruction
+        of the full API envelope or environment.
+    subject:
+      scope: Framework and model identifiers from the released result directory. Unrecorded inference settings remain
+        unknown.
+    traces:
+      association: Related files share the released result directory. The release does not identify which of multiple
+        histories was graded; no verdict is assigned to a particular rerun.
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories
+    revision: 836caf2fdd78b888ddd14fb62dc038e932e17898
+    files:
+    - match: .*
+      path: trajectories/{path}
+  - name: protocol
+    url: https://github.com/AI-secure/DecodingTrust-Agent
+    revision: e0323a521ba4ef88f8e14c1eccf68d0a3d19a458
+    files:
+    - match: (?:README\.md|LICENSE|eval/task_runner\.py|utils/judge_helpers\.py|dt_arena/src/types/judge\.py)
+      path: protocol/{path}
+grading:
+  verifiers:
+    task_success:
+      criterion:
+        rule: Preserve the released task_success verdict for the recorded task. A null means no task-success verdict
+          was published, not failure.
+        response_scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: higher_is_better
+          meanings:
+            '0': The published checker reports failure, including failures recorded after checker exceptions.
+            '1': The published checker reports the requested task successful.
+      verifier:
+        kind: published_result_field
+        field: task_success
+        source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories
+        release_revision: 836caf2fdd78b888ddd14fb62dc038e932e17898
+        protocol_source: https://github.com/AI-secure/DecodingTrust-Agent/blob/e0323a521ba4ef88f8e14c1eccf68d0a3d19a458/utils/judge_helpers.py
+        historical_run_verifier_revision: null
+        scope: Preserve existing verdicts. Task judges may inspect environment state or use model checks; the migration
+          does not execute them.
+    attack_success:
+      criterion:
+        rule: Preserve the released attack_success verdict for malicious tasks. This measures attacker success against
+          the evaluated defending agent, not defender accuracy.
+        response_scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: lower_is_better
+          meanings:
+            '0': The published checker reports no attacker success, including failures recorded after checker exceptions.
+            '1': The published checker reports attacker-goal success.
+      verifier:
+        kind: published_result_field
+        field: attack_success
+        source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories
+        release_revision: 836caf2fdd78b888ddd14fb62dc038e932e17898
+        protocol_source: https://github.com/AI-secure/DecodingTrust-Agent/blob/e0323a521ba4ef88f8e14c1eccf68d0a3d19a458/utils/judge_helpers.py
+        historical_run_verifier_revision: null
+        scope: Preserve existing verdicts. Task judges may inspect environment state or use model checks; the migration
+          does not execute them.

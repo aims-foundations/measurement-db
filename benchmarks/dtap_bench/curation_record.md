@@ -1,0 +1,3 @@
+- **Source:** Pinned author release with 65,910 grading files and full histories for ten framework/model configurations; captured bytes remain unchanged.
+- **Transform:** Five tabular stages produce 106,570 utility/security outcomes, including 720 null verdicts. Eight identical verdict copies do not create extra trials; published checker errors remain as recorded.
+- **Limits:** Keep 75 unresolved-input folders in raw. Histories are linked by result folder, not a guessed graded-attempt ID. Historical inference and environment settings are unknown.
