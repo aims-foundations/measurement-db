@@ -10036,6 +10036,86 @@ def _felm(directory, tables, metadata, source=None):
         source_empty_segments=sum(not row["segment"] for row in native.values()),
         source_unavailable_parent_answers=sum(not isinstance(row["response"], str) for row in parents.values()))
 
+def _faithcot_source_records(directory, metadata):
+    """Read every native trajectory independently of normalization and table joins."""
+    import unicodedata
+    from zipfile import ZipFile
+
+    native, identities, repeated = {}, {}, Counter()
+    with ZipFile(directory / "raw" / metadata["build"]["parameters"]["paths"]["records"]) as archive:
+        for path in sorted(archive.namelist()):
+            if not path.endswith(".json") or "/response_" not in path:
+                continue
+            text = archive.read(path).decode("utf-8")
+            original = json.loads(text)
+            _, task, model, filename = path.split("/")
+            answer = original["sample_0"]["parsed_final_answer"]
+            flag = original.get("unfaithfulness")
+            _check(answer is None or isinstance(answer, str), True, "FaithCoT native answer type")
+            _check(flag is None or type(flag) is int and flag in (0, 1), True, "FaithCoT native human annotation type")
+            correct = None if answer is None else float(answer.strip() == original["label"].strip())
+            faithful = None if flag is None else float(1 - flag)
+            expected_type = 2 * int(bool(correct)) + (1 if faithful else 2)
+            conflict = original.get("faithful_type") is not None and original["faithful_type"] != expected_type
+            issues = (["parsed_answer_unavailable"] if correct is None else []) + (
+                ["human_annotation_unavailable"] if faithful is None else []) + (
+                ["combined_type_inconsistent_or_undefined"] if conflict else [])
+            inputs = {k: original[k] for k in ("cot_prompt", "question", "options", "final_answer_str", "prefix")}
+            for metric, grade in (("correct", correct), ("faithful", faithful)):
+                gold = original["label"] if metric == "correct" else None
+                identity = (task, metric, unicodedata.normalize("NFC", json.dumps(inputs, ensure_ascii=False)), gold)
+                raw_id = task + ":" + filename.removeprefix("response_").removesuffix(".json") + ":" + metric
+                identities.setdefault(identity, dict(raw_id=raw_id, inputs=inputs))
+                repeated[model, identity] += 1
+                native[path, metric] = dict(text=text, original=original, model=model, task=task,
+                    metric=metric, grade=grade, gold=gold, identity=identity, issues=issues,
+                    trial=repeated[model, identity])
+    _check((len(native), len(identities)), (2728, 687), "FaithCoT complete trajectories and input/protocol variants")
+    return native, identities
+
+
+def _faithcot(directory, tables, metadata, source=None):
+    """Check every grade, missing value, stimulus, native record and association."""
+    native, identities = source if source is not None else _faithcot_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (2728, 2728, 4, 687), "FaithCoT all released measurements including ungraded attempts")
+    _check(set(traces), set(tables["responses"].response_id), "FaithCoT trace bijection")
+    seen, checked, used = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["metric"]
+        expected = native[key]
+        _check(trace, dict(source_file=key[0], metric=key[1], source_record_json=expected["text"],
+            source_issues=expected["issues"]), "FaithCoT complete original JSON and unmodified annotation evidence")
+        _check(None if pd.isna(row.response) else row.response, expected["grade"], "FaithCoT literal source grade with missingness preserved")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)),
+               (expected["trial"], True, True), "FaithCoT repeated observations and protocol separation")
+        subject = subjects[row.subject_id]
+        _check((subject["display_name"], subject["harness"], _features(subject["subject_features_extra"])),
+            (expected["model"], "FaithCoT-Bench", dict(reported_model=expected["model"])), "FaithCoT original generator identity")
+        item = items[row.item_id]
+        stimulus = identities[expected["identity"]]
+        _check((item["raw_item_id"], json.loads(item["content"])), (stimulus["raw_id"], stimulus["inputs"]), "FaithCoT complete input fields and ordered options without answer leakage")
+        _check(_features(item["item_features"]), dict(task=expected["task"]), "FaithCoT source task suite")
+        protocol = metadata["grading"]["verifiers"][key[1]]
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=expected["gold"], rule=protocol["rule"]), "FaithCoT distinct answer/faithfulness grading criteria")
+        verifier = dict(spec=json.dumps(protocol, sort_keys=True))
+        verifier.update({"class": "exact_matcher"} if key[1] == "correct" else {"class": "judge", "judged_by": "human"})
+        _check(json.loads(item["verifier"]), verifier, "FaithCoT human annotation versus deterministic answer comparison")
+        _check(pd.isna(item["asset_manifest"]), True, "FaithCoT text-only stimulus")
+        seen[key] += 1
+        checked.add(row.item_id)
+        used.add(row.subject_id)
+    _check(seen, Counter({key: 1 for key in native}), "FaithCoT each native measurement exactly once")
+    _check((checked, used), (set(items), set(subjects)), "FaithCoT no unused identities")
+    return dict(source_responses=2728, source_items=687, source_subjects=4, source_trajectories=1364,
+        source_parsed_answers=1215, source_human_annotations=1304, source_ungraded_measurements=209,
+        source_faithful_annotations=922, source_unfaithful_annotations=382,
+        source_combined_type_issues=63, source_repeated_measurements=sum(r["trial"] > 1 for r in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10048,7 +10128,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

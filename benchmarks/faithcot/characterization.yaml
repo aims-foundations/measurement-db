@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2728
+    logical_sha256: e61498e56ffb14dd3cc463cce10693ad7e1a0646b048aea204d4dbb09d336392
+  subjects:
+    rows: 4
+    logical_sha256: 4ac248b14d27664fe00e37e6786dd7e71bced174a710d8a71b0d1a1db1732f6c
+  responses:
+    rows: 2728
+    logical_sha256: 86ecc54fcff6e89db46de7ca27bad7491843d5b0e45731c9283e54ba09748c46
+  items:
+    rows: 687
+    logical_sha256: 8a3e24f87f1837da75b260cd8a51a8ab5c310786ae1e220bcf5236b84e5f0a82
+  benchmarks:
+    rows: 1
+    logical_sha256: b7ccaf119aed1db03e89f7d3a49bd1d73ae5fdca0b1fb114bef7ce136862a6a4
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 2728
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 687
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 4
+  source_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 1364
+  source_parsed_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 1215
+  source_human_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 1304
+  source_ungraded_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 209
+  source_faithful_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 922
+  source_unfaithful_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 382
+  source_combined_type_issues:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 63
+  source_repeated_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/se7esx/FaithCoT-BENCH/blob/6e3c004cbbde5bf47352df91e3ac399d2fb4593e/faithcot.zip
+    locator: Read every original ZIP member independently; verify complete input fields, parsed-answer and human-label
+      grades, missingness, source issues, full native records and all model/task/trial associations.
+    scope: All 1,364 released sample_0 generator trajectories under both correctness and human-faithfulness protocols.
+      Excludes rerunning detectors or inferring missing grades from combined labels.
+    expected: 8
