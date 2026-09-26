@@ -1,0 +1,89 @@
+benchmark:
+  name: IneqMath
+  description: Olympiad inequality problems expressed as bound estimation or relation prediction. This release preserves
+    1000 distinct GPT-4o-mini example outputs across four prompt conditions, with individual grades unavailable.
+  testing_condition: 'The public repository contains 400 development and 600 test attempts with their exact saved
+    prompts and complete model outputs. Its zero-shot directory labeled test is an exact copy of the 100 development
+    records, not an additional test run; retain both source locations but count each attempt once. Different prompt
+    conditions define distinct inputs. Individual final-answer judgments and stepwise judgments are not released:
+    responses remain null. The API success flag is not a grade. Aggregate scores cannot identify individual judgments,
+    and no new grading or inference is performed. Model alias and the 10000-token budget are recorded in the source
+    labels; immutable model revision and actual per-call sampling settings are unavailable.'
+  paper_url: https://arxiv.org/abs/2506.07927
+  data_source_url: https://github.com/lupantech/ineqmath
+  subject_type: model
+  item_type: question
+  license: The upstream repository declares MIT for code and CC-BY-SA-4.0 for the dataset in LICENSE-DATA.
+  citation: Lu et al. Solving Inequality Proofs with Large Language Models. NeurIPS 2025.
+  tags:
+  - mathematics
+  - inequalities
+  - reasoning
+  - ungraded_attempts
+  modality:
+  - text
+  domain:
+  - mathematics
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect under the final-answer judge
+      '1': Correct under the final-answer judge
+  categorical: true
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.tar.gz
+      root: ineqmath-2bd4413a3efd8ce3bdccc81eb2ec0afab2b25557
+    settings:
+      results/models_results_dev_data/gpt-4o-mini_tokens_10000/results.json: zero_shot
+      results/models_results_test_data/gpt-4o-mini_tokens_10000/results.json: zero_shot
+      results/few_shot_results_dev_data/gpt-4o-mini_tokens_10000_shot_num_3/results.json: few_shot_num_3
+      results/few_shot_results_test_data/gpt-4o-mini_tokens_10000_shot_num_3/results.json: few_shot_num_3
+      results/frequent_theorems_as_hints_results_dev_data/gpt-4o-mini_tokens_10000_theorem_num_3/results.json: theorem_hints_num_3
+      results/frequent_theorems_as_hints_results_test_data/gpt-4o-mini_tokens_10000_theorem_num_3/results.json: theorem_hints_num_3
+      results/frequent_solution_as_hints_results_dev_data/gpt-4o-mini_tokens_10000_solution_num_3/results.json: solution_hints_num_3
+      results/frequent_solution_as_hints_results_test_data/gpt-4o-mini_tokens_10000_solution_num_3/results.json: solution_hints_num_3
+    duplicate_exports:
+      results/models_results_test_data/gpt-4o-mini_tokens_10000/results.json: results/models_results_dev_data/gpt-4o-mini_tokens_10000/results.json
+    subject:
+      model_identifier: gpt-4o-mini
+      harness: IneqMath published example harness
+      max_tokens: '10000'
+      configuration_scope: Released model alias and token-budget label. Immutable model revision and actual per-call
+        sampling settings were not saved.
+    observation:
+      grade_status: individual_judgment_not_released
+      input_scope: Exact released user prompt. System prompt and per-call request configuration are not recorded
+        in these exports.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/lupantech/ineqmath/tar.gz/2bd4413a3efd8ce3bdccc81eb2ec0afab2b25557
+    revision: 2bd4413a3efd8ce3bdccc81eb2ec0afab2b25557
+    file: upstream.tar.gz
+    size: 10507073
+    sha256: dcafda90904d72a46c662611477af786791036fb7b6d4a2ced4a991e74faadc7
+grading:
+  rule: The published final-answer judge extracts a final answer and compares it with the reference, using an LLM
+    for bound extraction or mathematical equivalence and as a fallback for relation extraction. Individual judgments
+    are not saved in the release. Preserve a null grade for each recorded attempt; neither API success nor agreement
+    with aggregate totals establishes correctness. Stepwise proof correctness is a separate unreleased evaluation.
+  verifiers:
+    final_answer:
+      kind: upstream_llm_assisted_final_answer_judge
+      source: https://github.com/lupantech/ineqmath/blob/2bd4413a3efd8ce3bdccc81eb2ec0afab2b25557/models/utils/compute_score.py
+      function: ScoreComputer.evaluate_single_result
+      default_judge: gpt-4o-mini
+      judgment_availability: individual judgments not released
+      execution: not rerun during curation
+      output: aggregate scores.json only
+      stepwise_evaluation: Separate private upstream evaluation platform

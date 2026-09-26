@@ -1,0 +1,3 @@
+- Sources: pin all eight public GPT-4o-mini result exports and the original solver/grader; verify the complete archive against Git.
+- Transform: retain 1000 attempts (400 development, 600 test), full native prompts/outputs and both locations of the duplicate 100-row development export. Prompt variants are distinct inputs.
+- Correction: retire 200 inferred grades from the old release and restore 800 omitted attempts. Individual judge decisions were not released, so every grade is null; aggregate scores and API success are not per-item correctness.

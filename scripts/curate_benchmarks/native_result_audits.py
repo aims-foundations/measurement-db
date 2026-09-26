@@ -11894,6 +11894,110 @@ def _igakuqa119(directory, tables, metadata, source=None):
     return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), source_assets=len(assets), **counts)
 
 
+def _ineqmath_source_records(directory, metadata):
+    """Verify original exports, their raw records and the duplicated dev directory."""
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        files = {member.name.split("/", 1)[1]: member for member in archive if member.isfile()}
+        exports = {name: json.load(archive.extractfile(member)) for name, member in files.items()
+                   if name.startswith("results/") and name.endswith("/results.json")}
+        _check(set(exports), set(metadata["build"]["parameters"]["settings"]), "IneqMath every released result export")
+        dev = "results/models_results_dev_data/gpt-4o-mini_tokens_10000/results.json"
+        duplicate = "results/models_results_test_data/gpt-4o-mini_tokens_10000/results.json"
+        _check(exports[duplicate], exports[dev], "IneqMath mislabeled test export is an exact development copy")
+        _check(metadata["build"]["parameters"]["duplicate_exports"], {duplicate: dev}, "IneqMath only the evidenced duplicate is consolidated")
+        records, locations, source_count = {}, {}, 0
+        for name in sorted(exports):
+            family, label = name.split("/")[1:3]
+            model, budget = label.split("_tokens_", 1)
+            _check((model, budget.split("_")[0]), ("gpt-4o-mini", "10000"), "IneqMath source model alias and token-budget label")
+            if family.startswith("models_results_"):
+                setting = "zero_shot"
+            elif family.startswith("few_shot_results_"):
+                _check(label.endswith("_shot_num_3"), True, "IneqMath few-shot condition")
+                setting = "few_shot_num_3"
+            elif family.startswith("frequent_theorems_as_hints_results_"):
+                _check(label.endswith("_theorem_num_3"), True, "IneqMath theorem-hint condition")
+                setting = "theorem_hints_num_3"
+            elif family.startswith("frequent_solution_as_hints_results_"):
+                _check(label.endswith("_solution_num_3"), True, "IneqMath solution-hint condition")
+                setting = "solution_hints_num_3"
+            else:
+                raise ValueError("Unreviewed IneqMath result family: " + family)
+            _check(metadata["build"]["parameters"]["settings"][name], setting, "IneqMath native prompting condition")
+            raw_prefix = name.removesuffix("results.json") + "raw/"
+            raw_files = {path for path in files if path.startswith(raw_prefix) and path.endswith(".json")}
+            _check(len(raw_files), len(exports[name]), "IneqMath complete combined and per-question exports")
+            for index, record in enumerate(exports[name]):
+                raw = raw_prefix + str(record["data_id"]) + ".json"
+                _check(json.load(archive.extractfile(files[raw])), record, "IneqMath original individual output matches its combined export")
+                _check("evaluation" not in record, True, "IneqMath absence of released individual judgments")
+                primary = dev if name == duplicate else name
+                key = primary, index
+                if key in records:
+                    _check(records[key]["record"], record, "IneqMath duplicate record retains the exact source version")
+                records[key] = dict(record=record, setting=setting, model=model)
+                locations.setdefault(key, []).append(name)
+                source_count += 1
+    return records, locations, source_count
+
+
+def _ineqmath(directory, tables, metadata, source=None):
+    """Check all native attempts without manufacturing per-item judge decisions."""
+    native, locations, source_count = _ineqmath_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        _check(features["model_identifier"], "gpt-4o-mini", "IneqMath named native subject")
+        _check(row.display_name, "gpt-4o-mini", "IneqMath exact source model alias")
+        _check(features, {key: value for key, value in parameters["subject"].items() if key != "harness"}, "IneqMath source token budget and explicit configuration limits")
+        _check(row.harness, parameters["subject"]["harness"], "IneqMath original harness identity")
+        subjects[row.subject_id] = features["model_identifier"]
+    _check(Counter(subjects.values()), Counter({"gpt-4o-mini": 1}), "IneqMath one released model alias")
+    items = {row.item_id: row for row in tables["items"].itertuples()}
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "IneqMath one complete trace per native attempt")
+    seen, used_items, splits, problems, settings = Counter(), set(), Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["primary_file"], trace["source_row"]
+        original = native[key]
+        record = original["record"]
+        _check(trace, dict(primary_file=key[0], source_row=key[1], source_files=sorted(locations[key]),
+            source_record=record, grade_status="individual_judgment_not_released"), "IneqMath complete native output and all source aliases")
+        _check(subjects[row.subject_id], original["model"], "IneqMath exact response-to-model association")
+        _check(pd.isna(row.response), True, "IneqMath unavailable grade is null, independent of API success or aggregate scores")
+        _check(row.trial, 1, "IneqMath duplicate export is not a repeated trial")
+        _check(row.test_condition, "split=" + record["data_split"] + ";setting=" + original["setting"], "IneqMath source split and prompting condition")
+        _check(pd.isna(row.interactors), True, "IneqMath no invented interaction partners")
+        item = items[row.item_id]
+        _check(item.raw_item_id, record["data_split"] + ":" + str(record["data_id"]), "IneqMath namespaced upstream task ID")
+        _check(item.content, record["prompt"], "IneqMath complete original input, including its demonstrations and hints")
+        _check(_features(item.item_features), dict(split=record["data_split"], problem_type=record["type"],
+            prompt_condition=original["setting"], **parameters["observation"]), "IneqMath original task features and input scope")
+        _check(json.loads(item.grading_criterion), dict(reference_answer=record["answer"] or None,
+            rule=metadata["grading"]["rule"]), "IneqMath released reference or explicitly unavailable reference")
+        verifier = json.loads(item.verifier)
+        _check(verifier["class"], "judge", "IneqMath LLM-assisted grader identity")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["final_answer"], "IneqMath correct grading protocol and unavailable judgments")
+        _check(pd.isna(item.asset_manifest), True, "IneqMath no invented attachments")
+        seen[key] += 1
+        used_items.add(row.item_id)
+        splits[record["data_split"]] += 1
+        problems.add((record["data_split"], record["data_id"]))
+        settings.add(original["setting"])
+    _check(seen, Counter({key: 1 for key in native}), "IneqMath every distinct attempt exactly once")
+    _check(used_items, set(items), "IneqMath complete observed input coverage")
+    _check(len(tables.get("assets", [])), 0, "IneqMath no source multimedia assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        source_ungraded=len(native), source_dev_attempts=splits["dev"], source_test_attempts=splits["test"],
+        source_problem_definitions=len(problems), source_prompt_conditions=len(settings),
+        source_export_records=source_count, source_duplicate_records=source_count - len(native))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11907,7 +12011,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
