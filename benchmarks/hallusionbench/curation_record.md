@@ -1,0 +1,3 @@
+- Source: pinned OpenVLMRecords exports and the author's question banks, images and evaluation code. The original Drive result links currently return 404; their missing judgments are not fabricated.
+- Mapping: preserve complete outputs and image inputs. Use the declared frozen exact matcher for maintained exports; keep the earlier reference sample ungraded with its original question-bank revision and unspecified model identity.
+- Review: reconcile every source row, image, reference and derived grade independently. Historical exports and caches remain captured evidence; overlapping snapshots are not counted as new trials.

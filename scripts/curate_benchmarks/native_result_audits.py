@@ -10734,6 +10734,149 @@ def _genai(directory, tables, metadata, source=None):
         source_preserved_messages=sum(len(conversations[key]) for key in transcript_keys))
 
 
+def _hallusion_source_records(directory, metadata):
+    """Read published workbook cells and both original author question-bank versions."""
+    import openpyxl
+
+    parameters = metadata["build"]["parameters"]
+    paths = parameters["paths"]
+    raw = directory / "raw"
+    coordinates = ["category", "subcategory", "visual_input", "set_id", "figure_id", "question_id"]
+    banks, records, models = {}, {}, set()
+    for scope, filename in (("primary", "author/HallusionBench.json"), ("sample", "historical/HallusionBench.json")):
+        for row in json.loads((raw / filename).read_text()):
+            key = "_".join(str(row[name]) for name in coordinates)
+            _check((scope, key) not in banks, True, "Hallusion unique question-bank coordinates")
+            banks[scope, key] = row
+    for path in sorted((raw / paths["release"]).glob("mmeval/*/*_HallusionBench.xlsx")):
+        model = path.name.removesuffix("_HallusionBench.xlsx")
+        _check(model not in models, True, "Hallusion unique maintained model export")
+        models.add(model)
+        workbook = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        rows = workbook.active.iter_rows(values_only=True)
+        header = next(rows)
+        for position, cells in enumerate(rows):
+            _check(len(cells), len(header), "Hallusion workbook row width")
+            record = dict(zip(header, ["" if value is None else value for value in cells], strict=True))
+            index = record["index"]
+            bank = banks["primary", index]
+            image = f'{bank["category"]}/{bank["subcategory"]}/{bank["set_id"]}_{bank["figure_id"]}.png'
+            _check(record["question"], bank["question"], "Hallusion source question text")
+            _check(record["gt_answer_details"], bank["gt_answer_details"], "Hallusion source reference explanation")
+            _check((record["category"], record["l2-category"], record["image_path"].casefold(), record["answer"]),
+                   (bank["category"], bank["category"] + "_" + bank["subcategory"], image.casefold(), {"0": "No", "1": "Yes"}[bank["gt_answer"]]), "Hallusion source visual input and answer")
+            records[str(path.relative_to(raw)), position] = dict(record=record, model=model, scope="primary", index=index)
+        workbook.close()
+    for position, row in enumerate(json.loads((raw / paths["sample"]).read_text())):
+        index = "_".join(str(row[name]) for name in coordinates)
+        bank = banks["sample", index]
+        _check({key: value for key, value in row.items() if key != "model_prediction"},
+               {key: value for key, value in bank.items() if key not in {"gt_answer", "filename"}}, "Hallusion sample matches original bank without coordinate guessing")
+        records[paths["sample"], position] = dict(record=row, model="reference_sample", scope="sample", index=index)
+    images = {}
+    for path in sorted((raw / paths["images"]).glob("*/*/*")):
+        if not path.is_file(): continue
+        relative = str(path.relative_to(raw / paths["images"])).casefold()
+        _check(relative not in images, True, "Hallusion unambiguous case-insensitive image locator")
+        images[relative] = path
+    return records, banks, images, models
+
+
+def _hallusion_extract(text):
+    """Independent scalar implementation of the pinned upstream exact-matching branch."""
+    import re
+    original = text.lower()
+    output = original
+    for punctuation in [';', '/', '[', ']', '"', '{', '}', '(', ')', '=', '+', '\\', '_', '-', '>', '<', '@', '`', ',', '?', '!']:
+        replacement = '' if punctuation + ' ' in original or ' ' + punctuation in original or re.search(r'(\d),(\d)', original) else ' '
+        output = output.replace(punctuation, replacement)
+    # Upstream passes re.UNICODE as the third positional argument: a count of 32.
+    output = re.sub(r'(?<!\d)\.(?!\d)', '', output, count=32)
+    words = output.split()
+    if 'yes' in words and 'no' not in words: return 'Yes'
+    if 'no' in words and 'yes' not in words: return 'No'
+    return 'Unknown'
+
+
+def _hallusion(directory, tables, metadata, source=None):
+    """Reconcile every published cell, exact-matching grade, input image and legacy sample."""
+    import hashlib
+    from urllib.parse import quote
+
+    native, banks, images, models = source if source is not None else _hallusion_source_records(directory, metadata)
+    parameters, protocols = metadata["build"]["parameters"], metadata["grading"]["verifiers"]
+    _check((protocols["exact_matching"]["function"], protocols["exact_matching"]["mode"], protocols["exact_matching"]["api_fallback"]),
+           ("YOrN_Extraction", "exact_matching", False), "Hallusion deterministic upstream grading without API judgments")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    scale = metadata["benchmark"]["response_scale"]
+    _check((scale["kind"], scale["values"], scale["direction"]), ("discrete", [0, 1], "higher_is_better"), "Hallusion correctness scale")
+    _check((len(tables["responses"]), len(traces), len(subjects)), (len(native), len(native), len(models) + 1), "Hallusion all maintained outputs and original sample")
+    _check(set(traces), set(tables["responses"].response_id), "Hallusion complete trace linkage")
+    seen, seen_items, seen_subjects, linked_assets, stats, image_hashes = Counter(), {}, {}, set(), Counter(), {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        source_row = native[key]
+        record, scope, model, index = (source_row[name] for name in ("record", "scope", "model", "index"))
+        bank = banks[scope, index]
+        gold = {"0": "No", "1": "Yes"}[bank["gt_answer"]]
+        prediction = record["prediction"] if scope == "primary" else record["model_prediction"]
+        unavailable = prediction == "" or "Failed to obtain answer via API" in str(prediction)
+        if scope == "sample":
+            status, answer, grade = "unattributed_sample_without_original_grade", None, None
+        elif unavailable:
+            status, answer, grade = "unavailable_output", None, None
+        else:
+            status, answer = "derived_exact_matching", _hallusion_extract(str(prediction))
+            grade = float(answer == gold)
+        _check(trace, dict(source_file=key[0], source_row=key[1], native_record=record, bank_record=bank,
+                           grade_status=status, extracted_answer=answer), "Hallusion complete native output, bank version and grading provenance")
+        _check(None if pd.isna(row.response) else row.response, grade, "Hallusion independently computed exact grade or explicit missing judgment")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "Hallusion no duplicated historical trials")
+        subject, item = subjects[row.subject_id], items[row.item_id]
+        config = parameters["subject_features" if scope == "primary" else "sample_features"]
+        _check(subject["harness"], config["harness"], "Hallusion source harness")
+        _check(_features(subject["subject_features_extra"]), dict(model_identifier=quote(model, safe=" /-._"),
+            **{k: v for k, v in config.items() if k != "harness"}), "Hallusion exact source model identifier and configuration limits")
+        if scope == "sample":
+            _check(subject["display_name"], "HallusionBench reference sample (model unspecified)", "Hallusion no unverified GPT-4V attribution")
+        elements = []
+        if bank["visual_input"] != "0":
+            image = f'{bank["category"]}/{bank["subcategory"]}/{bank["set_id"]}_{bank["figure_id"]}.png'
+            path = images[image.casefold()]
+            if path not in image_hashes:
+                blob = path.read_bytes()
+                _check(blob.startswith(b'\x89PNG\r\n\x1a\n'), True, "Hallusion declared PNG bytes")
+                image_hashes[path] = hashlib.sha256(blob).hexdigest(), blob
+            digest, blob = image_hashes[path]
+            _check(json.loads(item["asset_manifest"]), [dict(asset_id=digest, path=image, media_type="image/png", role="input", ordinal=1)], "Hallusion exact figure association")
+            _check((assets[digest]["data"], assets[digest]["byte_size"]), (blob, len(blob)), "Hallusion unmodified source image")
+            linked_assets.add(digest)
+            elements.append(dict(content_type="image/png", location=image))
+        else:
+            _check(pd.isna(item["asset_manifest"]), True, "Hallusion text-only question has no invented image")
+        elements.append(dict(content_type="text/plain", text=bank["question"]))
+        _check(json.loads(item["content"]), dict(multimedia_elements=elements), "Hallusion original question and complete visual input")
+        _check(item["raw_item_id"], scope + ":" + index, "Hallusion original question-bank version")
+        _check(_features(item["item_features"]), {name: bank[name] for name in parameters["coordinates"]}, "Hallusion original diagnostic question attributes")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=gold, rule=metadata["grading"]["rule"]), "Hallusion source reference answer")
+        name = "exact_matching" if scope == "primary" else "ungraded_reference_sample"
+        _check(json.loads(item["verifier"]), dict(**{"class": "exact_matcher" if scope == "primary" else "judge"}, spec=json.dumps(protocols[name], sort_keys=True)), "Hallusion declared grading protocol")
+        _check(seen_subjects.setdefault(row.subject_id, model), model, "Hallusion no source-model collapse")
+        _check(seen_items.setdefault(row.item_id, (scope, index)), (scope, index), "Hallusion no unrelated image/question collapse")
+        seen[key] += 1
+        stats[status] += 1
+        if answer == "Unknown": stats["unparseable_exact_matching"] += 1
+    _check(seen, Counter({key: 1 for key in native}), "Hallusion every native output exactly once")
+    _check((set(seen_subjects), set(seen_items), linked_assets), (set(subjects), set(items), set(assets)), "Hallusion no unused identities or images")
+    return dict(source_responses=len(native), source_models=len(models), source_unattributed_sample=stats["unattributed_sample_without_original_grade"],
+        source_derived_grades=stats["derived_exact_matching"], source_missing_outputs=stats["unavailable_output"],
+        source_unparseable_exact_matching=stats["unparseable_exact_matching"], source_items=len(items), source_subjects=len(subjects), source_assets=len(assets))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10746,7 +10889,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
