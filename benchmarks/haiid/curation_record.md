@@ -1,0 +1,3 @@
+- Coverage: preserve all 35,670 original interactions as before/after judgments, plus 24 invariant ResNet-18 advice values. Advice framed as AI in the four lay tasks is crowd-derived.
+- Inputs: retain complete released text, records and image bytes. Keep grading labels and lesion diagnoses outside item content; record the initial choice and displayed advice for revised judgments without revealing correctness. Task descriptions summarize the paper; original UI layout is unavailable.
+- Review: independently reconcile every source row and signed-slider grade. Preserve incomplete participant sequences and full numeric precision. Remove the earlier 128 inferred crowd-advisor averages while retaining every actually displayed advice value in its source interaction.

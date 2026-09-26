@@ -10877,6 +10877,161 @@ def _hallusion(directory, tables, metadata, source=None):
         source_unparseable_exact_matching=stats["unparseable_exact_matching"], source_items=len(items), source_subjects=len(subjects), source_assets=len(assets))
 
 
+def _haiid_source_records(directory, metadata):
+    """Read original CSV cells and archive members without using the tabular builder."""
+    import csv
+    import io
+    import math
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    native, definitions, stimuli, participants, advice = [], {}, {}, {}, {}
+    with tarfile.open(directory / "raw" / paths["archive"]) as archive:
+        root = paths["root"] + "/"
+        with io.TextIOWrapper(archive.extractfile(root + "haiid_dataset.csv"), encoding="utf-8", newline="") as stream:
+            native = list(csv.DictReader(stream))
+        members = {}
+        for member in archive:
+            if not member.isfile(): continue
+            name = member.name.removeprefix(root).casefold()
+            _check(name not in members, True, "HAIID unique case-insensitive source paths")
+            members[name] = member.name
+        identities = set()
+        fields = ["geographic_region", "education", "education_description", "gender", "age", "programming_experience", "socioeconomic_status", "years_of_experience", "job_title"]
+        for position, row in enumerate(native):
+            key = row["participant_id"], row["task_instance_id"]
+            _check(key not in identities, True, "HAIID one released interaction per participant/task")
+            identities.add(key)
+            for name in ["response_1", "response_2", "advice"]:
+                number = float(row[name])
+                _check(math.isfinite(number) and -1 <= number <= 1, True, "HAIID finite signed slider")
+            item = row["task_instance_id"]
+            definition = {name: row[name] for name in ["task_name", "path_to_task", "correct_label", "incorrect_label"]}
+            _check(definitions.setdefault(item, definition), definition, "HAIID stable original task definition")
+            if item not in stimuli:
+                stimuli[item] = archive.extractfile(members[("tasks/" + row["path_to_task"]).casefold()]).read()
+            person = {name: row[name] for name in fields + ["task_name"]}
+            _check(participants.setdefault(row["participant_id"], person), person, "HAIID stable participant background")
+            if row["task_name"] == "dermatology":
+                entry = advice.setdefault(item, dict(advice=row["advice"], source_rows=[]))
+                _check(row["advice"], entry["advice"], "HAIID invariant recorded model advice")
+                entry["source_rows"].append(position)
+    return native, definitions, stimuli, participants, advice
+
+
+def _haiid(directory, tables, metadata, source=None):
+    """Verify every recorded judgment, presented context, stimulus and source cell."""
+    import hashlib
+    import io
+    from urllib.parse import quote
+    from PIL import Image
+
+    native, definitions, stimuli, participants, advice = source if source is not None else _haiid_source_records(directory, metadata)
+    parameters = metadata["build"]["parameters"]
+    protocol = metadata["grading"]["verifiers"]["signed_slider"]
+    _check((protocol["function"], protocol["predicate"], protocol["neutral_score"], protocol["sign_orientation"]),
+           ("_accuracy", "response > 0", 0, "relative to correct label"), "HAIID upstream sign convention including neutral zero")
+    _check(metadata["benchmark"]["subject_type"], "human and model", "HAIID humans distinguished from models")
+    scale = metadata["benchmark"]["response_scale"]
+    _check((scale["values"], scale["direction"]), ([0, 1], "higher_is_better"), "HAIID correctness scale")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)),
+           (len(native) * 2 + len(advice), len(native) * 2 + len(advice), len(participants) + 1, len(definitions)), "HAIID complete observations without inferred crowd averages")
+    _check(set(traces), set(tables["responses"].response_id), "HAIID complete source-trace linkage")
+    by_item, attached = {}, set()
+    for item_id, row in items.items():
+        key = row["raw_item_id"]
+        _check(key not in by_item, True, "HAIID unique original task identity")
+        by_item[key] = item_id
+        original, blob = definitions[key], stimuli[key]
+        text = [dict(content_type="text/plain", text=parameters["prompts"][original["task_name"]])]
+        if original["path_to_task"].endswith(".jpg"):
+            with Image.open(io.BytesIO(blob)) as picture:
+                _check(picture.format, "JPEG", "HAIID source JPEG bytes")
+                picture.verify()
+            digest = hashlib.sha256(blob).hexdigest()
+            path = "stimuli/" + digest + ".jpg"
+            text.append(dict(content_type="image/jpeg", location=path))
+            _check(json.loads(row["asset_manifest"]), [dict(asset_id=digest, path=path, media_type="image/jpeg", role="input", ordinal=1)], "HAIID correct complete image without grading-label filename")
+            _check((assets[digest]["data"], assets[digest]["byte_size"]), (blob, len(blob)), "HAIID exact released image bytes")
+            attached.add(digest)
+        else:
+            text.append(dict(content_type="text/plain", text=blob.decode("utf-8")))
+            _check(pd.isna(row["asset_manifest"]), True, "HAIID text stimulus has no invented image")
+        text.append(dict(content_type="text/plain", text="Candidate labels: " + " / ".join(sorted([original["correct_label"], original["incorrect_label"]])) + "."))
+        _check(json.loads(row["content"]), dict(multimedia_elements=text), "HAIID complete source stimulus and candidate labels without correctness or diagnosis")
+        _check(_features(row["item_features"]), dict(task_name=original["task_name"], input_scope=parameters["presentation"]["input_scope"]), "HAIID no grading-derived input features")
+        _check(json.loads(row["grading_criterion"]), dict(reference_answer=original["correct_label"], rule=metadata["grading"]["rule"]), "HAIID reference label reserved for grading")
+        _check(json.loads(row["verifier"]), dict(**{"class": "exact_matcher"}, spec=json.dumps(protocol, sort_keys=True)), "HAIID declared upstream scorer")
+    _check((set(by_item), attached), (set(definitions), set(assets)), "HAIID all task definitions and no unused assets")
+    person_ids, model_ids = {}, []
+    fields = ["geographic_region", "education", "education_description", "gender", "age", "programming_experience", "socioeconomic_status", "years_of_experience", "job_title"]
+    for subject_id, row in subjects.items():
+        features = _features(row["subject_features_extra"])
+        if features["subject_kind"] == "human":
+            participant = features["source_participant"]
+            original = participants[participant]
+            _check(row["display_name"], "HAIID participant " + participant, "HAIID complete released participant identifier")
+            _check(row["harness"], "HAIID judge-advisor study", "HAIID participant harness")
+            expected = dict(subject_kind="human", source_participant=participant, task_cohort=original["task_name"],
+                **{key: quote(original[key], safe=" /-._()") for key in fields if original[key] != ""})
+            _check(features, expected, "HAIID original participant background without post-study survey leakage")
+            _check(participant not in person_ids, True, "HAIID no merged or duplicated participants")
+            person_ids[participant] = subject_id
+        else:
+            _check(features, {key: value for key, value in parameters["model_features"].items() if key != "harness"}, "HAIID recorded model identity and unknown configuration")
+            _check((row["display_name"], row["harness"]), ("ResNet-18 (HAIID dermatology advisor)", "HAIID recorded advice"), "HAIID actual ResNet advisor")
+            model_ids.append(subject_id)
+    _check((set(person_ids), len(model_ids)), (set(participants), 1), "HAIID distinct human and model identities")
+    seen, zero_count, stages = Counter(), Counter(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        field = trace["source_field"]
+        if field == "advice":
+            item = trace["task_instance_id"]
+            original = advice[item]
+            expected = dict(source_file="haiid_dataset.csv", source_rows=original["source_rows"], source_field="advice",
+                task_instance_id=item, advice=original["advice"], **parameters["model_trace"])
+            key = "advice", item
+            value = float(original["advice"])
+            subject_id, condition, interactor = model_ids[0], "task=dermatology;stage=recorded_model_advice", None
+        else:
+            _check(field in {"response_1", "response_2"}, True, "HAIID known response stage")
+            position = trace["source_row"]
+            original = native[position]
+            item = original["task_instance_id"]
+            key, value = (position, field), float(original[field])
+            expected = dict(source_row=position, source_field=field, source_record=original, source_file="haiid_dataset.csv")
+            subject_id = person_ids[original["participant_id"]]
+            stage = "before_advice" if field == "response_1" else "after_advice"
+            condition = f'task={original["task_name"]};stage={stage};advice_framing={original["advice_source"]};stated_accuracy={original["perceived_accuracy"]};survey_order={original["order_appearing_in_survey"]}'
+            interactor = None
+            if field == "response_2":
+                initial = original["correct_label"] if float(original["response_1"]) > 0 else original["incorrect_label"]
+                shown = original["correct_label"] if float(original["advice"]) > 0 else original["incorrect_label"]
+                if float(original["response_1"]) == 0: initial = "undecided"
+                if float(original["advice"]) == 0: shown = "undecided"
+                condition += f';initial_label={initial};initial_slider_magnitude={original["response_1"].removeprefix("-")};advice_label={shown};advice_slider_magnitude={original["advice"].removeprefix("-")}'
+                interactor = "advisor=" + ("HAIID ResNet-18 dermatology advisor" if original["task_name"] == "dermatology" else "perturbed crowd advice")
+        _check(trace, expected, "HAIID complete source cells, exact decimals and source-row associations")
+        _check((row.subject_id, row.item_id), (subject_id, by_item[item]), "HAIID correct person/model and task mapping")
+        _check((row.response, row.trial, row.test_condition, None if pd.isna(row.interactors) else row.interactors),
+               (float(value > 0), 1, condition, interactor), "HAIID independent grade and exact available interaction context")
+        seen[key] += 1
+        stages[field] += 1
+        if value == 0: zero_count[field] += 1
+    wanted = Counter({(position, field): 1 for position in range(len(native)) for field in ["response_1", "response_2"]})
+    wanted.update({("advice", item): 1 for item in advice})
+    _check(seen, wanted, "HAIID every actual judgment exactly once and no inferred crowd-model rows")
+    return dict(source_responses=sum(stages.values()), source_interactions=len(native), source_participants=len(participants),
+        source_initial_responses=stages["response_1"], source_revised_responses=stages["response_2"], source_model_advice=stages["advice"],
+        source_neutral_initial=zero_count["response_1"], source_neutral_revised=zero_count["response_2"],
+        source_items=len(definitions), source_assets=len(assets), source_subjects=len(subjects))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10889,7 +11044,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

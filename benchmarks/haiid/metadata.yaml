@@ -1,0 +1,132 @@
+benchmark:
+  name: HAIID
+  description: Human judgments before and after advice on five classification tasks, with recorded ResNet-18 advice
+    for the dermatology task.
+  testing_condition: The release contains 35670 participant-item interactions and both initial and revised judgments.
+    Lay participants see perturbed crowd-derived advice framed as human or AI; this framing does not identify the
+    actual advice generator. Dermatology advice is the invariant released ResNet-18 output on 24 images. Keep these
+    24 unique model outputs and every human judgment. Do not infer an unperturbed crowd prediction from exposure
+    frequencies. Item content includes the released stimulus and both candidate labels, without revealing which
+    label is correct. Brief task descriptions are semantic reconstructions from the paper, not claimed verbatim
+    survey screens. Human response conditions preserve stage, stated advice accuracy and survey order; the after-advice
+    condition additionally gives the initial choice and displayed advice in label-relative slider units without
+    exposing their correctness. Complete source records, including post-study questionnaires, remain in traces.
+    Model weights, exact training configuration and UI event histories were not released. No new participant or
+    model evaluations.
+  paper_url: https://arxiv.org/abs/2107.07015
+  data_source_url: https://github.com/kailas-v/human-ai-interactions
+  subject_type: human and model
+  item_type: binary_classification
+  license: The upstream repository is MIT-licensed. Retain attribution for the released task materials, including
+    the ISIC lesion images and original image/text sources described in the paper.
+  citation: Vodrahalli, K., Daneshjou, R., Gerstenberg, T., and Zou, J. (2022). Do Humans Trust Advice More if it
+    Comes from AI? An Analysis of Human-AI Interactions. AIES, 763–777.
+  tags:
+  - human_ai_interaction
+  - advice_taking
+  - classification
+  modality:
+  - text
+  - image
+  domain:
+  - human_ai_interaction
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect choice or neutral slider
+      '1': Correct choice
+  categorical: true
+  release_date: '2021-07-14'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: human-ai-interactions.tar.gz
+      root: human-ai-interactions-24881cc7586180a9c9742a7dd838aea97d008235
+      csv: haiid_dataset.csv
+      dermatology_metadata: tasks/dermatology/metadata.csv
+    prompts:
+      art: Identify the art period of the painting using the two candidate labels.
+      cities: Identify the city shown in the photograph using the two candidate labels.
+      sarcasm: Determine whether the comment is sarcastic.
+      census: Classify the person's annual income using the supplied attributes.
+      dermatology: Determine whether the pictured skin lesion is benign or malignant.
+    presentation:
+      labels: 'Candidate labels: {labels}.'
+      input_scope: Released stimulus and candidate labels with a semantic task description. Exact survey wording
+        and left-right slider layout are not reconstructed.
+      slider_scope: The magnitude is the absolute released slider value on a zero-to-one scale. The chosen label
+        is decoded from the original correctness-relative sign.
+      neutral: undecided
+    stages:
+      response_1: before_advice
+      response_2: after_advice
+    conditions:
+      human: task={task_name};stage={stage};advice_framing={advice_source};stated_accuracy={perceived_accuracy};survey_order={order_appearing_in_survey}
+      after: ;initial_label={initial_label};initial_slider_magnitude={initial_magnitude};advice_label={advice_label};advice_slider_magnitude={advice_magnitude}
+      model: task=dermatology;stage=recorded_model_advice
+    advisors:
+      art: perturbed crowd advice
+      cities: perturbed crowd advice
+      sarcasm: perturbed crowd advice
+      census: perturbed crowd advice
+      dermatology: HAIID ResNet-18 dermatology advisor
+    human_features:
+      subject_kind: human
+      harness: HAIID judge-advisor study
+    demographic_fields:
+      geographic_region: geographic_region
+      education: education
+      education_description: education_description
+      gender: gender
+      age: age
+      programming_experience: programming_experience
+      socioeconomic_status: socioeconomic_status
+      years_of_experience: years_of_experience
+      job_title: job_title
+    model_features:
+      subject_kind: model
+      harness: HAIID recorded advice
+      model_identifier: ResNet-18 HAIID dermatology advisor
+      training_data: ISIC release described by Rotemberg et al. 2021
+      configuration_scope: Paper Section 3.5 identifies ResNet-18. Exact checkpoint, training settings and inference
+        transcript are not released.
+    labels:
+      participant: HAIID participant {participant_id}
+      model: ResNet-18 (HAIID dermatology advisor)
+    model_trace:
+      observation_scope: One invariant model-advice value per task image, repeated in participant rows. These source-row
+        references are provenance, not additional inference trials.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/kailas-v/human-ai-interactions/tar.gz/24881cc7586180a9c9742a7dd838aea97d008235
+    revision: 24881cc7586180a9c9742a7dd838aea97d008235
+    file: human-ai-interactions.tar.gz
+    size: 26393580
+    sha256: 3cd8aa33bcb785f7e0f1f419d597da73049ec4aae01ce2bd7c2d777efae57b36
+  - name: paper
+    url: https://arxiv.org/pdf/2107.07015v2
+    revision: v2
+    file: paper-v2.pdf
+    size: 3525367
+    sha256: d1d82d7489fa490293a5d46457711bacf8a8d65ced9dfc5b44a86718244a6efc
+grading:
+  rule: 'Use the released sign convention and upstream haiid.py::_accuracy: a finite signed response strictly greater
+    than zero is correct. Negative values and a neutral zero score zero. The sign in the released CSV is relative
+    to the correct label, not a fixed left/right screen position. Preserve the original continuous value in the
+    trace.'
+  verifiers:
+    signed_slider:
+      kind: deterministic_recorded_response_scoring
+      source: https://github.com/kailas-v/human-ai-interactions/blob/24881cc7586180a9c9742a7dd838aea97d008235/haiid.py
+      function: _accuracy
+      predicate: response > 0
+      neutral_score: 0
+      sign_orientation: relative to correct label
