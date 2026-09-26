@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 21391
+    logical_sha256: 1d310b03146e8529746e5c368dddc54863ed7d26eedf54c49dd2c8f8f3d23064
+  subjects:
+    rows: 7
+    logical_sha256: e3f23f013ba05439831df926d5d4daf29b1be53f60af6bd000ad68fd64d664f7
+  responses:
+    rows: 21391
+    logical_sha256: d7bc50091c53a2c3f560b49112bd505823d2e2b6b4cf2b26efe01826c0c7c2f7
+  items:
+    rows: 3009
+    logical_sha256: efdbd6d8e0b12c8a0c5ab6408689f59c7d04804a68cf57078ee74fbb30996b1e
+  benchmarks:
+    rows: 1
+    logical_sha256: a076c8598e2793f4e59c0bdf8308d53390d075f7e1cc7c2d88d7c5aee13f8105
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 21391
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 7
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 3009
+  source_exact_repeated_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 3053
+  source_repeated_source_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 3389
+  source_blank_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 409
+  source_zero_source_trial_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 21391
+  source_ungraded_source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 0
+  source_partial_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 2
+  source_conflicting_prediction_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 336
+  source_unique_source_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 18002
+  source_task_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All seven result CSVs, four original test-bank Parquets and captured historical writer/grader sources
+      at the declared pins.
+    scope: Join explicit subset/index IDs and verify every reference. Preserve repeated source keys, incomplete
+      exports, complete recorded text and zero-valued source trials. Occurrence numbering does not establish independent
+      runs.
+    expected: 3009

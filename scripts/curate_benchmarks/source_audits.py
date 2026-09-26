@@ -878,3 +878,4 @@ SOURCE_AUDITS["judgetuning"] = verify_native_results
 SOURCE_AUDITS["katakomba"] = verify_native_results
 SOURCE_AUDITS["kernelbench"] = verify_native_results
 SOURCE_AUDITS["kmmlu"] = verify_native_results
+SOURCE_AUDITS["kormedmcqa"] = verify_native_results

@@ -12754,6 +12754,120 @@ def _kmmlu(directory, tables, metadata, source=None):
         **{"source_" + key:value for key,value in counts.items()})
 
 
+def _kormedmcqa_source_records(directory, metadata):
+    """Read the original Arrow banks and CSV exports without builder joins."""
+    import csv
+    import unicodedata
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    parameters = metadata["build"]["parameters"]
+    bank, definitions, native, subjects, counts = {}, {}, {}, set(), Counter()
+    for path in sorted(raw.glob(parameters["paths"]["tasks"])):
+        subset = path.parent.name
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            item_key = f"{subset}_{index}"
+            gold = "ABCDE"[row["answer"] - 1]
+            content = (row["question"] + "\n\n" + "\n".join(f"{letter}: {row[letter]}" for letter in "ABCDE")).strip()
+            identity = unicodedata.normalize("NFC", content), gold
+            _check(item_key not in bank, True, "KorMedMCQA unique original subset/index ID")
+            bank[item_key] = dict(identity=identity, subset=subset, bank_file=str(path.relative_to(raw)), bank_row=index)
+            definitions.setdefault(identity, dict(content=content, gold=gold, raw_item_id=item_key))
+    trials, repeated, exact, choices = Counter(), Counter(), Counter(), {}
+    for path in sorted(raw.glob(parameters["paths"]["results"])):
+        covered = set()
+        with path.open(newline="", encoding="utf-8-sig") as handle:
+            reader = csv.DictReader(handle)
+            _check(reader.fieldnames, ["id", "category", "trial", "answer", "pred", "response"], "KorMedMCQA native export schema")
+            for index, row in enumerate(reader):
+                definition = bank[row["id"]]
+                _check(row["category"], definition["subset"], "KorMedMCQA explicit ID and category agree")
+                _check(row["answer"], definition["identity"][1], "KorMedMCQA saved reference matches original task")
+                _check(row["trial"].isdigit(), True, "KorMedMCQA nonnegative native trial value")
+                source_file = str(path.relative_to(raw))
+                key = source_file, index
+                condition = f'subset={row["category"]};source_trial={row["trial"]}'
+                trial_key = path.stem, definition["identity"], condition
+                trials[trial_key] += 1
+                original_key = path.stem, row["id"], row["trial"]
+                repeated[original_key] += 1
+                choices.setdefault(original_key, set()).add(row["pred"])
+                exact_key = path.stem, tuple(row.values())
+                counts["exact_repeated_records"] += exact[exact_key] > 0
+                exact[exact_key] += 1
+                counts["repeated_source_keys"] += repeated[original_key] > 1
+                counts["blank_predictions"] += row["pred"] == ""
+                counts["zero_source_trial_records"] += row["trial"] == "0"
+                failed = row["pred"] == parameters["labels"]["ungraded_marker"]
+                counts["ungraded_source_failures"] += failed
+                trace = dict(source_file=source_file, source_row=index, bank_file=definition["bank_file"],
+                    bank_row=definition["bank_row"], source_record=row)
+                native[key] = dict(subject=path.stem, item=definition["identity"], trial=trials[trial_key],
+                    condition=condition, grade=None if failed else float(row["pred"] == row["answer"]), trace=trace)
+                subjects.add(path.stem)
+                covered.add(row["id"])
+        counts["partial_model_exports"] += len(covered) < len(bank)
+    counts["conflicting_prediction_keys"] = sum(len(values) > 1 for values in choices.values())
+    counts["unique_source_keys"] = len(repeated)
+    counts["task_rows"] = len(bank)
+    used = {row["item"] for row in native.values()}
+    definitions = {key:value for key,value in definitions.items() if key in used}
+    return native, subjects, definitions, counts
+
+
+def _kormedmcqa(directory, tables, metadata, source=None):
+    """Check all original records, including repeated IDs and partial exports."""
+    import unicodedata
+
+    native, configurations, definitions, counts = _kormedmcqa_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features["source_model_label"]
+        _check(label in configurations, True, "KorMedMCQA source-supported configuration label")
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=label), "KorMedMCQA no guessed inference settings")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "KorMedMCQA unchanged export model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "KorMedMCQA source harness")
+        for column in ["harness_version", "reasoning_effort", "release_date", "access_date", "provider", "normalized_name"]:
+            _check(pd.isna(getattr(row, column)), True, "KorMedMCQA no invented " + column)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({key:1 for key in configurations}), "KorMedMCQA all seven source configurations")
+    for row in tables["items"].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        key = unicodedata.normalize("NFC", row.content).strip(), criterion["reference_answer"]
+        original = definitions[key]
+        _check(row.content, original["content"], "KorMedMCQA complete question and five choices")
+        _check(row.raw_item_id, original["raw_item_id"], "KorMedMCQA preserved subset/index task ID")
+        _check(criterion, dict(reference_answer=original["gold"], rule=metadata["grading"]["rule"]), "KorMedMCQA original reference and matching rule")
+        _check(_features(row.item_features), dict(input_scope=parameters["labels"]["input_scope"]), "KorMedMCQA no rationale/reference leakage into attributes")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("exact_matcher", metadata["grading"]["verifiers"]["recorded_option_match"]), "KorMedMCQA original grader and parsing policy")
+        _check(pd.isna(row.asset_manifest), True, "KorMedMCQA no invented input assets")
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), "KorMedMCQA all original canonical questions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "KorMedMCQA one full trace per record")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, original["trace"], "KorMedMCQA exact CSV record, source trial, text and bank association")
+        _check(subjects[row.subject_id], original["subject"], "KorMedMCQA correct source model")
+        _check(items[row.item_id], original["item"], "KorMedMCQA correct original question")
+        _check(row.trial, original["trial"], "KorMedMCQA stable occurrence number without silently deduplicating")
+        _check(row.test_condition, original["condition"], "KorMedMCQA original subset and source trial")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "KorMedMCQA original exact-match verdict")
+        _check(pd.isna(row.interactors), True, "KorMedMCQA no invented interacting system")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "KorMedMCQA every recorded row exactly once")
+    _check(len(tables.get("assets", [])), 0, "KorMedMCQA no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(configurations), source_items=len(definitions),
+        **{"source_" + key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -12767,7 +12881,7 @@ def verify_native_results(directory, tables_directory=None):
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
-            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu,
+            "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
