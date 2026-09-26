@@ -1,0 +1,92 @@
+benchmark:
+  name: EHRFlowBench
+  description: Published completion flags and full answer text for seven agent frameworks on the 20-task HealthFlow
+    review subset, with the original EHR inputs and reference reports.
+  testing_condition: "The exported success Boolean is a reported completion flag, not the paper's 1\u20135 report-quality\
+    \ rubric or a clinical-correctness grade. Preserve all 140 flags, including cases whose narrative summary reports\
+    \ an earlier or partial failure. All 140 flags were checked against explicit upstream framework manifests; none\
+    \ uses the platform's missing-value default. The 20 task texts match the fixed 100-task release exactly. Retain\
+    \ full published answer/reference text and artifact indexes; execution trajectories and linked generated artifact\
+    \ bytes are not included in these traces. HealthFlow's backend model is not identified by its published variant\
+    \ string."
+  paper_url: https://arxiv.org/abs/2508.02621
+  data_source_url: https://github.com/yhzhu99/HealthFlow
+  subject_type: model
+  item_type: task
+  license: No explicit code license file was found in the captured HealthFlow repository. Released input datasets
+    retain their upstream usage terms, as documented in the author README.
+  citation: 'Zhu, Y. et al. HealthFlow: A Self-Evolving AI Agent with Meta Planning for Autonomous Healthcare Research.
+    arXiv:2508.02621 (2025).'
+  tags:
+  - clinical
+  - ehr
+  - agents
+  - completion_status
+  modality:
+  - text
+  domain:
+  - medicine
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The published framework manifest reports non-completion.
+      '1': The published framework manifest reports completion; report quality is not established by this flag.
+  categorical: true
+  release_date: 2025-08
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      evaluation: evaluation.payload.json
+      datasets: healthflow_datasets.zip
+      tasks: data/ehrflowbench/processed/test.jsonl
+      processed: data/ehrflowbench/processed/
+      archive_prefix: data/
+      task_prefix: benchmarks/
+    media_types:
+      .parquet: application/vnd.apache.parquet
+      .json: application/json
+      .md: text/markdown
+    subject_features:
+      configuration_scope: Published framework and modelId only. HealthFlow provides a variant name instead of an
+        identified backbone model.
+    test_condition:
+      value: dataset=ehrflowbench-test;split=human-eval;metric=reported_completion
+sources:
+  upstream:
+  - name: evaluation
+    url: https://healthflow.medx-pku.com/evaluation-data/data/evaluation.payload.json
+    revision: healthflow-local-dev
+    file: evaluation.payload.json
+    size: 1782118
+    sha256: 5e643ee87ead0a80110308e484d0436353b906658f3e1dbcdd01a8b807c4631f
+  - name: datasets
+    url: https://github.com/yhzhu99/HealthFlow/releases/download/datasets/healthflow_datasets.zip
+    revision: datasets
+    file: healthflow_datasets.zip
+    size: 321160955
+    sha256: 93e6c89c06efa6661caa0a0424c13cde1047b57a8bb7741a1cadc6e0f2f12b1e
+  - name: harness
+    url: https://github.com/yhzhu99/HealthFlow
+    revision: 43d3adb476adf7c3a65027321e8be1ed96958682
+    files:
+    - match: (?:README\.md|data/ehrflowbench/(?:README\.md|scripts/evaluate\.py)|platform/(?:README\.md|dev/evaluation-data\.ts|src/domain/evaluation\.ts))
+      path: harness/{path}
+grading:
+  rule: Read the original candidate.success Boolean as 1 or 0. This measures the exported completion status, not
+    exact agreement with the reference report and not the separate LLM-judged report-quality rubric. Preserve conflicting
+    narrative summaries without overriding the recorded flag.
+  verifiers:
+    completion:
+      kind: published_framework_completion_status
+      source: https://github.com/yhzhu99/HealthFlow/blob/43d3adb476adf7c3a65027321e8be1ed96958682/platform/dev/evaluation-data.ts
+      field: framework.manifest.success
+      scope: All 140 native manifests have explicit Boolean flags matching the review payload. Quality scores are
+        null in this payload. No inference, exact matching or rejudging.

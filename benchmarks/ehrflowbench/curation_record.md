@@ -1,0 +1,3 @@
+- Source: pinned HealthFlow review payload, author dataset archive and platform code; 140 attempts across seven frameworks and 20 original tasks.
+- Mapping: preserve every published completion flag and full answer/reference text. Attach the released EHR data and split files; identify models only as specified by the source.
+- Scope: completion is separate from scientific report quality. Preserve inconsistent narrative summaries; traces contain published answers and artifact indexes, not full execution logs or linked generated files. No inference or rejudging.

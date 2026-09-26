@@ -9588,6 +9588,82 @@ def _edu_circuit(directory, tables, metadata, source=None):
         source_reviewed_references=220)
 
 
+
+def _ehrflow_source_records(directory, metadata):
+    """Read the original snapshot and referenced task assets independently of pandas."""
+    from zipfile import ZipFile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    raw = directory / "raw"
+    snapshot = json.loads((raw / paths["evaluation"]).read_text())["snapshot"]
+    runs = {row["id"]: row for row in snapshot["runs"]}
+    questions = {row["qid"]: row for row in snapshot["questions"]}
+    records = {candidate["id"]: (question, candidate) for question in questions.values() for candidate in question["candidates"]}
+    with ZipFile(raw / paths["datasets"]) as archive:
+        tasks = {str(row["qid"]): row for line in archive.read(paths["tasks"]).splitlines() if line.strip()
+            for row in [json.loads(line)]}
+        inputs = {}
+        for qid, question in questions.items():
+            task = tasks[qid]
+            _check(question["task"], task["task"], "EHR released evaluation prompt")
+            manifest = json.loads(archive.read(paths["processed"] + task["reference_answer"]))
+            inputs[qid] = [(name.replace("data/", "benchmarks/", 1), archive.read(name)) for name in manifest["required_inputs"]]
+    _check((len(runs), len(questions), len(records), len(tasks)), (7, 20, 140, 100), "EHR published review subset")
+    return runs, questions, records, tasks, inputs
+
+
+def _ehrflow(directory, tables, metadata, source=None):
+    """Reconcile every exported flag, complete answer and original task input."""
+    import unicodedata
+
+    runs, questions, native, tasks, inputs = source if source is not None else _ehrflow_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (140, 140, 7, 20), "EHR complete table scope")
+    _check(set(traces), set(tables["responses"].response_id), "EHR trace-response bijection")
+    seen, checked, used_assets, used_subjects = Counter(), set(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        question, candidate = native[trace["candidate"]["id"]]
+        run = runs[candidate["runId"]]
+        qid = question["qid"]
+        _check(trace, dict(candidate=candidate, run=run), "EHR complete original candidate and run record")
+        _check(type(candidate["success"]), bool, "EHR explicit source flag")
+        _check(row.response, float(candidate["success"]), "EHR original completion flag without reinterpretation")
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)),
+            (1, metadata["build"]["parameters"]["test_condition"]["value"], True), "EHR one published final attempt")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], run["label"] + " (" + run["modelId"] + ")", "EHR published framework/model identity")
+        _check(subject["harness"], run["label"], "EHR framework identity")
+        identity = dict(variant=run["modelId"].removeprefix("variant=")) if run["modelId"].startswith("variant=") else dict(model_identifier=run["modelId"])
+        _check(_features(subject["subject_features_extra"]), dict(**identity,
+            **metadata["build"]["parameters"]["subject_features"]), "EHR do not invent HealthFlow's backbone model")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], question["datasetId"] + ":" + qid, "EHR original question association")
+        if row.item_id not in checked:
+            _check(item["content"], unicodedata.normalize("NFC", question["task"]).strip(), "EHR complete original task text")
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=unicodedata.normalize("NFC", question["reference"]["text"]),
+                rule=metadata["grading"]["rule"]), "EHR full reference report and completion semantics")
+            _check(json.loads(item["verifier"]), dict(**{"class": "judge"}, spec=json.dumps(metadata["grading"]["verifiers"]["completion"], sort_keys=True)), "EHR published completion flag is not exact report matching")
+            _check(_features(item["item_features"]), dict(dataset=tasks[qid]["dataset"], paper_id=str(tasks[qid]["paper_id"])), "EHR task provenance")
+            links = json.loads(item["asset_manifest"])
+            _check([link["path"] for link in links], [name for name, data in inputs[qid]], "EHR exact task-input attachment list")
+            for link, (name, data) in zip(links, inputs[qid], strict=True):
+                _check(assets[link["asset_id"]]["data"], data, "EHR byte-identical released patient-data/split input")
+                used_assets.add(link["asset_id"])
+            checked.add(row.item_id)
+        used_subjects.add(row.subject_id)
+        seen[candidate["id"]] += 1
+    _check(seen, Counter({key: 1 for key in native}), "EHR every published attempt once")
+    _check((checked, used_assets, used_subjects), (set(items), set(assets), set(subjects)), "EHR no unused records")
+    return dict(source_responses=140, source_subjects=7, source_items=20, source_assets=len(assets),
+        source_reported_complete=sum(candidate["success"] for question, candidate in native.values()),
+        source_reported_incomplete=sum(not candidate["success"] for question, candidate in native.values()),
+        source_quality_scores=sum(candidate["score"] is not None for question, candidate in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9600,7 +9676,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

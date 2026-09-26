@@ -842,3 +842,5 @@ SOURCE_AUDITS["eduguardbench"] = verify_native_results
 SOURCE_AUDITS["egoschema"] = verify_native_results
 
 SOURCE_AUDITS["edu_circuit_hw"] = verify_native_results
+
+SOURCE_AUDITS["ehrflowbench"] = verify_native_results
