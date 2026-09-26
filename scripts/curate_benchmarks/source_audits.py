@@ -854,3 +854,5 @@ SOURCE_AUDITS["enginemt_qa"] = verify_native_results
 SOURCE_AUDITS["felm"] = verify_native_results
 
 SOURCE_AUDITS["faithcot"] = verify_native_results
+
+SOURCE_AUDITS["fetv"] = verify_native_results

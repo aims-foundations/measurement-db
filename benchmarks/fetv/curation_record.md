@@ -1,0 +1,3 @@
+- Source: pinned author prompts, individual scores, full rating instructions and four archives containing 2,476 generated videos. Original reference-video ratings and auxiliary QA releases are retained in raw.
+- Mapping: preserve 41,576 measurements, including 6,912 attribute-alignment ratings omitted by the old parser; keep human raters, metrics, native scales and CogVideo’s Chinese source prompts distinct. Every grade links to its complete native record and generated-video member/hash.
+- Scope: ratings share a generated video and are not separate generation trials. Exclude real videos as AI subjects and corpus-level FID/FVD scores. Historical execution settings and auxiliary judge-to-score matches remain unasserted; no inference or new judging.

@@ -10116,6 +10116,147 @@ def _faithcot(directory, tables, metadata, source=None):
         source_combined_type_issues=63, source_repeated_measurements=sum(r["trial"] > 1 for r in native.values()))
 
 
+def _fetv_source_records(directory, metadata):
+    """Parse original dictionaries and video bytes independently of pandas normalization."""
+    import hashlib
+    import unicodedata
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    tasks = [json.loads(line) for line in (raw / "FETV/fetv_data.json").read_text().split("\n") if line.strip()]
+    chinese = (raw / "FETV-EVAL/cogvideo/datas/fetv_data_cn.txt").read_text().splitlines()
+    _check((len(tasks), len(chinese)), (619, 619), "FETV complete original and translated prompt banks")
+    native, identities, outputs = {}, {}, {}
+    labels = {"cogvideo": "CogVideo", "modelscope-t2v": "ModelScopeT2V",
+              "text2video-zero": "Text2Video-Zero", "zeroscope": "ZeroScope-v2-576w"}
+    for model in labels:
+        archive_path = "videos/" + model + ".zip"
+        prefix = ("output_videos" if model == "zeroscope" else model) + "/videos/"
+        with ZipFile(raw / archive_path) as archive:
+            members = [name for name in archive.namelist() if name.startswith(prefix) and name.endswith((".mp4", ".gif"))]
+            _check(len(members), 619, "FETV one released video per model/prompt")
+            for member in members:
+                index = int(Path(member).stem)
+                payload = archive.read(member)
+                _check(payload.startswith(b"GIF8") if model == "cogvideo" else payload[4:8] == b"ftyp",
+                       True, "FETV native output file signature")
+                _check((model, index) not in outputs, True, "FETV unambiguous video coordinates")
+                outputs[model, index] = dict(source_file=archive_path, member=member,
+                    sha256=hashlib.sha256(payload).hexdigest(), bytes=len(payload),
+                    media_type="image/gif" if model == "cogvideo" else "video/mp4")
+    for path in sorted((raw / "FETV-EVAL/manual_eval_results").rglob("*.json")):
+        token = path.stem.removeprefix("manual_eval_results_")
+        model = "modelscope-t2v" if token == "damo-text2video" else token
+        if model not in labels:
+            continue
+        filename = str(path.relative_to(raw))
+        seen = set()
+        for line_number, line in enumerate(path.read_text().split("\n")):
+            if not line.strip():
+                continue
+            for key, original in json.loads(line).items():
+                index = int(key)
+                _check(index not in seen, True, "FETV unique native annotation coordinates")
+                seen.add(index)
+                _check(original["video_id"], str(tasks[index]["video_id"]), "FETV annotation-to-task association; null reference IDs are serialized as 'None'")
+                ratings = [(field, field, original[field]) for field in ("static_quality", "temporal_quality", "alignment")]
+                ratings += [("attribute_" + field.replace(" ", "_"), "fine-grained_alignment." + field, value)
+                            for field, value in original.get("fine-grained_alignment", {}).items()]
+                for metric, field, value in ratings:
+                    upper = 3 if metric.startswith("attribute_") else 5
+                    _check(type(value) is int and 1 <= value <= upper, True, "FETV original rubric range")
+                    native[filename, index, metric] = dict(model=model, rater=path.parent.name,
+                        field=field, grade=value, source_row=line_number, original=original)
+        _check(seen, set(range(619)), "FETV all prompts in each human annotation file")
+    for path in sorted((raw / "FETV-EVAL/auto_eval_results").rglob("*.json")):
+        model = path.stem.removeprefix("auto_eval_results_")
+        if model not in labels:
+            continue
+        original = json.loads(path.read_text())
+        _check(set(map(int, original)), set(range(619)), "FETV all prompts in each automatic score file")
+        for key, value in original.items():
+            native[str(path.relative_to(raw)), int(key), path.parent.name] = dict(model=model, rater="automatic",
+                field=None, grade=value, source_row=None, original={key: value})
+    for (filename, index, metric), row in native.items():
+        row["task"] = tasks[index]
+        row["input"] = chinese[index] if row["model"] == "cogvideo" else tasks[index]["prompt"]
+        identity = (unicodedata.normalize("NFC", row["input"]),
+                    unicodedata.normalize("NFC", tasks[index]["prompt"]), metric, row["rater"], row["model"] == "cogvideo")
+        row["identity"] = identity
+        identities.setdefault(identity, set()).add(str(index))
+        row["output"] = outputs[row["model"], index]
+    _check(len(native), 41576, "FETV all individual ratings, including fine-grained attributes")
+    return native, identities, outputs, labels
+
+
+def _fetv(directory, tables, metadata, source=None):
+    """Reconcile every score, input, rater, protocol, original record and video hash."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, identities, outputs, labels = source if source is not None else _fetv_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)),
+           (len(native), len(native), 4, len(identities)), "FETV full source coverage and distinct identities")
+    _check(set(traces), set(tables["responses"].response_id), "FETV trace bijection")
+    for metric, profile in metadata["grading"]["verifiers"].items():
+        if metric.startswith("attribute_") or metric in {"static_quality", "temporal_quality", "alignment"}:
+            expected_scale = dict(kind="discrete", values=[1, 2, 3] if metric.startswith("attribute_") else [1, 2, 3, 4, 5], direction="higher_is_better")
+        else:
+            lower, upper = ((None, None) if metric == "UMTScore" else ((0, 1) if metric == "Otter-VQA" else (-1, 1)))
+            expected_scale = dict(kind="interval", min=lower, max=upper, direction="higher_is_better")
+        _check({key: profile["response_scale"][key] for key in expected_scale}, expected_scale,
+               "FETV scales agree with the captured rating instructions and metric implementations")
+    seen, trials, used_items, used_subjects = Counter(), {}, set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["prompt_index"], trace["metric"]
+        expected = native[key]
+        _check(trace, dict(source_file=key[0], source_row=expected["source_row"], prompt_index=key[1],
+            metric=key[2], rater=expected["rater"], native_record=expected["original"], task_record=expected["task"],
+            generation_prompt=expected["input"], output=expected["output"]), "FETV complete native evidence and exact generated-video association")
+        _check(row.response, expected["grade"], "FETV unrounded original grade")
+        _check((pd.isna(row.test_condition), pd.isna(row.interactors)), (True, True), "FETV no invented run settings or interactors")
+        subject = subjects[row.subject_id]
+        features = _features(subject["subject_features_extra"])
+        _check((subject["display_name"], subject["harness"], features),
+            (labels[expected["model"]], "FETV", dict(source_model=expected["model"], configuration_scope=
+                metadata["build"]["parameters"]["subject_features"]["configuration_scope"])), "FETV native generator, not the grading model")
+        item = items[row.item_id]
+        _check(item["raw_item_id"] in identities[expected["identity"]], True, "FETV original prompt index")
+        _check(item["content"], expected["input"], "FETV complete source prompt in the generator's language")
+        _check(_features(item["item_features"]), dict(input_language="zh" if expected["model"] == "cogvideo" else "en",
+            input_scope=metadata["build"]["parameters"]["input_scope"]["description"]), "FETV input scope without output leakage")
+        profile = metadata["grading"]["verifiers"][key[2]]
+        _check(profile["implementation"].get("field") if expected["rater"] != "automatic" else profile["implementation"]["metric"],
+               expected["field"] if expected["rater"] != "automatic" else key[2], "FETV native grading dimension")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None,
+            rule=profile["rule"] + "\nEvaluation prompt: " + expected["task"]["prompt"],
+            response_scale=json.loads(canonical_response_scale(profile["response_scale"]))), "FETV original evaluation target and mixed-scale grading protocol")
+        implementation = dict(profile["implementation"])
+        if expected["rater"] != "automatic":
+            implementation["annotator"] = expected["rater"]
+        verifier = dict(spec=json.dumps(implementation, sort_keys=True))
+        verifier.update({"class": "exact_matcher"} if expected["rater"] == "automatic" else
+                        {"class": "judge", "judged_by": "human"})
+        _check(json.loads(item["verifier"]), verifier, "FETV human rater and metric association")
+        _check(pd.isna(item["asset_manifest"]), True, "FETV generated outputs are not input assets")
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+        seen[key] += 1
+        used_items.add(row.item_id);used_subjects.add(row.subject_id)
+    _check(seen, Counter({key: 1 for key in native}), "FETV every original observation exactly once")
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), "FETV consecutive trial labels for repeated source pairs")
+    _check((used_items, used_subjects), (set(items), set(subjects)), "FETV no unused identities")
+    return dict(source_responses=len(native), source_items=len(identities), source_subjects=4,
+        source_prompts=619, source_generated_videos=len(outputs),
+        source_human_ratings=sum(r["rater"] != "automatic" for r in native.values()),
+        source_attribute_ratings=sum(key[2].startswith("attribute_") for key in native),
+        source_automatic_scores=sum(r["rater"] == "automatic" for r in native.values()),
+        source_negative_umt_scores=sum(key[2] == "UMTScore" and r["grade"] < 0 for key, r in native.items()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10128,7 +10269,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

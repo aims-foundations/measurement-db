@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 41576
+    logical_sha256: 039d88dbe93febb737625a042c05038f3a5ef966a2295c8a524fda3db9e448aa
+  subjects:
+    rows: 4
+    logical_sha256: 7cee1ecad3a4782cfc455251db8f766fe43da684428752d4c98d3683892205ef
+  responses:
+    rows: 41576
+    logical_sha256: 4ec26d8a9aed11bc30a50b5022f9075bc9d3f70e6170c4c5aca86b7108b9c6ee
+  items:
+    rows: 20788
+    logical_sha256: 4e51a9b8d9d4f3eae8bacd0df67ce11f2c0761d41d4e2389ee2d05ebb5620b4e
+  benchmarks:
+    rows: 1
+    logical_sha256: cc9d6f0d21c5632d7f391b53758caefea180bee8ed3c36288ea7343acd3a5b94
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 41576
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 20788
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 4
+  source_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 619
+  source_generated_videos:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 2476
+  source_human_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 29196
+  source_attribute_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 6912
+  source_automatic_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 12380
+  source_negative_umt_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/llyx97/FETV-EVAL/tree/1385218bc92899e85aae0941888d8ddcf94bd65d
+    locator: Independently parse every original JSON entry and task; read each generated video to verify its member,
+      size, signature and SHA-256. Check every source grade, rater, input language, protocol and original record.
+    scope: Four AI generators on 619 prompts; individual human ratings and five automatic alignment metrics. Excludes
+      human reference videos as subjects and corpus-level FID/FVD metrics.
+    expected: 380
