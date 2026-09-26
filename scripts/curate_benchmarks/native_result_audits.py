@@ -9018,6 +9018,132 @@ def _dpai(directory, tables, metadata, *, source=None):
             for key, (record, _) in expected.items()))
 
 
+def _devbench_source_records(directory):
+    """Read CSV rows, native numeric arrays and actual images independently."""
+    import csv
+    import hashlib
+    import numpy as np
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    tasks, incomplete, arrays, image_bytes = {}, [], {}, {}
+    with ZipFile(raw / "images_THINGSplus-CC0.zip") as archive:
+        archive_names = set(archive.namelist())
+        for component in ("lex-lwl", "lex-viz_vocab", "gram-trog"):
+            with (raw / "release/assets" / component / "manifest.csv").open(newline="") as stream:
+                manifest = list(csv.DictReader(stream))
+            for index, record in enumerate(manifest):
+                images, missing = [], []
+                for column in sorted(key for key in record if key.startswith("image")):
+                    name = record[column]
+                    if component == "lex-viz_vocab":
+                        member = "object_images_CC0/" + Path(name).name
+                        value = archive.read(member) if member in archive_names else None
+                    else:
+                        path = (raw / "trog" / Path(name).name if component == "gram-trog" else
+                                raw / "release/assets/lex-lwl" / name)
+                        value = path.read_bytes() if path.exists() else None
+                    if value is None:
+                        missing.append(name)
+                        continue
+                    digest = hashlib.sha256(value).hexdigest()
+                    image_bytes[digest] = value
+                    images.append(dict(asset_id=digest, path=component + "/" + name, role="input",
+                        ordinal=len(images) + 1, media_type="image/png" if name.endswith(".png") else "image/jpeg"))
+                if missing:
+                    incomplete.append(dict(component=component, source_row=index, missing=missing))
+                else:
+                    tasks[component, index] = record, images
+            for path in sorted((raw / "release/evals" / component).glob("*.npy")):
+                values = np.load(path, allow_pickle=False)
+                _check(len(values), len(manifest), "DevBench native array rows match manifest order")
+                _check(bool(np.isfinite(values).all()), True, "DevBench finite released numerical outputs")
+                arrays[str(path.relative_to(raw))] = component, path.stem.split("_", 1)[1], values
+    pending = sum(len(np.load(path, allow_pickle=False))
+        for path in (raw / "release/evals/gram-winoground").glob("*.npy"))
+    return dict(tasks=tasks, incomplete=incomplete, arrays=arrays, images=image_bytes, pending_winoground=pending)
+
+
+def _devbench(directory, tables, metadata, *, source=None):
+    """Reconcile each included result, input image and native numerical trace."""
+    import numpy as np
+
+    source = _devbench_source_records(directory) if source is None else source
+    tasks, arrays, image_bytes = (source[name] for name in ("tasks", "arrays", "images"))
+    settings = metadata["build"]["parameters"]
+    expected, excluded = {}, 0
+    for filename, (component, model, values) in arrays.items():
+        for index, native in enumerate(values):
+            if (component, index) not in tasks:
+                excluded += 1
+                continue
+            # Python doubles match the author's R arithmetic. Do not use argmax:
+            # it would credit the first option in a tie, unlike strict comparison.
+            choice = np.squeeze(native)
+            if choice.ndim == 2:
+                _check(choice.shape[1], 2, "DevBench native yes/no axis")
+                scores = [float(pair[0]) - float(pair[1]) for pair in choice]
+            else:
+                _check(choice.ndim, 1, "DevBench native scalar choice scores")
+                scores = [float(value) for value in choice]
+            _check(len(scores), len(tasks[component, index][1]), "DevBench choice-image correspondence")
+            expected[filename, index] = component, model, float(all(scores[0] > value for value in scores[1:])), native
+    _check(len(tables["responses"]), len(expected), "DevBench all and only complete-input observations")
+    _check(len(tables["traces"]), len(expected), "DevBench complete native score traces")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    assets = tables["assets"].set_index("asset_id").data.to_dict()
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(set(traces), set(tables["responses"].response_id), "DevBench trace-response bijection")
+    _check({row["display_name"] for row in subjects.values()}, {entry[1] for entry in arrays.values()},
+        "DevBench every released model/scoring variant separately")
+    seen, used_items, used_assets = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"]
+        component, model, grade, native = expected[key]
+        array = arrays[key[0]][2]
+        _check(trace, dict(source_file=key[0], source_row=key[1], component=component, subject_key=model,
+            array_shape=list(array.shape), array_dtype=str(array.dtype), original_scores=native.tolist()),
+            "DevBench full numerical row, shape, dtype and source coordinates")
+        _check(row.response, grade, "DevBench independent strict-choice grade")
+        _check(row.test_condition, "component=" + component, "DevBench native component condition")
+        _check(row.trial, 1, "DevBench one saved row per model/trial")
+        _check(pd.isna(row.interactors), True, "DevBench no invented interacting agent")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], model, "DevBench exact filename-to-model association")
+        features = dict(settings["subject_features"])
+        _check(subject["harness"], features.pop("harness"), "DevBench evaluation harness")
+        _check(_features(subject["subject_features_extra"]), features, "DevBench honest configuration scope")
+        item = items[row.item_id]
+        _check(item["raw_item_id"], component + "/" + str(key[1]), "DevBench original manifest row preserved")
+        if row.item_id not in used_items:
+            record, links = tasks[component, key[1]]
+            elements = [dict(content_type="text/plain", text=record["text1"])] + [
+                dict(content_type=link["media_type"], location=link["path"]) for link in links]
+            _check(json.loads(item["content"]), dict(multimedia_elements=elements), "DevBench exact text and ordered image inputs")
+            _check(json.loads(item["asset_manifest"]), links, "DevBench original option-image associations")
+            for link in links:
+                _check(assets[link["asset_id"]], image_bytes[link["asset_id"]], "DevBench complete unmodified image bytes")
+                used_assets.add(link["asset_id"])
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer="image1", rule=metadata["grading"]["rule"]),
+                "DevBench first-option target and strict grading protocol")
+            _check(json.loads(item["verifier"]), dict(**{"class": "exact_matcher"},
+                spec=json.dumps(metadata["grading"]["verifiers"][component], sort_keys=True)), "DevBench author scorer provenance")
+            _check(_features(item["item_features"]), dict(component=component, input_scope=settings["input_scope"]["description"]),
+                "DevBench original component and input scope")
+            used_items.add(row.item_id)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in expected}), "DevBench complete source-row bijection")
+    _check(used_items, set(items), "DevBench only complete evaluated inputs")
+    _check(used_assets, set(assets), "DevBench no missing or unrelated image payloads")
+    _check(len(items), len(tasks), "DevBench all qualified source trials")
+    return dict(source_included_arrays=len(arrays), source_responses=len(expected), source_items=len(tasks),
+        source_subjects=len(subjects), source_assets=len(assets), source_correct=int(sum(value[2] for value in expected.values())),
+        source_incomplete_image_trials=len(source["incomplete"]), source_excluded_incomplete_responses=excluded,
+        source_pending_winoground_responses=source["pending_winoground"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9028,7 +9154,7 @@ def verify_native_results(directory, tables_directory=None):
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
-            "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai,
+            "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

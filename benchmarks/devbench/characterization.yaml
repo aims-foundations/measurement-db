@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5149
+    logical_sha256: 0068eb188bfb075515219b7c8aa80b8b8d56f59d9c8423c2d32e479c397bbce3
+  subjects:
+    rows: 19
+    logical_sha256: 2074c06ac35f6548256f0f6136be51dc9231732aae39e409e92d460c1b4defd2
+  responses:
+    rows: 5149
+    logical_sha256: 5c8c7a4c4c45d701b6f68f074648b942503a1ee5da1a3d4062138cea21d25cfd
+  assets:
+    rows: 900
+    logical_sha256: 743b3dab4107e2f09221f26946e931e126de2ab65d15f7375c1b9f8751733404
+  items:
+    rows: 271
+    logical_sha256: 35841ae37ddcc81c9ffe0980b8dc08a32b233c7dfc3594018598608f0b74de4e
+  benchmarks:
+    rows: 1
+    logical_sha256: eea1fd15cddf19d38f082a0569c221b152eeca796c3baa683f783c5d4cb36c04
+source_claims:
+  source_included_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 57
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 5149
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 271
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 19
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 900
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 2928
+  source_incomplete_image_trials:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 2
+  source_excluded_incomplete_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 38
+  source_pending_winoground_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/alvinwmtan/dev-bench/tree/59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    locator: Original forced-choice manifest rows and native NumPy files. Validate against complete image inputs
+      from the sources pinned in metadata.
+    scope: Three supported components only. Retain original positions and full numerical traces. Two TROG trials
+      lack images; Winoground remains pending gated image access.
+    expected: 3249

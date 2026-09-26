@@ -1,0 +1,3 @@
+- Source: Pinned author arrays and manifests, author-linked THINGSplus CC0 images and the historical LEVANTE TROG image release. Preserve raw bytes and original manifest positions.
+- Mapping: Three forced-choice components with full available image inputs; use the author strict-choice rule and preserve native numerical rows. Distinguish the released model/scoring variants.
+- Limits: Two TROG trials lack their named images; Winoground images require access. Their published arrays remain captured, without invented inputs or outcomes. Semantic embeddings and unshared training-checkpoint arrays are not scored. No model execution or new judging.
