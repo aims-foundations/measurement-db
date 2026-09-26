@@ -865,3 +865,4 @@ SOURCE_AUDITS["genai_learning"] = verify_native_results
 SOURCE_AUDITS["hallusionbench"] = verify_native_results
 
 SOURCE_AUDITS["haiid"] = verify_native_results
+SOURCE_AUDITS["harmbench"] = verify_native_results

@@ -11032,6 +11032,168 @@ def _haiid(directory, tables, metadata, source=None):
         source_items=len(definitions), source_assets=len(assets), source_subjects=len(subjects))
 
 
+def _harmbench_source_records(directory, metadata):
+    """Read the original mappings and duplicate file aliases without pandas transforms."""
+    import csv
+    import hashlib
+    import io
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    files, images = {}, {}
+    with tarfile.open(directory / "raw" / paths["website_archive"]) as archive:
+        root = paths["website_root"] + "/playground_data/"
+        for member in archive:
+            relative = member.name.removeprefix(root)
+            if not member.isfile() or not member.name.startswith(root):
+                continue
+            if relative.endswith(".json"):
+                files[relative] = archive.extractfile(member).read()
+            elif relative.startswith("multimodal/images/"):
+                images[Path(relative).name] = archive.extractfile(member).read()
+    native, definitions, models, alias_count = {}, {}, {}, 0
+    for modality, folder in [("text", "standard"), ("multimodal", "multimodal")]:
+        manifest = json.loads(files[f"metadata_{modality}.json"])
+        for model in manifest["models"]:
+            _check(model["value"] not in models, True, "HarmBench distinct manifest model keys")
+            models[model["value"]] = model
+        for row in json.loads(files[f"{modality}_behaviors.json"]):
+            key = modality, row["BehaviorID"]
+            _check(key not in definitions, True, "HarmBench unique website behavior IDs")
+            definitions[key] = row
+        for method in manifest["methods"]:
+            name = folder + "/" + method["value"] + ".json"
+            aliases = [name]
+            if modality == "text":
+                aliases += [category + "/" + method["value"] + ".json" for category in ["contextual", "copyright"]]
+            for alias in aliases:
+                _check(hashlib.sha256(files[alias]).digest(), hashlib.sha256(files[name]).digest(), "HarmBench byte-identical directory aliases")
+            alias_count += len(aliases) - 1
+            for behavior, targets in json.loads(files[name]).items():
+                for model, record in targets.items():
+                    key = name, behavior, model
+                    _check(key not in native, True, "HarmBench unique native generation")
+                    _check(model in models, True, "HarmBench target-model identity exists")
+                    _check(set(record) <= {"test_case", "generation", "label", "advbench_label"}, True, "HarmBench known released record fields")
+                    _check(isinstance(record["generation"], str), True, "HarmBench generation remains source text")
+                    for field in ["label", "advbench_label"]:
+                        if field in record:
+                            _check(type(record[field]) is int and record[field] in (0, 1), True, "HarmBench explicit native binary grade")
+                    if modality == "multimodal":
+                        _check(len(record["test_case"]), 2, "HarmBench native image/text pair")
+                        _check(record["test_case"][0] in images, True, "HarmBench referenced image exists")
+                    else:
+                        _check(isinstance(record["test_case"], str), True, "HarmBench complete native text input")
+                    native[key] = dict(record=record, modality=modality, method=method["value"], aliases=aliases)
+    author_bank, validation = {}, {}
+    with tarfile.open(directory / "raw" / paths["author_archive"]) as archive:
+        root = paths["author_root"] + "/"
+        members = set(archive.getnames())
+        for modality in ["text", "multimodal"]:
+            filename = f"data/behavior_datasets/harmbench_behaviors_{modality}_all.csv"
+            with io.TextIOWrapper(archive.extractfile(root + filename), encoding="utf-8", newline="") as stream:
+                for row in csv.DictReader(stream):
+                    key = modality, row["BehaviorID"]
+                    _check(key not in author_bank, True, "HarmBench unique author behavior IDs")
+                    author_bank[key] = row
+                    if key in definitions and "hash_check" in row["Tags"]:
+                        _check(root + f'data/copyright_classifier_hashes/{row["BehaviorID"]}.pkl' in members, True, "HarmBench captured copyright reference hashes")
+            rows = json.load(archive.extractfile(root + f"data/classifier_val_sets/{modality}_behaviors_val_set.json"))
+            validation[modality] = sum(map(len, rows.values()))
+    _check(set(definitions) <= set(author_bank), True, "HarmBench all website behaviors have grading definitions")
+    return native, definitions, author_bank, models, images, alias_count, validation
+
+
+def _harmbench(directory, tables, metadata, source=None):
+    """Reconcile every generation, native grade, actual prompt and complete image."""
+    import hashlib
+    import io
+    from PIL import Image
+
+    native, definitions, author_bank, models, images, alias_count, validation = (
+        source if source is not None else _harmbench_source_records(directory, metadata))
+    scale = metadata["benchmark"]["response_scale"]
+    _check((scale["values"], scale["direction"]), ([0, 1], "lower_is_better"), "HarmBench attack-success orientation")
+    protocols = metadata["grading"]["verifiers"]
+    for key in ["text", "multimodal"]:
+        _check((protocols[key]["kind"], protocols[key]["judge"]), ("llm", "cais/HarmBench-Llama-2-13b-cls"), "HarmBench declared classifier")
+    _check((protocols["copyright"]["kind"], protocols["advbench"]["kind"]), ("deterministic", "deterministic"), "HarmBench non-LLM grading protocols")
+    _check(all(value in protocols["copyright"]["protocol"] for value in ["MinHash", "300", "200", "50", "40", "greater than 0.6"]), True, "HarmBench original copyright scorer")
+    _check("case-sensitive" in protocols["advbench"]["protocol"], True, "HarmBench native refusal heuristic")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    subject_keys = {}
+    for subject_id, row in subjects.items():
+        features = _features(row["subject_features_extra"])
+        model = features["source_model"]
+        _check(model not in subject_keys, True, "HarmBench model configurations remain distinct")
+        _check(row["display_name"], models[model]["label"], "HarmBench manifest display name")
+        _check(row["harness"], "HarmBench published playground results", "HarmBench target harness")
+        _check(features, dict(source_model=model, configuration_scope=metadata["build"]["parameters"]["subject_features"]["configuration_scope"]), "HarmBench original model key and unclaimed inference settings")
+        subject_keys[model] = subject_id
+    _check(set(subject_keys), {key[2] for key in native}, "HarmBench all observed target models")
+    _check(set(traces), set(tables["responses"].response_id), "HarmBench every judgment linked to a trace")
+    seen, counts, trials, used_items, used_assets = Counter(), Counter(), Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["BehaviorID"], trace["subject_key"]
+        entry = native[key]
+        record, field = entry["record"], trace["source_field"]
+        _check(field in record and field in {"label", "advbench_label"}, True, "HarmBench no invented absent annotation")
+        modality, behavior = entry["modality"], key[1]
+        website, author = definitions[modality, behavior], author_bank[modality, behavior]
+        _check(trace, dict(source_file=key[0], source_aliases=entry["aliases"], BehaviorID=behavior, subject_key=key[2],
+            source_field=field, source_record=record, website_behavior=website, author_behavior=author), "HarmBench complete original records and both definition versions")
+        trial_key = row.subject_id, row.item_id, row.interactors
+        trials[trial_key] += 1
+        _check((row.subject_id, row.response, row.trial, row.interactors, pd.isna(row.test_condition)),
+            (subject_keys[key[2]], float(record[field]), trials[trial_key], "attacker=" + entry["method"], True), "HarmBench target, grade, attacker and ordinal of distinct recorded entries")
+        item = items[row.item_id]
+        elements = []
+        if modality == "multimodal":
+            blob = images[record["test_case"][0]]
+            digest = hashlib.sha256(blob).hexdigest()
+            path = "images/" + digest + ".png"
+            elements = [dict(content_type="image/png", location=path), dict(content_type="text/plain", text=record["test_case"][1])]
+            _check(json.loads(item["asset_manifest"]), [dict(asset_id=digest, path=path, media_type="image/png", role="input", ordinal=1)], "HarmBench exact input image association")
+            if digest not in used_assets:
+                _check((assets[digest]["data"], assets[digest]["byte_size"]), (blob, len(blob)), "HarmBench complete original image bytes")
+                with Image.open(io.BytesIO(blob)) as picture:
+                    _check(picture.format, "PNG", "HarmBench actual image format")
+                    picture.verify()
+                used_assets.add(digest)
+        else:
+            elements = [dict(content_type="text/plain", text=record["test_case"])]
+            _check(pd.isna(item["asset_manifest"]), True, "HarmBench text input has no invented image")
+        _check(json.loads(item["content"]), dict(multimedia_elements=elements), "HarmBench actual test case rather than behavior summary")
+        _check(_features(item["item_features"]), dict(modality=modality, functional_category=author["FunctionalCategory"],
+            semantic_category=author["SemanticCategory"], input_scope=metadata["build"]["parameters"]["presentation"]["input_scope"]), "HarmBench corrected multimodal category and no grading leakage")
+        rule = metadata["grading"]["rule"] + "\n" + json.dumps(dict(behavior=website["Behavior"],
+            context=author.get("ContextString", ""), image_description=author.get("RedactedImageDescription", ""), tags=author["Tags"]), ensure_ascii=False)
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=rule), "HarmBench original target and grading context")
+        protocol = "advbench" if field == "advbench_label" else ("copyright" if "hash_check" in author["Tags"] else modality)
+        expected = {"class": "exact_matcher", "spec": json.dumps(protocols[protocol], sort_keys=True)}
+        if protocol in {"text", "multimodal"}:
+            expected.update({"class": "judge", "judge": "cais/HarmBench-Llama-2-13b-cls", "judged_by": "llm"})
+        _check(json.loads(item["verifier"]), expected, "HarmBench appropriate judge included in item identity")
+        used_items.add(row.item_id)
+        seen[(*key, field)] += 1
+        counts[modality, field] += 1
+    wanted = Counter({(*key, field): 1 for key, entry in native.items() for field in ["label", "advbench_label"] if field in entry["record"]})
+    _check(seen, wanted, "HarmBench every native judgment exactly once; no duplicate folders or validation reimports")
+    _check((used_items, used_assets), (set(items), set(assets)), "HarmBench all items and assets are used")
+    return dict(source_generations=len(native), source_responses=sum(wanted.values()), source_subjects=len(subjects),
+        source_behaviors=len(definitions), source_text_generations=counts["text", "label"],
+        source_multimodal_generations=counts["multimodal", "label"], source_assets=len(assets),
+        source_text_primary=counts["text", "label"], source_text_secondary=counts["text", "advbench_label"],
+        source_multimodal_judgments=counts["multimodal", "label"] + counts["multimodal", "advbench_label"],
+        duplicate_file_aliases=alias_count, repeated_input_judgments=sum(value - 1 for value in trials.values()),
+        archived_text_validation_records=validation["text"],
+        archived_multimodal_validation_records=validation["multimodal"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -11044,7 +11206,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
