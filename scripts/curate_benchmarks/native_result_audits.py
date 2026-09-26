@@ -10365,6 +10365,145 @@ def _finegrain(directory, tables, metadata, source=None):
         source_restored_image_paths=sum(value["original_record"] is not None for value in native.values()))
 
 
+def _find_source_records(directory, metadata):
+    """Read every released dialogue and grading file without using the builder."""
+    import hashlib
+    import math
+    import re
+    from zipfile import ZipFile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    references = {}
+    with ZipFile(directory / "raw" / paths["functions"]) as archive:
+        for name in sorted(archive.namelist()):
+            match = re.fullmatch(r"find_dataset/([^/]+/f\d+)/([^/]+)", name)
+            if not match:
+                continue
+            record = references.setdefault(match[1], {"files": []})
+            payload = archive.read(name)
+            record["files"].append(dict(member=name, sha256=hashlib.sha256(payload).hexdigest()))
+            if match[2] == "function_code.py":
+                record["code"] = payload.decode("utf-8")
+    _check(len(references), 2275, "FIND complete function bank")
+    native = {}
+    with ZipFile(directory / "raw" / paths["interpretations"]) as archive:
+        for name in sorted(archive.namelist()):
+            if not name.endswith((".json", ".txt", ".py")):
+                continue
+            match = re.fullmatch(r"(results/([^/]+)/([^/]+)/(f\d+))/(.+)", name)
+            _check(match is not None, True, "FIND source member layout")
+            record = native.setdefault(match[1], dict(model=match[2], condition=match[3], function=match[4], files={}))
+            _check(match[5] not in record["files"], True, "FIND unique source file")
+            record["files"][match[5]] = archive.read(name).decode("utf-8")
+    observations, empty, missing_description, extra_initial, conflicts, unparseable = {}, 0, 0, 0, 0, 0
+    categories = {"numeric": "numeric", "strings": "strings", "neurons_entities": "neurons_entities", "neurons_entities_hints": "neurons_entities", "neurons_relations": "neurons_relations", "neurons_relations_hints": "neurons_relations"}
+    _check(metadata["build"]["parameters"]["categories"], categories, "FIND source family mapping")
+    for attempt, record in native.items():
+        files = record["files"]
+        history = json.loads(files["history.json"])
+        if history == "":
+            _check(all(value == "" for name, value in files.items() if name != "history.json"), True, "FIND empty folder has no attempt evidence")
+            empty += 1
+            continue
+        _check(isinstance(history, list) and any(message["role"] == "assistant" for message in history), True, "FIND actual recorded assistant output")
+        initial = []
+        for message in history:
+            _check(set(message), {"role", "content"}, "FIND native message keys")
+            if message["role"] == "assistant":
+                break
+            initial.append(message)
+        _check([m["role"] for m in initial] in [["system", "user"], ["system", "user", "user"]], True, "FIND initial prompt boundary")
+        missing_description += not files["description.txt"].strip()
+        extra_initial += len(initial) == 3
+        category = categories[record["condition"]]
+        reference_key = category + "/" + record["function"]
+        reference = dict(references[reference_key], archive=paths["functions"])
+        metrics = {"mse" if category == "numeric" else "ungraded": (None, [])}
+        if "test/test.json" in files:
+            data = json.loads(files["test/test.json"])
+            _check(set(data) in [set(), {"mse"}], True, "FIND native MSE record")
+            value = data.get("mse")
+            _check(value is None or (type(value) is float and math.isfinite(value) and value >= 0), True, "FIND finite nonnegative MSE")
+            metrics["mse"] = value, []
+        for filename, metric in [("test/test_desc.json", "description"), ("test/test_desc_data.json", "description_data")]:
+            if filename not in files:
+                continue
+            data = json.loads(files[filename])
+            _check(data["name"], record["function"], "FIND grade target matches its directory")
+            _check(data["desc_score"] in [0, 1], True, "FIND native discrete annotation")
+            issues = []
+            if metric == "description":
+                answer = re.search(r"\[ANSWER\]:\s*([01])\b", data["respones"])
+                if answer is None:
+                    issues.append("judge_answer_unparseable")
+                    unparseable += 1
+                elif int(answer[1]) != data["desc_score"]:
+                    issues.append("grade_disagrees_with_written_answer")
+                    conflicts += 1
+            metrics[metric] = data["desc_score"], issues
+        for metric, (grade, issues) in metrics.items():
+            observations[attempt, metric] = dict(record, grade=grade, issues=issues,
+                content=dict(initial_messages=initial), reference=reference, reference_key=reference_key)
+    _check((len(native), empty, missing_description, extra_initial, conflicts, unparseable),
+           (10385, 49, 2, 18, 16, 1), "FIND complete source and anomaly coverage")
+    _check(Counter(metric for _, metric in observations),
+           Counter(mse=3951, ungraded=6385, description=57, description_data=4), "FIND native measurement protocols")
+    return observations, dict(source_attempts=len(native)-empty, source_empty_folders=empty,
+        source_empty_final_descriptions=missing_description, source_extra_initial_messages=extra_initial,
+        source_grade_conflicts=conflicts, source_unparseable_judge_answers=unparseable, source_reference_functions=len(references))
+
+
+def _find(directory, tables, metadata, source=None):
+    """Reconcile each grade/null, complete prompt, reference and trace with its ZIP member."""
+    native, counts = source if source is not None else _find_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(metadata["benchmark"]["response_scale"], {"kind": "mixed"}, "FIND grades are not a common binary score")
+    _check((len(tables["responses"]), len(traces), len(subjects)), (len(native), len(native), 5), "FIND response/subject coverage")
+    _check(set(traces), set(tables["responses"].response_id), "FIND full trace linkage")
+    scales = {"mse": dict(kind="interval", min=0, max=None, direction="lower_is_better"),
+        "ungraded": dict(kind="interval", min=None, max=None),
+        "description": dict(kind="discrete", values=[0, 1]), "description_data": dict(kind="discrete", values=[0, 1])}
+    seen, item_associations, subject_associations = Counter(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["attempt"], trace["metric"]
+        expected = native[key]
+        _check(trace, dict(archive="FIND-interpretations.zip", attempt=key[0], metric=key[1],
+            files=expected["files"], source_issues=expected["issues"]), "FIND complete original files and annotation issues")
+        _check(None if pd.isna(row.response) else row.response, expected["grade"], "FIND unchanged native grade or unavailable observation")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "FIND separate grades are not generation trials")
+        subject = subjects[row.subject_id]
+        _check((subject["harness"], _features(subject["subject_features_extra"])), ("FIND", dict(interpreter=expected["model"],
+            configuration_scope=metadata["build"]["parameters"]["subject_features"]["configuration_scope"])), "FIND interpreter and method association")
+        item = items[row.item_id]
+        _check(json.loads(item["content"]), expected["content"], "FIND exact initial messages without hidden reference code")
+        _check(item["raw_item_id"], expected["reference_key"]+":"+key[1], "FIND source function and metric")
+        _check(_features(item["item_features"]), dict(reference_key=expected["reference_key"], condition=expected["condition"]), "FIND function/hints identity")
+        criterion = json.loads(item["grading_criterion"])
+        _check(json.loads(criterion.pop("reference_answer")), expected["reference"], "FIND complete reference function and original state hashes")
+        protocol = metadata["grading"]["verifiers"][key[1]]
+        _check(protocol["response_scale"], scales[key[1]], "FIND unnormalized MSE and unknown description direction")
+        _check(criterion, dict(rule=protocol["rule"], response_scale=scales[key[1]]), "FIND exact grading contract")
+        _check(json.loads(item["verifier"]), {"class": "judge",
+            "spec": json.dumps(protocol["implementation"], sort_keys=True)}, "FIND historical grader uncertainty")
+        _check(pd.isna(item["asset_manifest"]), True, "FIND reference state is not revealed input")
+        identity = (expected["reference_key"], expected["condition"], item["content"], key[1])
+        if row.item_id in item_associations:
+            _check(item_associations[row.item_id], identity, "FIND no function/protocol collapse")
+        if row.subject_id in subject_associations:
+            _check(subject_associations[row.subject_id], expected["model"], "FIND no interpreter/method collapse")
+        item_associations[row.item_id] = identity
+        subject_associations[row.subject_id] = expected["model"]
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "FIND every released measurement exactly once")
+    _check((set(item_associations), set(subject_associations)), (set(items), set(subjects)), "FIND no unused identities")
+    return dict(counts, source_responses=len(native), source_items=len(items), source_subjects=len(subjects),
+        source_available_grades=sum(value["grade"] is not None for value in native.values()),
+        source_ungraded_measurements=sum(value["grade"] is None for value in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10377,7 +10516,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

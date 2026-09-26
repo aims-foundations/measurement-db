@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 10397
+    logical_sha256: 2f381efe84b47978a2f5c2b4fcb95c552a00e117646840e9526f87c48443f4c8
+  subjects:
+    rows: 5
+    logical_sha256: 8cd7df4755ab67882c4b9ffa987a0582323afc1735e01aa4573ef72699021555
+  responses:
+    rows: 10397
+    logical_sha256: 42441c24614d2b16a21a6181e87f3197b5d8090cbef63e7fe3f2e71ea32a50c2
+  items:
+    rows: 10397
+    logical_sha256: 558aabdd389314b59557e2aa65d8e3b86f142e608664cc595f7c6a7a3fd957ad
+  benchmarks:
+    rows: 1
+    logical_sha256: 2cff0a8232a7265875c7c89b7fb7a0ba4fa9350e39b6031a7e30ff2b17c1653d
+source_claims:
+  source_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 10336
+  source_empty_folders:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 49
+  source_empty_final_descriptions:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 2
+  source_extra_initial_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 18
+  source_grade_conflicts:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 16
+  source_unparseable_judge_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 1
+  source_reference_functions:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 2275
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 10397
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 10397
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 5
+  source_available_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 408
+  source_ungraded_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    locator: Independently parse every original conversation, output and grading JSON member; cross-reference all
+      function definitions and state hashes in Zenodo 8039658. Compare every curated observation and trace, including
+      unavailable grades and contradictory annotation evidence.
+    scope: The complete released interpretation archive. Empty folders remain raw only; alternate metrics describe
+      the same generation. Item variants preserve native initial messages and separate grading protocols.
+    expected: 9989

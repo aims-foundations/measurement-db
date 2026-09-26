@@ -1,0 +1,3 @@
+- Source: complete official interpretation/function ZIPs and pinned author code; preserve all captured bytes and conversations.
+- Mapping: 10,336 recorded attempts, 408 native grades across distinct protocols, and explicit nulls for unavailable grades. Keep 49 empty folders in raw only; retain two conversations without final descriptions.
+- Review: preserve actual initial messages, hints, function identity and full traces. Keep hidden function code in grading references; flag 16 conflicting and one unparseable description annotations without rewriting scores. Historical grader configurations are unknown.
