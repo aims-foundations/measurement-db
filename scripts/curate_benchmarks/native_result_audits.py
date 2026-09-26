@@ -10504,6 +10504,74 @@ def _find(directory, tables, metadata, source=None):
         source_ungraded_measurements=sum(value["grade"] is None for value in native.values()))
 
 
+def _ghosts_source_records(directory, metadata):
+    """Read original GHOSTS arrays independently, including withheld-prompt records."""
+    import unicodedata
+    from zipfile import ZipFile
+
+    records, first_items, withheld = {}, {}, 0
+    with ZipFile(directory / "raw/GHOSTS.zip") as archive:
+        names = sorted(name for name in archive.namelist() if name.endswith(".json"))
+        for name in names:
+            _, run, filename = name.split("/")
+            _check(run in {"dataset_9jan", "dataset_30jan", "miniGHOSTS_gpt4"}, True, "GHOSTS source model/version")
+            category = filename.removesuffix(".json")
+            for index, group in enumerate(json.loads(archive.read(name))):
+                for subindex, record in enumerate(group if isinstance(group, list) else [group]):
+                    _check(set(record), {"prompt", "output", "rating", "errorcodes", "warningcodes", "comment", "msc", "ref", "confidence", "timestamp"}, "GHOSTS complete native annotation")
+                    _check(record["rating"] in {"1", "2", "3", "4", "5"}, True, "GHOSTS native ordinal scale")
+                    if not record["prompt"].strip():
+                        withheld += 1
+                        continue
+                    key = run + "/" + filename, index, subindex
+                    identity = category, unicodedata.normalize("NFC", record["prompt"]).strip()
+                    first_items.setdefault(identity, dict(content=record["prompt"], raw_item_id=f"{category}:{index}:{subindex}"))
+                    records[key] = dict(record=record, run=run, category=category, identity=identity)
+    counts = dict(source_files=len(names), source_all_observations=len(records) + withheld,
+                  source_withheld_prompt_observations=withheld, source_released_prompt_observations=len(records))
+    return records, first_items, counts
+
+
+def _ghosts(directory, tables, metadata, source=None):
+    """Reconcile every retained rating, prompt, model/version and full annotation."""
+    native, first_items, counts = source if source is not None else _ghosts_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    scale = metadata["benchmark"]["response_scale"]
+    _check((scale["kind"], scale["values"], scale["direction"]), ("discrete", [1, 2, 3, 4, 5], "higher_is_better"), "GHOSTS original human rating scale")
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (len(native), len(native), 3, len(first_items)), "GHOSTS complete eligible coverage")
+    _check(set(traces), set(tables["responses"].response_id), "GHOSTS full trace linkage")
+    seen, item_ids, subject_ids = Counter(), {}, {}
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"], trace["source_row"], trace["source_subrow"]
+        source_row = native[key]
+        record = source_row["record"]
+        _check(trace, dict(source_file=key[0], source_row=key[1], source_subrow=key[2], record=record), "GHOSTS all original output and annotation fields")
+        _check(row.response, int(record["rating"]), "GHOSTS unchanged human rating")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True), "GHOSTS one recorded generation per source prompt and model")
+        subject = subjects[row.subject_id]
+        _check((subject["harness"], _features(subject["subject_features_extra"])),
+               ("ChatGPT web interface", dict(source_run=source_row["run"], configuration_scope=metadata["build"]["parameters"]["subject_features"]["configuration_scope"])), "GHOSTS model/version attribution")
+        item = items[row.item_id]
+        first = first_items[source_row["identity"]]
+        _check((item["content"], item["raw_item_id"]), (first["content"], first["raw_item_id"]), "GHOSTS released prompt and native reference")
+        _check(_features(item["item_features"]), dict(category=source_row["category"]), "GHOSTS output annotations are not input features")
+        _check(json.loads(item["grading_criterion"]), dict(rule=metadata["grading"]["rule"], reference_answer=None), "GHOSTS reviewer comments are not universal reference answers")
+        _check(json.loads(item["verifier"]), {"class": "judge", "judged_by": "human", "spec": json.dumps(metadata["grading"]["verifiers"]["rating"], sort_keys=True)}, "GHOSTS original human grading protocol")
+        _check(pd.isna(item["asset_manifest"]), True, "GHOSTS plain-text stimulus")
+        if row.item_id in item_ids:
+            _check(item_ids[row.item_id], source_row["identity"], "GHOSTS no unrelated prompt collapse")
+        if row.subject_id in subject_ids:
+            _check(subject_ids[row.subject_id], source_row["run"], "GHOSTS no version collapse")
+        item_ids[row.item_id], subject_ids[row.subject_id] = source_row["identity"], source_row["run"]
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "GHOSTS every eligible source observation exactly once")
+    _check((set(item_ids), set(subject_ids)), (set(items), set(subjects)), "GHOSTS no unused identities")
+    return dict(counts, source_responses=len(native), source_items=len(items), source_subjects=len(subjects))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10516,7 +10584,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

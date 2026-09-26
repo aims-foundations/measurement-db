@@ -860,3 +860,4 @@ SOURCE_AUDITS["fetv"] = verify_native_results
 SOURCE_AUDITS["finegrain_t2i"] = verify_native_results
 
 SOURCE_AUDITS["find_interp"] = verify_native_results
+SOURCE_AUDITS["ghosts_math"] = verify_native_results
