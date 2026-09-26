@@ -1,0 +1,176 @@
+benchmark:
+  name: GenAI Learning
+  description: Original student practice and exam grades from a mathematics tutoring study, with separately annotated
+    standalone GPT-4 answers.
+  testing_condition: A four-session study in grades 9–11 of a Turkish high school during fall 2023–2024. Preserve
+    all released participants, including honors students, rather than reproducing the paper's restricted regression
+    sample. The 15,423 practice grades are binary; 13,020 exam grades include partial credit. Assigned GPT Base
+    and GPT Tutor access applies to practice only; exams are closed-book and closed-laptop for every arm. GPT-4
+    contributes 570 separately annotated standalone answers. Published Appendix D worksheets supply complete practice
+    and exam stimuli as PDF attachments, with explicit part and question locators. These English materials differ
+    in places from the question CSV used by the published GPT script, so human and GPT input variants remain distinct.
+    Historical classroom handouts, handwritten student answers and full per-item grading rubrics are unavailable.
+    Original transcript characters, system messages, timestamps and conversation boundaries are preserved without
+    heuristic repairs. Chats are interaction evidence, not the graded handwritten response. Unmatched chats remain
+    raw-only. No fresh model calls or regrading.
+  paper_url: https://www.pnas.org/doi/10.1073/pnas.2422633122
+  data_source_url: https://github.com/obastani/GenAICanHarmLearning
+  subject_type: human_and_model
+  item_type: math_problem
+  license: No explicit license in the captured repository. Authors publicly share anonymized data and code for research;
+    see the original source.
+  citation: 'Bastani, H., Bastani, O., Sungu, A., Ge, H., Kabakci, O., and Mariman, R. (2025). Generative AI without
+    guardrails can harm learning: Evidence from high school mathematics. PNAS 122, e2422633122.'
+  tags:
+  - education
+  - human_subjects
+  - mathematics
+  - tutoring
+  modality:
+  - text
+  - document
+  domain:
+  - education
+  - mathematics
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: '2025-06-25'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: GenAICanHarmLearning.tar.gz
+      root: GenAICanHarmLearning-2f63dae1a01d51453826fe07ef5cf6678e339588
+      paper: author-paper.pdf
+    student_files:
+      practice: main_regressions/problem_part2.csv
+      exam: main_regressions/problem_part3.csv
+    files:
+      gpt: main_regressions/gpt_answers_full.csv
+      questions: text_analysis/data/raw/question_list.csv
+      chats: text_analysis/data/raw/valid_student_data_w_time_stamp.csv
+    worksheet_pages:
+      s1_9: '51'
+      s2_9: 52,53
+      s3_9: 54,55
+      s4_9: 56,57
+      s1_10: '58'
+      s2_10: 59,60
+      s3_10: 61,62
+      s4_10: '63'
+      s1_11: '64'
+      s2_11: '65'
+      s3_11: 66,67
+      s4_11: '68'
+    practice_number_offsets:
+      s3_10: '5'
+      s2_11: '10'
+    practice_number_overrides:
+      s1_11_3: '4'
+    parts:
+      practice: '2'
+      exam: '3'
+    arms:
+      control: Control
+      vanilla: GPT Base
+      augmented: GPT Tutor
+    chat_arms:
+      aug: augmented
+      vanilla: vanilla
+    conditions:
+      control: practice;assigned_access=course books and notes
+      vanilla: practice;assigned_access=GPT Base
+      augmented: practice;assigned_access=GPT Tutor
+      exam: exam;access=closed book and closed laptop
+      gpt: phase=standalone_gpt;temperature=1;max_tokens=1000
+    student_features:
+      subject_kind: human student
+      harness: School study
+      configuration_scope: Assigned study arm is participant history. Assistance applies to practice only. Exam
+        responses are unassisted. Assignment does not establish compliance.
+    model_features:
+      subject_kind: language model
+      harness: GenAICanHarmLearning/check_gpt_accuracy.py
+      model_identifier: gpt-4
+      input_scope: Published generation script using Latin-1 question CSV decoding. Historical request logs and
+        exact model snapshot are unavailable.
+    prompt:
+      system_template: 'You are ChatGPT, a large language model trained by OpenAI.                         Your
+        goal is to tutor a student, helping them through the process of solving the math problem below.                             Please
+        follow the student''s instructions carefully. Write your answers in Github supported Markdown.                                Wrap
+        inline math expressions with ''$'' and blcok math expressions with ''n$$n''.                                    When
+        write numbered list, use ''First,'' instead of use ''1.''. Now you can help with this problem:                                         {question}.'
+      user: What is the answer
+    gpt_grades:
+      correct: '1'
+      logical: '0'
+      arithmetic: '0'
+    stimulus:
+      instruction: Answer the question at position {position} in Part {part} of the attached grade {grade}, session
+        {session} worksheet (printed question number {number}).
+      scope: Published English session material. The original classroom handouts are not independently captured.
+        Select the indicated part and printed question number. The attachment includes the other questions in that
+        session.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    revision: 2f63dae1a01d51453826fe07ef5cf6678e339588
+    file: GenAICanHarmLearning.tar.gz
+    size: 16751263
+    sha256: 6516abb3bf10ad15237701adfaae2e9323e896ef5bd239040b72707e69e9fd8c
+  - name: paper
+    url: https://hamsabastani.github.io/education_llm.pdf
+    revision: null
+    file: author-paper.pdf
+    size: 1150746
+    sha256: 3c480fab94d0b6e466741a181724eba2bb868015f1a16ab998894a3a61067b4a
+grading:
+  rule: Preserve the source human grade without regrading. Practice and standalone GPT correctness are binary; exam
+    scores retain fractional credit. Per-item response scales distinguish these protocols. Do not treat tutor system
+    prompts as student responses or extract their solutions heuristically.
+  verifiers:
+    practice:
+      kind: blinded_human_grading
+      source: https://hamsabastani.github.io/education_llm.pdf
+      field: main_regressions/problem_part2.csv:Score
+      protocol: Appendix A.5. Preserve the released binary practice grade. Grader codes are retained per response;
+        handwritten work and the complete rubric are not released.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': No practice credit
+          '1': Full practice credit
+    exam:
+      kind: blinded_human_grading
+      source: https://hamsabastani.github.io/education_llm.pdf
+      field: main_regressions/problem_part3.csv:Score
+      protocol: Appendix A.5 and B.2. Preserve the normalized exam grade, including fractional credit. All study
+        arms take this exam without assistance. Item-specific scoring rubrics and handwritten work are not released.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    gpt:
+      kind: human_error_annotation
+      source: https://hamsabastani.github.io/education_llm.pdf
+      field: main_regressions/gpt_answers_full.csv:g0 through g9
+      protocol: Appendix C.1. Map correct to 1, logical and arithmetic errors to 0. Retain the original category
+        and answer without repairing its characters.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Logical or arithmetic error
+          '1': Correct answer

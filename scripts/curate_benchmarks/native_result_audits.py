@@ -10572,6 +10572,168 @@ def _ghosts(directory, tables, metadata, source=None):
     return dict(counts, source_responses=len(native), source_items=len(items), source_subjects=len(subjects))
 
 
+def _genai_source_records(directory, metadata):
+    """Read all original CSV cells and the published worksheet pages independently."""
+    import ast
+    import csv
+    import hashlib
+    import io
+    import re
+    import tarfile
+    import pymupdf
+
+    records, participants, questions, conversations = {}, {}, {}, {}
+    with tarfile.open(directory / "raw/GenAICanHarmLearning.tar.gz") as archive:
+        root = "GenAICanHarmLearning-2f63dae1a01d51453826fe07ef5cf6678e339588/"
+        def read(path, encoding="utf-8-sig"):
+            return list(csv.DictReader(io.TextIOWrapper(archive.extractfile(root + path), encoding=encoding)))
+        for phase, part in (("practice", 2), ("exam", 3)):
+            path = f"main_regressions/problem_part{part}.csv"
+            for index, row in enumerate(read(path)):
+                participant = row["Student ID"]
+                identity = {key: row[key] for key in ("Year", "Honors", "Treatment arm")}
+                _check(participants.setdefault(participant, identity), identity, "GenAI stable participant history across phases")
+                records[path, index] = dict(phase=phase, record=row)
+        chats = read("text_analysis/data/raw/valid_student_data_w_time_stamp.csv")
+        untimed = read("text_analysis/data/raw/valid_student_data.csv")
+        _check([{key: value for key, value in row.items() if key != "time_stamp"} for row in chats], untimed,
+               "GenAI timestamped release preserves every original message")
+        for row in chats:
+            key = row["username"], f's{row["session_id"]}_{row["grade"]}_{row["problem_id"]}'
+            conversations.setdefault(key, []).append(row)
+        for row in read("text_analysis/data/raw/question_list.csv", "latin1"):
+            key = f'{row["session"]}_{row["grade"]}_{row["problem_id"]}'
+            _check(key not in questions, True, "GenAI unique GPT question coordinate")
+            questions[key] = row["question"]
+        gpt = read("main_regressions/gpt_answers_full.csv")
+        for index, row in enumerate(gpt):
+            for sample in range(10):
+                _check(row[f"g{sample}"] in {"correct", "logical", "arithmetic"}, True, "GenAI native GPT annotation")
+                records["gpt", row["problem"], str(sample)] = dict(phase="gpt", source_row=index, record=row)
+        tree = ast.parse(archive.extractfile(root + "text_analysis/check_gpt_accuracy.py").read())
+        query = next(node.value for node in ast.walk(tree) if isinstance(node, ast.Assign)
+                     and any(isinstance(target, ast.Name) and target.id == "gpt_query" for target in node.targets))
+        expression = query.elts[0].values[1]
+        _check([type(node).__name__ for node in expression.values], ["Constant", "FormattedValue", "Constant"], "GenAI documented system template")
+        _check(ast.dump(expression.values[1].value), "Name(id='question', ctx=Load())", "GenAI source question substitution")
+        template = expression.values[0].value + "{question}" + expression.values[2].value
+        user = ast.literal_eval(query.elts[1])["content"]
+        call = next(node for node in ast.walk(tree) if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute) and node.func.attr == "create")
+        config = {entry.arg: ast.literal_eval(entry.value) for entry in call.keywords if entry.arg in {"model", "temperature", "max_tokens"}}
+        _check(config, dict(model="gpt-4", temperature=1, max_tokens=1000), "GenAI published generation configuration")
+
+    # Explicit source-page correspondence, checked against each worksheet header.
+    pages = {"s1_9": [51], "s2_9": [52, 53], "s3_9": [54, 55], "s4_9": [56, 57],
+             "s1_10": [58], "s2_10": [59, 60], "s3_10": [61, 62], "s4_10": [63],
+             "s1_11": [64], "s2_11": [65], "s3_11": [66, 67], "s4_11": [68]}
+    documents = {}
+    with pymupdf.open(directory / "raw/author-paper.pdf") as paper:
+        for key, numbers in pages.items():
+            session, grade = key[1:].split("_")
+            text = paper[numbers[0] - 1].get_text()
+            _check(bool(re.search(r"Grade\s+" + grade + r"\s+Session\s+" + session + r"\s+", text)), True, "GenAI published worksheet header")
+            documents[key] = [(hashlib.sha256(paper[number - 1].get_pixmap().samples).hexdigest(), paper[number - 1].get_text())
+                              for number in numbers]
+    return records, participants, questions, conversations, documents, template, user
+
+
+def _genai(directory, tables, metadata, source=None):
+    """Reconcile all grades, phase identities, original messages and complete worksheets."""
+    import hashlib
+    import pymupdf
+
+    native, participants, questions, conversations, documents, template, user = (
+        source if source is not None else _genai_source_records(directory, metadata))
+    parameters, protocols = metadata["build"]["parameters"], metadata["grading"]["verifiers"]
+    _check(parameters["prompt"], dict(system_template=template, user=user), "GenAI exact published GPT input construction")
+    _check(metadata["benchmark"]["response_scale"], dict(kind="mixed"), "GenAI preserve binary and fractional protocols")
+    for phase in ("practice", "exam", "gpt"):
+        scale = protocols[phase]["response_scale"]
+        _check(scale["direction"], "higher_is_better", "GenAI score direction")
+        _check((scale["kind"], scale.get("values"), scale.get("min"), scale.get("max")),
+               ("interval", None, 0, 1) if phase == "exam" else ("discrete", [0, 1], None, None), "GenAI actual phase grading scale")
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    assets = tables["assets"].set_index("asset_id").to_dict("index")
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items), len(assets)),
+           (len(native), len(native), len(participants) + 1, 162, 12), "GenAI complete source coverage")
+    _check(set(traces), set(tables["responses"].response_id), "GenAI full trace associations")
+    seen, observed_items, observed_subjects, attached, transcript_keys, phase_counts = Counter(), {}, {}, {}, set(), Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        model = "sample" in trace
+        key = (("gpt", trace["record"]["problem"], trace["sample"]) if model else (trace["source_file"], trace["source_row"]))
+        expected = native[key]
+        record, phase = expected["record"], expected["phase"]
+        subject, item = subjects[response.subject_id], items[response.item_id]
+        if model:
+            sample, problem = key[2], key[1]
+            _check(trace, dict(source_file="main_regressions/gpt_answers_full.csv", source_row=expected["source_row"],
+                record=record, sample=sample, answer=record[sample], label=record["g" + sample]), "GenAI all original GPT answers and error labels")
+            _check(response.response, float(record["g" + sample] == "correct"), "GenAI unchanged GPT judgment")
+            _check((response.trial, response.test_condition), (int(sample) + 1, "phase=standalone_gpt;temperature=1;max_tokens=1000"), "GenAI native sample and generation settings")
+            identity = "gpt-4"
+            _check((subject["display_name"], subject["harness"], _features(subject["subject_features_extra"])),
+                   ("gpt-4", parameters["model_features"]["harness"], {k: v for k, v in parameters["model_features"].items() if k != "harness"}), "GenAI standalone model attribution")
+            content = dict(messages=[dict(role="system", content=template.replace("{question}", questions[problem])), dict(role="user", content=user)])
+            features = dict(phase="gpt", input_scope=parameters["model_features"]["input_scope"])
+            _check(pd.isna(item["asset_manifest"]), True, "GenAI no worksheet supplied to standalone GPT script")
+        else:
+            participant, problem, arm = record["Student ID"], record["Problem"], record["Treatment arm"]
+            messages = conversations.get((participant, problem), []) if phase == "practice" else []
+            _check(trace, dict(source_file=key[0], source_row=key[1], record=record, messages=messages), "GenAI complete grade record and original messages with boundaries and timestamps")
+            _check(response.response, float(record["Score"]), "GenAI exact normalized human grade without thresholding")
+            condition = "exam;access=closed book and closed laptop" if phase == "exam" else {
+                "control": "practice;assigned_access=course books and notes", "vanilla": "practice;assigned_access=GPT Base", "augmented": "practice;assigned_access=GPT Tutor"}[arm]
+            _check((response.trial, response.test_condition), (1, condition), "GenAI exams unassisted for all arms")
+            identity = participant
+            features_subject = dict(source_participant=participant, assigned_arm=arm, school_grade=record["Year"], honors=record["Honors"],
+                **{k: v for k, v in parameters["student_features"].items() if k != "harness"})
+            _check((subject["harness"], _features(subject["subject_features_extra"])), ("School study", features_subject), "GenAI source participant and history")
+            worksheet, position = problem.rsplit("_", 1)
+            number = int(position)
+            if phase == "practice":
+                number += {"s3_10": 5, "s2_11": 10}.get(worksheet, 0)
+                if problem == "s1_11_3": number = 4
+            session, grade = worksheet[1:].split("_")
+            part = 2 if phase == "practice" else 3
+            content = dict(multimedia_elements=[dict(content_type="text/plain", text=f"Answer the question at position {position} in Part {part} of the attached grade {grade}, session {session} worksheet (printed question number {number})."),
+                dict(content_type="application/pdf", location=f"worksheets/{worksheet}.pdf")])
+            features = dict(phase=phase, worksheet=worksheet, question_position=position, printed_question=str(number), input_scope=parameters["stimulus"]["scope"])
+            links = json.loads(item["asset_manifest"])
+            _check(len(links), 1, "GenAI one complete worksheet attachment")
+            link = links[0]
+            _check({k: v for k, v in link.items() if k != "asset_id"}, dict(path=f"worksheets/{worksheet}.pdf", role="input", media_type="application/pdf", ordinal=1), "GenAI correct worksheet attachment")
+            _check(attached.setdefault(worksheet, link["asset_id"]), link["asset_id"], "GenAI stable worksheet asset")
+            if messages:
+                transcript_keys.add((participant, problem))
+                _check({row["treatment"] for row in messages}, {"aug" if arm == "augmented" else arm}, "GenAI transcript treatment matches participant")
+        _check(json.loads(item["content"]), content, "GenAI exact input variant and question coordinate")
+        _check(_features(item["item_features"]), features, "GenAI phase-specific input features")
+        _check(item["raw_item_id"], phase + ":" + problem, "GenAI separate human and model stimuli")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=protocols[phase]["protocol"], response_scale=protocols[phase]["response_scale"]), "GenAI correct phase grading protocol and no invented reference")
+        _check(json.loads(item["verifier"]), dict(**{"class": "judge"}, judged_by="human", spec=json.dumps(protocols[phase], sort_keys=True)), "GenAI original human grader")
+        _check(pd.isna(response.interactors), True, "GenAI no fabricated response interlocutor")
+        _check(observed_subjects.setdefault(response.subject_id, identity), identity, "GenAI no participant/model identity collapse")
+        _check(observed_items.setdefault(response.item_id, (phase, problem)), (phase, problem), "GenAI no question/phase collapse")
+        seen[key] += 1
+        phase_counts[phase] += 1
+    _check(seen, Counter({key: 1 for key in native}), "GenAI every source observation exactly once")
+    _check((set(observed_subjects), set(observed_items), set(attached.values())), (set(subjects), set(items), set(assets)), "GenAI no unused identities or assets")
+    for worksheet, asset_id in attached.items():
+        blob = assets[asset_id]["data"]
+        _check((hashlib.sha256(blob).hexdigest(), len(blob)), (asset_id, assets[asset_id]["byte_size"]), "GenAI exact asset digest")
+        with pymupdf.open(stream=blob, filetype="pdf") as document:
+            observed = [(hashlib.sha256(page.get_pixmap().samples).hexdigest(), page.get_text()) for page in document]
+        _check(observed, documents[worksheet], "GenAI worksheet page pixels and text match source PDF without unrelated results")
+    return dict(source_practice_grades=phase_counts["practice"], source_exam_grades=phase_counts["exam"], source_gpt_grades=phase_counts["gpt"],
+        source_student_participants=len(participants), source_responses=len(native), source_items=len(items), source_subjects=len(subjects),
+        source_worksheets=len(attached), source_chat_grade_matches=len(transcript_keys), source_unmatched_chat_keys=len(conversations) - len(transcript_keys),
+        source_preserved_messages=sum(len(conversations[key]) for key in transcript_keys))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -10584,7 +10746,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
