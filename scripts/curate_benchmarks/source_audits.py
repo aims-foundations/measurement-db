@@ -850,3 +850,5 @@ SOURCE_AUDITS["elicitation_game"] = verify_native_results
 SOURCE_AUDITS["emoji_attack"] = verify_native_results
 
 SOURCE_AUDITS["enginemt_qa"] = verify_native_results
+
+SOURCE_AUDITS["felm"] = verify_native_results

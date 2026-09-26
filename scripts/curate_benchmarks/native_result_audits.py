@@ -9959,6 +9959,83 @@ def _enginemt(directory, tables, metadata, source=None):
         source_perception=sum(row["stage"] == 2 for row in native.values()),
         source_reasoning=sum(row["stage"] == 3 for row in native.values()))
 
+
+def _felm_source_records(directory, metadata):
+    """Read native line/segment positions independently of DataFrame expansion."""
+    import math
+    import unicodedata
+
+    path = directory / "raw" / metadata["build"]["parameters"]["paths"]["records"]
+    native, stimuli, parents, repeats = {}, {}, {}, Counter()
+    with path.open() as stream:
+        for line, original in enumerate(stream):
+            text = original.removesuffix("\n")
+            record = json.loads(text)
+            _check(record["index"] not in parents, True, "FELM unique original record identifier")
+            parents[record["index"]] = record
+            _check(len(record["labels"]), len(record["segmented_response"]), "FELM exact segment/label alignment")
+            _check(len(record["comment"]), len(record["segmented_response"]), "FELM exact segment/comment alignment")
+            domain = metadata["build"]["parameters"]["domains"][record["domain"]]
+            for index, segment in enumerate(record["segmented_response"]):
+                label = record["labels"][index]
+                _check(type(label), bool, "FELM original Boolean annotation")
+                stimulus = unicodedata.normalize("NFC", record["prompt"]).strip(), domain, index
+                stimuli.setdefault(stimulus, dict(raw_id=record["index"] + "_" + str(index), content=record["prompt"]))
+                repeats[stimulus] += 1
+                issues = []
+                if isinstance(record["response"], float) and math.isnan(record["response"]):
+                    issues.append("parent_response_is_upstream_NaN")
+                if not segment:
+                    issues.append("empty_segment_has_original_label")
+                native[line, index] = dict(record=record, native_line=text, segment=segment, stimulus=stimulus,
+                    grade=float(label), domain=domain, trial=repeats[stimulus], source_issues=issues)
+    _check((len(native), len(parents), len(stimuli)), (4426, 847, 4412), "FELM exact combined-release scope")
+    _check(sum(row["grade"] for row in native.values()), 3639, "FELM original positive label count")
+    return native, stimuli, parents
+
+
+def _felm(directory, tables, metadata, source=None):
+    """Check all annotations, input/output roles and complete parent context."""
+    native, stimuli, parents = source if source is not None else _felm_source_records(directory, metadata)
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check((len(tables["responses"]), len(traces), len(subjects), len(items)), (4426, 4426, 1, 4412), "FELM all released segment measurements")
+    _check(set(traces), set(tables["responses"].response_id), "FELM response-trace bijection")
+    _check(metadata["benchmark"]["license"].startswith("CC-BY-NC-SA-4.0"), True, "FELM dataset license distinct from code")
+    parameters = metadata["build"]["parameters"]
+    seen, checked, used_subjects = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_line"], trace["segment_index"]
+        expected = native[key]
+        _check(trace, dict(source_line=key[0], segment_index=key[1], segment=expected["segment"],
+            parent_record_json=expected["native_line"], source_issues=expected["source_issues"]), "FELM complete original parent line and original-format flags")
+        _check(row.response, expected["grade"], "FELM original human factuality label")
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (expected["trial"], True, True), "FELM repeated prompt/protocol observations retained")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], "ChatGPT (FELM response generator)", "FELM generator is not a scored detector")
+        _check(pd.isna(subject["normalized_name"]), True, "FELM no unsupported exact generator checkpoint")
+        _check(_features(subject["subject_features_extra"]), parameters["subject_features"], "FELM recorded model identity scope")
+        item = items[row.item_id]
+        stimulus = stimuli[expected["stimulus"]]
+        _check((item["raw_item_id"], item["content"]), (stimulus["raw_id"], stimulus["content"]), "FELM prompt stimulus without generated-answer leakage")
+        if row.item_id not in checked:
+            _check(_features(item["item_features"]), dict(domain=expected["domain"]), "FELM domain is an item attribute")
+            _check(json.loads(item["grading_criterion"]), dict(reference_answer=None, rule=metadata["grading"]["rule"]), "FELM error comments are not assumed complete gold solutions")
+            protocol = dict(segment_index=key[1], **metadata["grading"]["verifiers"]["annotation"])
+            _check(json.loads(item["verifier"]), {"class": "judge", "judged_by": "human", "spec": json.dumps(protocol, sort_keys=True)}, "FELM correct assessed segment and human annotation protocol")
+            _check(pd.isna(item["asset_manifest"]), True, "FELM original text-only inputs")
+            checked.add(row.item_id)
+        seen[key] += 1
+        used_subjects.add(row.subject_id)
+    _check(seen, Counter({key: 1 for key in native}), "FELM every native segment exactly once")
+    _check((checked, used_subjects), (set(items), set(subjects)), "FELM no unused items or subjects")
+    return dict(source_responses=len(native), source_items=len(stimuli), source_subjects=1, source_parent_answers=len(parents),
+        source_factual_segments=3639, source_error_segments=787, source_repeated_observations=14,
+        source_empty_segments=sum(not row["segment"] for row in native.values()),
+        source_unavailable_parent_answers=sum(not isinstance(row["response"], str) for row in parents.values()))
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -9971,7 +10048,7 @@ def verify_native_results(directory, tables_directory=None):
             "legal_rag_bench": _legal_rag, "nester": _nester, "engibench": _engibench,
             "llmail_inject": _llmail_inject, "safeagentbench": _safeagentbench, "dpai": _dpai, "devbench": _devbench,
             "edumath": _edumath,
-            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt,
+            "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

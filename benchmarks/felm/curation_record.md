@@ -1,0 +1,3 @@
+- Source: pinned FELM combined release, with 847 ChatGPT answers and 4,426 human segment labels (3,639 true and 787 false). The alternative per-domain ZIP is captured but not merged because it contains differing annotations.
+- Mapping: retain the original prompt as stimulus, put the segment selector in the human grading protocol, and preserve complete parent records in JSON trace wrappers. All prior labels remain unchanged; repeated prompt/protocol pairs remain separate observations.
+- Scope: this is generator factuality, not detector performance. Segment grades share parent answers; preserve four empty segments and flag two unavailable full answers. Correct the dataset license and avoid inferring a checkpoint or treating error comments as gold solutions.
