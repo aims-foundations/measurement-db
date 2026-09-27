@@ -14624,6 +14624,141 @@ def _lohi(directory, tables, metadata, source=None):
     return source["counts"]
 
 
+def _matharena_platform_sources(directory, metadata):
+    """Read every author-published row independently of the table transformation."""
+    import math
+    import pyarrow.parquet as pq
+
+    files, bank, subjects = {}, {}, set()
+    for path in sorted((directory / 'raw/tasks').glob('*/data/*.parquet')):
+        version = path.parents[1].name
+        for row in pq.read_table(path).to_pylist():
+            key = version, str(row['problem_idx'])
+            _check(key not in bank, True, 'MathArena unique source task key')
+            bank[key] = row
+    grades, missing_messages, empty_answers, missing_judgments = Counter(), 0, 0, 0
+    occurrences = set()
+    for path in sorted((directory / 'raw/outputs').glob('*/data/*.parquet')):
+        version = path.parents[1].name
+        rows = pq.read_table(path).to_pylist()
+        files[str(path.relative_to(directory / 'raw'))] = rows
+        for row in rows:
+            key = version, row['model_config'], str(row['problem_idx']), row['idx_answer']
+            _check(key not in occurrences, True, 'MathArena unique native attempt')
+            occurrences.add(key)
+            _check(row['problem'], bank[version, str(row['problem_idx'])]['problem'], 'MathArena pinned task/attempt association')
+            _check(isinstance(row['idx_answer'], int) and row['idx_answer'] >= 0, True, 'MathArena original attempt index')
+            value = row['correct']
+            _check(value is None or math.isfinite(value), True, 'MathArena finite published grade')
+            if version.startswith(('arxivmath_', 'arxivlean_')):
+                _check(value is None or value in (False, True), True, 'MathArena native binary grade')
+            elif value is not None and row['points_judge_1'] is not None:
+                _check(value, row['points_judge_1'] / row['max_points_judge_1'], 'MathArena source-normalized judge points')
+            elif value is not None:
+                _check((value, row['max_points_judge_1'], row['grading_details_judge_1'], row['answer']),
+                       (0., None, None, ''), 'MathArena source-recorded empty-attempt zero without judge details')
+                missing_judgments += 1
+            subjects.add((row['model_name'], row['model_config']))
+            grades[str(value)] += 1
+            missing_messages += not bool(row['user_message'])
+            empty_answers += not bool(row['answer'])
+    return dict(files=files, bank=bank, subjects=subjects, counts=dict(source_responses=len(occurrences),
+        source_versions=len(files), source_configurations=len(subjects), source_task_bank_rows=len(bank),
+        source_missing_user_messages=missing_messages, source_empty_answers=empty_answers,
+        source_ungraded=grades['None'], source_empty_attempt_zeros_without_judgment=missing_judgments))
+
+
+def _matharena_platform(directory, tables, metadata, source=None):
+    """Verify complete requests, conversations, grades and their source associations."""
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = source or _matharena_platform_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    protocols = metadata['grading']['verifiers']
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_model_label'], features['source_model_config']
+        expected = {k: v for k, v in parameters['subject_features'].items() if k != 'harness'}
+        expected.update(source_model_label=key[0], source_model_config=key[1])
+        _check(features, expected, 'MathArena literal published configuration')
+        _check(row.display_name, parameters['labels']['subject_prefix'] + key[0], 'MathArena original model label')
+        _check(row.harness, 'MathArena', 'MathArena published harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MathArena no invented model setting: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['subjects']}), 'MathArena complete source configurations')
+
+    expected_items, expected_by_occurrence = set(), {}
+    for filename, records in source['files'].items():
+        version = Path(filename).parts[1]
+        protocol_name = 'arxivmath_answer_judge' if version == 'arxivmath_0826' else version.split('_')[0]
+        _check(parameters['versions'][version], protocol_name, 'MathArena native family and August answer-judge distinction')
+        protocol = protocols[protocol_name]
+        for index, record in enumerate(records):
+            if 'selected' in source and (filename, index) not in source['selected']:
+                continue
+            request = record['user_message']
+            scope = parameters['labels']['recorded_input']
+            if not request:
+                request = json.dumps(dict(problem=record['problem'], formal_statement=record.get('formal_statement')), ensure_ascii=False)
+                scope = parameters['labels']['fallback_input']
+            task = source['bank'][version, str(record['problem_idx'])]
+            reference = (record.get('gold_answer') if protocol_name.startswith('arxivmath')
+                         else task.get('sample_solution') if protocol_name == 'usamo' else None)
+            reference = str(reference) if reference is not None and str(reference).strip() else None
+            rubric = [{field: part[field] for field in ['title', 'max_points', 'grading_scheme_desc'] if field in part}
+                      for part in json.loads(record.get('grading_details_judge_1') or '[]')]
+            rule = dict(native_rule=protocol['rule'], rubric=rubric)
+            if protocol_name == 'arxivlean': rule['formal_statement'] = record['formal_statement']
+            scale = protocol['response_scale']
+            if protocol_name in ('brokenarxiv', 'usamo'):
+                limit = source['bank'][version, str(record['problem_idx'])]['points']
+                if record['max_points_judge_1'] is not None:
+                    _check(record['max_points_judge_1'], limit, 'MathArena published rubric maximum')
+                _check(limit > 0 and int(limit) == limit, True, 'MathArena integer rubric maximum')
+                scale = dict(kind='discrete', values=[points / limit for points in range(int(limit) + 1)], direction='higher_is_better')
+            criterion = canonical_grading_criterion(dict(reference_answer=reference,
+                rule=json.dumps(rule, ensure_ascii=False, sort_keys=True), response_scale=scale))
+            definition = (version, str(record['problem_idx']), request, scope, criterion, protocol_name)
+            expected_items.add(definition)
+            expected_by_occurrence[filename, index] = definition
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        version, problem = row.raw_item_id.split('::', 1)
+        protocol_name = 'arxivmath_answer_judge' if version == 'arxivmath_0826' else version.split('_')[0]
+        _check(features, dict(competition=version, problem_idx=problem, input_scope=features.get('input_scope')), 'MathArena original item attributes')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], protocols[protocol_name]['verifier_class'], 'MathArena source grader class')
+        _check(json.loads(verifier['spec']), protocols[protocol_name], 'MathArena source grading protocol')
+        if protocols[protocol_name]['verifier_class'] == 'judge':
+            _check(verifier.get('judged_by'), 'llm', 'MathArena source LLM judge without guessed endpoint')
+        _check(pd.isna(row.asset_manifest), True, 'MathArena text-only source task')
+        items[row.item_id] = (version, problem, row.content, features['input_scope'], row.grading_criterion, protocol_name)
+    _check(Counter(items.values()), Counter({key: 1 for key in expected_items}), 'MathArena complete untruncated task/grading definitions')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MathArena one full trace per observation')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, trials = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        filename, index = trace['source_file'], trace['source_row']
+        _check(isinstance(index, int) and not isinstance(index, bool) and 0 <= index < len(source['files'][filename]), True, 'MathArena valid original row coordinate')
+        native = source['files'][filename][index]
+        _check(trace, dict(source_file=filename, source_row=index, record=native), 'MathArena complete native conversation and record')
+        _check(subjects[row.subject_id], (native['model_name'], native['model_config']), 'MathArena model/output association')
+        _check(items[row.item_id], expected_by_occurrence[filename, index], 'MathArena original request/reference/rubric association')
+        _check(None if pd.isna(row.response) else float(row.response), None if native['correct'] is None else float(native['correct']), 'MathArena unchanged native grade')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'MathArena no invented occasion setting: ' + field)
+        key = row.subject_id, row.item_id
+        trials[key] += 1
+        _check(row.trial, trials[key], 'MathArena retained original occurrence order')
+        seen[filename, index] += 1
+    _check(Counter(seen), Counter({key: 1 for key in expected_by_occurrence}), 'MathArena exact released attempt coverage')
+    _check(len(tables.get('assets', [])), 0, 'MathArena no invented media attachments')
+    return dict(source['counts'], source_item_definitions=len(expected_items))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14639,6 +14774,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
+            "matharena_platform": _matharena_platform,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
