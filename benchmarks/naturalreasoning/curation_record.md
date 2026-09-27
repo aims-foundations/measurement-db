@@ -1,0 +1,3 @@
+- Import all 1,145,824 released questions and Llama-3.3-70B-Instruct answers, expanding the old 143,048-row viewer shard; this is training data, not a held-out evaluation set.
+- Preserve full native records and available references; 209,574 references are empty. Replace the old answer-presence score of 1 with null because correctness grades are not released.
+- Document paper-reported generation settings and the reference-check protocol without claiming it was applied to these answers. Exact historical prompts, revisions and judge verdicts are unavailable; no new inference or grading was performed.

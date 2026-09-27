@@ -17157,6 +17157,102 @@ def _nanobaselib(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _naturalreasoning_sources(directory, metadata):
+    """Read original JSONL records independently of the builder's table operations."""
+    records, observations, models, questions = {}, set(), set(), set()
+    counts = Counter()
+    with (directory / 'raw/upstream/full.jsonl').open() as stream:
+        for ordinal, line in enumerate(stream):
+            record = json.loads(line)
+            _check(set(record), {'question', 'reference_answer', 'responses'}, 'NaturalReasoning native record fields')
+            _check(isinstance(record['question'], str) and bool(record['question'].strip()), True,
+                   'NaturalReasoning nonempty original question')
+            _check(record['question'] not in questions, True, 'NaturalReasoning unique original question')
+            _check(isinstance(record['reference_answer'], str), True, 'NaturalReasoning original reference type')
+            _check(isinstance(record['responses'], list) and bool(record['responses']), True,
+                   'NaturalReasoning recorded answer list')
+            questions.add(record['question'])
+            records[ordinal] = record
+            counts['source_missing_references'] += not bool(record['reference_answer'])
+            for position, answer in enumerate(record['responses']):
+                _check(set(answer), {'response_model', 'response'}, 'NaturalReasoning native answer fields without grades')
+                _check(all(isinstance(value, str) and bool(value) for value in answer.values()), True,
+                       'NaturalReasoning nonempty literal model and generated answer')
+                observations.add((ordinal, position))
+                models.add(answer['response_model'])
+                counts['source_maximum_response_characters'] = max(counts['source_maximum_response_characters'], len(answer['response']))
+    counts.update(source_records=len(records), source_observations=len(observations), source_models=len(models),
+                  source_saved_grades=0, source_captured_author_files=sum(path.is_file() for path in (directory / 'raw/upstream').rglob('*')))
+    return dict(records=records, observations=observations, models=models, counts=dict(counts))
+
+
+def _naturalreasoning(directory, tables, metadata, source=None):
+    source = source or _naturalreasoning_sources(directory, metadata)
+    _check(len(tables['items']), len(source['records']), 'NaturalReasoning complete item coverage')
+    _check(len(tables['responses']), len(source['observations']), 'NaturalReasoning complete attempt coverage')
+    _check(len(tables['traces']), len(source['observations']), 'NaturalReasoning complete trace coverage')
+    _check(set(tables['responses'].response_id), set(tables['traces'].response_id), 'NaturalReasoning trace keys cover every attempt')
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        _check(row.display_name, 'Llama-3.3-70B-Instruct', 'NaturalReasoning exact released model label')
+        _check((row.normalized_name, row.provider, row.release_date),
+               ('Meta Llama 3.3 70B', 'Meta', '2024-12-06'), 'NaturalReasoning supported canonical model metadata')
+        _check(row.harness, 'vLLM', 'NaturalReasoning paper-reported generation harness')
+        for field in ['access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'NaturalReasoning unknown execution field: ' + field)
+        _check(_features(row.subject_features_extra),
+               {key: value for key, value in metadata['build']['parameters']['subject_features'].items() if key != 'harness'},
+               'NaturalReasoning explicit unknown historical generation configuration')
+        subjects[row.subject_id] = row.display_name
+    _check(Counter(subjects.values()), Counter({model: 1 for model in source['models']}), 'NaturalReasoning each literal model once')
+    for row in tables['items'].itertuples():
+        prefix, ordinal = row.raw_item_id.rsplit(':', 1)
+        _check(prefix, 'upstream/full.jsonl', 'NaturalReasoning original source location')
+        ordinal = int(ordinal)
+        original = source['records'][ordinal]
+        _check(row.content, original['question'], 'NaturalReasoning exact original question without generated answer leakage')
+        _check(_features(row.item_features), dict(split='released_training_subset', input_scope='released_question_text'),
+               'NaturalReasoning question-only item attributes')
+        _check(pd.isna(row.asset_manifest), True, 'NaturalReasoning no invented attachments')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=original['reference_answer'] or None, rule=metadata['grading']['rule']),
+               'NaturalReasoning exact available reference and declared unexecuted verification rule')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'NaturalReasoning reference comparison needs judgment')
+        _check(verifier.get('judge'), None, 'NaturalReasoning no inferred historical judge identity')
+        _check(verifier['judged_by'], 'llm', 'NaturalReasoning paper protocol is an LLM judgment')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['reference_check'],
+               'NaturalReasoning described reference-check protocol, not an asserted saved judgment')
+        items[row.item_id] = ordinal
+    _check(Counter(items.values()), Counter({ordinal: 1 for ordinal in source['records']}), 'NaturalReasoning every source question exactly once')
+    if 'assets' in tables:
+        _check(len(tables['assets']), 0, 'NaturalReasoning no invented source assets')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        ordinal, model = items[row.item_id], subjects[row.subject_id]
+        original = source['records'][ordinal]
+        trace = traces[row.response_id]
+        decoded = json.loads(trace['trace'])
+        position = decoded['response_index']
+        _check((ordinal, position) in source['observations'], True, 'NaturalReasoning original answer position')
+        _check(original['responses'][position]['response_model'], model, 'NaturalReasoning correct model/answer association')
+        _check(pd.isna(row.response), True, 'NaturalReasoning absence of a correctness grade is null, not success')
+        _check(row.trial, 1, 'NaturalReasoning one released attempt per model and question')
+        _check(row.test_condition, 'temperature=0.7;top_p=0.9', 'NaturalReasoning paper-reported stochastic settings')
+        _check(pd.isna(row.interactors), True, 'NaturalReasoning no invented interaction participants')
+        expected = dict(source_file='upstream/full.jsonl', source_row=ordinal, response_index=position,
+                        record=original, grade_status='no_saved_correctness_verdict')
+        _check(decoded, expected, 'NaturalReasoning complete unchanged original JSON record')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, wanted = trace[field], getattr(row, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(wanted) else wanted,
+                   'NaturalReasoning trace association: ' + field)
+        seen[ordinal, position] += 1
+    _check(seen, Counter({key: 1 for key in source['observations']}), 'NaturalReasoning all original answers exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17172,7 +17268,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
