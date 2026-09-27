@@ -905,3 +905,4 @@ SOURCE_AUDITS["llm_bp_tag"] = verify_native_results
 SOURCE_AUDITS["llm_survey_simulation"] = verify_native_results
 
 SOURCE_AUDITS["llm_uncertainty_bench"] = verify_native_results
+SOURCE_AUDITS["llms_lean_formalization"] = verify_native_results

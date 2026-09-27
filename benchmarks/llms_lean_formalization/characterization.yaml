@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 64960
+    logical_sha256: e1399d4f4bac8633a6af26f71bb52b235cbb9922995024d11708ce0e6b9bc0df
+  subjects:
+    rows: 120
+    logical_sha256: 6f494d172ddd821597963635a1231229cf24b506ef3ef5fc1e85ed1c0cd70cf9
+  responses:
+    rows: 64960
+    logical_sha256: 60aac01aa91293229e800151520a9e02900c54800cf4be184f4d67b4ff77f831
+  items:
+    rows: 588
+    logical_sha256: 79f3242c265a1cfe1067a77d652462c4e018d9ce52e81365981e7d507f732a6f
+  benchmarks:
+    rows: 1
+    logical_sha256: bae5cac244cbd6a1a79b961863f392779fdcba213244e550fc7b780f47022f60
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 26
+  source_original_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 8032
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 64960
+  source_after_prior_pass:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 19136
+  source_reused_outputs_after_pass:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 19134
+  source_propagated_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 92
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 868
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 22246
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 120
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uw-math-ai/LLMsLean
+    locator: Pinned March 2026 data/test_data/*.jsonl and contemporaneous winter generator/verifier; every native
+      round is checked independently.
+    scope: Historical grading-round records on existing miniF2F/miniCTX tasks; copied/propagated assessments are
+      not independent generations or the later paper's 50-task results.
+    expected: 588

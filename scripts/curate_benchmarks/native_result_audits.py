@@ -14399,6 +14399,113 @@ def _llm_uncertainty(directory,tables,metadata,source=None):
         canonical_alias_occurrences=sum(count-1 for count in trial_counts.values()))
 
 
+def _lean_historical_sources(directory):
+    """Read complete recorded rounds without the builder's explode or label mapping."""
+    import re
+
+    files = {}
+    counts = Counter()
+    subjects, items = set(), set()
+    for path in sorted((directory / "raw/repo/data/test_data").glob("*.jsonl")):
+        dataset, model, policy, limit = re.fullmatch(r"(miniCTX|minif2f)_(.+)_(amend|pass)@(\d+)\.jsonl", path.name.replace("_x40_", "@")).groups()
+        rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        filename = str(path.relative_to(directory / "raw/repo")).replace("_x40_", "@")
+        files[filename] = dict(dataset=dataset, model=model, policy=policy, limit=int(limit), rows=rows)
+        counts["source_files"] += 1
+        counts["source_original_records"] += len(rows)
+        for record in rows:
+            _check({len(record[k]) for k in ["responses", "verification", "verify_time"]}, {int(limit)}, "Lean aligned native round arrays")
+            items.add((dataset, record["header"] + "\n" + record["formal_statement"]))
+            previous_pass = False
+            for index, (output, verdict, timing) in enumerate(zip(record["responses"], record["verification"], record["verify_time"], strict=True)):
+                _check(isinstance(output, str) and isinstance(verdict, str), True, "Lean native proof and diagnostic strings")
+                _check(verdict == "Pass" or verdict.startswith(("Fail:", "Unknown Error:")), True, "Lean reviewed native verdict")
+                subjects.add((model, policy, index + 1))
+                counts["source_responses"] += 1
+                counts["source_after_prior_pass"] += previous_pass
+                counts["source_reused_outputs_after_pass"] += previous_pass and output == record["responses"][index - 1]
+                counts["source_propagated_passes"] += verdict == "Pass" and timing == -1
+                unknown = (verdict != "Pass" and not verdict.startswith("Fail:")) or output.startswith("ERROR: Generation failed")
+                counts["source_ungraded"] += unknown
+                counts["source_successes"] += verdict == "Pass" and not unknown
+                previous_pass |= verdict == "Pass"
+    _check(bool(files), True, "Lean nonempty original release")
+    counts.update(source_subjects=len(subjects), source_items=len(items))
+    return dict(files=files, counts=dict(counts), subjects=subjects, items=items)
+
+
+def _lean_historical(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = _lean_historical_sources(directory) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features["source_model_label"], features["policy"], int(features["recorded_round"])
+        expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
+        expected.update(source_model_label=key[0], policy=key[1], recorded_round=str(key[2]))
+        _check(features, expected, "Lean literal model, policy and grading-round identity")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + ":".join(map(str, key)), "Lean source-labelled subject")
+        _check(row.harness, parameters["subject_features"]["harness"], "Lean historical pipeline")
+        for field in ["provider", "normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "Lean no guessed historical setting: " + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source["subjects"]}), "Lean complete distinct recorded configurations")
+    for row in tables["items"].itertuples():
+        filename, position = row.raw_item_id.rsplit("#", 1)
+        batch = source["files"][filename]
+        record = batch["rows"][int(position)]
+        key = batch["dataset"], record["header"] + "\n" + record["formal_statement"]
+        _check(row.content, key[1], "Lean complete native theorem and context")
+        _check(_features(row.item_features), dict(dataset=key[0], input_scope=parameters["labels"]["input_scope"]), "Lean original task attribution and input scope")
+        _check(json.loads(row.grading_criterion), json.loads(canonical_grading_criterion(dict(rule=metadata["grading"]["rule"]))), "Lean historical acceptance rule, not a reference proof")
+        judge = json.loads(row.verifier)
+        _check((judge["class"], json.loads(judge["spec"])), ("exact_matcher", metadata["grading"]["verifiers"]["lean"]), "Lean original limited verifier")
+        _check(pd.isna(row.asset_manifest), True, "Lean no fabricated assets")
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source["items"]}), "Lean complete theorem/context definitions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "Lean one complete trace per assessment")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, trials = Counter(), Counter()
+    context_fields = ["model_time", "input_tokens", "output_tokens", "name", "goal", "informal_prefix", "split"]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        filename, position, round_number = trace["source_file"], trace["source_row"], trace["round"]
+        batch = source["files"][filename]
+        record = batch["rows"][position]
+        index = round_number - 1
+        _check(isinstance(round_number, int) and 0 <= index < batch["limit"], True, "Lean native grading-round coordinate")
+        output, verdict = record["responses"][index], record["verification"][index]
+        expected = dict(source_file=filename, source_row=position, round=round_number, round_limit=batch["limit"],
+            output=output, verification=verdict, verify_time=record["verify_time"][index],
+            prior_pass="Pass" in record["verification"][:index], previous_output=record["responses"][index - 1] if index else None,
+            previous_verification=record["verification"][index - 1] if index else None,
+            record_metadata={key: record.get(key) for key in context_fields})
+        _check(trace, expected, "Lean exact proof, diagnostics, history, timings and source associations")
+        _check(subjects[row.subject_id], (batch["model"], batch["policy"], round_number), "Lean original model/policy/round association")
+        _check(items[row.item_id], (batch["dataset"], record["header"] + "\n" + record["formal_statement"]), "Lean original theorem association")
+        unknown = (verdict != "Pass" and not verdict.startswith("Fail:")) or output.startswith("ERROR: Generation failed")
+        if unknown:
+            _check(pd.isna(row.response), True, "Lean unknown or generation error is ungraded")
+        else:
+            _check(row.response, float(verdict == "Pass"), "Lean unchanged reported assessment")
+        _check(row.test_condition, f'dataset={batch["dataset"]};policy={batch["policy"]};round={round_number}', "Lean native condition")
+        key = row.subject_id, row.item_id, row.test_condition
+        trials[key] += 1
+        _check(row.trial, trials[key], "Lean occurrence numbering, not an independent-generation claim")
+        _check(pd.isna(row.interactors), True, "Lean no invented interactor")
+        seen[filename, position, round_number] += 1
+    wanted = {(filename, position, index + 1) for filename, batch in source["files"].items()
+              for position, record in enumerate(batch["rows"]) for index in range(len(record["verification"]))}
+    if "selected" in source:
+        wanted = source["selected"]
+    _check(set(seen), wanted, "Lean complete source round coverage")
+    _check(all(value == 1 for value in seen.values()), True, "Lean no duplicated grading round")
+    _check(len(tables.get("assets", [])), 0, "Lean no unassociated assets")
+    return source["counts"]
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14413,7 +14520,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
