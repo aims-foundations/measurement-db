@@ -1,0 +1,132 @@
+benchmark:
+  name: MMedBench (MedS-Ins rationale examples)
+  description: 'All 300 released MedS-Ins rationale-generation examples on MMedBench: 50 attempts in each of six
+    languages, with full recorded requests, reference explanations and generated outputs. The release has no saved
+    grades.'
+  testing_condition: Each request supplies the correct option and asks for an explanation, so these records do not
+    measure multiple-choice answer accuracy. Every request has three recorded demonstrations; five also demonstrate
+    their own target and reference. Preserve these cases and their flags. Item content is the exact serialized chat
+    request before tokenization, including native spelling. The published evaluator allows input truncation; actual
+    tokenized inputs, weights, tokenizer revisions and generation arguments are absent. The CSV model label is retained
+    literally. Even code at the commit introducing this CSV spells an instruction differently from the recorded
+    requests, so it cannot establish the precise historical execution. Original and adapted questions, options and
+    references are matched exactly. Keep all response grades null because no cached metric or single primary score
+    is supplied; no new inference or scoring is performed. The later native metric pair is documented for interpretation
+    only. This small example export does not cover the complete 8518-item MMedBench test bank.
+  paper_url: https://arxiv.org/abs/2402.13963
+  data_source_url: https://huggingface.co/datasets/Henrychur/MMedBench
+  subject_type: model
+  item_type: question
+  license: CC-BY-NC-4.0 (original MMedBench); CC BY-SA (MedS-Ins repository, version unspecified)
+  citation: 'Qiu et al. Towards Building Multilingual Language Model for Medicine (2024), arXiv:2402.13963. Related
+    results: Towards Evaluating and Building Versatile Large Language Models for Medicine, arXiv:2408.12547; MAGIC-AI4Med/MedS-Ins
+    example CSV.'
+  tags:
+  - medical
+  - multilingual
+  - rationale_generation
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-02
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: meds/rationale_examples.csv
+      original_bank: original/MMedBench.zip
+      adapted_bank: adapted/Rationale
+      original_test_prefix: MMedBench/Test/
+    languages:
+      task51: Chinese
+      task52: English
+      task53: French
+      task54: Japanese
+      task55: Russian
+      task56: Spanish
+    chat_wrapper:
+      prefix: '<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+
+        '
+      separator: '<|eot_id|><|start_header_id|>user<|end_header_id|>
+
+
+        '
+      suffix: '<|eot_id|><|start_header_id|>assistant<|end_header_id|>
+
+
+        '
+    labels:
+      model_label: MMedS-Llama 3
+      grade_status: no_saved_grade
+    subject_features:
+      harness: MedS-Ins
+      model_identity: literal_source_filename_label
+      weights_revision: not_recorded
+      tokenizer_revision: not_recorded
+      generation_arguments: not_recorded
+      input_scope: recorded_pre_tokenization_chat
+    item_features:
+      task: rationale_generation
+      correct_option_supplied: 'true'
+      demonstrations: '3'
+      input_scope: recorded_pre_tokenization_chat
+grading:
+  verifiers:
+    rationale_similarity:
+      kind: native_text_similarity
+      source: https://github.com/MAGIC-AI4Med/MedS-Ins/blob/185cfc04a27023983e48b357a6f2fd525049b9af/Metrics/Rationale.py
+      utility_source: https://github.com/MAGIC-AI4Med/MedS-Ins/blob/185cfc04a27023983e48b357a6f2fd525049b9af/Metrics/utils.py
+      reported_metrics:
+      - BLEU-1
+      - ROUGE-1
+      implemented_metrics:
+      - BLEU-1
+      - ROUGE-L F1
+      rule: Compare the generated explanation with the reference rationale. The later native code strips outputs
+        and references, skips empty pairs, uses NLTK BLEU-1 with method1 smoothing and language-specific tokenization,
+        and computes ROUGE-L F1 despite labeling that field ROUGE-1. Per-language means are multiplied by 100 and
+        then averaged across six languages. The declared [0,1] scale describes raw individual similarities before
+        percentage display; no metric is chosen or computed here. This source CSV contains no cached grades, so
+        response remains null. Correct options are already supplied in the input; never assign a binary answer-correctness
+        grade.
+sources:
+  upstream:
+  - name: original_bank
+    url: https://huggingface.co/datasets/Henrychur/MMedBench
+    revision: d817c67d0bca216e63ea784fcf8a642c57bc372b
+    files:
+    - match: (?:MMedBench\.zip|README\.md)
+      path: original/{path}
+  - name: adapted_rationale_bank
+    url: https://huggingface.co/datasets/Henrychur/MedS-Bench
+    revision: 6945b14e0f408082aecb6a77a185b9ebdd5fb413
+    files:
+    - match: (?:Rationale/task5[1-6]_.*\.jsonl|README\.md)
+      path: adapted/{path}
+  - name: released_examples
+    url: https://github.com/MAGIC-AI4Med/MedS-Ins
+    revision: 185cfc04a27023983e48b357a6f2fd525049b9af
+    files:
+    - match: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3\.csv
+      path: meds/rationale_examples.csv
+    - match: (?:examples/model_submission_tutorial\.md|Metrics/(?:Rationale|utils)\.py|README\.md|LICENSE)
+      path: meds/{path}
+  - name: code_when_example_published
+    url: https://github.com/MAGIC-AI4Med/MedS-Ins
+    revision: f5809651ea68285130a756629132895ac9559d32
+    files:
+    - match: (?:Evaluation/(?:EvalDataset|eval)\.py|README\.md|LICENSE)
+      path: historical/{path}

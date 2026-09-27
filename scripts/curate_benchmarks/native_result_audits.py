@@ -15220,6 +15220,132 @@ def _medarabiq(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _mmedbench_sources(directory, metadata):
+    """Associate every native CSV request with its two banks without pandas joins."""
+    import csv
+    from zipfile import ZipFile
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout = parameters['layout']
+    adapted, original = {}, {}
+    with ZipFile(raw / layout['original_bank']) as archive:
+        for task, language in parameters['languages'].items():
+            paths = list((raw / layout['adapted_bank']).glob(task + '_*.jsonl'))
+            _check(len(paths), 1, 'Unique adapted task source')
+            adapted[task] = str(paths[0].relative_to(raw)), json.loads(paths[0].read_text())
+            name = layout['original_test_prefix'] + language + '.jsonl'
+            original[language] = name, [json.loads(line) for line in archive.read(name).splitlines()]
+    with (raw / layout['results']).open(newline='') as stream:
+        reader = csv.DictReader(stream)
+        _check(reader.fieldnames, ['task_id', 'input', 'GT', 'output'], 'Native export has no cached grades')
+        records = list(reader)
+    prefix = '<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n'
+    separator = '<|eot_id|><|start_header_id|>user<|end_header_id|>\n\n'
+    suffix = '<|eot_id|><|start_header_id|>assistant<|end_header_id|>\n\n'
+    observations, by_prompt = {}, {}
+    for position, row in enumerate(records):
+        task, prompt = row['task_id'], row['input']
+        language = parameters['languages'][task]
+        _check(prompt.startswith(prefix) and prompt.endswith(suffix), True, 'Original serialized chat boundaries')
+        _check(prompt.count(separator), 1, 'Exactly one original user turn')
+        system, query = prompt[len(prefix):-len(suffix)].split(separator)
+        adapted_path, task_bank = adapted[task]
+        cases = task_bank['Instances']
+        matches = [(i, case) for i, case in enumerate(cases)
+                   if ('Input:\n' + case['input'] + '\nOutput:\n').strip() == query]
+        _check(len(matches), 1, 'Exact unique native target request')
+        index, case = matches[0]
+        _check(row['GT'], case['output'], 'Native reference is unchanged')
+        name, bank = original[language]
+        matches = [(i, item) for i, item in enumerate(bank)
+                   if item['rationale'] == row['GT'] and item['question'] in case['input']]
+        _check(len(matches), 1, 'Unique original question and rationale')
+        original_index, original_item = matches[0]
+        _check(all(option in case['input'] for option in original_item['options'].values()), True,
+               'Every original option appears in adapted task')
+        demonstrations = []
+        remaining = system
+        for _ in range(3):
+            matches = []
+            for i, example in enumerate(cases):
+                text = 'Input:\n' + example['input'] + '\n\nOutput:\n' + example['output'] + '\n\n\n'
+                if remaining.startswith(text):
+                    matches.append((i, text))
+            _check(len(matches), 1, 'Unique complete original demonstration')
+            i, text = matches[0]
+            demonstrations.append(i)
+            remaining = remaining[len(text):]
+        _check(len(set(demonstrations)), 3, 'Three distinct demonstrations')
+        _check(remaining, (task_bank['Definition'][0]
+            + 'Please learn from the few-shot cases to see what content you have to ouput.').strip(),
+            'Exact recorded instruction including its original spelling')
+        target_in_demos = index in demonstrations
+        trace = dict(source_file=layout['results'], source_row=position, source_record=row,
+            adapted_file=adapted_path, adapted_row=index, adapted_record=case,
+            original_file=name, original_row=original_index, original_record=original_item,
+            target_in_demonstrations=target_in_demos, grade_status='no_saved_grade')
+        _check(prompt not in by_prompt, True, 'Distinct complete recorded requests')
+        observations[position] = trace
+        by_prompt[prompt] = position
+    counts = dict(source_responses=len(records), source_subjects=1, source_items=len(by_prompt),
+        source_languages=len({row['task_id'] for row in records}), source_ungraded=len(records),
+        source_target_in_demonstrations=sum(x['target_in_demonstrations'] for x in observations.values()))
+    return dict(observations=observations, by_prompt=by_prompt, counts=counts)
+
+
+def _mmedbench(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _mmedbench_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    _check(len(tables['subjects']), 1, 'Exactly one literal source model label')
+    subject = tables['subjects'].iloc[0]
+    _check(subject.display_name, 'MMedS-Llama 3', 'Literal model label in original result filename')
+    _check(subject.harness, 'MedS-Ins', 'Native result harness')
+    features = dict(parameters['subject_features'])
+    features.pop('harness')
+    _check(_features(subject.subject_features_extra), canonicalize_features(features), 'Model configuration limitations')
+    for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+        _check(pd.isna(subject[field]), True, 'No invented historical model attribute: ' + field)
+    items = {}
+    protocol = metadata['grading']['verifiers']['rationale_similarity']
+    for row in tables['items'].itertuples():
+        position = source['by_prompt'][row.content]
+        native = source['observations'][position]
+        record = native['source_record']
+        _check(row.raw_item_id, native['original_file'] + '#' + str(native['original_row']), 'Original item location')
+        expected = dict(parameters['item_features'], task_id=record['task_id'],
+            language=parameters['languages'][record['task_id']], target_in_demonstrations=native['target_in_demonstrations'])
+        _check(_features(row.item_features), canonicalize_features(expected), 'Native task and target-demonstration flag')
+        expected = canonical_grading_criterion(dict(reference_answer=record['GT'], rule=protocol['rule']))
+        _check(json.loads(row.grading_criterion), json.loads(expected), 'Exact rationale reference and grading contract')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Native deterministic similarity protocol')
+        _check(json.loads(verifier['spec']), protocol, 'Full native metric description')
+        _check(pd.isna(row.asset_manifest), True, 'No invented task assets')
+        items[row.item_id] = position
+    _check(Counter(items.values()), Counter({key: 1 for key in source['observations']}), 'Every original complete request exactly once')
+    _check(len(tables.get('assets', [])), 0, 'No fabricated assets')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'Exactly one complete linked trace per attempt')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        position = trace['source_row']
+        _check(trace, source['observations'][position], 'Unchanged entire source request, output, reference and bank records')
+        _check(row.subject_id, subject.subject_id, 'Correct original model association')
+        _check(items[row.item_id], position, 'Correct original request association')
+        _check(pd.isna(row.response), True, 'Unrecorded grade remains null, not failure or reconstructed score')
+        _check(row.trial, 1, 'Single recorded attempt per complete request')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented response setting: ' + field)
+        seen[position] += 1
+    _check(seen, Counter({key: 1 for key in source['observations']}), 'Every released attempt exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -15235,7 +15361,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
