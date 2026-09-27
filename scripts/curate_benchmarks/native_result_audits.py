@@ -17452,6 +17452,155 @@ def _naturebench(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _nis3d_sources(directory, metadata):
+    """Read PDF cells by position, independently of the builder's line regex."""
+    import hashlib
+    import re
+    from zipfile import ZipFile
+    import pymupdf
+
+    raw = directory / 'raw'
+    fields = ['W_F1', 'W_Precision', 'W_Recall', 'W_IoU', 'W_SEG', 'time_seconds']
+    methods = {'3D Suite': '3d_suite', 'Cellpose_cyto': 'cellpose_cyto',
+               'Cellpose_nuclei': 'cellpose_nuclei', 'StarDist': 'stardist', 'Vaa3D': 'vaa3d', 'QCAnet': 'QCAnet'}
+    observations, human_rows = {}, 0
+    with pymupdf.open(raw / 'paper.pdf') as document:
+        page = document[8]
+        words, lines = page.get_text('words'), page.get_text(sort=True).splitlines()
+        header = next(word for word in words if word[4] == 'W-F1')
+        rows = {}
+        for word in words:
+            if word[1] > header[1] + 5:
+                rows.setdefault(round(word[1], 1), []).append(word)
+        volume = None
+        for _, row in sorted(rows.items()):
+            row.sort(key=lambda word: word[0])
+            values = [word[4] for word in row if word[0] >= header[0] - 1]
+            if len(values) != 6 or not all(re.fullmatch(r'\d+(?:\.\d+)?', value) for value in values[:5]):
+                continue
+            image_words = [word[4] for word in row if word[0] < 190]
+            if image_words:
+                volume = ' '.join(image_words)
+            label = ' '.join(word[4] for word in row if 190 <= word[0] < header[0] - 1)
+            _check(volume is not None, True, 'NIS3D PDF row has a preceding volume label')
+            if label == 'Human':
+                human_rows += 1
+                continue
+            method = '3D Suite' if label == '3d Suite' else label
+            _check(method in methods, True, 'NIS3D independently recognized published method')
+            literal = [line for line in lines if line.split()[-6:] == values and label in line]
+            _check(len(literal), 1, 'NIS3D one literal PDF line for each geometric row')
+            record = dict(volume=volume, source_method=label, **dict(zip(fields, values)), source_line=literal[0])
+            folder = '_'.join([volume.rsplit(' ', 1)[0].replace(' ', ''), volume.rsplit(' ', 1)[1]])
+            key = folder, method
+            _check(key not in observations, True, 'NIS3D distinct paper method-volume result')
+            observations[key] = record
+    _check((len(observations), human_rows), (36, 6), 'NIS3D complete published Table 3')
+
+    volumes, artifacts, implementation = {}, {}, {}
+    with ZipFile(raw / 'NIS3D.zip') as archive:
+        for folder in sorted({key[0] for key in observations}):
+            root = 'NIS3D/NIS3D/' + folder + '/'
+            data = archive.read(root + 'data.tif')
+            _check(data[:4] in (b'II*\x00', b'MM\x00*', b'II+\x00', b'MM\x00+'), True, 'NIS3D original TIFF encoding')
+            digest, size = hashlib.sha256(data).hexdigest(), len(data)
+            del data
+            names = ('gt.tif', 'scoreOfConfidence.tif') if folder == 'MusMusculus_2' else ('GroundTruth.tif', 'ConfidenceScore.tif')
+            reference = dict(archive='NIS3D.zip')
+            for role, name in zip(['ground_truth', 'confidence'], names):
+                reference[role] = dict(member=root + name, sha256=hashlib.sha256(archive.read(root + name)).hexdigest())
+            volumes[folder] = dict(reference=reference, bytes=size,
+                info=archive.read(root + 'Info.txt').decode('utf-8'),
+                attachment=dict(asset_id=digest, path=folder + '/data.tif', role='microscopy_volume', media_type='image/tiff', ordinal=1))
+    human_outputs = 0
+    with ZipFile(raw / 'NIS3D_ExperimentResult.zip') as archive:
+        for name in archive.namelist():
+            if name.startswith('NIS3D_ExperimentResult/Peer Method Result/') and name.endswith('.mat'):
+                folder, method, _ = name.removeprefix('NIS3D_ExperimentResult/Peer Method Result/').split('/')
+                if method == 'human':
+                    human_outputs += 1
+                    continue
+                _check((folder, method) not in artifacts, True, 'NIS3D unique released method output')
+                artifacts[folder, method] = dict(archive='NIS3D_ExperimentResult.zip', member=name,
+                    bytes=archive.getinfo(name).file_size, sha256=hashlib.sha256(archive.read(name)).hexdigest())
+            if name.startswith('NIS3D_ExperimentResult/Evaluation Code/') and name.endswith('.m'):
+                implementation[name.rsplit('/', 1)[1]] = archive.read(name).decode('utf-8')
+    _check(set(artifacts), {(folder, method) for folder in volumes if folder != 'MusMusculus_2' for method in methods.values()},
+           'NIS3D exact available and unavailable binary predictions')
+    _check(len(implementation), 9, 'NIS3D complete published grading implementation')
+    return dict(observations=observations, volumes=volumes, methods=methods, artifacts=artifacts,
+                implementation=implementation, human_rows=human_rows, human_outputs=human_outputs)
+
+
+def _nis3d(directory, tables, metadata, source=None):
+    import hashlib
+
+    source = source or _nis3d_sources(directory, metadata)
+    parameters, grading = metadata['build']['parameters'], metadata['grading']
+    metric_names = {'W-F1': 'W_F1', 'W-Precision': 'W_Precision', 'W-Recall': 'W_Recall', 'W-IoU': 'W_IoU', 'W-SEG': 'W_SEG'}
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        label = row.display_name
+        _check(label in source['methods'], True, 'NIS3D original method identity')
+        _check(_features(row.subject_features_extra), dict(parameters['subject_features'], source_method=label,
+            protocol=parameters['method_protocols'][label]), 'NIS3D declared published method configuration')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'NIS3D no inferred model metadata: ' + field)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['methods']}), 'NIS3D all six methods exactly once')
+    for row in tables['items'].itertuples():
+        folder, metric = row.raw_item_id.split(':')
+        original = source['volumes'][folder]
+        protocol = grading['verifiers'][metric_names[metric]]
+        _check(pd.isna(row.content), True, 'NIS3D actual volume input without gold statistics in a text descriptor')
+        _check(_features(row.item_features), dict(source_volume=folder), 'NIS3D input features exclude ground truth and metrics')
+        _check(json.loads(row.asset_manifest), [original['attachment']], 'NIS3D correct stimulus bytes and attachment role')
+        criterion = json.loads(row.grading_criterion)
+        _check(json.loads(criterion['reference_answer']), original['reference'], 'NIS3D exact separate gold and confidence masks')
+        _check(criterion['rule'], grading['rule'] + ' ' + protocol['rule'], 'NIS3D item-specific grading protocol')
+        _check(set(criterion), {'rule', 'reference_answer'}, 'NIS3D inherited bounded grading scale')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'NIS3D recorded deterministic grader class')
+        _check(json.loads(verifier['spec']), dict(**protocol, implementation=source['implementation']), 'NIS3D full original grading implementation')
+        items[row.item_id] = folder, metric
+    expected_items = {(folder, metric) for folder in source['volumes'] for metric in metric_names}
+    _check(Counter(items.values()), Counter({key: 1 for key in expected_items}), 'NIS3D six volumes with five grading identities each')
+
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'NIS3D complete trace associations')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        folder, metric = items[row.item_id]
+        model = subjects[row.subject_id]
+        original = source['observations'][folder, model]
+        _check(row.response, float(original[metric_names[metric]]), 'NIS3D exact published per-volume quality score')
+        _check(row.trial, 1, 'NIS3D one published result per volume/method/protocol')
+        _check(row.test_condition, 'published_baseline', 'NIS3D original experiment condition')
+        _check(pd.isna(row.interactors), True, 'NIS3D no invented interaction participants')
+        trace = traces[row.response_id]
+        _check(json.loads(trace['trace']), dict(source_file='paper.pdf', source_page=9, published_record=original,
+            source_info=source['volumes'][folder]['info'], metric=metric,
+            prediction_artifact=source['artifacts'].get((folder, source['methods'][model])),
+            prediction_scope=parameters['labels']['prediction_scope'], grade_status='published_rounded_per_volume_score'),
+            'NIS3D complete published record, runtime, description and binary-output association')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, wanted = trace[field], getattr(row, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(wanted) else wanted, 'NIS3D trace association: ' + field)
+        seen[folder, model, metric] += 1
+    expected = Counter({(folder, model, metric): 1 for folder, model in source['observations'] for metric in metric_names})
+    _check(seen, expected, 'NIS3D complete nonduplicated quality assessments')
+    actual_assets = {}
+    for row in tables['assets'].itertuples():
+        _check(hashlib.sha256(row.data).hexdigest(), row.asset_id, 'NIS3D unchanged original input bytes')
+        _check(row.byte_size, len(row.data), 'NIS3D original input byte length')
+        actual_assets[row.asset_id] = row.byte_size
+    _check(actual_assets, {row['attachment']['asset_id']: row['bytes'] for row in source['volumes'].values()}, 'NIS3D exact input inventory without label or prediction assets')
+    return dict(source_volumes=len(source['volumes']), source_methods=len(subjects), source_segmentation_results=len(source['observations']),
+        source_quality_grades=len(expected), source_recorded_runtimes=len(source['observations']), source_input_assets=len(actual_assets),
+        source_released_prediction_arrays=len(source['artifacts']), source_missing_prediction_arrays=6,
+        source_human_reference_rows=source['human_rows'], source_human_output_arrays=source['human_outputs'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17468,7 +17617,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
