@@ -15698,6 +15698,122 @@ def _mergebench(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _mind2web_sources(directory, metadata):
+    """Read complete source actions independently of the builder's table joins."""
+    import hashlib
+    import math
+    import subprocess
+    from zipfile import ZipFile
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+
+    raw = Path(directory) / "raw"
+    layout = metadata["build"]["parameters"]["layout"]
+    outputs = read_native_pickle(raw / layout["rankings"])
+    _check(set(outputs), {"scores", "ranks"}, "Mind2Web native result fields")
+    _check(set(outputs["scores"]), set(outputs["ranks"]), "Mind2Web score/rank action coverage")
+    files = [(str(path.relative_to(raw)), path) for path in sorted(raw.glob(layout["training_glob"]))]
+    with ZipFile(raw / layout["test_archive"]) as archive:
+        files += [(layout["test_archive"] + "!" + name, name)
+                  for name in sorted(archive.namelist()) if name.endswith(".json")]
+    observations, partitions, tasks_seen = {}, Counter(), set()
+    for source_file, source in files:
+        data = source.read_bytes() if isinstance(source, Path) else subprocess.check_output(
+            ["unzip", "-p", "-P", layout["published_test_password"], str(raw / layout["test_archive"]), source])
+        tasks = json.loads(data)
+        split = "train" if isinstance(source, Path) else source.split("/")[0]
+        for task_position, task in enumerate(tasks):
+            _check(task["annotation_id"] not in tasks_seen, True, "Mind2Web source task appears once")
+            tasks_seen.add(task["annotation_id"])
+            _check(len(task["actions"]), len(task["action_reprs"]), "Mind2Web aligned action history")
+            history = []
+            for action_position, action in enumerate(task["actions"]):
+                sample = task["annotation_id"] + "_" + action["action_uid"]
+                _check(sample not in observations, True, "Mind2Web source action appears once")
+                _check(sample in outputs["ranks"], True, "Mind2Web source action has a native result")
+                scores, ranks = outputs["scores"][sample], outputs["ranks"][sample]
+                positive = [candidate["backend_node_id"] for candidate in action["pos_candidates"]]
+                candidates = [candidate["backend_node_id"] for candidate in action["pos_candidates"] + action["neg_candidates"]]
+                _check(len(candidates), len(set(candidates)), "Mind2Web distinct candidate identifiers")
+                _check(set(scores), set(candidates), "Mind2Web complete candidate scores")
+                _check(set(ranks), set(candidates), "Mind2Web complete candidate ranks")
+                _check(sorted(ranks.values()), list(range(len(candidates))), "Mind2Web ranks are a permutation")
+                _check(all(math.isfinite(value) for value in scores.values()), True, "Mind2Web finite scores")
+                ordered = sorted(ranks, key=ranks.__getitem__)
+                _check(all(scores[a] >= scores[b] for a,b in zip(ordered, ordered[1:])), True, "Mind2Web ranks agree with recorded scores")
+                query = "task is: " + task["confirmed_task"] + "\nPrevious actions: " + "; ".join(history[-3:])
+                trace = dict(source_file=source_file, source_split=split, source_task_position=task_position,
+                    source_action_position=action_position, annotation_id=task["annotation_id"], action_uid=action["action_uid"],
+                    source_query=query, candidate_scores=scores, candidate_ranks=ranks, gold_candidate_ids=positive,
+                    source_operation=action["operation"], source_positive_candidates=action["pos_candidates"],
+                    source_negative_candidates=action["neg_candidates"])
+                observations[sample] = dict(trace=trace, query=query, split=split,
+                    dom_sha256=hashlib.sha256(action["cleaned_html"].encode()).hexdigest(), candidates=sorted(candidates),
+                    positive=positive, grade=int(bool(set(positive).intersection(ordered[:50]))))
+                partitions[split] += 1
+                history.append(task["action_reprs"][action_position])
+        del data, tasks
+    unmatched = sorted(set(outputs["ranks"]) - set(observations))
+    _check(unmatched, sorted(metadata["build"]["parameters"]["unmatched_outputs"]), "Mind2Web explicit unresolved actions")
+    return dict(observations=observations, tasks=len(tasks_seen), partitions=dict(partitions), unmatched=unmatched,
+        total_ranked_actions=len(outputs["ranks"]), total_candidate_scores=sum(map(len, outputs["scores"].values())))
+
+
+def _mind2web(directory, tables, metadata, source=None):
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _mind2web_sources(directory, metadata) if source is None else source
+    native, parameters = source["observations"], metadata["build"]["parameters"]
+    _check(int(parameters["layout"]["recall_k"]), 50, "Mind2Web native Recall@50")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "Mind2Web retrieval scale")
+    _check(len(tables["subjects"]), 1, "Mind2Web one released ranker")
+    subject = tables["subjects"].iloc[0]
+    _check(subject.display_name, parameters["subject"]["label"], "Mind2Web fine-tuned ranker identity")
+    _check(subject.harness, parameters["subject_features"]["harness"], "Mind2Web retrieval harness")
+    _check(_features(subject.subject_features_extra),
+           {key:value for key,value in parameters["subject_features"].items() if key != "harness"}, "Mind2Web source configuration")
+    for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+        _check(pd.isna(getattr(subject, field)), True, "Mind2Web unknown setting: " + field)
+    items = {}
+    for item in tables["items"].itertuples():
+        sample, content = item.raw_item_id, json.loads(item.content)
+        original = native[sample]
+        _check(set(content), {"query", "cleaned_html", "candidate_node_ids"}, "Mind2Web input excludes targets and responses")
+        _check(content["query"], original["query"], "Mind2Web exact task/history query")
+        _check(hashlib.sha256(content["cleaned_html"].encode()).hexdigest(), original["dom_sha256"], "Mind2Web complete unclipped DOM")
+        _check(content["candidate_node_ids"], original["candidates"], "Mind2Web complete candidate universe")
+        _check(_features(item.item_features), dict(**parameters["item_features"],source_split=original["split"]), "Mind2Web source partition and input form")
+        criterion = dict(reference_answer=json.dumps(sorted(original["positive"])),rule=metadata["grading"]["rule"])
+        _check(json.loads(item.grading_criterion), json.loads(canonical_grading_criterion(criterion)), "Mind2Web original gold targets")
+        verifier = json.loads(item.verifier)
+        _check((verifier["class"],json.loads(verifier["spec"])),
+               ("exact_matcher",metadata["grading"]["verifiers"]["rank_recall"]), "Mind2Web cached-rank verifier")
+        _check(pd.isna(item.asset_manifest), True, "Mind2Web no invented screenshots")
+        items[item.item_id] = sample
+    _check(Counter(items.values()), Counter({key:1 for key in native}), "Mind2Web every source input once")
+    _check(Counter(tables["traces"].response_id),Counter(tables["responses"].response_id),"Mind2Web complete traces")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        sample = trace["annotation_id"] + "_" + trace["action_uid"]
+        original = native[sample]
+        _check(trace,original["trace"],"Mind2Web exact scores, ranks, candidates and source coordinates")
+        _check((row.subject_id,items[row.item_id]),(subject.subject_id,sample),"Mind2Web ranker/action association")
+        _check(row.response,original["grade"],"Mind2Web native retrieval outcome, including absent positives")
+        _check(row.trial,1,"Mind2Web one captured ranking per action")
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors),True,"Mind2Web no invented configuration")
+        seen[sample] += 1
+    _check(seen,Counter({key:1 for key in native}),"Mind2Web every supported result once")
+    _check(len(tables.get("assets",[])),0,"Mind2Web no unassociated assets")
+    return dict(source_responses=len(native),source_subjects=1,source_items=len(items),source_tasks=source["tasks"],
+        source_no_positive_candidates=sum(not row["positive"] for row in native.values()),
+        source_successes=sum(row["grade"] for row in native.values()),source_unmatched_output_actions=len(source["unmatched"]),
+        source_original_ranking_actions=source["total_ranked_actions"],source_original_candidate_scores=source["total_candidate_scores"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -15713,7 +15829,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

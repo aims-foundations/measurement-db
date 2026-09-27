@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 17153
+    logical_sha256: d40122e60ab664b8edef4a1cae7912572858a233d111bf182a58c3b47f9b1282
+  subjects:
+    rows: 1
+    logical_sha256: f2ddc8301827f45533e34e5ae2e0079f644881fe6bed10804916d80125f92e83
+  responses:
+    rows: 17153
+    logical_sha256: 1969b7cc9840ab36d2089602ee3ae9907230610734978f592495d7a386d40e2c
+  items:
+    rows: 17153
+    logical_sha256: 2598b80b7d81f7a2ed6f547f2796e05b8a3fe20f674d5a60a702fc993a3160c4
+  benchmarks:
+    rows: 1
+    logical_sha256: 29078067f59fad593e3dcd5b21b41e6075d568e549d70c4140b4447f726d8616
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 17153
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 17153
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 2350
+  source_no_positive_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 912
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 15384
+  source_unmatched_output_actions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 6
+  source_original_ranking_actions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 17159
+  source_original_candidate_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/osunlp/Mind2Web
+    locator: Complete train shards, all three test partitions and scores_all_data.pkl at 17ece8eb89862368edc0cc806acee6fca5163474.
+    scope: Independent direct JSON and restricted-pickle inspection checks every query, full DOM, candidate, cached
+      score/rank, gold association and native Recall@50 event. Six orphan actions are counted separately; no new
+      evaluation.
+    expected: 9954509

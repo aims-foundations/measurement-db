@@ -1,0 +1,3 @@
+- Source: the authors' complete 2,350-task release and cached DeBERTa candidate rankings, with train and all three test partitions retained.
+- Transformation: preserve 17,153 action-level Recall@50 outcomes and full score/rank traces. Keep complete source inputs, remove the old target-action leakage, and restore 912 native failures with no positive candidate.
+- Limits: candidate retrieval is not end-to-end agent success. Six rankings lack source task inputs and remain in raw. Historical checkpoint versions are unknown; retain the authors' test-data anti-contamination instructions. No inference or new judging.

@@ -914,3 +914,4 @@ SOURCE_AUDITS["medarabiq"] = verify_native_results
 SOURCE_AUDITS["mmedbench"] = verify_native_results
 SOURCE_AUDITS["medwatermark_fws"] = verify_native_results
 SOURCE_AUDITS["mergebench"] = verify_native_results
+SOURCE_AUDITS["mind2web"] = verify_native_results
