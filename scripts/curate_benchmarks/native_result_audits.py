@@ -14506,6 +14506,124 @@ def _lean_historical(directory, tables, metadata, source=None):
     return source["counts"]
 
 
+def _lohi_sources(directory, metadata):
+    """Read original CSV cells and verify every prediction against its released split."""
+    import csv
+    import io
+    import math
+    import re
+    from zipfile import ZipFile
+
+    layout = metadata["build"]["parameters"]["layout"]
+    files, banks, subjects, items = {}, {}, set(), set()
+    counts = Counter()
+    def native_key(record):
+        reference = float({"True": "1", "False": "0"}.get(record["value"], record["value"]))
+        cluster = float(record["cluster"]) if "cluster" in record else None
+        return record["smiles"], reference, cluster
+    with ZipFile(directory / "raw" / layout["archive"]) as archive:
+        names = {name.removeprefix(layout["prefix"]): name for name in archive.namelist() if not name.endswith("/")}
+        for name, member in names.items():
+            if re.fullmatch(r"data/(hi|lo)/[^/]+/(train|test)_[123]\.csv", name):
+                records = list(csv.DictReader(io.StringIO(archive.read(member).decode())))
+                banks[name] = Counter(native_key(record) for record in records)
+        for name in sorted(names):
+            if not (name.startswith("predictions/") and name.endswith(".csv")):
+                continue
+            task, dataset, model, partition, fold = re.fullmatch(r"predictions/(hi|lo)/([^/]+)/([^/]+)/(train|test)_([123])\.csv", name).groups()
+            rows = list(csv.DictReader(io.StringIO(archive.read(names[name]).decode())))
+            files[name] = dict(task=task, dataset=dataset, model=model, partition=partition, fold=fold, rows=rows)
+            subjects.add((model, task, dataset, fold))
+            original = banks[f"data/{task}/{dataset}/{partition}_{fold}.csv"]
+            actual = Counter(native_key(record) for record in rows)
+            if (task, dataset, model, partition) == ("hi", "hiv", "mlp_ecfp4", "train"):
+                _check(set(actual), set(original), "Lo-Hi oversampling preserves all original molecules and references")
+                _check({key: value for key, value in actual.items() if key[1] == 0},
+                    {key: value for key, value in original.items() if key[1] == 0}, "Lo-Hi oversampling leaves majority rows unchanged")
+                _check(sum(value for key, value in actual.items() if key[1] == 1),
+                    sum(value for key, value in actual.items() if key[1] == 0), "Lo-Hi documented positive-class oversampling")
+                counts["source_oversampled_occurrences"] += sum(actual.values()) - sum(original.values())
+            else:
+                _check(actual, original, "Lo-Hi exact original split membership and references")
+            counts["source_files"] += 1
+            counts["source_responses"] += len(rows)
+            counts["source_" + partition + "_records"] += len(rows)
+            for record in rows:
+                smiles, reference, _ = native_key(record)
+                prediction = float({"True": "1", "False": "0"}.get(record["preds"], record["preds"]))
+                _check(bool(smiles.strip()) and math.isfinite(reference) and math.isfinite(prediction), True, "Lo-Hi complete finite native input/output")
+                if task == "hi":
+                    _check(reference in (0., 1.), True, "Lo-Hi original binary property reference")
+                items.add((task, dataset, smiles, str(reference)))
+        _check(bool(files) and len(banks) == 42, True, "Lo-Hi complete original dataset split definitions")
+    counts.update(source_ungraded=counts["source_responses"], source_subjects=len(subjects), source_items=len(items))
+    return dict(files=files, subjects=subjects, items=items, counts=dict(counts))
+
+
+def _lohi(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = _lohi_sources(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        key = tuple(features[name] for name in ["source_model_label", "training_task", "training_dataset", "training_fold"])
+        expected = {name: value for name, value in parameters["subject_features"].items() if name != "harness"}
+        expected.update(zip(["source_model_label", "training_task", "training_dataset", "training_fold"], key))
+        _check(features, expected, "Lo-Hi method and fitted training configuration")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + ":".join(key), "Lo-Hi source-labelled model")
+        _check(row.harness, parameters["subject_features"]["harness"], "Lo-Hi native harness")
+        for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "Lo-Hi no invented historical model setting: " + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source["subjects"]}), "Lo-Hi all trained source configurations")
+    for row in tables["items"].itertuples():
+        filename, index = row.raw_item_id.rsplit("#", 1)
+        batch = source["files"][filename]
+        record = batch["rows"][int(index)]
+        reference = str(float({"True": "1", "False": "0"}.get(record["value"], record["value"])))
+        key = batch["task"], batch["dataset"], record["smiles"], reference
+        _check(row.content, record["smiles"], "Lo-Hi exact native SMILES")
+        _check(_features(row.item_features), dict(task=key[0], dataset=key[1], input_scope=parameters["labels"]["input_scope"]), "Lo-Hi original property task and input scope")
+        protocol = metadata["grading"]["verifiers"][batch["task"]]
+        expected = canonical_grading_criterion(dict(reference_answer=reference, rule=protocol["rule"], response_scale=protocol["response_scale"]))
+        _check(json.loads(row.grading_criterion), json.loads(expected), "Lo-Hi exact reference and native aggregate metric scope")
+        judge = json.loads(row.verifier)
+        _check((judge["class"], json.loads(judge["spec"])), ("exact_matcher", protocol), "Lo-Hi recorded aggregate grader")
+        _check(pd.isna(row.asset_manifest), True, "Lo-Hi no fabricated featurized input")
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source["items"]}), "Lo-Hi complete molecule/reference definitions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "Lo-Hi complete one-to-one trace links")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, trials = Counter(), Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        filename, index = trace["source_file"], trace["source_row"]
+        batch = source["files"][filename]
+        _check(isinstance(index, int) and not isinstance(index, bool) and 0 <= index < len(batch["rows"]), True, "Lo-Hi valid original CSV row coordinate")
+        record = batch["rows"][index]
+        _check(trace, dict(source_file=filename, source_row=index, record=record, grade_status="no_native_per_molecule_grade"), "Lo-Hi full original CSV fields and exact output text")
+        reference = str(float({"True": "1", "False": "0"}.get(record["value"], record["value"])))
+        _check(items[row.item_id], (batch["task"], batch["dataset"], record["smiles"], reference), "Lo-Hi original molecule/reference association")
+        _check(subjects[row.subject_id], tuple(batch[key] for key in ["model", "task", "dataset", "fold"]), "Lo-Hi original trained model association")
+        _check(pd.isna(row.response), True, "Lo-Hi prediction or aggregate score must not become a molecule grade")
+        condition = f'task={batch["task"]};dataset={batch["dataset"]};fold={batch["fold"]};partition={batch["partition"]}'
+        _check(row.test_condition, condition, "Lo-Hi original train/test partition and fold")
+        _check(pd.isna(row.interactors), True, "Lo-Hi no invented interactor")
+        key = row.subject_id, row.item_id, row.test_condition
+        trials[key] += 1
+        _check(row.trial, trials[key], "Lo-Hi source occurrence numbering including resampled training rows")
+        seen[filename, index] += 1
+    if "selected" in source:
+        _check(set(seen), source["selected"], "Lo-Hi selected original row coverage")
+    else:
+        _check(len(seen), source["counts"]["source_responses"], "Lo-Hi complete released row coverage")
+    _check(all(value == 1 for value in seen.values()), True, "Lo-Hi no duplicated source occurrence")
+    _check(len(tables.get("assets", [])), 0, "Lo-Hi no unassociated assets")
+    return source["counts"]
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14520,7 +14638,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

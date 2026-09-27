@@ -906,3 +906,4 @@ SOURCE_AUDITS["llm_survey_simulation"] = verify_native_results
 
 SOURCE_AUDITS["llm_uncertainty_bench"] = verify_native_results
 SOURCE_AUDITS["llms_lean_formalization"] = verify_native_results
+SOURCE_AUDITS["lohi_drug_discovery"] = verify_native_results
