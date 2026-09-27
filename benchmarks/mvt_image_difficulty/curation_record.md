@@ -1,0 +1,3 @@
+- Preserve all 276,718 original prediction cells for 4,771 images and 58 literal model configurations; compare each recorded class with the source reference.
+- Retain each original cropped image, with its exact bytes and association. Gold classes remain in grading metadata, without answer-bearing item descriptions.
+- Keep unavailable checkpoint details explicit. Human judgments and derived difficulty statistics remain captured source material. ImageNet/ObjectNet image restrictions still apply; no model inference was performed.

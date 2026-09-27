@@ -761,6 +761,87 @@ class SnapshotTests(unittest.TestCase):
             with self.assertRaisesRegex(SourceDataError, 'cyclic JSON index'):
                 upstream_artifacts(sources, ('images',))
 
+    def test_public_api_query_and_embedded_html_preserve_all_pinned_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        manifest = b'{"entries":[{"id":"1","query":"A&B"},{"id":"2","query":"C/D"}]}'
+        pages = {key: json.dumps({'html': value}).encode() for key, value in {
+            '1.json': '<img src="image?key=a"><img src="https://other.example/private">',
+            '2.json': '<img src="image?key=b"><img src="image?key=a">'}.items()}
+        images = {'image?key=a': b'GIF89a-original-a', 'image?key=b': b'GIF89a-original-b'}
+        body = {'SubjectCode': 'MAT', 'filters': [1, 2]}
+        index = dict(name='index', url='https://provider.example/release/search', revision=None,
+            file='index.json', size=len(manifest), sha256=hashlib.sha256(manifest).hexdigest(), request_json=body)
+        sources = [index]
+        for name, selector, contents, rules in [
+            ('items', dict(json_index=dict(source='index', records=['entries'], path='{id}.json', query={'tableID': '{query}'})),
+             pages, [dict(match=r'.*\.json', path='items/{path}')]),
+            ('images', dict(html_index=dict(source='items', field='html', tag='img', attribute='src')),
+             images, [dict(match=r'image\?key=(?P<key>[ab])', path='images/{key}.gif')])]:
+            identity = [dict(path=path, size=len(data), digest=hashlib.sha256(data).hexdigest()) for path, data in sorted(contents.items())]
+            sources.append(dict(name=name, url='https://provider.example/release/' + ('item' if name == 'items' else ''), revision=None,
+                **selector, files=rules, tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()))
+        self.metadata['sources']['upstream'] = sources
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        self.metadata_path.write_text(yaml.safe_dump(self.metadata))
+        payloads = {'https://provider.example/release/item?tableID=A%26B': pages['1.json'],
+                    'https://provider.example/release/item?tableID=C%2FD': pages['2.json'],
+                    **{'https://provider.example/release/' + key: value for key, value in images.items()}}
+        requests = []
+
+        def fetch(request, **kwargs):
+            requests.append(request.full_url)
+            if request.full_url == index['url']:
+                self.assertEqual(request.get_method(), 'POST')
+                self.assertEqual(json.loads(request.data), body)
+                self.assertEqual(request.get_header('Content-type'), 'application/json')
+                return io.BytesIO(manifest)
+            self.assertEqual(request.get_method(), 'GET')
+            return io.BytesIO(payloads[request.full_url])
+
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+             patch('urllib.request.urlopen', side_effect=fetch):
+            builder.fetch_sources('*')
+        self.assertEqual((self.raw / 'index.json').read_bytes(), manifest)
+        self.assertEqual((self.raw / 'items/1.json').read_bytes(), pages['1.json'])
+        self.assertEqual((self.raw / 'images/b.gif').read_bytes(), images['image?key=b'])
+        self.assertFalse(any('other.example' in url for url in requests))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')), \
+             patch('urllib.request.urlopen', side_effect=AssertionError('network')):
+            builder.fetch_sources('*')
+            (self.raw / 'images/a.gif').write_bytes(b'changed source image')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                builder.fetch_sources('*')
+            (self.raw / 'images/a.gif').write_bytes(images['image?key=a'])
+            (self.raw / 'items/1.json').write_bytes(pages['2.json'])
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+        sources[0].pop('sha256')
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_data_post_does_not_resume_by_range_and_checks_the_complete_response(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'response.json'
+        body = {'selected': [1, 2]}
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_method(), 'POST')
+            self.assertIsNone(request.get_header('Range'))
+            self.assertEqual(json.loads(request.data), body)
+            return io.BytesIO(PAYLOAD)
+
+        with patch('urllib.request.urlopen', side_effect=fetch):
+            builder._download('https://provider.example/search', destination, request_json=body,
+                expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=1)
+        self.assertEqual(destination.read_bytes(), PAYLOAD)
+        destination.unlink()
+        with patch('urllib.request.urlopen', return_value=io.BytesIO(b'wrong')):
+            with self.assertRaises(SourceDataError):
+                builder._download('https://provider.example/search', destination, request_json=body,
+                    expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+        self.assertFalse(destination.exists())
+
     def test_json_index_rejects_unsafe_duplicate_and_missing_paths(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         source = dict(name='runs', url='https://provider.example/runs/',

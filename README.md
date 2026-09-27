@@ -125,6 +125,13 @@ each trajectory lists its screenshots. The manifest checksum and each collection
 `tree_sha256` pin membership and file contents; duplicate paths, changed bytes,
 dependency cycles and paths outside the source are rejected.
 
+Public data APIs can declare a JSON POST body with `request_json` on a pinned
+HTTP source. A JSON index can supply `query` parameter templates for an API
+endpoint while `path` names each local document. HTML embedded in those JSON
+documents can link source files through, for example,
+`html_index: {source: items, field: itemHTML, tag: img, attribute: src}`.
+The same content hashes and immutable-cache checks apply to these API responses.
+
 Public Google Drive folder URLs support the same `files` rules. Their
 `tree_sha256` pins selected relative paths, Drive file IDs, sizes and SHA-256
 content hashes. The shared loader visits the complete folder tree and checks

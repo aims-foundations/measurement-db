@@ -96,6 +96,46 @@ def read_gpg_json(path: Path, *, password: str, scratch_dir: Path) -> Any:
     return json.loads(result.stdout)
 
 
+def _read_index_source(url, destination, raw_dir, request_json=None):
+    """Read unchanged cached bytes, or call the declared public retrieval endpoint."""
+    if raw_dir is not None:
+        path = raw_dir / destination
+        if not path.resolve().is_relative_to(raw_dir.resolve()):
+            raise SourceDataError(f"Unsafe raw destination {destination}")
+        if path.exists():
+            return path.read_bytes()
+    headers = {"User-Agent": "measurement-db", "Accept-Encoding": "identity"}
+    body = None
+    if request_json is not None:
+        body = json.dumps(request_json, allow_nan=False).encode('utf-8')
+        headers['Content-Type'] = 'application/json'
+    with urlopen(Request(url, data=body, headers=headers), timeout=120) as response:
+        return response.read()
+
+
+def _json_index_documents(index, named, raw_dir, trail):
+    """Verify every manifest before using its fields to discover more inputs."""
+    if "json_index" in index:
+        manifests = json_index_entries(index, named, raw_dir, _trail=trail)
+        records = []
+        for entry in manifests:
+            destinations = [rule['path'].format(path=entry['path'], **match.groupdict())
+                for rule in index['files'] if (match := re.fullmatch(rule['match'], entry['path']))]
+            if len(destinations) != 1:
+                raise SourceDataError('Ambiguous indexed manifest destination')
+            payload = _read_index_source(entry['url'], destinations[0], raw_dir)
+            if len(payload) != entry['size'] or hashlib.sha256(payload).hexdigest() != entry['digest']:
+                raise SourceDataError('Indexed manifest changed after verification')
+            records.append(json.loads(payload))
+        return records
+    if {"url", "file", "size", "sha256"} <= index.keys():
+        payload = _read_index_source(index['url'], index['file'], raw_dir, index.get('request_json'))
+        if len(payload) != index['size'] or hashlib.sha256(payload).hexdigest() != index['sha256']:
+            raise SourceDataError('JSON index differs from its declared bytes')
+        return [json.loads(payload)]
+    raise SourceDataError('JSON index must name a pinned HTTP source or JSON-indexed collection')
+
+
 def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
     """Resolve a static site's linked files and verify their complete content tree.
 
@@ -104,23 +144,23 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
     This supports sites that publish transcripts without a repository archive.
     """
     name = source["name"]
-    index = named.get(source["html_index"], {})
-    if not {"url", "file", "size", "sha256"} <= index.keys():
-        raise SourceDataError(f"{name}: HTML index must name a pinned HTTP source")
-
-    def read(url, destination):
-        if raw_dir is not None:
-            path = raw_dir / destination
-            if not path.resolve().is_relative_to(raw_dir.resolve()):
-                raise SourceDataError(f"{name}: unsafe raw destination {destination}")
-            if path.exists():
-                return path.read_bytes()
-        with urlopen(Request(url, headers={"User-Agent": "measurement-db", "Accept-Encoding": "identity"}), timeout=120) as response:
-            return response.read()
-
-    payload = read(index["url"], index["file"])
-    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
-        raise SourceDataError(f"{name}: HTML index differs from its declared bytes")
+    selector = source['html_index']
+    structured = isinstance(selector, dict)
+    index = named.get(selector['source'] if structured else selector, {})
+    if structured:
+        records = _json_index_documents(index, named, raw_dir, (name,))
+        pages = []
+        for record in records:
+            if not isinstance(record, dict) or not isinstance(record.get(selector['field']), str):
+                raise SourceDataError(f'{name}: missing declared HTML field')
+            pages.append(record[selector['field']])
+    else:
+        if not {'url', 'file', 'size', 'sha256'} <= index.keys():
+            raise SourceDataError(f'{name}: HTML index must name a pinned HTTP source')
+        payload = _read_index_source(index['url'], index['file'], raw_dir, index.get('request_json'))
+        if len(payload) != index['size'] or hashlib.sha256(payload).hexdigest() != index['sha256']:
+            raise SourceDataError(f'{name}: HTML index differs from its declared bytes')
+        pages = [payload.decode('utf-8')]
 
     class Links(HTMLParser):
         def __init__(self):
@@ -128,19 +168,24 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
             self.hrefs = set()
 
         def handle_starttag(self, tag, attrs):
-            if tag == "a" and (href := dict(attrs).get("href")):
+            wanted_tag = selector['tag'] if structured else 'a'
+            attribute = selector['attribute'] if structured else 'href'
+            if tag == wanted_tag and (href := dict(attrs).get(attribute)):
                 self.hrefs.add(href)
 
     parser = Links()
-    parser.feed(payload.decode("utf-8"))
+    for page in pages:
+        parser.feed(page)
     base = urlparse(source["url"].rstrip("/") + "/")
     paths = {}
     for href in parser.hrefs:
         location = urlparse(urljoin(index["url"], href))
         if ((location.scheme, location.netloc) != (base.scheme, base.netloc)
-                or not location.path.startswith(base.path) or location.query or location.fragment):
+                or not location.path.startswith(base.path) or (location.query and not structured) or location.fragment):
             continue
         relative = location.path.removeprefix(base.path)
+        if location.query:
+            relative += '?' + location.query
         for rule in source["files"]:
             if match := re.fullmatch(rule["match"], relative):
                 destination = rule["path"].format(path=relative, **match.groupdict())
@@ -151,7 +196,7 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
 
     def inspect(relative):
         url, destination = paths[relative]
-        content = read(url, destination)
+        content = _read_index_source(url, destination, raw_dir)
         return dict(path=relative, size=len(content), digest=hashlib.sha256(content).hexdigest(),
                     hash_kind="sha256", url=url)
 
@@ -171,35 +216,7 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
         raise SourceDataError(f"{name}: cyclic JSON index sources")
     index = named.get(selector["source"], {})
 
-    def read(url, destination):
-        if raw_dir is not None:
-            path = raw_dir / destination
-            if not path.resolve().is_relative_to(raw_dir.resolve()):
-                raise SourceDataError(f"{name}: unsafe raw destination {destination}")
-            if path.exists():
-                return path.read_bytes()
-        with urlopen(Request(url, headers={"User-Agent": "measurement-db", "Accept-Encoding": "identity"}), timeout=120) as response:
-            return response.read()
-
-    if "json_index" in index:
-        manifests = json_index_entries(index, named, raw_dir, _trail=(*_trail, name))
-        records = []
-        for entry in manifests:
-            destinations = [rule['path'].format(path=entry['path'], **match.groupdict())
-                for rule in index['files'] if (match := re.fullmatch(rule['match'], entry['path']))]
-            if len(destinations) != 1:
-                raise SourceDataError(f"{name}: ambiguous indexed manifest destination")
-            payload = read(entry['url'], destinations[0])
-            if len(payload) != entry['size'] or hashlib.sha256(payload).hexdigest() != entry['digest']:
-                raise SourceDataError(f"{name}: indexed manifest changed after verification")
-            records.append(json.loads(payload))
-    elif {"url", "file", "size", "sha256"} <= index.keys():
-        payload = read(index["url"], index["file"])
-        if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
-            raise SourceDataError(f"{name}: JSON index differs from its declared bytes")
-        records = [json.loads(payload)]
-    else:
-        raise SourceDataError(f"{name}: JSON index must name a pinned HTTP source or JSON-indexed collection")
+    records = _json_index_documents(index, named, raw_dir, (*_trail, name))
     for field in selector["records"]:
         nested = []
         for record in records:
@@ -227,11 +244,23 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
                     raise SourceDataError(f"{name}: unsafe raw destination {destination}")
                 if relative in paths:
                     raise SourceDataError(f"{name}: duplicate indexed source path {relative}")
-                paths[relative] = destination
+                query = selector.get('query')
+                if query:
+                    try:
+                        parameters = {key: value.format_map(record) for key, value in query.items()}
+                    except (KeyError, ValueError, TypeError, AttributeError, IndexError) as exc:
+                        raise SourceDataError(f'{name}: invalid JSON index query template') from exc
+                    location = urlparse(source['url'])
+                    if location.query or location.fragment:
+                        raise SourceDataError(f'{name}: indexed API URL must not already contain a query or fragment')
+                    url = source['url'] + '?' + urlencode(parameters)
+                else:
+                    url = urljoin(base, relative)
+                paths[relative] = (destination, url)
 
     def inspect(relative):
-        url = urljoin(base, relative)
-        data = read(url, paths[relative])
+        destination, url = paths[relative]
+        data = _read_index_source(url, destination, raw_dir)
         return dict(path=relative, size=len(data), digest=hashlib.sha256(data).hexdigest(),
                     hash_kind="sha256", url=url)
 
@@ -442,6 +471,8 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
         if "file" in source:
             selected = [dict(file=source["file"], url=url, size=source["size"],
                              hash_kind="sha256", digest=source["sha256"])]
+            if 'request_json' in source:
+                selected[0]['request_json'] = source['request_json']
         else:
             location = urlparse(url)
             entries = []

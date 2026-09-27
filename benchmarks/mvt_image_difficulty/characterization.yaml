@@ -1,0 +1,93 @@
+format_version: 1
+tables:
+  traces:
+    rows: 276718
+    logical_sha256: 48ae5e39a79f0d488e9abeb8cf1c247181f38c8c6d67d96b5261bfbfcccbebd4
+  subjects:
+    rows: 58
+    logical_sha256: dae3ea8faa49e51fe2136f60b261e1f1c62806ee2703d9dcf65d4c7c5c017ce3
+  responses:
+    rows: 276718
+    logical_sha256: 2ecbdea511057485100738fb21cf515f9a0b39c39be7be0db606bfacd157bb51
+  assets:
+    rows: 4771
+    logical_sha256: a26fec8e7afe12a1fc5660593be5041255cc470f98093e7c708d00c80435f5ab
+  items:
+    rows: 4771
+    logical_sha256: fee95c8bdd61e766e063c37f1851c0927b3f5c9f154192086715370650dddc16
+  benchmarks:
+    rows: 1
+    logical_sha256: d2b014eca1675f2cca73306b4eadb319681da5f3e2f21e07b58ae5698fea0cf4
+source_claims:
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 4771
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 58
+  source_classes:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 50
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 276718
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 177197
+  source_stimulus_archive_images:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 5000
+  source_selected_images:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 4771
+  source_distinct_stimulus_bytes:
+    kind: count
+    origin: derived_from_data
+    source: https://objectnet.dev/mvt/download.html
+    locator: model_predictions_dataframe.csv and label_to_idx.json in reproduce_results_2023.zip; cropped_images.zip
+      in flash_data_release_2023.zip.
+    scope: Complete released model prediction matrix and exact original cropped stimulus bytes. Human judgments
+      and image-difficulty proxy files are preserved in the captured archives but do not become model observations.
+    expected: 4771

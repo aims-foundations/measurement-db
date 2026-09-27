@@ -925,3 +925,5 @@ SOURCE_AUDITS["mj_bench"] = verify_native_results
 SOURCE_AUDITS["mmbench_v11"] = verify_native_results
 SOURCE_AUDITS["mmoral_bench"] = verify_native_results
 SOURCE_AUDITS["mypcbench"] = verify_native_results
+SOURCE_AUDITS["naep_llm_students"] = verify_native_results
+SOURCE_AUDITS["mvt_image_difficulty"] = verify_native_results

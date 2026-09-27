@@ -16801,6 +16801,269 @@ def _mypc(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _naep_sources(directory, metadata):
+    """Read the complete recorded CSV and independently bind the original NAEP pages."""
+    import csv
+    import hashlib
+    import re
+    from html.parser import HTMLParser
+    from urllib.parse import urlparse, parse_qs
+
+    raw = directory / 'raw'
+    with (raw / 'study/naep_consolidated_responses.csv').open(newline='') as stream:
+        records = list(csv.DictReader(stream))
+    pages, catalog_paths = {}, set()
+    for family in ['MAT', 'RED']:
+        index = json.loads((raw / 'naep' / family / 'index.json').read_text())
+        _check(index['itemCount'], len(index['gridItemsList']), 'NAEP complete original catalog count')
+        for entry in index['gridItemsList']:
+            relative = f"naep/{family}/items/{entry['itemTableIDAsInt']}.json"
+            page = json.loads((raw / relative).read_text())
+            question = page['questionID'].removeprefix('Question ID:').strip()
+            _check(question, entry['questionID'] + ' ' + entry['naepId'], 'NAEP original question identifier binding')
+            _check(question not in pages, True, 'NAEP unique catalog question')
+            _check(entry['displayType'], 'MC', 'NAEP selected original multiple-choice catalog')
+            pages[question] = dict(native=page, source_file=relative, family=family, index=entry)
+            catalog_paths.add(relative)
+    _check({str(path.relative_to(raw)) for path in raw.glob('naep/*/items/*.json')}, catalog_paths,
+           'NAEP no omitted catalog pages')
+
+    class Images(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.urls = []
+            self.text = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'img':
+                self.urls.append(dict(attrs)['src'])
+
+        def handle_data(self, data):
+            self.text.append(data)
+
+    observations, questions, images = {}, {}, {}
+    for ordinal, record in enumerate(records):
+        key = tuple(record[field] for field in ['llm', 'question_id', 'prompt_type', 'student_grade'])
+        _check(key not in observations, True, 'NAEP each native observation exactly once')
+        _check(record['is_correct'] in ['0', '1'], True, 'NAEP original binary outcome')
+        _check(int(record['is_correct']), int(record['gold_option'] == record['predicted_option']), 'NAEP released grade and extracted choice')
+        _check(record['is_grade_enforced'], 'False' if record['student_grade'] == '-1' else 'True', 'NAEP target grade and enforcement')
+        observations[key] = dict(record=record, source_row=ordinal)
+        question = record['question_id']
+        definition = {field: record[field] for field in ['subject', 'question_grade', 'total_options', 'gold_option']}
+        if question in questions:
+            _check(questions[question]['definition'], definition, 'NAEP consistent source question and gold key')
+            continue
+        page = pages[question]
+        grading_file = page['source_file'].replace('/items/', '/grading/').removesuffix('.json') + '.html'
+        guide = Images()
+        guide.feed((raw / grading_file).read_text())
+        answer = re.search(r'The correct answer is:\s*([A-Z])\.', ' '.join(guide.text))
+        _check(answer is not None, True, 'NAEP original scoring guide contains its answer key')
+        _check(answer[1], record['gold_option'], 'NAEP author key matches the independent official key')
+        _check(page['index']['grade'], record['question_grade'], 'NAEP source grade association')
+        _check(page['family'], {'mathematics': 'MAT', 'reading': 'RED'}[record['subject']], 'NAEP source subject association')
+        parser = Images()
+        parser.feed(page['native']['itemHTML'])
+        attachments, seen = [], set()
+        for url in parser.urls:
+            resource = parse_qs(urlparse(url).query)['TableID'][0]
+            if resource in seen:
+                continue
+            seen.add(resource)
+            path = raw / 'naep' / page['family'] / 'images' / resource
+            data = path.read_bytes()
+            digest = hashlib.sha256(data).hexdigest()
+            if data.startswith(b'\x89PNG\r\n\x1a\n'):
+                media = 'image/png'
+            elif data.startswith((b'GIF87a', b'GIF89a')):
+                media = 'image/gif'
+            elif data.startswith(b'\xff\xd8\xff'):
+                media = 'image/jpeg'
+            else:
+                raise ValueError('NAEP unknown original source-image encoding')
+            images[digest] = data
+            attachments.append(dict(asset_id=digest, path='source_images/' + resource, media_type=media,
+                                    role='source_document_image', ordinal=len(attachments) + 1))
+        questions[question] = dict(definition=definition, page=page, attachments=attachments,
+                                  grading_file=grading_file, image_occurrences=len(parser.urls))
+    registry = json.loads((Path(__file__).resolve().parents[1] / 'build_measurement_tables/map_model_registry.json').read_text())
+    models = {row['llm']: row['llm'].replace('--', '/') for row in records}
+    counts = dict(source_rows=len(records), source_questions=len(questions), source_models=len(models),
+        source_conditions=len({(row['prompt_type'], row['student_grade']) for row in records}),
+        source_omitted_choices=sum(row['predicted_option'] == 'Omitted' for row in records),
+        source_correct=sum(int(row['is_correct']) for row in records), source_catalog_questions=len(pages),
+        source_catalog_images=len(list(raw.glob('naep/*/images/*'))),
+        source_catalog_scoring_guides=len(list(raw.glob('naep/*/grading/*.html'))), source_verified_reference_keys=len(questions),
+        source_questions_with_images=sum(bool(q['attachments']) for q in questions.values()),
+        source_image_occurrences=sum(q['image_occurrences'] for q in questions.values()),
+        source_distinct_image_bytes=len(images))
+    return dict(records=records, observations=observations, questions=questions, images=images, models=models,
+                registry=registry, counts=counts)
+
+
+def _naep(directory, tables, metadata, source=None):
+    """Compare every original NAEP choice, condition, document and attachment."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _naep_sources(directory, metadata)
+    parameters, subjects, items = metadata['build']['parameters'], {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features['source_model_label']
+        alias = source['models'][label]
+        _check(row.display_name, alias, 'NAEP literal model label without invented checkpoint variants')
+        _check(features, dict(parameters['subject_features'], source_model_label=label), 'NAEP recorded model provenance')
+        catalog = source['registry'].get(alias, {})
+        for field, expected in [('normalized_name', catalog.get('model')), ('provider', catalog.get('company')),
+                                ('release_date', catalog.get('release_date'))]:
+            actual = getattr(row, field)
+            _check(None if pd.isna(actual) else actual, expected, 'NAEP known canonical model metadata: ' + field)
+        for field in ['access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'NAEP no invented historical configuration: ' + field)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['models']}), 'NAEP all recorded models')
+    for row in tables['items'].itertuples():
+        question = source['questions'][row.raw_item_id]
+        definition, page = question['definition'], question['page']
+        _check(row.content, page['native']['itemHTML'].strip(), 'NAEP complete released HTML without lost notation or images')
+        expected = dict(question_subject=definition['subject'], question_grade=definition['question_grade'],
+            total_options=definition['total_options'], source_file=page['source_file'],
+            grading_source_file=question['grading_file'], input_scope=parameters['labels']['input_scope'])
+        _check(_features(row.item_features), canonicalize_features(expected), 'NAEP input provenance without human outcome statistics')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=definition['gold_option'], rule=metadata['grading']['rule']),
+               'NAEP original reference choice and recorded-extraction limitation')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'NAEP deterministic comparison of recorded extracted choices')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['choice'], 'NAEP complete verifier description')
+        actual = [] if pd.isna(row.asset_manifest) else json.loads(row.asset_manifest)
+        _check(actual, question['attachments'], 'NAEP every source image with its original role and order')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['questions']}), 'NAEP all released questions, without a fabricated 489th')
+    assets = {row.asset_id: bytes(row.data) for row in tables['assets'].itertuples()}
+    _check(assets, source['images'], 'NAEP exact image bytes associated with the recorded questions')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'NAEP one complete source trace per observation')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for response in tables['responses'].itertuples():
+        condition = dict(part.split('=', 1) for part in response.test_condition.split(';'))
+        _check(set(condition) <= {'prompt', 'enforced_grade'}, True, 'NAEP only recorded condition fields')
+        key = subjects[response.subject_id], items[response.item_id], condition['prompt'], condition.get('enforced_grade', '-1')
+        native = source['observations'][key]
+        _check(response.response, float(native['record']['is_correct']), 'NAEP exact original grade')
+        _check(response.trial, 1, 'NAEP prompting conditions do not invent repeated trials')
+        _check(pd.isna(response.interactors), True, 'NAEP no invented occasion participants')
+        trace = traces[response.response_id]
+        _check(json.loads(trace['trace']), dict(source_file='study/naep_consolidated_responses.csv', source_row=native['source_row'],
+            record=native['record'], question_source_file=source['questions'][key[1]]['page']['source_file'],
+            available_output='released_extracted_choice; full_generation_unreleased'), 'NAEP complete native CSV record and exact association')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, expected = trace[field], getattr(response, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(expected) else expected, 'NAEP trace association: ' + field)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'NAEP every original observation exactly once')
+    return source['counts']
+
+
+def _mvt_sources(directory, metadata):
+    import csv
+    import hashlib
+    import io
+    from zipfile import ZipFile
+
+    with ZipFile(directory / 'raw/reproduce_results_2023.zip') as archive:
+        with archive.open('reproduce_results_2023/model_predictions_dataframe.csv') as stream:
+            reader = csv.DictReader(io.TextIOWrapper(stream, encoding='utf-8', newline=''))
+            records = list(reader)
+            models = [name for name in reader.fieldnames if name not in {'', 'image', 'label'}]
+        labels = json.loads(archive.read('reproduce_results_2023/label_to_idx.json'))
+    classes = {int(value): name for name, value in labels.items()}
+    _check(len(classes), len(labels), 'MVT unique native class indices')
+    questions = {}
+    for ordinal, record in enumerate(records):
+        _check(record['image'] not in questions, True, 'MVT unique source image row')
+        _check(int(record['label']) in classes, True, 'MVT reference index is in the native class dictionary')
+        for model in models:
+            _check(int(record[model]) in classes, True, 'MVT predicted index is in the native class dictionary')
+        questions[record['image']] = dict(record=record, source_row=ordinal)
+    assets = {}
+    with ZipFile(directory / 'raw/flash_data_release_2023.zip') as outer:
+        with ZipFile(io.BytesIO(outer.read('data_release_2023/cropped_images.zip'))) as archive:
+            members = {}
+            for name in archive.namelist():
+                if not name.lower().endswith(('.png', '.jpeg', '.jpg')):
+                    continue
+                basename = name.rsplit('/', 1)[-1]
+                _check(basename not in members, True, 'MVT unambiguous original stimulus filename')
+                members[basename] = name
+            for image, question in questions.items():
+                data = archive.read(members[image])
+                digest = hashlib.sha256(data).hexdigest()
+                media = 'image/png' if data.startswith(b'\x89PNG\r\n\x1a\n') else 'image/jpeg' if data.startswith(b'\xff\xd8\xff') else None
+                _check(media is not None, True, 'MVT actual original image encoding')
+                question['attachment'] = dict(asset_id=digest, path='images/' + image,
+                    media_type=media, role='input_image', ordinal=1)
+                assets[digest] = data
+    counts = dict(source_questions=len(records), source_models=len(models), source_classes=len(classes),
+        source_observations=len(records) * len(models),
+        source_correct=sum(int(record[model]) == int(record['label']) for record in records for model in models),
+        source_stimulus_archive_images=len(members), source_selected_images=len(questions),
+        source_distinct_stimulus_bytes=len(assets))
+    return dict(questions=questions, models=models, classes=classes, assets=assets, counts=counts)
+
+
+
+def _mvt(directory, tables, metadata, source=None):
+    source = source or _mvt_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        label = row.display_name
+        _check(label in source['models'], True, 'MVT literal original model configuration')
+        _check(_features(row.subject_features_extra), dict(metadata['build']['parameters']['subject_features'],
+            source_model_label=label), 'MVT model-protocol provenance')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MVT no inferred checkpoint metadata: ' + field)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({model: 1 for model in source['models']}), 'MVT all 58 model columns exactly once')
+    for row in tables['items'].itertuples():
+        original = source['questions'][row.raw_item_id]
+        _check(pd.isna(row.content), True, 'MVT original image input without a gold-class descriptor')
+        _check(pd.isna(row.item_features), True, 'MVT no answer or human-response statistics in input features')
+        _check(json.loads(row.asset_manifest), [original['attachment']], 'MVT exact original stimulus association and role')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=source['classes'][int(original['record']['label'])],
+            rule=metadata['grading']['rule']), 'MVT exact original reference category')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'MVT deterministic recorded-class comparison')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['classification'], 'MVT recorded verifier specification')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['questions']}), 'MVT every recorded stimulus')
+    _check({row.asset_id: row.data for row in tables['assets'].itertuples()}, source['assets'], 'MVT all original stimulus bytes')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MVT one associated trace per recorded prediction')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        image, model = items[row.item_id], subjects[row.subject_id]
+        original = source['questions'][image]
+        record = original['record']
+        _check(row.response, float(int(record[model]) == int(record['label'])), 'MVT exact native class-correctness grade')
+        _check(row.trial, 1, 'MVT one prediction per model and image')
+        _check(row.test_condition, 'task=image_classification;choice_set=' + str(len(source['classes'])), 'MVT original classification choice set')
+        _check(pd.isna(row.interactors), True, 'MVT no invented interaction participants')
+        trace = traces[row.response_id]
+        _check(json.loads(trace['trace']), dict(source_archive='reproduce_results_2023.zip',
+            source_file='reproduce_results_2023/model_predictions_dataframe.csv', source_row=original['source_row'],
+            source_index=int(record['']), image=image, model=model,
+            reference_index=int(record['label']), predicted_index=int(record[model])), 'MVT complete original prediction cell and source coordinates')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, wanted = trace[field], getattr(row, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(wanted) else wanted, 'MVT trace association: ' + field)
+        seen[image, model] += 1
+    expected = Counter({(image, model): 1 for image in source['questions'] for model in source['models']})
+    _check(seen, expected, 'MVT all native model-image observations exactly once')
+    return source['counts']
+
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -16816,7 +17079,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

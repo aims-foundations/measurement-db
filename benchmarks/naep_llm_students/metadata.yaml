@@ -1,0 +1,270 @@
+benchmark:
+  description: Recorded answer choices and correctness from the NAEP LLM-as-student study, linked to original NAEP
+    question pages.
+  testing_condition: Import all 53,680 released observations for 488 questions and 11 models, retaining prompt type
+    and target student grade. The article describes 489 questions; no extra question or response is fabricated.
+    The original NAEP item HTML and linked source images are preserved losslessly, rather than stripping illustrations
+    or mathematical notation. The article reports text-only inputs, but the historical text rendering and full generated
+    solutions were not released. Source-document attachments do not claim that images were delivered to the models.
+    Grades are the original is_correct flags, checked against predicted_option and gold_option. A follow-up model
+    prompt extracted choices in the study; this import does not rerun extraction or grading. The 1,153 literal Omitted
+    choices retain their source-recorded grade of zero. Human percent_correct is an aggregate source statistic,
+    not an individual student response or an item input feature. Exact historical model, harness and extractor revisions
+    are unknown. The four shortened LLaMA labels remain literal because their Chat/Instruct checkpoint variants
+    were not established by the released records.
+  paper_url: https://arxiv.org/abs/2507.08232
+  data_source_url: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students
+  subject_type: model
+  item_type: question
+  license: MIT for the authors' recorded results and analysis code. NAEP source pages and illustrations retain their
+    original attributions.
+  citation: "@article{srivatsa2025naepllm,\n  title={Can LLMs Reliably Simulate Real Students' Abilities in Mathematics\
+    \ and Reading Comprehension?},\n  author={Srivatsa, KV Aditya and Maurya, Kaushal Kumar and Kochmar, Ekaterina},\n\
+    \  journal={arXiv preprint arXiv:2507.08232},\n  year={2025}\n}"
+  tags:
+  - naep
+  - student-simulation
+  - item-response-theory
+  - education
+  - llm-eval
+  modality:
+  - text
+  domain:
+  - education
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The recorded extracted choice differs from the released key.
+      '1': The recorded extracted choice equals the released key.
+  categorical: true
+  release_date: 2025-07
+  release: public
+  name: NAEP LLM-as-Student
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      responses: study/naep_consolidated_responses.csv
+      pages: naep/*/items/*.json
+      images: naep/*/images/*
+    parsing:
+      question_prefix: 'Question ID:'
+      resource_pattern: TableID=([0-9a-fA-F-]+)$
+      correct_answer_pattern: ^The correct answer is:\s*([A-Z])\.
+    labels:
+      image_role: source_document_image
+      input_scope: original_NAEP_HTML_with_historical_text_rendering_unreleased
+      default_condition: prompt={prompt_type}
+      enforced_condition: prompt={prompt_type};enforced_grade={student_grade}
+      output_scope: released_extracted_choice; full_generation_unreleased
+    image_media_types:
+      89504e: image/png
+      '474946': image/gif
+      ffd8ff: image/jpeg
+    model_aliases:
+      CogBase-USTC--SocraticLM: CogBase-USTC/SocraticLM
+      Qwen--Qwen2.5-7B-Instruct: Qwen/Qwen2.5-7B-Instruct
+      Qwen--Qwen2.5-Math-7B-Instruct: Qwen/Qwen2.5-Math-7B-Instruct
+      mistralai--Mistral-7B-Instruct-v0.3: mistralai/Mistral-7B-Instruct-v0.3
+      learnlm-1.5-pro-experimental: learnlm-1.5-pro-experimental
+      llama2-13B: llama2-13B
+      llama2-70B: llama2-70B
+      llama3.1-8B: llama3.1-8B
+      llama3.1-70B: llama3.1-70B
+      gpt-3.5-turbo: gpt-3.5-turbo
+      o3-mini: o3-mini
+    subject_features:
+      benchmark_protocol: NAEP LLM-as-student study
+      historical_model_revision: not_recorded
+      historical_harness_revision: not_recorded
+      paper_reported_temperature: '0'
+      paper_reported_top_p: '0.95'
+      paper_reported_max_tokens: '2048'
+      prompt_and_target_grade: recorded in response.test_condition
+grading:
+  rule: Import the original binary is_correct flag and require exact agreement between the released predicted_option
+    and gold_option. Check each released gold option against the original NAEP scoring guide. The predicted option
+    is the result of the study's follow-up LLM extraction prompt; the full solution and extractor execution are
+    unavailable.
+  verifiers:
+    choice:
+      kind: published_choice_equality
+      source: https://arxiv.org/html/2507.08232v1#S5.SS3
+      recorded_grade: is_correct
+      prediction: predicted_option
+      reference: gold_option
+      extraction: follow-up model prompt, appendix B figure 13
+      extractor_revision: not_recorded
+      reference_check: byte-pinned original NAEP scoring guide
+      execution: not_performed
+sources:
+  upstream:
+  - name: recorded_results
+    url: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students
+    revision: c3105e17cb9f1e10ec5d9f939d0a336ad735e200
+    files:
+    - match: .*
+      path: study/{path}
+  - name: mat_index
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/getTabular
+    revision: null
+    request_json:
+      SubjectCode: MAT
+      GradeStr: 4,8,12
+      SystemID: '1'
+      SubjectGradeInfo:
+      - subject: MAT
+        ndeSystemID: '1'
+        isSelected: true
+        gradeList:
+        - grade: '4'
+          cohort: 1
+          isSelected: true
+        - grade: '8'
+          cohort: 2
+          isSelected: true
+        - grade: '12'
+          cohort: 3
+          isSelected: true
+      YearsInfo: []
+      LimitToOnlineItems: false
+      ContentClassifications:
+        contentClassificationList: []
+      ItemTypes:
+      - itemType: MC
+        isSelected: true
+      - itemType: SR
+        isSelected: false
+      - itemType: SCR
+        isSelected: false
+      - itemType: ECR
+        isSelected: false
+      DifficultyInfo: []
+    file: naep/MAT/index.json
+    size: 526336
+    sha256: 0d8b6ed9829bff506de33121c6ca97167a9a0f8ddfc8a3948a6061551f7435dd
+  - name: mat_items
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/GetItem
+    revision: null
+    json_index:
+      source: mat_index
+      records:
+      - gridItemsList
+      path: '{itemTableIDAsInt}.json'
+      query:
+        tableID: '{itemTableIDAsInt}'
+    files:
+    - match: '[0-9]+\.json'
+      path: naep/MAT/items/{path}
+    tree_sha256: 36f1bf74c115d1792ff89f5daeca32967c7cf1f28ffa85a58bf4d3a226e0053a
+  - name: mat_grading
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/GetItemScoreGuide
+    revision: null
+    json_index:
+      source: mat_index
+      records:
+      - gridItemsList
+      path: '{itemTableIDAsInt}.html'
+      query:
+        tableID: '{itemTableIDAsInt}'
+    files:
+    - match: '[0-9]+\.html'
+      path: naep/MAT/grading/{path}
+    tree_sha256: 348a56e6ed2c5ba639b62b5f55236574df8ecfc0c63afcfcca87cff98adcc8c4
+  - name: mat_images
+    url: https://www.nationsreportcard.gov/nqt/
+    revision: null
+    html_index:
+      source: mat_items
+      field: itemHTML
+      tag: img
+      attribute: src
+    files:
+    - match: api/QueryResults/GetItemResource\?TableID=(?P<id>[0-9a-fA-F-]+)
+      path: naep/MAT/images/{id}
+    tree_sha256: 2b13431273145b13a7f643cbd0c9b44ce5b466cd3bce1edc40ba6f0b4859471a
+  - name: red_index
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/getTabular
+    revision: null
+    request_json:
+      SubjectCode: RED
+      GradeStr: 4,8,12
+      SystemID: '1'
+      SubjectGradeInfo:
+      - subject: RED
+        ndeSystemID: '1'
+        isSelected: true
+        gradeList:
+        - grade: '4'
+          cohort: 1
+          isSelected: true
+        - grade: '8'
+          cohort: 2
+          isSelected: true
+        - grade: '12'
+          cohort: 3
+          isSelected: true
+      YearsInfo: []
+      LimitToOnlineItems: false
+      ContentClassifications:
+        contentClassificationList: []
+      ItemTypes:
+      - itemType: MC
+        isSelected: true
+      - itemType: SCR
+        isSelected: false
+      - itemType: ECR
+        isSelected: false
+      DifficultyInfo: []
+    file: naep/RED/index.json
+    size: 235070
+    sha256: bf52dcd33eb674a3781aa9a1149742b6617f0884812ab3bc8cf83e0128a05c46
+  - name: red_items
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/GetItem
+    revision: null
+    json_index:
+      source: red_index
+      records:
+      - gridItemsList
+      path: '{itemTableIDAsInt}.json'
+      query:
+        tableID: '{itemTableIDAsInt}'
+    files:
+    - match: '[0-9]+\.json'
+      path: naep/RED/items/{path}
+    tree_sha256: 393c8cb18fada8cae247da92c3911437b5632c0b9dab3b17b3f7de3b9aa888a7
+  - name: red_grading
+    url: https://www.nationsreportcard.gov/nqt/api/queryresults/GetItemScoreGuide
+    revision: null
+    json_index:
+      source: red_index
+      records:
+      - gridItemsList
+      path: '{itemTableIDAsInt}.html'
+      query:
+        tableID: '{itemTableIDAsInt}'
+    files:
+    - match: '[0-9]+\.html'
+      path: naep/RED/grading/{path}
+    tree_sha256: f8713c81a801eac56cd312f3e8ef74e148dcd305acacc7af285926d6c607dcae
+  - name: red_images
+    url: https://www.nationsreportcard.gov/nqt/
+    revision: null
+    html_index:
+      source: red_items
+      field: itemHTML
+      tag: img
+      attribute: src
+    files:
+    - match: api/QueryResults/GetItemResource\?TableID=(?P<id>[0-9a-fA-F-]+)
+      path: naep/RED/images/{id}
+    tree_sha256: 0d60ff5ca0545d9fc8f59011e8ce67203370a09b887169cae551bf74cf33be42

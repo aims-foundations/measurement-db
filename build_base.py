@@ -251,6 +251,7 @@ class BenchmarkBuild(ABC):
         expected_size: int | None = None,
         expected_sha256: str | None = None,
         request_headers: dict[str, str] | None = None,
+        request_json: dict | None = None,
         chunk_size: int = 256 * 1024 * 1024,
     ) -> Path:
         """Download and optionally verify one cached source artifact.
@@ -283,6 +284,10 @@ class BenchmarkBuild(ABC):
                 return dest
 
         headers = {"User-Agent": "measurement-db", **(request_headers or {})}
+        body = None
+        if request_json is not None:
+            body = json.dumps(request_json, allow_nan=False).encode('utf-8')
+            headers['Content-Type'] = 'application/json'
         if chunk_size <= 0:
             raise ValueError("chunk_size must be positive")
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -293,8 +298,8 @@ class BenchmarkBuild(ABC):
                 suffix=".tmp", delete=False,
             ) as temporary:
                 temporary_path = Path(temporary.name)
-                if expected_size is None or expected_size <= chunk_size:
-                    request = urllib.request.Request(url, headers=headers)
+                if body is not None or expected_size is None or expected_size <= chunk_size:
+                    request = urllib.request.Request(url, headers=headers, data=body)
                     with urllib.request.urlopen(request, timeout=timeout) as response:
                         shutil.copyfileobj(response, temporary)
                 else:
@@ -786,6 +791,8 @@ class BenchmarkBuild(ABC):
                     # when Accept-Encoding is set. Keep the stored bytes.
                     encoding_options = ({"request_headers": {"Accept-Encoding": "gzip", "User-Agent": "measurement-db"}}
                                         if artifact.get("content_encoding") == "gzip" else {})
+                    if 'request_json' in artifact:
+                        encoding_options['request_json'] = artifact['request_json']
                     self._download(artifact["url"], temporary, timeout=600,
                                    expected_size=artifact["size"],
                                    expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None,

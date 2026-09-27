@@ -304,6 +304,10 @@ $defs:
                 not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
                 properties:
                   url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
+            - if:
+                required: [request_json]
+              then:
+                required: [file, size, sha256]
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -322,6 +326,9 @@ $defs:
               pattern: '^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$'
             size: {type: integer, minimum: 0}
             sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            request_json:
+              description: JSON body for a public data-retrieval POST endpoint. The returned bytes remain pinned by size and sha256; omit for GET.
+              type: object
             git_lfs:
               description: Resolve selected GitHub LFS pointers to their SHA-256-pinned large files.
               type: boolean
@@ -339,9 +346,18 @@ $defs:
               type: string
               pattern: '^[0-9a-f]{64}$'
             html_index:
-              description: Name of a pinned HTML source whose same-site links are selected by files patterns.
-              type: string
-              pattern: '^[a-z][a-z0-9_]*$'
+              description: Pinned HTML link source. An object extracts a declared HTML field from a pinned JSON source or JSON-indexed collection; files patterns select same-site links, including explicit query parameters.
+              oneOf:
+                - type: string
+                  pattern: '^[a-z][a-z0-9_]*$'
+                - type: object
+                  additionalProperties: false
+                  required: [source, field, tag, attribute]
+                  properties:
+                    source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+                    field: {$ref: '#/$defs/nonempty_string'}
+                    tag: {enum: [a, img]}
+                    attribute: {enum: [href, src]}
             wandb_runs:
               description: Select public W&B runs by state. Optionally keep step_files only at the maximum latest_step match per run; both expressions must capture the numeric step in a named group.
               type: object
@@ -366,6 +382,11 @@ $defs:
                   minItems: 1
                   items: {$ref: '#/$defs/nonempty_string'}
                 path: {$ref: '#/$defs/nonempty_string'}
+                query:
+                  description: Optional query parameter templates for the source URL as an API endpoint; path remains the logical filename used by files patterns.
+                  type: object
+                  minProperties: 1
+                  additionalProperties: {$ref: '#/$defs/nonempty_string'}
             helm_index:
               description: Select all run directories in a pinned HELM release manifest, optionally limited to one group.
               type: object

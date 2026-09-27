@@ -1,0 +1,151 @@
+format_version: 1
+tables:
+  traces:
+    rows: 53680
+    logical_sha256: 186a25fd11a0c96faf40bdafb6a776bee4d0e4b8ceb7b3bbc9f50d089e359d56
+  subjects:
+    rows: 11
+    logical_sha256: d8c000ef2f6bf23a2f13c3d81a97dabe92861b28b1bf090748832abe7c3e7f01
+  responses:
+    rows: 53680
+    logical_sha256: a0398b908250c8fb7b4524d1ae7fa9ffe067640f4e6620dd7f46e80522417462
+  assets:
+    rows: 46
+    logical_sha256: 3e4456c2a2faee110b14296efc04466764ddbb1df3adaf634aef392eaf3b4afc
+  items:
+    rows: 488
+    logical_sha256: 07a70166b18ba9b2b5e5aae37f53888080dc4248a661181aa04312845a599b76
+  benchmarks:
+    rows: 1
+    logical_sha256: de5a3ab9cd56478f986bf0d74e5fdbffe7934f4841d93c57d9a48c0d23adab0c
+source_claims:
+  source_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 53680
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 488
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 11
+  source_conditions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 10
+  source_omitted_choices:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 1153
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 41143
+  source_catalog_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 1064
+  source_catalog_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 890
+  source_catalog_scoring_guides:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 1064
+  source_verified_reference_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 488
+  source_questions_with_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 147
+  source_image_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 252
+  source_distinct_image_bytes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kvadityasrivatsa/IRT-for-LLMs-as-Students/blob/c3105e17cb9f1e10ec5d9f939d0a336ad735e200/naep_consolidated_responses.csv
+    locator: Complete original CSV; official NAEP question catalogs, item definitions, scoring guides and referenced
+      image files.
+    scope: Independent all-row CSV/JSON comparison and source-image byte comparison. The released CSV has 488 questions;
+      the paper describes 489. Original HTML is preserved with source-document images; historical text rendering
+      and full generations are unreleased.
+    expected: 46
