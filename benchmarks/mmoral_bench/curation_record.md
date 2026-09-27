@@ -1,0 +1,3 @@
+- Preserve both original MMOral task banks and all released OPTG voter/ensemble choice maps. Merge only the two documented reproduced copies; retain partial runs and distinct policy labels.
+- Grade recorded closed-question choices against the original key using the source normalizer. Ensemble selection uses benchmark labels; exact historical models, prompts and transformed images are unknown. Keep open questions unobserved and the 38 compact-export option discrepancies explicit.
+- Independently compare every answer, task, image and source association. Original image filenames collide across task banks, so preserve their different bytes by content hash. No models or judges were run.

@@ -1,0 +1,151 @@
+format_version: 1
+tables:
+  traces:
+    rows: 28679
+    logical_sha256: 295418ee01a03b73022418f1f890211185bb8ac695c7bc560fd184bcf86727ca
+  subjects:
+    rows: 85
+    logical_sha256: abd0d9e01ba3d75a8c281295c0cba8efc47a94e47ffd1104f98ad4ccf049607c
+  responses:
+    rows: 28679
+    logical_sha256: ff7624ebf2a18aafde67cb662322b3e708ea102086314acee1b00eb3ecab3898
+  assets:
+    rows: 200
+    logical_sha256: 4d35d460791e3201fd5d0ced0404ef1300b2fceac083991f646d0e1d8d158636
+  items:
+    rows: 1069
+    logical_sha256: 5f269a5c3002a1f3ecbe51be67436762b2bd9061c73dc4a677f07e174ccf4442
+  benchmarks:
+    rows: 1
+    logical_sha256: 9ff91769b707dc2629f52fe57369768799e65026cfd78e3c7ff5aeccfff4a508
+source_claims:
+  source_prediction_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 87
+  source_export_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 29661
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 28679
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 85
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 1069
+  source_closed_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 491
+  source_open_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 578
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 200
+  source_missing_option_coordinates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 38
+  source_missing_correct_options:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 32
+  source_copied_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 2
+  source_affected_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 2222
+  source_correct_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zmeik/OPTG_Analizer/tree/a44e45affbad7bd1c1a099456b33857ba1b7047c
+    locator: Complete predictions/ and voter_predictions/ maps, compact question mapping, and the original OralGPT/MMOral-OPG-Bench
+      closed/open TSVs at dbab248c3a09cc4c46682e0d5004fb246d84e92e.
+    scope: Independent CSV/JSON census of original tasks, image bytes, named policies, recorded choices, documented
+      copies and deterministic letter comparison. Ensemble policies may use benchmark labels; historical prompts
+      and exact model configurations are unavailable. No new inference or judging.
+    expected: 16266

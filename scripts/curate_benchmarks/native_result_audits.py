@@ -16520,6 +16520,163 @@ def _mmbench(directory, tables, metadata, source=None):
     return dict(source['counts'], source_assets=len(assets))
 
 
+def _mmoral_sources(directory, metadata):
+    """Read original task fields and every released choice independently of pandas."""
+    import ast
+    import base64
+    import csv
+    import hashlib
+    import math
+
+    raw, bank, images = directory / 'raw', {}, {}
+    csv.field_size_limit(10_000_000)
+    for split, suffix in [('closed', 'Closed'), ('open', 'Open')]:
+        filename = f'tasks/MMOral-OPG-Bench-{suffix}-Ended.tsv'
+        with (raw / filename).open(newline='') as stream:
+            for position, row in enumerate(csv.DictReader(stream, delimiter='\t')):
+                key = split + ':' + row['index']
+                _check(key not in bank, True, 'MMOral unique split and original task index')
+                data = base64.b64decode(row.pop('image'), validate=True)
+                _check(data.startswith(b'\xff\xd8'), True, 'MMOral original JPEG encoding')
+                digest = hashlib.sha256(data).hexdigest()
+                images[digest] = data
+                bank[key] = dict(row, split=split, source_file=filename, source_row=position,
+                    image_sha256=digest, image_name=row.get('file_name', row.get('image_name')),
+                    missing_options=[])
+    compact = json.loads((raw / 'optg/data/mmoral_compact_questions.json').read_text())
+    seen, missing, missing_correct = set(), 0, 0
+    for row in compact:
+        key = 'closed:' + str(row['index'])
+        _check(key not in seen, True, 'MMOral unique compact task index')
+        seen.add(key)
+        original = bank[key]
+        for field in ['question', 'category', 'type', 'answer', 'file_name']:
+            _check(row[field], original[field], 'MMOral exact original/compact association: ' + field)
+        for number, letter in enumerate('ABCD', 1):
+            value, field = row[f'option{number}'], f'option{number}'
+            if value is None or isinstance(value, float) and math.isnan(value):
+                _check(original[field], 'None', 'MMOral documented literal-None option conversion')
+                original['missing_options'].append(letter)
+                missing += 1
+                missing_correct += letter == original['answer']
+            else:
+                _check(value, original[field], 'MMOral unchanged compact option text')
+    _check(seen, {key for key in bank if key.startswith('closed:')}, 'MMOral complete compact task bank')
+
+    # Execute only this reviewed, pure string normalizer, with no source imports
+    # or ensemble/model/judge code. The independent reader retains all policies.
+    path = raw / 'optg/src/mmoral_oracle_lite.py'
+    nodes = [node for node in ast.parse(path.read_text()).body
+             if isinstance(node, ast.FunctionDef) and node.name == 'normalize_answer']
+    _check(len(nodes), 1, 'MMOral published deterministic normalizer')
+    environment = dict(Any=object, LETTERS=set('ABCD'))
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(path), 'exec'), environment)
+    aliases = {
+        'optg/predictions/v19_reproduced_from_bundle.json': 'optg/predictions/v19_primary_370.json',
+        'optg/predictions/v20_reproduced_from_bundle.json': 'optg/predictions/v20_strict_363.json',
+    }
+    _check(metadata['build']['parameters']['copied_exports'], aliases, 'MMOral only documented reproduced copies')
+    observations, counts = {}, Counter()
+    for folder in ['predictions', 'voter_predictions']:
+        for path in sorted((raw / 'optg' / folder).glob('*.json')):
+            filename = str(path.relative_to(raw))
+            policy = aliases.get(filename, filename)
+            answers = json.loads(path.read_text())
+            _check(isinstance(answers, dict), True, 'MMOral native item-index to choice map')
+            counts['source_prediction_files'] += 1
+            counts['source_export_occurrences'] += len(answers)
+            for index, value in answers.items():
+                task = bank['closed:' + index]
+                _check(isinstance(value, str), True, 'MMOral complete native answer string')
+                normalized = environment['normalize_answer'](value)
+                key = policy, index
+                record = observations.setdefault(key, dict(prediction=value, normalized_choice=normalized,
+                    grade=float(normalized == task['answer']) if normalized is not None else None, aliases=[]))
+                _check(record['prediction'], value, 'MMOral documented copies agree')
+                record['aliases'].append(dict(source_file=filename, upstream_index=index))
+    counts.update(source_responses=len(observations), source_subjects=len({key[0] for key in observations}),
+        source_items=len(bank), source_closed_items=len(seen), source_open_items=len(bank) - len(seen),
+        source_assets=len(images), source_missing_option_coordinates=missing,
+        source_missing_correct_options=missing_correct,
+        source_copied_exports=len(aliases),
+        source_affected_responses=sum(bool(bank['closed:' + key[1]]['missing_options']) for key in observations),
+        source_correct_responses=sum(record['grade'] == 1 for record in observations.values()))
+    return dict(bank=bank, images=images, observations=observations, counts=dict(counts))
+
+
+def _mmoral(directory, tables, metadata, source=None):
+    """Check all task/image, policy, prediction, provenance and grade associations."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _mmoral_sources(directory, metadata)
+    parameters, subjects = metadata['build']['parameters'], {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        policy = features['source_export']
+        kind = 'ensemble' if policy.startswith('optg/predictions/') else 'voter'
+        _check(features, dict(parameters['subject_features'], source_export=policy, policy_kind=kind),
+               'MMOral literal policy identity and configuration limitations')
+        _check(row.display_name, 'MMOral / OPTG / ' + policy.removeprefix('optg/'), 'MMOral original policy label')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MMOral no invented model configuration: ' + field)
+        subjects[row.subject_id] = policy
+    _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MMOral every named policy retained')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    items, used = {}, set()
+    for item in tables['items'].itertuples():
+        task = source['bank'][item.raw_item_id]
+        path = 'images/' + task['image_sha256'] + '.jpg'
+        text = task['question'] + '\n'
+        if task['split'] == 'closed':
+            text += 'Options:\n' + ''.join(letter + '. ' + task[f'option{number}'] + '\n'
+                for number, letter in enumerate('ABCD', 1))
+        _check(json.loads(item.content), dict(multimedia_elements=[dict(content_type='image/jpeg', location=path),
+            dict(content_type='text/plain', text=text)]), 'MMOral original question, options and image without reference leakage')
+        expected = dict(split=task['split'], upstream_index=task['index'], category=task['category'],
+            source_file=task['source_file'], source_row=task['source_row'], image_name=task['image_name'],
+            image_sha256=task['image_sha256'], compact_export_missing_options=json.dumps(task['missing_options']),
+            input_scope=parameters['labels']['input_scope'])
+        _check(_features(item.item_features), canonicalize_features(expected), 'MMOral source attributes and missing-option flags')
+        links = json.loads(item.asset_manifest)
+        _check(len(links), 1, 'MMOral one original image per task')
+        _check(links[0], dict(asset_id=task['image_sha256'], path=path, media_type='image/jpeg', role='input', ordinal=1),
+               'MMOral image content identity across reused filenames')
+        _check(assets[links[0]['asset_id']]['data'], source['images'][task['image_sha256']], 'MMOral exact original JPEG bytes')
+        used.add(links[0]['asset_id'])
+        grading = metadata['grading']['verifiers'][task['split']]
+        _check(json.loads(item.grading_criterion), dict(reference_answer=task['answer'], rule=grading['rule'],
+            response_scale=grading['response_scale']), 'MMOral original reference and split-specific scale')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], 'exact_matcher' if task['split'] == 'closed' else 'judge', 'MMOral split-specific grading method')
+        _check(json.loads(verifier['spec']), grading['verifier'], 'MMOral documented verifier')
+        items[item.item_id] = item.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['bank']}), 'MMOral complete original task banks')
+    _check(used, set(assets), 'MMOral exact complete asset set')
+    _check(set(assets), set(source['images']), 'MMOral both banks preserve original image versions')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MMOral one full trace per answer')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for response in tables['responses'].itertuples():
+        item = items[response.item_id]
+        _check(item.startswith('closed:'), True, 'MMOral no invented open-question attempts')
+        index, policy = item.removeprefix('closed:'), subjects[response.subject_id]
+        original = source['observations'][policy, index]
+        trace = traces[response.response_id]
+        _check(json.loads(trace['trace']), dict(prediction=original['prediction'], normalized_choice=original['normalized_choice'],
+            upstream_index=index, source_aliases=original['aliases'], compact_export_missing_options=source['bank'][item]['missing_options']),
+            'MMOral exact recorded choice, source aliases and input caveat')
+        _check(None if pd.isna(response.response) else float(response.response), original['grade'], 'MMOral native deterministic letter grade')
+        _check(response.trial, 1, 'MMOral copied exports do not invent trials')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial']:
+            _check(trace[field], getattr(response, field), 'MMOral trace association: ' + field)
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(response, field)), True, 'MMOral no invented occasion setting: ' + field)
+            _check(pd.isna(trace[field]), True, 'MMOral trace has no invented occasion setting: ' + field)
+        seen[policy, index] += 1
+    _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'MMOral all native answers exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -16535,7 +16692,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
