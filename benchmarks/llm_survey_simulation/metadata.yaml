@@ -1,0 +1,124 @@
+benchmark:
+  description: Published synthetic survey responses from eight LLMs on 412 EEDI questions and 385 OpinionQA questions.
+    These are simulated human responses, not direct estimates of the LLMs' question-solving ability.
+  testing_condition: 'Preserve all 669,350 published cleaned entries and their exact numeric values; do not snap
+    fractional values to a rounded category. Each item contains the complete released base question and choices.
+    The source conditions generation on synthetic human personas, but per-response persona IDs and historical request
+    settings are absent. Do not substitute a guessed persona or claim that the base question is a complete historical
+    prompt. Raw profile banks and templates remain available in the unchanged archive. Equal-length raw/clean lists
+    are linked by their documented question and list position. DeepSeek OpinionQA has 200 raw outputs versus 150
+    cleaned entries per question, with no recoverable run mapping; its 57,750 scores retain no fabricated output
+    association. Known API-error outputs have random imputed scores in the source: retain the attempt with response=null
+    and preserve the published value in its trace. Other published scores remain unchanged, including discrepancies
+    with the currently published postprocessor. Human survey records, random baselines and aggregate analyses stay
+    raw-only. Trial is the one-based clean-list position, not a persona ID.'
+  paper_url: https://arxiv.org/abs/2502.17773
+  data_source_url: https://github.com/yw3453/uq-llm-survey-simulation
+  subject_type: model
+  item_type: survey_question
+  license: The captured source repository declares MIT. The included EEDI and OpinionQA source data retain any applicable
+    upstream terms; the repository license alone does not establish those rights.
+  citation: Huang, Chengpiao; Wu, Yuhang; Wang, Kaizheng. How Many Human Survey Respondents is a Large Language
+    Model Worth? An Uncertainty Quantification Perspective. arXiv:2502.17773.
+  tags:
+  - survey_simulation
+  - opinion
+  - education
+  - persona
+  - social_science
+  modality:
+  - text
+  domain:
+  - mathematics
+  - cultural
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: 2025-02
+  release: public
+  name: LLM survey-simulation responses (EEDI and OpinionQA)
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: upstream.zip
+      prefix: uq-llm-survey-simulation-fe3eb19111a2d9327e9ec051bd96f68750a7895d/
+      data_archive: data.zip
+      results: data/{dataset}/synthetic_answers/{kind}/{model}.json
+    datasets:
+      EEDI: data/EEDI/eedi_data.json
+      OpinionQA: data/OpinionQA/opinionqa_data.json
+    models:
+      claude-3.5-haiku: claude-3-5-haiku-20241022
+      deepseek-v3: deepseek-ai/DeepSeek-V3
+      gpt-3.5-turbo: gpt-3.5-turbo
+      gpt-4o-mini: gpt-4o-mini
+      gpt-4o: gpt-4o
+      gpt-5-mini: gpt-5-mini
+      llama-3.3-70B-instruct-turbo: meta-llama/Llama-3.3-70B-Instruct-Turbo
+      mistral-7B-instruct-v0.3: mistralai/Mistral-7B-Instruct-v0.3
+    labels:
+      subject_prefix: 'LLM survey simulation / '
+    subject_features:
+      harness: UQ LLM survey simulation
+      historical_configuration: request_parameters_and_persona_assignments_not_recorded
+    unlinked_results:
+      OpinionQA/deepseek-v3: Raw lists contain 200 outputs but clean lists contain 150 scores; no authoritative
+        source mapping is available.
+grading:
+  verifiers:
+    EEDI:
+      kind: published_assessment
+      source: https://github.com/yw3453/uq-llm-survey-simulation/blob/fe3eb19111a2d9327e9ec051bd96f68750a7895d/data.zip
+      documented_processor: https://github.com/yw3453/uq-llm-survey-simulation/blob/fe3eb19111a2d9327e9ec051bd96f68750a7895d/src/simulations.py
+      function: process_responses_EEDI
+      rule: 'Preserve the published binary grade of the simulated student choice. The documented cleaner extracts
+        a bracketed capital letter, falls back to SequenceMatcher against answer-map values, then compares A/B/C/D
+        with the released answer index. Its historical outputs can disagree with the published cleaner. Explicit
+        API-error outputs have no observed student answer: store null and retain the original random imputation
+        in the trace.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Published simulated student answer was graded incorrect.
+          '1': Published simulated student answer was graded correct.
+    OpinionQA:
+      kind: published_choice_encoding
+      source: https://github.com/yw3453/uq-llm-survey-simulation/blob/fe3eb19111a2d9327e9ec051bd96f68750a7895d/data.zip
+      documented_processor: https://github.com/yw3453/uq-llm-survey-simulation/blob/fe3eb19111a2d9327e9ec051bd96f68750a7895d/src/simulations.py
+      function: process_responses_OpinionQA
+      rule: Preserve the published opinion-choice encoding without regrading or rounding. The documented cleaner
+        maps choices 1/2/3/4/5 to 1, 1/3, -1/3, -1, 0 and falls back to the item-specific choice-text mapping. These
+        are answer categories, not correctness or higher-is-better performance. Preserve floating-point variants
+        of thirds as released. Explicit associated API errors are ungraded; source imputations remain in traces.
+        An unmatched raw-output list is not linked by guessing its offset.
+      response_scale:
+        kind: discrete
+        values:
+        - -1
+        - -0.3333333333333333
+        - 0
+        - 0.3333333333333333
+        - 1
+        direction: unordered
+        meanings:
+          '1': First listed opinion choice
+          '0.3333333333333333': Second listed opinion choice
+          '-0.3333333333333333': Third listed opinion choice
+          '-1': Fourth listed opinion choice
+          '0': Fifth listed choice, commonly refused; not a correctness score
+sources:
+  upstream:
+  - name: published_release
+    file: upstream.zip
+    url: https://codeload.github.com/yw3453/uq-llm-survey-simulation/zip/fe3eb19111a2d9327e9ec051bd96f68750a7895d
+    revision: fe3eb19111a2d9327e9ec051bd96f68750a7895d
+    size: 40732962
+    sha256: 11f6b58a66685d3af67db208f2506bdeb1cd9e0ec00d821e7e744e342caeeee6

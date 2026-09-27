@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 669350
+    logical_sha256: ead341f926cac5e0a7a38feab41599d6a23aaf40b70c6756d83ba153fd6c7127
+  subjects:
+    rows: 8
+    logical_sha256: fbdb9b22bc5731f14f13d035fb7448de04792c7170d9bc063f38aa7f23f94159
+  responses:
+    rows: 669350
+    logical_sha256: 5797ef4a14e35d92363363aa44ec8fe9aec7a3268bc2a1b44497fab6a90496ad
+  items:
+    rows: 797
+    logical_sha256: d2443232c307abede6e5f7af4653e9656b11938174335f568676a9990f85ccae
+  benchmarks:
+    rows: 1
+    logical_sha256: 566c67db5009a3f3a1170239dce5d7fe5dbb8997da4688f7f27ae01a88ed5aa3
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 669350
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 797
+  source_profile_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 159400
+  source_api_error_imputations_removed:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 173
+  source_unlinked_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 57750
+  source_linked_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 611600
+  source_documented_parser_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 2244
+  source_raw_only_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yw3453/uq-llm-survey-simulation
+    locator: 'Pinned data.zip: EEDI and OpinionQA base questions, synthetic profile banks, and raw/clean lists;
+      src/simulations.py describes their positional structure and cleanup functions.'
+    scope: All eight published model labels; score entries remain primary. Human responses/random baselines remain
+      raw-only; missing persona and output associations are not inferred.
+    expected: 77000

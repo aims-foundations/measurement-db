@@ -14124,6 +14124,142 @@ def _llm_bp_tag(directory,tables,metadata,source=None):
     return counts
 
 
+def _survey_parse(output, question, dataset):
+    """Diagnostic implementation of the published cleaner, without random imputations."""
+    import re
+    from difflib import SequenceMatcher
+
+    if output.startswith('ERROR:'):
+        return None
+    matches=re.findall(r'\[\[(.*?)\]',output)
+    text=matches[0] if matches else output
+    if dataset=='EEDI':
+        letters=re.findall('[A-Z]',text) if matches else []
+        if letters:
+            letter=letters[0]
+        else:
+            values=list(question['answer_to_letter'].values())
+            letter=max(values,key=lambda value:SequenceMatcher(None,text,value).ratio())
+        if letter not in 'ABCD' or len(letter)!=1:
+            letter=max('ABCD',key=lambda value:SequenceMatcher(None,letter,value).ratio())
+        return float('ABCD'.index(letter)+1==question['answer'])
+    numbers=re.findall(r'\d+',text) if matches else []
+    if numbers:
+        values={'1':1.,'2':1/3,'3':-1/3,'4':-1.,'5':0.}
+        choice=numbers[0]
+        if choice not in values:
+            choice=max(values,key=lambda value:SequenceMatcher(None,choice,value).ratio())
+        return values[choice]
+    values=question['choices_to_numeric']
+    choice=max(values,key=lambda value:SequenceMatcher(None,text,value).ratio())
+    return values[choice]
+
+
+def _llm_survey_source_records(directory,metadata):
+    """Read native dictionaries independently of the pandas explode/join operations."""
+    import io
+    import math
+    from zipfile import ZipFile
+
+    parameters=metadata['build']['parameters'];layout=parameters['layout']
+    native,questions={},{}
+    counts=Counter()
+    with ZipFile(directory/'raw'/layout['archive']) as release:
+        nested=release.read(layout['prefix']+layout['data_archive'])
+    with ZipFile(io.BytesIO(nested)) as archive:
+        for dataset,filename in parameters['datasets'].items():
+            bank=json.loads(archive.read(filename))
+            for qid,question in bank.items():
+                if dataset=='EEDI':
+                    _check(type(question['answer']) is int and question['answer'] in [1,2,3,4],True,'Survey original reference index')
+                _check(len(question['synthetic_profile']),200,'Survey released profile bank')
+                counts['source_profile_candidates']+=len(question['synthetic_profile'])
+                questions[dataset+':'+qid]={k:v for k,v in question.items() if k not in ['survey','synthetic_profile']}
+            for model in parameters['models']:
+                clean_file=layout['results'].format(dataset=dataset,model=model,kind='clean')
+                raw_file=layout['results'].format(dataset=dataset,model=model,kind='raw')
+                clean=json.loads(archive.read(clean_file));raw=json.loads(archive.read(raw_file))
+                _check(set(clean),set(bank),'Survey complete source score question coverage')
+                _check(set(raw),set(bank),'Survey complete source output question coverage')
+                unresolved=dataset+'/'+model in parameters['unlinked_results']
+                for qid,values in clean.items():
+                    outputs=raw[qid]
+                    if unresolved:
+                        _check((len(values),len(outputs)),(150,200),'Survey documented unmatched source lists')
+                        counts['source_raw_only_outputs']+=len(outputs)
+                    else:
+                        _check(len(values),len(outputs),'Survey one-to-one source list positions')
+                    question=questions[dataset+':'+qid]
+                    for index,value in enumerate(values):
+                        _check(type(value) in [int,float] and math.isfinite(value),True,'Survey finite published value')
+                        output=None if unresolved else outputs[index]
+                        error=output is not None and output.startswith('ERROR:')
+                        grade=None if error else float(value)
+                        counts['source_api_error_imputations_removed']+=int(error)
+                        counts['source_unlinked_scores']+=int(unresolved)
+                        counts['source_linked_outputs']+=int(not unresolved)
+                        if output is not None and not error:
+                            reconstructed=_survey_parse(output,question,dataset)
+                            counts['source_documented_parser_disagreements']+=int(not math.isclose(reconstructed,value,rel_tol=0,abs_tol=1e-15))
+                        key=clean_file+'#'+qid+':'+str(index)
+                        _check(key not in native,True,'Survey unique native score record')
+                        native[key]=dict(model=model,dataset=dataset,item=dataset+':'+qid,grade=grade,trial=index+1,
+                            condition=dict(dataset=dataset,task='simulate_human_survey_response',persona_assignment='not_recorded'),
+                            trace=dict(source_file=clean_file,question_id=qid,source_position=index,published_value=value,
+                                output_file=None if unresolved else raw_file,output=output,
+                                output_association='unresolved_list_lengths' if unresolved else 'documented_list_position',
+                                grading_status='api_error_random_imputation_removed' if error else 'source_reported'))
+            del bank
+    return dict(native=native,questions=questions,counts=dict(counts))
+
+
+def _llm_survey(directory,tables,metadata,source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source=_llm_survey_source_records(directory,metadata) if source is None else source
+    native=source['native'];parameters=metadata['build']['parameters']
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),dict(kind='mixed'),'Survey distinct grade/choice domains')
+    subjects,items={},{}
+    for row in tables['subjects'].itertuples():
+        features=_features(row.subject_features_extra);model=features['source_model_label']
+        expected={k:v for k,v in parameters['subject_features'].items() if k!='harness'}
+        _check(features,dict(**expected,source_model_label=model,documented_model_identifier=parameters['models'][model]),'Survey source model configuration')
+        _check(row.display_name,parameters['labels']['subject_prefix']+model,'Survey literal model label')
+        _check(row.harness,parameters['subject_features']['harness'],'Survey simulation harness')
+        for field in ['provider','normalized_name','harness_version','reasoning_effort','release_date','access_date']:
+            _check(pd.isna(getattr(row,field)),True,'Survey no guessed historical model setting: '+field)
+        subjects[row.subject_id]=model
+    _check(Counter(subjects.values()),Counter({r['model']:1 for r in native.values()}),'Survey complete model coverage')
+    for row in tables['items'].itertuples():
+        dataset,qid=row.raw_item_id.split(':',1);question=source['questions'][row.raw_item_id]
+        _check(row.content,question['question'],'Survey complete original base question and choices')
+        _check(_features(row.item_features),dict(survey_dataset=dataset),'Survey original question family')
+        protocol=metadata['grading']['verifiers'][dataset]
+        criterion=dict(reference_answer='ABCD'[question['answer']-1] if dataset=='EEDI' else None,
+            rule=protocol['rule'],response_scale=protocol['response_scale'])
+        _check(json.loads(row.grading_criterion),json.loads(canonical_grading_criterion(criterion)),'Survey native reference and explicit scale')
+        judge=json.loads(row.verifier);expected=dict(**protocol,source_choice_mapping=question['answer_to_letter'] if dataset=='EEDI' else question['choices_to_numeric'])
+        _check((judge['class'],json.loads(judge['spec'])),('judge',expected),'Survey exact published choice encoding and reported-score protocol')
+        _check(pd.isna(row.asset_manifest),True,'Survey no fabricated assets or persona input')
+        items[row.item_id]=row.raw_item_id
+    _check(Counter(items.values()),Counter({r['item']:1 for r in native.values()}),'Survey complete question/grade coverage')
+    _check(Counter(tables['traces'].response_id),Counter(tables['responses'].response_id),'Survey exact trace associations')
+    traces=tables['traces'].set_index('response_id').trace.to_dict();seen=Counter()
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);key=trace['source_file']+'#'+trace['question_id']+':'+str(trace['source_position'])
+        original=native[key]
+        _check(trace,original['trace'],'Survey exact source number, complete output and association status')
+        _check((subjects[row.subject_id],items[row.item_id]),(original['model'],original['item']),'Survey correct model/question association')
+        _check(pd.isna(row.response) if original['grade'] is None else row.response==original['grade'],True,'Survey preserve native value or explicit ungraded API failure')
+        _check(row.trial,original['trial'],'Survey original clean-list position')
+        _check(json.loads(row.test_condition),original['condition'],'Survey simulation condition without guessed persona')
+        _check(pd.isna(row.interactors),True,'Survey no invented interactor')
+        seen[key]+=1
+    _check(seen,Counter({key:1 for key in native}),'Survey complete native score coverage')
+    _check(len(tables.get('assets',[])),0,'Survey no unassociated assets')
+    return dict(source_responses=len(native),source_subjects=len(subjects),source_items=len(items),**source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14138,7 +14274,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
