@@ -5,8 +5,11 @@ is not a general pickle loader. Torch ZIP tensors become NumPy views, and SDK /
 PyG instances retain their serialized state as passive records.
 """
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
+import base64
 import io
+import json
+import math
 from pathlib import Path
 import pickle
 from zipfile import ZipFile, is_zipfile
@@ -20,6 +23,14 @@ except ImportError:  # NumPy 1.x writes the same array representation.
 
 
 class StoredRecord:
+    def __new__(cls, *args, **kwargs):
+        record = object.__new__(cls)
+        record.args, record.kwargs = args, kwargs
+        return record
+
+    def __init__(self, *args, **kwargs):
+        pass
+
     def __setstate__(self, state):
         self.state = state
 
@@ -39,8 +50,47 @@ class _DataUnpickler(pickle.Unpickler):
         }
         if (module, name) in records:
             return StoredRecord
+        # These scientific objects remain inert records. In particular, never
+        # import a serialized calculator or instantiate an upstream model.
+        scientific_records = {
+            ("ase.atoms", "Atoms"), ("ase.cell", "Cell"),
+            ("ase.spacegroup.spacegroup", "Spacegroup"),
+            ("ase.utils.forcecurve", "ForceFit"),
+            ("pymatgen.core.units", "FloatWithUnit"),
+            ("pymatgen.core.units", "Unit"),
+            ("pymatgen.io.ase", "MSONAtoms"),
+            ("mlip_arena.models", "MLIPEnum"),
+            ("mlip_arena.models.externals.mace-mp", "MACE_MP_Medium"),
+            ("mlip_arena.models.externals.sevennet", "SevenNet"),
+        }
+        if (module, name) in scientific_records:
+            return type(name, (StoredRecord,), {"source_type": module + "." + name})
+        if module == "builtins" and name in {"int", "float", "set", "frozenset", "slice"}:
+            return {"int": int, "float": float, "set": set, "frozenset": frozenset, "slice": slice}[name]
         if (module, name) == ("collections", "OrderedDict"):
             return OrderedDict
+        if (module, name) == ("collections", "defaultdict"):
+            return defaultdict
+        if module == "pandas" or module.startswith("pandas."):
+            # A small explicit set of installed pandas data constructors, never
+            # a module/name chosen dynamically by the input file.
+            import pandas as pd
+            from pandas.core.internals.managers import BlockManager
+            from pandas._libs.internals import _unpickle_block
+            from pandas.core.indexes.base import _new_Index
+            containers = {
+                ("pandas", "DataFrame"): pd.DataFrame,
+                ("pandas", "Index"): pd.Index,
+                ("pandas", "RangeIndex"): pd.RangeIndex,
+                ("pandas.core.frame", "DataFrame"): pd.DataFrame,
+                ("pandas.core.internals.managers", "BlockManager"): BlockManager,
+                ("pandas._libs.internals", "_unpickle_block"): _unpickle_block,
+                ("pandas.core.indexes.base", "_new_Index"): _new_Index,
+                ("pandas.core.indexes.base", "Index"): pd.Index,
+                ("pandas.core.indexes.range", "RangeIndex"): pd.RangeIndex,
+            }
+            if (module, name) in containers:
+                return containers[module, name]
         if (module, name) == ("torch._utils", "_rebuild_tensor_v2"):
             return _tensor_view
         if module == "torch" and name in {"FloatStorage", "LongStorage", "BoolStorage"}:
@@ -50,6 +100,8 @@ class _DataUnpickler(pickle.Unpickler):
             return _reconstruct
         if module in {"numpy.core.multiarray", "numpy._core.multiarray"} and name == "scalar":
             return _numeric_scalar
+        if module in {"numpy.core.numeric", "numpy._core.numeric"} and name == "_frombuffer":
+            return _array_from_buffer
         if (module, name) == ("numpy", "ndarray"):
             return np.ndarray
         if (module, name) == ("numpy", "dtype"):
@@ -85,6 +137,15 @@ def _numeric_scalar(dtype, data):
     return np.frombuffer(data, dtype=dtype)[0]
 
 
+def _array_from_buffer(data, dtype, shape, order):
+    """Read protocol-5 array bytes without restoring object pointers."""
+    if (not isinstance(data, (bytes, bytearray)) or not isinstance(dtype, np.dtype)
+            or dtype.hasobject or order not in {"C", "F"} or not isinstance(shape, tuple)
+            or any(type(n) is not int or n < 0 for n in shape)):
+        raise pickle.UnpicklingError("Invalid native array buffer, dtype, shape or order")
+    return np.frombuffer(data, dtype=dtype).reshape(shape, order=order)
+
+
 def _tensor_view(storage, offset, shape, strides, requires_grad, hooks):
     if (not isinstance(storage, np.ndarray) or storage.ndim != 1 or storage.dtype.hasobject
             or type(offset) is not int or offset < 0 or len(shape) != len(strides)
@@ -118,3 +179,38 @@ def read_native_pickle(path):
             raise ValueError("Unknown original storage byte order")
         return _DataUnpickler(io.BytesIO(archive.read(pickles[0])), archive, prefix,
             "<" if byteorder == "little" else ">").load()
+
+
+def native_json_value(value):
+    """Represent scientific source data in JSON without clipping or repr fallbacks.
+
+    Nonfinite values remain explicitly tagged, rather than becoming null grades
+    or invalid JSON tokens. Source-only objects retain their original type,
+    constructor arguments and state; their methods are never called.
+    """
+    if isinstance(value, np.ndarray):
+        return native_json_value(value.tolist())
+    if isinstance(value, np.generic):
+        return native_json_value(value.item())
+    if isinstance(value, float) and not math.isfinite(value):
+        return {"nonfinite_float": repr(value)}
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, complex):
+        return {"complex": [native_json_value(value.real), native_json_value(value.imag)]}
+    if isinstance(value, (bytes, bytearray)):
+        return {"base64": base64.b64encode(value).decode("ascii")}
+    if isinstance(value, dict):
+        if not all(isinstance(key, str) for key in value):
+            return {"mapping": [[native_json_value(key), native_json_value(item)] for key, item in value.items()]}
+        return {key: native_json_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [native_json_value(item) for item in value]
+    if isinstance(value, (set, frozenset)):
+        return {"set": sorted((native_json_value(item) for item in value), key=lambda item: json.dumps(item, sort_keys=True))}
+    if isinstance(value, StoredRecord):
+        return {"stored_type": value.source_type, "args": native_json_value(value.args),
+                "kwargs": native_json_value(value.kwargs), "state": native_json_value(getattr(value, "state", None))}
+    if isinstance(value, type) and issubclass(value, StoredRecord):
+        return {"stored_class": value.source_type}
+    raise TypeError(f"Unsupported native JSON data type: {type(value).__name__}")

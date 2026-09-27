@@ -16082,6 +16082,245 @@ def _mj_bench(directory, tables, metadata, source=None):
         source_unavailable_preferences=grade_counts['unavailable_preference'],source_conflicting_preferences=grade_counts['conflicting_released_preferences'])
 
 
+def _mlip_arena_sources(directory, metadata):
+    """Census native files directly; use ASE independently of the SQL builder."""
+    import hashlib
+    import math
+    import re
+    from collections import defaultdict
+    from ase.db import connect
+    from ase.symbols import Symbols
+    import numpy as np
+    import pyarrow.parquet as pq
+    from .read_native_pickle import read_native_pickle, native_json_value
+
+    raw = Path(directory) / 'raw'
+    grading = metadata['grading']['verifiers']['native']
+    banks = {}
+    for family, filename, field in [('wbm', 'github/benchmarks/wbm_structures.db', 'wbm_id'),
+        ('c2db', 'github/benchmarks/c2db/c2db.db', 'uid'),
+        ('stability', 'huggingface/stability/random-mixture.db', None)]:
+        bank = {}
+        for row in connect(raw / filename).select():
+            structure = dict(atomic_numbers=row.numbers.tolist(), positions_angstrom=row.positions.tolist(),
+                cell_angstrom=row.cell.tolist(), periodic=row.pbc.tolist())
+            for name in ['initial_magmoms', 'initial_charges', 'masses', 'tags', 'momenta']:
+                value = row.get(name)
+                if value is not None:
+                    structure.setdefault('atom_arrays_ase_units', {})[name] = value.tolist()
+            key = row.key_value_pairs[field] if field else Symbols(row.numbers).get_chemical_formula(mode='hill')
+            _check(key not in bank, True, 'MLIP unique input structure key')
+            bank[key] = dict(structure=structure, properties=row.key_value_pairs,
+                coordinate=dict(source_file=filename, database_row=row.id))
+        banks[family] = bank
+
+    events, counts = {}, Counter()
+    def add(family, model, task, record, filename, index, stimulus, coordinate, reference, metrics):
+        record = native_json_value(record)
+        key = hashlib.sha256(json.dumps([family, model, task, stimulus, record], sort_keys=True, allow_nan=False).encode()).hexdigest()
+        value = dict(family=family, model=model, task=task, record=record, input_source=coordinate,
+            stimulus=dict(instruction=grading['families'][family]['instruction'], input=stimulus),
+            reference=reference, metrics=metrics)
+        if key in events:
+            original = {k: v for k, v in events[key].items() if k != 'coordinates'}
+            # Identical diatomic exports repeat their own input coordinates;
+            # the full record and stimulus must agree, and every export stays linked.
+            _check(native_json_value({k:v for k,v in original.items() if k != 'input_source'}),
+                native_json_value({k:v for k,v in value.items() if k != 'input_source'}), 'MLIP copied source export has identical associations')
+        else:
+            events[key] = dict(value, coordinates=[])
+        events[key]['coordinates'].append(dict(source_file=filename, source_row=index))
+        counts['source_export_records'] += 1
+
+    for family in ['eos_bulk', 'ev']:
+        for path in sorted((raw / 'github/benchmarks' / family).glob('*_processed.parquet')):
+            assessed = pq.read_table(path).to_pylist()
+            scores = {r['structure']: (i, r) for i, r in enumerate(assessed)}
+            _check(len(scores), len(assessed), 'MLIP unique processed curve identifiers')
+            native_path = path.with_name(path.name.replace('_processed', ''))
+            native = pq.read_table(native_path).to_pylist()
+            counts['source_missing_curve_placeholders'] += sum(bool(row['missing']) for row in assessed)
+            for index, row in enumerate(native):
+                position, score = scores[row['id']]
+                _check(score['missing'], False, 'MLIP observed curve is not an aggregate placeholder')
+                _check(score['model'], row['method'], 'MLIP curve and assessment model association')
+                bank = banks['wbm'][row['id']]
+                record = dict(output=row, assessment=score, assessment_source=dict(source_file=str(path.relative_to(raw)), source_row=position))
+                add(family, row['method'], row['id'], record, str(native_path.relative_to(raw)), index,
+                    bank['structure'], bank['coordinate'], None, {k: score.get(k) for k in grading['families'][family]['metrics']})
+
+    for family in ['diatomics', 'combustion']:
+        for path in sorted((raw / 'github/benchmarks' / family).rglob('*.json')):
+            text = path.read_text()
+            rows = json.loads(text) if text.lstrip().startswith('[') else [json.loads(line) for line in text.splitlines() if line.strip()]
+            for index, row in enumerate(rows):
+                model = row.get('method', path.stem)
+                coordinate = dict(source_file=str(path.relative_to(raw)), source_row=index)
+                if family == 'diatomics':
+                    task = row['name']
+                    stimulus = dict(homonuclear_pair=task, separations_angstrom=row['R'])
+                    metrics = {k: row.get(k) for k in grading['families'][family]['metrics']}
+                else:
+                    task = row['formula']
+                    filename = 'huggingface/combustion/H256O128.extxyz'
+                    stimulus, coordinate = dict(extended_xyz=(raw / filename).read_text()), dict(source_file=filename)
+                    metrics = dict(yield_value=row['yield'], steps_per_second=row['steps_per_second'],
+                        enthalpy_difference=(row['energies'][-1] - row['energies'][0]) / 128 * 23.0 + 68.3078,
+                        com_drift=math.sqrt(sum(value * value for value in row['com_drifts'][-1])))
+                    metrics['yield'] = metrics.pop('yield_value')
+                add(family, model, task, row, str(path.relative_to(raw)), index, stimulus, coordinate, None, metrics)
+
+    for path in sorted((raw / 'github/benchmarks/stability').rglob('*.parquet')):
+        grouped = defaultdict(list)
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            grouped[row['formula']].append((index, row))
+        original_name = re.sub(r'_x([0-9a-f]+)_', lambda match: chr(int(match[1], 16)), path.stem)
+        model, protocol = original_name.rsplit('-', 1)
+        for task, frames in grouped.items():
+            bank = banks['stability'][task]
+            record = dict(frames=[r for _, r in frames], source_rows=[i for i, _ in frames])
+            metrics = {k: frames[0][1][k] for k in grading['families']['stability']['metrics']}
+            for _, row in frames:
+                for key, value in metrics.items():
+                    _check(row[key], value, 'MLIP stability frames agree on run summaries')
+            add('stability', model, task, record, str(path.relative_to(raw)), frames[0][0],
+                dict(structure=bank['structure'], protocol=protocol), bank['coordinate'], None, metrics)
+            counts['source_stability_frames'] += len(frames)
+            counts['source_stability_runs'] += 1
+
+    for path in sorted((raw / 'github/benchmarks/c2db').glob('*.parquet')):
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            bank = banks['c2db'][row['uid']]
+            reference = bank['properties']['dyn_stab']
+            values = [min(vector) if all(np.isreal(vector)) else -1e-7 for vector in [row['eigenvalues'], row['frequencies']]]
+            valid = reference in ['Yes', 'No'] and all(math.isfinite(value) for value in values)
+            predicted = all(value >= -1e-7 for value in values)
+            grade = float(predicted == (reference == 'Yes')) if valid else None
+            add('c2db', row['model'], row['uid'], row, str(path.relative_to(raw)), index,
+                bank['structure'], bank['coordinate'], reference, dict(classification_agreement=grade))
+
+    filename = 'github/benchmarks/mof/classification/input.pkl'
+    bank = read_native_pickle(raw / filename).to_dict('records')
+    inputs = {row['name']: (i, row) for i, row in enumerate(bank)}
+    _check(len(inputs), len(bank), 'MLIP unique MOF input labels')
+    for path in sorted((raw / filename).parent.glob('*.pkl')):
+        if path.name == 'input.pkl':
+            continue
+        frame = read_native_pickle(path)
+        # The pickle preserves its DataFrame index, including gaps in ORBv2.
+        for index, row in zip(frame.index, frame.to_dict('records')):
+            position, entry = inputs[row['name']]
+            _check(row['class'], entry['class'], 'MLIP original adsorption class')
+            _check(native_json_value(row['structure']), native_json_value(entry['structure']), 'MLIP original MOF structure')
+            state = entry['structure'].state
+            structure = dict(atomic_numbers=state['arrays']['numbers'].tolist(), positions_angstrom=state['arrays']['positions'].tolist(),
+                cell_angstrom=state['_cellobj'].state['array'].tolist(), periodic=state['_pbc'].tolist(),
+                atom_arrays_ase_units=native_json_value({k: v for k, v in state['arrays'].items() if k not in ['numbers', 'positions']}),
+                info=native_json_value(state.get('info', {})))
+            samples = row['heat_of_adsorption']; value = -float(np.mean(samples))
+            low, high = {'General': (None, 35), 'Flue Gas': (35, 50), 'DAC': (50, 100)}[row['class']]
+            valid = math.isfinite(value) and value > 0 and row['name'] != 'MIL-96-Al'
+            grade = float(not ((low is not None and value < low) or (high is not None and value >= high))) if valid else None
+            add('mof', row['model'], row['name'], row, str(path.relative_to(raw)), index, structure,
+                dict(source_file=filename, source_row=position), row['class'], dict(classification_agreement=grade))
+
+    for path in sorted((raw / 'huggingface/vacancy_migration').rglob('*.pkl')):
+        record = read_native_pickle(path)
+        filename = re.sub(r'_x([0-9a-f]+)_', lambda match: chr(int(match[1], 16)), path.stem)
+        match = re.fullmatch(r'(.+)-(fcc|hcp)-([A-Z][a-z]?)(\d+)', filename)
+        model, lattice, element, n = match.groups()
+        task = lattice + '-' + element + n
+        add('vacancy_migration', model, task, record, str(path.relative_to(raw)), 0,
+            dict(lattice=lattice, element=element, supercell_atoms=int(n), initial_geometry_available=False),
+            dict(source_file='github/mlip_arena/tasks/vacancy_migration/input.py'), None, dict(asymmetry=record['asymmetry']))
+
+    counts.update(source_simulations=len(events), source_subjects=len({(v['family'], v['model']) for v in events.values()}),
+        source_responses=sum(len(v['metrics']) for v in events.values()),
+        source_graded=sum(value is not None and math.isfinite(value) for event in events.values() for value in event['metrics'].values()))
+    counts['source_export_aliases'] = counts['source_export_records'] - len(events)
+    return dict(events=events, counts=dict(counts))
+
+
+def _mlip_arena(directory, tables, metadata, source=None):
+    """Compare every source association, input field, native output and grade."""
+    import math
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    from .read_native_pickle import native_json_value
+
+    source = _mlip_arena_sources(directory, metadata) if source is None else source
+    grading = metadata['grading']['verifiers']['native']
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        config = (features['task_family'], features['native_model'])
+        _check(features, dict(native_model=config[1], task_family=config[0], **{k:v for k,v in parameters['subject_features'].items() if k != 'harness'}), 'MLIP recorded configuration and explicit unknowns')
+        _check(row.harness, 'MLIP Arena', 'MLIP source harness')
+        _check(row.display_name, 'MLIP Arena / '+config[1]+' / '+config[0], 'MLIP literal source label')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row,field)), True, 'MLIP no invented configuration')
+        subjects[row.subject_id] = config
+    _check(Counter(subjects.values()), Counter({(v['family'],v['model']):1 for v in source['events'].values()}), 'MLIP full configuration coverage')
+    _check(Counter(tables['responses'].response_id), Counter(tables['traces'].response_id), 'MLIP one complete trace per assessment')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, trials, checked = Counter(), Counter(), set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id]); event = source['events'][trace['record_key']]
+        metric = trace['metric']; value = event['metrics'][metric]
+        _check(subjects[row.subject_id], (event['family'],event['model']), 'MLIP response configuration')
+        expected = None if value is None or not math.isfinite(value) else float(value)
+        actual = None if pd.isna(row.response) else float(row.response)
+        # A norm computed with a different reduction can differ by one ulp.
+        if metric == 'com_drift' and expected is not None and actual is not None:
+            _check(math.isclose(actual, expected, rel_tol=1e-14, abs_tol=1e-15), True, 'MLIP native displacement norm')
+        else:
+            _check(actual, expected, 'MLIP original or deterministically reconstructed grade')
+        _check(trace['family'], event['family'], 'MLIP task family')
+        _check(trace['model'], event['model'], 'MLIP native model')
+        _check(trace['task_name'], event['task'], 'MLIP native task association')
+        if trace['source_coordinates'] != event['coordinates']:
+            raise ValueError('MLIP source coordinate mismatch: '+repr((event['family'],event['model'],event['task'],trace['source_coordinates'],event['coordinates'])))
+        _check(trace['native_record'], event['record'], 'MLIP complete unmodified native result')
+        _check(trace['input_source'], event['input_source'], 'MLIP original input provenance')
+        _check(trace['reference'], event['reference'], 'MLIP reference belongs to original task')
+        status = ('unavailable_native_grade' if value is None or math.isnan(value) else
+            'graded' if math.isfinite(value) else 'nonfinite_native_grade')
+        _check(trace['grade_status'], status, 'MLIP explicit grading availability')
+        native_value = trace['native_metric']
+        if expected is not None:
+            _check(isinstance(native_value,(int,float)) and math.isclose(native_value,expected,rel_tol=1e-14,abs_tol=1e-15), True, 'MLIP unmodified native metric')
+        else:
+            _check(native_value is None or (isinstance(native_value,dict) and 'nonfinite_float' in native_value), True, 'MLIP missing/nonfinite metric retained')
+        trials[row.subject_id,row.item_id] += 1
+        _check(row.trial,trials[row.subject_id,row.item_id], 'MLIP unique occurrence numbering')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'MLIP no invented run settings')
+        if row.item_id not in checked:
+            item = items[row.item_id]
+            _check(json.loads(item['content']), event['stimulus'], 'MLIP full input without reference/output leakage')
+            _check(item['raw_item_id'], '/'.join([event['family'],event['task'],metric]), 'MLIP original task and grading identity')
+            expected_features = dict(task_family=event['family'],native_task=event['task'],input_source=json.dumps(event['input_source'],sort_keys=True,separators=(',',':')))
+            features = _features(item['item_features'])
+            _check(features['task_family'], event['family'], 'MLIP item family')
+            _check(features['native_task'], event['task'], 'MLIP original system label')
+            _check(json.loads(features['input_source']),event['input_source'],'MLIP original input source field')
+            _check(set(features),set(expected_features),'MLIP only declared input features')
+            criterion = dict(rule=grading['metrics'][metric]['rule'],response_scale=grading['metrics'][metric]['response_scale'])
+            if event['reference'] is not None:criterion['reference_answer']=event['reference']
+            _check(json.loads(item['grading_criterion']),json.loads(canonical_grading_criterion(criterion)), 'MLIP declared scale and reference')
+            verifier=json.loads(item['verifier'])
+            _check((verifier['class'],json.loads(verifier['spec'])), ('exact_matcher',dict(source=grading['families'][event['family']]['source'],metric=metric,unit=grading['metrics'][metric]['unit'])), 'MLIP documented native verifier')
+            _check(pd.isna(item['asset_manifest']) or json.loads(item['asset_manifest']) == [], True, 'MLIP complete textual structure inputs')
+            checked.add(row.item_id)
+        seen[trace['record_key'],metric] += 1
+    _check(seen,Counter({(key,metric):1 for key,event in source['events'].items() for metric in event['metrics']}),'MLIP full native assessment census')
+    _check(checked,set(items),'MLIP no unrelated items')
+    _check(len(tables.get('assets',pd.DataFrame())),0,'MLIP no undeclared assets')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),json.loads(canonical_response_scale({'kind':'mixed'})),'MLIP metrics retain distinct scales')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -16097,7 +16336,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

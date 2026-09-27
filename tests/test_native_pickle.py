@@ -1,14 +1,16 @@
 """Exercise data fidelity and rejection of executable/invalid native containers."""
 
 import io
+import json
 import pickle
 from zipfile import ZipFile
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from measurement_db.scripts.curate_benchmarks.read_native_pickle import (
-    _DataUnpickler, _numeric_scalar, _tensor_view, read_native_pickle,
+    _DataUnpickler, _array_from_buffer, _numeric_scalar, _tensor_view, native_json_value, read_native_pickle,
 )
 
 
@@ -114,3 +116,54 @@ def test_unknown_byte_order(tmp_path):
         archive.writestr("original/byteorder", "unknown")
     with pytest.raises(ValueError, match="byte order"):
         read_native_pickle(path)
+
+
+@pytest.mark.parametrize("protocol", [4, 5])
+def test_pandas_numeric_and_object_columns_preserve_records(tmp_path, protocol):
+    frame = pd.DataFrame({"name": pd.Series(["first", "second"], dtype=object),
+        "value": [1.25, np.nan], "outputs": [np.array([1., 2.]), np.array([3.])]}, index=[0, 1])
+    frame.columns = pd.Index(frame.columns, dtype=object)
+    path = tmp_path / "native.pkl"
+    path.write_bytes(pickle.dumps(frame, protocol=protocol))
+    pd.testing.assert_frame_equal(read_native_pickle(path), frame)
+
+
+def test_scientific_records_keep_constructor_and_state_without_source_imports(tmp_path):
+    import sys
+    path = tmp_path / "record.pkl"
+    # A protocol-0 constructor and state assignment for a source-only class.
+    path.write_bytes(b"case.atoms\nAtoms\n(Voriginal\ntR(Vstate\nVpreserved\ndb.")
+    before = set(sys.modules)
+    record = read_native_pickle(path)
+    assert record.source_type == "ase.atoms.Atoms"
+    assert record.args == ("original",)
+    assert record.state == {"state": "preserved"}
+    assert not any(name.startswith("ase") for name in set(sys.modules) - before)
+
+
+@pytest.mark.parametrize("global_name", [b"pandas\nread_pickle", b"pandas.io.common\nget_handle",
+    b"ase.calculators.calculator\nCalculator", b"mlip_arena.models.externals.other\nRun"])
+def test_unreviewed_data_and_scientific_globals_fail_closed(tmp_path, global_name):
+    path = tmp_path / "unsupported.pkl"
+    path.write_bytes(b"c" + global_name + b"\n.")
+    with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+        read_native_pickle(path)
+
+
+@pytest.mark.parametrize("dtype,shape,order", [(np.dtype("O"), (1,), "C"),
+    (np.dtype("f8"), (-1,), "C"), (np.dtype("f8"), (1,), "X"), (np.dtype("f8"), (2,), "C")])
+def test_malformed_protocol_five_array_is_rejected(dtype, shape, order):
+    with pytest.raises((ValueError, pickle.UnpicklingError)):
+        _array_from_buffer(b"\0" * 8, dtype, shape, order)
+
+
+def test_scientific_json_preserves_full_values_and_explicit_nonfinite_outputs():
+    native = {"text": "complete trace\n" * 2000, "id": np.int64(2**60 + 3),
+        "outputs": np.array([np.nan, np.inf, -np.inf, 1.25]), "literal": "nan", "bytes": b"\0\xff"}
+    result = json.loads(json.dumps(native_json_value(native), allow_nan=False))
+    assert result["text"] == native["text"] and result["id"] == 2**60 + 3
+    assert result["outputs"] == [{"nonfinite_float": "nan"}, {"nonfinite_float": "inf"},
+                                  {"nonfinite_float": "-inf"}, 1.25]
+    assert result["literal"] == "nan" and result["bytes"] == {"base64": "AP8="}
+    with pytest.raises(TypeError, match="Unsupported native JSON"):
+        native_json_value(object())

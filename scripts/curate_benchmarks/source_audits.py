@@ -26,6 +26,10 @@ def source_observations(directory):
         "helm_harmbench", "helm_real_toxicity_prompts", "helm_simple_safety_tests", "helm_xstest",
     }:
         return verify_helm_upstream(directory)
+    if slug == "mlip_arena":
+        import yaml
+        from .native_result_audits import _mlip_arena_sources
+        return _mlip_arena_sources(directory, yaml.safe_load((directory / "metadata.yaml").read_text()))["counts"]
     if slug == "mlrbench":
         return verify_mlrbench_upstream(directory)
     if slug == "cellverse":
