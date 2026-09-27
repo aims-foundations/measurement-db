@@ -555,6 +555,14 @@ def verify_helm_upstream(directory, tables_directory=None):
             raise ValueError(f"HELM {identity}: differing fields {[name for name, valid in checks.items() if not valid]}")
     if seen != set(expected):
         raise ValueError(f"Missing {len(set(expected) - seen)} native HELM attempts")
+    # The shared writer numbers occurrences after canonical identity is known.
+    # Native training-trial indices remain unchanged inside the complete trace.
+    occurrences = {}
+    for row in responses:
+        key = row["subject_id"], row["item_id"], row["test_condition"]
+        occurrences.setdefault(key, []).append(row["trial"])
+    if any(sorted(values) != list(range(1, len(values) + 1)) for values in occurrences.values()):
+        raise ValueError("HELM canonical occurrence numbers are incomplete or duplicated")
     grade_total = "source_successes" if directory.name.startswith("medhelm_") or configuration.get("metric") == "exact_match" else "source_grade_sum"
     if "metric" not in configuration:
         # Different task metrics have different units; keep their totals separate.
@@ -744,6 +752,8 @@ SOURCE_AUDITS.update(dict.fromkeys([
 ], source_observations))
 
 SOURCE_AUDITS.update(dict.fromkeys(["helm_afr", "helm_cleva", "helm_thaiexam"], source_observations))
+
+SOURCE_AUDITS["legalbench"] = verify_helm_upstream
 
 SOURCE_AUDITS["mlrbench"] = source_observations
 

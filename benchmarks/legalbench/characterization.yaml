@@ -1,0 +1,54 @@
+format_version: 1
+tables:
+  traces:
+    rows: 63457
+    logical_sha256: 37ccfd86fdd7bb314f11198f649047a922d1734bf51d66d4a259df40a22c9d19
+  subjects:
+    rows: 31
+    logical_sha256: b6d6c5e9e64ffbf828cc2dc4112015648e75feedffbf54ee47abd90ac03c1d13
+  responses:
+    rows: 63457
+    logical_sha256: 58983f6e45b3a1eadb0c14a9c31ccfe1cd5bced3e38ff81135b1b0eefee10b59
+  items:
+    rows: 9393
+    logical_sha256: 7de6650905aca4ebae6e3cf8a630c897dd8c188295c37a4c4081b1428b23ff8b
+  benchmarks:
+    rows: 1
+    logical_sha256: 54a354be02630615ea575ef163c43d48a48d1995597928bd79756e7324aad918
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/lite/latest/
+    locator: All 155 original HELM Lite v1.0.0 LegalBench run exports; join native instance and training-trial identifiers,
+      retaining actual requests and complete generation results.
+    scope: Five established LegalBench task subsets. Compare every published prediction and grade with its source,
+      without new inference or regrading.
+    expected: 155
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/lite/latest/
+    locator: All 155 original HELM Lite v1.0.0 LegalBench run exports; join native instance and training-trial identifiers,
+      retaining actual requests and complete generation results.
+    scope: Five established LegalBench task subsets. Compare every published prediction and grade with its source,
+      without new inference or regrading.
+    expected: 63457
+  source_grade_sum:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/lite/latest/
+    locator: All 155 original HELM Lite v1.0.0 LegalBench run exports; join native instance and training-trial identifiers,
+      retaining actual requests and complete generation results.
+    scope: Five established LegalBench task subsets. Compare every published prediction and grade with its source,
+      without new inference or regrading.
+    expected: 33329.0
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/lite/latest/
+    locator: All 155 original HELM Lite v1.0.0 LegalBench run exports; join native instance and training-trial identifiers,
+      retaining actual requests and complete generation results.
+    scope: Five established LegalBench task subsets. Compare every published prediction and grade with its source,
+      without new inference or regrading.
+    expected: 0
