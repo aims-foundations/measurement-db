@@ -14260,6 +14260,145 @@ def _llm_survey(directory,tables,metadata,source=None):
     return dict(source_responses=len(native),source_subjects=len(subjects),source_items=len(items),**source['counts'])
 
 
+def _uncertainty_sources(directory):
+    """Read native numeric records and literal prompt declarations, independently of pandas."""
+    import ast
+    import math
+    from .read_native_pickle import read_native_pickle
+
+    repository=directory/'raw/repo'
+    constants={}
+    for name in ['prompt.py','generate_logits.py','generate_logits_chat.py']:
+        values={}
+        for node in ast.parse((repository/name).read_text()).body:
+            if isinstance(node,ast.Assign) and len(node.targets)==1 and isinstance(node.targets[0],ast.Name):
+                try:values[node.targets[0].id]=ast.literal_eval(node.value)
+                except (ValueError,TypeError):pass
+        constants[name]=values
+    banks={}
+    for path in sorted((repository/'data').glob('*.json')):
+        rows=json.loads(path.read_text());bank={row['id']:row for row in rows}
+        _check(len(bank),len(rows),'Uncertainty original question IDs are unique')
+        _check(list(bank),list(range(len(rows))),'Uncertainty native question order')
+        for row in rows:
+            _check(list(row['choices']),list('ABCDEF'),'Uncertainty original option order')
+            _check(row['answer'] in row['choices'],True,'Uncertainty reference belongs to native options')
+        banks[path.stem]=bank
+    files={};count=0;ties=0
+    for path in sorted(repository.glob('outputs*/*.pkl')):
+        _check(path.stem.endswith('_icl1'),True,'Uncertainty known source few-shot flag')
+        prefix,method=path.stem.removesuffix('_icl1').rsplit('_',1)
+        _check(method in ['base','shared','task'],True,'Uncertainty original prompt method')
+        datasets=[name for name in banks if prefix.endswith('_'+name)]
+        _check(len(datasets),1,'Uncertainty source dataset filename')
+        dataset=datasets[0];model=prefix.removesuffix('_'+dataset)
+        rows=read_native_pickle(path)
+        _check([row['id'] for row in rows],list(banks[dataset]),'Uncertainty original logit/question IDs')
+        for row in rows:
+            _check(set(row),{'id','logits_options'},'Uncertainty native record fields')
+            array=row['logits_options']
+            _check(array.shape,(6,),'Uncertainty original six logits')
+            _check(str(array.dtype),'float32','Uncertainty original logit dtype')
+            _check(all(math.isfinite(float(value)) for value in array),True,'Uncertainty finite logits')
+            maximum=max(array);ties+=int(sum(value==maximum for value in array)>1)
+        key=str(path.relative_to(repository))
+        files[key]=dict(model=model,dataset=dataset,method=method,variant=path.parent.name,rows=rows)
+        count+=len(rows)
+    return dict(banks=banks,files=files,constants=constants,counts=dict(source_responses=count,
+        source_files=len(files),source_base_questions=sum(map(len,banks.values())),source_tied_maxima=ties))
+
+
+def _uncertainty_prompt(source,dataset,qid,method):
+    bank=source['banks'][dataset];question=bank[qid];constants=source['constants']
+    def example(row,with_answer=False):
+        family=row['source'];text=''
+        if family in ['CosmosQA','HellaSwag']:text='Context: '+row['context']+'\n'
+        elif family=='Halu-OpenDialKG':text='Dialogue: '+row['context']+'\n'
+        elif family=='Halu-CNN/DailyMail':text='Document: '+row['context']+'\n'
+        else:_check(family,'MMLU','Uncertainty known native question family')
+        text+='Question: '+row['question']+'\nChoices:\n'
+        for key,value in row['choices'].items():text+=key+'. '+str(value)+'\n'
+        text+='Answer:'
+        return text+(' '+row['answer']+'\n' if with_answer else '')
+    prompts=constants['prompt.py'];header=''
+    if method=='shared':header=prompts['shared_few_prompt']
+    elif method=='task':header=json.loads(prompts['task_few_prompt'],strict=False)[question['source']]
+    ids=constants['generate_logits.py']['few_shot_exp_ids'][question['source']]
+    text=header+''.join(example(bank[key],True) for key in ids)
+    if method!='base':text+='\nNow make your best effort and select the correct answer for the following question. You only need to output the option.\n\n'
+    return text+example(question)
+
+
+def _llm_uncertainty(directory,tables,metadata,source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source=_uncertainty_sources(directory) if source is None else source
+    parameters=metadata['build']['parameters'];files=source['files'];subjects={};items={}
+    for row in tables['subjects'].itertuples():
+        features=_features(row.subject_features_extra)
+        key=(features['source_model_label'],features['input_variant'],features['prompt_method'])
+        model,variant,method=key;native=source['constants']
+        expected={k:v for k,v in parameters['subject_features'].items() if k!='harness'}
+        expected.update(source_model_label=model,input_variant=variant,prompt_method=method,
+            input_format='model_chat_template' if variant=='outputs_chat_v1' else 'plain',
+            chat_template=json.dumps('User: {prompt}\nAssistant:') if variant=='outputs_chat_v1' and 'falcon' in model else None,
+            option_token_strings=json.dumps(native['generate_logits_chat.py']['options_alt'] if variant=='outputs_chat_v1' and 'Yi' in model else native['generate_logits.py']['options']))
+        _check(features,{key:str(value) for key,value in expected.items() if value is not None},'Uncertainty exact documented model/prompt settings')
+        _check(row.harness,parameters['subject_features']['harness'],'Uncertainty harness identity')
+        _check(row.display_name,parameters['labels']['subject_prefix']+':'.join(key),'Uncertainty literal model label')
+        for field in ['provider','normalized_name','harness_version','release_date','access_date','reasoning_effort']:
+            _check(pd.isna(getattr(row,field)),True,'Uncertainty no guessed historical setting: '+field)
+        subjects[row.subject_id]=key
+    _check(Counter(subjects.values()),Counter({(v['model'],v['variant'],v['method']):1 for v in files.values()}),'Uncertainty all native model configurations')
+    prompt_cache={}
+    for row in tables['items'].itertuples():
+        dataset,qid,method=row.raw_item_id.split(':');qid=int(qid)
+        question=source['banks'][dataset][qid]
+        prompt=_uncertainty_prompt(source,dataset,qid,method)
+        _check(row.content,prompt,'Uncertainty full documented prompt and demonstrations')
+        expected=dict(dataset=dataset,prompt_method=method,
+            demonstration_ids=str(source['constants']['generate_logits.py']['few_shot_exp_ids'][question['source']]),
+            input_scope=parameters['labels']['input_scope'])
+        _check(_features(row.item_features),expected,'Uncertainty documented input scope and native demonstration IDs')
+        criterion=canonical_grading_criterion(dict(reference_answer=question['answer'],rule=metadata['grading']['rule']))
+        _check(json.loads(row.grading_criterion),json.loads(criterion),'Uncertainty exact original answer and rule')
+        judge=json.loads(row.verifier)
+        _check((judge['class'],json.loads(judge['spec'])),('exact_matcher',metadata['grading']['verifiers']['option_argmax']),'Uncertainty original first-maximum matcher')
+        _check(pd.isna(row.asset_manifest),True,'Uncertainty no invented input assets')
+        items[row.item_id]=(dataset,method,prompt,question['answer'])
+        prompt_cache[(dataset,qid,method)]=prompt
+    _check(Counter(tables['traces'].response_id),Counter(tables['responses'].response_id),'Uncertainty exact response/trace relationship')
+    traces=tables['traces'].set_index('response_id').trace.to_dict();seen=Counter();trial_counts=Counter();used_items=set()
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);filename=trace['source_file'];batch=files[filename]
+        index=trace['source_position'];record=batch['rows'][index];qid=record['id'];values=record['logits_options']
+        option='ABCDEF'[max(range(6),key=lambda i:values[i])]
+        expected=dict(source_file=filename,source_position=index,source_item_id=qid,
+            logits_options=values.tolist(),logits_dtype=str(values.dtype),predicted_option=option)
+        _check(trace,expected,'Uncertainty full original numeric vector, ID and source position')
+        dataset,method,variant=batch['dataset'],batch['method'],batch['variant']
+        question=source['banks'][dataset][qid];cache_key=(dataset,qid,method)
+        if cache_key not in prompt_cache:prompt_cache[cache_key]=_uncertainty_prompt(source,dataset,qid,method)
+        _check(items[row.item_id],(dataset,method,prompt_cache[cache_key],question['answer']),'Uncertainty correct native prompt/grade association')
+        _check(subjects[row.subject_id],(batch['model'],variant,method),'Uncertainty correct source model configuration')
+        _check(row.response,float(option==question['answer']),'Uncertainty native first-argmax exact match')
+        _check(row.test_condition,f'dataset={dataset};prompt={method};variant={variant.removeprefix("outputs_")}','Uncertainty original condition')
+        trial_key=(row.subject_id,row.item_id,row.test_condition);trial_counts[trial_key]+=1
+        _check(row.trial,trial_counts[trial_key],'Uncertainty preserved occurrences after canonical item aliases')
+        _check(pd.isna(row.interactors),True,'Uncertainty no invented interactor')
+        seen[(filename,index)]+=1;used_items.add(row.item_id)
+    if 'selected_positions' in source:
+        wanted={(filename,index) for filename,positions in source['selected_positions'].items() for index in positions}
+        _check(set(seen),wanted,'Uncertainty selected native observation coverage')
+    else:
+        _check(len(seen),sum(len(batch['rows']) for batch in files.values()),'Uncertainty complete native observation coverage')
+    _check(all(value==1 for value in seen.values()),True,'Uncertainty no duplicated native result')
+    _check(used_items,set(items),'Uncertainty all and only evaluated prompt definitions')
+    _check(len(tables.get('assets',[])),0,'Uncertainty no unassociated assets')
+    return dict(**source['counts'],source_subjects=len(subjects),source_items=len(items),
+        canonical_alias_occurrences=sum(count-1 for count in trial_counts.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14274,7 +14413,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
