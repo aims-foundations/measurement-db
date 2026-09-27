@@ -899,3 +899,5 @@ SOURCE_AUDITS["liveaopsbench"] = verify_native_results
 SOURCE_AUDITS["livebench"] = verify_native_results
 
 SOURCE_AUDITS["llm4ir"] = verify_native_results
+
+SOURCE_AUDITS["llm_bp_tag"] = verify_native_results

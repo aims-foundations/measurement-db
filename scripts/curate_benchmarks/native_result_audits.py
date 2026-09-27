@@ -14003,6 +14003,127 @@ def _llm4ir(directory, tables, metadata, source=None):
     return counts
 
 
+def _llm_bp_tag_source_records(directory, metadata):
+    """Read every test position with native containers and stdlib CSV/regex parsing."""
+    import csv
+    import re
+    import unicodedata
+    import numpy as np
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+
+    parameters = metadata['build']['parameters']
+    layout, prompt = parameters['layout'], parameters['prompt']
+    native, targets, occurrences = {}, {}, Counter()
+    for dataset, spec in parameters.items():
+        if spec.get('role') != 'dataset':
+            continue
+        with (directory/'raw'/layout['categories'].format(dataset=dataset)).open() as stream:
+            rows = list(csv.reader(stream)); labels = [row[0] for row in rows[1:]]
+        if spec['format'] == 'csv':
+            with (directory/'raw'/spec['nodes']).open() as stream:
+                nodes = list(csv.DictReader(stream))
+            ids = [int(row['node_id']) for row in nodes]
+            _check(ids, list(range(len(nodes))), 'LLM-BP CSV/graph node ordering')
+            texts = [row['raw_text'] for row in nodes]
+            golds = [int(row['label']) for row in nodes]
+        else:
+            graph = read_native_pickle(directory/'raw'/layout['graph'].format(dataset=dataset))
+            mapping = graph.state['_store'].state['_mapping']
+            texts = read_native_pickle(directory/'raw'/layout['texts'].format(dataset=dataset))
+            golds = mapping['y'].tolist()
+            ids = (np.flatnonzero(mapping['test_mask']).tolist() if spec['test_field']=='test_mask'
+                   else list(map(int, mapping['test_id'])))
+        _check(len(texts),len(golds),'LLM-BP complete node labels/texts')
+        _check(len(ids),len(set(ids)),'LLM-BP distinct test IDs')
+        _check(all(0<=index<len(texts) for index in ids),True,'LLM-BP valid test indices')
+        filename=layout['results'].format(dataset=dataset)
+        messages=read_native_pickle(directory/'raw'/filename)
+        _check(len(messages),len(ids),'LLM-BP exact source/prediction cardinality')
+        for position, (node_id,message) in enumerate(zip(ids,messages,strict=True)):
+            state=dict(message.state)
+            state['__pydantic_fields_set__']=sorted(state['__pydantic_fields_set__'])
+            output=state['__dict__']['content']
+            _check(isinstance(output,str),True,'LLM-BP original parser text input')
+            prediction=-1
+            for label_index,label in enumerate(labels):
+                if re.search(re.sub(r'\(.*?\)','',label),output,re.IGNORECASE):
+                    if prediction==-1: prediction=label_index
+                    else: prediction=-2;break
+            gold=golds[node_id]
+            _check(0<=gold<len(labels),True,'LLM-BP original reference index')
+            text=texts[node_id][:int(prompt['max_chars'])]
+            content=json.dumps([dict(role='system',content=prompt['system']),dict(role='user',content=
+                f'We have {spec["description"]} from the following {len(labels)} categories: {labels}\n'
+                f'The text is as follows:\n{text}\nPlease tell which category the text belongs to:')],ensure_ascii=False)
+            identity=(dataset,unicodedata.normalize('NFC',content).strip(),labels[gold])
+            alias=f'{dataset}::node{node_id}'
+            target=targets.setdefault(identity,dict(raw_item_id=alias,content=content,dataset=dataset,reference=labels[gold]))
+            occurrences[identity]+=1
+            key=filename+'#'+str(position)
+            _check(key not in native,True,'LLM-BP unique native attempt')
+            native[key]=dict(target=target,grade=float(prediction==gold),trial=occurrences[identity],
+                condition=dict(dataset=dataset,native_trial=0,grading='original_category_parser'),
+                trace=dict(source_file=filename,source_position=position,dataset=dataset,node_id=node_id,native_trial=0,
+                    message=state,parsed_category_index=prediction,reference_category_index=gold))
+    unattributed=sum(len(read_native_pickle(path)) for path in sorted((directory/'raw/results').glob('*/4o_mini/agenth/*.pkl')))
+    return dict(native=native,targets=list(targets.values()),unattributed=unattributed)
+
+
+def _llm_bp_tag(directory,tables,metadata,source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source=_llm_bp_tag_source_records(directory,metadata) if source is None else source
+    native=source['native'];parameters=metadata['build']['parameters']
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])),'LLM-BP explicit binary grading')
+    _check(len(tables['subjects']),1,'LLM-BP one released classification configuration')
+    subject=tables['subjects'].iloc[0]
+    _check(subject.display_name,parameters['subject']['label'],'LLM-BP literal source engine label')
+    _check(subject.harness,parameters['subject_features']['harness'],'LLM-BP original classification harness')
+    _check(_features(subject.subject_features_extra),{k:v for k,v in parameters['subject_features'].items() if k!='harness'},
+        'LLM-BP no invented historical request settings')
+    for field in ['provider','normalized_name','harness_version','reasoning_effort','release_date','access_date']:
+        _check(pd.isna(getattr(subject,field)),True,'LLM-BP unknown endpoint setting: '+field)
+    targets={row['raw_item_id']:row for row in source['targets']}
+    _check(len(tables['items']),len(targets),'LLM-BP complete canonical input/grading definitions')
+    items={}
+    for row in tables['items'].itertuples():
+        target=targets[row.raw_item_id]
+        _check(row.content,target['content'],'LLM-BP full template/categories and actual truncated input')
+        _check(_features(row.item_features),dict(graph_dataset=target['dataset']),'LLM-BP graph provenance')
+        verifier=metadata['grading']['verifiers']['classification']
+        criterion=dict(reference_answer=target['reference'],rule=verifier['rule'])
+        _check(json.loads(row.grading_criterion),json.loads(canonical_grading_criterion(criterion)),
+            'LLM-BP original reference and grading rule')
+        judge=json.loads(row.verifier)
+        _check((judge['class'],json.loads(judge['spec'])),('judge',verifier),'LLM-BP native category parser')
+        _check(pd.isna(row.asset_manifest),True,'LLM-BP no invented graph/image input')
+        items[row.item_id]=row.raw_item_id
+    _check(Counter(items.values()),Counter({key:1 for key in targets}),'LLM-BP unique canonical item coverage')
+    _check(Counter(tables['traces'].response_id),Counter(tables['responses'].response_id),'LLM-BP exact trace associations')
+    traces=tables['traces'].set_index('response_id').trace.to_dict();seen=Counter()
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);key=trace['source_file']+'#'+str(trace['source_position'])
+        original=native[key]
+        _check(trace,original['trace'],'LLM-BP unchanged full native message and node positions')
+        _check(row.subject_id,subject.subject_id,'LLM-BP classification model association')
+        _check(items[row.item_id],original['target']['raw_item_id'],'LLM-BP original node input/grading association')
+        _check(row.response,original['grade'],'LLM-BP native parser result')
+        _check(row.trial,original['trial'],'LLM-BP duplicate-input occurrence number')
+        _check(json.loads(row.test_condition),original['condition'],'LLM-BP original dataset and trial')
+        _check(pd.isna(row.interactors),True,'LLM-BP no invented interactors')
+        seen[key]+=1
+    _check(seen,Counter({key:1 for key in native}),'LLM-BP complete native prediction coverage')
+    _check(len(tables.get('assets',[])),0,'LLM-BP no unassociated assets')
+    counts=dict(source_responses=len(native),source_subjects=1,source_items=len(targets),
+        source_graph_datasets=len({r['trace']['dataset'] for r in native.values()}),
+        source_raw_only_homophily_messages=source['unattributed'],
+        source_ambiguous_classifications=sum(r['trace']['parsed_category_index']==-2 for r in native.values()),
+        source_unmatched_classifications=sum(r['trace']['parsed_category_index']==-1 for r in native.values()))
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14017,7 +14138,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
