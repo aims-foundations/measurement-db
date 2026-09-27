@@ -15089,6 +15089,137 @@ def _medagentboard(directory, tables, metadata, source=None):
         source_unavailable_grades=7447, source_incomplete_logs=200)
 
 
+def _medarabiq_sources(directory, metadata):
+    import math
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    banks = {path.parent.name: pq.read_table(path).to_pylist()
+             for path in (raw / 'mcq_bank').glob('*/data.parquet')}
+    qa_banks = {path.parent.name: pq.read_table(path).to_pylist()
+                for path in (raw / 'qa_bank').glob('*/data.parquet')}
+    _check(banks, qa_banks, 'The two released task banks contain the same original rows')
+    observations, definitions, aliases, configurations = {}, {}, {}, {}
+    metric = "acc:logprob_normalization=LogProbCharNorm(name='norm', ignore_first_space=False)"
+    letters = ['أ', 'ب', 'ج', 'د', 'هـ', 'و']
+    aggregates, choice_correct = 0, 0
+    for path in sorted((raw / 'details').rglob('*.parquet')):
+        relative = path.relative_to(raw / 'details')
+        subset, run = path.parent.name, path.stem
+        model = '/'.join(relative.parts[:-2])
+        config_file = model + '/results_' + run + '.json'
+        config = json.loads((raw / 'configurations' / config_file).read_text())
+        subject = model, run
+        configurations[subject] = config['config_general']
+        _check(configurations[subject]['model_name'], model, 'Recorded model and result directory agree')
+        protocol = 'multiple_choice' if subset in ['fib_with_choices', 'mcq_bias', 'mcq_knowledge'] else 'open_ended'
+        expected_task = ('qimma-MedArabiQ:' if protocol == 'multiple_choice' else 'qimma-MedArabicQ-QA:') + subset + '|0'
+        scores = {}
+        for position, row in enumerate(pq.read_table(path).to_pylist()):
+            doc, response = row['doc'], row['model_response']
+            source_id = str(doc['id'])
+            bank = banks[subset][int(source_id)]
+            _check(doc['query'], bank['prompt'], 'Original source position and exact prompt correspondence')
+            _check(doc['task_name'], expected_task, 'Recorded task and result path correspondence')
+            expected_choices = letters[:len(bank['choices'])] if protocol == 'multiple_choice' else [bank['choices']]
+            _check(doc['choices'], expected_choices, 'Exact native option/reference representation')
+            _check(doc['gold_index'], bank['index'] if protocol == 'multiple_choice' else 0, 'Original gold index')
+            reference = json.dumps(doc['choices'][doc['gold_index']], ensure_ascii=False)
+            item = subset, doc['query'], reference
+            definitions[item] = dict(subset=subset, query=doc['query'], reference=reference, protocol=protocol)
+            aliases.setdefault(item, set()).add(subset + '/' + source_id)
+            primary = metric if protocol == 'multiple_choice' else 'BERTScore-F'
+            grade = row['metric'][primary]
+            _check(math.isfinite(grade), True, 'Finite native primary assessment')
+            if protocol == 'multiple_choice':
+                normalized = [value / len(choice) for value, choice in zip(response['logprobs'], doc['choices'], strict=True)]
+                _check(all(math.isfinite(value) for value in normalized), True, 'Finite native log-probabilities')
+                best = max(range(len(normalized)), key=normalized.__getitem__)
+                _check(grade, int(best == doc['gold_index']), 'Independent native first-argmax grading')
+                choice_correct += grade
+            for name, value in row['metric'].items():
+                if isinstance(value, (int, float)):
+                    scores.setdefault(name, []).append(value)
+                else:
+                    _check(name in ['bleu', 'chrf++'], True, 'Known deferred corpus metric')
+                    _check(set(value), {'golds', 'preds'}, 'Corpus input pairs are not numerical item grades')
+            key = str(relative), position
+            _check(key not in observations, True, 'Unique original source coordinate')
+            observations[key] = dict(subject=subject, item=item, grade=grade,
+                trace=dict(source_file=str(relative), source_row=position, configuration_file=config_file,
+                    source_record=row, source_configuration=config['config_general'], reference_record=bank))
+        for name, values in scores.items():
+            _check(math.isclose(sum(values) / len(values), config['results'][expected_task][name], abs_tol=1e-10),
+                   True, 'Every saved numeric metric mean matches the published run summary')
+            aggregates += 1
+    _check((len(observations), len(definitions), len(configurations)), (40419, 497, 81), 'Complete original release census')
+    return dict(observations=observations, definitions=definitions, aliases=aliases, configurations=configurations,
+        counts=dict(source_responses=40419, source_subjects=81, source_model_labels=80, source_items=497,
+            source_task_positions=499, source_duplicated_bank_positions=2, source_repeated_task_occurrences=162,
+            source_multiple_choice_grades=24219,
+            source_multiple_choice_correct=int(choice_correct), source_cached_bertscore_f1=16200,
+            source_verified_metric_means=aggregates))
+
+
+def _medarabiq(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _medarabiq_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_model_label'], features['source_run']
+        expected = dict(parameters['subject_features'], source_model_label=key[0], source_run=key[1],
+                        recorded_configuration=source['configurations'][key])
+        expected.pop('harness')
+        _check(features, canonicalize_features(expected), 'Complete recorded model and run configuration')
+        _check(row.display_name, 'QIMMA / ' + key[0], 'Literal recorded model label')
+        _check(row.harness, 'QIMMA_LightEval', 'Recorded evaluation harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented historical attribute: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'All 81 recorded configurations exactly once')
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        criterion = json.loads(row.grading_criterion)
+        key = features['task_family'], row.content, criterion['reference_answer']
+        definition = source['definitions'][key]
+        _check(row.content, definition['query'], 'Exact full native text prompt')
+        _check(features, dict(parameters['item_features'], task_family=definition['subset']), 'Native task-family attributes without position-dependent identity')
+        _check(row.raw_item_id in source['aliases'][key], True, 'Retained source item alias')
+        protocol = metadata['grading']['verifiers'][definition['protocol']]
+        expected = canonical_grading_criterion(dict(reference_answer=definition['reference'], rule=protocol['rule'], response_scale=protocol['response_scale']))
+        _check(criterion, json.loads(expected), 'Exact reference, native primary metric and scale')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Deterministic native metric type')
+        _check(json.loads(verifier['spec']), protocol, 'Complete documented native metric procedure')
+        _check(pd.isna(row.asset_manifest), True, 'No invented input assets')
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source['definitions']}), 'Deduplicate the two repeated bank entries by content and grading')
+    _check(len(tables.get('assets', [])), 0, 'No fabricated image assets')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'One complete trace per source observation')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, occurrences = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        native = source['observations'][key]
+        _check(trace, native['trace'], 'Every original prompt, output, token array, metric, reference and setting')
+        _check((subjects[row.subject_id], items[row.item_id]), (native['subject'], native['item']), 'Exact native model/task association')
+        _check(float(row.response), float(native['grade']), 'Unmodified native primary score')
+        pair = row.subject_id, row.item_id
+        occurrences[pair] += 1
+        _check(row.trial, occurrences[pair], 'Repeated source positions remain separate ordered occurrences')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented response setting')
+        seen[key] += 1
+    expected = source.get('selected', source['observations'])
+    _check(seen, Counter({key: 1 for key in expected}), 'Every recorded source row exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -15104,7 +15235,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
