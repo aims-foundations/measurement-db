@@ -15814,6 +15814,274 @@ def _mind2web(directory, tables, metadata, source=None):
         source_original_ranking_actions=source["total_ranked_actions"],source_original_candidate_scores=source["total_candidate_scores"])
 
 
+def _mj_bench_sources(directory, metadata):
+    import hashlib
+    from collections import defaultdict
+    from io import BytesIO
+    import re
+    import tarfile
+    from zipfile import ZipFile
+    import pyarrow.parquet as pq
+    from PIL import Image
+
+    raw = Path(directory) / 'raw'
+    parameters = metadata['build']['parameters']
+    _check(parameters['image_suffix_aliases'], {'.jpeg': '.jpg', '.JPG': '.jpg'}, 'MJ original JPEG filename aliases')
+    score_models = {'clipscore_v2', 'pickscore_v1', 'hps_v2.1', 'aesthetics', 'blipscore', 'ImageReward'}
+    _check(set(parameters['score_models']), score_models, 'MJ original scalar model fields')
+    image_names, image_variants, hf_rows = {}, defaultdict(set), []
+    media = {}
+    for path in sorted((raw / 'tasks/data').glob('*.parquet')):
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            coordinate = dict(source_file=str(path.relative_to(raw)), source_row=index)
+            image_records = []
+            for role in ['image0', 'image1']:
+                image = row[role]
+                digest = hashlib.sha256(image['bytes']).hexdigest()
+                image_variants[image['path']].add(digest)
+                image_records.append((image['path'], digest))
+                with Image.open(BytesIO(image['bytes'])) as opened:
+                    media[digest] = 'image/jpeg' if opened.format == 'MPO' else Image.MIME[opened.format]
+            hf_rows.append(dict(caption=row['caption'], label=str(row['label']), info=row['info'],
+                split=path.stem, images=image_records, coordinate=coordinate))
+    for side in range(2):
+        for row in hf_rows:
+            name, digest = row['images'][side]
+            if len(image_variants[name]) == 1:
+                image_names.setdefault(name, dict(sha256=digest, coordinate=dict(**row['coordinate'], role='image'+str(side))))
+
+    # The native Pick-a-Pic importer saves the RGB-decoded input as default JPEG.
+    # HPDv2 and ImageReward use their original image bytes. Confirm every overlap.
+    recovered = []
+    path = raw / parameters['layout']['pickapic']
+    for side in range(2):
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            original = row['jpg_'+str(side)]
+            with Image.open(BytesIO(original)) as opened:
+                output = BytesIO(); opened.convert('RGB').save(output, format='JPEG')
+            recovered.append((row['image_'+str(side)+'_uid']+'.jpg', output.getvalue(),
+                dict(source_file=str(path.relative_to(raw)), source_row=index, role='jpg_'+str(side),
+                     transformation='RGB conversion and default JPEG serialization', method_source='author/get_rm_score.py',
+                     source_sha256=hashlib.sha256(original).hexdigest())))
+    path = raw / parameters['layout']['hpdv2']
+    with tarfile.open(path) as archive:
+        for member in archive.getmembers():
+            if member.isfile() and member.name.lower().endswith('.jpg'):
+                recovered.append((Path(member.name).name, archive.extractfile(member).read(),
+                    dict(source_file=str(path.relative_to(raw)), member=member.name)))
+    for path in sorted((raw / 'imagereward/images/test').glob('*.zip')):
+        with ZipFile(path) as archive:
+            for member in archive.infolist():
+                if not member.is_dir() and member.filename.lower().endswith('.webp'):
+                    recovered.append((Path(member.filename).name, archive.read(member),
+                        dict(source_file=str(path.relative_to(raw)), member=member.filename)))
+    for name, payload, coordinate in recovered:
+        digest = hashlib.sha256(payload).hexdigest()
+        if name in image_names:
+            _check(image_names[name]['sha256'], digest, 'MJ recovered image matches original published cache')
+        else:
+            image_names[name] = dict(sha256=digest, coordinate=coordinate)
+        with Image.open(BytesIO(payload)) as opened:
+            media[digest] = 'image/jpeg' if opened.format == 'MPO' else Image.MIME[opened.format]
+    del recovered
+
+    definitions = {}
+    for row in hf_rows:
+        image0, image1 = row['images']
+        key = (row['caption'], row['info'], image0[0]) if row['split'] == 'bias' else (
+            row['caption'], image0[0], image1[0], row['label'])
+        coordinate = dict(**row['coordinate'], images={role: dict(**row['coordinate'], role=role) for role in ['image0', 'image1']})
+        if key in definitions:
+            _check(definitions[key]['images'], row['images'], 'MJ duplicate task has identical image bytes')
+            definitions[key]['coordinates'].append(coordinate)
+        else:
+            definitions[key] = dict(images=row['images'], coordinates=[coordinate])
+    paths = sorted((raw / 'author/alignment/benchmark').rglob('*.json'))
+    paths += sorted((raw / 'author/artifacts').rglob('captions*.json'))
+    paths += [raw / 'author/safety/nsfw/captions_nsfw.json']
+    for path in paths:
+        for index, row in enumerate(json.loads(path.read_text())):
+            if 'image0' in row:
+                pairs, label = [(row['image0'], row['image1'])], str(row['label'])
+            else:
+                label = {1: '0', 0: '1', .5: 'tie'}[row['label_0']]
+                pairs = [(row['sharp_image'], row[variant]) for variant in ['motion_blur_image', 'defocused_blur_image']] if 'sharp_image' in row else [(row['image_0'], row['image_1'])]
+            for left, right in pairs:
+                names = [str(Path(name).with_suffix('.jpg')) if Path(name).suffix in {'.jpeg', '.JPG'} else name for name in [left, right]]
+                if any(name not in image_names for name in names):
+                    continue
+                images = [(name, image_names[name]['sha256']) for name in names]
+                key = row['caption'], *names, label
+                coordinate = dict(source_file=str(path.relative_to(raw)), source_row=index,
+                    images={'image'+str(side): image_names[name]['coordinate'] for side,name in enumerate(names)})
+                if key in definitions:
+                    _check(definitions[key]['images'], images, 'MJ earlier annotation image correspondence')
+                    definitions[key]['coordinates'].append(coordinate)
+                else:
+                    definitions[key] = dict(images=images, coordinates=[coordinate])
+
+    groups, skipped, total = {}, 0, 0
+    paths = set()
+    for prefix in ['author', 'official']:
+        for pattern in ['personal/result/**/*.json', 'bias/new_bias*.json', 'bias/new_bias/*.json']:
+            paths.update((raw/prefix).glob(pattern))
+    for pattern in ['result/**/*.json', 'closesource_result/**/*.json', 'online_result/**/*.json', 'backup/bias_dataset.json']:
+        paths.update((raw/'author').glob(pattern))
+    for path in sorted(paths):
+        rows = json.loads(path.read_text())
+        columns = set().union(*(row.keys() for row in rows))
+        if 'ranking_id' in columns:
+            skipped += len(rows)
+            continue
+        wide = {'images_dir', 'ImageReward'}.issubset(columns)
+        stem = path.stem
+        suffix = re.search(r'_(number|narrative)_scale([0-9]+)$', stem)
+        closed = stem.endswith('_alignment_number10')
+        target = stem.split('bias_dataset_', 1)[1] if 'bias_dataset_' in stem else None
+        for index, row in enumerate(rows):
+            models = sorted((score_models | ({target} if target else set())).intersection(row)) if wide else [
+                stem[:suffix.start()] if suffix else stem[:-len('_alignment_number10')] if closed else path.parent.name]
+            for model in models:
+                if wide:
+                    mode = 'single_image'
+                    style = 'narrative' if stem.startswith('narrative_') else 'number'
+                    scale = '10' if stem.startswith('scale_10_') else 'not_recorded'
+                    dimension = 'bias'
+                    output = dict(rating=row[model])
+                    if model == target: output['analysis'] = row.get('analysis')
+                    column = model
+                else:
+                    mode = 'multi_image' if 'vlm_pred' in columns else 'single_image' if {'output_0', 'vlm_output'}.intersection(columns) else 'not_recorded'
+                    style = suffix[1] if suffix else 'number' if closed else 'not_recorded'
+                    scale = suffix[2] if suffix else '10' if closed else 'not_recorded'
+                    dimension = next((d for d in ['alignment', 'artifacts', 'safety', 'bias'] if d in path.parts), None)
+                    if 'images_dir' in columns: dimension = 'bias'
+                    if dimension is None:
+                        legacy = re.sub(r'_?0\.0$', '', stem).lower()
+                        dimension = 'safety' if legacy in {'nsfw', 'toxic'} else 'artifacts'
+                        _check(legacy in {'nsfw', 'toxic', 'blur', 'human', 'huamn', 'mpii', 'object_indoor'}, True, 'MJ known legacy source family')
+                    fields = ['vlm_output'] if 'vlm_output' in columns else ['output_0', 'output_1'] if 'output_0' in columns else ['output'] if 'output' in columns else ['scores'] if 'scores' in columns else ['score_0', 'score_1']
+                    output = {field: row.get(field) for field in fields}
+                    column = 'score' if dimension == 'bias' else None
+                if model in score_models: mode, style, scale = 'single_image', 'scalar', 'not_applicable'
+                configuration = model, mode, style, scale
+                if 'images_dir' in row:
+                    task = row['prompt'], row['demographic'], Path(row['images_dir']).name
+                    preference = None
+                else:
+                    if 'image_0_uid' in row: fields = 'image_0_uid', 'image_1_uid'
+                    elif 'image_0_path' in row: fields = 'image_0_path', 'image_1_path'
+                    elif 'sharp_image' in row: fields = 'sharp_image', 'motion_blur_image'
+                    else: fields = 'sharp_image_path', 'motion_blur_image_path'
+                    names = [Path(str(row[field])).name for field in fields]
+                    names = [str(Path(name).with_suffix('.jpg')) if Path(name).suffix in {'.jpeg', '.JPG'} else name for name in names]
+                    task = row['caption'], *names, str(row['label'])
+                    value = str(row.get('vlm_pred') if 'vlm_pred' in row else row.get('pred')).strip()
+                    if 'online_result' in path.parts: preference = {'1': '0', '2': '1', '0': 'tie'}.get(value)
+                    elif 'vlm_pred' in columns: preference = {'0': '0', '1': '1', '-1': 'tie', 'tie': 'tie'}.get(value)
+                    else: preference = {'0': '0', '1': '1', 'tie': 'tie'}.get(value)
+                _check(task in definitions, True, 'MJ every released observation has a full original input')
+                key = (configuration, dimension, task, json.dumps(output, sort_keys=True, ensure_ascii=False, allow_nan=False))
+                if key not in groups:
+                    groups[key] = dict(configuration=configuration, dimension=dimension, task=task, output=output,
+                        assessments=[], preferences=set(), definition=definitions[task])
+                groups[key]['assessments'].append(dict(source_file=str(path.relative_to(raw)), source_row=index,
+                    rating_column=column, native_record=row))
+                if preference is not None: groups[key]['preferences'].add(preference)
+                total += 1
+    return dict(groups=groups, media=media, source_occurrences=total, outside_mj_development_rows=skipped)
+
+
+def _mj_bench(directory, tables, metadata, source=None):
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _mj_bench_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'MJ declared binary agreement scale')
+    configurations = {key[0] for key in source['groups']}
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        config = tuple(features[key] for key in ['source_model', 'input_mode', 'response_style', 'declared_scale'])
+        _check(config in configurations, True, 'MJ original model/input/rating configuration')
+        _check(row.display_name, 'MJ-Bench / '+' / '.join(config), 'MJ literal released subject label')
+        _check(row.harness, 'MJ-Bench', 'MJ source harness')
+        _check(features, dict(source_model=config[0], input_mode=config[1], response_style=config[2], declared_scale=config[3], historical_inference_settings='not_recorded', historical_model_revision='not_recorded'), 'MJ complete source configuration')
+        for name in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row,name)), True, 'MJ no invented model setting')
+        subjects[row.subject_id] = config
+    _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), 'MJ every released configuration once')
+    _check(Counter(tables['responses'].response_id), Counter(tables['traces'].response_id), 'MJ complete trace coverage')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    for asset_id, row in assets.items():
+        _check(asset_id, hashlib.sha256(row['data']).hexdigest(), 'MJ complete original asset bytes')
+        _check(row['byte_size'], len(row['data']), 'MJ exact asset size')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, checked_items, item_keys, used_assets, trials = Counter(), set(), {}, set(), Counter()
+    grade_counts = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        config = subjects[row.subject_id]
+        task = tuple(json.loads(trace['input_key']))
+        features = _features(items[row.item_id]['item_features'])
+        dimension = features['dimension']
+        key = config, dimension, task, json.dumps(trace['model_output'], sort_keys=True, ensure_ascii=False, allow_nan=False)
+        original = source['groups'][key]
+        _check(trace['subject_key'], json.dumps(list(config),ensure_ascii=False), 'MJ response associated with its source subject')
+        _check(Counter(json.dumps(x,sort_keys=True,ensure_ascii=False) for x in trace['source_assessments']), Counter(json.dumps(x,sort_keys=True,ensure_ascii=False) for x in original['assessments']), 'MJ every complete native export alias')
+        _check(Counter(json.dumps(x,sort_keys=True) for x in trace['task_coordinates']), Counter(json.dumps(x,sort_keys=True) for x in original['definition']['coordinates']), 'MJ exact historical task and image-source provenance')
+        preferences = sorted(original['preferences'])
+        _check(trace['reported_preferences'], preferences, 'MJ original valid preferences, with conflicts preserved')
+        grade = None if dimension == 'bias' or len(preferences) != 1 else float(preferences[0] == task[3])
+        status = 'population_metric_only' if dimension == 'bias' else 'unavailable_preference' if not preferences else 'conflicting_released_preferences' if len(preferences)>1 else 'recorded_preference_agreement'
+        _check(None if pd.isna(row.response) else row.response, grade, 'MJ original preference agreement without invented bias grades')
+        _check(trace['grade_status'], status, 'MJ explicit unavailable/conflicting grading')
+        image_records = original['definition']['images'][:1 if dimension == 'bias' else 2]
+        _check((trace['image0_sha256'], trace['image1_sha256']), (image_records[0][1], None if dimension=='bias' else image_records[1][1]), 'MJ complete image order')
+        trials[row.subject_id,row.item_id] += 1
+        _check(row.trial, trials[row.subject_id,row.item_id], 'MJ occurrence indexing after export deduplication')
+        _check(pd.isna(row.interactors) and pd.isna(row.test_condition), True, 'MJ no invented runtime conditions')
+        item_key = task, dimension, config[1:]
+        if row.item_id in item_keys: _check(item_keys[row.item_id], item_key, 'MJ consistent task/protocol identity')
+        item_keys[row.item_id] = item_key
+        if row.item_id not in checked_items:
+            item = items[row.item_id]
+            _check(item['raw_item_id'], hashlib.sha256(json.dumps(list(task),ensure_ascii=False).encode()).hexdigest(), 'MJ stable original input identifier')
+            _check(features, dict(dimension=dimension,input_mode=config[1],response_style=config[2],declared_scale=config[3],input_scope=parameters['labels']['input_scope']), 'MJ explicit input/rating protocol')
+            links = json.loads(item['asset_manifest'])
+            _check(len(links), len(image_records), 'MJ every input image, with bias packaging duplicate removed')
+            elements = [dict(content_type='text/plain', text=task[0])]
+            for side, ((name,digest), link) in enumerate(zip(image_records,links)):
+                path = 'image'+str(side)+'/'+name
+                mime = source['media'][digest]
+                _check(link,dict(asset_id=digest,path=path,media_type=mime,role='input',ordinal=side+1),'MJ original image-byte association')
+                _check(digest in assets,True,'MJ full asset present')
+                used_assets.add(digest)
+                elements.append(dict(content_type=mime,location=path))
+            prompt = Path(directory)/'raw/author/prompt_template'/('prompts_'+config[1])/(dimension+'_'+config[1].removesuffix('_image')+'_'+config[2]+'_scale'+config[3]+'.txt')
+            declared = dict(source_file=str(prompt.relative_to(Path(directory)/'raw')),template=prompt.read_text(),historical_execution_revision='not_recorded') if prompt.is_file() else None
+            _check(json.loads(item['content']),dict(multimedia_elements=elements,published_prompt_template=declared),'MJ full caption and images, with template provenance separate')
+            kind = 'bias' if dimension=='bias' else 'preference'
+            criterion = dict(rule=metadata['grading']['verifiers']['bias']['rule']) if kind=='bias' else dict(reference_answer=task[3],rule=metadata['grading']['rule'])
+            _check(json.loads(item['grading_criterion']),json.loads(canonical_grading_criterion(criterion)),'MJ historical grading reference')
+            verifier=json.loads(item['verifier'])
+            _check((verifier['class'],json.loads(verifier['spec'])),('exact_matcher',metadata['grading']['verifiers'][kind]),'MJ recorded judge output is scored by deterministic comparison')
+            checked_items.add(row.item_id)
+        seen[key] += 1
+        grade_counts[status] += 1
+    _check(seen,Counter({key:1 for key in source['groups']}),'MJ every distinct released observation once')
+    _check(checked_items,set(items),'MJ no missing or unobserved item')
+    _check(len(set(item_keys.values())),len(items),'MJ no duplicated task/protocol definitions')
+    _check(used_assets,set(assets),'MJ no missing or unrelated asset')
+    return dict(source_responses=len(seen),source_subjects=len(subjects),source_items=len(items),source_assets=len(assets),
+        source_export_occurrences=source['source_occurrences'],source_development_rows_excluded=source['outside_mj_development_rows'],
+        source_graded=grade_counts['recorded_preference_agreement'],source_bias_ratings=grade_counts['population_metric_only'],
+        source_unavailable_preferences=grade_counts['unavailable_preference'],source_conflicting_preferences=grade_counts['conflicting_released_preferences'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -15829,7 +16097,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

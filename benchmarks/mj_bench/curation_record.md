@@ -1,0 +1,3 @@
+- Source: original four-perspective MJ-Bench judge exports, task annotations and image collections; all source revisions are pinned in metadata.
+- Transformation: preserve 210,965 observations across 82 recorded configurations, 27,054 task/protocol definitions and 5,241 image assets. Restore 54 historical alignment pairs; retain complete outputs and all duplicate-export provenance.
+- Limits: 83,003 bias ratings and 23,653 unavailable preferences remain ungraded. Historical execution IDs/settings are unknown; preserve original reference labels when later packaging differs. Exclude 1,000 separate Pick-a-Pic development rows and the former aggregate-table transcription. Dataset license declarations vary by source. No new model execution.
