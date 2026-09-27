@@ -1,0 +1,120 @@
+format_version: 1
+tables:
+  traces:
+    rows: 16847
+    logical_sha256: 5a65851fde5298cd6bd0897f06a860b057339cd2b19ac814101f28dc210f4006
+  subjects:
+    rows: 83
+    logical_sha256: 46cf6e0ba6be9bf247834771442ea766e7db18d1f008ace1aa70fdafb093e3fc
+  responses:
+    rows: 16847
+    logical_sha256: 82a677432fa95138423c97e11b936db795143798e0590dca97bf28679252af12
+  assets:
+    rows: 371
+    logical_sha256: aa3d1c381c28a394a7a5153dfc10ccf6629fafe0cae147a04af36ea7b97642fd
+  items:
+    rows: 2301
+    logical_sha256: 99ae8bcc6d30b6576d4d50b9afc0178e4ef3348701b4237dc3f2e116b1b0b8f2
+  benchmarks:
+    rows: 1
+    logical_sha256: 928b13424cb5c4c6f27ae81de2b33b1a9aad741a3786f10d69f5a38f71c7a6a1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 16847
+  source_log_records:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 16447
+  source_workflow_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 400
+  source_individual_reviews:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 2400
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 83
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 2301
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 371
+  source_multiple_choice_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 9000
+  source_multiple_choice_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 6819
+  source_unavailable_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 7447
+  source_incomplete_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/22299495
+    locator: All original logs/ result files plus pinned workflow task100.json and English_version/{A,B,C,D,E,F,Merged}.json.
+    scope: All native attempts and consolidated human assessments. Original images are checked byte-for-byte; unavailable
+      grades remain null and human categories remain explicitly unordered. The two processed MIMIC task files are
+      not used.
+    expected: 200

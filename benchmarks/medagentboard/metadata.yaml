@@ -1,0 +1,279 @@
+benchmark:
+  name: MedAgentBoard
+  description: Released medical QA, lay-summary, EHR prediction and clinical workflow records with exact available
+    assessments and complete native logs.
+  testing_condition: 'Each response represents a released task/method attempt; workflow rows use the consolidated
+    human assessment with individual reviews retained as evidence. Preserve the actual recorded questions, options,
+    image bytes, references and literal method/configuration labels. Never treat a missing judgment as a failed
+    task, a predicted mortality probability as correctness, or different reviewers as fresh model runs. Two hundred
+    EHR logs end inside case_history: decode only the intact top-level prefix and retain the original malformed
+    text. Workflow task instructions and published reviews are retained, but complete historical execution datasets
+    are not provided. No models, judges, generated programs or training jobs are run.'
+  paper_url: https://arxiv.org/abs/2505.12371
+  data_source_url: https://zenodo.org/records/22299495
+  subject_type: method
+  item_type: task
+  license: Zenodo declares CC-BY-4.0 for the captured release. Incorporated datasets retain their original terms.
+    The original archive unexpectedly contains processed MIMIC task records despite its description; these are excluded
+    from tables, and the complete archive is held locally rather than republished.
+  citation: 'Zhu et al. MedAgentBoard: Benchmarking Multi-Agent Collaboration with Conventional Methods for Diverse
+    Medical Tasks. NeurIPS 2025 Datasets and Benchmarks.'
+  tags:
+  - medicine
+  - multi_agent
+  - medical_qa
+  - clinical_workflow
+  modality:
+  - text
+  - image
+  domain:
+  - medicine
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-05
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: MedAgentBoard_full_log.zip
+      prefix: MedAgentBoard/
+      incomplete_logs: /logs/ehr/tjh/mortality/ReConcile/
+      old_image_prefix: my_datasets/raw/
+      image_prefix: my_datasets/raw/medqa/
+      workflow: workflow
+    incomplete_prefix_fields:
+      qid: qid
+      timestamp: timestamp
+      question: question
+      ground_truth: ground_truth
+      predicted_probability: predicted_probability
+    configuration_fields:
+      model: model
+      prompt_type: prompt_type
+      agent_configs: agent_configs
+      doctor_configs: doctor_configs
+      meta_model_key: meta_model_key
+    free_form_protocols:
+      PubMedQA: pubmed_free_form
+      VQA-RAD: vqa_free_form
+    workflow_methods:
+      Single LLM: Single LLM
+      SmolAgents: SmolAgents
+      OpenManus: OpenManus
+      Owl: Owl
+    workflow_raters:
+      A: A
+      B: B
+      C: C
+      D: D
+      E: E
+      F: F
+    workflow_category_codes:
+      Anomalous Numerical Results: '0'
+      Clear Presentation: '1'
+      Correct: '2'
+      Correct w/ Presentation Issues: '3'
+      Fails Requirements: '4'
+      Incomplete/Partial: '5'
+      Incorrect Answer: '6'
+      Info Not Extractable: '7'
+      Lacks Conclusion/Summary: '8'
+      Missing Metrics: '9'
+      Model Not Saved: '10'
+      No Report: '11'
+      No Result: '12'
+      No Visualization: '13'
+      Poor Readability: '14'
+      Preprocessing Only: '15'
+      Too Simple (w/ Evidence): '16'
+      Viz. Meaningless (Model Fail): '17'
+      Viz. Only (No Model): '18'
+    grade_status:
+      multiple_choice: native_exact_comparison
+      pubmed_free_form: judge_score_not_released
+      vqa_free_form: judge_score_not_released
+      laysummary: per_case_metric_not_released
+      ehr: no_individual_performance_grade
+      workflow: published_unordered_assessment_category
+    input_scope:
+      default: complete_released_question_or_source_text_with_available_options_and_images
+      workflow: released_instruction_only_missing_historical_execution_dataset
+    subject_features:
+      harness: MedAgentBoard
+      historical_configuration: only_explicit_recorded_settings_are_asserted
+    labels:
+      subject_prefix: 'MedAgentBoard / '
+      workflow_code_method: Single LLM
+grading:
+  verifiers:
+    multiple_choice:
+      kind: native_exact_comparison
+      source: https://github.com/yhzhu99/MedAgentBoard/blob/b09dcbb11cb2c908e23b83b8b71c566be41326c5/medagentboard/medqa/evaluate.py
+      rule: Compare the recorded ground_truth and predicted_answer directly, including case and punctuation, as
+        the released evaluator does. Do not extract a first letter or normalize answers.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native exact comparison reports a nonmatch.
+          '1': Native exact comparison reports a match.
+    pubmed_free_form:
+      kind: unavailable_cached_llm_assessment
+      source: https://github.com/yhzhu99/MedAgentBoard/blob/b09dcbb11cb2c908e23b83b8b71c566be41326c5/medagentboard/utils/llm_scoring.py
+      judged_by: llm
+      rule: The native PubMedQA judge assesses factual accuracy, completeness, relevance and semantic alignment
+        to the released reference on an integer 1–10 scale. No llm_score is present in the captured logs, so retain
+        response=null and do not call a judge.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        direction: higher_is_better
+    vqa_free_form:
+      kind: unavailable_cached_llm_assessment
+      source: https://github.com/yhzhu99/MedAgentBoard/blob/b09dcbb11cb2c908e23b83b8b71c566be41326c5/medagentboard/utils/llm_scoring.py
+      judged_by: llm
+      rule: The native VQA-RAD judge checks essential correctness against the reference, allowing semantically equivalent
+        wording, on a binary scale. No llm_score is present in the captured logs, so retain response=null and do
+        not call a judge.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+    laysummary:
+      kind: unavailable_native_metric
+      source: https://github.com/yhzhu99/MedAgentBoard/blob/b09dcbb11cb2c908e23b83b8b71c566be41326c5/medagentboard/laysummary/evaluation.py
+      rule: The released script evaluates overlap, simplification and readability against the source and reference.
+        The primary ROUGE-Lsum F1 measure uses NLTK sentence segmentation and a stemmed rouge_score scorer. The
+        released per-case logs contain no numeric metric; preserve the generated summary and reference without inventing
+        a historical metric or using the former approximate sentence splitter.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    ehr:
+      kind: aggregate_metric_only
+      source: https://arxiv.org/html/2505.12371v2#S4.SS3
+      rule: The native study evaluates mortality predictions using aggregate AUROC and AUPRC. A per-patient probability
+        is a model output, not a correctness grade. Retain the released probability and observed outcome in the
+        full source trace; response is null. Do not impose an unreported decision threshold.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    workflow:
+      kind: published_nominal_human_assessment
+      source: https://github.com/yhzhu99/MedAgentBoard-WorkflowAutomation/blob/cab28a55e308140f3dde7126911237455608f3b7/evaluation/English_version/Merged.json
+      judged_by: human
+      rule: Preserve the consolidated human assessment category. Encode its literal name using the declared unordered
+        category mapping; numerical codes are not a quality ranking and must not be averaged as scores. Retain the
+        six individual reviews separately in the trace, without treating them as independent model executions. Appendix
+        G.3 describes task-specific review and consolidation.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        - 7
+        - 8
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+        - 15
+        - 16
+        - 17
+        - 18
+        direction: unordered
+        meanings:
+          '0': Anomalous Numerical Results
+          '1': Clear Presentation
+          '2': Correct
+          '3': Correct w/ Presentation Issues
+          '4': Fails Requirements
+          '5': Incomplete/Partial
+          '6': Incorrect Answer
+          '7': Info Not Extractable
+          '8': Lacks Conclusion/Summary
+          '9': Missing Metrics
+          '10': Model Not Saved
+          '11': No Report
+          '12': No Result
+          '13': No Visualization
+          '14': Poor Readability
+          '15': Preprocessing Only
+          '16': Too Simple (w/ Evidence)
+          '17': Viz. Meaningless (Model Fail)
+          '18': Viz. Only (No Model)
+sources:
+  upstream:
+  - name: release
+    url: https://zenodo.org/api/records/22299495/files/MedAgentBoard_full_log.zip/content
+    file: MedAgentBoard_full_log.zip
+    size: 2005920036
+    sha256: d5dbaa43676baa39c94de2583b46528b21947798996f6fa83b0b3d3de885d0d9
+    revision: Zenodo-22299495-v1
+  - name: harness
+    url: https://github.com/yhzhu99/MedAgentBoard
+    revision: b09dcbb11cb2c908e23b83b8b71c566be41326c5
+    files:
+    - match: .*
+      path: harness/{path}
+  - name: workflow
+    url: https://github.com/yhzhu99/MedAgentBoard-WorkflowAutomation
+    revision: cab28a55e308140f3dde7126911237455608f3b7
+    files:
+    - match: .*
+      path: workflow/{path}
+  - name: reference_answers
+    url: https://github.com/yhzhu99/MedAgentBoard-WorkflowAutomation/releases/download/v1.0.1/reference_answers.zip
+    file: workflow_releases/reference_answers.zip
+    size: 12325936
+    sha256: 4dffab9f6fc8341acdbd164018e390337b9ed786256ab503428dfe403ceb2ba4
+    revision: v1.0.1
+  - name: result_deepseek_tjh
+    url: https://github.com/yhzhu99/MedAgentBoard-WorkflowAutomation/releases/download/v1.0.1/result_deepseek_tjh.zip
+    file: workflow_releases/result_deepseek_tjh.zip
+    size: 34824636
+    sha256: e13fe6cddfa7a8dfe5f8b5769988d38eefdd1d8f1f2a071ed6e7fd1caf6db6b8
+    revision: v1.0.1
+  - name: result_qwen_tjh
+    url: https://github.com/yhzhu99/MedAgentBoard-WorkflowAutomation/releases/download/v1.0.1/result_qwen_tjh.zip
+    file: workflow_releases/result_qwen_tjh.zip
+    size: 28930826
+    sha256: 81bb240f7329e290cb0d1c23bb479f20debd9c67ca4e27f89913f6b5a53e4af6
+    revision: v1.0.1
+  - name: paper
+    url: https://arxiv.org/html/2505.12371v2
+    file: paper.html
+    size: 1818958
+    sha256: 6dcc3a90af820d269883ddf30cd0695aae1fc92ef67d21a288fdfaa59b3c0478
+    revision: arxiv-2505.12371v2

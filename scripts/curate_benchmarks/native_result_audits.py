@@ -14914,6 +14914,181 @@ def _mathvista(directory, tables, metadata, source=None):
     return dict(source['counts'], source_assets=len(assets))
 
 
+def _medagentboard_sources(directory, metadata):
+    import re
+    from zipfile import ZipFile
+
+    parameters = metadata["build"]["parameters"]
+    observations, definitions, configurations, images = {}, {}, {}, {}
+    with ZipFile(directory / 'raw/MedAgentBoard_full_log.zip') as archive:
+        for path in sorted(archive.namelist()):
+            if not path.startswith('MedAgentBoard/logs/') or not path.endswith('.json'):
+                continue
+            text = archive.read(path).decode('utf-8')
+            incomplete = False
+            try:
+                data = json.loads(text)
+            except json.JSONDecodeError:
+                _check('/ehr/tjh/mortality/ReConcile/' in path, True, 'Known upstream incomplete log family')
+                # Independently locate and decode each intact field; never execute
+                # the input or append invented history to the source file.
+                data = {}
+                for key in ['qid', 'timestamp', 'question', 'ground_truth', 'predicted_probability']:
+                    positions = list(re.finditer(r'^  "' + key + r'": ', text, re.M))
+                    _check(len(positions), 1, 'Unique intact top-level source field')
+                    data[key] = json.JSONDecoder().raw_decode(text, positions[0].end())[0]
+                incomplete = True
+            path_parts = path.split('/')
+            family, dataset = path_parts[2:4]
+            if family == 'laysummary':
+                setting, method, original_id = 'summary', path_parts[4], str(data['id'])
+                question, reference, options, image = data['source'], data['target'], None, ''
+                configuration = {key: value for key, value in data['metadata'].items() if key != 'processing_time'}
+                protocol = 'laysummary'
+            else:
+                setting, method, original_id = path_parts[4], path_parts[5], str(data['qid'])
+                question, reference, options = data['question'], str(data['ground_truth']), data.get('options')
+                image = (data.get('image_path') or '').removeprefix('./')
+                if image and not image.startswith('my_datasets/raw/medqa/'):
+                    _check(image.startswith('my_datasets/raw/'), True, 'Known old image root')
+                    image = image.replace('my_datasets/raw/', 'my_datasets/raw/medqa/', 1)
+                configuration = {key: value for key, value in (data.get('case_history') or {}).items()
+                                 if key in ['model', 'prompt_type', 'agent_configs', 'doctor_configs', 'meta_model_key']}
+                protocol = 'ehr' if family == 'ehr' else 'multiple_choice' if setting == 'multiple_choice' else {
+                    'PubMedQA': 'pubmed_free_form', 'VQA-RAD': 'vqa_free_form'}[dataset]
+            if image and image not in images:
+                images[image] = archive.read('MedAgentBoard/' + image)
+                _check(images[image].startswith(b'\xff\xd8'), True, 'Native JPEG bytes')
+            item = '/'.join([family, dataset, setting, original_id])
+            subject = '/'.join([family, dataset, setting, method])
+            definition = dict(question=question, reference=reference, options=options, image=image, protocol=protocol,
+                              family=family, dataset=dataset, setting=setting, source_item=original_id)
+            if item in definitions:
+                _check(definitions[item], definition, 'All task-definition aliases agree')
+            definitions[item] = definition
+            if subject in configurations:
+                _check(configurations[subject], configuration, 'Every recorded model configuration is consistent')
+            configurations[subject] = configuration
+            grade = float(data['predicted_answer'] == data['ground_truth']) if protocol == 'multiple_choice' else None
+            observations[path] = dict(item=item, subject=subject, grade=grade, protocol=protocol,
+                trace=dict(source_file=path, native_json=text, source_prefix_decoded=incomplete,
+                           grade_status=parameters['grade_status'][protocol]))
+
+    workflow = directory / 'raw/workflow'
+    bank = {row['ID']: row for row in json.loads((workflow / 'task100.json').read_text())}
+    merged = json.loads((workflow / 'evaluation/English_version/Merged.json').read_text())
+    raters = {name: {row['ID']: row for row in json.loads((workflow / f'evaluation/English_version/{name}.json').read_text())}
+              for name in 'ABCDEF'}
+    code = {row['ID']: row for row in json.loads((workflow / 'results/Single_LLM_code.json').read_text())}
+    methods = ['Single LLM', 'SmolAgents', 'OpenManus', 'Owl']
+    categories = sorted({row[method] for row in merged for method in methods})
+    _check(parameters['workflow_category_codes'], {label: str(index) for index, label in enumerate(categories)},
+           'The nominal encoding preserves every literal category in sorted order')
+    for row in merged:
+        task = bank[row['ID']]
+        _check(' '.join(row['task'].split()), ' '.join(task['task'].split()), 'Workflow task-text correspondence')
+        _check(code[row['ID']]['task'], task['task'], 'Workflow generated code correspondence')
+        item = 'workflow/' + str(row['ID'])
+        definitions[item] = dict(question=task['task'], reference=None, options=None, image='', protocol='workflow',
+            family='workflow', dataset=task['dataset'], setting='clinical_workflow', source_item=str(row['ID']))
+        for method in methods:
+            subject = 'workflow/' + method
+            configurations[subject] = {}
+            individual = []
+            for rater in 'ABCDEF':
+                review = raters[rater][row['ID']]
+                key = 'SmolAgent' if method == 'SmolAgents' and 'SmolAgent' in review else method
+                individual.append(dict(rater=rater, assessment=review[key]))
+            observations[subject + '/' + str(row['ID'])] = dict(item=item, subject=subject,
+                grade=float(categories.index(row[method])), protocol='workflow',
+                trace=dict(source_file='workflow/evaluation/English_version/Merged.json', source_item=str(row['ID']),
+                           method=method, assessment=row[method], individual_reviews=individual,
+                           code=code[row['ID']]['code'] if method == 'Single LLM' else None,
+                           grade_status=parameters['grade_status']['workflow']))
+    _check((len(observations), len(definitions), len(configurations), len(images)),
+           (16847, 2301, 83, 371), 'Complete released source census')
+    return dict(observations=observations, definitions=definitions, configurations=configurations, images=images)
+
+
+def _medagentboard(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    parameters = metadata["build"]["parameters"]
+    protocols = metadata["grading"]["verifiers"]
+    source = source or _medagentboard_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        key = _features(row.subject_features_extra)['source_configuration']
+        expected = dict(parameters['subject_features'], source_configuration=key,
+                        recorded_configuration=source['configurations'][key])
+        expected.pop('harness')
+        _check(_features(row.subject_features_extra), canonicalize_features(expected), 'Exact original subject configuration')
+        _check(row.display_name, 'MedAgentBoard / ' + key, 'Literal source-labelled subject')
+        _check(row.harness, 'MedAgentBoard', 'Native harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented historical setting: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'All native source configurations')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    used = set()
+    for row in tables['items'].itertuples():
+        key = row.raw_item_id
+        definition = source['definitions'][key]
+        elements = [dict(content_type='text/plain', text=definition['question'])]
+        if definition['options']:
+            elements.append(dict(content_type='application/json', text=json.dumps(definition['options'], ensure_ascii=False)))
+        if definition['image']:
+            elements.append(dict(content_type='image/jpeg', location=definition['image']))
+            links = json.loads(row.asset_manifest)
+            _check(len(links), 1, 'One exact original image per visual question')
+            link = links[0]
+            _check(link, dict(asset_id=link['asset_id'], path=definition['image'], media_type='image/jpeg', role='input', ordinal=1),
+                   'Original image association and MIME type')
+            _check(assets[link['asset_id']]['data'], source['images'][definition['image']], 'Complete original image bytes')
+            used.add(link['asset_id'])
+        else:
+            _check(pd.isna(row.asset_manifest), True, 'No fabricated input asset')
+        _check(json.loads(row.content), dict(multimedia_elements=elements), 'Complete released stimulus, options and image')
+        features = {name: definition[name] for name in ['family', 'dataset', 'setting', 'source_item']}
+        features['input_scope'] = parameters['input_scope'].get(definition['family'], parameters['input_scope']['default'])
+        _check(_features(row.item_features), features, 'Task identity and documented input scope')
+        protocol = protocols[definition['protocol']]
+        criterion = canonical_grading_criterion(dict(reference_answer=definition['reference'], rule=protocol['rule'],
+                                                    response_scale=protocol['response_scale']))
+        _check(json.loads(row.grading_criterion), json.loads(criterion), 'Native reference, grading rule and scale')
+        verifier = json.loads(row.verifier)
+        _check(json.loads(verifier['spec']), protocol, 'Exact documented grading procedure')
+        _check(verifier['class'], 'judge' if 'judged_by' in protocol else 'exact_matcher', 'Grading mechanism')
+        if 'judged_by' in protocol:
+            _check(verifier['judged_by'], protocol['judged_by'], 'Human versus model grading')
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source['definitions']}), 'Complete source task definitions')
+    _check(set(assets), used, 'No missing or orphan image bytes')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'One full trace per observation')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, occurrences = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = (subjects[row.subject_id] + '/' + trace['source_item']) if 'source_item' in trace else trace['source_file']
+        native = source['observations'][key]
+        _check(trace, native['trace'], 'Every native byte, available judgment and incomplete-log flag')
+        _check((subjects[row.subject_id], items[row.item_id]), (native['subject'], native['item']), 'Native subject-item association')
+        _check(None if pd.isna(row.response) else float(row.response), native['grade'], 'Exact native label or unavailable grade')
+        pair = row.subject_id, row.item_id
+        occurrences[pair] += 1
+        _check(row.trial, occurrences[pair], 'Original occurrence numbering')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented response setting')
+        seen[key] += 1
+    expected = source.get('selected', source['observations'])
+    _check(seen, Counter({key: 1 for key in expected}), 'Every original observation exactly once')
+    return dict(source_responses=16847, source_log_records=16447, source_workflow_assessments=400,
+        source_individual_reviews=2400, source_subjects=83, source_items=2301, source_assets=371,
+        source_multiple_choice_grades=9000, source_multiple_choice_correct=6819,
+        source_unavailable_grades=7447, source_incomplete_logs=200)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14929,7 +15104,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

@@ -909,3 +909,4 @@ SOURCE_AUDITS["llms_lean_formalization"] = verify_native_results
 SOURCE_AUDITS["lohi_drug_discovery"] = verify_native_results
 SOURCE_AUDITS["matharena_platform"] = verify_native_results
 SOURCE_AUDITS["mathvista_mini"] = verify_native_results
+SOURCE_AUDITS["medagentboard"] = verify_native_results
