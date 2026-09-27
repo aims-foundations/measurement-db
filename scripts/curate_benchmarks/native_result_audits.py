@@ -17064,6 +17064,99 @@ def _mvt(directory, tables, metadata, source=None):
 
 
 
+def _nanobaselib_sources(directory, metadata):
+    import csv
+    import math
+
+    protocols = {
+        'm6A': (['pos', 'kmer', 'gene_id', 'coverage'], ['MeRIP-seq', 'miCLIP', 'miCLIP2'],
+                ['Tombo', 'MINES', 'Nanom6A', 'm6Anet', 'ELIGOS', 'Epinano', 'SegPore']),
+        'm5C': (['pos'], ['gt'], ['Tombo_alternative', 'Tombo_de_novo', 'CHEUI-solo']),
+    }
+    sites, observations, subjects = {}, {}, set()
+    counts = Counter()
+    for modification, (attributes, references, methods) in protocols.items():
+        source_file = 'upstream/rna_mod_detection/' + modification + '.benchmark.csv'
+        with (directory / 'raw' / source_file).open(newline='') as stream:
+            reader = csv.DictReader(stream)
+            _check(set(reader.fieldnames), set(attributes + references + methods), 'NanoBaseLib exact native columns')
+            for ordinal, record in enumerate(reader):
+                key = modification + ':' + record['pos']
+                _check(key not in sites and bool(record['pos']), True, 'NanoBaseLib unique native site')
+                _check(all(record[field] in {'0', '1'} for field in references), True, 'NanoBaseLib native reference categories')
+                sites[key] = dict(record=record, modification=modification, source_file=source_file, source_row=ordinal,
+                    attributes={field: record[field] for field in attributes}, references={field: record[field] for field in references})
+                counts['source_' + modification.lower() + '_sites'] += 1
+                if len({record[field] for field in references}) > 1:
+                    counts['source_disagreeing_assay_sites'] += 1
+                for method in methods:
+                    if record[method] == '':
+                        counts['source_empty_prediction_cells'] += 1
+                        continue
+                    _check(math.isfinite(float(record[method])), True, 'NanoBaseLib finite recorded prediction')
+                    observations[key, method] = record[method]
+                    subjects.add((modification, method))
+                    counts['source_' + modification.lower() + '_observations'] += 1
+    counts.update(source_sites=len(sites), source_observations=len(observations), source_methods=len(subjects),
+                  source_graded_observations=0, source_captured_author_files=sum(path.is_file() for path in (directory / "raw/upstream").rglob("*")))
+    return dict(sites=sites, observations=observations, subjects=subjects, counts=dict(counts))
+
+
+def _nanobaselib(directory, tables, metadata, source=None):
+    source = source or _nanobaselib_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['modification'], features['source_method']
+        _check(key in source['subjects'], True, 'NanoBaseLib original modification/method configuration')
+        _check(row.display_name, 'NanoBaseLib / ' + key[0] + ' / ' + key[1], 'NanoBaseLib literal method name')
+        _check(features, dict(metadata['build']['parameters']['subject_features'], modification=key[0], source_method=key[1]),
+               'NanoBaseLib complete method provenance')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'NanoBaseLib no inferred model metadata: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['subjects']}), 'NanoBaseLib all recorded method configurations')
+    for row in tables['items'].itertuples():
+        original = source['sites'][row.raw_item_id]
+        _check(json.loads(row.content), original['attributes'], 'NanoBaseLib exact released site annotations without reference labels')
+        _check(_features(row.item_features), dict(modification=original['modification'], input_scope='released_site_annotations_only'),
+               'NanoBaseLib explicit scope of the released input attributes')
+        _check(pd.isna(row.asset_manifest), True, 'NanoBaseLib no invented original signal attachment')
+        criterion = json.loads(row.grading_criterion)
+        _check(set(criterion), {'reference_answer', 'rule'}, 'NanoBaseLib unchanged grading contract')
+        _check(json.loads(criterion['reference_answer']), original['references'], 'NanoBaseLib separate original reference assays, not their union')
+        _check(criterion['rule'], metadata['grading']['rule'], 'NanoBaseLib original aggregate evaluation scope')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'NanoBaseLib captured external grading description')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers'][original['modification']], 'NanoBaseLib matching native aggregate evaluation routine')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['sites']}), 'NanoBaseLib every native site exactly once')
+    if 'assets' in tables:
+        _check(len(tables['assets']), 0, 'NanoBaseLib no invented signal files')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'NanoBaseLib one complete trace per recorded prediction')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        site, (modification, method) = items[row.item_id], subjects[row.subject_id]
+        original = source['sites'][site]
+        _check(modification, original['modification'], 'NanoBaseLib correct modification/method association')
+        prediction = source['observations'][site, method]
+        _check(pd.isna(row.response), True, 'NanoBaseLib unavailable individual grade is null, not a prediction score')
+        _check(row.trial, 1, 'NanoBaseLib one original prediction cell per site and method')
+        _check(row.test_condition, 'modification=' + modification, 'NanoBaseLib recorded modification condition')
+        _check(pd.isna(row.interactors), True, 'NanoBaseLib no invented interactors')
+        trace = traces[row.response_id]
+        expected = dict(source_file=original['source_file'], source_row=original['source_row'], modification=modification,
+            method=method, prediction=prediction, record=original['record'], grade_status='no_native_per_site_grade')
+        _check(json.loads(trace['trace']), expected, 'NanoBaseLib complete original CSV row and exact prediction cell')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, wanted = trace[field], getattr(row, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(wanted) else wanted, 'NanoBaseLib trace association: ' + field)
+        seen[site, method] += 1
+    _check(seen, Counter({key: 1 for key in source['observations']}), 'NanoBaseLib all nonempty native predictions exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17079,7 +17172,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
