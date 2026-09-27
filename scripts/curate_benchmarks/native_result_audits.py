@@ -13276,12 +13276,17 @@ def _lawbench_source_records(directory, metadata):
 
 
 def _lawbench(directory, tables, metadata, source=None):
-    """Check every prompt, reference, configuration, grade and full trace."""
+    source = _lawbench_source_records(directory, metadata) if source is None else source
+    return _check_recorded_prompt_results(tables, metadata, source, "LawBench")
+
+
+def _check_recorded_prompt_results(tables, metadata, source, benchmark_name):
+    """Verify the shared contract for native prompt/reference/output records."""
     import math
     import unicodedata
     from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
 
-    native, definitions, counts = _lawbench_source_records(directory, metadata) if source is None else source
+    native, definitions, counts = source
     # The shared item identity normalizes NFC and surrounding whitespace only.
     # Preserve each exact prompt in its trace and the first representative item.
     identities, definitions = {}, {}
@@ -13295,30 +13300,30 @@ def _lawbench(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         label = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
-        _check(features, dict(**expected, source_model_label=label), "LawBench source-supported subject attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "LawBench literal source model label")
-        _check(row.harness, parameters["subject_features"]["harness"], "LawBench recorded harness")
+        _check(features, dict(**expected, source_model_label=label), f"{benchmark_name} source-supported subject attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, f"{benchmark_name} literal source model label")
+        _check(row.harness, parameters["subject_features"]["harness"], f"{benchmark_name} recorded harness")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, "LawBench unrecorded subject setting: " + field)
+            _check(pd.isna(getattr(row, field)), True, f"{benchmark_name} unrecorded subject setting: " + field)
         subjects[row.subject_id] = label
-    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LawBench all original model labels")
+    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), f"{benchmark_name} all original model labels")
     for row in tables["items"].itertuples():
         original = native[row.raw_item_id]
         setting, task, content, reference = original["identity"]
-        _check(row.raw_item_id, definitions[identities[row.raw_item_id]], "LawBench first source alias for each complete stimulus")
-        _check(row.content, content, "LawBench complete recorded prompt including demonstrations")
+        _check(row.raw_item_id, definitions[identities[row.raw_item_id]], f"{benchmark_name} first source alias for each complete stimulus")
+        _check(row.content, content, f"{benchmark_name} exact recorded input text")
         verifier = metadata["grading"]["verifiers"][task]
         expected = json.loads(canonical_grading_criterion(dict(reference_answer=json.dumps(reference, ensure_ascii=False),
             rule=verifier["rule"].format(task=task, setting=setting), response_scale=verifier["response_scale"])))
-        _check(json.loads(row.grading_criterion), expected, "LawBench exact native reference and task-specific grading scale")
+        _check(json.loads(row.grading_criterion), expected, f"{benchmark_name} exact native reference and task-specific grading scale")
         _check(_features(row.item_features), dict(task=task, recorded_prompt_setting=setting,
-            input_scope=parameters["labels"]["input_scope"]), "LawBench stimulus attributes without outcomes")
+            input_scope=parameters["labels"]["input_scope"]), f"{benchmark_name} stimulus attributes without outcomes")
         actual = json.loads(row.verifier)
-        _check((actual["class"], json.loads(actual["spec"])), ("judge", verifier), "LawBench pinned deterministic evaluator")
-        _check(pd.isna(row.asset_manifest), True, "LawBench no invented assets")
+        _check((actual["class"], json.loads(actual["spec"])), ("judge", verifier), f"{benchmark_name} pinned deterministic evaluator")
+        _check(pd.isna(row.asset_manifest), True, f"{benchmark_name} no invented assets")
         items[row.item_id] = identities[row.raw_item_id]
-    _check(Counter(items.values()), Counter({identity:1 for identity in definitions}), "LawBench complete distinct stimuli and grading conditions")
-    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LawBench one complete trace per response")
+    _check(Counter(items.values()), Counter({identity:1 for identity in definitions}), f"{benchmark_name} complete distinct stimuli and grading conditions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), f"{benchmark_name} one complete trace per response")
     traces = tables["traces"].set_index("response_id").trace.to_dict()
     seen, trials = Counter(), {}
     occurrences = Counter()
@@ -13331,20 +13336,120 @@ def _lawbench(directory, tables, metadata, source=None):
         key = trace["source_file"] + "#" + trace["source_key"]
         original = native[key]
         _check(trace, dict(source_file=original["file"], source_key=original["key"],
-            source_record=original["record"], grade_status=original["status"]), "LawBench lossless native record and grade provenance")
-        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], identities[key]), "LawBench exact model, prompt and reference association")
+            source_record=original["record"], grade_status=original["status"]), f"{benchmark_name} lossless native record and grade provenance")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], identities[key]), f"{benchmark_name} exact model, prompt and reference association")
         if original["grade"] is None:
-            _check(pd.isna(row.response), True, "LawBench unavailable individual grade stays null")
+            _check(pd.isna(row.response), True, f"{benchmark_name} unavailable individual grade stays null")
         else:
-            _check(math.isfinite(row.response) and math.isclose(row.response, original["grade"], rel_tol=1e-13, abs_tol=1e-13), True, "LawBench unchanged native per-item metric")
+            _check(math.isfinite(row.response) and math.isclose(row.response, original["grade"], rel_tol=1e-13, abs_tol=1e-13), True, f"{benchmark_name} unchanged native per-item metric")
         setting, task, _, _ = original["identity"]
-        _check((row.trial, row.test_condition), (trials[key], f"task={task};prompt_setting={setting}"), "LawBench original occurrence and prompting condition")
-        _check(pd.isna(row.interactors), True, "LawBench no invented interactor")
+        _check((row.trial, row.test_condition), (trials[key], f"task={task};prompt_setting={setting}"), f"{benchmark_name} original occurrence and prompting condition")
+        _check(pd.isna(row.interactors), True, f"{benchmark_name} no invented interactor")
         seen[key] += 1
-    _check(seen, Counter({key:1 for key in native}), "LawBench every recorded attempt exactly once")
-    _check(len(tables.get("assets", [])), 0, "LawBench no unassociated assets")
+    _check(seen, Counter({key:1 for key in native}), f"{benchmark_name} every recorded attempt exactly once")
+    _check(len(tables.get("assets", [])), 0, f"{benchmark_name} no unassociated assets")
     return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
-        **{"source_" + key.replace("-", "_"):value for key,value in counts.items()})
+        **{"source_" + key.lower().replace("-", "_"):value for key,value in counts.items()})
+
+
+def _lexeval_grade_file(job):
+    """Reconstruct the source metric independently of the DataFrame pipeline."""
+    import ast
+    import re
+    import string
+    import zipfile
+    from collections import OrderedDict
+    import jieba
+    from rouge import Rouge
+
+    archive_path, prefix, relative, scratch = job
+    tools = getattr(_lexeval_grade_file, "tools", None)
+    if tools is None:
+        with zipfile.ZipFile(archive_path) as archive:
+            tree = ast.parse(archive.read(prefix + "code/evaluation/process.py"))
+        selected = [node for node in tree.body if isinstance(node, ast.FunctionDef)
+                    and node.name in {"find_valid_substrings", "normalize_zh_answer"}]
+        _check(len(selected), 2, "LexEval unchanged native extraction and normalization")
+        namespace = {"re": re, "string": string, "OrderedDict": OrderedDict}
+        exec(compile(ast.Module(body=selected, type_ignores=[]), "native_lexeval_process", "exec"), namespace)
+        tokenizer = jieba.Tokenizer()
+        tokenizer.tmp_dir = scratch
+        tools = namespace, tokenizer, Rouge(), {}, {}
+        _lexeval_grade_file.tools = tools
+    functions, tokenizer, scorer, tokens, grade_cache = tools
+    task = "_".join(Path(relative).stem.split("_")[-2:])
+    metric = "rouge_l" if task.startswith("5_") else "accuracy"
+    with zipfile.ZipFile(archive_path) as archive:
+        records = [json.loads(line) for line in archive.read(prefix + relative).splitlines() if line.strip()]
+    result = []
+    for index, record in enumerate(records):
+        _check(set(record), {"input", "output", "answer"}, "LexEval complete native fields")
+        _check(all(isinstance(record[name], str) for name in record), True, "LexEval original string types")
+        identity = metric, record["output"], record["answer"]
+        if identity not in grade_cache:
+            status = "reconstructed_native_score"
+            if metric == "accuracy":
+                grade = float(functions["find_valid_substrings"](record["output"]) == record["answer"])
+            else:
+                for value in [record["output"], record["answer"]]:
+                    if value not in tokens:
+                        tokens[value] = " ".join(tokenizer.cut(functions["normalize_zh_answer"](value), cut_all=False))
+                try:
+                    grade = scorer.get_scores([tokens[record["output"]]], [tokens[record["answer"]]], avg=True)["rouge-l"]["f"]
+                except Exception as error:
+                    grade, status = 0.0, "native_rouge_fallback_" + type(error).__name__
+            grade_cache[identity] = grade, status
+        grade, status = grade_cache[identity]
+        result.append((str(index), record, grade, status))
+    return relative, result
+
+
+def _lexeval_source_records(directory, metadata):
+    import multiprocessing
+    import tempfile
+    import zipfile
+    from concurrent.futures import ProcessPoolExecutor
+
+    parameters = metadata["build"]["parameters"]
+    archive_path = directory / "raw" / parameters["paths"]["archive"]
+    prefix = parameters["paths"]["prefix"]
+    with zipfile.ZipFile(archive_path) as archive:
+        files = sorted(name.removeprefix(prefix) for name in archive.namelist()
+                       if name.startswith(prefix + "model_output/") and name.endswith(".jsonl"))
+    _check(len(files), 1748, "LexEval complete released prediction files")
+    native, definitions, counts = {}, {}, Counter()
+    with tempfile.TemporaryDirectory(prefix=".lexeval-audit-", dir=directory.parent) as scratch:
+        with ProcessPoolExecutor(max_workers=8, mp_context=multiprocessing.get_context("spawn")) as workers:
+            jobs = [(archive_path, prefix, name, scratch) for name in files]
+            for number, (relative, records) in enumerate(workers.map(_lexeval_grade_file, jobs), 1):
+                _, setting, model, filename = relative.split("/")
+                task = "_".join(Path(filename).stem.split("_")[-2:])
+                for key, record, grade, status in records:
+                    identity = setting, task, record["input"], record["answer"]
+                    source_key = relative + "#" + key
+                    definitions.setdefault(identity, source_key)
+                    native[source_key] = dict(record=record, grade=grade, status=status,
+                        identity=identity, model=model, file=relative, key=key)
+                    counts[status] += 1
+                    counts["task_" + task] += 1
+                    counts["empty_outputs"] += record["output"] == ""
+                    counts["empty_references"] += record["answer"] == ""
+                    counts["source_failure_marker"] += record["output"] == "未成功回答"
+                if number % 100 == 0:
+                    print(f"Independently graded {number}/{len(files)} source files", flush=True)
+    _check(len(native), 1076280, "LexEval every released prediction")
+    return native, definitions, counts
+
+
+def _lexeval(directory, tables, metadata, source=None):
+    source = _lexeval_source_records(directory, metadata) if source is None else source
+    # Both releases use the same observed prompt/reference/record contract;
+    # task routing differs and is checked directly from LexEval's file names.
+    tasks = {row["identity"][1] for row in source[0].values()}
+    expanded = {task: metadata["grading"]["verifiers"]["rouge_l" if task.startswith("5_") else "accuracy"]
+                for task in tasks}
+    checked_metadata = dict(metadata, grading=dict(metadata["grading"], verifiers=expanded))
+    return _check_recorded_prompt_results(tables, checked_metadata, source, "LexEval")
 
 
 def verify_native_results(directory, tables_directory=None):
@@ -13361,7 +13466,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

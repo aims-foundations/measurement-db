@@ -14,6 +14,7 @@ lxml>=6.0
 h5py>=3.10
 jieba==0.42.1
 rouge-chinese==1.0.3
+rouge==1.0.1
 cn2an==0.5.23
 proces==0.1.7
 nltk==3.9.1
