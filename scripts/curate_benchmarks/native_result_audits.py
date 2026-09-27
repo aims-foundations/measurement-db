@@ -16321,6 +16321,205 @@ def _mlip_arena(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _mmbench_sources(directory, metadata):
+    """Read native cells directly and use the frozen upstream deterministic parser."""
+    import ast
+    import base64
+    import copy
+    import csv
+    import hashlib
+    import string
+    from types import SimpleNamespace
+    from openpyxl import load_workbook
+    from openpyxl.utils.escape import unescape
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+
+    raw = directory / 'raw'
+    bank = {}
+    csv.field_size_limit(10_000_000)
+    for path in sorted(raw.glob('tasks/MMBench_*_EN_V11.tsv')):
+        with path.open(newline='') as stream:
+            for position, row in enumerate(csv.DictReader(stream, delimiter='\t')):
+                task = {key: value if value != '' else None for key, value in row.items()}
+                index = int(task['index'])
+                _check(index not in bank, True, 'MMBench unique original task index')
+                bank[index] = dict(task, source_file=str(path.relative_to(raw)), source_row=position)
+    images = {}
+    for index, task in bank.items():
+        origin, visited = index, set()
+        while bank[origin]['image'].isdigit():
+            _check(origin not in visited, True, 'MMBench acyclic original image references')
+            visited.add(origin)
+            origin = int(bank[origin]['image'])
+        task['image_source_index'] = origin
+        if origin not in images:
+            images[origin] = base64.b64decode(bank[origin]['image'], validate=True)
+
+    observations, exports, counts = {}, set(), Counter()
+    for path in sorted((raw / 'results').rglob('*_MMBench_V11.xlsx')):
+        workbook = load_workbook(path, read_only=True, data_only=False)
+        rows = workbook.active.iter_rows(values_only=True)
+        columns = next(rows)
+        native = [dict(zip(columns, values)) for values in rows]
+        workbook.close()
+        _check(len({row['index'] for row in native}), len(native), 'MMBench unique native prediction indices')
+        digest = hashlib.sha256(json.dumps(sorted(native, key=lambda row: row['index']), sort_keys=True,
+            ensure_ascii=False, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+        model = path.name.removesuffix('_MMBench_V11.xlsx')
+        exports.add((model, digest))
+        counts['source_prediction_files'] += 1
+        counts['source_workbook_prediction_rows'] += len(native)
+        for position, row in enumerate(native):
+            key = model, digest, int(row['index'])
+            if key not in observations:
+                observations[key] = dict(prediction=row, aliases=[])
+            _check(observations[key]['prediction'], row, 'MMBench alias exports contain identical native records')
+            observations[key]['aliases'].append(dict(source_file=str(path.relative_to(raw)), source_row=position))
+
+    # These three reviewed source functions only inspect strings. No source
+    # imports, model constructors, fallback judge, or random choice is executed.
+    parser_path = raw / 'historical_harness/vlmeval/utils/matching_util.py'
+    tree = ast.parse(parser_path.read_text())
+    names = {'can_infer', 'can_infer_option', 'can_infer_text'}
+    nodes = [node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name in names]
+    _check({node.name for node in nodes}, names, 'MMBench complete frozen deterministic parser')
+    environment = dict(cp=copy, string=string, os=SimpleNamespace(environ={}))
+    exec(compile(ast.Module(body=nodes, type_ignores=[]), str(parser_path), 'exec'), environment)
+    parse = environment['can_infer']
+    for (model, digest, index), original in observations.items():
+        record, task = original['prediction'], bank[index]
+        for field in ['question', 'hint', 'A', 'B', 'C', 'D', 'category', 'l2-category', 'split']:
+            if field in record:
+                value = record[field]
+                actual = unescape(str(value)) if value is not None else ''
+                _check(actual, task[field] if task[field] is not None else '', 'MMBench exact recorded input: ' + field)
+        choices = {letter: record[letter] for letter in 'ABCD' if record.get(letter) is not None}
+        prediction = record['prediction']
+        inferred = (parse(prediction, choices) or None) if prediction is not None else None
+        conflict = record.get('answer') is not None and record['answer'] != task['answer']
+        failed = isinstance(prediction, str) and 'Failed to obtain answer via API' in prediction
+        grade = float(inferred == task['answer']) if inferred is not None and not conflict and not failed else None
+        status = ('missing_prediction' if prediction is None else 'api_failure' if failed else
+                  'conflicting_recorded_reference' if conflict else 'derived_historical_comparator'
+                  if grade is not None else 'unresolved_extraction')
+        original.update(inferred_option=inferred, reference_restored=record.get('answer') is None,
+                        grade=grade, grade_status=status)
+        counts['source_' + status] += 1
+        counts['source_restored_references'] += record.get('answer') is None
+
+    circular, supplements, cache_lookup = {}, {}, {}
+    cache_models = {path.name.split('_MMBench_V11')[0] for path in (raw / 'results').rglob('*_MMBench_V11*.pkl')}
+    for (model, _, index), original in observations.items():
+        if model in cache_models:
+            cache_lookup.setdefault((model, index), []).append(original['prediction'])
+    for path in sorted((raw / 'results').rglob('*_MMBench_V11_gpt4_result.xlsx')):
+        workbook = load_workbook(path, read_only=True, data_only=False)
+        rows = workbook.active.iter_rows(values_only=True)
+        columns = next(rows)
+        cached = read_native_pickle(path.with_suffix('.pkl'))
+        model = path.name.removesuffix('_MMBench_V11_gpt4_result.xlsx')
+        for position, values in enumerate(rows):
+            record = dict(zip(columns, values))
+            index = int(record['index'])
+            _check(cached[index], dict(hit=record['hit'], log=record['log']), 'MMBench unchanged native circular cache')
+            matches = cache_lookup.get((model, index), [])
+            _check(len(matches), 1, 'MMBench unambiguous cached circular export association')
+            for field, value in record.items():
+                if field not in {'hit', 'log'}:
+                    _check(value, matches[0][field], 'MMBench cached circular row matches its actual generation')
+            circular[model, index] = dict(circular_record=record, circular_workbook=str(path.relative_to(raw)),
+                circular_cache=str(path.with_suffix('.pkl').relative_to(raw)), circular_source_row=position)
+        workbook.close()
+        _check(len(cached), sum(key[0] == model for key in circular), 'MMBench complete circular verdict preservation')
+    for path in sorted((raw / 'results').rglob('*_MMBench_V11_supp.pkl')):
+        model = path.name.removesuffix('_MMBench_V11_supp.pkl')
+        for index, prediction in read_native_pickle(path).items():
+            matches = [row['prediction'] for row in cache_lookup.get((model, index), [])]
+            _check(matches, [prediction], 'MMBench supplement is the same recorded output, not a new trial')
+            supplements[model, int(index)] = dict(file=str(path.relative_to(raw)), index=int(index), prediction=prediction)
+    counts.update(source_responses=len(observations), source_subjects=len({key[0] for key in observations}),
+                  source_distinct_exports=len(exports), source_items=len(bank), source_circular_verdicts=len(circular),
+                  source_supplement_records=len(supplements))
+    return dict(observations=observations, bank=bank, images=images, circular=circular, supplements=supplements, counts=dict(counts))
+
+
+def _mmbench(directory, tables, metadata, source=None):
+    """Check every native response, input, source alias, image and grade independently."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _mmbench_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_label']
+        expected = {key: value for key, value in parameters['subject_features'].items() if key != 'harness'}
+        _check(features, dict(expected, source_model_label=model), 'MMBench literal published model configuration')
+        _check(row.display_name, parameters['labels']['subject_prefix'] + model, 'MMBench original model label')
+        _check(row.harness, 'VLMEvalKit', 'MMBench recorded harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MMBench no invented configuration: ' + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MMBench all source model labels')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    items, used = {}, set()
+    for item in tables['items'].itertuples():
+        index = int(item.raw_item_id)
+        task = source['bank'][index]
+        image_index = task['image_source_index']
+        data = source['images'][image_index]
+        media = ('image/png' if data.startswith(b'\x89PNG\r\n\x1a\n') else 'image/jpeg' if data.startswith(b'\xff\xd8')
+                 else 'image/webp' if data.startswith(b'RIFF') and data[8:12] == b'WEBP' else None)
+        _check(media is not None, True, 'MMBench original supported image encoding')
+        path = f'images/{image_index}'
+        text = ('Hint: ' + task['hint'] + '\n') if task['hint'] is not None else ''
+        text += 'Question: ' + task['question'] + '\nOptions:\n'
+        text += ''.join(letter + '. ' + task[letter] + '\n' for letter in 'ABCD' if task[letter] is not None)
+        text += 'Please select the correct answer from the options above. \n'
+        _check(json.loads(item.content), dict(multimedia_elements=[dict(content_type=media, location=path),
+            dict(content_type='text/plain', text=text)]), 'MMBench complete original question, hint, option order and image')
+        expected = dict(upstream_index=index, base_question_index=index % 1_000_000, circular_rotation=index // 1_000_000,
+            split=task['split'], category=task['category'], ability=task['l2-category'], source_file=task['source_file'],
+            source_row=task['source_row'], source_image_index=image_index)
+        _check(_features(item.item_features), canonicalize_features(expected), 'MMBench complete original item attributes')
+        links = json.loads(item.asset_manifest)
+        _check(len(links), 1, 'MMBench one original image per presented question')
+        _check(links[0], dict(asset_id=links[0]['asset_id'], path=path, media_type=media, role='input', ordinal=1), 'MMBench exact image manifest')
+        _check(assets[links[0]['asset_id']]['data'], data, 'MMBench original image bytes')
+        used.add(links[0]['asset_id'])
+        _check(json.loads(item.grading_criterion), dict(reference_answer=task['answer'], rule=metadata['grading']['rule']),
+               'MMBench task-bank reference with disclosed per-response grading scope')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], 'exact_matcher', 'MMBench deterministic grading, without a new judge')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['recorded_answer'], 'MMBench frozen comparison rule')
+        items[item.item_id] = index
+    _check(Counter(items.values()), Counter({index: 1 for index in source['bank']}), 'MMBench every presented task ordering')
+    _check(set(assets), used, 'MMBench no lost or orphan image bytes')
+    _check(len(assets), len({hashlib.sha256(data).hexdigest() for data in source['images'].values()}), 'MMBench original image deduplication')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MMBench full linked trace coverage')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, trials = Counter(), Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = subjects[response.subject_id], trace['export_hash'], items[response.item_id]
+        original = source['observations'][key]
+        _check(trace, dict(export_hash=key[1], prediction_record=original['prediction'], source_aliases=original['aliases'],
+            inferred_option=original['inferred_option'], reference_restored=original['reference_restored'],
+            grade_status=original['grade_status'], circular_evidence=source['circular'].get((key[0], key[2] % 1_000_000)),
+            supplement=source['supplements'].get((key[0], key[2]))), 'MMBench full native records and correctly scoped cache evidence')
+        _check(None if pd.isna(response.response) else float(response.response), original['grade'],
+               'MMBench independent native deterministic grading and explicit missing values')
+        occurrence = response.subject_id, response.item_id
+        trials[occurrence] += 1
+        _check(response.trial, trials[occurrence], 'MMBench occurrence numbering without duplicated exports')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(response, field)), True, 'MMBench no invented occasion setting: ' + field)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'MMBench all native answers accounted exactly once')
+    return dict(source['counts'], source_assets=len(assets))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -16336,7 +16535,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

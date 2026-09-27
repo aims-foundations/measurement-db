@@ -1,0 +1,156 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3262900
+    logical_sha256: 4e0a04ed52db1dd0608d0ab85868f5ebdb825101088d8da7e6d38a825ea94d77
+  subjects:
+    rows: 251
+    logical_sha256: 650dfd7e8cc86731c6d87532b2ea6bf9e77d3b152c41065db2fed8b05fe732b0
+  responses:
+    rows: 3262900
+    logical_sha256: a570095a7ecb8bb089d8f4a3fa15b15cce3a1c82ae3bac158f97cff379b9bbe8
+  assets:
+    rows: 3092
+    logical_sha256: 5fd53453280fbaa9d020982a375dc4875cb13e8f1d3933328922ae861e7cc3ad
+  items:
+    rows: 12175
+    logical_sha256: a336ed3661f18bf910e2e76238abc406599b3bfbdef16c52a2417fefa74ed7fb
+  benchmarks:
+    rows: 1
+    logical_sha256: 77d5b92a520cc224b1ad2a85e84491356b14bc78b0a29a98299d89eb697115a6
+source_claims:
+  source_prediction_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 398
+  source_workbook_prediction_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 4845650
+  source_derived_historical_comparator:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 3115891
+  source_restored_references:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 7299
+  source_unresolved_extraction:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 142799
+  source_api_failure:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 2271
+  source_missing_prediction:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 1851
+  source_conflicting_recorded_reference:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 88
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 3262900
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 251
+  source_distinct_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 268
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 12175
+  source_circular_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 6434
+  source_supplement_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 828
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: All English MMBench V1.1 workbooks and caches; original author dev/test task banks; historical VLMEvalKit
+      aaf24c59feae4f987025e21af32ed4b849cf9105 deterministic extractor.
+    scope: Independent direct-cell census, complete input/image/output/source-alias comparison and deterministic
+      per-answer grading. Native circular verdicts remain group evidence. No model or judge calls.
+    expected: 3092

@@ -921,3 +921,5 @@ SOURCE_AUDITS["mergebench"] = verify_native_results
 SOURCE_AUDITS["mind2web"] = verify_native_results
 
 SOURCE_AUDITS["mj_bench"] = verify_native_results
+
+SOURCE_AUDITS["mmbench_v11"] = verify_native_results
