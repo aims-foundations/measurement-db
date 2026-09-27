@@ -164,12 +164,12 @@ def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
     return entries
 
 
-def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
-    """Resolve a JSON manifest to same-site files and pin the complete selection."""
+def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *, _trail: tuple = ()) -> list[dict]:
+    """Resolve one JSON manifest or a pinned collection of JSON manifests."""
     name, selector = source["name"], source["json_index"]
+    if name in _trail:
+        raise SourceDataError(f"{name}: cyclic JSON index sources")
     index = named.get(selector["source"], {})
-    if not {"url", "file", "size", "sha256"} <= index.keys():
-        raise SourceDataError(f"{name}: JSON index must name a pinned HTTP source")
 
     def read(url, destination):
         if raw_dir is not None:
@@ -181,10 +181,25 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -
         with urlopen(Request(url, headers={"User-Agent": "measurement-db", "Accept-Encoding": "identity"}), timeout=120) as response:
             return response.read()
 
-    payload = read(index["url"], index["file"])
-    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
-        raise SourceDataError(f"{name}: JSON index differs from its declared bytes")
-    records = [json.loads(payload)]
+    if "json_index" in index:
+        manifests = json_index_entries(index, named, raw_dir, _trail=(*_trail, name))
+        records = []
+        for entry in manifests:
+            destinations = [rule['path'].format(path=entry['path'], **match.groupdict())
+                for rule in index['files'] if (match := re.fullmatch(rule['match'], entry['path']))]
+            if len(destinations) != 1:
+                raise SourceDataError(f"{name}: ambiguous indexed manifest destination")
+            payload = read(entry['url'], destinations[0])
+            if len(payload) != entry['size'] or hashlib.sha256(payload).hexdigest() != entry['digest']:
+                raise SourceDataError(f"{name}: indexed manifest changed after verification")
+            records.append(json.loads(payload))
+    elif {"url", "file", "size", "sha256"} <= index.keys():
+        payload = read(index["url"], index["file"])
+        if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
+            raise SourceDataError(f"{name}: JSON index differs from its declared bytes")
+        records = [json.loads(payload)]
+    else:
+        raise SourceDataError(f"{name}: JSON index must name a pinned HTTP source or JSON-indexed collection")
     for field in selector["records"]:
         nested = []
         for record in records:

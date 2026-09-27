@@ -1,0 +1,128 @@
+format_version: 1
+tables:
+  traces:
+    rows: 118
+    logical_sha256: 62862c326034acd0e4a4588b258ccdd4a7d559f28c94709ca99817edd5939b89
+  subjects:
+    rows: 6
+    logical_sha256: fbb0baa82efc7db158a00c2fcddff6d964e0118bb431cd6497da66413b1b847e
+  responses:
+    rows: 118
+    logical_sha256: f2a9dd58d8b69aa86f27792eed8483489a12f5f6c0200fb6c82119447b484bf5
+  items:
+    rows: 118
+    logical_sha256: aa268cefeb0a608f8e8425cc7ef7eee50e6386672e86b23a152b13076e14f778
+  benchmarks:
+    rows: 1
+    logical_sha256: ee32d11836ac48175f73eab3093e985e0ff2baa36e51123b3231eb80bb04bf3f
+source_claims:
+  source_index_entries:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 15
+  source_signature_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 3
+  source_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 15
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 6
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 118
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 118
+  source_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 92
+  source_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 1053
+  source_screenshots:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 1053
+  source_tasks_different_from_current_catalog:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 1
+  source_current_catalog_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://mypcbench.com/data/trajectories/index.json
+    locator: Pinned index/signatures, every referenced native trajectory, all referenced screenshots, and the current
+      data/tasks.json catalog.
+    scope: Independent complete JSON census and file-byte hashing. Count recorded showcase rubric outcomes, not
+      the full evaluation panel. One historical task definition differs from the current catalog. No agent or judge
+      execution.
+    expected: 184

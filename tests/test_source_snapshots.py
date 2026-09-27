@@ -709,6 +709,58 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaises(BenchmarkMetadataError):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
+    def test_json_index_collection_preserves_every_manifest_and_referenced_asset(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        manifest = b'{"runs":[{"id":"a"},{"id":"b"}]}'
+        pages = {'a.json': b'{"steps":[{"image":"images/a.jpg"}]}',
+                 'b.json': b'{"steps":[{"image":"images/b.jpg"}]}'}
+        images = {'images/a.jpg': b'first image', 'images/b.jpg': b'second image'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='site/manifest.json', size=len(manifest), sha256=hashlib.sha256(manifest).hexdigest())
+        sources = [index]
+        for name, parent, records, template, contents in [
+                ('runs', 'manifest', ['runs'], '{id}.json', pages),
+                ('images', 'runs', ['steps'], '{image}', images)]:
+            identity = [dict(path=path, size=len(data), digest=hashlib.sha256(data).hexdigest())
+                        for path, data in sorted(contents.items())]
+            sources.append(dict(name=name, url='https://provider.example/', revision=None,
+                json_index=dict(source=parent, records=records, path=template),
+                tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                files=[dict(match=r'.*', path='site/{path}')]))
+        self.metadata['sources']['upstream'] = sources
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        content = {'manifest.json': manifest, **pages, **images}
+
+        def fetch(request, **kwargs):
+            return io.BytesIO(content[request.full_url.removeprefix('https://provider.example/')])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts(sources, ('images',))
+        self.assertEqual([row['file'] for row in artifacts], ['site/images/a.jpg', 'site/images/b.jpg'])
+        for path, data in content.items():
+            destination = self.raw / 'site' / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts(sources, ('images',), raw_dir=self.raw), artifacts)
+            (self.raw / 'site/images/b.jpg').write_bytes(b'wrong image')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+            (self.raw / 'site/images/b.jpg').write_bytes(images['images/b.jpg'])
+            (self.raw / 'site/b.json').write_bytes(pages['a.json'])
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+
+    def test_json_index_collection_rejects_dependency_cycles(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        sources = [dict(name=name, url='https://provider.example/', revision=None,
+                   json_index=dict(source=parent, records=['files'], path='{path}'),
+                   tree_sha256='0' * 64, files=[dict(match=r'.*', path='site/{path}')])
+                   for name, parent in [('runs', 'images'), ('images', 'runs')]]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            with self.assertRaisesRegex(SourceDataError, 'cyclic JSON index'):
+                upstream_artifacts(sources, ('images',))
+
     def test_json_index_rejects_unsafe_duplicate_and_missing_paths(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         source = dict(name='runs', url='https://provider.example/runs/',

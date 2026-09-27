@@ -16677,6 +16677,130 @@ def _mmoral(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _mypc_sources(directory, metadata):
+    """Read every declared showcase judgment and screenshot directly from native files."""
+    import hashlib
+
+    raw = directory / 'raw'
+    index = json.loads((raw / 'site/data/trajectories/index.json').read_text())['trajectories']
+    signatures = json.loads((raw / 'site/data/trajectories/signatures.json').read_text())['signatures']
+    catalog = {task['id']: task for task in json.loads((raw / 'site/data/tasks.json').read_text())}
+    runs, observations, items, images, changed = {}, {}, {}, {}, set()
+    for entry in index:
+        path = 'site/' + entry['data_url']
+        run = json.loads((raw / path).read_text())
+        slug = run['slug']
+        _check(slug not in runs, True, 'MyPCBench unique published trajectory')
+        for field in ['slug', 'model', 'model_key', 'task_id', 'legacy_id', 'instruction', 'num_steps']:
+            if field in entry:
+                _check(run[field], entry[field], 'MyPCBench index agrees with its trajectory: ' + field)
+        _check(len(run['steps']), run['num_steps'], 'MyPCBench complete published step count')
+        _check(len(run['rubrics']), entry['rubric_count'], 'MyPCBench complete published rubric count')
+        task = catalog[run['task_id']]
+        if run['instruction'] != task['instruction'] or [r['requirement'] for r in run['rubrics']] != [r['criterion'] for r in task['grading']['rubrics']]:
+            changed.add(run['task_id'])
+        screenshots = []
+        for step in run['steps']:
+            image_path = 'site/' + step['image']
+            data = (raw / image_path).read_bytes()
+            _check(data.startswith(b'\xff\xd8'), True, 'MyPCBench captured JPEG encoding')
+            capture = dict(i=step['i'], image=step['image'], raw_path=image_path,
+                           sha256=hashlib.sha256(data).hexdigest(), bytes=len(data))
+            screenshots.append(capture)
+            images[image_path] = capture['sha256']
+        runs[slug] = dict(native=run, source_file=path, screenshots=screenshots)
+        for rubric in run['rubrics']:
+            _check(rubric['score'] in [0, 1], True, 'MyPCBench original binary grade')
+            _check(rubric['pass'], bool(rubric['score']), 'MyPCBench score and pass flag agree')
+            key = slug, rubric['id']
+            item = run['task_id'] + '::' + rubric['id']
+            _check(key not in observations and item not in items, True, 'MyPCBench unique recorded task rubric')
+            observations[key] = dict(run=slug, item=item, rubric=rubric)
+            items[item] = observations[key]
+    _check({str(path.relative_to(raw)) for path in (raw / 'site/data/trajectories').glob('*__*.json')},
+           {value['source_file'] for value in runs.values()}, 'MyPCBench no omitted or extra native trajectories')
+    for entry in signatures:
+        run = runs[entry['slug']]['native']
+        for field in ['model_key', 'model', 'task_id', 'instruction']:
+            _check(entry[field], run[field], 'MyPCBench signature aliases the same recorded trajectory')
+    counts = dict(source_index_entries=len(index), source_signature_aliases=len(signatures), source_trajectories=len(runs),
+        source_subjects=len({run['native']['model_key'] for run in runs.values()}), source_items=len(items),
+        source_responses=len(observations), source_passes=sum(value['rubric']['score'] for value in observations.values()),
+        source_steps=sum(len(run['native']['steps']) for run in runs.values()), source_screenshots=len(images),
+        source_tasks_different_from_current_catalog=len(changed), source_current_catalog_tasks=len(catalog))
+    registry = json.loads((Path(__file__).resolve().parents[1] / 'build_measurement_tables/map_model_registry.json').read_text())
+    model_catalog = {value['native']['model']: registry.get(value['native']['model']) for value in runs.values()}
+    return dict(runs=runs, observations=observations, items=items, images=images, changed_tasks=changed,
+                model_catalog=model_catalog, counts=counts)
+
+
+def _mypc(directory, tables, metadata, source=None):
+    """Compare recorded task versions, all rubric outcomes, and complete released traces."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _mypc_sources(directory, metadata)
+    parameters, subjects = metadata['build']['parameters'], {}
+    native_models = {value['native']['model_key']: value['native']['model'] for value in source['runs'].values()}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_model_key']
+        expected = dict(parameters['subject_features'], source_model_key=key, source_model_label=native_models[key],
+            declared_tool_variant='cua_only' if key.endswith('-cua_only') else 'not_explicit_in_showcase')
+        _check(features, expected, 'MyPCBench literal actor configuration and explicit ablation')
+        _check(row.display_name, native_models[key], 'MyPCBench recorded model label')
+        catalog = source['model_catalog'][native_models[key]] or {}
+        for field, catalog_field in [('normalized_name', 'model'), ('provider', 'company'), ('release_date', 'release_date')]:
+            value = getattr(row, field)
+            _check(None if pd.isna(value) else value, catalog.get(catalog_field), 'MyPCBench preserves central model metadata: ' + field)
+        for field in ['access_date', 'harness', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MyPCBench no invented historical configuration: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in native_models}), 'MyPCBench every recorded actor configuration')
+    items = {}
+    for row in tables['items'].itertuples():
+        original = source['items'][row.raw_item_id]
+        run, rubric = source['runs'][original['run']]['native'], original['rubric']
+        _check(row.content, run['instruction'], 'MyPCBench actual recorded instruction without grading requirements')
+        _check(pd.isna(row.asset_manifest), True, 'MyPCBench later screenshots are not initial item inputs')
+        expected = dict(task_id=run['task_id'], legacy_task_id=run['legacy_id'], rubric_id=rubric['id'],
+            task_category=run['category'], task_apps=json.dumps(run['apps']),
+            definition_scope=parameters['labels']['definition_scope'])
+        _check(_features(row.item_features), canonicalize_features(expected), 'MyPCBench task and rubric provenance')
+        criterion = json.loads(row.grading_criterion)
+        _check(set(criterion), {'reference_answer', 'rule'}, 'MyPCBench rubric grading contract')
+        _check(criterion['reference_answer'], None, 'MyPCBench requirements are rules, not gold answers')
+        _check(json.loads(criterion['rule']), dict(requirement=rubric['requirement'], rubric_id=rubric['id'],
+            weight=rubric['weight'], protocol=metadata['grading']['rule']), 'MyPCBench original rubric and weight')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'MyPCBench recorded judgment class')
+        _check(verifier['judged_by'], 'llm', 'MyPCBench recorded LLM judgment')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['rubric'], 'MyPCBench explicit judge-version limits')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['items']}), 'MyPCBench all historical task-rubric definitions')
+    _check(len(tables.get('assets', [])), 0, 'MyPCBench screenshots remain trace evidence, not item inputs')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MyPCBench one complete trace per rubric observation')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for response in tables['responses'].itertuples():
+        original = source['items'][items[response.item_id]]
+        native = source['runs'][original['run']]
+        _check(subjects[response.subject_id], native['native']['model_key'], 'MyPCBench correct actor/task association')
+        _check(response.response, float(original['rubric']['score']), 'MyPCBench exact recorded rubric grade')
+        _check(response.trial, 1, 'MyPCBench signature aliases do not create additional trials')
+        condition = 'variant=cua_only' if native['native']['model_key'].endswith('-cua_only') else None
+        _check(None if pd.isna(response.test_condition) else response.test_condition, condition, 'MyPCBench explicit tool ablation condition')
+        _check(pd.isna(response.interactors), True, 'MyPCBench no invented occasion participants')
+        trace = traces[response.response_id]
+        _check(json.loads(trace['trace']), dict(source_file=native['source_file'], selected_rubric_id=original['rubric']['id'],
+            trajectory=native['native'], screenshots=native['screenshots']), 'MyPCBench entire viewer record and every captured screenshot')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, expected = trace[field], getattr(response, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(expected) else expected, 'MyPCBench trace association: ' + field)
+        seen[original['run'], original['rubric']['id']] += 1
+    _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'MyPCBench all original outcomes exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -16692,7 +16816,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

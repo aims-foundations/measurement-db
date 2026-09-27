@@ -120,8 +120,10 @@ checks the complete selection, including cached files, before building tables.
 JSON manifests use `json_index: {source: manifest, records: [models, runs],
 path: "{run_id}.json"}` to select files beneath the source URL. `records`
 walks nested object/list fields, and `path` uses values from each resulting
-record. The manifest checksum and `tree_sha256` pin both membership and file
-contents; duplicate paths, changed bytes and paths outside the source are rejected.
+record. `source` can also name another JSON-indexed collection, for example when
+each trajectory lists its screenshots. The manifest checksum and each collection's
+`tree_sha256` pin membership and file contents; duplicate paths, changed bytes,
+dependency cycles and paths outside the source are rejected.
 
 Public Google Drive folder URLs support the same `files` rules. Their
 `tree_sha256` pins selected relative paths, Drive file IDs, sizes and SHA-256
