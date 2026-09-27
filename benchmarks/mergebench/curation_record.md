@@ -1,0 +1,3 @@
+- Source: 3,638 recorded safety assessments from two merged models across four original benchmarks; preserve full releases, task banks and cached labels.
+- Transformation: join task inputs, decode task-specific events, retain 12 repeated occurrences and one unavailable grade. All 118 native summary values reconcile. The earlier 144 aggregate paper cells are archived locally, not represented as individual attempts.
+- Limits: 1,498 WildGuardTest outputs were overwritten upstream with dataset responses; retain their provenance without assigning those strings to the merged models. Historical versions are unknown. Data remain local pending output-archive redistribution terms; no inference or new judging.
