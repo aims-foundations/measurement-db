@@ -1,0 +1,170 @@
+benchmark:
+  description: Complete released medical-watermark generations for three models, with cached paired GPT-Judger quality
+    ratings for Meditron and original auxiliary detection statistics.
+  testing_condition: 'Import 36 generation files, preserving all original output occurrences and identifying JSON
+    copies as aliases. Twelve paired-judgment files assess Meditron outputs on three ordinal dimensions. Distinguish
+    these dimensions and repeated judgment events from independent generations. EXPEdit/MeQSum uses KGW unwatermarked
+    controls for its 200 paired judgments; the unused EXPEdit controls remain ungraded. Other models have no cached
+    quality grades and remain ungraded. The summarization second dimension is Completeness, not Relevance. Retain
+    the original source natural continuation/answer/summary as a reference; it was not shown to the paired judge.
+    Source task prompts, complete saved generations, comparison outputs, randomized A/B order, judge text and cached
+    arrays are preserved. For 3328 JSL outputs the saved string does not begin with the literal source prompt; retain
+    both unchanged and expose the prefix-match flag instead of correcting or truncating either. Exact tokenized
+    inputs and chat formatting are not recorded. One DIP/Meditron/HQA judgment at source row 3 has cached arrays
+    that the published parser does not recover; preserve these native cached values without regrading. Auxiliary
+    detector scores are not quality grades: positions are reconstructed using the published rule that omits watermarked
+    outputs empty after removing prompt-length words. All 36 array lengths agree with this rule, including 11 omissions.
+    Every natural-text score remains paired with its source reference. Repeated prompts and identical outputs in
+    separate experiment files are source occurrences, not proof of independent trials. Literal model/method/dataset/variant
+    configurations are retained; precise historical weights, seeds and generation settings are not recorded with
+    results. Published defaults do not establish the executed configuration. No models, judges or detectors are
+    rerun.'
+  paper_url: https://arxiv.org/abs/2509.07755
+  data_source_url: https://github.com/rochanaph/fact-eval-wllm
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: "@inproceedings{hastuti2025factuality,\n  title={Factuality Beyond Coherence: Evaluating LLM Watermarking\
+    \ Methods for Medical Texts},\n  author={Hastuti, Rochana Prih and Rajagede, Rian Adam and Al Ghanim, Mansour\
+    \ and Zheng, Mengxin and Lou, Qian},\n  booktitle={Findings of the Association for Computational Linguistics:\
+    \ EMNLP 2025},\n  year={2025},\n}"
+  tags:
+  - medical
+  - watermarking
+  - llm-as-a-judge
+  - likert
+  - factuality
+  modality:
+  - text
+  domain:
+  - medicine
+  - safety
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+    meanings:
+      '1': Lowest quality / strong disagreement in the published general rubric.
+      '2': Intermediate ordinal level; no separate verbal anchor is provided.
+      '3': Intermediate ordinal level; no separate verbal anchor is provided.
+      '4': Intermediate ordinal level; no separate verbal anchor is provided.
+      '5': Highest quality / strong agreement in the published general rubric.
+  categorical: true
+  release_date: 2025-09
+  release: public
+  name: MedWatermark-FWS
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: upstream.zip
+      prefix: fact-eval-wllm-faf94610eedd1e208500c32e829ba6201f671b41/
+      reused_control_experiment: logs/EXPEdit/EXPEdit-n256-meditron-MEQS.pkl
+      reused_control_source: logs/KGW/KGW-g0.5-d2-meditron-MEQS.pkl
+    banks:
+      HQA: dataset/hqa/hqa_processed_230words.json
+      HQA2: dataset/hqa2/hqa2_processed_4.json
+      MEQS: dataset/meqsum/meqsum_processed.json
+    patterns:
+      generation: logs/[^/]+/(?P<experiment>.+)-(?P<model>biomistral|jsl|meditron)-(?P<dataset>HQA2|HQA|MEQS)\.pkl
+      judgment: logs/GPTJUDGE-Results/results_NEW2_judged_(?P<filename>(?P<method>DIP|EXPEdit|KGW|SWEET)-.+\.pkl)\.json
+    variants:
+      scores_U: unwatermarked
+      scores_W: watermarked
+    dimensions:
+      HQA: coherence|relevance|factual_accuracy
+      HQA2: coherence|relevance|factual_accuracy
+      MEQS: coherence|completeness|factual_accuracy
+    models:
+      meditron: epfl-llm/meditron-7b
+      biomistral: BioMistral/BioMistral-7B
+      jsl: johnsnowlabs/JSL-MedLlama-3-8B-v2.0
+    subject_features:
+      harness: fact-eval-wllm
+      configuration_scope: source_experiment_dataset_and_variant
+      historical_weights_revision: not_recorded
+      historical_generation_settings: not_recorded
+grading:
+  rule: Use the original cached 1–5 paired quality rating for this criterion; the source reference text is retained
+    for provenance but was not passed to the judge.
+  fallback_rule: The original generation has no corresponding released paired quality rating. Keep its grade null.
+    The related native quality protocol is documented without selecting or fabricating a score dimension.
+  verifiers:
+    HQA:
+      kind: cached_pairwise_llm_judgment
+      source: https://github.com/rochanaph/fact-eval-wllm/blob/faf94610eedd1e208500c32e829ba6201f671b41/judgerfunctions.py
+      function: gpt_judge
+      declared_model: gpt-4o-2024-08-06
+      historical_request_model: not_recorded_in_result
+      task_type: GEN
+      description: Text Completions in Medical Domain
+      criteria:
+        coherence: Coherence. Is the language coherence, clear, understandable for a general audience?
+        relevance: Relevance. Does the text complete the prompt with a relevant information?
+        factual_accuracy: Factual Accuracy. Does the generated answer introduce any inaccurate or unrelated medical
+          terms?
+      rule: Present watermarked and unwatermarked completions together, in the recorded randomized order, with the
+        original task prompt. Apply the source 1–5 quality rubric and retain each cached score dimension separately.
+        The source natural text is not shown to the judge. Cached arrays remain authoritative observations, including
+        the documented one-record parser disagreement. The original full judgment is retained; no new judgment is
+        inferred.
+      ordering: 'randomized=true: A is unwatermarked and B is watermarked; false: A is watermarked and B is unwatermarked.'
+      score_source: scores_U or scores_W in the unchanged released judgment JSON
+    HQA2:
+      kind: cached_pairwise_llm_judgment
+      source: https://github.com/rochanaph/fact-eval-wllm/blob/faf94610eedd1e208500c32e829ba6201f671b41/judgerfunctions.py
+      function: gpt_judge
+      declared_model: gpt-4o-2024-08-06
+      historical_request_model: not_recorded_in_result
+      task_type: QA
+      description: answer in Medical Question-Answer System
+      criteria:
+        coherence: Coherence. Is the language coherence, clear, understandable for a general audience?
+        relevance: Relevance. Does the answer directly address the question asked without going off-topic? Does
+          the answer cover all essential parts of the question?
+        factual_accuracy: Factual Accuracy. Does the generated answer introduce any inaccurate or unrelated medical
+          terms?
+      rule: Present watermarked and unwatermarked completions together, in the recorded randomized order, with the
+        original task prompt. Apply the source 1–5 quality rubric and retain each cached score dimension separately.
+        The source natural text is not shown to the judge. Cached arrays remain authoritative observations, including
+        the documented one-record parser disagreement. The original full judgment is retained; no new judgment is
+        inferred.
+      ordering: 'randomized=true: A is unwatermarked and B is watermarked; false: A is watermarked and B is unwatermarked.'
+      score_source: scores_U or scores_W in the unchanged released judgment JSON
+    MEQS:
+      kind: cached_pairwise_llm_judgment
+      source: https://github.com/rochanaph/fact-eval-wllm/blob/faf94610eedd1e208500c32e829ba6201f671b41/judgerfunctions.py
+      function: gpt_judge
+      declared_model: gpt-4o-2024-08-06
+      historical_request_model: not_recorded_in_result
+      task_type: SUMM
+      description: Summarized Medical Question
+      criteria:
+        coherence: Coherence. Is the language coherence, clear, understandable for a general audience?
+        completeness: Completeness. Does the generated summary miss any important information from the original
+          question?
+        factual_accuracy: Factual Accuracy. Does the generated summary introduce any inaccurate or unrelated medical
+          terms not found in the original question?
+      rule: Present watermarked and unwatermarked completions together, in the recorded randomized order, with the
+        original task prompt. Apply the source 1–5 quality rubric and retain each cached score dimension separately.
+        The source natural text is not shown to the judge. Cached arrays remain authoritative observations, including
+        the documented one-record parser disagreement. The original full judgment is retained; no new judgment is
+        inferred.
+      ordering: 'randomized=true: A is unwatermarked and B is watermarked; false: A is watermarked and B is unwatermarked.'
+      score_source: scores_U or scores_W in the unchanged released judgment JSON
+sources:
+  upstream:
+  - name: original_release
+    file: upstream.zip
+    url: https://codeload.github.com/rochanaph/fact-eval-wllm/zip/faf94610eedd1e208500c32e829ba6201f671b41
+    revision: faf94610eedd1e208500c32e829ba6201f671b41
+    size: 15198798
+    sha256: 8b4a117b2f205347e39a56a527d4f185671513d4af4a680312e4c40129041aa0

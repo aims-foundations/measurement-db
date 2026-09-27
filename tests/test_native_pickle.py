@@ -8,8 +8,45 @@ import numpy as np
 import pytest
 
 from measurement_db.scripts.curate_benchmarks.read_native_pickle import (
-    _DataUnpickler, _tensor_view, read_native_pickle,
+    _DataUnpickler, _numeric_scalar, _tensor_view, read_native_pickle,
 )
+
+
+@pytest.mark.parametrize("protocol", [2, 4])
+def test_native_numeric_scalars_preserve_values_and_types(tmp_path, protocol):
+    values = [np.float32(1.25), np.float64(1 / 3), np.int64(2**60 + 3),
+              np.uint64(2**63 + 7), np.bool_(True), np.complex128(1 + 2j)]
+    path = tmp_path / "scores.pkl"
+    path.write_bytes(pickle.dumps(values, protocol=protocol))
+    restored = read_native_pickle(path)
+    for expected, actual in zip(values, restored):
+        assert type(actual) is type(expected)
+        assert actual.tobytes() == expected.tobytes()
+
+
+@pytest.mark.parametrize("dtype,data", [(np.dtype("O"), b"\0" * 8),
+    (np.dtype("f8"), b"\0"), (np.dtype("U1"), b"\0" * 4), ("f8", b"\0" * 8)])
+def test_non_numeric_or_malformed_scalar_data_is_rejected(dtype, data):
+    with pytest.raises(pickle.UnpicklingError, match="numeric scalar bytes"):
+        _numeric_scalar(dtype, data)
+
+
+def test_original_archive_member_needs_no_extraction(tmp_path):
+    path = tmp_path / "upstream.zip"
+    with ZipFile(path, "w") as archive:
+        archive.writestr("results.pkl", pickle.dumps((["complete\noutput"], [np.float64(.75)])))
+        archive.writestr("unsupported.pkl", b"cbuiltins\neval\n.")
+    before = path.read_bytes()
+    with ZipFile(path) as archive:
+        with archive.open("results.pkl") as source:
+            outputs, scores = read_native_pickle(source)
+            assert outputs == ["complete\noutput"]
+            assert type(scores[0]) is np.float64 and scores[0] == .75
+        with archive.open("unsupported.pkl") as source:
+            with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+                read_native_pickle(source)
+    assert path.read_bytes() == before
+    assert list(tmp_path.iterdir()) == [path]
 
 
 @pytest.mark.parametrize("protocol", [2, 4])

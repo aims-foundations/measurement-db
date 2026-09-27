@@ -48,6 +48,8 @@ class _DataUnpickler(pickle.Unpickler):
             return np.dtype(dtype).newbyteorder(self.endian)
         if module in {"numpy.core.multiarray", "numpy._core.multiarray"} and name == "_reconstruct":
             return _reconstruct
+        if module in {"numpy.core.multiarray", "numpy._core.multiarray"} and name == "scalar":
+            return _numeric_scalar
         if (module, name) == ("numpy", "ndarray"):
             return np.ndarray
         if (module, name) == ("numpy", "dtype"):
@@ -75,6 +77,14 @@ def _latin1_bytes(text, encoding):
     return text.encode("latin1")
 
 
+def _numeric_scalar(dtype, data):
+    """Decode original numeric bytes without allowing object-scalar restoration."""
+    if (not isinstance(dtype, np.dtype) or dtype.hasobject or dtype.kind not in "biufc"
+            or not isinstance(data, bytes) or len(data) != dtype.itemsize):
+        raise pickle.UnpicklingError("Expected numeric scalar bytes with the declared size")
+    return np.frombuffer(data, dtype=dtype)[0]
+
+
 def _tensor_view(storage, offset, shape, strides, requires_grad, hooks):
     if (not isinstance(storage, np.ndarray) or storage.ndim != 1 or storage.dtype.hasobject
             or type(offset) is not int or offset < 0 or len(shape) != len(strides)
@@ -87,9 +97,12 @@ def _tensor_view(storage, offset, shape, strides, requires_grad, hooks):
 
 
 def read_native_pickle(path):
-    """Return passive data from an original pickle or Torch ZIP archive."""
-    path = Path(path)
+    """Read passive data from a path or seekable binary source, including ZIP members."""
+    path = path if hasattr(path, "read") else Path(path)
     if not is_zipfile(path):
+        if hasattr(path, "read"):
+            path.seek(0)
+            return _DataUnpickler(path).load()
         with path.open("rb") as stream:
             return _DataUnpickler(stream).load()
     with ZipFile(path) as archive:

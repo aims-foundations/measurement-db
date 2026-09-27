@@ -15346,6 +15346,180 @@ def _mmedbench(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _medwatermark_sources(directory, metadata):
+    """Build a direct native-record ledger, independently of table unpivots and joins."""
+    import ast
+    import re
+    from zipfile import ZipFile
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+
+    parameters = metadata['build']['parameters']
+    layout = parameters['layout']
+    generation, configurations, observations, definitions = {}, {}, {}, {}
+    aliases, seen_grades, duplicate_jsons = {}, set(), 0
+    detector_count, omitted, parser_disagreements, reused = 0, 0, [], 0
+    dimensions = {'HQA': ['coherence', 'relevance', 'factual_accuracy'],
+        'HQA2': ['coherence', 'relevance', 'factual_accuracy'],
+        'MEQS': ['coherence', 'completeness', 'factual_accuracy']}
+    with ZipFile(directory / 'raw' / layout['archive']) as archive:
+        prefix = layout['prefix']
+        members = set(archive.namelist())
+        bank = {task: json.loads(archive.read(prefix + path)) for task, path in parameters['banks'].items()}
+        tree = ast.parse(archive.read(prefix + 'judgerfunctions.py').decode())
+        rubrics = next(ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == 'JUDGER_PROMPTS' for target in node.targets))
+        for dataset, task in [('HQA', 'GEN'), ('HQA2', 'QA'), ('MEQS', 'SUMM')]:
+            _check(metadata['grading']['verifiers'][dataset]['criteria'],
+                dict(zip(dimensions[dataset], rubrics[task]['criteria'])), 'Exact original task-specific rubric')
+        for name in sorted(members):
+            path = name.removeprefix(prefix)
+            if not path.startswith('logs/') or not path.endswith('.pkl') or path.endswith('-SCORES.pkl'):
+                continue
+            experiment, model, dataset = Path(path).stem.rsplit('-', 2)
+            with archive.open(name) as stream:
+                watermarked, unwatermarked, natural = read_native_pickle(stream)
+            with archive.open(name + '-SCORES.pkl') as stream:
+                watermarked_scores, control_scores, natural_scores = read_native_pickle(stream)
+            _check((len(watermarked), len(unwatermarked), len(natural), len(natural_scores)), (200, 200, 200, 200), 'Native arrays and source loader limit')
+            _check(control_scores, [], 'No invented unwatermarked detector scores')
+            retained = [i for i, text in enumerate(watermarked) if text.split()[len(bank[dataset][i]['prompt'].split()):]]
+            _check(len(retained), len(watermarked_scores), 'Source skip-empty rule explains every detector position')
+            detector = dict(zip(retained, map(float, watermarked_scores)))
+            detector_count += len(detector)
+            omitted += len(watermarked) - len(detector)
+            if name + '.json' in members:
+                copies = json.loads(archive.read(name + '.json'))
+                _check(copies, [dict(prompt=bank[dataset][i]['prompt'], watermarked_text=watermarked[i],
+                    unwatermarked_text=unwatermarked[i], natural_text=natural[i]) for i in range(200)], 'JSON copies are exact aliases, not additional attempts')
+                duplicate_jsons += 1
+            for variant, outputs in [('watermarked', watermarked), ('unwatermarked', unwatermarked)]:
+                configurations[path, variant] = dict(model=model, dataset=dataset, experiment=experiment, variant=variant)
+                for i, text in enumerate(outputs):
+                    native = bank[dataset][i]
+                    _check(natural[i], native['natural'], 'Original natural reference at source position')
+                    generation[path, i, variant] = dict(source_file=path, source_row=i, variant=variant,
+                        output=text, literal_prompt_prefix=text.startswith(native['prompt']), natural_text=natural[i], detector_score=detector.get(i) if variant == 'watermarked' else None,
+                        natural_detector_score=float(natural_scores[i]), prompt=native['prompt'], dataset=dataset)
+        for name in sorted(members):
+            path = name.removeprefix(prefix)
+            if not path.startswith('logs/GPTJUDGE-Results/') or not path.endswith('.json'):
+                continue
+            basename = Path(path).name.removeprefix('results_NEW2_judged_').removesuffix('.json')
+            method = basename.split('-')[0]
+            generation_path = 'logs/' + method + '/' + basename
+            for position, record in enumerate(json.loads(archive.read(name))):
+                # Check the published cache against the original parser without calling the judge.
+                a = re.findall(r'\[\[A\]\]: (?:\[)?([5, 4, 3, 2, 1, ]+)(?:\])?', record['judge_output'])
+                b = re.findall(r'\[\[B\]\]: (?:\[)?([5, 4, 3, 2, 1, ]+)(?:\])?', record['judge_output'])
+                expected = ([], [])
+                if a and b and '[[C]]' not in record['judge_output']:
+                    a, b = ([float(x.strip()) for x in value[-1].strip('[] ').split(',')] for value in [a, b])
+                    expected = (a, b) if record['randomized'] else (b, a)
+                if (record['scores_U'], record['scores_W']) != expected:
+                    parser_disagreements.append((path, position))
+                for variant, output_field, scores_field in [('unwatermarked', 'uw_output', 'scores_U'), ('watermarked', 'w_output', 'scores_W')]:
+                    actual_path = generation_path
+                    if method == 'EXPEdit' and basename.endswith('-MEQS.pkl') and variant == 'unwatermarked':
+                        actual_path = actual_path.replace('EXPEdit', 'KGW').replace('-n256', '-g0.5-d2')
+                        reused += 1
+                    key = actual_path, record['sample_id'], variant
+                    native = generation[key]
+                    _check(record['prompt'], native['prompt'], 'Original task linked to cached paired judgment')
+                    _check(record[output_field], native['output'][len(native['prompt']):], 'Exact character-sliced completion passed to judge')
+                    _check(len(record[scores_field]), 3, 'All cached quality dimensions retained')
+                    for dimension, score in zip(dimensions[native['dataset']], record[scores_field]):
+                        _check(score in [1, 2, 3, 4, 5], True, 'Native finite ordinal rating')
+                        trace = {field: value for field, value in native.items() if field not in ['prompt', 'dataset']}
+                        trace.update(judgment_file=path, judgment_row=position, source_judgment=record, dimension=dimension)
+                        item = native['dataset'], native['prompt'], native['natural_text'], dimension
+                        observation_key = path, position, variant, dimension
+                        observations[observation_key] = dict(trace=trace, grade=float(score), subject=(actual_path, variant), item=item)
+                        definitions[item] = native
+                        aliases.setdefault(item, set()).add(native['dataset'] + '#' + str(native['source_row']))
+                    seen_grades.add(key)
+        for key, native in generation.items():
+            if key in seen_grades:
+                continue
+            trace = {field: value for field, value in native.items() if field not in ['prompt', 'dataset']}
+            trace.update(judgment_file=None, judgment_row=None, source_judgment=None, dimension='ungraded')
+            item = native['dataset'], native['prompt'], native['natural_text'], 'ungraded'
+            observations[None, *key] = dict(trace=trace, grade=None, subject=(key[0], key[2]), item=item)
+            definitions[item] = native
+            aliases.setdefault(item, set()).add(native['dataset'] + '#' + str(native['source_row']))
+    _check(parser_disagreements, [('logs/GPTJUDGE-Results/results_NEW2_judged_DIP-a0.45-meditron-HQA.pkl.json', 3)], 'Documented cached-parser disagreement remains explicit')
+    counts = dict(source_responses=len(observations), source_subjects=len(configurations), source_items=len(definitions),
+        source_generation_outputs=len(generation), source_linked_generation_outputs=len(seen_grades),
+        source_graded_rows=sum(x['grade'] is not None for x in observations.values()),
+        source_ungraded_rows=sum(x['grade'] is None for x in observations.values()), source_json_alias_files=duplicate_jsons,
+        source_watermarked_detector_scores=detector_count, source_reference_detector_scores=7200,
+        source_omitted_empty_detector_outputs=omitted, source_reused_control_judgments=reused,
+        source_cached_parser_disagreements=len(parser_disagreements),
+        source_generation_prompt_prefix_mismatches=sum(not x['literal_prompt_prefix'] for x in generation.values()))
+    return dict(observations=observations, configurations=configurations, definitions=definitions,
+        aliases=aliases, counts=counts, generation=generation)
+
+
+def _medwatermark(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _medwatermark_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_generation_file'], features['variant']
+        config = source['configurations'][key]
+        expected = dict(parameters['subject_features'], source_model_label=config['model'],
+            declared_model_identifier=parameters['models'][config['model']], experiment=config['experiment'],
+            source_generation_file=key[0], variant=key[1])
+        expected.pop('harness')
+        _check(features, canonicalize_features(expected), 'Recorded source model/experiment/variant configuration')
+        _check(row.display_name, ' / '.join(config[x] for x in ['model', 'experiment', 'dataset', 'variant']), 'Literal source configuration label')
+        _check(row.harness, 'fact-eval-wllm', 'Native harness attribution')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented historical subject attribute: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'Exactly one subject per recorded configuration')
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        criterion = json.loads(row.grading_criterion)
+        key = features['source_dataset'], row.content, criterion['reference_answer'], features['dimension']
+        native = source['definitions'][key]
+        _check(features, dict(source_dataset=key[0], dimension=key[3]), 'Task family and exact quality dimension')
+        _check(row.raw_item_id in source['aliases'][key], True, 'Original source-bank alias')
+        protocol = metadata['grading']['verifiers'][key[0]]
+        rule = metadata['grading']['fallback_rule'] if key[3] == 'ungraded' else metadata['grading']['rule'] + ' ' + protocol['criteria'][key[3]]
+        _check(criterion, json.loads(canonical_grading_criterion(dict(reference_answer=native['natural_text'], rule=rule))), 'Native reference and task-specific ordinal grading rule')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'Source quality judgment type')
+        _check(verifier['judged_by'], 'llm', 'Native LLM judgment')
+        _check(json.loads(verifier['spec']), protocol, 'Full declared paired judge description')
+        _check(pd.isna(row.asset_manifest), True, 'No invented input assets')
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source['definitions']}), 'Each distinct native input/reference/grading definition exactly once')
+    _check(len(tables.get('assets', [])), 0, 'No invented assets')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'Exactly one linked full trace per response')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, occurrences = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = ((trace['judgment_file'], trace['judgment_row'], trace['variant'], trace['dimension']) if trace['judgment_file'] is not None
+            else (None, trace['source_file'], trace['source_row'], trace['variant']))
+        native = source['observations'][key]
+        _check(json.dumps(trace, sort_keys=True), json.dumps(native['trace'], sort_keys=True), 'Complete unchanged original outputs, paired records, auxiliary scores and source positions')
+        _check((subjects[row.subject_id], items[row.item_id]), (native['subject'], native['item']), 'Exact original subject/item association')
+        _check(None if pd.isna(row.response) else float(row.response), native['grade'], 'Cached grade or explicit unavailable grade')
+        pair = row.subject_id, row.item_id
+        occurrences[pair] += 1
+        _check(row.trial, occurrences[pair], 'Source occurrences and reused-generation grading events remain traceable')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'No invented response setting: ' + field)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'Every original rating and otherwise-ungraded generation exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -15361,7 +15535,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
