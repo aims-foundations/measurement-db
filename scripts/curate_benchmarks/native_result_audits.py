@@ -13805,6 +13805,204 @@ def _livebench(directory, tables, metadata, source=None):
         source_partial_credit=sum(0 < value["grade"] < 1 for value in native.values()))
 
 
+def _llm4ir_source_records(directory, metadata):
+    """Read original CSV rows with stdlib parsers, independently of pandas reshaping."""
+    import csv
+    import io
+    from zipfile import ZipFile
+
+    parameters = metadata["build"]["parameters"]
+    paths = parameters["paths"]
+    native, excluded, cache = {}, {}, {}
+    with ZipFile(directory / "raw" / paths["archive"]) as archive:
+        members = set(archive.namelist())
+
+        def text(filename):
+            return archive.read(paths["prefix"] + filename).decode("utf-8")
+
+        def records(filename):
+            if filename not in cache:
+                cache[filename] = [dict(file=filename, row=index, record=record)
+                    for index, record in enumerate(csv.DictReader(io.StringIO(text(filename))))]
+            return cache[filename]
+
+        def add(pointer, task, label, program, grade, protocol, *, level="O3", form="IR", trial=1,
+                suffix="", aliases=(), output_file=None, output=None, reference=None):
+            key = pointer["file"] + "#" + str(pointer["row"]) + suffix
+            _check(key not in native and key not in excluded, True, "LLM4IR unique native assessment")
+            count = None
+            if output_file:
+                output = text(output_file) if paths["prefix"] + output_file in members else None
+                if task == "execution" and output is not None:
+                    count = len(list(csv.DictReader(io.StringIO(output))))
+                    if count == 0:
+                        excluded[key] = pointer
+                        return
+            input_file = (paths["source"] if form == "SC" else paths["ir"]).format(level=level, program=program)
+            content = text(input_file)
+            if task == "execution":
+                assertions = records(paths["assertions"].format(program=program))
+                content = json.dumps(dict(program=content,
+                    released_assertions=[value["record"]["assert_statement"] for value in assertions]), ensure_ascii=False)
+            identity = "/".join([task, protocol, form, level, program])
+            native[key] = dict(task=task, model=label, subject=task+"/"+label,
+                item=identity, input_file=input_file, content=content, reference=reference, protocol=protocol,
+                trial=trial, grade=grade, program=program, form=form, level=level,
+                condition=dict(task=task, input_form=form, optimization_level=level, assessment="source_reported"),
+                trace=dict(source_records=[pointer, *aliases], source_program=program, source_metric=protocol,
+                    source_grade=None, output_file=output_file, output=output, processed_assertions=count))
+            return native[key]
+
+        # Published categorical assessments: check the source's actual count rule.
+        gold = {p["record"]["file_name"]:p["record"] for p in records(paths["cfg_gold"])}
+        codes = {"Wrong":0., "Branch Completed":1., "Loop Completed":2., "Overall Completed":3.}
+        for spec in parameters.values():
+            if spec.get("role") != "cfg":
+                continue
+            for pointer in records(spec["file"]):
+                row = pointer["record"]
+                nodes = abs(int(row["overall_nodes_test"]) - int(row["overall_nodes_golden"]))
+                edges = abs(int(row["overall_edges_test"]) - int(row["overall_edges_golden"]))
+                category = ("Overall Completed" if nodes < 2 and edges < 2 else
+                    "Loop Completed" if nodes < 2 and row["loop_edges_test"] == row["loop_edges_golden"] else
+                    "Branch Completed" if nodes < 2 and row["branch_edges_test"] == row["branch_edges_golden"] else "Wrong")
+                _check(row["category"], category, "LLM4IR original count-based classification")
+                golden = gold[row["file_name"]]
+                for field, value in golden.items():
+                    if field != "file_name":
+                        _check(row[field+"_golden"], value, "LLM4IR published reference graph counts")
+                program = row["file_name"].removesuffix(".dot")
+                entry = add(pointer, "cfg", spec["label"], program, codes[category], "cfg", trial=int(spec["trial"]),
+                    output_file=parameters["cfg_outputs"][spec["label"]].format(program=program),
+                    reference=json.dumps({k:v for k,v in golden.items() if k != "file_name"}, sort_keys=True))
+                entry["trace"]["source_grade"] = category
+
+        # One O3 export is repeated in the optimization table; retain it as provenance.
+        optimized = {p["record"]["file"]:p for p in records(parameters["decompile_files"]["optimizations"])}
+        codes = {"Decompilation Failed":0., "Compilation Failed":1., "Execution Failed":2., "Passed":3.}
+        for pointer in records(parameters["decompile_files"]["o3"]):
+            row = pointer["record"]
+            program = "CPP_" + row["Number"]
+            for label in ["GPT4o", "GPT3.5", "Gemma27b", "Meta-Llama"]:
+                aliases = []
+                if label == "GPT4o":
+                    alias = optimized[row["Number"]]
+                    _check(alias["record"]["GPT4o-O3"], row[label], "LLM4IR repeated O3 export")
+                    aliases.append(alias)
+                entry = add(pointer, "decompile", label, program, codes[row[label]], "decompile",
+                    suffix=":"+label+":O3", aliases=aliases,
+                    output_file=parameters["decompile_outputs"][label+"_O3"].format(program=program),
+                    reference=text(paths["source"].format(program=program)))
+                entry["trace"]["source_grade"] = row[label]
+        for pointer in optimized.values():
+            row = pointer["record"]
+            program = "CPP_" + row["file"]
+            for level in ["O0", "O1", "O2"]:
+                grade = row["GPT4o-"+level]
+                entry = add(pointer, "decompile", "GPT4o", program, codes[grade], "decompile", level=level,
+                    suffix=":GPT4o:"+level, output_file=parameters["decompile_outputs"]["GPT4o_"+level].format(program=program),
+                    reference=text(paths["source"].format(program=program)))
+                entry["trace"]["source_grade"] = grade
+
+        # All four released metrics have exact source model/program/output matches.
+        summaries = {p["record"]["Index"]:p for p in records(paths["summary_outputs"])}
+        cosine = {(p["record"]["Index"],p["record"]["Model"]):p for p in records(paths["summary_cosine"])}
+        _check(len(cosine), len(records(paths["summary_cosine"])), "LLM4IR unique cosine assessment")
+        for pointer in records(paths["summary_scores"]):
+            row = pointer["record"]
+            program, label = row["Index"], row["Model"]
+            similarity, summary = cosine[program,label], summaries[program]
+            _check(bool(summary["record"][label]) and bool(summary["record"]["Golden"]), True,
+                   "LLM4IR associated generated and reference summary")
+            for metric in ["BLEU_Score", "ROUGE-L_Score", "METEOR_Score", "Similarity"]:
+                value = similarity["record"][metric] if metric == "Similarity" else row[metric]
+                entry = add(pointer, "summary", label, program, float(value), metric, suffix=":"+metric,
+                    aliases=[similarity, summary], output=summary["record"][label], reference=summary["record"]["Golden"])
+                entry["trace"]["source_grade"] = value
+
+        # Preserve distinct repetition numbers and both source-code and IR conditions.
+        codes = {"fail":0., "partial pass":1., "pass":2.}
+        for spec in parameters.values():
+            if spec.get("role") != "execution":
+                continue
+            for pointer in records(spec["file"]):
+                row = pointer["record"]
+                program, label = row["CPP_number"], row[spec["column"]]
+                output_file = spec["output"].format(program=program) if spec["output"] else None
+                entry = add(pointer, "execution", spec["label"], program, codes[label], "execution",
+                    form=spec["form"], trial=int(spec["trial"]), output_file=output_file)
+                if entry:
+                    entry["trace"]["source_grade"] = label
+                    if entry["trace"]["output"] is not None:
+                        outcomes = [r["final_result"] for r in csv.DictReader(io.StringIO(entry["trace"]["output"]))]
+                        expected = "pass" if all(v == "pass" for v in outcomes) else "fail" if all(v == "fail" for v in outcomes) else "partial pass"
+                        _check(label, expected, "LLM4IR program summary agrees with nonempty parsed outputs")
+    return dict(native=native, excluded=excluded)
+
+
+def _llm4ir(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _llm4ir_source_records(directory, metadata) if source is None else source
+    native = source["native"]
+    parameters = metadata["build"]["parameters"]
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), {"kind":"mixed"}, "LLM4IR mixed grading domains")
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        task, label = features["source_task"], features["source_model_label"]
+        expected = {k:v for k,v in parameters["subject_features"].items() if k != "harness"}
+        _check(features, dict(**expected, source_task=task, source_model_label=label), "LLM4IR source-specific model attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"]+task+"/"+label, "LLM4IR literal task-specific labels")
+        _check(row.harness, parameters["subject_features"]["harness"], "LLM4IR original study harness")
+        for field in ["provider", "normalized_name", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row,field)), True, "LLM4IR no guessed endpoint or inference setting: "+field)
+        subjects[row.subject_id] = task+"/"+label
+    _check(Counter(subjects.values()), Counter({r["subject"]:1 for r in native.values()}), "LLM4IR complete model coverage")
+    targets = {r["item"]:r for r in native.values()}
+    for row in tables["items"].itertuples():
+        original = targets[row.raw_item_id]
+        _check(row.content, original["content"], "LLM4IR complete original IR/source/assertion input")
+        expected = dict(task=original["task"], input_form=original["form"], optimization_level=original["level"],
+            source_program=original["program"], source_input=original["input_file"])
+        _check(_features(row.item_features), expected, "LLM4IR original task and optimization level")
+        protocol = metadata["grading"]["verifiers"][original["protocol"]]
+        criterion = canonical_grading_criterion(dict(reference_answer=original["reference"], rule=protocol["rule"], response_scale=protocol["response_scale"]))
+        _check(json.loads(row.grading_criterion), json.loads(criterion), "LLM4IR actual reference, rule and grading scale")
+        judge = json.loads(row.verifier)
+        _check((judge["class"],json.loads(judge["spec"])), ("judge",protocol), "LLM4IR original grader definition")
+        _check(pd.isna(row.asset_manifest),True,"LLM4IR no fabricated assets")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key:1 for key in targets}), "LLM4IR exact task/grading definitions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LLM4IR complete trace associations")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        first = trace["source_records"][0]
+        task, label = subjects[row.subject_id].split("/",1)
+        target = targets[items[row.item_id]]
+        key = first["file"]+"#"+str(first["row"])
+        if task == "decompile": key += ":"+label+":"+target["level"]
+        if task == "summary": key += ":"+trace["source_metric"]
+        original = native[key]
+        _check(trace, original["trace"], "LLM4IR unchanged source rows and full output text")
+        _check((subjects[row.subject_id],items[row.item_id]),(original["subject"],original["item"]), "LLM4IR model/input/assessment association")
+        _check(row.response,original["grade"],"LLM4IR unchanged published category or numeric value")
+        _check(row.trial,original["trial"],"LLM4IR original repetition number")
+        _check(json.loads(row.test_condition),original["condition"],"LLM4IR actual IR versus source-code condition")
+        _check(pd.isna(row.interactors),True,"LLM4IR no invented interactor")
+        seen[key]+=1
+    _check(seen,Counter({key:1 for key in native}),"LLM4IR complete eligible native assessment coverage")
+    _check(len(tables.get("assets",[])),0,"LLM4IR no unassociated assets")
+    counts = dict(source_responses=len(native),source_subjects=len(subjects),source_items=len(items),
+        source_excluded_empty_summaries=len(source["excluded"]),
+        source_complete_outputs=sum(r["trace"]["output"] is not None for r in native.values()))
+    counts.update({"source_"+task+"_assessments":sum(r["task"]==task for r in native.values()) for task in ["cfg","decompile","summary","execution"]})
+    return counts
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13819,7 +14017,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

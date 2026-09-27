@@ -1,0 +1,3 @@
+- Source: pinned original LLM4IR Git archive; all 18,901 file blobs verified. Preserve raw bytes and literal task-specific model labels.
+- Transformation: 5,348 program/metric assessments across all four tasks, with actual LLVM or source-code inputs, explicit grading scales and complete associated outputs. Collapse repeated GPT4o O3 exports; retain three DeepSeek execution trials for each input condition.
+- Limits: exclude twelve empty-output summaries incorrectly labeled pass upstream; preserve other published grades. SC means source code. Historical prompt wrappers, exact endpoints and some grader versions are unknown. Additional graph-comparison analyses and unassociated outputs remain raw-only; assessments are not independent model-call counts.

@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5348
+    logical_sha256: 0b807aeb6742e65d03944c633f7cfc6c86f6dfad98a1df7df59b49b5333cbe0d
+  subjects:
+    rows: 19
+    logical_sha256: b9fcb8e42aaaed1786723923b28d3a588b868e9d1578dd98bc1b74f763ea49c4
+  responses:
+    rows: 5348
+    logical_sha256: 728df3f09598ffa0bc493e00880290cda3639022a5887c45f3db2ab845bbfcdb
+  items:
+    rows: 1804
+    logical_sha256: f8c201458df9075bcb406a0fe3ba466e127983148ff2879bff4ee1b05989a4b3
+  benchmarks:
+    rows: 1
+    logical_sha256: 90cb6035ba8ef5be49b5011e9fc1395bf8e9fa6ee38faafb408278827094d5ad
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 5348
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 19
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 1804
+  source_excluded_empty_summaries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 12
+  source_complete_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 4997
+  source_cfg_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 544
+  source_decompile_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 1148
+  source_summary_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 1864
+  source_execution_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hjiang13/LLM4IR
+    locator: "Pinned primary CSV tables in data/Task1\u2013Task4, and three DeepSeek execution runs for both IR\
+      \ and source-code inputs."
+    scope: All native rows, real input artifacts, grading definitions, linked outputs and documented empty-output
+      exclusions.
+    expected: 1792

@@ -1,0 +1,315 @@
+benchmark:
+  description: Published program-level assessments of LLVM control-flow reconstruction, decompilation, summarization
+    and execution reasoning.
+  testing_condition: Preserve primary author assessment tables for all four tasks, including GPT4o decompilation
+    at O0–O3, four summary metrics and three DeepSeek execution runs in both IR and source-code conditions. A response
+    is a published program/metric assessment, not necessarily one model call; metrics and conditions must not be
+    pooled as independent generations. Literal labels remain task-specific because exact historical endpoints and
+    settings are not established. SC means source-code input, not self-consistency. Inputs contain the actual released
+    LLVM text or source code and assertion definitions, without invented historical prompt wrappers. Execution summaries
+    aggregate the assertions the source processed, which may be fewer than the released assertions. Twelve summaries
+    whose native output tables are empty are excluded, despite upstream's vacuous pass label. Other published labels
+    and numeric metrics remain unchanged; the migration does not execute model code or regrade outputs. Auxiliary
+    graph-comparison experiments, unassociated outputs and aggregate plots remain in raw.
+  paper_url: https://arxiv.org/abs/2502.06854
+  data_source_url: https://github.com/hjiang13/LLM4IR
+  subject_type: model
+  item_type: question
+  license: The upstream README states MIT, but the captured tree contains no LICENSE file. This statement does not
+    establish the license of every incorporated HumanEval-X artifact.
+  citation: "@inproceedings{jiang2025llm4ir,\n  title={Can Large Language Models Understand Intermediate Representations\
+    \ in Compilers?},\n  author={Jiang, Hailong and Zhu, Jianfeng and Wan, Yao and Fang, Bo and Zhang, Hongyu and\
+    \ Jin, Ruoming and Guan, Qiang},\n  booktitle={International Conference on Machine Learning (ICML)},\n  year={2025}\n\
+    }"
+  tags:
+  - compilers
+  - intermediate-representation
+  - llvm
+  - code-reasoning
+  - llm-eval
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-02
+  release: public
+  name: LLM4IR (LaMIR)
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.zip
+      prefix: LLM4IR-af9d4e2a781b3910637903862f5d8ee343995b86/
+      ir: Benchmarks/IR_Human_x_164_{level}/{program}/{program}.bc
+      source: Benchmarks/Human_xBenchmarks_164/{program}/{program}.cpp
+      assertions: Benchmarks/IR_Human_x_164_O3/{program}/{program}.csv
+      cfg_gold: data/Task1_CFG_Construction/CFGResult_O3.csv
+      summary_outputs: data/Task3_IR_Summarization/Processed_code_summaries.csv
+      summary_scores: data/Task3_IR_Summarization/Codesummary_scores.csv
+      summary_cosine: data/Task3_IR_Summarization/CodeSummary_embeddings_and_similarity.csv
+    labels:
+      subject_prefix: 'LLM4IR / '
+    subject_features:
+      harness: LLM4IR released assessments
+      model_identifier_status: literal_task_specific_source_label
+      inference_settings: not_established_for_historical_results
+    cfg_outputs:
+      GPT35: results/Task1_CFG_Construction/GPT35_human_x_164/{program}.dot
+      GPT4o: results/Task1_CFG_Construction/GPT4o_human_x_164/{program}.dot
+      Gemma27b: results/Task1_CFG_Construction/Gemma27b_humaneval_x_cpp_164/{program}.dot
+      MetaLlama: results/Task1_CFG_Construction/Meta-Llama-3.1-405B_Humaneval_x_cpp_164/{program}.dot
+      deepseek: results/Task1_CFG_Construction/DeepSeek_CFG_Result/Run3_DeepSeek_CFG/{program}.dot
+    decompile_outputs:
+      GPT3.5_O3: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/GPT35_human_x_164_decompiled/{program}.cpp
+      GPT4o_O3: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/GPT4o_human_x_164_decompiled/{program}.cpp
+      Gemma27b_O3: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/Gemma27b_humaneval_x_cpp_164/{program}.cpp
+      Meta-Llama_O3: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/Meta-Llama-3.1-405B_Humaneval_x_cpp_164/{program}.cpp
+      GPT4o_O0: results/Task2_IR_Decompilation/DecompiledResults_Human_x_164_O0/GPT4o_Human_x_164_O0_decompiled/{program}.cpp
+      GPT4o_O1: results/Task2_IR_Decompilation/DecompiledResuts_Human_x_164_O1/GPT4o_Human_x_164_O1_decompiled/{program}.cpp
+      GPT4o_O2: results/Task2_IR_Decompilation/DecompiledResuts_Human_x_164_O2/GPT4o_Human_x_164_O2_decompiled/{program}.cpp
+    decompile_files:
+      o3: data/Task2_IR_Decompilation/decompilationResult_O3.csv
+      optimizations: data/Task2_IR_Decompilation/Decompilation_GPT4o_O123.csv
+    decompile_models:
+      GPT4o: GPT4o
+      GPT3.5: GPT35
+      Gemma27b: Gemma27b
+      Meta-Llama: Meta-Llama
+    category_codes:
+      Wrong: '0'
+      Branch Completed: '1'
+      Loop Completed: '2'
+      Overall Completed: '3'
+      Decompilation Failed: '0'
+      Compilation Failed: '1'
+      Execution Failed: '2'
+      Passed: '3'
+      fail: '0'
+      partial pass: '1'
+      pass: '2'
+    cfg_GPT35:
+      role: cfg
+      label: GPT35
+      file: data/Task1_CFG_Construction/CFG_completion_analysis_results_GPT35.csv
+      trial: '1'
+    cfg_GPT4o:
+      role: cfg
+      label: GPT4o
+      file: data/Task1_CFG_Construction/CFG_completion_analysis_results_GPT4o.csv
+      trial: '1'
+    cfg_Gemma27b:
+      role: cfg
+      label: Gemma27b
+      file: data/Task1_CFG_Construction/CFG_completion_analysis_results_Gemma27b.csv
+      trial: '1'
+    cfg_MetaLlama:
+      role: cfg
+      label: MetaLlama
+      file: data/Task1_CFG_Construction/CFG_completion_analysis_results_MetaLlama.csv
+      trial: '1'
+    cfg_deepseek:
+      role: cfg
+      label: deepseek
+      file: data/Task1_CFG_Construction/CFG_completion_analysis_results_deepseek.csv
+      trial: '3'
+    execution_GPT4o:
+      role: execution
+      label: GPT4o
+      form: IR
+      trial: '1'
+      file: data/Task4_Execution_reasoning/GPT4o.summary.csv
+      output: results/Task4_Execution_reasoning/GPT4/{program}/assertion_results.csv
+      column: Result
+    execution_GPT35:
+      role: execution
+      label: GPT35
+      form: IR
+      trial: '1'
+      file: data/Task4_Execution_reasoning/GPT35.summary.csv
+      output: results/Task4_Execution_reasoning/GPT35/{program}/assertion_results.csv
+      column: Result
+    execution_Gemma:
+      role: execution
+      label: Gemma
+      form: IR
+      trial: '1'
+      file: data/Task4_Execution_reasoning/Gemma.summary.csv
+      output: results/Task4_Execution_reasoning/gemma/{program}/assertion_results.csv
+      column: Result
+    execution_Meta_Llama:
+      role: execution
+      label: Meta_Llama
+      form: IR
+      trial: '1'
+      file: data/Task4_Execution_reasoning/Meta_Llama.summary.csv
+      output: results/Task4_Execution_reasoning/meta-llama/{program}/assertion_results.csv
+      column: Result
+    execution_GPT4_SC:
+      role: execution
+      label: GPT4_SC
+      form: SC
+      trial: '1'
+      file: data/Task4_Execution_reasoning/GPT4_SC_summary.csv
+      output: ''
+      column: Status
+    execution_DeepSeek_IR_1:
+      role: execution
+      label: DeepSeek
+      form: IR
+      trial: '1'
+      file: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run1_DeepSeek_IR_Execute/assertion_results_summary.csv
+      output: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run1_DeepSeek_IR_Execute/{program}/assertion_results.csv
+      column: Result
+    execution_DeepSeek_IR_2:
+      role: execution
+      label: DeepSeek
+      form: IR
+      trial: '2'
+      file: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run2_DeepSeek_IR_Execute/assertion_results_summary.csv
+      output: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run2_DeepSeek_IR_Execute/{program}/assertion_results.csv
+      column: Result
+    execution_DeepSeek_IR_3:
+      role: execution
+      label: DeepSeek
+      form: IR
+      trial: '3'
+      file: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run3_DeepSeek_IR_Execute/assertion_results_summary.csv
+      output: results/Task4_Execution_reasoning/DeepSeek_IR_Execute_Result/Run3_DeepSeek_IR_Execute/{program}/assertion_results.csv
+      column: Result
+    execution_DeepSeek_SC_1:
+      role: execution
+      label: DeepSeek
+      form: SC
+      trial: '1'
+      file: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run1_DeepSeek_Execute/assertion_results_summary.csv
+      output: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run1_DeepSeek_Execute/{program}/assertion_results.csv
+      column: Result
+    execution_DeepSeek_SC_2:
+      role: execution
+      label: DeepSeek
+      form: SC
+      trial: '2'
+      file: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run2_DeepSeek_Execute/assertion_results_summary.csv
+      output: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run2_DeepSeek_Execute/{program}/assertion_results.csv
+      column: Result
+    execution_DeepSeek_SC_3:
+      role: execution
+      label: DeepSeek
+      form: SC
+      trial: '3'
+      file: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run3_DeepSeek_Execute/assertion_results_summary.csv
+      output: results/Task2_IR_Decompilation/Decompiled_Humaneval_x_cpp_164_Result_O3/March2025_Decompiled_Humaneval_x_cpp_164_O0_Result/DeepSeekFolder/DeepSeek_Execute_Result/Run3_DeepSeek_Execute/{program}/assertion_results.csv
+      column: Result
+sources:
+  upstream:
+  - name: original_release
+    file: upstream.zip
+    url: https://codeload.github.com/hjiang13/LLM4IR/zip/af9d4e2a781b3910637903862f5d8ee343995b86
+    revision: af9d4e2a781b3910637903862f5d8ee343995b86
+    size: 88293090
+    sha256: cbdab3b17ff63110a1422b03a534628c00d09b5bdc1cf164cf09326c1ec4df48
+grading:
+  verifiers:
+    cfg:
+      kind: reported_category
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task1_CFG_Construction/count_numbers.py
+      rule: Preserve the source category. Overall Completed requires node- and edge-count differences below 2. Otherwise
+        node difference below 2 permits Loop Completed if loop-edge counts match, then Branch Completed if branch-edge
+        counts match; otherwise Wrong. These categories do not assert graph isomorphism. Codes are unordered identifiers.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        direction: unordered
+        meanings:
+          '0': Wrong
+          '1': Branch Completed
+          '2': Loop Completed
+          '3': Overall Completed
+    decompile:
+      kind: reported_category
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task2_IR_Decompilation/decompilationResult_O3.csv
+      rule: Preserve the published decompilation, compilation, execution or pass status. The captured testAndRun.py
+        compiles and executes generated C++ with ten-second limits; historical compiler and environment versions
+        are not recorded. Do not execute or regrade the generated code.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '0': Decompilation Failed
+          '1': Compilation Failed
+          '2': Execution Failed
+          '3': Passed
+    execution:
+      kind: reported_category
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/results/Task4_Execution_reasoning/GPT4/analyzeAssertionResults.py
+      rule: 'Preserve the published program summary: all extracted final_result values pass gives pass, all fail
+        gives fail, and every other combination gives partial pass. This summarizes parsed model answers, not a
+        separately executed correctness check. Empty assertion-result tables are excluded rather than inheriting
+        Python all([])''s vacuous pass. The number of processed assertions varies.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        - 2
+        direction: higher_is_better
+        meanings:
+          '0': fail
+          '1': partial pass
+          '2': pass
+    BLEU_Score:
+      kind: reported_metric
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task3_IR_Summarization/Codesummary_scores.csv
+      rule: Preserve the published BLEU_Score for the released model summary against Golden. Exact scorer/tokenizer/embedding-model
+        versions are not established; do not recompute or threshold this metric.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    ROUGE-L_Score:
+      kind: reported_metric
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task3_IR_Summarization/Codesummary_scores.csv
+      rule: Preserve the published ROUGE-L_Score for the released model summary against Golden. Exact scorer/tokenizer/embedding-model
+        versions are not established; do not recompute or threshold this metric.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    METEOR_Score:
+      kind: reported_metric
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task3_IR_Summarization/Codesummary_scores.csv
+      rule: Preserve the published METEOR_Score for the released model summary against Golden. Exact scorer/tokenizer/embedding-model
+        versions are not established; do not recompute or threshold this metric.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+    Similarity:
+      kind: reported_metric
+      source: https://github.com/hjiang13/LLM4IR/blob/af9d4e2a781b3910637903862f5d8ee343995b86/data/Task3_IR_Summarization/CodeSummary_embeddings_and_similarity.csv
+      rule: Preserve the published Similarity for the released model summary against Golden. Exact scorer/tokenizer/embedding-model
+        versions are not established; do not recompute or threshold this metric.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
