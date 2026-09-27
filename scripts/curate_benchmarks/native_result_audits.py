@@ -13452,6 +13452,148 @@ def _lexeval(directory, tables, metadata, source=None):
     return _check_recorded_prompt_results(tables, checked_metadata, source, "LexEval")
 
 
+def _lingoly_source_records(directory, metadata):
+    """Associate every recorded target prompt and grade its original answer."""
+    import ast
+    import io
+    import re
+    import unicodedata as ud
+    import zipfile
+
+    parameters = metadata["build"]["parameters"]
+    paths = parameters["paths"]
+    password = parameters["archive_settings"]["password"].encode()
+    with zipfile.ZipFile(directory / "raw" / paths["archive"]) as archive:
+        code = paths["prefix"] + paths["scorer"]
+        functions = [node for node in ast.parse(archive.read(code)).body
+                     if isinstance(node, ast.FunctionDef) and node.name in {"clean_answer", "safe_exact", "parse_str_list_score"}]
+        _check(len(functions), 3, "LINGOLY unchanged native exact-match functions")
+        scorer = dict(ast=ast, re=re, ud=ud)
+        exec(compile(ast.Module(body=functions, type_ignores=[]), code, "exec"), scorer)
+        with zipfile.ZipFile(io.BytesIO(archive.read(paths["prefix"] + paths["questions"]))) as bank:
+            sheets = [json.loads(line) for line in bank.read("test.jsonl", pwd=password).splitlines() if line.strip()]
+        with zipfile.ZipFile(io.BytesIO(archive.read(paths["prefix"] + paths["responses"]))) as results:
+            files = {name: json.loads(results.read(name, pwd=password))
+                     for name in sorted(results.namelist()) if name.endswith(".json")}
+    bank = {sheet["overall_question_n"]: json.loads(sheet["questions"]) for sheet in sheets}
+    _check(len(bank), 90, "LINGOLY distinct original problem sheets")
+    fields = ["questions", "overall_question_n", "model_answers"]
+    for duplicate, original in parameters["duplicate_results"].items():
+        _check([{key:row[key] for key in fields} for row in files[duplicate]],
+               [{key:row[key] for key in fields} for row in files[original]], "LINGOLY duplicate export is not a new run")
+        del files[duplicate]
+    _check(len(files), 22, "LINGOLY attributable result files")
+    native, counts = {}, Counter()
+    for name, records in files.items():
+        suffix = "_lingoly_nocontext.json" if name.endswith("_nocontext.json") else "_lingoly.json"
+        _check(name.endswith(suffix), True, "LINGOLY supported native filename")
+        _check([row["overall_question_n"] for row in records],
+               [sheet["overall_question_n"] for sheet in sheets for _ in json.loads(sheet["questions"])],
+               "LINGOLY original global question order used by scoring.py")
+        model, condition = name.removesuffix(suffix), "none" if name.endswith("_nocontext.json") else "full"
+        positions = Counter()
+        for index, record in enumerate(records):
+            sheet = record["overall_question_n"]
+            question = bank[sheet][positions[sheet]]
+            positions[sheet] += 1
+            # Verify the actually selected question, not just a matching sheet or row count.
+            target = "\n" + question["prompt"] + "\n" + "".join(
+                part["questionpart_n"] + " " + part["question"] + "\n" for part in question["subprompts"])
+            segments = record["questions"].split("Now respond to the following questions:")
+            _check(len(segments), 2, "LINGOLY unique recorded target-question marker")
+            _check(target in segments[1], True, "LINGOLY question-bank association matches the recorded target text")
+            parts = {part["questionpart_n"]: part for part in question["subprompts"]}
+            _check(list(record["model_answers"]), list(parts), "LINGOLY all original answer parts in native order")
+            _check(set(record["correct_answers"]), set(parts), "LINGOLY complete earlier reference mapping")
+            for part, prediction in record["model_answers"].items():
+                value = ", ".join(prediction) if isinstance(prediction, list) else prediction
+                reference = parts[part]["answer"]
+                grade = float(scorer["parse_str_list_score"](value, reference, scorer["safe_exact"], None))
+                earlier = float(scorer["parse_str_list_score"](value, record["correct_answers"][part], scorer["safe_exact"], None))
+                key = f"{name}#{index}:{part}"
+                native[key] = dict(file=name, key=str(index), part=part, model=model, condition=condition,
+                    record=record, reference_record=parts[part], grade=grade, earlier_grade=earlier,
+                    identity=(condition, record["questions"], part, reference))
+                counts["context_" + condition] += 1
+                counts["reference_corrections"] += reference != record["correct_answers"][part]
+                counts["grade_corrections"] += grade != earlier
+                counts["empty_answers"] += prediction == ""
+                counts["null_answers"] += prediction is None
+                counts["list_answers"] += isinstance(prediction, list)
+                counts["numeric_answers"] += isinstance(prediction, (float, int))
+                counts["empty_references"] += reference == ""
+            counts["recorded_prompts"] += 1
+        _check(dict(positions), {key:len(questions) for key,questions in bank.items()}, "LINGOLY complete question coverage per file")
+    _check((len(native), counts["grade_corrections"]), (24926, 9), "LINGOLY all original attempts and documented reference corrections")
+    return native, counts
+
+
+def _lingoly(directory, tables, metadata, source=None):
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, counts = _lingoly_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "LINGOLY native binary scale")
+    identities, definitions = {}, {}
+    for key, row in native.items():
+        condition, prompt, part, reference = row["identity"]
+        identity = condition, unicodedata.normalize("NFC", prompt).strip(), part, reference
+        identities[key] = identity
+        definitions.setdefault(identity, key)
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["source_model_label"]
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=model), "LINGOLY source-supported subject attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LINGOLY original model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "LINGOLY released harness label")
+        for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "LINGOLY unrecorded subject setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LINGOLY all attributable models")
+    verifier = metadata["grading"]["verifiers"]["exact_match"]
+    for row in tables["items"].itertuples():
+        original = native[row.raw_item_id]
+        condition, prompt, part, reference = original["identity"]
+        _check(row.raw_item_id, definitions[identities[row.raw_item_id]], "LINGOLY first alias for the complete prompt and selected part")
+        _check(row.content, prompt, "LINGOLY complete exact recorded prompt, including context condition and wrapper")
+        _check(_features(row.item_features), dict(context=condition, target_part=json.dumps(part, ensure_ascii=False)), "LINGOLY exact selected part without answer leakage")
+        expected = canonical_grading_criterion(dict(reference_answer=json.dumps(reference, ensure_ascii=False),
+            rule=metadata["grading"]["rule"].format(part=part, condition=condition)))
+        _check(json.loads(row.grading_criterion), json.loads(expected), "LINGOLY corrected reference and original exact-match rule")
+        judge = json.loads(row.verifier)
+        _check((judge["class"], json.loads(judge["spec"])), ("judge", verifier), "LINGOLY pinned native verifier")
+        _check(pd.isna(row.asset_manifest), True, "LINGOLY no invented prompt assets")
+        items[row.item_id] = identities[row.raw_item_id]
+    _check(Counter(items.values()), Counter({identity:1 for identity in definitions}), "LINGOLY distinct recorded prompt/part definitions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LINGOLY complete trace for every attempt")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    occurrences, trials, seen = Counter(), {}, Counter()
+    for key, row in native.items():
+        unit = row["model"], identities[key]
+        occurrences[unit] += 1
+        trials[key] = occurrences[unit]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"] + "#" + trace["source_key"] + ":" + trace["target_part"]
+        original = native[key]
+        _check(trace, dict(source_file=original["file"], source_key=original["key"], target_part=original["part"],
+            source_record=original["record"], reference_record=original["reference_record"]), "LINGOLY all original fields and corrected reference annotations")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], identities[key]), "LINGOLY exact model, observed prompt and scored part")
+        _check(row.response, original["grade"], "LINGOLY unchanged native deterministic grade")
+        _check((row.trial, row.test_condition), (trials[key], "context=" + original["condition"]), "LINGOLY original occurrence and condition")
+        _check(pd.isna(row.interactors), True, "LINGOLY no invented interactor")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "LINGOLY every attributable observation exactly once")
+    _check(len(tables.get("assets", [])), 0, "LINGOLY no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+                **{"source_" + key:value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13466,7 +13608,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

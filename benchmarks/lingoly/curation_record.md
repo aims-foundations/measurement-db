@@ -1,0 +1,3 @@
+- Sources: pinned author repository, encrypted task/result archives and unchanged exact-match code; the documented archive password is public.
+- Transformation: preserve 24,926 part observations, complete recorded prompts, both context conditions and full source records. The authors' corrected answer bank changes nine earlier grades; the temporary Gemini file duplicates an existing run.
+- Limits: outputs are parsed answers, without separate raw completions or verified historical generation settings. Question data are licensed CC-BY-NC-ND-4.0 for LLM benchmarking; upstream code is CC-BY-SA-4.0. Preserve the original LICENSE and attribution.

@@ -1,0 +1,93 @@
+benchmark:
+  description: Released model answers to individual LINGOLY question parts, retaining complete recorded prompts
+    and full-context/no-context conditions.
+  testing_condition: Each item identifies one graded part of the complete prompt actually recorded in a model result.
+    Preserve the original prompt, including model wrappers and context ablations, rather than reconstructing it
+    from the later corrected template. Reconstruct normalized exact match using the unchanged native scorer and
+    the current pinned question bank, as the author's scoring script does. The original stored references remain
+    in traces; corrections change nine of the previously curated grades. A duplicate temporary Gemini export remains
+    only in raw. Model directory/file labels do not establish unrecorded generation settings or exact historical
+    harness revisions. Parsed answers are available, but separate raw model completions are not in these result
+    records. No new inference or judge calls occur.
+  paper_url: https://arxiv.org/abs/2406.06196
+  data_source_url: https://github.com/am-bean/lingOly
+  subject_type: model
+  item_type: task
+  license: 'Question data: CC-BY-NC-ND-4.0, for LLM benchmarking only; upstream code: CC-BY-SA-4.0. See the captured
+    LICENSE.'
+  citation: "@inproceedings{bean2024lingoly,\n  title={LINGOLY: A Benchmark of Olympiad-Level Linguistic Reasoning\
+    \ Puzzles in Low Resource and Extinct Languages},\n  author={Bean, Andrew M. and Hellsten, Simi and Mayne, Harry\
+    \ and Magomere, Jabez and Chi, Ethan A. and Chi, Ryan and Hale, Scott A. and Kirk, Hannah Rose},\n  booktitle={NeurIPS\
+    \ 2024 Datasets and Benchmarks Track},\n  year={2024},\n}"
+  tags:
+  - linguistic_reasoning
+  - multilingual
+  - low_resource
+  - olympiad
+  modality:
+  - text
+  domain:
+  - reasoning
+  - multilingual
+  response_type: binary
+  response_scale: &id001
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': No accepted answer matches after the native normalization
+      '1': An accepted answer matches under the native exact-match rule
+  categorical: true
+  release_date: 2024-06
+  release: public
+  name: LINGOLY
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.zip
+      prefix: lingOly-ba5cfb422c0cdf6cb25a0fcd04234b411060bf28/
+      questions: testing/data/benchmark.zip
+      responses: testing/data/responses.zip
+      scorer: testing/code/scoring_methods.py
+    archive_settings:
+      password: lingoly
+      question_member: test.jsonl
+    native_functions:
+      normalization: clean_answer
+      comparison: safe_exact
+      grading: parse_str_list_score
+    duplicate_results:
+      temp.json: gemini-1.5-pro_lingoly.json
+    labels:
+      subject_prefix: 'LINGOLY / '
+    subject_features:
+      harness: LINGOLY released predictions
+      historical_configuration: numeric_settings_not_recorded
+      model_identifier_status: released_filename_label
+grading:
+  rule: Grade part {part} of the recorded prompt under context={condition}. Use the native normalized exact match
+    against the pinned question-bank reference. reference_answer is a JSON string preserving the original reference
+    text, including serialized alternative answers; original response-file references remain in traces.
+  verifiers:
+    exact_match:
+      kind: reconstructed_native_deterministic_metric
+      metric: normalized_exact_match
+      source: https://github.com/am-bean/lingOly/blob/ba5cfb422c0cdf6cb25a0fcd04234b411060bf28/testing/code/scoring_methods.py
+      function: parse_str_list_score(model_answer, reference, safe_exact, None)
+      reference_source: https://github.com/am-bean/lingOly/blob/ba5cfb422c0cdf6cb25a0fcd04234b411060bf28/testing/data/benchmark.zip
+      reference_policy: Replace stored references with the pinned question-bank answers, following scoring.py; preserve
+        the earlier references in the source trace.
+      response_scale: *id001
+sources:
+  upstream:
+  - name: upstream
+    url: https://codeload.github.com/am-bean/lingOly/zip/ba5cfb422c0cdf6cb25a0fcd04234b411060bf28
+    revision: ba5cfb422c0cdf6cb25a0fcd04234b411060bf28
+    file: upstream.zip
+    size: 16967883
+    sha256: 6dcef591bde853feb492c4578d0318105c6c6d6e9aad99d464b60662af8d1e72

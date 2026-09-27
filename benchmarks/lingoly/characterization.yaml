@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 24926
+    logical_sha256: 8920feb45b24bf1c7f4c8f5658496c5a8e9f89f72b875d321df843ee7110bb9c
+  subjects:
+    rows: 11
+    logical_sha256: e72b2a7077214e5e6a8a4e14b0c092e5a1ea0bef5e74fe1f8dd7d4cd3181b7a3
+  responses:
+    rows: 24926
+    logical_sha256: 166f6a36824d13b9f84b460cd01f4cd9949ce45f0592cbc69135589e87075594
+  items:
+    rows: 12463
+    logical_sha256: 0b66ae9759859bc0bc3ff6fa8d2c5c630595ddb83de288261c3be26110308a6a
+  benchmarks:
+    rows: 1
+    logical_sha256: e4c070d9931a3fb0ce7710985863710182c7f4c662afe0a46af363ab467020a1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 24926
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 12463
+  source_context_full:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 12463
+  source_reference_corrections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 417
+  source_grade_corrections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 9
+  source_empty_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 2612
+  source_null_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 16
+  source_list_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 18
+  source_numeric_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 1
+  source_empty_references:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 286
+  source_recorded_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 4488
+  source_context_none:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/am-bean/lingOly
+    locator: The 22 named result files, exact recorded target-question text, pinned question bank and unchanged
+      native exact-match functions.
+    scope: Every attributable answer part, full recorded prompt, original and corrected references, native grade
+      and condition. The duplicate temporary export remains in raw.
+    expected: 12463
