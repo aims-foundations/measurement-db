@@ -14759,6 +14759,161 @@ def _matharena_platform(directory, tables, metadata, source=None):
     return dict(source['counts'], source_item_definitions=len(expected_items))
 
 
+def _mathvista_sources(directory, metadata):
+    """Decode the workbooks independently and use only the frozen comparison functions."""
+    import ast
+    import copy
+    import hashlib
+    import string
+    from types import SimpleNamespace
+    import openpyxl
+    from openpyxl.utils.escape import unescape
+    import pyarrow.parquet as pq
+
+    namespace = dict(cp=copy, os=SimpleNamespace(environ={}), string=string,
+        eval=ast.literal_eval)
+    names = {'can_infer', 'can_infer_text', 'can_infer_option', 'post_check', 'list_to_dict'}
+    for path in [directory / 'raw/historical_harness/vlmeval/utils/matching_util.py',
+                 directory / 'raw/historical_harness/vlmeval/dataset/utils/mathvista.py']:
+        body = [node for node in ast.parse(path.read_text()).body
+                if isinstance(node, ast.FunctionDef) and node.name in names]
+        # Imports, model/judge calls and all other upstream code are excluded.
+        exec(compile(ast.Module(body=body, type_ignores=[]), str(path), 'exec'), namespace)
+    _check(names <= namespace.keys(), True, 'MathVista complete frozen deterministic comparator')
+    compare = namespace['post_check']
+    bank = {int(row['pid']): row for row in pq.read_table(
+        directory / 'raw' / metadata['build']['parameters']['paths']['tasks']).to_pylist()}
+    observations, exports, workbook_rows = {}, set(), 0
+    for path in sorted((directory / 'raw/results').rglob('*.xlsx')):
+        book = openpyxl.load_workbook(path, read_only=True, data_only=True)
+        iterator = book.worksheets[0].iter_rows(values_only=True)
+        columns = list(next(iterator))
+        records = [dict(zip(columns, values)) for values in iterator]
+        book.close()
+        model = path.name.split('_MathVista_MINI')[0]
+        predictions = [{key: value for key, value in row.items() if key not in ('res', 'log')}
+                       for row in sorted(records, key=lambda row: row['index'])]
+        fingerprint = hashlib.sha256(json.dumps(predictions, sort_keys=True, ensure_ascii=False,
+            separators=(',', ':'), allow_nan=False).encode()).hexdigest()
+        exports.add((model, fingerprint))
+        _check(Counter(row['index'] for row in records), Counter({key: 1 for key in bank}),
+               'MathVista complete original task coverage in each export')
+        for offset, row in enumerate(records):
+            task = bank[row['index']]
+            _check(unescape(row['question']), task['query'], 'MathVista exact source question after Excel escape decoding')
+            _check(str(row['answer']), task['answer'], 'MathVista original reference answer')
+            for field in ('answer_type', 'question_type'):
+                _check(row[field], task[field], 'MathVista original task type: ' + field)
+            choices = ast.literal_eval(row['choices']) if isinstance(row['choices'], str) else row['choices']
+            _check(choices, task['choices'], 'MathVista original choices in original order')
+            if task['question_type'] == 'multi_choice':
+                _check(row['answer_option'], chr(65 + choices.index(task['answer'])), 'MathVista original correct option')
+            key = model, fingerprint, row['index']
+            prediction = {key: value for key, value in row.items() if key not in ('res', 'log')}
+            original = observations.setdefault(key, dict(prediction=prediction, aliases=[], extractions={}))
+            _check(original['prediction'], prediction, 'MathVista copies have identical complete prediction records')
+            source = dict(source_file=str(path.relative_to(directory / 'raw')), source_row=offset)
+            original['aliases'].append(source)
+            workbook_rows += 1
+            if 'res' in row:
+                extracted = dict(res=row['res'], log=row['log'])
+                extraction_key = json.dumps(extracted, sort_keys=True, ensure_ascii=False, allow_nan=False)
+                evidence = original['extractions'].setdefault(extraction_key,
+                    dict(extraction_record=extracted, extraction_sources=[], comparison_grade=None))
+                evidence['extraction_sources'].append(source)
+                usable = (isinstance(row['log'], str) and row['log'].endswith(('Succeed', 'Prefetch succeed'))
+                    and row['prediction'] is not None and 'Failed to obtain answer via API' not in str(row['prediction'])
+                    and row['res'] is not None)
+                if usable:
+                    evidence['comparison_grade'] = float(compare(row))
+    counts = Counter(source_workbook_rows=workbook_rows, source_responses=len(observations),
+        source_prediction_exports=len(exports), source_subjects=len({key[0] for key in exports}), source_items=len(bank))
+    for original in observations.values():
+        grades = {row['comparison_grade'] for row in original['extractions'].values() if row['comparison_grade'] is not None}
+        original['grade'] = next(iter(grades)) if len(grades) == 1 else None
+        original['status'] = ('conflicting_extraction_grades' if len(grades) > 1 else
+            'derived_historical_comparator' if grades else 'unavailable_extraction')
+        counts['source_extraction_variants'] += len(original['extractions'])
+        counts['source_ungraded'] += original['grade'] is None
+        counts['source_conflicting_grades'] += len(grades) > 1
+        counts['source_excel_limit_predictions'] += isinstance(original['prediction']['prediction'], str) and len(original['prediction']['prediction']) >= 32767
+    return dict(bank=bank, observations=observations, counts=dict(counts))
+
+
+def _mathvista(directory, tables, metadata, source=None):
+    """Audit every prediction, extraction history, grade and image without builder helpers."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _mathvista_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_label']
+        expected = {key: value for key, value in parameters['subject_features'].items() if key != 'harness'}
+        _check(features, dict(expected, source_model_label=model), 'MathVista literal published model configuration scope')
+        _check(row.display_name, parameters['labels']['subject_prefix'] + model, 'MathVista original model label')
+        _check(row.harness, 'VLMEvalKit', 'MathVista source harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MathVista no invented setting: ' + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MathVista all source model labels')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    items, used = {}, set()
+    for item in tables['items'].itertuples():
+        index = int(item.raw_item_id)
+        task = source['bank'][index]
+        data = task['decoded_image']['bytes']
+        media_type = ('image/png' if data.startswith(b'\x89PNG\r\n\x1a\n') else
+                      'image/jpeg' if data.startswith(b'\xff\xd8') else
+                      'image/webp' if data.startswith(b'RIFF') and data[8:12] == b'WEBP' else None)
+        _check(media_type is not None, True, 'MathVista original supported image encoding')
+        _check(json.loads(item.content), dict(multimedia_elements=[
+            dict(content_type=media_type, location=task['image']), dict(content_type='text/plain', text=task['query'])]),
+            'MathVista exact question, image path and actual media type')
+        features = dict(task['metadata'], source_image_path=task['image'], precision=task['precision'], unit=task['unit'])
+        _check(_features(item.item_features), canonicalize_features(features), 'MathVista complete original task attributes')
+        links = json.loads(item.asset_manifest)
+        _check(len(links), 1, 'MathVista one source image per task')
+        _check(links[0], dict(asset_id=links[0]['asset_id'], path=task['image'], media_type=media_type, role='input', ordinal=1),
+               'MathVista exact image manifest')
+        _check(assets[links[0]['asset_id']]['data'], data, 'MathVista full original image bytes')
+        used.add(links[0]['asset_id'])
+        criterion = json.loads(item.grading_criterion)
+        _check(criterion, dict(reference_answer=task['answer'], rule=metadata['grading']['rule']),
+               'MathVista original gold answer and disclosed historical scoring limitation')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], 'exact_matcher', 'MathVista deterministic comparison of released extraction')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['released_extraction'], 'MathVista fixed historical comparator')
+        items[item.item_id] = index
+    _check(Counter(items.values()), Counter({index: 1 for index in source['bank']}), 'MathVista all task/image definitions')
+    _check(set(assets), used, 'MathVista no missing or orphan image bytes')
+    _check(len(assets), len({hashlib.sha256(row['decoded_image']['bytes']).hexdigest() for row in source['bank'].values()}),
+           'MathVista preserve deduplicated original asset count')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MathVista full linked trace coverage')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, trials = Counter(), Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = subjects[response.subject_id], trace['export_hash'], items[response.item_id]
+        original = source['observations'][key]
+        _check(trace, dict(export_hash=key[1], prediction_record=original['prediction'],
+            source_aliases=original['aliases'], extractions=list(original['extractions'].values()), grade_status=original['status']),
+            'MathVista unchanged full output, source coordinates and all extracted-answer alternatives')
+        _check(None if pd.isna(response.response) else float(response.response), original['grade'],
+               'MathVista frozen native comparator, unavailable grades and conflicting histories')
+        occurrence = response.subject_id, response.item_id
+        trials[occurrence] += 1
+        _check(response.trial, trials[occurrence], 'MathVista occurrence numbering without duplicated exports')
+        for field in ('test_condition', 'interactors'):
+            _check(pd.isna(getattr(response, field)), True, 'MathVista no invented occasion setting: ' + field)
+        seen[key] += 1
+    expected = source.get('selected', source['observations'])
+    _check(seen, Counter({key: 1 for key in expected}), 'MathVista every distinct complete export accounted exactly once')
+    return dict(source['counts'], source_assets=len(assets))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -14774,7 +14929,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
