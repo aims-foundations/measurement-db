@@ -13179,6 +13179,174 @@ def _lambda_fp_course(directory, tables, metadata, source=None):
         **{"source_"+key:value for key,value in counts.items()})
 
 
+def _lawbench_grade_file(job):
+    """Read one immutable source file and apply its unchanged scalar evaluator."""
+    import importlib
+    import math
+    import sys
+    import zipfile
+
+    archive_path, prefix, relative, function = job
+    grader_path = str(archive_path) + "/" + prefix + "evaluation"
+    if grader_path not in sys.path:
+        sys.path.insert(0, grader_path)
+    task = Path(relative).stem
+    with zipfile.ZipFile(archive_path) as archive:
+        records = json.loads(archive.read(prefix + relative))
+    grader = None
+    if task != "2-1":
+        module, name = function.split(".")
+        imported = importlib.import_module("evaluation_functions." + module)
+        _check(imported.__file__.startswith(grader_path + "/"), True, "LawBench pinned evaluator module")
+        grader = getattr(imported, name)
+    result = []
+    for key, record in records.items():
+        _check(set(record), {"origin_prompt", "prediction", "refr"}, "LawBench native record fields")
+        grade, status = None, "reconstructed_native_score"
+        if task == "2-1":
+            status = "corpus_metric_no_individual_grade"
+        elif (task == "2-2" and record["refr"][7:-1] == "赔偿") or (
+            task in {"3-4", "3-5"} and any(word in record["refr"] for word in ["死刑", "无期"])):
+            status = "upstream_excludes_reference"
+        else:
+            grade = float(grader([record])["score"])
+            _check(math.isfinite(grade), True, "LawBench finite native grade")
+        result.append((key, record, grade, status))
+    return relative, result
+
+
+def _lawbench_source_records(directory, metadata):
+    """Inspect the native dispatch and records independently of table joins."""
+    import ast
+    import multiprocessing
+    import os
+    import tempfile
+    import zipfile
+    from concurrent.futures import ProcessPoolExecutor
+
+    parameters = metadata["build"]["parameters"]
+    archive_path = directory / "raw" / parameters["paths"]["archive"]
+    prefix = parameters["paths"]["prefix"]
+    with zipfile.ZipFile(archive_path) as archive:
+        module = ast.parse(archive.read(prefix + "evaluation/main.py"))
+        dispatch = next(node.value for node in ast.walk(module) if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "funct_dict" for target in node.targets))
+        functions = {key.value:value.value.id + "." + value.attr for key,value in zip(dispatch.keys, dispatch.values)}
+        files = sorted(name.removeprefix(prefix) for name in archive.namelist()
+            if name.startswith(prefix + "predictions/") and name.endswith(".json"))
+    tasks = {Path(name).stem for name in files}
+    _check(parameters["native_functions"], {task:functions[task] for task in tasks}, "LawBench native metric dispatch")
+    _check(len(files), 1836, "LawBench complete released files")
+    _check(len(tasks), 18, "LawBench tasks with individual predictions")
+    native, definitions, counts = {}, {}, Counter()
+    previous = {key:os.environ.get(key) for key in ["PYTHONHASHSEED", "TMPDIR"]}
+    try:
+        with tempfile.TemporaryDirectory(prefix=".lawbench-audit-", dir=directory.parent) as scratch:
+            os.environ.update(PYTHONHASHSEED="0", TMPDIR=scratch)
+            with ProcessPoolExecutor(max_workers=8, mp_context=multiprocessing.get_context("spawn")) as workers:
+                jobs = [(archive_path, prefix, relative, functions[Path(relative).stem]) for relative in files]
+                for relative, records in workers.map(_lawbench_grade_file, jobs):
+                    _, setting, model, filename = relative.split("/")
+                    task = Path(filename).stem
+                    _check(len(records), 500, "LawBench released file coverage")
+                    for key, record, grade, status in records:
+                        content = record["origin_prompt"]
+                        if isinstance(content, list):
+                            _check(len(content), 1, "LawBench single recorded input message")
+                            _check(set(content[0]), {"role", "prompt"}, "LawBench original message fields")
+                            _check(content[0]["role"], "HUMAN", "LawBench original message role")
+                            content = content[0]["prompt"]
+                        identity = setting, task, content, record["refr"]
+                        source_key = relative + "#" + key
+                        definitions.setdefault(identity, source_key)
+                        native[source_key] = dict(record=record, grade=grade, status=status,
+                            identity=identity, model=model, file=relative, key=key)
+                        counts[status] += 1
+                        counts["task_" + task] += 1
+                        counts["negative_grades"] += grade is not None and grade < 0
+                        counts["empty_references"] += record["refr"] == ""
+    finally:
+        for key, value in previous.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    _check(len(native), 918000, "LawBench every released prediction")
+    return native, definitions, counts
+
+
+def _lawbench(directory, tables, metadata, source=None):
+    """Check every prompt, reference, configuration, grade and full trace."""
+    import math
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    native, definitions, counts = _lawbench_source_records(directory, metadata) if source is None else source
+    # The shared item identity normalizes NFC and surrounding whitespace only.
+    # Preserve each exact prompt in its trace and the first representative item.
+    identities, definitions = {}, {}
+    for key, original in native.items():
+        setting, task, content, reference = original["identity"]
+        identities[key] = setting, task, unicodedata.normalize("NFC", content).strip(), reference
+        definitions.setdefault(identities[key], key)
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        label = features["source_model_label"]
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=label), "LawBench source-supported subject attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "LawBench literal source model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "LawBench recorded harness")
+        for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "LawBench unrecorded subject setting: " + field)
+        subjects[row.subject_id] = label
+    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LawBench all original model labels")
+    for row in tables["items"].itertuples():
+        original = native[row.raw_item_id]
+        setting, task, content, reference = original["identity"]
+        _check(row.raw_item_id, definitions[identities[row.raw_item_id]], "LawBench first source alias for each complete stimulus")
+        _check(row.content, content, "LawBench complete recorded prompt including demonstrations")
+        verifier = metadata["grading"]["verifiers"][task]
+        expected = json.loads(canonical_grading_criterion(dict(reference_answer=json.dumps(reference, ensure_ascii=False),
+            rule=verifier["rule"].format(task=task, setting=setting), response_scale=verifier["response_scale"])))
+        _check(json.loads(row.grading_criterion), expected, "LawBench exact native reference and task-specific grading scale")
+        _check(_features(row.item_features), dict(task=task, recorded_prompt_setting=setting,
+            input_scope=parameters["labels"]["input_scope"]), "LawBench stimulus attributes without outcomes")
+        actual = json.loads(row.verifier)
+        _check((actual["class"], json.loads(actual["spec"])), ("judge", verifier), "LawBench pinned deterministic evaluator")
+        _check(pd.isna(row.asset_manifest), True, "LawBench no invented assets")
+        items[row.item_id] = identities[row.raw_item_id]
+    _check(Counter(items.values()), Counter({identity:1 for identity in definitions}), "LawBench complete distinct stimuli and grading conditions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LawBench one complete trace per response")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, trials = Counter(), {}
+    occurrences = Counter()
+    for key, row in native.items():
+        unit = row["model"], identities[key]
+        occurrences[unit] += 1
+        trials[key] = occurrences[unit]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_file"] + "#" + trace["source_key"]
+        original = native[key]
+        _check(trace, dict(source_file=original["file"], source_key=original["key"],
+            source_record=original["record"], grade_status=original["status"]), "LawBench lossless native record and grade provenance")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], identities[key]), "LawBench exact model, prompt and reference association")
+        if original["grade"] is None:
+            _check(pd.isna(row.response), True, "LawBench unavailable individual grade stays null")
+        else:
+            _check(math.isfinite(row.response) and math.isclose(row.response, original["grade"], rel_tol=1e-13, abs_tol=1e-13), True, "LawBench unchanged native per-item metric")
+        setting, task, _, _ = original["identity"]
+        _check((row.trial, row.test_condition), (trials[key], f"task={task};prompt_setting={setting}"), "LawBench original occurrence and prompting condition")
+        _check(pd.isna(row.interactors), True, "LawBench no invented interactor")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "LawBench every recorded attempt exactly once")
+    _check(len(tables.get("assets", [])), 0, "LawBench no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        **{"source_" + key.replace("-", "_"):value for key,value in counts.items()})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13193,7 +13361,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

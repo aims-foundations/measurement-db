@@ -1,0 +1,252 @@
+format_version: 1
+tables:
+  traces:
+    rows: 918000
+    logical_sha256: 8e32eb5bed8ce6e0c92c7c2a4689c7e36e9c226ad761c1abeb493dc7b0e00e10
+  subjects:
+    rows: 51
+    logical_sha256: f08126556700d463ec08c93c2e844207e524f7b75faa413d5ae63b1382591535
+  responses:
+    rows: 918000
+    logical_sha256: 6326c94c3b811a32795d062de73f1a58be7fce863a6259cdc94a8eb8e255b510
+  items:
+    rows: 233168
+    logical_sha256: 19ec19991e61b3f484f97f4af8fffc0b23643f6637b9e87916c4cd5da7b64989
+  benchmarks:
+    rows: 1
+    logical_sha256: 23ee31c855c27ef272e15398fa09a8a97004eb6b536cece966ea8bd22d813825
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 918000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 233168
+  source_reconstructed_native_score:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 865419
+  source_task_1_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_negative_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 193
+  source_empty_references:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 1122
+  source_task_1_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_corpus_metric_no_individual_grade:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_5:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_6:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_7:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_2_8:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_upstream_excludes_reference:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 1581
+  source_task_3_5:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_6:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_7:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000
+  source_task_3_8:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-compass/LawBench
+    locator: All 1836 original prediction JSON files, native metric dispatch, and unchanged deterministic per-item
+      graders in the pinned upstream Git archive.
+    scope: Preserve every recorded model label, prompt, reference, output and occurrence. Reconstruct only individual
+      metrics; corpus-only and native-excluded grades remain null. No new model or judge calls.
+    expected: 51000

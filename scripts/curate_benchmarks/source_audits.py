@@ -881,3 +881,4 @@ SOURCE_AUDITS["kmmlu"] = verify_native_results
 SOURCE_AUDITS["kormedmcqa"] = verify_native_results
 SOURCE_AUDITS["kris_bench"] = verify_native_results
 SOURCE_AUDITS["lambda_fp_course"] = verify_native_results
+SOURCE_AUDITS["lawbench"] = verify_native_results
