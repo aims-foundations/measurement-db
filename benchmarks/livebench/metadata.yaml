@@ -1,0 +1,557 @@
+benchmark:
+  description: Published per-question grading events from the LiveBench release history across six task categories.
+  testing_condition: One response represents a distinct published grading event, identified by literal model label,
+    question ID, turn and grading timestamp. Repeated exports and task renamings are aliases, not extra responses.
+    Different grading timestamps remain separate assessments; they do not establish independent model generations.
+    Trial is 1 within each timestamped assessment condition. Include only events whose question definitions occur
+    in captured author releases. Use the newest released question definition (test before train within a snapshot),
+    including ten prompt typo corrections and fifty repaired reference fields; the precise historical prompt and
+    grader version remain unknown. Preserve published scores unchanged, without regrading. Model-answer exports
+    lack an authoritative link to these grade events and remain in raw, without assigning their generations as verified
+    response traces. Traces instead preserve complete native grade records and their export locations. Exact model
+    endpoints and inference settings are unrecorded.
+  paper_url: https://arxiv.org/abs/2406.19314
+  data_source_url: https://huggingface.co/datasets/livebench/model_judgment
+  subject_type: model
+  item_type: task
+  license: Upstream LiveBench code is Apache-2.0. Dataset cards and the captured datasheet retain the source-specific
+    terms for constituent questions; do not assume one license covers all original task content.
+  citation: "@misc{white2025livebenchchallengingcontaminationlimitedllm,\n      title={LiveBench: A Challenging,\
+    \ Contamination-Limited LLM Benchmark},\n      author={Colin White and Samuel Dooley and Manley Roberts and\
+    \ Arka Pal and Ben Feuer and Siddhartha Jain and Ravid Shwartz-Ziv and Neel Jain and Khalid Saifullah and Sreemanti\
+    \ Dey and Shubh-Agrawal and Sandeep Singh Sandha and Siddartha Naidu and Chinmay Hegde and Yann LeCun and Tom\
+    \ Goldstein and Willie Neiswanger and Micah Goldblum},\n      year={2025},\n      eprint={2406.19314},\n   \
+    \   archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.19314},\n}"
+  tags:
+  - reasoning
+  modality:
+  - text
+  domain:
+  - general
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-06
+  release: public
+  name: LiveBench
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      judgments: judgments/*/data/*.parquet
+      questions: questions/*/*/data/*.parquet
+    labels:
+      subject_prefix: 'LiveBench / '
+    subject_features:
+      harness: LiveBench released judgments
+      model_identifier_status: literal_published_label
+      historical_configuration: not_recorded
+    trace:
+      answer_association: not_established; original model-answer exports are retained separately in raw
+sources:
+  upstream:
+  - name: judgments_20250407203422_9704e5da
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 9704e5da7bfbefe75ac1482a13de827127295993
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20250407203422_9704e5da/{path}
+  - name: questions_data_analysis_20250407203415_31b9661f
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 31b9661ff678df9958e2f7fa228427f4c858c1a1
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20250407203415_31b9661f/{path}
+  - name: questions_reasoning_20250407203413_6fc6498a
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 6fc6498a5dfba553f69f4413feabade1f1a2d384
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20250407203413_6fc6498a/{path}
+  - name: questions_math_20250407203411_bb66571c
+    url: https://huggingface.co/datasets/livebench/math
+    revision: bb66571c8ccf32d3df9e6f48b920d3770ff4aacb
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20250407203411_bb66571c/{path}
+  - name: questions_instruction_following_20250407203407_0868379c
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: 0868379c4b5cf62aeacaf8be4f08fced815c81bb
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20250407203407_0868379c/{path}
+  - name: questions_coding_20250407203405_a958549f
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: a958549fdd8aa57be0a3fafe7b205ffc160ed5f4
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20250407203405_a958549f/{path}
+  - name: questions_language_20250407203347_3ada32a2
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 3ada32a2e53d5e04e57fa503384cb85ce9116c40
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet|data/train\-00000\-of\-00001\.parquet)
+      path: questions/language/20250407203347_3ada32a2/{path}
+  - name: judgments_20241022030921_5896e3b1
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 5896e3b11081702c7f93f4733605fa4f5a072a11
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20241022030921_5896e3b1/{path}
+  - name: answers_20241022030920_bc43a286
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: bc43a286b08243d6dcfa89ba2e906283e9adac9c
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20241022030920_bc43a286/{path}
+  - name: questions_data_analysis_20241022021357_9b73ab81
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 9b73ab813303e71fa34e71598e3108df14c1222c
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20241022021357_9b73ab81/{path}
+  - name: questions_instruction_following_20241022021355_4f7ab12f
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: 4f7ab12f0d47848da31de92bd7cc3d7d4acfe695
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20241022021355_4f7ab12f/{path}
+  - name: questions_language_20241022021353_1561feeb
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 1561feebcfa3a5adaf8ecb3a0bc3b01536af5710
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20241022021353_1561feeb/{path}
+  - name: questions_reasoning_20241022021352_2335f69a
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 2335f69aecfbe07126abe9b333ba04def8515c9c
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20241022021352_2335f69a/{path}
+  - name: questions_coding_20241022021350_204020a0
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 204020a05f23d75e8a61d3e0373bdc9ee9f12bb0
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20241022021350_204020a0/{path}
+  - name: questions_math_20241022021341_17808a18
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 17808a1857c4504ca390b380c40ab6dc604fd8c4
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20241022021341_17808a18/{path}
+  - name: judgments_20240818011404_81f6a1cd
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 81f6a1cd42f793285e215aabed4fd1c71a94889a
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240818011404_81f6a1cd/{path}
+  - name: answers_20240818011402_3530e71a
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 3530e71a0555673a947e24efc51dd0d2164ee12d
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240818011402_3530e71a/{path}
+  - name: judgments_20240804060226_65fce612
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 65fce612236e865cb87e0917db64702d9c856459
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240804060226_65fce612/{path}
+  - name: answers_20240804060224_4779df04
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 4779df04a7f40bbe168af5a90237c6b7db007439
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240804060224_4779df04/{path}
+  - name: judgments_20240729143323_86ad8e20
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 86ad8e20dc53bbf2549d6fddd91e183f23525a6a
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240729143323_86ad8e20/{path}
+  - name: answers_20240729143321_808be283
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 808be2836f9a27ac8c0955adf3ac706489b0bf11
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240729143321_808be283/{path}
+  - name: questions_data_analysis_20240727191724_47fc858d
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 47fc858dabe61b1a14033b02c72405c3ef334a8e
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240727191724_47fc858d/{path}
+  - name: questions_instruction_following_20240727191722_dcec3662
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: dcec36621411c3fb2210a5de5fa1dc2221391f42
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20240727191722_dcec3662/{path}
+  - name: questions_math_20240727191721_79832fac
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 79832fac7d1a0faddb5f1e36522b00a7209de4ba
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240727191721_79832fac/{path}
+  - name: questions_reasoning_20240727191719_82f6f8cd
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 82f6f8cd59f7f9b944bd20b9d6a0f1f5eb0606a0
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20240727191719_82f6f8cd/{path}
+  - name: questions_coding_20240727191718_4693b7d6
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 4693b7d603b51fa1f7eeb309a0dd697a3f77f893
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240727191718_4693b7d6/{path}
+  - name: questions_language_20240727191707_6a4906b0
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 6a4906b0387269ceb355774a0e2089c2df51715a
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240727191707_6a4906b0/{path}
+  - name: judgments_20240720194605_b6494fe9
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: b6494fe94248ae100738536582c2a9c40a225410
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240720194605_b6494fe9/{path}
+  - name: answers_20240720194603_634df270
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 634df27071fc0123aec63ef4dd24ed3dbecae315
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240720194603_634df270/{path}
+  - name: judgments_20240703215136_1090e27b
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 1090e27bb510cef921931c245a88f36bd89e579a
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240703215136_1090e27b/{path}
+  - name: answers_20240703215027_14c231aa
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 14c231aa4518d7c5d9f2e07d3d5dd423d654c9d9
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240703215027_14c231aa/{path}
+  - name: questions_language_20240703214157_87b915e1
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 87b915e156c7bf8c7dc51f62f724cbeb836a13e6
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240703214157_87b915e1/{path}
+  - name: questions_coding_20240703214141_7a250a5a
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 7a250a5a81c95fc47a7a4a79e2b5c7535dab6ed9
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240703214141_7a250a5a/{path}
+  - name: questions_reasoning_20240703214122_ef125dc7
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: ef125dc74bedd110d2619b816ec03e03be117647
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20240703214122_ef125dc7/{path}
+  - name: questions_math_20240703214056_e03b5afc
+    url: https://huggingface.co/datasets/livebench/math
+    revision: e03b5afc3b67912c0fa8c7f6147349fe9b04c7e9
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240703214056_e03b5afc/{path}
+  - name: questions_data_analysis_20240703213849_f59c9b99
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: f59c9b9943880399fb97e6dc7042d16c8e6465c1
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240703213849_f59c9b99/{path}
+  - name: questions_instruction_following_20240703213609_c4f4bd26
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: c4f4bd26f1a74b4c97d55d479f88d5d9aa7034ea
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20240703213609_c4f4bd26/{path}
+  - name: questions_instruction_following_20240703212218_8aa0e2db
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: 8aa0e2dbc188633e3cbf35694e65a7fc75dd5de7
+    files:
+    - match: (?:README\.md)
+      path: questions/instruction_following/20240703212218_8aa0e2db/{path}
+  - name: judgments_20240626033907_9ecfb727
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 9ecfb7272c7cabe43ae6c3edb61431163a6c6958
+    files:
+    - match: (?:README\.md)
+      path: judgments/20240626033907_9ecfb727/{path}
+  - name: answers_20240626033906_ae2b8674
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: ae2b8674e5b56a9522f016105f26bf2559a21807
+    files:
+    - match: (?:README\.md)
+      path: answers/20240626033906_ae2b8674/{path}
+  - name: questions_data_analysis_20240626033903_4362c1a0
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 4362c1a0be5ca10811bc26baa30a0074592b6909
+    files:
+    - match: (?:README\.md)
+      path: questions/data_analysis/20240626033903_4362c1a0/{path}
+  - name: questions_instruction_following_20240626033902_c42da7fb
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: c42da7fb3b7647377f1e6aa48b3d52b774778fb4
+    files:
+    - match: (?:README\.md)
+      path: questions/instruction_following/20240626033902_c42da7fb/{path}
+  - name: questions_math_20240626033900_e0996a90
+    url: https://huggingface.co/datasets/livebench/math
+    revision: e0996a90281335549a42ccdec9a43fc4a184273c
+    files:
+    - match: (?:README\.md)
+      path: questions/math/20240626033900_e0996a90/{path}
+  - name: questions_reasoning_20240626033859_b6a4d5a8
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: b6a4d5a8cb3e8ee73ad51ff86acfdbab29ef4bf9
+    files:
+    - match: (?:README\.md)
+      path: questions/reasoning/20240626033859_b6a4d5a8/{path}
+  - name: questions_coding_20240626033858_7e15bbb9
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 7e15bbb9e93b3881cca53038a464dabbfeca443b
+    files:
+    - match: (?:README\.md)
+      path: questions/coding/20240626033858_7e15bbb9/{path}
+  - name: questions_language_20240626033849_f6ed53d6
+    url: https://huggingface.co/datasets/livebench/language
+    revision: f6ed53d61e8b22089108200bd1b3bd090aaa1441
+    files:
+    - match: (?:README\.md)
+      path: questions/language/20240626033849_f6ed53d6/{path}
+  - name: questions_instruction_following_20240613173122_a93e888e
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: a93e888e94f98e78bbbeaa0e92e0abd4d7545f97
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20240613173122_a93e888e/{path}
+  - name: questions_language_20240613173121_f7c91c7b
+    url: https://huggingface.co/datasets/livebench/language
+    revision: f7c91c7b30b4dee868845e185e19d0e1bd5eadc0
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240613173121_f7c91c7b/{path}
+  - name: questions_data_analysis_20240613173119_069c5396
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 069c539600ee6ee48e94d70536c8f430055a2d88
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240613173119_069c5396/{path}
+  - name: questions_math_20240613173118_a8bbf232
+    url: https://huggingface.co/datasets/livebench/math
+    revision: a8bbf2326ff5ae46a714f56a3ef29facd3f4065e
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240613173118_a8bbf232/{path}
+  - name: questions_reasoning_20240613173116_3ff5ca3f
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 3ff5ca3f0b2334a8c261422455f05606dbb2da31
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20240613173116_3ff5ca3f/{path}
+  - name: questions_coding_20240613173115_179166e8
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 179166e8c9c7297d5a0d8182b9af878891ad5339
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240613173115_179166e8/{path}
+  - name: judgments_20240613153818_63d3b863
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 63d3b8634a8ae039dde5f388e723f0ef14413046
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240613153818_63d3b863/{path}
+  - name: answers_20240613153817_5b020dbe
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 5b020dbe6b00aca8fe28e462eefc57e08d480f28
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240613153817_5b020dbe/{path}
+  - name: questions_instruction_following_20240613153804_b0ee4a76
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: b0ee4a76e70dc366afa02fc1284219c12f1fad3f
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20240613153804_b0ee4a76/{path}
+  - name: questions_language_20240613153802_a3a3ed16
+    url: https://huggingface.co/datasets/livebench/language
+    revision: a3a3ed16faa29817311197c949bbe0499ab14c41
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240613153802_a3a3ed16/{path}
+  - name: questions_math_20240613153759_2166edc6
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 2166edc6b383d3be9006c0cfefecce0b7e666dbf
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240613153759_2166edc6/{path}
+  - name: judgments_20240613042001_c1a93c48
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: c1a93c489de759da3c814c4122a5a9f31bbc73b4
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240613042001_c1a93c48/{path}
+  - name: answers_20240613041959_0c50fe5f
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 0c50fe5f6c45bfbfacc171e6775d12c210bab33f
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240613041959_0c50fe5f/{path}
+  - name: questions_language_20240613041955_e4000029
+    url: https://huggingface.co/datasets/livebench/language
+    revision: e40000291c1b8fba41efaf1509f2e8887005f76d
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240613041955_e4000029/{path}
+  - name: questions_data_analysis_20240613041954_0ec86b48
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 0ec86b48d00825806f057379872017a32f5a17f2
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240613041954_0ec86b48/{path}
+  - name: questions_math_20240613041952_717e8f99
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 717e8f9906a864a73ac3db279121421f086ba397
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240613041952_717e8f99/{path}
+  - name: questions_reasoning_20240613041950_06a1c849
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 06a1c8492fad2d9a46222b5adc36f60b9245757b
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20240613041950_06a1c849/{path}
+  - name: questions_coding_20240613041948_dfd6c1fd
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: dfd6c1fdf4739730b0cd73691637cda57c19d34d
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240613041948_dfd6c1fd/{path}
+  - name: judgments_20240612133700_473a9800
+    url: https://huggingface.co/datasets/livebench/model_judgment
+    revision: 473a9800c92a6f9d42c93d9d500f6c0f05b4e9ea
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: judgments/20240612133700_473a9800/{path}
+  - name: answers_20240612133658_7b002b77
+    url: https://huggingface.co/datasets/livebench/model_answer
+    revision: 7b002b771f9c7cb71ecb9e47fbf10fadf9ae7c7b
+    files:
+    - match: (?:README\.md|data/leaderboard\-00000\-of\-00001\.parquet)
+      path: answers/20240612133658_7b002b77/{path}
+  - name: questions_language_20240611212629_c233da73
+    url: https://huggingface.co/datasets/livebench/language
+    revision: c233da731f98b4e53fc61a245a05cf86931a8a2b
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240611212629_c233da73/{path}
+  - name: questions_data_analysis_20240611212020_25fa9a93
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 25fa9a9389f486929f6dd8b009d7841e85011ed3
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240611212020_25fa9a93/{path}
+  - name: questions_math_20240611212018_5501b6d8
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 5501b6d806335f8dff59d2c8c73cf248f27ffd45
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240611212018_5501b6d8/{path}
+  - name: questions_data_analysis_20240606190010_86fdb118
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 86fdb1188a66d2a0cc969677887fe8005ee3aac9
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240606190010_86fdb118/{path}
+  - name: questions_instruction_following_20240606190009_4463ee4e
+    url: https://huggingface.co/datasets/livebench/instruction_following
+    revision: 4463ee4eeebdb41c1c18a08e51b49a280ed2288b
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/instruction_following/20240606190009_4463ee4e/{path}
+  - name: questions_math_20240606190008_24b7b03c
+    url: https://huggingface.co/datasets/livebench/math
+    revision: 24b7b03c6f6e195386a5c48481f3d16317aa60cd
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240606190008_24b7b03c/{path}
+  - name: questions_reasoning_20240606190007_5b850b97
+    url: https://huggingface.co/datasets/livebench/reasoning
+    revision: 5b850b97fa6ced0832c75b33d874809295179aad
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/reasoning/20240606190007_5b850b97/{path}
+  - name: questions_coding_20240606190006_4c9c0719
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 4c9c07197bf230ec4dfbb4958e4a387a63be914f
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240606190006_4c9c0719/{path}
+  - name: questions_language_20240606185958_8f8f9239
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 8f8f92397a994a1285020cb5bc207ad7b647b873
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/language/20240606185958_8f8f9239/{path}
+  - name: questions_data_analysis_20240606185612_01541666
+    url: https://huggingface.co/datasets/livebench/data_analysis
+    revision: 01541666cfc80757e79778b6f08d3fe43bae7fe0
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/data_analysis/20240606185612_01541666/{path}
+  - name: questions_math_20240606185610_fd2b54d8
+    url: https://huggingface.co/datasets/livebench/math
+    revision: fd2b54d8278ddda9ff8340fb4bb405ac5522c2d1
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/math/20240606185610_fd2b54d8/{path}
+  - name: questions_coding_20240606185607_80e440c9
+    url: https://huggingface.co/datasets/livebench/coding
+    revision: 80e440c9f07e9dbb0c977e32efe256eea8c7b4ab
+    files:
+    - match: (?:README\.md|data/test\-00000\-of\-00001\.parquet)
+      path: questions/coding/20240606185607_80e440c9/{path}
+  - name: questions_language_20240606185605_ca5f76c0
+    url: https://huggingface.co/datasets/livebench/language
+    revision: ca5f76c058b2ba6b330e3035dce2d33ed2a0d554
+    files:
+    - match: (?:README\.md)
+      path: questions/language/20240606185605_ca5f76c0/{path}
+  - name: questions_language_20240606185247_9f28a742
+    url: https://huggingface.co/datasets/livebench/language
+    revision: 9f28a74227235dc38107fc044ee6a2a9fd2c6ada
+    files:
+    - match: (?:README\.md)
+      path: questions/language/20240606185247_9f28a742/{path}
+  - name: code
+    file: upstream-code.zip
+    url: https://codeload.github.com/LiveBench/LiveBench/zip/85f874fcd0d443fbba525dab300ec1dcf76272ff
+    revision: 85f874fcd0d443fbba525dab300ec1dcf76272ff
+    size: 7407932
+    sha256: ea00bf87d2c2e6dab4a37fe1d1ec2b08457eb08e7e6ee254c858728c9d747ccb
+grading:
+  rule: Use the unchanged source-reported per-question score. The native question record contains the task's reference
+    answer, tests or instruction constraints where released. Its file, zero-based row and SHA-256 identify the complete
+    latest released definition; this does not identify the historical grading implementation.
+  verifiers:
+    reported:
+      kind: source_reported_metric
+      metric: score
+      source: https://huggingface.co/datasets/livebench/model_judgment
+      published_evaluator: https://github.com/LiveBench/LiveBench/blob/85f874fcd0d443fbba525dab300ec1dcf76272ff/livebench/gen_ground_truth_judgment.py
+      historical_evaluator_revision: not_recorded_in_judgment_exports
+      interpretation: Task-specific objective correctness or partial credit in [0,1]; larger is better. Import the
+        published score without executing the captured evaluator.

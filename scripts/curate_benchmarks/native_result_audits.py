@@ -13696,6 +13696,115 @@ def _liveaops(directory, tables, metadata, source=None):
         source_repeated_definitions=sum(count - 1 for count in occurrences.values()))
 
 
+def _livebench_source_records(directory, metadata):
+    """Reconcile native Arrow records independently of the pandas builder."""
+    import hashlib
+    import pyarrow.parquet as pq
+
+    raw = Path(directory) / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    questions = {}
+    files = list(raw.glob(paths["questions"]))
+    files.sort(key=lambda path: (path.parts[-3], path.name.startswith("test-")), reverse=True)
+    for path in files:
+        for position, record in enumerate(pq.read_table(path).to_pylist()):
+            if record["question_id"] in questions:
+                continue
+            pointer = dict(file=str(path.relative_to(raw)), row=position,
+                record_sha256=hashlib.sha256(json.dumps(record, sort_keys=True, ensure_ascii=False,
+                    default=str, allow_nan=False).encode()).hexdigest())
+            questions[record["question_id"]] = dict(record=record, pointer=pointer)
+    events = {}
+    for path in sorted(raw.glob(paths["judgments"]), reverse=True):
+        for position, record in enumerate(pq.read_table(path).to_pylist()):
+            key = (record["question_id"], record["model"], record["turn"], record["tstamp"])
+            _check(all(value is not None for value in key), True, "LiveBench native grading identity")
+            _check(isinstance(record["score"], (int, float)) and 0 <= record["score"] <= 1,
+                   True, "LiveBench bounded published score")
+            original = dict(file=str(path.relative_to(raw)), row=position, record=record)
+            if key in events:
+                _check(events[key]["grade"], record["score"], "LiveBench repeated grading event has the same score")
+                events[key]["aliases"].append(original)
+                continue
+            task = record["task"] if "task" in record else record["category"]
+            category = record["category"] if "task" in record else record["grouping"]
+            events[key] = dict(model=record["model"], question_id=record["question_id"], grade=record["score"],
+                condition=dict(category=category, task=task, turn=record["turn"], grading_timestamp=record["tstamp"]),
+                aliases=[original])
+    native, excluded = {}, {}
+    for key, event in events.items():
+        if key[0] not in questions:
+            excluded[key] = event
+        else:
+            native[key] = dict(event, question=questions[key[0]])
+    return dict(native=native, excluded=excluded)
+
+
+def _livebench(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _livebench_source_records(directory, metadata) if source is None else source
+    native = source["native"]
+    parameters = metadata["build"]["parameters"]
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "LiveBench published scale")
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["source_model_label"]
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=model), "LiveBench recorded model attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LiveBench literal model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "LiveBench released judgment harness")
+        for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "LiveBench unrecorded model setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({value["model"]:1 for value in native.values()}), "LiveBench all literal models")
+    questions = {value["question_id"]:value["question"] for value in native.values()}
+    for row in tables["items"].itertuples():
+        question = questions[row.raw_item_id]
+        record, pointer = question["record"], question["pointer"]
+        _check(len(record["turns"]), 1, "LiveBench single-turn released task")
+        _check(row.content, record["turns"][0], "LiveBench exact released question text")
+        reference = record.get("ground_truth")
+        criterion = canonical_grading_criterion(dict(reference_answer=None if reference is None else
+            json.dumps(reference, ensure_ascii=False), rule=json.dumps(dict(rule=metadata["grading"]["rule"],
+            question_source=pointer), sort_keys=True)))
+        _check(json.loads(row.grading_criterion), json.loads(criterion), "LiveBench reference and complete grading-source identity")
+        judge = json.loads(row.verifier)
+        _check((judge["class"], json.loads(judge["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
+               "LiveBench source-reported verifier")
+        for field in ["item_features", "asset_manifest"]:
+            _check(pd.isna(getattr(row, field)), True, "LiveBench no invented item attributes/assets")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key:1 for key in questions}), "LiveBench complete released question coverage")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LiveBench one trace per grading event")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        first = trace["source_records"][0]["record"]
+        key = first["question_id"], first["model"], first["turn"], first["tstamp"]
+        original = native[key]
+        _check(trace, dict(source_records=original["aliases"], question_source=original["question"]["pointer"],
+            answer_association=parameters["trace"]["answer_association"]), "LiveBench complete unmodified grade records and provenance")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], original["question_id"]),
+               "LiveBench exact grade/model/question association")
+        _check(row.response, original["grade"], "LiveBench unchanged native grade")
+        _check(row.trial, 1, "LiveBench one grade event per timestamped condition")
+        _check(json.loads(row.test_condition), original["condition"], "LiveBench recorded assessment condition")
+        _check(pd.isna(row.interactors), True, "LiveBench no invented interactor")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "LiveBench all eligible grading events exactly once")
+    _check(len(tables.get("assets", [])), 0, "LiveBench no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        source_excluded_grades=len(source["excluded"]),
+        source_unavailable_questions=len({key[0] for key in source["excluded"]}),
+        source_grade_export_records=sum(len(value["aliases"]) for value in native.values()),
+        source_partial_credit=sum(0 < value["grade"] < 1 for value in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13710,7 +13819,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
