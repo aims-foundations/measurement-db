@@ -17253,6 +17253,205 @@ def _naturalreasoning(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _naturebench_sources(directory, metadata):
+    """Read page cells, original Parquet records and trace files without builder joins."""
+    import hashlib
+    import math
+    import re
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    pages = {}
+    for version, path in [('current', 'code/page/naturebench-data.js'), ('historical', 'historical/page/naturebench-data.js')]:
+        text = (raw / path).read_text()
+        pages[version] = json.loads(re.fullmatch(r'\s*window\.NATUREBENCH_DATA\s*=\s*(\{.*\})\s*;?\s*', text, re.S).group(1))
+    page = pages['current']
+    models = {model['id']: model for model in page['models']}
+    names = {model['name']: model for model in models.values()}
+    cases = {case['caseId']: case for case in page['cases']}
+    legacy_cells = {(case['caseId'], name): cell for case in pages['historical']['cases'] for name, cell in case['scores'].items()}
+    documents = {}
+    for version, folder in [('current', raw / 'tasks/tasks'), ('historical', raw / 'historical/tasks/tasks')]:
+        for path in folder.glob('*/metadata.json'):
+            documents[path.parent.name, version] = dict(metadata=json.loads(path.read_bytes()),
+                content=(path.parent / 'problem/README.md').read_bytes().decode('utf-8'))
+    normalize = lambda value: re.sub('[^a-z0-9]', '', value.lower())
+    indices, files, older_configurations = {}, {}, set()
+    counts = Counter()
+    for row in pq.read_table(raw / 'traces/metadata/index.parquet').to_pylist():
+        candidates = [m for m in models.values() if normalize(m['agent']) == normalize(row['harness'])
+            and normalize(row['model']) in {normalize(m['name']), normalize(m.get('displayName', m['name']))}]
+        _check(len(candidates), 1, 'NatureBench unambiguous model AND harness trace association')
+        model = candidates[0]
+        key = model['id'], row['case_id']
+        _check(key not in indices, True, 'NatureBench unique native run identity')
+        indices[key] = row
+        folder = raw / 'traces/trajectories' / (row['harness'] + '__' + row['model']) / row['case_id']
+        carriers = {}
+        for path in folder.glob('*'):
+            if not path.is_file():
+                continue
+            data = path.read_bytes()
+            text = data.decode('utf-8')
+            relative = str(path.relative_to(raw))
+            carriers[relative] = dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest())
+            if path.name.startswith('transcript.'):
+                counts['source_conversations'] += 1
+                if row['case_id'] == 's43588-024-00765-7' and 'Computed separately for tissue type prediction' in text:
+                    older_configurations.add(model['id'])
+                records = text.splitlines() if path.suffix == '.jsonl' else [text]
+                for line in records:
+                    if line.strip():
+                        try:
+                            json.loads(line)
+                        except json.JSONDecodeError:
+                            counts['source_malformed_original_json_lines'] += 1
+            elif path.name == 'submissions.jsonl':
+                for line in text.splitlines():
+                    if line.strip():
+                        json.loads(line)
+                        counts['source_submission_records'] += 1
+            elif path.name in ['judge_verdict.json', 'judge_verdict_v2.json']:
+                verdict = json.loads(text)
+                if path.name == 'judge_verdict_v2.json':
+                    _check(verdict['model'], 'GPT-5.5', 'NatureBench current recorded native judge')
+                    _check(verdict['is_valid'], row['judge_valid'], 'NatureBench index agrees with saved current validity verdict')
+                    counts['source_current_saved_verdicts'] += 1
+                else:
+                    _check(verdict['model'], 'claude-sonnet-4-6', 'NatureBench historical recorded native judge')
+                    counts['source_historical_saved_verdicts'] += 1
+        for flag, alternatives in [('has_result', ['result.json']), ('has_transcript', ['transcript.json', 'transcript.jsonl']),
+                                   ('has_submissions', ['submissions.jsonl']), ('has_judge', ['judge_verdict_v2.json'])]:
+            _check(bool(row[flag]), any((folder / name).is_file() for name in alternatives), 'NatureBench honest native file-completeness flag')
+        files[key] = carriers
+    _check(len(older_configurations), 15, 'NatureBench trace evidence for the earlier task description')
+    news = (raw / 'code/main/README.md').read_text().splitlines()
+    _check(any('2026-08-07' in line and 'AIBuildAI' in line for line in news), True,
+           'NatureBench AIBuildAI publication predates the 2026-08-24 task revision')
+    older_configurations.add(next(m['id'] for m in models.values() if m['agent'] == 'AIBuildAI 2.5'))
+    observations = {}
+    for board in page['leaderboard']:
+        model = names[board['name']]
+        _check(board['configurationId'], model['id'], 'NatureBench published leaderboard configuration identity')
+        for case_id, case in cases.items():
+            cell = board.get('scores', {}).get(case_id, case['scores'].get(model['name']))
+            _check(isinstance(cell, dict), True, 'NatureBench explicit recorded full-track cell, not an imputed missing combination')
+            key = model['id'], case_id
+            _check(key not in observations, True, 'NatureBench no duplicate full/subset view observations')
+            index = indices.get(key)
+            score = index['effective_improvement'] if index else cell['value']
+            if cell['state'] == 'valid':
+                _check(score is not None and math.isfinite(score), True, 'NatureBench finite original valid score')
+                if index:
+                    _check(index['judge_valid'], True, 'NatureBench published valid cell agrees with native index')
+                    _check(cell['value'] in [round(score, n) for n in [3, 4, 6]], True, 'NatureBench published display precision')
+            else:
+                _check(cell['state'] in ['invalid', 'none'], True, 'NatureBench explicit invalid/no-score state')
+            grade = float(cell['state'] == 'valid' and score >= 0)
+            _check(grade, float(cell['state'] == 'valid' and cell['value'] >= 0), 'NatureBench no threshold change from display rounding')
+            version = 'historical' if case_id == 's43588-024-00765-7' and model['id'] in older_configurations else 'current'
+            legacy = legacy_cells.get((case_id, model['name']))
+            if legacy is not None:
+                old_grade = float(legacy['state'] == 'valid' and legacy['value'] >= 0)
+                counts['source_historical_cells'] += 1
+                counts['source_historical_grade_changes'] += old_grade != grade
+            observations[key] = dict(model=model, cell=cell, score=score, grade=grade, index=index,
+                version=version, document=documents[case_id, version], legacy_cell=legacy, files=files.get(key, {}))
+            counts['source_successes'] += grade == 1
+    counts.update(source_responses=len(observations), source_configurations=len(models), source_cases=len(cases),
+        source_native_index_records=len(indices), source_score_only_configurations=len(models) - len({key[0] for key in indices}),
+        source_captured_files=sum(path.is_file() for path in raw.rglob('*')))
+    return dict(models=models, cases=cases, documents=documents, observations=observations, counts=dict(counts))
+
+
+def _naturebench(directory, tables, metadata, source=None):
+    import hashlib
+    import re
+    from measurement_db.scripts.build_measurement_tables.register_measurements import _load_model_registry
+
+    from urllib.parse import unquote
+
+    source = source or _naturebench_sources(directory, metadata)
+    expected = source['observations']
+    _check(len(tables['responses']), len(expected), 'NatureBench every reported full-track outcome')
+    _check(len(tables['traces']), len(expected), 'NatureBench one evidence carrier per published outcome')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'NatureBench trace/response correspondence')
+    registry = _load_model_registry()
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        config = re.search(r'(?:^|;)configuration_id=([^;]+)', row.subject_features_extra).group(1)
+        model = source['models'][config]
+        label = model.get('displayName', model['name'])
+        _check(row.display_name, label, 'NatureBench literal published model label')
+        _check(row.harness, model['agent'], 'NatureBench actual published agent harness')
+        features = dict(configuration_id=config, solving_budget=model['solvingBudget'], declared_compute=model['compute'], external_access=model['externalAccess'])
+        if model.get('notes'):
+            features['configuration_notes'] = model['notes']
+        _check({key: unquote(value) for key, value in _features(row.subject_features_extra).items()}, features,
+               'NatureBench complete unabridged source configuration conditions')
+        entry = registry.get(label, {})
+        for field, key in [('normalized_name', 'model'), ('provider', 'company'), ('release_date', 'release_date')]:
+            value = getattr(row, field)
+            _check(None if pd.isna(value) else value, entry.get(key), 'NatureBench supported registry metadata: ' + field)
+        for field in ['access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'NatureBench no invented execution settings: ' + field)
+        subjects[row.subject_id] = config
+    _check(Counter(subjects.values()), Counter({config: 1 for config in source['models']}), 'NatureBench each source configuration exactly once')
+    roles = {(case, record['version'], record['model']['validityJudge']) for (config, case), record in expected.items()}
+    for row in tables['items'].itertuples():
+        case = row.raw_item_id
+        versions = [version for (case_id, version), doc in source['documents'].items() if case_id == case and doc['content'] == row.content]
+        _check(len(versions), 1, 'NatureBench exact captured task-brief variant')
+        version = versions[0]
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'NatureBench published validity judgment is part of grading')
+        _check(verifier['judged_by'], 'llm', 'NatureBench declared validity judge type')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published_match_sota'], 'NatureBench documented public scoring protocol')
+        role = case, version, verifier['judge']
+        _check(role in roles, True, 'NatureBench correct task/brief/judge identity')
+        doc = source['documents'][case, version]
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion['reference_answer'], None, 'NatureBench SOTA thresholds are grading rules, not a reference solution')
+        _check(json.loads(criterion['rule']), dict(rule=metadata['grading']['rule'], performance_entries=doc['metadata']['performance_entries']),
+               'NatureBench complete original scientific metric targets')
+        case_record = source['cases'][case]
+        _check(_features(row.item_features), dict(domain=case_record['domain'], scientific_task_type=case_record['mlTaskType'], input_scope='published_task_brief_only'),
+               'NatureBench task attributes exclude performance and acknowledge unavailable scientific data')
+        _check(pd.isna(row.asset_manifest), True, 'NatureBench no invented scientific-data attachments')
+        items[row.item_id] = role
+    _check(Counter(items.values()), Counter({role: 1 for role in roles}), 'NatureBench every distinct task/brief/judge combination')
+    if 'assets' in tables:
+        _check(len(tables['assets']), 0, 'NatureBench no claims to uncaptured task-data bytes')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        config = subjects[row.subject_id]
+        case, version, judge = items[row.item_id]
+        original = expected[config, case]
+        _check((version, judge), (original['version'], original['model']['validityJudge']), 'NatureBench run uses its matching task variant and judge')
+        _check(row.response, original['grade'], 'NatureBench source-defined Match-SOTA outcome')
+        _check(row.trial, 1, 'NatureBench one run summary, not one independent response per submission or track view')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'NatureBench no invented observation conditions')
+        trace = traces[row.response_id]
+        payload = json.loads(trace['trace'])
+        _check(set(payload), {'leaderboard_file', 'case_id', 'configuration', 'cell', 'native_index', 'score_used', 'native_files', 'historical_leaderboard_cell', 'task_brief_version'}, 'NatureBench exact evidence structure')
+        for field, value in dict(leaderboard_file='code/page/naturebench-data.js', case_id=case,
+            configuration=original['model'], cell=original['cell'], native_index=original['index'], score_used=original['score'],
+            historical_leaderboard_cell=original['legacy_cell'], task_brief_version=version).items():
+            _check(payload[field], value, 'NatureBench unchanged recorded evidence: ' + field)
+        _check(set(payload['native_files']), set(original['files']), 'NatureBench complete original run-file collection')
+        for filename, text in payload['native_files'].items():
+            data = text.encode('utf-8')
+            _check(dict(bytes=len(data), sha256=hashlib.sha256(data).hexdigest()), original['files'][filename],
+                   'NatureBench every original byte, including malformed source JSON lines')
+        for field in ['subject_id', 'item_id', 'benchmark_id', 'trial', 'test_condition', 'interactors']:
+            actual, wanted = trace[field], getattr(row, field)
+            _check(None if pd.isna(actual) else actual, None if pd.isna(wanted) else wanted, 'NatureBench trace association: ' + field)
+        seen[config, case] += 1
+    _check(seen, Counter({key: 1 for key in expected}), 'NatureBench exact outcome coverage without duplicated subset views')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17268,7 +17467,7 @@ def verify_native_results(directory, tables_directory=None):
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
-            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning,
+            "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
