@@ -13594,6 +13594,108 @@ def _lingoly(directory, tables, metadata, source=None):
                 **{"source_" + key:value for key,value in counts.items()})
 
 
+def _liveaops_source_records(directory, metadata):
+    """Independently associate the fixed author exports by their original positions."""
+    from datetime import datetime, timezone
+    import unicodedata
+
+    paths = metadata["build"]["parameters"]["paths"]
+    raw = Path(directory) / "raw"
+    bank = [json.loads(line) for line in (raw / paths["questions"]).read_text().splitlines() if line.strip()]
+    original = [json.loads(line) for line in (raw / paths["source_questions"]).read_text().splitlines() if line.strip()]
+    _check(len(bank), len(original), "LiveAoPS both author task exports have the same length")
+    for position, (question, source) in enumerate(zip(bank, original)):
+        _check(question["idx"], position + 1, "LiveAoPS one-based task index")
+        _check((question["question"], question["solution"]), (source["question"], source["solution"]),
+               "LiveAoPS exact original question/solution ordering")
+        _check(question["post_time"], f'{source["post_time"]["year"]}-{source["post_time"]["month"]}',
+               "LiveAoPS original topic month")
+    released = json.loads((raw / paths["results"]).read_text())["performances"]
+    native = {}
+    for record in released:
+        index = int(record["question_id"])
+        _check(0 <= index < len(bank), True, "LiveAoPS zero-based result key within task release")
+        question, source = bank[index], original[index]
+        year, month = map(int, question["post_time"].split("-"))
+        date = datetime.fromtimestamp(record["date"] / 1000, tz=timezone.utc)
+        _check((date.year, date.month), (year, month), "LiveAoPS exact result/task publication month")
+        _check(record["pass@1"] in (0, 100), True, "LiveAoPS source grade is binary")
+        key = record["model"] + "#" + record["question_id"]
+        _check(key not in native, True, "LiveAoPS no duplicate native model/question key")
+        native[key] = dict(record=record, question=question, original=source, model=record["model"],
+            identity=(unicodedata.normalize("NFC", question["question"]).strip(), question["answer"]),
+            grade=record["pass@1"] / 100)
+    for model in {row["model"] for row in native.values()}:
+        _check({row["question"]["idx"] for row in native.values() if row["model"] == model},
+               set(range(1, len(bank) + 1)), "LiveAoPS complete task coverage for each released model")
+    return native
+
+
+def _liveaops(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native = _liveaops_source_records(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata["benchmark"]["response_scale"])), "LiveAoPS binary scale")
+    subjects, items, definitions = {}, {}, {}
+    for value in native.values():
+        definitions.setdefault(value["identity"], value)
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["source_model_label"]
+        expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
+        _check(features, dict(**expected, source_model_label=model), "LiveAoPS recorded model attributes")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LiveAoPS literal source model label")
+        _check(row.harness, parameters["subject_features"]["harness"], "LiveAoPS source release label")
+        for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
+            _check(pd.isna(getattr(row, field)), True, "LiveAoPS unrecorded setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LiveAoPS every released model")
+    aliases = {str(value["question"]["idx"]):value for value in definitions.values()}
+    for row in tables["items"].itertuples():
+        original = aliases[row.raw_item_id]
+        question = original["question"]
+        _check(row.content, question["question"], "LiveAoPS complete exact question text")
+        criterion = canonical_grading_criterion(dict(reference_answer=json.dumps(question["answer"], ensure_ascii=False),
+            rule=metadata["grading"]["rule"]))
+        _check(json.loads(row.grading_criterion), json.loads(criterion), "LiveAoPS native reference and reported grading rule")
+        judge = json.loads(row.verifier)
+        _check((judge["class"], json.loads(judge["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
+               "LiveAoPS source-reported verifier")
+        for field in ["item_features", "asset_manifest"]:
+            _check(pd.isna(getattr(row, field)), True, "LiveAoPS no invented item attributes/assets")
+        items[row.item_id] = original["identity"]
+    _check(Counter(items.values()), Counter({key:1 for key in definitions}), "LiveAoPS complete question/reference definitions")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LiveAoPS one complete source record per observation")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    occurrences, trials, seen = Counter(), {}, Counter()
+    for key, value in native.items():
+        unit = value["model"], value["identity"]
+        occurrences[unit] += 1
+        trials[key] = occurrences[unit]
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_record"]["model"] + "#" + trace["source_record"]["question_id"]
+        original = native[key]
+        _check(trace, dict(source_record=original["record"], question_record=original["question"],
+            source_question_record=original["original"]), "LiveAoPS exact native score, reference, solution and topic provenance")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], original["identity"]),
+               "LiveAoPS exact subject, question and grading association")
+        _check(row.response, original["grade"], "LiveAoPS unchanged published grade")
+        _check((row.trial, row.test_condition), (trials[key], parameters["labels"]["condition"]), "LiveAoPS native occurrence and release")
+        _check(pd.isna(row.interactors), True, "LiveAoPS no invented interactor")
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in native}), "LiveAoPS every released result exactly once")
+    _check(len(tables.get("assets", [])), 0, "LiveAoPS no unassociated assets")
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        source_question_records=len({value["question"]["idx"] for value in native.values()}),
+        source_successes=sum(value["grade"] == 1 for value in native.values()),
+        source_empty_references=sum(value["question"]["answer"] == "" for value in native.values()),
+        source_repeated_definitions=sum(count - 1 for count in occurrences.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -13608,7 +13710,7 @@ def verify_native_results(directory, tables_directory=None):
             "edumath": _edumath,
             "eduguardbench": _eduguard, "egoschema": _egoschema, "edu_circuit_hw": _edu_circuit, "ehrflowbench": _ehrflow, "elicitation_game": _elicitation, "emoji_attack": _emoji, "enginemt_qa": _enginemt, "felm": _felm, "faithcot": _faithcot, "fetv": _fetv, "finegrain_t2i": _finegrain, "find_interp": _find, "ghosts_math": _ghosts, "genai_learning": _genai, "hallusionbench": _hallusion, "haiid": _haiid, "harmbench": _harmbench,
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
-            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly,
+            "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops,
             "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,

@@ -895,3 +895,4 @@ SOURCE_AUDITS["lawbench"] = verify_native_results
 
 SOURCE_AUDITS["lexeval"] = verify_native_results
 SOURCE_AUDITS["lingoly"] = verify_native_results
+SOURCE_AUDITS["liveaopsbench"] = verify_native_results

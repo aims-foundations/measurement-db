@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 69264
+    logical_sha256: 218777b75aaee595727066e8b1b0704c14d3461f2d9dadf745f0776053905dad
+  subjects:
+    rows: 13
+    logical_sha256: 69230ba5614d85cdf7ee202be0d63995fdf582bac3ccb452ec6937b7caf541aa
+  responses:
+    rows: 69264
+    logical_sha256: 394896641118be6ec80b7fcdc864b7cd0482cecc5466faec92b99ee6a10a3d69
+  items:
+    rows: 5323
+    logical_sha256: bf6db91227baed8c0d3c5655f5ff03cdf0fd50c24e7b1905a63c104d76928507
+  benchmarks:
+    rows: 1
+    logical_sha256: 2ae133a15f2d8e565f7577b4c70715df1c9cf032f91744c72ce865f81b06976c
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 69264
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 13
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 5323
+  source_question_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 5328
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 21361
+  source_empty_references:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 143
+  source_repeated_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    locator: The original performances array, associated ordered question release and earlier author export with
+      topic IDs.
+    scope: Complete 2024 result release only; older 9079-question export has unresolved associations and is not
+      imported.
+    expected: 65
