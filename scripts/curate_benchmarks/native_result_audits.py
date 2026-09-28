@@ -20475,12 +20475,240 @@ def _summeval(directory, tables, metadata, source=None):
 
 
 
+def _swe_live_sources(directory, metadata):
+    """Read original source events independently of the tabular joins."""
+    import ast
+    import hashlib
+    import re
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    parameters, labels = metadata['build']['parameters'], metadata['build']['parameters']['labels']
+    release = raw / parameters['layout']['release']
+    native, banks, reports, counts = {}, {}, {}, Counter()
+    primary_keys = set()
+    for fallback, sources in [(False, parameters['bank_files']), (True, parameters['fallback_bank_files'])]:
+        for filename, track in sources.items():
+            for position, record in enumerate(pq.read_table(raw / filename).to_pylist()):
+                key = track, record['instance_id']
+                if fallback and key in primary_keys:
+                    continue
+                _check(key not in banks, True, 'SWE-Live unambiguous official task keys')
+                banks[key] = dict(record=record, file=filename, row=position)
+        if not fallback:
+            primary_keys = set(banks)
+
+    exporter = ast.parse((raw / parameters['layout']['windows_exporter']).read_text())
+    function = next(node for node in ast.walk(exporter) if isinstance(node, ast.FunctionDef) and node.name == 'gather_patch')
+    strips = [node for node in ast.walk(function) if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name) and node.func.value.id == 'patch_file' and node.func.attr == 'strip']
+    _check(len(strips) == 1 and len(strips[0].args) == 1 and isinstance(strips[0].args[0], ast.Constant)
+        and strips[0].args[0].value == '.diff', True, 'SWE-Live original filename exporter rule')
+    inverses = {}
+    for track, instance_id in banks:
+        if track == 'windows':
+            exported = (instance_id + '.diff').strip('.diff')
+            _check(exported not in inverses, True, 'SWE-Live unambiguous filename-rule inverse')
+            inverses[exported] = instance_id
+    for alias, target in parameters['prediction_key_aliases'].items():
+        _check(inverses.get(alias), target, 'SWE-Live source-supported prediction alias')
+
+    def observation(run, instance_id):
+        key = run, instance_id
+        if key not in native:
+            track = 'python' if run.startswith('website/') else parameters['tracks'][run.split('/')[1]]
+            native[key] = dict(run=run, instance_id=instance_id, track=track,
+                flags=[], web=[], prediction=None, prediction_file=None, prediction_source_key=None, artifacts=[])
+        return native[key]
+
+    for path in sorted(release.rglob('*.json')):
+        if path.name not in ['results.json', 'result.json']:
+            continue
+        run = str(path.parent.relative_to(release))
+        record = json.loads(path.read_text())
+        _check(run not in reports, True, 'SWE-Live one summary per native run')
+        context = {key: value for key, value in record.items() if not key.endswith('_ids')}
+        reports[run] = dict(file=str(path.relative_to(raw)), context=context,
+            fix=record.get('related_upstream_evaluator_fix') or '')
+        seen = set()
+        for category, ids in record.items():
+            if not category.endswith('_ids'):
+                continue
+            _check(isinstance(ids, list) and len(ids) == len(set(ids)), True, 'SWE-Live unique native verdict lists')
+            for instance_id in ids:
+                observation(run, instance_id)['flags'].append(category)
+                seen.add(instance_id)
+        counts['source_summary_observations'] += len(seen)
+    counts['source_summary_files'] = len(reports)
+    native_runs = set(reports)
+    for path in sorted(release.rglob('preds.json')):
+        run = str(path.parent.relative_to(release))
+        native_runs.add(run)
+        payload = json.loads(path.read_text())
+        pairs = payload.items() if isinstance(payload, dict) else ((row['instance_id'], row) for row in payload)
+        for source_key, record in pairs:
+            _check(record.get('instance_id', source_key), source_key, 'SWE-Live matching prediction key and header')
+            instance_id = source_key
+            if run.startswith('submissions/windows/win-agent/') and source_key in parameters['prediction_key_aliases']:
+                instance_id = inverses[source_key]
+                _check((release / run / 'logs' / (instance_id + '.txt')).is_file(), True, 'SWE-Live matching original rollout filename')
+                counts['source_corrected_prediction_keys'] += 1
+            original = observation(run, instance_id)
+            _check(original['prediction_file'], None, 'SWE-Live unique source prediction record')
+            original.update(prediction=record, prediction_file=str(path.relative_to(raw)), prediction_source_key=source_key)
+            counts['source_prediction_records'] += 1
+
+    prefixes = sorted(native_runs, key=len, reverse=True)
+    for path in sorted(release.rglob('*')):
+        if not path.is_file():
+            continue
+        relative = str(path.relative_to(release))
+        run = next((prefix for prefix in prefixes if relative.startswith(prefix + '/')), None)
+        if run is None:
+            continue
+        remainder = relative[len(run) + 1:]
+        match = re.search(r'(?:^|/)([^/]+?__[^/]+?-\d+)(?=/|\.|$)', remainder)
+        if not match:
+            continue
+        instance_id = match[1]
+        pattern = remainder.replace(instance_id, '{instance_id}')
+        _check(pattern in parameters['artifact_roles'], True, 'SWE-Live reviewed native artifact layout')
+        role = parameters['artifact_roles'][pattern]
+        if role == 'evaluation_artifact':
+            counts['source_raw_evaluation_artifacts'] += 1
+            continue
+        original = observation(run, instance_id)
+        with path.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        original['artifacts'].append(dict(source_file=str(path.relative_to(raw)), role=role,
+            sha256=digest, bytes=path.stat().st_size))
+        counts['source_associated_artifacts'] += 1
+
+    website = [json.loads(line) for line in (raw / parameters['layout']['reports']).read_text().splitlines() if line.strip()]
+    for index, record in enumerate(website):
+        if not isinstance(record['resolved'], list):
+            continue
+        counts['source_item_level_website_rows'] += 1
+        key = record['name'] + '|' + record['date']
+        run = parameters['website_aliases'].get(key, 'website/' + key)
+        for flag in ['resolved', 'applied', 'located']:
+            for instance_id in record.get(flag, []):
+                observation(run, instance_id)['web'].append(dict(source_file=parameters['layout']['reports'],
+                    source_row=index, flag=flag, name=record['name'], subset=record['set'], total=record['total'], date=record['date']))
+                counts['source_website_flag_events'] += 1
+
+    definitions = set()
+    for (run, instance_id), expected in native.items():
+        summary = reports.get(run)
+        expected['summary_file'] = summary['file'] if summary else None
+        expected['summary_context'] = summary['context'] if summary else None
+        expected['evaluator_fix'] = summary['fix'] if summary else ''
+        succeeded = any(flag in expected['flags'] for flag in ['success_ids', 'resolved_ids'])
+        failed = any(flag in expected['flags'] for flag in ['failure_ids', 'unresolved_ids'])
+        web_success = any(row['flag'] == 'resolved' for row in expected['web'])
+        _check(not (failed and (succeeded or web_success)), True, 'SWE-Live consistent final source verdicts')
+        expected['grade'] = 1.0 if succeeded or web_success else 0.0 if failed else None
+        key = expected['track'], instance_id
+        _check(key in banks, True, 'SWE-Live every source attempt has an official task')
+        expected['task'] = banks[key]
+        definitions.add((*key, expected['evaluator_fix']))
+        counts['source_successes' if expected['grade'] == 1 else 'source_failures' if expected['grade'] == 0 else 'source_ungraded'] += 1
+    counts.update(source_responses=len(native), source_configurations=len({key[0] for key in native}),
+        source_definitions=len(definitions), source_native_runs=len(native_runs))
+    _check((counts['source_summary_files'], counts['source_summary_observations'],
+            counts['source_corrected_prediction_keys'], counts['source_item_level_website_rows']),
+           (49, 7903, 8, 19), 'SWE-Live independently reviewed release census')
+    return dict(native=native, counts=dict(counts))
+
+
+def _swe_live_tabular(directory, tables, metadata, source=None):
+    """Check complete task, configuration, grade, alias and artifact associations."""
+    from collections import defaultdict
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = source or _swe_live_sources(directory, metadata)
+    parameters, labels = metadata['build']['parameters'], metadata['build']['parameters']['labels']
+    raw = directory / 'raw'
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'SWE-Live unique ' + name + ' IDs')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'SWE-Live complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'SWE-Live complete original attempt coverage')
+    seen, used_items, configurations, trials = set(), set(), {}, defaultdict(list)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_run'], trace['instance_id']
+        _check(key in source['native'] and key not in seen, True, 'SWE-Live unique original attempt association')
+        expected = source['native'][key]
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'SWE-Live exact final verdict or unavailable grade')
+        run, instance_id = key
+        label = run.removeprefix('submissions/').removeprefix('website/')
+        subject = subjects[row.subject_id]
+        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
+            (label, labels['harness'], True), 'SWE-Live literal submission and harness identity')
+        readme = parameters['layout']['release'] + '/' + run + '/README.md'
+        features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
+            source_readme=readme if (raw / readme).is_file() else None))
+        _check(subject['subject_features_extra'], features_string(features), 'SWE-Live explicit source configuration provenance')
+        configurations[row.subject_id] = run
+        item, task = items[row.item_id], expected['task']
+        record = task['record']
+        _check((item['content'], item['raw_item_id']), (record['problem_statement'], expected['track'] + '/' + instance_id),
+            'SWE-Live complete original task and source identity')
+        features = canonicalize_features(dict(track=expected['track'], source_instance_id=instance_id,
+            repo=record['repo'], base_commit=record['base_commit'], task_definition_file=task['file'],
+            task_definition_row=task['row'], task_version_scope=labels['task_version_scope']))
+        _check(item['item_features'], features_string(features), 'SWE-Live original task attributes and revision scope')
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion.get('reference_answer'), record['patch'], 'SWE-Live complete original reference patch')
+        checks = {name: record[name] for name in metadata['grading']['verifiers']['published_report']['task_fields'] if name in record}
+        _check(json.loads(criterion['rule']), dict(rule=metadata['grading']['rule'], checks=checks), 'SWE-Live complete recorded grading checks')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')), ('exact_matcher', None, None),
+            'SWE-Live no invented judge execution')
+        _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['published_report'],
+            recorded_evaluator_fix=expected['evaluator_fix'] or None), 'SWE-Live recorded evaluator correction')
+        _check(set(trace), {'kind', 'source_run', 'instance_id', 'summary_file', 'summary_context', 'summary_flags',
+            'prediction_file', 'prediction_source_key', 'prediction', 'website_entries', 'artifacts', 'task_source', 'log_scope'}, 'SWE-Live complete trace contract')
+        _check((trace['kind'], trace['log_scope']), ('published_attempt_record', labels['log_scope']), 'SWE-Live explicit trace and log scope')
+        _check((trace['summary_file'], trace['summary_context']), (expected['summary_file'], expected['summary_context']),
+            'SWE-Live original summary context')
+        _check(Counter(trace['summary_flags']), Counter(expected['flags']), 'SWE-Live all original result flags')
+        _check((trace['prediction_file'], trace['prediction_source_key'], trace['prediction']),
+            (expected['prediction_file'], expected['prediction_source_key'], expected['prediction']),
+            'SWE-Live full native prediction record')
+        _check(Counter(json.dumps(value, sort_keys=True) for value in trace['website_entries']),
+            Counter(json.dumps(value, sort_keys=True) for value in expected['web']), 'SWE-Live all original website aliases')
+        _check(trace['task_source'], dict(file=task['file'], row=task['row']), 'SWE-Live original task source row')
+        artifacts = {}
+        for artifact in trace['artifacts']:
+            _check(set(artifact), {'source_file', 'role', 'content'}, 'SWE-Live complete artifact record')
+            filename = artifact['source_file']
+            _check(filename not in artifacts, True, 'SWE-Live unique artifact associations')
+            artifacts[filename] = dict(source_file=filename, role=artifact['role'], sha256=_digest(artifact['content']),
+                bytes=len(artifact['content'].encode('utf-8')))
+        _check(artifacts, {entry['source_file']: entry for entry in expected['artifacts']}, 'SWE-Live complete unmodified rollout and artifact content')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'SWE-Live no invented response conditions')
+        seen.add(key); used_items.add(row.item_id)
+        trials[row.subject_id, row.item_id].append(row.trial)
+    _check(seen, set(source['native']), 'SWE-Live every original attempt retained')
+    _check((used_items, set(configurations)), (set(items), set(subjects)), 'SWE-Live no orphan items or configurations')
+    _check(Counter(configurations.values()), Counter({key[0]: 1 for key in source['native']}), 'SWE-Live distinct source configurations')
+    _check(len(items), source['counts']['source_definitions'], 'SWE-Live complete task and grading definitions')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'SWE-Live consecutive recorded trials')
+    return dict(source['counts'], source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

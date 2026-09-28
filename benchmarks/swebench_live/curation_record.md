@@ -1,0 +1,4 @@
+- **Sources:** Pinned original submissions, website reports, grading code and official task releases; every captured byte remains in `raw/`.
+- **Conversion:** Read both summary filenames; join native predictions and complete rollouts; merge matching website subset aliases. Preserve explicit verdicts and leave ungraded attempts null.
+- **Associations:** Restore eight Windows prediction keys using the original exporter's filename rule, retaining the original keys in traces. Historical task/configuration revisions can be unknown; evaluation logs remain separate because some contain different patches.
+- **Release:** Code is independently authored. Submission artifacts have no explicit redistribution license in the captured repository; keep the data checkpoint local pending clarification.
