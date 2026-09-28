@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 346
+    logical_sha256: d980f367ff3b9e17a5c53b54eb66c26d9259998afe1e8a0037704924658b512a
+  subjects:
+    rows: 29
+    logical_sha256: c02b31a5481fad576ebb9dbbe11e93d10f53048824cdd2af4dc078713595ecf1
+  responses:
+    rows: 346
+    logical_sha256: b4931336f567b5070cbe2242a8de22979281ae56b2f5607c4072b8612bd17f8c
+  assets:
+    rows: 4
+    logical_sha256: b008cf8b7b8d9c64fa7d4b45c83624ccaf64e61dfdba69050790e90ac9854ac9
+  items:
+    rows: 4
+    logical_sha256: 52ddca77e3da58dd1ea3f636d725761f7ae2c7ec2d47cf45e9850e3ccc4f39ea
+  benchmarks:
+    rows: 1
+    logical_sha256: 5fb1613afdb05c7d3d1a8a0c3e36fb0c4deff9a335a2dcd557dad60466a101ed
+source_claims:
+  source_index_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 1824
+  source_original_task_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 21
+  source_released_task_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 4
+  source_original_example_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 20
+  source_raw_only_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 1478
+  source_linked_previews:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 202
+  source_upstream_truncated_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 1840
+  source_structured_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 201
+  source_passed:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 58
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 346
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 29
+  source_literal_models:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 19
+  source_input_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/scbench-long/index.json
+    locator: The pinned original runResults and evals arrays, linked previews and the four original GitHub eval
+      definitions.
+    scope: Run-level endpoint verdicts for released instructions; the other 17 tasks remain raw-only. Upstream preview
+      truncation and unavailable data-node contents remain explicit.
+    expected: 4

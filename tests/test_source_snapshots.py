@@ -895,6 +895,37 @@ class SnapshotTests(unittest.TestCase):
                     expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
         self.assertFalse(destination.exists())
 
+    def test_json_index_optional_artifact_links_remain_pinned_and_validated(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        index_bytes = b'{"runs":[{"trace":"a.json"},{"id":"unreleased"}]}'
+        trace = b'{"output":"complete"}'
+        index = dict(name='manifest', url='https://provider.example/index.json', revision=None, file='index.json',
+                     size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path='a.json', size=len(trace), digest=hashlib.sha256(trace).hexdigest())]
+        source = dict(name='traces', url='https://provider.example/', revision=None,
+                      json_index=dict(source='manifest', records=['runs'], path='{trace}', skip_missing_path=True),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='traces/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        pages = {index['url']: index_bytes, 'https://provider.example/a.json': trace}
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=lambda request, **kwargs: io.BytesIO(pages[request.full_url])):
+            artifacts = upstream_artifacts([index, source], ('traces',))
+        self.assertEqual([row['file'] for row in artifacts], ['traces/a.json'])
+        for rows, message in [([{'trace': '../outside.json'}], 'unsafe indexed source path'),
+                              ([{'trace': 'a.json'}, {'trace': 'a.json'}], 'duplicate indexed source path')]:
+            payload = json.dumps({'runs': rows}).encode()
+            changed = dict(index, size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+            with self.subTest(rows=rows), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                                               return_value=io.BytesIO(payload)):
+                with self.assertRaisesRegex(SourceDataError, message):
+                    upstream_artifacts([changed, source], ('traces',))
+        source['json_index']['skip_missing_path'] = False
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=io.BytesIO(index_bytes)):
+            with self.assertRaisesRegex(SourceDataError, 'invalid JSON index path template'):
+                upstream_artifacts([index, source], ('traces',))
+
     def test_json_index_rejects_unsafe_duplicate_and_missing_paths(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         source = dict(name='runs', url='https://provider.example/runs/',

@@ -18846,6 +18846,108 @@ def _scale_mrt(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _scbench_long_sources(directory, metadata):
+    """Read original instructions and named verdicts independently of table joins."""
+    import hashlib
+
+    raw = directory / 'raw'
+    index = json.loads((raw / 'results/index.json').read_bytes())
+    published = {row['id']: row for row in index['evals']}
+    tasks, assets = {}, {}
+    for path in sorted((raw / 'release/evals').glob('*/eval.json')):
+        original = json.loads(path.read_bytes())
+        task = original['id']
+        _check(task not in tasks, True, 'scBench-Long unique released task identity')
+        _check(original['task'], published[task]['prompt'], 'scBench-Long original instructions agree across releases')
+        payload = path.with_name('vocabulary.json').read_bytes()
+        digest = hashlib.sha256(payload).hexdigest()
+        assets[digest] = payload
+        tasks[task] = dict(content=original['task'], data_nodes=original['data_node'],
+            criterion=published[task]['expectedAnswer'], attachment=dict(asset_id=digest,
+                path='vocabulary.json', media_type='application/json', role='input', ordinal=1))
+    _check(set(tasks), set(published), 'scBench-Long released task inventory')
+    native, configurations, counts = {}, {}, Counter(source_index_observations=len(index['runResults']),
+        source_original_task_ids=len({row['task'] for row in index['runResults']}),
+        source_released_task_ids=len(tasks), source_original_example_logs=len(list((raw / 'release/trajectories').rglob('trajectory.json'))))
+    for row in index['runResults']:
+        if row['task'] not in tasks:
+            counts['source_raw_only_observations'] += 1
+            continue
+        key = row['modelId'], row['task'], row['trialIndex']
+        _check(key not in native, True, 'scBench-Long unique original observation identity')
+        _check(type(row['passed']) is bool, True, 'scBench-Long source verdict is a Boolean')
+        _check(row['expectedAnswer'], tasks[row['task']]['criterion'], 'scBench-Long run-specific grading definition')
+        configuration = row['modelName'], row['harness']
+        _check(configurations.get(row['modelId'], configuration), configuration, 'scBench-Long stable source configuration')
+        configurations[row['modelId']] = configuration
+        preview, preview_source = None, None
+        if 'trajectoryFile' in row:
+            preview_source = 'web_trajectories/' + Path(row['trajectoryFile']).name
+            preview = json.loads((raw / preview_source).read_bytes())
+            _check((preview['exampleId'], preview['model'], preview['harness']),
+                   (row['task'], *configuration), 'scBench-Long explicitly linked preview identity')
+            counts['source_linked_previews'] += 1
+            counts['source_upstream_truncated_steps'] += sum(step.get('truncated') is True for step in preview['steps'])
+        counts['source_structured_outputs'] += isinstance(row.get('agentAnswer'), dict)
+        counts['source_passed'] += row['passed']
+        native[key] = dict(source_index='results/index.json', native_record=row,
+                           preview_source=preview_source, native_preview=preview)
+    counts.update(source_observations=len(native), source_configurations=len(configurations),
+                  source_literal_models=len({value[0] for value in configurations.values()}), source_input_assets=len(assets))
+    return dict(native=native, tasks=tasks, configurations=configurations, assets=assets, counts=dict(counts))
+
+
+def _scbench_long(directory, tables, metadata, source=None):
+    source = source or _scbench_long_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['recorded_configuration']
+        _check((row.display_name, row.harness), source['configurations'][key], 'scBench-Long original model/harness association')
+        _check(features, dict(recorded_configuration=key, historical_settings='not_recorded'), 'scBench-Long recorded configuration metadata')
+        for field in ['access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'scBench-Long no invented historical setting: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'scBench-Long complete configuration inventory')
+    for row in tables['items'].itertuples():
+        task = source['tasks'][row.raw_item_id]
+        _check(row.content, task['content'], 'scBench-Long complete original instruction')
+        features = _features(row.item_features)
+        _check(features['input_scope'], 'released_prompt_and_vocabulary_biological_data_nodes_not_captured', 'scBench-Long explicit unavailable matrix inputs')
+        _check(json.loads(features['source_data_nodes']), task['data_nodes'], 'scBench-Long exact original data-node references')
+        _check(set(features), {'input_scope', 'source_data_nodes'}, 'scBench-Long no grader answers in item attributes')
+        criterion = json.loads(row.grading_criterion)
+        _check(set(criterion), {'reference_answer', 'rule'}, 'scBench-Long recorded grading fields only')
+        _check(criterion['reference_answer'], None, 'scBench-Long checks are grading rules, not gold answers')
+        _check(json.loads(criterion['rule']), task['criterion'], 'scBench-Long complete available grading summary')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'scBench-Long deterministic endpoint assessment')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['reported'], 'scBench-Long recorded-verdict verifier')
+        _check(json.loads(row.asset_manifest), [task['attachment']], 'scBench-Long original vocabulary association')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['tasks']}), 'scBench-Long only complete released instructions')
+    actual_assets = {row.asset_id: bytes(row.data) for row in tables['assets'].itertuples()}
+    _check(len(actual_assets), len(tables['assets']), 'scBench-Long unique vocabulary assets')
+    _check(actual_assets, source['assets'], 'scBench-Long exact complete vocabulary bytes')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'scBench-Long one source trace per response')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        key = subjects[row.subject_id], items[row.item_id], row.trial
+        original = source['native'][key]
+        _check(float(row.response), float(original['native_record']['passed']), 'scBench-Long unchanged native endpoint verdict')
+        trace_row = traces[row.response_id]
+        _check(json.loads(trace_row['trace']), original, 'scBench-Long full original record and linked preview')
+        for field in ['test_condition', 'interactors']:
+            _check(pd.isna(getattr(row, field)), True, 'scBench-Long no invented observation attribute: ' + field)
+            _check(pd.isna(trace_row[field]), True, 'scBench-Long matching trace attribute: ' + field)
+        _check(tuple(trace_row[field] for field in ['subject_id', 'item_id', 'trial']),
+               (row.subject_id, row.item_id, row.trial), 'scBench-Long exact response/trace relationship')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'scBench-Long complete released-task observation multiset')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18862,7 +18964,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "robust_reasoning_benchmark": _robust_reasoning_benchmark, "scale_mrt": _scale_mrt, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "robust_reasoning_benchmark": _robust_reasoning_benchmark, "scale_mrt": _scale_mrt, "scbench_long": _scbench_long, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,

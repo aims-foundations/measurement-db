@@ -232,7 +232,11 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
             raise SourceDataError(f"{name}: JSON index records must be objects")
         try:
             relative = selector["path"].format_map(record)
-        except (KeyError, ValueError, TypeError, AttributeError, IndexError) as exc:
+        except KeyError as exc:
+            if selector.get("skip_missing_path", False):
+                continue
+            raise SourceDataError(f"{name}: invalid JSON index path template") from exc
+        except (ValueError, TypeError, AttributeError, IndexError) as exc:
             raise SourceDataError(f"{name}: invalid JSON index path template") from exc
         if not re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", relative) or any(
                 part in {".", ".."} for part in relative.split("/")):

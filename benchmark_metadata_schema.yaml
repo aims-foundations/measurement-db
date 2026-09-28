@@ -386,6 +386,9 @@ $defs:
                   minItems: 1
                   items: {$ref: '#/$defs/nonempty_string'}
                 path: {$ref: '#/$defs/nonempty_string'}
+                skip_missing_path:
+                  description: Skip records lacking a field referenced by the path template, for optional released artifacts. Invalid paths and duplicate links still fail validation.
+                  type: boolean
                 query:
                   description: Optional query parameter templates for the source URL as an API endpoint; path remains the logical filename used by files patterns.
                   type: object

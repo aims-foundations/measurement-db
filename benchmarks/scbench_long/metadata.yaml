@@ -1,0 +1,94 @@
+benchmark:
+  name: scBench-Long
+  description: Published endpoint assessments of long-horizon single-cell biology analysis agents, restricted to
+    the four tasks with released instructions and vocabularies.
+  testing_condition: 'Keep all named model/harness/trial observations for the four released task definitions. The
+    full captured index also contains 1,478 observations on 17 tasks without released prompts; those remain in raw
+    rather than being assigned synthetic instructions. Preserve original replicate indices and endpoint verdicts.
+    Include the released vocabulary as an input attachment and preserve declared Latch data-node URIs; the biological
+    matrices referenced by those URIs are not captured. API settings and historical harness versions are unknown.
+    Save every explicitly linked web trajectory preview with its original truncation flags. The separate full GitHub
+    examples are retained in raw but are not silently joined by matching directory names: their contents do not
+    consistently match the web export. Newer per-task aggregate results are a distinct release and are not expanded
+    into individual observations. Source summary counts disagree with run-level fields; use each recorded passed verdict. The score-threshold task does not release its numeric threshold, so its grading rule remains incomplete and no threshold is inferred. No agent or grader is executed.'
+  paper_url: https://arxiv.org/abs/2606.26563
+  data_source_url: https://github.com/latchbio/scbench-long
+  subject_type: model
+  item_type: scientific_analysis_task
+  license: Apache-2.0 for the original GitHub release; redistribution terms for the separate website result export
+    are not stated.
+  citation: 'Diks et al. scBench-Long: Verifiable Benchmarking of Long-Horizon Single-Cell Biology. 2026. arXiv:2606.26563.'
+  tags:
+  - agent
+  - single-cell
+  - biology
+  - long-horizon
+  modality:
+  - text
+  - tabular
+  domain:
+  - science
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  multi_single_turn: multi_turn
+  release_date: 2026-06
+  release: public
+  granularity: item
+  version: 99da791f028343b3a0a08933c1089ee294c9c253
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      index: results/index.json
+      tasks: release/evals
+      previews: web_trajectories
+      preview_source_prefix: scbench-long/trajectories/
+    labels:
+      historical_settings: not_recorded
+      input_scope: released_prompt_and_vocabulary_biological_data_nodes_not_captured
+grading:
+  verifiers:
+    reported:
+      kind: published_deterministic_endpoint
+      source: https://benchmarks.bio/data/scbench-long/index.json
+      rule: Import the original Boolean passed endpoint assessment (true=1, false=0), without rerunning its deterministic
+        grader. The original expectedAnswer object specifies the task-specific typed checks and pass rule. Auxiliary
+        score and checkpoint metrics are not the endpoint response.
+      execution: read_recorded_verdict_only
+sources:
+  upstream:
+  - name: results
+    url: https://benchmarks.bio/data/scbench-long/index.json
+    revision: null
+    file: results/index.json
+    size: 15358747
+    sha256: 32d3b9e56686bfcb29c3d0a304778e057ddcd56554649f6694049d88a6ed0de0
+  - name: released_tasks_and_examples
+    url: https://github.com/latchbio/scbench-long
+    revision: 99da791f028343b3a0a08933c1089ee294c9c253
+    files:
+    - match: .*
+      path: release/{path}
+  - name: recorded_previews
+    url: https://benchmarks.bio/data
+    revision: null
+    json_index:
+      source: results
+      records:
+      - runResults
+      path: '{trajectoryFile}'
+      skip_missing_path: true
+    tree_sha256: de5cf23a84b705f8524c55bd9168da4825cfc02bf6db1803d0282c27844f6638
+    files:
+    - match: scbench-long/trajectories/(?P<filename>[^/]+\.json)
+      path: web_trajectories/{filename}
