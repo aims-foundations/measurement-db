@@ -12,6 +12,7 @@ import json
 import math
 from pathlib import Path
 import pickle
+import struct
 from zipfile import ZipFile, is_zipfile
 
 import numpy as np
@@ -93,6 +94,9 @@ class _DataUnpickler(pickle.Unpickler):
                 return containers[module, name]
         if (module, name) == ("torch._utils", "_rebuild_tensor_v2"):
             return _tensor_view
+        if (module, name) == ("torch.storage", "_load_from_bytes"):
+            # Never call Torch's loader: its nested pickle can contain code.
+            return _legacy_storage_bytes
         if module == "torch" and name in {"FloatStorage", "LongStorage", "BoolStorage"}:
             dtype = {"FloatStorage": "f4", "LongStorage": "i8", "BoolStorage": "?"}[name]
             return np.dtype(dtype).newbyteorder(self.endian)
@@ -121,6 +125,47 @@ class _DataUnpickler(pickle.Unpickler):
         if len(data) != size * dtype.itemsize:
             raise pickle.UnpicklingError("Storage byte count differs from declaration")
         return np.frombuffer(data, dtype=dtype)
+
+
+class _LegacyStorageUnpickler(_DataUnpickler):
+    def persistent_load(self, identifier):
+        if (not isinstance(identifier, tuple) or len(identifier) != 6
+                or identifier[0] != "storage"
+                or not isinstance(identifier[1], np.dtype)
+                or identifier[1] not in {np.dtype("<f4"), np.dtype("<i8"), np.dtype("?")}
+                or not isinstance(identifier[2], str) or not identifier[2].isdigit()
+                or identifier[3] != "cpu" or type(identifier[4]) is not int
+                or identifier[4] < 0 or identifier[5] is not None):
+            raise pickle.UnpicklingError("Unsupported legacy numeric storage reference")
+        return identifier
+
+
+def _legacy_storage_bytes(data):
+    """Decode the recorded CPU storage framing, without calling torch.load."""
+    if not isinstance(data, bytes):
+        raise pickle.UnpicklingError("Expected legacy storage bytes")
+    stream = io.BytesIO(data)
+    try:
+        magic = _DataUnpickler(stream).load()
+        protocol = _DataUnpickler(stream).load()
+        system = _DataUnpickler(stream).load()
+        if (magic != 119547037146038801333356 or protocol != 1001
+                or system != {"protocol_version": 1001, "little_endian": True,
+                              "type_sizes": {"short": 2, "int": 4, "long": 4}}):
+            raise pickle.UnpicklingError("Unsupported legacy storage framing")
+        record = _LegacyStorageUnpickler(stream).load()
+        if (not isinstance(record, tuple) or len(record) != 6
+                or _DataUnpickler(stream).load() != [record[2]]):
+            raise pickle.UnpicklingError("Unexpected legacy storage record")
+        # Validate even a literal tuple that did not use a persistent ID.
+        record = _LegacyStorageUnpickler(io.BytesIO()).persistent_load(record)
+        count = struct.unpack("<q", stream.read(8))[0]
+        payload = stream.read()
+        if count != record[4] or len(payload) != count * record[1].itemsize:
+            raise pickle.UnpicklingError("Legacy storage byte count differs from declaration")
+    except (EOFError, struct.error) as exc:
+        raise pickle.UnpicklingError("Truncated legacy numeric storage") from exc
+    return np.frombuffer(payload, dtype=record[1])
 
 
 def _latin1_bytes(text, encoding):

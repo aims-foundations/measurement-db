@@ -3,6 +3,7 @@
 import io
 import json
 import pickle
+import struct
 from zipfile import ZipFile
 
 import numpy as np
@@ -10,7 +11,8 @@ import pandas as pd
 import pytest
 
 from measurement_db.scripts.curate_benchmarks.read_native_pickle import (
-    _DataUnpickler, _array_from_buffer, _numeric_scalar, _tensor_view, native_json_value, read_native_pickle,
+    _DataUnpickler, _array_from_buffer, _legacy_storage_bytes, _numeric_scalar,
+    _tensor_view, native_json_value, read_native_pickle,
 )
 
 
@@ -97,6 +99,59 @@ def test_storage_length_and_byte_order():
             reader.persistent_load(("storage", np.dtype(">i8"), "0", "cpu", 3))
         with pytest.raises(pickle.UnpicklingError):
             reader.persistent_load(("storage", np.dtype("O"), "0", "cpu", 2))
+
+
+def _legacy_storage_fixture(values, *, descriptor=None, count=None, extra=b""):
+    record = descriptor or ("storage", values.dtype, "1234", "cpu", values.size, None)
+    headers = [119547037146038801333356, 1001,
+        {"protocol_version": 1001, "little_endian": True,
+         "type_sizes": {"short": 2, "int": 4, "long": 4}}, record, [record[2]]]
+    return (b"".join(pickle.dumps(value, protocol=2) for value in headers)
+            + struct.pack("<q", values.size if count is None else count)
+            + values.tobytes() + extra)
+
+
+@pytest.mark.parametrize("dtype", ["<f4", "<i8", "?"])
+def test_legacy_numeric_storage_keeps_exact_bytes_without_torch(dtype):
+    import sys
+    values = np.array([0, 1, 3], dtype=dtype)
+    before = set(sys.modules)
+    restored = _legacy_storage_bytes(_legacy_storage_fixture(values))
+    assert restored.dtype == values.dtype and restored.tobytes() == values.tobytes()
+    assert not any(name.startswith("torch") for name in set(sys.modules) - before)
+    assert _DataUnpickler(io.BytesIO()).find_class("torch.storage", "_load_from_bytes") is _legacy_storage_bytes
+
+
+@pytest.mark.parametrize("changes", [{"count": 4}, {"extra": b"unexpected"},
+    {"descriptor": ("storage", np.dtype("O"), "1234", "cpu", 3, None)},
+    {"descriptor": ("storage", np.dtype("<f4"), "1234", "cpu", -1, None)},
+    {"descriptor": ("storage", np.dtype("<f4"), "1234", "cpu", 3, (0, 3))}])
+def test_legacy_invalid_storage_is_rejected(changes):
+    with pytest.raises(pickle.UnpicklingError):
+        _legacy_storage_bytes(_legacy_storage_fixture(np.arange(3, dtype="<f4"), **changes))
+
+
+def test_legacy_truncated_and_executable_nested_data_are_rejected():
+    payload = _legacy_storage_fixture(np.arange(3, dtype="<f4"))
+    for truncated in [payload[:3], payload[:-1]]:
+        with pytest.raises(pickle.UnpicklingError):
+            _legacy_storage_bytes(truncated)
+    malicious = b"cos\nsystem\n."
+    with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+        _legacy_storage_bytes(malicious)
+
+
+def test_legacy_nested_storage_is_decoded_by_the_public_reader(tmp_path):
+    path = tmp_path / "native.pkl"
+    values = np.array([1.25, -2, 3], dtype="<f4")
+    data = _legacy_storage_fixture(values)
+    prefix = b"\x80\x04ctorch.storage\n_load_from_bytes\nB"
+    path.write_bytes(prefix + struct.pack("<I", len(data)) + data + b"\x85R.")
+    assert read_native_pickle(path).tobytes() == values.tobytes()
+    malicious = b"cos\nsystem\n."
+    path.write_bytes(prefix + struct.pack("<I", len(malicious)) + malicious + b"\x85R.")
+    with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+        read_native_pickle(path)
 
 
 @pytest.mark.parametrize("byteorder", ["little", "big", None])
