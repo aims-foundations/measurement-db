@@ -1,0 +1,3 @@
+- Preserve 576 published endpoint verdicts for 12 released tasks, 16 configurations and three trials. Keep the 4,224 observations without released instructions in raw only. Correct one legacy parser verdict to the published result.
+- Retain all 60 explicitly linked answers and trajectory previews, including upstream truncation flags and differing duration fields. Keep 48 separate full GitHub trajectories in raw without assuming they are identical executions.
+- Preserve all 52 Latch input-node references; biological data and historical inference settings remain unavailable. Source redistribution terms are unspecified, so captured data and tables remain local pending clarification.

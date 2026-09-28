@@ -21612,12 +21612,109 @@ def _xstest(directory, tables, metadata, source=None):
     return dict(counts)
 
 
+def _txbench_pp_sources(directory):
+    """Read original verdicts, task definitions and explicitly linked previews."""
+    raw = Path(directory) / 'raw'
+    index = json.loads((raw / 'results/index.json').read_text())
+    models = {row['id']: row for row in index['modelResults']}
+    _check(len(models), len(index['modelResults']), 'TxBench unique original configurations')
+    lookup = {(row['modelName'],row['harness']): row['id'] for row in models.values()}
+    _check(len(lookup), len(models), 'TxBench distinct model and harness identities')
+    tasks = {record['id']: record for path in sorted((raw / 'release/evals').glob('*/eval.json'))
+        for record in [json.loads(path.read_text())]}
+    published = {row['id']: row for row in index['evals']}
+    _check(set(tasks), set(published), 'TxBench released task coverage')
+    _check(all(task['task'] == published[key]['prompt'] for key,task in tasks.items()), True, 'TxBench original prompt correspondence')
+    native = {i: row for i,row in enumerate(index['runResults']) if row['task'] in tasks}
+    identities = {(row['modelId'],row['task'],row['trialIndex']): i for i,row in native.items()}
+    _check(len(identities), len(native), 'TxBench unique original trials')
+    examples, previews = {}, {}
+    for task in index['evals']:
+        for run in task['runs']:
+            key = lookup[run['model'],run['harness']], task['id'], int(run['run'].removeprefix('r'))
+            _check(key in identities and key not in examples, True, 'TxBench unique named example trial')
+            original = native[identities[key]]
+            _check((run['passed'],run['cost']), (original['passed'],original['cost']), 'TxBench recorded example verdict and cost')
+            preview = json.loads((raw / 'web_trajectories' / Path(run['trajectoryFile']).name).read_text())
+            _check((preview['exampleId'],preview['runId'],preview['model'],preview['harness'],preview['provider']),
+                (task['id'],run['runId'],run['model'],run['harness'],run['provider']), 'TxBench original preview identity')
+            examples[key],previews[key] = run,preview
+    return dict(index=index,models=models,tasks=tasks,native=native,identities=identities,examples=examples,previews=previews)
+
+
+def _txbench_pp(directory, tables, metadata, source=None):
+    """Check every retained native verdict and its complete source associations."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _txbench_pp_sources(directory) if source is None else source
+    for name,column in [('subjects','subject_id'),('items','item_id'),('responses','response_id'),('traces','response_id')]:
+        _check(tables[name][column].is_unique, True, 'TxBench unique ' + name + ' identifiers')
+    subjects=tables['subjects'].set_index('subject_id').to_dict('index')
+    items=tables['items'].set_index('item_id').to_dict('index')
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(tables['responses']),len(source['native']),'TxBench complete retained panel')
+    _check(set(traces),set(tables['responses'].response_id),'TxBench complete evidence linkage')
+    labels=metadata['build']['parameters']['labels']
+    seen,definitions,configurations=set(),{},{}
+    successes,linked=0,0
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);position=trace['source_row']
+        _check(position in source['native'] and position not in seen,True,'TxBench unique source association')
+        _check(set(trace),{'source_index','source_row','native_record','configuration_record','task_record',
+            'example_record','native_preview','scope'},'TxBench complete trace fields')
+        original=source['native'][position];config=source['models'][original['modelId']];task=source['tasks'][original['task']]
+        key=original['modelId'],original['task'],original['trialIndex']
+        _check(trace['source_index'],'results/index.json','TxBench original index path')
+        _check(trace['native_record'],original,'TxBench unchanged complete source record')
+        _check(trace['configuration_record'],config,'TxBench original configuration record')
+        _check(trace['task_record'],task,'TxBench full task definition and input references')
+        _check(trace['example_record'],source['examples'].get(key),'TxBench exact linked example and saved answer')
+        _check(trace['native_preview'],source['previews'].get(key),'TxBench exact linked preview and truncation flags')
+        _check(trace['scope'],labels['trace_scope'],'TxBench explicit evidence scope')
+        _check(isinstance(original['passed'],bool),True,'TxBench original Boolean endpoint')
+        _check(row.response,float(original['passed']),'TxBench published endpoint verdict')
+        _check(row.trial,original['trialIndex'],'TxBench original trial index')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors),True,'TxBench no invented response conditions')
+        subject=subjects[row.subject_id]
+        _check(subject['display_name'],config['modelName'],'TxBench literal model identity')
+        _check(subject['harness'],config['harness'],'TxBench recorded harness')
+        extra=dict(source_configuration=original['modelId'],historical_settings=labels['historical_settings'])
+        _check(subject['subject_features_extra'],features_string(canonicalize_features(extra)),'TxBench distinct configurations and unknown settings')
+        if row.subject_id in configurations:
+            _check(configurations[row.subject_id],original['modelId'],'TxBench stable source configuration')
+        configurations[row.subject_id]=original['modelId']
+        item=items[row.item_id]
+        _check((item['raw_item_id'],item['content']),(task['id'],task['task']),'TxBench full original task instructions')
+        criterion=json.loads(item['grading_criterion'])
+        _check(criterion.get('reference_answer'),None,'TxBench grading rule is not a reference solution')
+        _check(json.loads(criterion['rule']),dict(interpretation=metadata['grading']['rule'],source_grader=task['grader']),
+            'TxBench complete native grading configuration')
+        verifier=json.loads(item['verifier'])
+        _check((verifier['class'],verifier.get('judge'),verifier.get('judged_by')),('exact_matcher',None,None),'TxBench deterministic reported verifier')
+        _check(json.loads(verifier['spec']),metadata['grading']['verifiers']['reported'],'TxBench original endpoint interpretation')
+        _check(item['item_features'],features_string(canonicalize_features(dict(input_scope=labels['input_scope'],
+            source_data_nodes=json.dumps(task['data_node'])))),'TxBench uncaptured original input references')
+        _check(pd.isna(item['asset_manifest']),True,'TxBench no fabricated input assets')
+        if row.item_id in definitions:_check(definitions[row.item_id],task['id'],'TxBench stable task and grading identity')
+        definitions[row.item_id]=task['id']
+        successes+=original['passed'];linked+=key in source['examples'];seen.add(position)
+    _check(seen,set(source['native']),'TxBench every retained native record')
+    _check(set(definitions),set(items),'TxBench no orphan items')
+    _check(Counter(definitions.values()),Counter({key:1 for key in source['tasks']}),'TxBench all released tasks exactly once')
+    _check(set(configurations),set(subjects),'TxBench no orphan subjects')
+    _check(Counter(configurations.values()),Counter({key:1 for key in source['models']}),'TxBench all recorded configurations')
+    return dict(source_responses=len(seen),source_traces=len(traces),source_subjects=len(subjects),source_items=len(items),
+        source_successes=successes,source_failures=len(seen)-successes,source_linked_examples=linked,
+        source_original_panel=len(source['index']['runResults']),source_unreleased_task_observations=len(source['index']['runResults'])-len(seen),
+        source_truncated_preview_steps=sum(step.get('truncated',False) for preview in source['previews'].values() for step in preview['steps']))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
