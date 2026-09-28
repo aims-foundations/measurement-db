@@ -1,0 +1,81 @@
+benchmark:
+  name: RADAR
+  description: Recorded code-agent example from the RADAR benchmark for reasoning over imperfect tables.
+  testing_condition: >-
+    Import the one saved GPT-4o code-agent observation whose initial prompts, subsequent message history,
+    both model outputs and token counts match the native notebook debug log. This is a released demonstration,
+    not the paper's full evaluation or an estimate of benchmark-wide accuracy. Keep the complete initial
+    system/user messages, input table, tool observation, generated code and native false verdict. Notebook
+    execution counters are inconsistent; the association is established from matching messages and usage,
+    not from counters or the current cell's model configuration. The direct-prompting notebook contains
+    a failed execution alongside an older displayed result with unresolved model provenance; it remains
+    raw-only. No model, generated code or notebook was executed. Original raw debug output contains
+    credential values: preserve captured bytes locally and withhold the raw dataset from publication.
+  paper_url: https://arxiv.org/abs/2506.08249
+  data_source_url: https://github.com/codeKgu/RADAR
+  subject_type: model
+  item_type: task
+  license: Apache-2.0, as declared in the captured author repository LICENSE.
+  citation: 'Gu et al. RADAR: Benchmarking Language Models on Imperfect Tabular Data. NeurIPS 2025.'
+  tags: [tabular_reasoning, data_quality, code_agent, recorded_example]
+  modality: [text]
+  domain: [general]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: null
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+  version: c93aed8cea239ea965c4212eb6b5cdd4b0db44e5
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      notebook: upstream/notebooks/code_agent.ipynb
+      unresolved_notebook: upstream/notebooks/direct_prompting.ipynb
+      grader: upstream/radar/evaluate/measure.py
+    patterns:
+      ansi: '\x1b\[[0-9;]*m'
+      model: "model='([^']+)'"
+      message_text: 'text=(''(?:\\.|[^''\\])*''|"(?:\\.|[^"\\])*")'
+      prompt_tokens: 'PROMPT SENT TO LM \((\d+) tokens\)'
+      completion_tokens: 'LM RESPONSE \((\d+) tokens'
+    labels:
+      result_prefix: "{'baseline': 'code_agent',"
+      condition: released_code_agent_example
+      model_association: exact_logged_prompts_outputs_and_usage
+      grade_status: recorded_boolean_verdict
+    subject_features:
+      source_model_label: gpt-4o
+      protocol: RADAR code_agent with Python and done tools
+      endpoint: https://api.openai.com/v1/chat/completions
+      source_code_revision: c93aed8cea239ea965c4212eb6b5cdd4b0db44e5
+      historical_model_revision: not_recorded
+      historical_harness_revision: not_recorded
+      sampling_options: Temperature, top_p and max_tokens are unset in the original model log.
+grading:
+  rule: >-
+    Preserve the native is_correct boolean. For this scalar string reference, the released match_answer
+    routine compares stripped, lowercased strings. The original extracted answer and reference are kept
+    unchanged in the trace. Do not re-execute the model's code or replace the native verdict with a new grade.
+  verifiers:
+    match_answer:
+      kind: recorded_exact_match
+      source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/radar/evaluate/measure.py
+      function: match_answer
+      execution: import_recorded_verdict_only
+sources:
+  upstream:
+  - name: author_release
+    url: https://github.com/codeKgu/RADAR
+    revision: c93aed8cea239ea965c4212eb6b5cdd4b0db44e5
+    files:
+    - match: '(?:LICENSE|README\.md|notebooks/.*\.ipynb|radar/(?:evaluate|data)/.*\.py)'
+      path: upstream/{path}

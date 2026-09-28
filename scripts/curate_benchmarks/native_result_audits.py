@@ -17601,6 +17601,116 @@ def _nis3d(directory, tables, metadata, source=None):
         source_human_reference_rows=source['human_rows'], source_human_output_arrays=source['human_outputs'])
 
 
+def _radar_sources(directory, metadata):
+    """Match the saved demonstration to its original log without executing code."""
+    import ast
+    import csv
+    import io
+    import re
+
+    raw = directory / 'raw'
+    notebook_path = 'upstream/notebooks/code_agent.ipynb'
+    notebook = json.loads((raw / notebook_path).read_text())
+    records, streams = [], []
+    for cell_index, cell in enumerate(notebook['cells']):
+        for output in cell.get('outputs', []):
+            if output.get('output_type') == 'stream':
+                streams.append(''.join(output['text']))
+            text = ''.join(output.get('data', {}).get('text/plain', []))
+            if text.startswith("{'baseline': 'code_agent',"):
+                records.append((cell_index, ast.literal_eval(text)))
+    _check(len(records), 1, 'RADAR saved native code-agent record count')
+    cell_index, record = records[0]
+    stream = re.sub(r'\x1b\[[0-9;]*m', '', ''.join(streams))
+    models = re.findall(r"model='([^']+)'", stream)
+    _check(models, ['gpt-4o', 'gpt-4o'], 'RADAR native model identity for both calls')
+    prompt_values = [ast.literal_eval(value) for value in re.findall(
+        r"text=('(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\")", stream)]
+    history = record['llm_messages']
+    _check(prompt_values, [row['content'] for row in history[:2] + history[:4]],
+           'RADAR complete prompt history associates the saved result and log')
+    _check([row['role'] for row in history], ['system', 'user', 'assistant', 'user', 'assistant'],
+           'RADAR native two-step tool interaction')
+    for row in history:
+        if row['role'] == 'assistant':
+            _check(row['content'] in stream, True, 'RADAR full assistant output in original log')
+    for pattern, field in [(r'PROMPT SENT TO LM \((\d+) tokens\)', 'prompt_tokens'),
+                           (r'LM RESPONSE \((\d+) tokens', 'completion_tokens')]:
+        _check([int(value) for value in re.findall(pattern, stream)],
+               [entry['usage'][field] for entry in record['llm_messages_metadata']],
+               'RADAR recorded usage associates both original model calls')
+
+    # Verify that the embedded table really is the one presented to the model.
+    task = record['task']
+    table = io.StringIO()
+    writer = csv.writer(table, lineterminator='\n')
+    writer.writerow(task['table']['headers'])
+    writer.writerows(task['table']['rows'])
+    code = ast.parse((raw / 'upstream/radar/evaluate/baselines/code_agent.py').read_text())
+    template = next(ast.literal_eval(node.value) for node in code.body if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == 'TASK_PROMPT' for target in node.targets))
+    _check(history[1]['content'], template.format(table=table.getvalue(), question=task['query']),
+           'RADAR exact input CSV and question without reference data')
+    _check(task['answer'], record['ground_truth'], 'RADAR task reference and result reference agree')
+    _check(type(record['is_correct']), bool, 'RADAR boolean native verdict')
+    _check(record['is_correct'], record['llm_extracted_answer'].strip().lower() == record['ground_truth'].strip().lower(),
+           'RADAR native string-comparison verdict')
+    other = json.loads((raw / 'upstream/notebooks/direct_prompting.ipynb').read_text())
+    _check(any(output.get('ename') == 'UnboundLocalError' for cell in other['cells']
+               for output in cell.get('outputs', [])), True, 'RADAR unresolved notebook preserved unchanged')
+    return dict(record=record, cell=cell_index, file=notebook_path,
+                grader=(raw / 'upstream/radar/evaluate/measure.py').read_text())
+
+
+def _radar(directory, tables, metadata, source=None):
+    import re
+
+    source = source or _radar_sources(directory, metadata)
+    original = source['record']
+    _check({name: len(tables[name]) for name in ['subjects', 'items', 'responses', 'traces']},
+           dict(subjects=1, items=1, responses=1, traces=1), 'RADAR only the independently associated run')
+    _check(len(tables.get('assets', [])), 0, 'RADAR text-only native input')
+    subject = next(tables['subjects'].itertuples())
+    item = next(tables['items'].itertuples())
+    response = next(tables['responses'].itertuples())
+    trace_row = next(tables['traces'].itertuples())
+    _check(subject.display_name, 'gpt-4o', 'RADAR model name from original log')
+    _check(subject.normalized_name, 'OpenAI GPT-4o', 'RADAR shared model alias')
+    _check(subject.provider, 'OpenAI', 'RADAR shared model provider')
+    _check(subject.release_date, '2024-05-13', 'RADAR shared model-family release date, not a pinned checkpoint')
+    for field in ['access_date', 'harness', 'reasoning_effort', 'harness_version']:
+        _check(pd.isna(getattr(subject, field)), True, 'RADAR no invented historical model setting')
+    _check(_features(subject.subject_features_extra), metadata['build']['parameters']['subject_features'],
+           'RADAR explicit configuration and unknown historical revisions')
+    _check(item.raw_item_id, original['task_instance_id'], 'RADAR original task identity')
+    _check(json.loads(item.content), original['llm_messages'][:2], 'RADAR complete original initial messages')
+    _check(_features(item.item_features), {key: str(original['task'][key]) for key in
+           ['task_id', 'artifact_type', 'num_rows', 'num_cols']}, 'RADAR input features exclude grading annotations')
+    _check(pd.isna(item.asset_manifest) or item.asset_manifest == '[]', True, 'RADAR no fabricated image attachments')
+    _check(json.loads(item.grading_criterion), dict(reference_answer=original['ground_truth'], rule=metadata['grading']['rule']),
+           'RADAR reference is stored only in grading')
+    verifier = json.loads(item.verifier)
+    _check(verifier['class'], 'exact_matcher', 'RADAR original comparison verifier')
+    _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['match_answer'], implementation=source['grader']),
+           'RADAR complete released grading implementation')
+    _check((response.subject_id, response.item_id), (subject.subject_id, item.item_id), 'RADAR original subject-item association')
+    _check(response.response, float(original['is_correct']), 'RADAR unmodified native outcome')
+    _check(response.trial, 1, 'RADAR one complete recorded attempt, not separate API calls')
+    _check(response.test_condition, 'released_code_agent_example', 'RADAR demonstration scope')
+    _check(pd.isna(response.interactors), True, 'RADAR no invented interactor metadata')
+    _check((trace_row.response_id, trace_row.subject_id, trace_row.item_id),
+           (response.response_id, response.subject_id, response.item_id), 'RADAR exact trace association')
+    _check(json.loads(trace_row.trace), dict(source_file=source['file'], source_cell=source['cell'], native_record=original,
+           model='gpt-4o', model_association='exact_logged_prompts_outputs_and_usage', grade_status='recorded_boolean_verdict'),
+           'RADAR complete native record without debug credentials or truncated outputs')
+    _check(bool(re.search(r'sk-[A-Za-z0-9_-]{20,}|hf_[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_-]{20,}', trace_row.trace)),
+           False, 'RADAR debug credentials are not copied into formatted traces')
+    return dict(source_observations=1, source_models=1, source_items=1, source_api_calls=2,
+                source_input_rows=len(original['task']['table']['rows']),
+                source_input_columns=len(original['task']['table']['headers']),
+                source_trace_messages=len(original['llm_messages']), source_unresolved_notebook_results=1)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17617,7 +17727,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,

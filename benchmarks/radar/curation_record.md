@@ -1,0 +1,3 @@
+- Import one recorded GPT-4o code-agent attempt: preserve its original verdict, full input table, messages, tool observation and API usage. Match both prompts, outputs and token counts to establish model provenance.
+- Keep the failed direct-prompting execution and older displayed result in raw; their model association is unresolved. Paper-wide aggregate scores do not become individual observations.
+- Original notebook debug output contains credential values. Preserve the raw bytes locally and withhold them from publication; formatted traces contain the native result without that debug log. No model, notebook or generated code was run.
