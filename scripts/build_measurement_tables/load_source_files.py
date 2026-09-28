@@ -13,7 +13,7 @@ from pathlib import Path
 import re
 import subprocess
 import tempfile
-from urllib.parse import quote, urlencode, urljoin, urlparse
+from urllib.parse import parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from urllib.request import Request, urlopen
 from typing import Any
 
@@ -273,6 +273,60 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
     return entries
 
 
+def osf_entries(source: dict) -> list[dict]:
+    """Resolve a selected OSF folder using native file versions and SHA-256 hashes."""
+    location = urlparse(source['url'])
+    match = re.fullmatch(r'/v2/nodes/([A-Za-z0-9]+)/files/osfstorage/(?:[A-Za-z0-9]+/)?', location.path)
+    if location.scheme != 'https' or location.netloc != 'api.osf.io' or match is None:
+        raise SourceDataError('Expected an OSF node or folder API URL')
+    node_prefix = f'/v2/nodes/{match[1]}/files/osfstorage/'
+    pending, visited, entries = [(source['url'], '')], set(), {}
+    while pending:
+        url, prefix = pending.pop()
+        parsed = urlparse(url)
+        if parsed.scheme != 'https' or parsed.netloc != 'api.osf.io' or not parsed.path.startswith(node_prefix):
+            raise SourceDataError('OSF folder or pagination link leaves its source node')
+        if url in visited:
+            raise SourceDataError('Repeated OSF folder or pagination link')
+        visited.add(url)
+        with urlopen(Request(url, headers={'User-Agent': 'measurement-db'}), timeout=120) as response:
+            page = json.load(response)
+        if page.get('links', {}).get('next'):
+            pending.append((page['links']['next'], prefix))
+        for record in page['data']:
+            attributes = record['attributes']
+            filename = attributes['name']
+            if not filename or filename in {'.', '..'} or '/' in filename or '\\' in filename:
+                raise SourceDataError('Unsafe OSF filename')
+            path = prefix + filename
+            if attributes['kind'] == 'folder':
+                child = record['relationships']['files']['links']['related']['href']
+                pending.append((child, path + '/'))
+                continue
+            if not any(re.fullmatch(rule['match'], path) for rule in source['files']):
+                continue
+            version, size = attributes['current_version'], attributes['size']
+            digest = attributes.get('extra', {}).get('hashes', {}).get('sha256')
+            if (type(version) is not int or version < 1 or type(size) is not int or size < 0
+                    or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest)):
+                raise SourceDataError('Selected OSF file lacks a valid version, size or SHA-256 hash')
+            download = urlparse(record['links']['download'])
+            if download.scheme != 'https' or download.netloc != 'osf.io' or not re.fullmatch(r'/download/[A-Za-z0-9]+/?', download.path):
+                raise SourceDataError('Unexpected OSF download location')
+            query = dict(parse_qsl(download.query))
+            query['version'] = str(version)
+            if path in entries:
+                raise SourceDataError('Duplicate selected OSF path')
+            entries[path] = dict(path=path, osf_id=record['id'], version=version, size=size,
+                digest=digest, hash_kind='sha256', url=urlunparse(download._replace(query=urlencode(query))))
+    selected = [entries[path] for path in sorted(entries)]
+    identity = [{key: row[key] for key in ('path', 'osf_id', 'version', 'size', 'digest')} for row in selected]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not selected or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'{source["name"]}: OSF files differ from the pinned tree ({fingerprint})')
+    return selected
+
+
 def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict]:
     """Pin public Drive folder membership and bytes without a per-file YAML inventory."""
     name = source['name']
@@ -482,6 +536,8 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 entries = json_index_entries(source, named, raw_dir)
             elif "html_index" in source:
                 entries = html_index_entries(source, named, raw_dir)
+            elif location.netloc == "api.osf.io":
+                entries = osf_entries(source)
             elif location.netloc == "drive.google.com":
                 entries = google_drive_entries(source, raw_dir)
             elif location.netloc == "storage.googleapis.com" and "prefix" in source:
@@ -549,7 +605,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc == "drive.google.com":
+            if "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc in {"drive.google.com", "api.osf.io"}:
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")

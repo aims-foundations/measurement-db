@@ -18236,6 +18236,158 @@ def _refgrader(directory, tables, metadata, source=None):
     return dict(source_observations=len(native), source_configurations=len(subjects), source_items=len(items), **source["counts"])
 
 
+def _reliancescope_sources(directory, metadata):
+    """Reconstruct native joint calls and verify the separately published metrics."""
+    import re
+    from pypdf import PdfReader
+
+    raw = directory / 'raw'
+    report = '\n'.join(page.extract_text() or '' for page in PdfReader(raw / 'reports/evaluation.pdf').pages)
+    system = '<Role>' + report.split('<Role>', 1)[1].split('</LEARNING  INSTRUCTION>', 1)[0] + '</LEARNING  INSTRUCTION>'
+    three = report.split('3-shot  examples', 1)[1].split('6-shot  examples', 1)[0].strip()
+    nine = report.split('9-shot  examples', 1)[1].split('User  prompt', 1)[0].strip()
+    _check((three.count('<Example  '), nine.count('<Example  ')), (3, 9), 'RelianceScope complete documented demonstrations')
+    context = {'zeroshot': None, '3shot': three, '9shot': nine, '9shot+cot': nine}
+    models = {'qwen3:8b': ('qwen3:8b', '0.6'), 'qwen3:30b': ('qwen3:30b', '0.6'),
+              'gpt-4o-mini': ('gpt-4o-mini-2024-07-18', '1.0'),
+              'gpt-5.2': ('gpt-5.2-2025-12-11', 'not_applicable_in_source_report'),
+              'gemini-3-flash-preview': ('gemini-3-flash-preview', '1.0'),
+              'gemini-3-pro-preview': ('gemini-3-pro-preview', '1.0')}
+    for model, temperature in models.values():
+        _check(model in report, True, 'RelianceScope model identifier documented in the original report')
+    axes = {'help_seeking': ('gt_HelpSeeking', 'help_seeking_mode'), 'response_use': ('gt_ResponseUse', 'response_use_mode')}
+    segments = {}
+    for line in (raw / 'data/150-benchmark.jsonl').read_text().splitlines():
+        if line.strip():
+            record = json.loads(line)
+            _check(record['id'] in segments, False, 'RelianceScope unique native segment IDs')
+            segments[record['id']] = record
+    native, items, configurations, metrics = {}, {}, {}, {}
+    call_count = reasoning_count = 0
+    for path in sorted((raw / 'outputs').glob('*.jsonl')):
+        filename = path.name.replace('_x3a_', ':').replace('_x2b_', '+')
+        strategy, model = filename.removesuffix('.jsonl').split('_', 1)
+        relative = str(path.relative_to(raw))
+        configurations[model, strategy] = models[model]
+        predictions = {axis: [] for axis in axes}
+        rows = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        _check(Counter(row['id'] for row in rows), Counter({key: 1 for key in segments}), 'RelianceScope complete segment coverage per file')
+        for source_row, output in enumerate(rows):
+            segment = segments[output['id']]
+            schema = {'help_seeking_mode': 'Passive | Active | Constructive', 'response_use_mode': 'Passive | Active | Constructive'}
+            if strategy == '9shot+cot':
+                schema.update(help_seeking_reasoning='string', response_use_reasoning='string')
+            content = dict(documented_system_prompt=system, documented_examples=context[strategy],
+                           documented_response_schema=schema, target_input=segment['input'])
+            call_key = relative + '#' + str(source_row)
+            call_count += 1
+            reasoning_count += int('help_seeking_reasoning' in output or 'response_use_reasoning' in output)
+            for axis, (gold_field, prediction_field) in axes.items():
+                reference = segment['output'][gold_field]
+                _check(output[gold_field], reference, 'RelianceScope human label association')
+                prediction = output.get(prediction_field)
+                grade = None if prediction is None else float(prediction.strip().lower() == reference.strip().lower())
+                item_key = str(output['id']) + ':' + strategy + ':' + axis
+                item = dict(content=content, reference=reference, strategy=strategy, axis=axis,
+                            segment_id=output['id'], prediction_field=prediction_field)
+                if item_key in items:
+                    _check(item, items[item_key], 'RelianceScope identical inputs and criteria across models')
+                items[item_key] = item
+                key = relative, source_row, axis
+                native[key] = dict(subject=(model, strategy), item_key=item_key, grade=grade,
+                    condition='task=' + axis + ';prompting=' + strategy,
+                    trace=dict(source_file=relative, source_row=source_row, source_segment_id=output['id'],
+                               source_call_key=call_key, axis=axis, native_output=output))
+                predictions[axis].append((reference.lower(), prediction.lower() if prediction is not None else None))
+        values = []
+        for axis in axes:
+            observations, f1s = predictions[axis], []
+            for label in ['passive', 'active', 'constructive']:
+                tp = sum(gold == pred == label for gold, pred in observations)
+                predicted = sum(pred == label for gold, pred in observations)
+                reference_count = sum(gold == label for gold, pred in observations)
+                precision = tp / predicted if predicted else 0.0
+                recall = tp / reference_count if reference_count else 0.0
+                f1 = 2 * tp / (predicted + reference_count) if predicted + reference_count else 0.0
+                values.extend([precision, recall, f1])
+                f1s.append(f1)
+            values.extend([sum(f1s) / 3, sum(gold == pred for gold, pred in observations) / len(observations)])
+        metrics[filename.removesuffix('.jsonl')] = values
+    published = '\n'.join(page.extract_text() or '' for page in PdfReader(raw / 'reports/performance.pdf').pages)
+    names = '|'.join(re.escape(key) for key in sorted(metrics, key=len, reverse=True))
+    matches = list(re.finditer(names, published))
+    seen = Counter()
+    metric_count = 0
+    for index, match in enumerate(matches):
+        end = matches[index + 1].start() if index + 1 < len(matches) else len(published)
+        values = [float(value) for value in re.findall(r'[01]\.\d{3}', published[match.end():end])]
+        _check(len(values), 22, 'RelianceScope 22 separately published metrics per configuration')
+        _check(all(abs(wanted - actual) <= 0.000501 for wanted, actual in zip(values, metrics[match.group()])),
+               True, 'RelianceScope original precision/recall/F1/micro/macro values')
+        seen[match.group()] += 1
+        metric_count += len(values)
+    _check(seen, Counter({key: 1 for key in metrics}), 'RelianceScope complete published performance table')
+    return dict(native=native, items=items, configurations=configurations,
+                counts=dict(source_joint_calls=call_count, source_measurements=len(native), source_segments=len(segments),
+                            source_configurations=len(configurations), source_items=len(items),
+                            source_calls_with_reasoning=reasoning_count, source_published_metric_values=metric_count))
+
+
+def _reliancescope(directory, tables, metadata, source=None):
+    source = source or _reliancescope_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        strategy = features['prompting_strategy']
+        model_identifier = features['reported_model_identifier']
+        keys = [key for key, value in source['configurations'].items() if key[1] == strategy and value[0] == model_identifier]
+        _check(len(keys), 1, 'RelianceScope literal model/prompting configuration')
+        key = keys[0]
+        model, temperature = source['configurations'][key]
+        _check(features, dict(prompting_strategy=strategy, reported_model_identifier=model, reported_temperature=temperature),
+               'RelianceScope report-declared subject settings')
+        _check((row.display_name, row.harness), (model + ' / ' + strategy, 'RelianceScope'), 'RelianceScope configuration labels')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'RelianceScope complete configurations')
+    for row in tables['items'].itertuples():
+        _check(row.raw_item_id in source['items'], True, 'RelianceScope native segment, prompting strategy and scored axis')
+        original = source['items'][row.raw_item_id]
+        _check(json.loads(row.content), original['content'], 'RelianceScope complete documented context and original target input')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=original['reference'], rule=metadata['grading']['rule'] + ' Axis: ' + original['axis']),
+               'RelianceScope axis-specific human grading criterion')
+        _check(_features(row.item_features), dict(prompting_strategy=original['strategy'],
+            prompt_origin='transcribed_evaluation_report_not_wire_request'), 'RelianceScope attributes exclude outcomes')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'RelianceScope deterministic label comparison')
+        _check(json.loads(verifier['spec']), dict(**metadata['grading']['verifiers']['reported'], prediction_field=original['prediction_field']),
+               'RelianceScope selected output axis')
+        _check(pd.isna(row.asset_manifest), True, 'RelianceScope text-only classifier input')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in source['items']}), 'RelianceScope complete measured items')
+    native = source['native']
+    _check(len(tables['responses']), len(native), 'RelianceScope two measurements per joint call')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'RelianceScope one trace per measured axis')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace_row = traces[row.response_id]
+        trace = json.loads(trace_row['trace'])
+        key = trace['source_file'], trace['source_row'], trace['axis']
+        original = native[key]
+        _check(trace, original['trace'], 'RelianceScope complete native joint output and common call provenance')
+        _check((subjects[row.subject_id], items[row.item_id]), (original['subject'], original['item_key']), 'RelianceScope source association')
+        _check(None if pd.isna(row.response) else float(row.response), original['grade'], 'RelianceScope original label comparison')
+        _check((row.trial, row.test_condition), (1, original['condition']), 'RelianceScope one recorded trial per axis/configuration')
+        _check(pd.isna(row.interactors), True, 'RelianceScope no invented interactors')
+        _check(tuple(trace_row[k] for k in ('subject_id', 'item_id', 'trial', 'test_condition')),
+               (row.subject_id, row.item_id, row.trial, row.test_condition), 'RelianceScope exact trace relationship')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), 'RelianceScope each original measured axis exactly once')
+    _check(len(tables.get('assets', [])), 0, 'RelianceScope no fabricated assets')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18252,7 +18404,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,

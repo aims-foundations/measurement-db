@@ -476,6 +476,59 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaises(BenchmarkMetadataError):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
+    def test_osf_folder_versions_pagination_and_native_hashes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        root_url = 'https://api.osf.io/v2/nodes/abc12/files/osfstorage/root/?view_only=published-link'
+        child_url = root_url.replace('/root/', '/child/')
+        next_url = child_url + '&page=2'
+        digest = hashlib.sha256(PAYLOAD).hexdigest()
+        file = dict(id='file1', attributes=dict(name='model:one.jsonl', kind='file', size=len(PAYLOAD),
+            current_version=3, extra=dict(hashes=dict(sha256=digest))),
+            links=dict(download='https://osf.io/download/xyz34/?view_only=published-link'))
+        folder = dict(attributes=dict(name='outputs', kind='folder'),
+            relationships=dict(files=dict(links=dict(related=dict(href=child_url)))))
+        pages = [dict(data=[folder]), dict(data=[], links=dict(next=next_url)), dict(data=[file])]
+        identity = [dict(path='outputs/model:one.jsonl', osf_id='file1', version=3, size=len(PAYLOAD), digest=digest)]
+        source = dict(name='observations', url=root_url, revision=None,
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'outputs/.*\.jsonl', path='{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        def replies(values):
+            return [io.BytesIO(json.dumps(page).encode()) for page in values]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(pages)) as fetch:
+            artifacts = upstream_artifacts([source], ('observations',))
+        self.assertEqual([call.args[0].full_url for call in fetch.call_args_list], [root_url, child_url, next_url])
+        self.assertEqual(artifacts[0]['file'], 'outputs/model_x3a_one.jsonl')
+        self.assertEqual(artifacts[0]['url'], 'https://osf.io/download/xyz34/?view_only=published-link&version=3')
+        target = self.raw / 'captured.jsonl'
+        target.write_bytes(PAYLOAD)
+        verify_snapshot_file(target, artifacts[0])
+        target.write_bytes(b'x' * len(PAYLOAD))
+        with self.assertRaises(SourceDataError):
+            verify_snapshot_file(target, artifacts[0])
+        for field, value in [('current_version', 4), ('size', len(PAYLOAD) + 1), ('name', '../escape.jsonl')]:
+            changed = copy.deepcopy(pages)
+            changed[-1]['data'][0]['attributes'][field] = value
+            with self.subTest(field=field), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(changed)):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([source], ('observations',))
+        for label, modify in [
+            ('missing hash', lambda p: p[-1]['data'][0]['attributes']['extra']['hashes'].clear()),
+            ('duplicate file', lambda p: p[-1]['data'].append(copy.deepcopy(file))),
+            ('external pagination', lambda p: p[1]['links'].update(next='https://other.example/files')),
+            ('cycle', lambda p: p[1]['links'].update(next=root_url)),
+            ('external download', lambda p: p[-1]['data'][0]['links'].update(download='https://other.example/file')),
+        ]:
+            changed = copy.deepcopy(pages)
+            modify(changed)
+            with self.subTest(label=label), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(changed)):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([source], ('observations',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
     def test_public_wandb_pagination_latest_checkpoint_and_content_pin(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         digest = hashlib.md5(PAYLOAD).hexdigest()

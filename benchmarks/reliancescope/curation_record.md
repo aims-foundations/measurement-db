@@ -1,0 +1,3 @@
+- Preserve 3,600 joint classifier calls as 7,200 linked measurements across two axes. All earlier grades match, as do all 528 published performance values; retain the complete native outputs, including recorded reasoning.
+- Include documented system prompts, few-shot examples and response schemas with each original input. Exact API requests were not released. Keep prompting configurations separate; the scored axis is a grading rule, not an invented input instruction.
+- Download the source-versioned OSF collection through the link published in the paper. Raw data remain local pending clarification of dataset redistribution terms; the earlier CC-BY attribution was unsupported. No model or judge was run.
