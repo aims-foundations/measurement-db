@@ -17711,6 +17711,152 @@ def _radar(directory, tables, metadata, source=None):
                 source_trace_messages=len(original['llm_messages']), source_unresolved_notebook_results=1)
 
 
+def _realtimeqa_sources(directory, metadata):
+    """Associate complete native weekly files independently of the tabular joins."""
+    import itertools
+    import re
+    import string
+
+    raw = directory / "raw/upstream"
+    native, questions, held = {}, {}, Counter()
+    for path in sorted((raw / "baseline_results").rglob("*.jsonl")):
+        results = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+        match = re.fullmatch(r"(\d{8}(?:-time|_cnn)?)_qa(_nota)?_(.+)\.jsonl", path.name)
+        if match is None:
+            held["cumulative_export"] += len(results)
+            continue
+        date, nota, token = match.groups()
+        if date == "20220201":
+            held["unavailable_question"] += len(results)
+            continue
+        question_stem = date + "_qa" + (nota or "")
+        choices = [raw / f"past/{date[:4]}/{question_stem}.jsonl",
+                   raw / f"past/{date[:4]}/{question_stem}_public.jsonl",
+                   raw / f"latest/{question_stem}_public.jsonl"]
+        if question_stem == "20220613_qa":
+            choices.append(raw / "backnumber/2022/20220610_qa.jsonl")
+        question_path = next(p for p in choices if p.is_file())
+        if question_path not in questions:
+            questions[question_path] = [json.loads(line) for line in question_path.read_text().splitlines() if line.strip()]
+        bank = questions[question_path]
+        selected = [(i, q) for i, q in enumerate(bank) if not token.startswith("cnn_") or q["question_source"] == "CNN"]
+        _check([r["question_id"] for r in results], [q["question_id"] for _, q in selected],
+               "RealTime QA native file order and task identity")
+        mode = "generation" if token.endswith("_gen") else "multiple_choice"
+        for index, (record, (question_index, question)) in enumerate(zip(results, selected, strict=True)):
+            status, grade = "graded", None
+            if not question.get("answer"):
+                status = "reference_unavailable"
+            elif mode == "generation" and "except" in question["question_sentence"].lower().strip()[-10:]:
+                status = "excluded_by_native_grader"
+            elif mode == "generation" and not isinstance(record["prediction"], str):
+                status = "invalid_generation_type"
+            elif mode == "multiple_choice":
+                grade = float(record["prediction"] == question["answer"])
+            else:
+                answers = [question["choices"][int(i)] for i in question["answer"]]
+                targets = [" ".join(permutation) for permutation in itertools.permutations(answers)]
+                normalized = []
+                for value in [record["prediction"], *targets]:
+                    value = "".join(char for char in value.lower() if char not in string.punctuation)
+                    for counter in ("年", "歳", "人", "년"):
+                        value = value.replace(counter, "")
+                    normalized.append(" ".join(value.split()))
+                grade = float(normalized[0] in normalized[1:])
+            stimulus = {"question_date": question["question_date"], "question_sentence": question["question_sentence"]}
+            if mode == "multiple_choice":
+                stimulus["choices"] = question["choices"]
+            reference = (dict(indices=question["answer"], choices=question["choices"])
+                         if isinstance(question.get("answer"), list) else None)
+            identity = json.dumps([stimulus, reference, mode], ensure_ascii=False, sort_keys=True)
+            source_file = str(path.relative_to(raw))
+            trace = dict(source_file=source_file, source_row=index,
+                question_file=str(question_path.relative_to(raw)), question_row=question_index,
+                model_token=token, mode=mode, grade_status=status,
+                native_record=record, question_record=question)
+            native[source_file, index] = dict(trace=trace, grade=grade, stimulus=stimulus,
+                reference=reference, identity=identity, model=token, mode=mode, question=question)
+    return dict(native=native, held=dict(held))
+
+
+def _realtimeqa(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = source or _realtimeqa_sources(directory, metadata)
+    native = source["native"]
+    parameters = metadata["build"]["parameters"]
+    definitions = {}
+    for value in native.values():
+        definitions.setdefault(value["identity"], value)
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        token = features["source_model_token"]
+        mode = "generation" if token.endswith("_gen") else "multiple_choice"
+        expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
+        _check(features, dict(**expected, source_model_token=token, answer_mode=mode), "RealTime QA literal configuration")
+        _check(row.display_name, "RealTime QA / " + token, "RealTime QA literal model token")
+        _check(row.harness, parameters["subject_features"]["harness"], "RealTime QA source harness")
+        for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
+            _check(pd.isna(getattr(row, field)), True, "RealTime QA no invented historical setting: " + field)
+        subjects[row.subject_id] = token
+    _check(Counter(subjects.values()), Counter({value["model"]: 1 for value in native.values()}), "RealTime QA all configurations")
+    for row in tables["items"].itertuples():
+        features = _features(row.item_features)
+        mode = features["answer_mode"]
+        criterion = json.loads(row.grading_criterion)
+        reference = json.loads(criterion["reference_answer"]) if criterion.get("reference_answer") is not None else None
+        identity = json.dumps([json.loads(row.content), reference, mode], ensure_ascii=False, sort_keys=True)
+        original = definitions[identity]
+        question = original["question"]
+        _check(row.raw_item_id, question["question_id"] + "#" + mode, "RealTime QA original representative task ID")
+        _check(features, dict(question_source=question["question_source"], question_url=question["question_url"], answer_mode=mode),
+               "RealTime QA task attributes exclude solutions")
+        expected = dict(reference_answer=json.dumps(original["reference"], ensure_ascii=False) if original["reference"] is not None else None,
+            rule=metadata["grading"]["verifiers"][mode]["rule"])
+        _check(criterion, json.loads(canonical_grading_criterion(expected)), "RealTime QA full original references and rule")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("exact_matcher", metadata["grading"]["verifiers"][mode]),
+               "RealTime QA correct mode-specific verifier")
+        _check(pd.isna(row.asset_manifest), True, "RealTime QA no invented multimedia")
+        items[row.item_id] = identity
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), "RealTime QA complete task/grading definitions")
+    _check(len(tables.get("assets", [])), 0, "RealTime QA text-only tasks")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "RealTime QA exactly one trace per attempt")
+    traces = tables["traces"].set_index("response_id")
+    trials, occurrences = {}, Counter()
+    for key, original in native.items():
+        unit = original["model"], original["identity"]
+        occurrences[unit] += 1
+        trials[key] = occurrences[unit]
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace_row = traces.loc[row.response_id]
+        trace = json.loads(trace_row.trace)
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, original["trace"], "RealTime QA unchanged full native records and source association")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["model"], original["identity"]),
+               "RealTime QA response model/task association")
+        _check(None if pd.isna(row.response) else float(row.response), original["grade"],
+               "RealTime QA native grade without index shifting")
+        _check(row.trial, trials[key], "RealTime QA native record occurrence")
+        _check(row.test_condition, "released_weekly_prediction", "RealTime QA explicit release scope")
+        _check(pd.isna(row.interactors), True, "RealTime QA no fabricated interactors")
+        _check((trace_row.subject_id, trace_row.item_id, trace_row.trial, trace_row.test_condition),
+               (row.subject_id, row.item_id, row.trial, row.test_condition), "RealTime QA full trace relationship")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "RealTime QA every eligible weekly prediction exactly once")
+    statuses = Counter(row["trace"]["grade_status"] for row in native.values())
+    return dict(source_observations=len(native), source_models=len(set(subjects.values())), source_items=len(definitions),
+        source_multiple_choice=sum(row["mode"] == "multiple_choice" for row in native.values()),
+        source_generation=sum(row["mode"] == "generation" for row in native.values()),
+        source_graded=statuses["graded"], source_missing_reference=statuses["reference_unavailable"],
+        source_excluded_by_grader=statuses["excluded_by_native_grader"], source_invalid_generation=statuses["invalid_generation_type"],
+        source_cumulative_raw_only=source["held"]["cumulative_export"],
+        source_missing_question_raw_only=source["held"]["unavailable_question"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17727,7 +17873,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,

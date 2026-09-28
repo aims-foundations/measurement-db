@@ -1,0 +1,3 @@
+- Import 64,822 weekly predictions with complete native traces; join within each source file because task IDs are reused. Keep MC and generation attempts separate, and use literal model/configuration labels.
+- Use the original zero-based MC comparison and generation exact match. Retain 1,080 missing-reference, 93 excluded and 29 malformed-generation attempts with null grades; preserve overlapping cumulative exports and 42 questionless demo records in raw.
+- Independently check every source association and all 2,072 comparable published 2026 leaderboard values. Retire the old index-offset guess and unrelated generation attachments; dataset redistribution terms remain unverified. No model or judge was run.

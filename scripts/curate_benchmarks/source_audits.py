@@ -935,3 +935,4 @@ SOURCE_AUDITS["naturalreasoning"] = verify_native_results
 SOURCE_AUDITS["naturebench"] = verify_native_results
 SOURCE_AUDITS["nis3d"] = verify_native_results
 SOURCE_AUDITS["radar"] = verify_native_results
+SOURCE_AUDITS["realtimeqa"] = verify_native_results
