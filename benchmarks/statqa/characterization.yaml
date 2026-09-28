@@ -1,0 +1,122 @@
+format_version: 1
+tables:
+  traces:
+    rows: 53498
+    logical_sha256: 1d4a610c6909fa4b5005b5818fb0fb860a7f90d2f51561449b03c907370bb478
+  subjects:
+    rows: 46
+    logical_sha256: 133f51bbbe06617965853c452a60ffa84b1b37949deeae8cb8c27655958d2960
+  responses:
+    rows: 53498
+    logical_sha256: 826565e004be61d7fc2951bc8db5a2cc1d657bb631beeeb78c876202534daf08
+  items:
+    rows: 1183
+    logical_sha256: c93f8a04928e30377de59afcd87a084359bcca8f14a8483141657d397d7776ae
+  benchmarks:
+    rows: 1
+    logical_sha256: da4320258e715470c00ef02ccbcd1b6e28dd400ec0f51204207426e001d236a3
+source_claims:
+  source_reference_parser_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 228
+  source_answer_parser_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 74
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 15147
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 44194
+  source_older_question_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 152
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 9304
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 53498
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 46
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 10
+  source_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 1183
+  source_bank_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 1158
+  source_column_datasets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 36
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUSTDial/StatQA/tree/3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    locator: Original Extracted Answer.zip, mini-StatQA, published zero-shot prompts, column metadata and analyze_model_answer.py.
+    scope: Every released AI observation; general-analysis grades follow the original scorer, qualitative binary
+      grades remain unavailable. Canonical task context does not claim exact historical few-shot prompts.
+    expected: 53498

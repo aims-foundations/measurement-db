@@ -20017,12 +20017,166 @@ def _sketchjudge(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces))
 
 
+def _statqa_sources(directory, metadata):
+    """Read original CSV rows and independently reconstruct canonical task context."""
+    import ast
+    import csv
+    import io
+    import re
+    from zipfile import ZipFile
+
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    release = directory / 'raw' / layout['release']
+    words = {node.targets[0].id: ast.literal_eval(node.value)
+        for node in ast.parse((release / 'prompt_wording.py').read_text()).body
+        if isinstance(node, ast.Assign)}
+    prompts, bank, prefixes = {}, {}, {}
+    with (release / layout['prompts']).open(newline='') as stream:
+        for row in csv.DictReader(stream):
+            key = row['dataset'], row['refined_question']
+            if key in prompts:
+                _check(prompts[key], row['prompt'], 'StatQA identical canonical prompts for duplicate task rows')
+            prompts[key] = row['prompt']
+            if row['dataset'] not in prefixes:
+                filename = re.sub(r'[^A-Za-z0-9._/-]', lambda match: f'_x{ord(match[0]):02x}_', row['dataset'] + '_col_meta.csv')
+                columns = pd.read_csv(release / layout['column_metadata'] / filename)
+                lines = []
+                for _, column in columns.iterrows():
+                    text = '; '.join(f'{name}: {column[name]}' for name in columns.columns
+                        if name not in ('dataset', 'column_description')) + '.'
+                    lines.append(text.replace('cate', 'categorical').replace('quant', 'quantitative'))
+                prefixes[row['dataset']] = ('### Task Description: ' + words['PROMPT_TASK_DESCRIPTION']
+                    + '\n### Instruction: ' + words['PROMPT_INSTRUCTION']
+                    + '\n### Classification List: \n' + words['PROMPT_CLASSIFICATION']
+                    + '\n### Column Information: \n' + '\n'.join(lines))
+            expected = prefixes[row['dataset']] + '\n### Statistical Question: ' + row['refined_question'] + '\n### Response: ' + words['PROMPT_RESPONSE']
+            _check(row['prompt'], expected, 'StatQA original complete column metadata and canonical task template')
+    with (release / layout['bank']).open(newline='') as stream:
+        for row in csv.DictReader(stream):
+            key = row['dataset'], row['refined_question'], row['ground_truth']
+            if key in bank:
+                _check(bank[key], row, 'StatQA identical duplicate task annotations')
+            bank[key] = row
+    native, configurations, definitions, counts = {}, {}, {}, Counter()
+    with ZipFile(release / layout['answers']) as archive:
+        for member in sorted(archive.namelist()):
+            if not member.endswith('.csv') or Path(member).name.startswith('human_'):
+                continue
+            scope = Path(member).parent.name
+            _check(scope in [labels['general_scope'], labels['qualitative_scope']], True, 'StatQA declared analysis scope')
+            configuration = Path(member).stem
+            match = re.fullmatch(r'(.+)_(zero-shot-CoT|one-shot-CoT|stats-prompt|zero-shot|one-shot)(-Explain)?', configuration)
+            _check(match is not None, True, 'StatQA native model and strategy filename')
+            model, strategy, explanation = match.groups()
+            _check(bool(explanation), scope == labels['qualitative_scope'], 'StatQA original explanation configuration')
+            configurations[configuration] = model, strategy, scope
+            records = list(csv.DictReader(io.StringIO(archive.read(member).decode('utf-8-sig'))))
+            for position, record in enumerate(records):
+                task_key = record['dataset'], record['refined_question'], record['ground_truth']
+                task = bank.get(task_key)
+                general = scope == labels['general_scope']
+                _check(not general or task is not None, True, 'StatQA exact graded task and reference association')
+                content = prefixes[record['dataset']] + '\n### Statistical Question: ' + record['refined_question'] + '\n### Response: ' + words['PROMPT_RESPONSE']
+                if general:
+                    _check(content, prompts[task_key[:2]], 'StatQA graded question matches released canonical prompt')
+                grade, status = None, labels['qualitative']
+                if general:
+                    try:
+                        reference = json.loads(record['ground_truth'].replace("'", '"'))
+                        gold = [{word.lower().strip() for word in reference.get(target, [])} for target in ['columns', 'methods']]
+                        valid_reference = True
+                    except (ValueError, TypeError, AttributeError):
+                        valid_reference, gold = False, None
+                    try:
+                        answer = json.loads(record['extracted_answer'])
+                        selected = [{word.lower().strip() for word in answer.get(target, [])} for target in ['columns', 'methods']]
+                        valid_answer = True
+                    except (ValueError, TypeError, AttributeError):
+                        valid_answer, selected = False, None
+                    grade = float(valid_answer and valid_reference and all(gold) and selected == gold)
+                    status = labels['invalid_reference'] if not valid_reference else labels['invalid_answer'] if not valid_answer else labels['valid_grade']
+                    counts['source_reference_parser_failures'] += not valid_reference
+                    counts['source_answer_parser_failures'] += not valid_answer
+                    counts['source_correct'] += int(grade)
+                counts['source_graded' if general else 'source_ungraded'] += 1
+                counts['source_older_question_attempts'] += task is None
+                item = dict(content=content, raw_item_id=record['dataset'] + '::' + record['refined_question'],
+                    reference=record['ground_truth'], dataset=record['dataset'],
+                    task=task['task'] if task else 'unknown', difficulty=task['difficulty'] if task else 'unknown')
+                if task_key in definitions:
+                    _check(definitions[task_key], item, 'StatQA consistent original task definition')
+                definitions[task_key] = item
+                trace = dict(source_file=layout['release'] + '/' + layout['answers'], source_member=member,
+                    source_row=position, source_record=record, source_task=task, grade_status=status, grade_scope=labels['grade_scope'])
+                native[member, position] = dict(trace=trace, configuration=configuration, grade=grade, item=item)
+    counts.update(source_responses=len(native), source_configurations=len(configurations),
+        source_models=len({value[0] for value in configurations.values()}), source_definitions=len(definitions),
+        source_bank_definitions=len(bank), source_column_datasets=len(prefixes))
+    return dict(native=native, configurations=configurations, definitions=definitions, counts=dict(counts))
+
+
+def _statqa(directory, tables, metadata, source=None):
+    """Check every attempt, parser outcome, full trace and original task association."""
+    from collections import defaultdict
+
+    source = source or _statqa_sources(directory, metadata)
+    labels = metadata['build']['parameters']['labels']
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'StatQA unique ' + name + ' IDs')
+    subjects = {row.subject_id: row for row in tables['subjects'].itertuples()}
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'StatQA complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'StatQA complete original observation coverage')
+    seen, used_items, used_subjects, configurations = set(), set(), set(), {}
+    trials = defaultdict(list)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_member'], trace['source_row']
+        _check(type(trace['source_row']) is int and key in source['native'] and key not in seen,
+            True, 'StatQA unique original row association')
+        expected = source['native'][key]
+        _check(trace, expected['trace'], 'StatQA full source record, annotation and parser status')
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'StatQA original accuracy rule or unreleased qualitative grade')
+        model, strategy, scope = source['configurations'][expected['configuration']]
+        subject = subjects[row.subject_id]
+        _check((subject.display_name, subject.harness, pd.isna(subject.harness_version)),
+            (model, labels['harness'], True), 'StatQA original model and harness identity')
+        _check(_features(subject.subject_features_extra), dict(source_model_label=model,
+            strategy=strategy, analysis_scope=scope, configuration_status=labels['configuration_status']),
+            'StatQA distinct native prompting configurations')
+        configurations[row.subject_id] = expected['configuration']
+        item, original = items[row.item_id], expected['item']
+        _check((item['raw_item_id'], item['content']), (original['raw_item_id'], original['content']),
+            'StatQA complete canonical task and original question wording')
+        _check(_features(item['item_features']), dict(dataset=original['dataset'], task=original['task'],
+            difficulty=original['difficulty'], input_scope=labels['input_scope']), 'StatQA task features and historical prompt limitation')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=original['reference'], rule=metadata['grading']['rule']),
+            'StatQA unchanged original reference and explicit grading rule')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], json.loads(verifier['spec'])), ('exact_matcher', metadata['grading']['verifiers']['selection']),
+            'StatQA original exact-set scorer declaration')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'StatQA no invented judge call')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'StatQA no invented response conditions')
+        seen.add(key); used_items.add(row.item_id); used_subjects.add(row.subject_id)
+        trials[row.subject_id, row.item_id].append(row.trial)
+    _check(seen, set(source['native']), 'StatQA every original observation retained')
+    _check((used_items, used_subjects), (set(items), set(subjects)), 'StatQA no orphan subjects or items')
+    _check(Counter(configurations.values()), Counter({key: 1 for key in source['configurations']}), 'StatQA all recorded configurations remain distinct')
+    _check(len(items), len(source['definitions']), 'StatQA all distinct task and grading definitions')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'StatQA consecutive recorded trials')
+    return dict(source['counts'], source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

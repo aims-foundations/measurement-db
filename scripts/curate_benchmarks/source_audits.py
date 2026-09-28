@@ -952,3 +952,5 @@ SOURCE_AUDITS["sib200"] = verify_native_results
 SOURCE_AUDITS["sgrades"] = verify_native_results
 SOURCE_AUDITS["situat3dchange"] = verify_native_results
 SOURCE_AUDITS["sketchjudge"] = verify_native_results
+
+SOURCE_AUDITS["statqa"] = verify_native_results
