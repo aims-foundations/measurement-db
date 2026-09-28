@@ -950,3 +950,4 @@ SOURCE_AUDITS["sciarena"] = verify_native_results
 SOURCE_AUDITS["scivisagentbench"] = verify_native_results
 SOURCE_AUDITS["sib200"] = verify_native_results
 SOURCE_AUDITS["sgrades"] = verify_native_results
+SOURCE_AUDITS["situat3dchange"] = verify_native_results

@@ -19646,12 +19646,223 @@ def _sgrades(directory, tables, metadata, source=None):
     return dict(counts)
 
 
+def _situat3dchange_sources(directory, metadata):
+    """Read original task, pose, grade and asset records without the builder joins."""
+    import hashlib
+    import io
+    import re
+    from collections import defaultdict
+    from zipfile import ZipFile
+
+    import numpy as np
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    poses, annotations, alignments = defaultdict(list), {}, {}
+    with ZipFile(raw / layout['annotations']) as archive:
+        alignments = json.loads(archive.read(layout['alignment']))
+        for member in sorted(archive.namelist()):
+            if member.startswith(layout['situations']) and member.endswith('.json'):
+                for scene, group in json.loads(archive.read(member)).items():
+                    for position, record in enumerate(group['response']):
+                        name = record['situation']
+                        if name.startswith('standing'):
+                            match = re.fullmatch(r"(standing with )(.+)( \d+ o'clock)", name)
+                            if match:
+                                name = match[1] + '_'.join(match[2].split()) + match[3]
+                        elif name.startswith('sitting'):
+                            name = 'sitting on ' + '_'.join(name[len('sitting on '):].split())
+                        poses[record['scan_id'], name].append(dict(archive=layout['annotations'], member=member,
+                            scene=scene, row=position, record=record))
+        for task in parameters['tasks']:
+            member = layout['annotation_prefix'] + task + '_val_v2.json'
+            for scene, group in json.loads(archive.read(member)).items():
+                for position, record in enumerate(group['response']):
+                    key = task, record['scan_id'], str(record['index'])
+                    _check(key not in annotations, True, 'Situat3DChange unique source annotation key')
+                    annotations[key] = dict(archive=layout['annotations'], member=member,
+                        scene=scene, row=position, record=record)
+
+    native, scans, images, counts = {}, set(), set(), Counter()
+    for task, task_directory in parameters['tasks'].items():
+        file = layout['release'] + '/results/SCReasoner/' + task_directory + '/results_wscore.json'
+        unscored_file = file.replace('results_wscore.json', 'results.json')
+        records = json.loads((raw / file).read_text())
+        unscored = json.loads((raw / unscored_file).read_text())
+        _check(len(records), len(unscored), 'Situat3DChange scored and unscored export lengths')
+        seen_items = set()
+        for position, record in enumerate(records):
+            _check({k: v for k, v in record.items() if k != 'score'},
+                {k: v for k, v in unscored[position].items() if k != 'score'},
+                'Situat3DChange scored export preserves the original observation')
+            key = task, record['scene_id'], str(record['index'])
+            _check(key not in seen_items and key in annotations, True, 'Situat3DChange unique recorded scan/index association')
+            seen_items.add(key)
+            annotation = annotations[key]
+            definition = annotation['record']
+            question = definition['Q' if task == 'qa' else 'Query']
+            reference = definition[{'qa': 'A', 'caption': 'Caption', 'instruction': 'Instruction'}[task]]
+            category = definition['type' if task == 'qa' else 'Type']
+            direction = task == 'qa' and 'Direction' in category
+            if direction:
+                reference = 'At your ' + reference
+            _check((record['instruction'], record['response_gt']),
+                ('USER: ' + question + ' ASSISTANT:', reference), 'Situat3DChange original question and loader reference')
+            candidates = [annotation] if task == 'qa' else poses[definition['scan_id'], definition['brief_situation']]
+            _check(len(candidates), 1, 'Situat3DChange unambiguous original pose')
+            pose = candidates[0]
+            alignment = alignments[record['scene_id']]
+            theta, translation = alignment
+            radians = np.deg2rad(theta)
+            rotation = np.array([[np.cos(radians), -np.sin(radians), 0],
+                [np.sin(radians), np.cos(radians), 0], [0, 0, 1]])
+            anchor = (np.array(pose['record']['location']).dot(rotation) - translation).astype('float32')
+            _check(anchor.tolist(), record['anchor'], 'Situat3DChange exact recorded float32 camera position')
+            _check(np.isfinite(pose['record']['orientation']).all().item(), True, 'Situat3DChange finite original orientation')
+            protocol = 'distance' if task == 'qa' and 'distance' in category.lower() else 'qa' if task == 'qa' else 'longform'
+            score = record['score']
+            if score is None:
+                _check(protocol, 'distance', 'Situat3DChange original unavailable-grade protocol')
+                grade = None
+            elif protocol == 'distance':
+                _check(type(score) in (int, float) and np.isfinite(score) and 0 <= score <= 1,
+                    True, 'Situat3DChange original numeric distance scale')
+                grade = float(score)
+            else:
+                numbers = re.findall(r'\d+\.\d+|\d+', score)
+                _check(len(numbers), 1, 'Situat3DChange one original judge rating')
+                rating = float(numbers[0])
+                _check(rating in (1, 2, 3, 4, 5), True, 'Situat3DChange original five-category judge scale')
+                grade = (rating - 1) / 4
+                counts['source_formatted_ratings'] += score.startswith('Score:')
+            scan, previous = record['scene_id'], annotation['scene']
+            image = 'ego_view/' + scan + '/' + definition['brief_situation'].replace('/', '').replace(' ', '_') + '.png'
+            scans.update((scan, previous)); images.add(image)
+            trace = dict(source_file=file, source_row=position, source_record=record, unscored_file=unscored_file,
+                annotation=annotation, pose=pose,
+                alignment=dict(archive=layout['annotations'], member=layout['alignment'], scan_id=scan, record=alignment),
+                image=dict(archive=layout['images'], member=image), protocol=protocol,
+                grade_status='source_grade_unavailable' if grade is None else 'recorded_score', grade_scope=labels['grade_scope'])
+            native[file, position] = dict(trace=trace, grade=grade, task=task, protocol=protocol,
+                item_key=':'.join(key), reference=reference, scan=scan, previous=previous, image=image,
+                content='Situation: ' + definition['situation'] + '\n\n' + record['instruction'],
+                spatial=dict(current_scan=scan, reference_scan=previous, brief_situation=definition['brief_situation'],
+                    recorded_anchor=record['anchor'], source_pose=dict(location=pose['record']['location'],
+                    orientation=pose['record']['orientation']), alignment=alignment))
+            counts['source_' + task + '_responses'] += 1
+            counts['source_direction_prefixes'] += direction
+            counts['source_ungraded' if grade is None else 'source_graded'] += 1
+            counts['source_' + protocol + '_grades'] += grade is not None
+
+    assets, scene_inputs, image_inputs = {}, {}, {}
+    with ZipFile(raw / layout['pointclouds']) as archive:
+        for scan in sorted(scans):
+            point_member = layout['scene_prefix'] + scan + '/pcd-align.pth'
+            instance_member = layout['scene_prefix'] + scan + '/inst_to_label.pth'
+            data, instances = archive.read(point_member), archive.read(instance_member)
+            digest = hashlib.sha256(data).hexdigest()
+            instance_map = read_native_pickle(io.BytesIO(instances))
+            arrays = read_native_pickle(io.BytesIO(data))
+            xyz, rgb, labels_array = arrays[:3]
+            _check(xyz.shape == rgb.shape and xyz.ndim == 2 and xyz.shape[1] == 3 and len(xyz) == len(labels_array),
+                True, 'Situat3DChange original point-array dimensions')
+            _check(np.isfinite(xyz).all().item() and np.isfinite(rgb).all().item(), True, 'Situat3DChange finite point arrays')
+            _check(bool(instance_map) and set(instance_map) <= set(np.unique(labels_array)), True, 'Situat3DChange original instance membership')
+            counts['source_points'] += len(xyz)
+            assets[digest] = len(data)
+            scene_inputs[scan] = dict(point_member=point_member, instance_member=instance_member,
+                instances_sha256=hashlib.sha256(instances).hexdigest(), instance_order=list(instance_map), sha256=digest)
+    with ZipFile(raw / layout['images']) as archive:
+        from PIL import Image
+        for member in sorted(images):
+            data = archive.read(member)
+            with Image.open(io.BytesIO(data)) as picture:
+                picture.verify()
+            digest = hashlib.sha256(data).hexdigest()
+            image_inputs[member] = digest
+            assets[digest] = len(data)
+    for expected in native.values():
+        current, previous = scene_inputs[expected['scan']], scene_inputs[expected['previous']]
+        expected['spatial'].update(current_instance_order=current['instance_order'], reference_instance_order=previous['instance_order'])
+        expected['trace']['scene_inputs'] = dict(archive=layout['pointclouds'], current_pointcloud=current['point_member'],
+            current_instances=current['instance_member'], current_instances_sha256=current['instances_sha256'],
+            reference_pointcloud=previous['point_member'], reference_instances=previous['instance_member'],
+            reference_instances_sha256=previous['instances_sha256'])
+        expected['links'] = [dict(asset_id=digest, path=path, media_type=media, role=role, ordinal=i + 1)
+            for i, (digest, path, media, role) in enumerate([
+                (current['sha256'], 'current_scene/pcd-align.pth', 'application/octet-stream', labels['current_role']),
+                (previous['sha256'], 'reference_scene/pcd-align.pth', 'application/octet-stream', labels['reference_role']),
+                (image_inputs[expected['image']], 'egocentric_view.png', 'image/png', labels['image_role'])])]
+    counts.update(source_responses=len(native), source_scenes=len(scans), source_images=len(images), source_assets=len(assets))
+    return dict(native=native, assets=assets, counts=dict(counts))
+
+
+def _situat3dchange(directory, tables, metadata, source=None):
+    """Check every recorded observation, pose, full trace and original stimulus byte."""
+    import hashlib
+    from collections import defaultdict
+
+    source = source or _situat3dchange_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    for name, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id'), ('assets', 'asset_id')]:
+        _check(tables[name][key].is_unique, True, 'Situat3DChange unique ' + name + ' IDs')
+    _check(len(tables['subjects']), 1, 'Situat3DChange one recorded subject configuration')
+    subject = tables['subjects'].iloc[0]
+    _check((subject.display_name, subject.harness, pd.isna(subject.harness_version)),
+        ('SCReasoner', labels['harness'], True), 'Situat3DChange recorded subject without an invented checkpoint')
+    _check(_features(subject.subject_features_extra), parameters['subject_features'], 'Situat3DChange explicit unknown historical settings')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'Situat3DChange complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'Situat3DChange complete native observation coverage')
+    seen, used, trials = set(), set(), defaultdict(list)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(type(trace['source_row']) is int and key in source['native'] and key not in seen,
+            True, 'Situat3DChange original observation association exactly once')
+        expected = source['native'][key]
+        _check(trace, expected['trace'], 'Situat3DChange complete original record, pose and provenance')
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'Situat3DChange recorded grade or explicit unavailable grade')
+        _check(row.subject_id, subject.subject_id, 'Situat3DChange original subject association')
+        item = items[row.item_id]
+        _check((item['raw_item_id'], item['content']), (expected['item_key'], expected['content']),
+            'Situat3DChange complete source question and item identity')
+        extra = _features(item['item_features'])
+        _check(set(extra), {'task', 'input_scope', 'spatial_context'}, 'Situat3DChange stimulus fields without reference-label features')
+        _check((extra['task'], extra['input_scope'], json.loads(extra['spatial_context'])),
+            (expected['task'], labels['input_scope'], expected['spatial']), 'Situat3DChange exact original spatial inputs')
+        verifier_spec = metadata['grading']['verifiers'][expected['protocol']]
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=expected['reference'], rule=verifier_spec['rule']),
+            'Situat3DChange original reference and reporting rule')
+        verifier = json.loads(item['verifier'])
+        _check(json.loads(verifier['spec']), verifier_spec, 'Situat3DChange original grading protocol')
+        _check(verifier['class'], 'exact_matcher' if expected['protocol'] == 'distance' else 'judge', 'Situat3DChange verifier classification')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'Situat3DChange no invented historical judge')
+        _check(json.loads(item['asset_manifest']), expected['links'], 'Situat3DChange complete original scene and image association')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'Situat3DChange no invented response settings')
+        seen.add(key); used.add(row.item_id); trials[row.subject_id, row.item_id].append(row.trial)
+    _check(seen, set(source['native']), 'Situat3DChange every original observation retained')
+    _check(used, set(items), 'Situat3DChange no orphan items')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'Situat3DChange consecutive retained trials')
+    _check(set(tables['assets'].asset_id), set(source['assets']), 'Situat3DChange exact original asset coverage')
+    for row in tables['assets'].itertuples():
+        _check((hashlib.sha256(row.data).hexdigest(), len(row.data), row.byte_size),
+            (row.asset_id, source['assets'][row.asset_id], source['assets'][row.asset_id]), 'Situat3DChange complete original asset payload')
+    return dict(source['counts'], source_traces=len(traces), source_items=len(items), source_subjects=len(tables['subjects']))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
