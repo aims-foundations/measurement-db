@@ -18388,6 +18388,170 @@ def _reliancescope(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _researchclawbench_sources(directory, metadata):
+    """Independently associate every original run, rubric, instruction and asset."""
+    import hashlib
+    import math
+    import re
+
+    raw = directory / 'raw'
+    home = raw / 'home/data'
+    current_rows = json.loads((home / 'runs_index.json').read_bytes())
+    historical_rows = [r for r in json.loads((raw / 'history/data/runs_index.json').read_bytes())
+                       if r['agent_name'] == 'Qiushi Engine' and r['model'] == 'gpt-5.5']
+    rows = current_rows + historical_rows
+    files = {r['run_id']:'home/data/runs_index.json' for r in current_rows}
+    files.update({r['run_id']:'history/data/runs_index.json' for r in historical_rows})
+    index = {row['run_id']: row for row in rows}
+    _check(len(index), len(rows), 'ResearchClawBench unique native run IDs')
+    tasks, assets, details, trials = {}, {}, {}, {}
+    counts = Counter(source_runs=len(rows), source_current_runs=len(current_rows), source_historical_runs=len(historical_rows),
+                     source_tasks=len({r['task_id'] for r in rows}),
+                     source_configurations=len({(r['agent_name'], r['model'], r['model_display']) for r in rows}))
+    for task in sorted({r['task_id'] for r in rows}):
+        folder = home / 'tasks' / task
+        instruction = (folder / 'INSTRUCTIONS.md').read_bytes().decode('utf-8')
+        checklist = json.loads((folder / 'checklist.json').read_bytes())
+        original = raw / 'original/tasks' / task
+        _check(json.loads((folder / 'info.json').read_bytes()), json.loads((original / 'task_info.json').read_bytes()),
+               'ResearchClawBench task definition agrees across original releases')
+        _check(checklist, json.loads((original / 'target_study/checklist.json').read_bytes()),
+               'ResearchClawBench published rubric agrees across original releases')
+        for exported in sorted((folder / 'workspace').rglob('*')):
+            relative = exported.relative_to(folder / 'workspace')
+            if not exported.is_file() or relative.parts[0] not in {'data', 'related_work'}:
+                continue
+            _check(hashlib.sha256(exported.read_bytes()).hexdigest(),
+                   hashlib.sha256((original / relative).read_bytes()).hexdigest(),
+                   'ResearchClawBench exported inputs match the full original task release')
+            counts['source_cross_verified_input_files'] += 1
+        manifest = []
+        for path in sorted(original.rglob('*')):
+            relative = path.relative_to(original)
+            if not path.is_file() or relative.parts[0] not in {'data', 'related_work'}:
+                continue
+            logical = re.sub(r'_x([0-9a-f]{2,6})_', lambda m: chr(int(m[1], 16)), str(relative))
+            payload = path.read_bytes()
+            digest = hashlib.sha256(payload).hexdigest()
+            asset_id = digest
+            assets[asset_id] = dict(sha256=digest, size=len(payload))
+            manifest.append(dict(asset_id=asset_id, path=logical, role='input', ordinal=len(manifest) + 1,
+                media_type=metadata['build']['parameters']['media_types'].get(Path(logical).suffix.lower(), 'application/octet-stream')))
+        _check(bool(manifest), True, 'ResearchClawBench original task inputs present')
+        _check(len({m['path'] for m in manifest}), len(manifest), 'ResearchClawBench unique decoded asset paths')
+        tasks[task] = dict(content=instruction, checklist=checklist, asset_manifest=manifest)
+        counts['source_input_files'] += len(manifest)
+    for path in sorted((home / 'runs').glob('*/data.json')):
+        record = json.loads(path.read_bytes())
+        run = path.parent.name
+        summary = index[run]
+        for field in ['run_id', 'task_id', 'agent_name', 'model', 'model_display', 'timestamp', 'status', 'duration_seconds', 'cost_usd']:
+            _check(record[field], summary[field], 'ResearchClawBench native index/detail agreement: ' + field)
+        score = record['score']
+        _check(score['total_score'], summary['total_score'], 'ResearchClawBench native grade agreement')
+        _check((score['run_id'], score['task_id'], score['agent_name']),
+               (run, summary['task_id'], summary['agent_name']), 'ResearchClawBench grading association')
+        weights = sum(criterion['weight'] for criterion in score['items'])
+        weighted = sum(criterion['weight'] * criterion['score'] for criterion in score['items'])
+        _check(math.isclose(weights, score['total_weight'], abs_tol=1e-12), True, 'ResearchClawBench recorded total weight')
+        _check(round(weighted / weights, 2) if weights else 0, score['total_score'], 'ResearchClawBench independently recomputed weighted score')
+        task = tasks[summary['task_id']]
+        for criterion in score['items']:
+            current = task['checklist'][criterion['index']]
+            _check((criterion['content'], criterion['weight'], criterion['type']),
+                   (current['content'][:200], current['weight'], current['type']), 'ResearchClawBench recorded criterion prefix and weight')
+            counts['source_scored_criteria'] += 1
+        instructions = (path.parent / 'workspace/INSTRUCTIONS.md').read_bytes().decode('utf-8')
+        normalized = re.sub(r'(?m)^Your workspace is: `[^`]+`$', 'Your workspace is: `<workspace>`', instructions)
+        _check(normalized.split(), task['content'].split(), 'ResearchClawBench original instructions match the source template')
+        output = json.loads(path.with_name('output.json').read_bytes())
+        details[run] = dict(native_detail=record, recorded_instructions=instructions, exported_output=output,
+                            exported_files=json.loads(path.with_name('files.json').read_bytes()))
+        counts['source_exported_output_lines'] += len(output)
+        counts['source_logs_at_500_line_limit'] += len(output) == 500
+    best, occasions = {}, Counter()
+    for row in sorted(rows, key=lambda r:(r['timestamp'], r['run_id'])):
+        _check(math.isfinite(row['total_score']) and 0 <= row['total_score'] <= 100, True, 'ResearchClawBench valid native score')
+        configuration = row['agent_name'], row['model'], row['model_display']
+        occasions[configuration, row['task_id']] += 1
+        trials[row['run_id']] = occasions[configuration, row['task_id']]
+        _check((row['run_id'] in details), row.get('details_exported', True), 'ResearchClawBench explicit detail availability')
+    # The published exporter uses native index order to break best-score ties.
+    for row in current_rows:
+        key = row['agent_name'], row['task_id']
+        if key not in best or row['total_score'] > best[key]['total_score']:
+            best[key] = row
+    leaderboard = json.loads((home / 'leaderboard.json').read_bytes())
+    cells = {(agent, task): cell for agent, values in leaderboard['scores'].items() for task, cell in values.items()}
+    _check(set(cells), set(best), 'ResearchClawBench complete leaderboard associations')
+    for key, cell in cells.items():
+        _check((cell['run_id'], cell['score']), (best[key]['run_id'], best[key]['total_score']), 'ResearchClawBench original best-run selection')
+    counts.update(source_detailed_runs=len(details), source_summary_only_runs=len(rows)-len(details),
+                  source_leaderboard_cells=len(cells), source_input_assets=len(assets))
+    return dict(index=index, files=files, tasks=tasks, details=details, assets=assets, trials=trials, counts=dict(counts))
+
+
+def _researchclawbench(directory, tables, metadata, source=None):
+    import hashlib
+
+    source = source or _researchclawbench_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['recorded_agent'], features['recorded_model'], features['recorded_model_display']
+        _check(row.display_name, key[0], 'ResearchClawBench literal recorded agent name')
+        _check(features, dict(recorded_agent=key[0], recorded_model=key[1], recorded_model_display=key[2], historical_settings='not_recorded'),
+               'ResearchClawBench recorded model settings')
+        _check(row.harness, 'ResearchClawBench', 'ResearchClawBench declared measurement harness')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({(r['agent_name'], r['model'], r['model_display']):1 for r in source['index'].values()}),
+           'ResearchClawBench each literal agent/model configuration once')
+    for row in tables['items'].itertuples():
+        task = source['tasks'][row.raw_item_id]
+        _check(row.content, task['content'], 'ResearchClawBench complete upstream instruction template')
+        _check(_features(row.item_features), dict(domain=row.raw_item_id.split('_')[0],
+            input_scope='published_template_and_pinned_task_assets'), 'ResearchClawBench task attributes contain no outcomes')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion.get('reference_answer'), None, 'ResearchClawBench rubric is not a gold answer')
+        _check(json.loads(criterion['rule']), dict(rule=metadata['grading']['rule'], published_checklist=task['checklist']),
+               'ResearchClawBench complete published grading rubric')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'ResearchClawBench reported LLM judgment')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['reported'], 'ResearchClawBench source-only verifier')
+        _check(json.loads(row.asset_manifest), task['asset_manifest'], 'ResearchClawBench original task input associations')
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key:1 for key in source['tasks']}), 'ResearchClawBench every original task once')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'ResearchClawBench one source record per response')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace_row = traces[row.response_id]
+        trace = json.loads(trace_row['trace'])
+        run = trace['native_index']['run_id']
+        original = source['index'][run]
+        detail = source['details'].get(run, dict(native_detail=None, recorded_instructions=None, exported_output=None, exported_files=None))
+        _check(trace, dict(source_index=source['files'][run], native_index=original, **detail),
+               'ResearchClawBench complete unchanged native run evidence')
+        _check((subjects[row.subject_id], items[row.item_id]),
+               ((original['agent_name'], original['model'], original['model_display']), original['task_id']),
+               'ResearchClawBench original run/model/task association')
+        _check(float(row.response), original['total_score'], 'ResearchClawBench unbinned native score')
+        _check(row.trial, source['trials'][run], 'ResearchClawBench stable chronological trial order')
+        _check(pd.isna(row.interactors), True, 'ResearchClawBench no invented interactors')
+        _check(pd.isna(row.test_condition), True, 'ResearchClawBench no invented per-run conditions')
+        _check(tuple(trace_row[k] for k in ['subject_id', 'item_id', 'trial']),
+               (row.subject_id, row.item_id, row.trial), 'ResearchClawBench linked trace identity')
+        _check(pd.isna(trace_row['test_condition']), True, 'ResearchClawBench linked null trace condition')
+        seen[run] += 1
+    _check(seen, Counter({key:1 for key in source['index']}), 'ResearchClawBench all native attempts exactly once')
+    _check(set(tables['assets'].asset_id), set(source['assets']), 'ResearchClawBench complete deduplicated input assets')
+    for row in tables['assets'].itertuples():
+        original = source['assets'][row.asset_id]
+        _check((row.byte_size, len(row.data), hashlib.sha256(row.data).hexdigest()),
+               (original['size'], original['size'], original['sha256']), 'ResearchClawBench original input bytes')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18404,7 +18568,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,

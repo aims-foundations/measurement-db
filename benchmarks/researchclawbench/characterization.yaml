@@ -1,0 +1,161 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1432
+    logical_sha256: 9272dbbc304c5bf5d8f52d1360ec1a61ab7bec9ada04e503fd117d609ac77cd2
+  subjects:
+    rows: 37
+    logical_sha256: 460da2a2857cad581530ef847c03616ef632f4405d1c66d9b1a823d7480f8268
+  responses:
+    rows: 1432
+    logical_sha256: b20759ec8c061a1519700092e33fcf7a06b6a3651128e5904340a56c6f3fb4a4
+  assets:
+    rows: 7610
+    logical_sha256: bc496d1eb91b7d6080f34d68d4571048f6357d02ce795f6f6bfaa2ae3119262c
+  items:
+    rows: 40
+    logical_sha256: 9ef4ffa94413be956fbbfb579cc2ff64ee2d78a2a4fa0289fc30647bee4758a8
+  benchmarks:
+    rows: 1
+    logical_sha256: 95179e8d2557821717f202281f671edb9b948799b6f14201e2f8fad352534473
+source_claims:
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 1432
+  source_current_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 1392
+  source_historical_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 40
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 40
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 37
+  source_cross_verified_input_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 203
+  source_input_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 8032
+  source_scored_criteria:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 3322
+  source_exported_output_lines:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 361213
+  source_logs_at_500_line_limit:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 664
+  source_detailed_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 860
+  source_summary_only_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 572
+  source_leaderboard_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 1390
+  source_input_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InternScience/ResearchClawBench-Home
+    locator: Pinned current run index and run details; the earlier Qiushi Engine/GPT-5.5 index; original task data
+      and related literature.
+    scope: All native attempts, preserving historical configurations. Independent checks also recompute each detailed
+      weighted score, reconcile the best-run leaderboard, verify the original inputs and preserve upstream-limited
+      trajectories.
+    expected: 7610

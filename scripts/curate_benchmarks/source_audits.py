@@ -939,3 +939,5 @@ SOURCE_AUDITS["realtimeqa"] = verify_native_results
 SOURCE_AUDITS["rewardbench"] = verify_native_results
 SOURCE_AUDITS["refgrader"] = verify_native_results
 SOURCE_AUDITS["reliancescope"] = verify_native_results
+
+SOURCE_AUDITS["researchclawbench"] = verify_native_results
