@@ -1,0 +1,437 @@
+benchmark:
+  name: Stanford-ORB
+  description: Original capture-level assessments of 3D object inverse-rendering methods on measured real-world
+    images and geometry.
+  testing_condition: Each item includes a complete object-scene capture and its metric-specific reference files.
+    Subjects are recorded method workflows; multi-view fitting occurs independently within each capture, so method
+    names do not imply shared fitted weights. Preserve the original metric values and source evaluation records.
+    Twelve zero shape entries with neither output nor target mesh remain raw-only. The historical baseline evaluator,
+    rather than current main, documents per-image depth scores, NeRD and Neural-PIL exposure adjustment and implicit
+    masks. Native NeRFactor scores can include the original white-image fallback when output_image is null. Numbered
+    rendered images are associated only with their explicit method and capture; their per-view target order is not
+    established.
+  paper_url: https://arxiv.org/abs/2310.16044
+  data_source_url: https://github.com/StanfordORB/Stanford-ORB
+  subject_type: model
+  item_type: capture_metric
+  license: MIT
+  citation: 'Kuang, Zhang, Yu, Agarwala, Wu and Wu. Stanford-ORB: A Real-World 3D Object Inverse Rendering Benchmark.
+    NeurIPS Datasets and Benchmarks, 2023.'
+  tags:
+  - inverse_rendering
+  - capture_level
+  modality:
+  - image
+  - 3d
+  domain:
+  - computer_vision
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-10
+  release: public
+  version: 8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      methods: release/visualize/methods
+      notebook: baselines/visualize/visualize.ipynb
+      ldr_archive: archives/blender_LDR.tar.gz
+      hdr_archive: archives/blender_HDR.tar.gz
+      ground_truth_archive: archives/ground_truth.tar.gz
+      render_archive: archives/lights_results.zip
+    labels:
+      capture_mapping: scene_name_remap_dict
+      historical_mask_prefix: /source/
+      input_scope: 'Complete captured LDR/HDR images, masks and unmodified camera metadata are preserved. Frame
+        paths are relative to the declared capture in the corresponding image archive. Capture observations are
+        source context, not a claim that every method used every image: multi-view methods fit on train frames,
+        while single-image methods infer from individual test images. Metric references are marked separately in
+        the asset manifest.'
+      aggregation_unit: capture and metric
+      configuration_scope: Literal source method workflow. Pinned baseline configurations document the implementation
+        but do not prove each historical run used those exact settings.
+      rendered_asset_scope: Explicit method and capture association only. Numbered files are not asserted to match
+        individual target-image order.
+      evaluator_scope: Preserved native capture-level scores. The original baseline implementation differs from
+        the current main evaluator; no rendering, model fitting or metric recomputation is performed.
+    camera_partitions:
+      train: multi-view fitting inputs
+      test: same-scene evaluation views and single-image method inputs
+      novel: novel-scene camera targets
+    asset_media_types:
+      .png: image/png
+      .exr: image/x-exr
+      .npy: application/x-npy
+      .obj: model/obj
+    input_archives:
+      ldr: archives/blender_LDR.tar.gz
+      hdr: archives/blender_HDR.tar.gz
+    target_archives:
+      blender_format_LDR: archives/blender_LDR.tar.gz
+      blender_format_HDR: archives/blender_HDR.tar.gz
+      geometry_outputs: archives/ground_truth.tar.gz
+    target_roots:
+      blender_format_LDR: blender_LDR
+      blender_format_HDR: blender_HDR
+      geometry_outputs: ground_truth
+    ground_truth_names:
+      z_maps: z_depth
+      normal_maps: surface_normal
+      albedo_maps: pseudo_gt_albedo
+      pseudo_gt_mesh_spherify: mesh_blender
+    implicit_mask_inputs:
+      geometry: target_normal
+      material: target_image
+    patterns:
+      target: /(?P<target_native_capture>scene\d+_obj\d+_[^/]+)/final_output/(?P<asset>(?:blender_format_(?:LDR|HDR)|geometry_outputs)/.+)$
+      render: ^results/(?P<method>.+)_(?P<native_capture>scene\d+_obj\d+_.+)_(?P<output_index>\d+)\.(?P<format>png|exr)$
+    method_protocols:
+      idr: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of the
+        capture-level task.
+      invrender: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of
+        the capture-level task.
+      nerd: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of the
+        capture-level task.
+      nerf: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of the
+        capture-level task.
+      nerfactor: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of
+        the capture-level task.
+      neuralpil: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of
+        the capture-level task.
+      nvdiffrec: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of
+        the capture-level task.
+      nvdiffrec_pseudo_gt: Original scanned-geometry reference variant selected by IMAEGINT_PSEUDO_GT. The released
+        pipeline renders the captured pseudo-GT mesh instead of evaluating a reconstructed mesh. It is not an ordinary
+        geometry-reconstruction model.
+      nvdiffrecmc: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part
+        of the capture-level task.
+      nvdiffrecmc_pseudo_gt: Original scanned-geometry reference variant selected by IMAEGINT_PSEUDO_GT. The released
+        pipeline renders the captured pseudo-GT mesh instead of evaluating a reconstructed mesh. It is not an ordinary
+        geometry-reconstruction model.
+      physg: Recorded inverse-rendering method with a separate fit for each input capture. Fitting is part of the
+        capture-level task.
+      singleimage: Recorded SI-SVBRDF single-image inference. Its per-image outputs are aggregated within the input
+        capture.
+      sirfs: Recorded SIRFS single-image inverse-rendering optimization. Its per-image outputs are aggregated within
+        the input capture.
+    method_configs:
+      idr: baselines/configs/idr.conf
+      invrender: baselines/configs/invrender.conf
+      nerd: baselines/configs/nerd.txt
+      nerf: baselines/configs/nerf.txt, baselines/configs/nerfactor_nerf.ini, baselines/configs/nerfactor_nerfactor.ini,
+        baselines/configs/nerfactor_shape.ini
+      nerfactor: baselines/configs/nerfactor_nerf.ini, baselines/configs/nerfactor_nerfactor.ini, baselines/configs/nerfactor_shape.ini
+      neuralpil: baselines/configs/neuralpil.txt
+      nvdiffrec: baselines/configs/nvdiffrec.json, baselines/configs/nvdiffrecmc.json
+      nvdiffrec_pseudo_gt: baselines/configs/nvdiffrec.json, baselines/configs/nvdiffrecmc.json
+      nvdiffrecmc: baselines/configs/nvdiffrecmc.json
+      nvdiffrecmc_pseudo_gt: baselines/configs/nvdiffrecmc.json
+      physg: baselines/configs/physg.conf
+      singleimage: No matching baseline configuration file was released.
+      sirfs: No matching baseline configuration file was released.
+grading:
+  verifiers:
+    view.psnr_hdr:
+      kind: original_capture_metric
+      task: view
+      metric: psnr_hdr
+      rule: Native high-dynamic-range peak signal-to-noise ratio. The original use_gt_median option actually rescales
+        both images by the ratio of mean tone-mapped to mean linear reference intensity, then clips values at 4.
+        Import the recorded capture-level value without regrading or changing its scale. Individual image metrics
+        are averaged within the capture. The original implementation returns the larger of the prediction PSNR and
+        the PSNR of a constant 0.5 foreground image, using its eroded mask. This native floor is retained. Native
+        novel-view scores do not fit the relighting exposure scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+    view.psnr_ldr:
+      kind: original_capture_metric
+      task: view
+      metric: psnr_ldr
+      rule: Native peak signal-to-noise ratio in the original evaluator image representation. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture. The original implementation returns the larger of the prediction PSNR and the PSNR of a constant
+        0.5 foreground image, using its eroded mask. This native floor is retained. Native novel-view scores do
+        not fit the relighting exposure scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+    view.ssim:
+      kind: original_capture_metric
+      task: view
+      metric: ssim
+      rule: Native structural similarity, calculated as one minus twice the Kornia dissimilarity loss with a three-pixel
+        window. Import the recorded capture-level value without regrading or changing its scale. Individual image
+        metrics are averaged within the capture. Native novel-view scores do not fit the relighting exposure scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+    view.lpips:
+      kind: original_capture_metric
+      task: view
+      metric: lpips
+      rule: Native VGG LPIPS perceptual distance with the original masked-image preprocessing. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture. The original helper applies rgb_to_srgb again to the already tone-mapped PSNR outputs; this
+        is not a claim of standard LPIPS preprocessing. Native novel-view scores do not fit the relighting exposure
+        scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    light.psnr_hdr:
+      kind: original_capture_metric
+      task: light
+      metric: psnr_hdr
+      rule: Native high-dynamic-range peak signal-to-noise ratio. The original use_gt_median option actually rescales
+        both images by the ratio of mean tone-mapped to mean linear reference intensity, then clips values at 4.
+        Import the recorded capture-level value without regrading or changing its scale. Individual image metrics
+        are averaged within the capture. The original implementation returns the larger of the prediction PSNR and
+        the PSNR of a constant 0.5 foreground image, using its eroded mask. This native floor is retained. Native
+        relighting scores align exposure separately for each image.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+    light.psnr_ldr:
+      kind: original_capture_metric
+      task: light
+      metric: psnr_ldr
+      rule: Native peak signal-to-noise ratio in the original evaluator image representation. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture. The original implementation returns the larger of the prediction PSNR and the PSNR of a constant
+        0.5 foreground image, using its eroded mask. This native floor is retained. Native relighting scores align
+        exposure separately for each image.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+    light.ssim:
+      kind: original_capture_metric
+      task: light
+      metric: ssim
+      rule: Native structural similarity, calculated as one minus twice the Kornia dissimilarity loss with a three-pixel
+        window. Import the recorded capture-level value without regrading or changing its scale. Individual image
+        metrics are averaged within the capture. Native relighting scores align exposure separately for each image.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+    light.lpips:
+      kind: original_capture_metric
+      task: light
+      metric: lpips
+      rule: Native VGG LPIPS perceptual distance with the original masked-image preprocessing. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture. The original helper applies rgb_to_srgb again to the already tone-mapped PSNR outputs; this
+        is not a claim of standard LPIPS preprocessing. Native relighting scores align exposure separately for each
+        image.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    geometry.normal_angle:
+      kind: original_capture_metric
+      task: geometry
+      metric: normal_angle
+      rule: Mean cosine distance, one minus cosine similarity, between reconstructed and reference normals. This
+        is not an angle in degrees. Import the recorded capture-level value without regrading or changing its scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_normal
+      - target_mask
+      response_scale:
+        kind: interval
+        min: 0
+        max: 2
+        direction: lower_is_better
+    geometry.depth_mse:
+      kind: original_capture_metric
+      task: geometry
+      metric: depth_mse
+      rule: Mean per-image depth squared error after fitting one multiplicative scale for each image. There is no
+        additive shift. The masked squared residual is averaged over the complete image, then across images. Import
+        the recorded capture-level value without regrading or changing its scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_depth
+      - target_mask
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    geometry.depth_mse_scene:
+      kind: original_capture_metric
+      task: geometry
+      metric: depth_mse_scene
+      rule: Depth squared error after fitting one multiplicative scale jointly across the capture. There is no additive
+        shift. The masked squared residual is averaged over each complete image, then across images. Import the
+        recorded capture-level value without regrading or changing its scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_depth
+      - target_mask
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    material.psnr_ldr:
+      kind: original_capture_metric
+      task: material
+      metric: psnr_ldr
+      rule: Native peak signal-to-noise ratio in the original evaluator image representation. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture. Despite its source field name, this albedo metric is computed in linear RGB without tone mapping.
+        The original implementation returns the larger of the prediction PSNR and the PSNR of a constant 0.5 foreground
+        image, using its eroded mask. This native floor is retained.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      - target_mask
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+    material.ssim:
+      kind: original_capture_metric
+      task: material
+      metric: ssim
+      rule: Native structural similarity, calculated as one minus twice the Kornia dissimilarity loss with a three-pixel
+        window. Import the recorded capture-level value without regrading or changing its scale. Individual image
+        metrics are averaged within the capture.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      - target_mask
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+    material.lpips:
+      kind: original_capture_metric
+      task: material
+      metric: lpips
+      rule: Native VGG LPIPS perceptual distance with the original masked-image preprocessing. Import the recorded
+        capture-level value without regrading or changing its scale. Individual image metrics are averaged within
+        the capture.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/metrics.py
+      target_fields:
+      - target_image
+      - target_mask
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+    shape.bidir_chamfer:
+      kind: original_capture_metric
+      task: shape
+      metric: bidir_chamfer
+      rule: Half the sum of the two mean squared nearest-point distances using the original 30000-point mesh sampling.
+        Preserve the native JSON value; paper tables multiply it by 2000. Import the recorded capture-level value
+        without regrading or changing its scale.
+      source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/test.py
+      metric_source: https://github.com/StanfordORB/Stanford-ORB/blob/cf536a096fdbcb45cc954243c7726c7cf44e036a/orb/utils/eval_mesh.py
+      target_fields:
+      - target_mesh
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/StanfordORB/Stanford-ORB
+    revision: 8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    files:
+    - match: .*
+      path: release/{path}
+  - name: baseline_protocol
+    url: https://github.com/StanfordORB/Stanford-ORB
+    revision: cf536a096fdbcb45cc954243c7726c7cf44e036a
+    files:
+    - match: (?:README\.md|visualize/visualize\.ipynb|configs/[^/]+|orb/(?:constant\.py|utils/(?:test|metrics|preprocess|eval_mesh|ppp)\.py|pipelines/[^/]+\.py))
+      path: baselines/{path}
+  - name: ground_truth_tar_gz
+    url: https://downloads.cs.stanford.edu/viscam/StanfordORB/ground_truth.tar.gz
+    revision: '"654c3cba-12d7446a2"'
+    file: archives/ground_truth.tar.gz
+    size: 5057562274
+    sha256: 3814bf0a6aecf38fc871afc41eeaf4769915214478c38670ad619de0b46c1de3
+  - name: blender_ldr_tar_gz
+    url: https://downloads.cs.stanford.edu/viscam/StanfordORB/blender_LDR.tar.gz
+    revision: '"652db245-2b415b135"'
+    file: archives/blender_LDR.tar.gz
+    size: 11611255093
+    sha256: 0c6685340146027b55f8bf4efe9dda769836dc83b3117765b89c71eeff2f1c93
+  - name: blender_hdr_tar_gz
+    url: https://downloads.cs.stanford.edu/viscam/StanfordORB/blender_HDR.tar.gz
+    revision: '"652db171-11c1edc6ae"'
+    file: archives/blender_HDR.tar.gz
+    size: 76268029614
+    sha256: 27e854d25c361dc34e44dc6a01e8aa3321c8c1e99b5a8628a69c29cc82ec8d88
+  - name: lights_results_zip
+    url: https://downloads.cs.stanford.edu/viscam/StanfordORB/lights_results.zip
+    revision: '"66f4ae92-8fb1cba5"'
+    file: archives/lights_results.zip
+    size: 2410793893
+    sha256: 580f00f1cf922215f13f6489cfdee17f24a5cad35e4cb3b1ee19489904ab6cc0

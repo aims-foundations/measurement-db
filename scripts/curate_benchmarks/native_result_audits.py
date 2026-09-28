@@ -21073,12 +21073,219 @@ def _taubench(directory, tables, metadata):
     return dict(counts,source_responses=len(tables['responses']),source_traces=len(traces),source_run_files=len(paths))
 
 
+def _stanford_orb_sources(directory, metadata):
+    """Read native capture records and hash archive members without table joins."""
+    import ast
+    import hashlib
+    import math
+    import posixpath
+    import re
+    import tarfile
+    from pathlib import PurePosixPath
+    from zipfile import ZipFile
+
+    raw = directory / 'raw'
+    layout = metadata['build']['parameters']['layout']
+    native, excluded = {}, []
+    for path in sorted((raw / layout['methods']).glob('*.json')):
+        document = json.loads(path.read_text())
+        for task, captures in document['scores'].items():
+            task = task.removesuffix('_all')
+            for capture, metrics in (captures or {}).items():
+                for metric, score in metrics.items():
+                    key = path.stem, capture, task, metric
+                    info = document['info'][capture][task]
+                    if task == 'shape' and info.get('output_mesh') is None and info.get('target_mesh') is None:
+                        _check(score, 0, 'ORB unsupported native shape placeholder')
+                        excluded.append(key)
+                        continue
+                    _check(key not in native and math.isfinite(score), True, 'ORB unique finite native assessment')
+                    native[key] = dict(score=score, info=info, file=str(path.relative_to(raw)))
+
+    notebook = json.loads((raw / layout['notebook']).read_text())
+    mappings = []
+    for cell in notebook['cells']:
+        if cell['cell_type'] != 'code' or 'scene_name_remap_dict' not in ''.join(cell['source']):
+            continue
+        for node in ast.parse(''.join(cell['source'])).body:
+            if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and
+                    target.id == 'scene_name_remap_dict' for target in node.targets):
+                mappings.append(ast.literal_eval(node.value))
+    _check(len(mappings), 1, 'ORB one original literal capture mapping')
+    captures = mappings[0]
+    _check(len(captures), len(set(captures.values())), 'ORB one-to-one capture names')
+
+    required = set()
+    for key, record in native.items():
+        method, capture, task, metric = key
+        fields = (['target_mesh'] if task == 'shape' else ['target_normal', 'target_mask'] if metric == 'normal_angle'
+            else ['target_depth', 'target_mask'] if task == 'geometry'
+            else ['target_image', 'target_mask'] if task == 'material' else ['target_image'])
+        references = []
+        for info in record['info'] if isinstance(record['info'], list) else [record['info']]:
+            for field in fields:
+                original = info.get(field)
+                if field == 'target_mask' and original is None:
+                    source = info['target_normal'] if task == 'geometry' else info['target_image']
+                    reference = dict(target_field=field, archive=layout['ldr_archive'],
+                        member='blender_LDR/' + captures[capture] + '/test_mask/' + PurePosixPath(source).stem + '.png')
+                else:
+                    _check(isinstance(original, str), True, 'ORB original reference path')
+                    before, tail = posixpath.normpath(original).split('/final_output/', 1)
+                    target_capture = captures[before.rsplit('/', 1)[1]]
+                    container, member = tail.split('/', 1)
+                    if container == 'geometry_outputs':
+                        group, member = member.split('/', 1)
+                        group = {'z_maps': 'z_depth', 'normal_maps': 'surface_normal',
+                            'albedo_maps': 'pseudo_gt_albedo', 'pseudo_gt_mesh_spherify': 'mesh_blender'}[group]
+                        reference = dict(target_field=field, archive=layout['ground_truth_archive'],
+                            member='ground_truth/' + target_capture + '/' + group + '/' + member)
+                    else:
+                        _check(container in {'blender_format_LDR', 'blender_format_HDR'}, True, 'ORB native image container')
+                        root = container.replace('_format', '')
+                        reference = dict(target_field=field,
+                            archive=layout['hdr_archive' if root.endswith('HDR') else 'ldr_archive'],
+                            member=root + '/' + target_capture + '/' + member)
+                references.append(reference)
+                required.add((reference['archive'], reference['member']))
+        record['references'] = sorted(references, key=lambda value: (value['target_field'], value['member']))
+
+    assets, captured, cameras = {}, {}, {}
+    for source in [layout['ldr_archive'], layout['hdr_archive'], layout['ground_truth_archive']]:
+        image_archive = source in {layout['ldr_archive'], layout['hdr_archive']}
+        with tarfile.open(raw / source, 'r|gz') as archive:
+            for member in archive:
+                path = PurePosixPath(member.name)
+                _check(not path.is_absolute() and '..' not in path.parts, True, 'ORB safe source member')
+                if image_archive and path.name.startswith('transforms_') and path.suffix == '.json':
+                    _check(member.isfile(), True, 'ORB regular camera JSON')
+                    cameras.setdefault(source, {}).setdefault(path.parts[1], {})[path.stem.removeprefix('transforms_')] = dict(
+                        member=member.name, camera=json.load(archive.extractfile(member)))
+                selected_image = image_archive and path.suffix in {'.png', '.exr'}
+                if selected_image or (source, member.name) in required:
+                    _check(member.isfile(), True, 'ORB regular original asset')
+                    key = source, member.name
+                    _check(key not in assets, True, 'ORB unique source asset coordinate')
+                    with archive.extractfile(member) as stream:
+                        digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+                    assets[key] = dict(asset_id=digest, byte_size=member.size,
+                        media_type={'.png': 'image/png', '.exr': 'image/x-exr',
+                            '.npy': 'application/x-npy', '.obj': 'model/obj'}[path.suffix])
+                    if selected_image:
+                        captured.setdefault(path.parts[1], {})[key] = (
+                            'capture_mask' if path.parent.name.endswith('_mask') else 'capture_observation')
+    _check(required <= assets.keys(), True, 'ORB all exact reference members captured')
+    _check(set(captured), set(captures.values()), 'ORB images for every recorded capture')
+    for capture in captures.values():
+        ldr = cameras[layout['ldr_archive']][capture]
+        hdr = cameras[layout['hdr_archive']][capture]
+        _check(set(ldr), {'train', 'test', 'novel'}, 'ORB complete camera partitions')
+        _check({key: value['camera'] for key, value in ldr.items()},
+            {key: value['camera'] for key, value in hdr.items()}, 'ORB identical LDR/HDR camera metadata')
+
+    renders = {}
+    with ZipFile(raw / layout['render_archive']) as archive:
+        for member in archive.infolist():
+            if member.is_dir():
+                continue
+            match = re.fullmatch(r'results/(.+)_(scene\d+_obj\d+_.+)_(\d+)\.(png|exr)', member.filename)
+            _check(match is not None, True, 'ORB explicit output method/capture association')
+            renders.setdefault((match[1], match[2]), []).append(dict(archive=layout['render_archive'], member=member.filename))
+    return dict(native=native, excluded=excluded, captures=captures, assets=assets,
+        captured=captured, cameras=cameras[layout['ldr_archive']], renders=renders)
+
+
+def _stanford_orb(directory, tables, metadata, source_records=None):
+    """Check every assessment, capture definition and exact binary asset."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _stanford_orb_sources(directory, metadata) if source_records is None else source_records
+    parameters = metadata['build']['parameters']
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'),
+            ('traces', 'response_id'), ('assets', 'asset_id')]:
+        _check(tables[name][column].is_unique, True, 'ORB unique ' + name + ' identifiers')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'ORB complete trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'ORB all native assessments')
+    seen, definitions, used_subjects = set(), {}, {}
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        _check(set(trace), {'source_file', 'source_capture', 'source_task', 'source_metric', 'source_score',
+            'native_info', 'references', 'rendered_assets', 'rendered_asset_scope', 'evaluator_scope'}, 'ORB complete trace fields')
+        subject = subjects[row.subject_id]
+        method = _features(subject['subject_features_extra'])['source_method']
+        key = method, trace['source_capture'], trace['source_task'], trace['source_metric']
+        _check(key in source['native'] and key not in seen, True, 'ORB unique source-supported assessment')
+        native = source['native'][key]
+        _check((row.response, trace['source_score']), (native['score'], native['score']), 'ORB unchanged native score')
+        _check(row.trial, 1, 'ORB single native assessment per method and metric')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'ORB no invented response conditions')
+        _check((trace['source_file'], trace['native_info'], trace['references']),
+            (native['file'], native['info'], native['references']), 'ORB complete original evaluation record and references')
+        _check(subject['display_name'], method, 'ORB literal source method label')
+        expected_features = dict(source_method=method, configuration_scope=parameters['labels']['configuration_scope'],
+            protocol=parameters['method_protocols'][method], configuration_sources=parameters['method_configs'][method])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(expected_features)), 'ORB recorded method protocol')
+        item = items[row.item_id]
+        capture, task, metric = source['captures'][key[1]], key[2], key[3]
+        _check(item['raw_item_id'], '/'.join([capture, task, metric]), 'ORB capture and metric identity')
+        content = json.loads(item['content'])
+        _check(content, dict(capture=capture, cameras=source['cameras'][capture],
+            input_archives=parameters['input_archives'], input_scope=parameters['labels']['input_scope']), 'ORB complete source camera inputs')
+        _check(item['item_features'], features_string(canonicalize_features(dict(capture=capture, task=task,
+            aggregation_unit=parameters['labels']['aggregation_unit']))), 'ORB source capture attributes')
+        criterion = json.loads(item['grading_criterion'])
+        protocol = metadata['grading']['verifiers'][task + '.' + metric]
+        _check(json.loads(criterion['reference_answer']), native['references'], 'ORB exact reference file sequence')
+        _check((criterion['rule'], criterion['response_scale']), (protocol['rule'], protocol['response_scale']), 'ORB native grading interpretation')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')), ('exact_matcher', None, None), 'ORB original evaluator without invented judge')
+        _check(json.loads(verifier['spec']), protocol, 'ORB original verifier specification')
+        expected_renders = source['renders'].get(key[:2], []) if task == 'light' else []
+        _check(sorted(trace['rendered_assets'], key=lambda value: value['member']),
+            sorted(expected_renders, key=lambda value: value['member']), 'ORB supported output capture associations')
+        _check((trace['rendered_asset_scope'], trace['evaluator_scope']),
+            (parameters['labels']['rendered_asset_scope'], parameters['labels']['evaluator_scope']), 'ORB explicit association limitations')
+        definition = capture, task, metric, json.dumps(native['references'], sort_keys=True)
+        if row.item_id in definitions:
+            _check(definitions[row.item_id], definition, 'ORB stable grading-aware item identity')
+        else:
+            roles = dict(source['captured'][capture])
+            roles.update({(entry['archive'], entry['member']): 'reference' for entry in native['references']})
+            manifest = []
+            for ordinal, ((archive, member), role) in enumerate(sorted(roles.items(), key=lambda pair: pair[0][1]), 1):
+                asset = source['assets'][archive, member]
+                manifest.append(dict(asset_id=asset['asset_id'], path=member,
+                    media_type=asset['media_type'], role=role, ordinal=ordinal))
+            _check(json.loads(item['asset_manifest']), manifest, 'ORB complete exact item asset manifest')
+        definitions[row.item_id] = definition
+        used_subjects[row.subject_id] = method
+        seen.add(key)
+    _check(seen, set(source['native']), 'ORB complete native record coverage')
+    _check((set(definitions), set(used_subjects)), (set(items), set(subjects)), 'ORB no orphan item or subject')
+    _check(len(set(definitions.values())), len(items), 'ORB no duplicate capture/grading definitions')
+    _check(Counter(used_subjects.values()), Counter({key[0]: 1 for key in source['native']}), 'ORB all literal method workflows')
+    expected_assets = {value['asset_id']: value['byte_size'] for value in source['assets'].values()}
+    _check(set(tables['assets'].asset_id), set(expected_assets), 'ORB complete unique asset coverage')
+    for row in tables['assets'].itertuples():
+        _check((row.benchmark_id, row.byte_size, len(row.data), hashlib.sha256(row.data).hexdigest()),
+            (directory.name, expected_assets[row.asset_id], expected_assets[row.asset_id], row.asset_id), 'ORB unchanged binary asset payload')
+    return dict(source_responses=len(source['native']), source_traces=len(traces), source_subjects=len(subjects),
+        source_items=len(items), source_captures=len(source['captures']), source_assets=len(expected_assets),
+        source_asset_bytes=sum(expected_assets.values()), source_unsupported_shape_placeholders=len(source['excluded']),
+        source_rendered_files=sum(map(len, source['renders'].values())),
+        source_camera_configurations=sum(map(len, source['cameras'].values())))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
