@@ -20871,12 +20871,112 @@ def _swe_poly_tabular(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces))
 
 
+def _tau2_bench(directory, tables, metadata):
+    """Compare all simulations, inputs and grading protocols with original JSON."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    raw, labels = directory / 'raw', metadata['build']['parameters']['labels']
+    for name, key in [('responses', 'response_id'), ('traces', 'response_id'), ('subjects', 'subject_id'), ('items', 'item_id')]:
+        _check(tables[name][key].is_unique, True, 'tau2 unique ' + name + ' identifiers')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'tau2 complete trace/response linkage')
+    by_file = {}
+    for row in tables['responses'].itertuples():
+        source_file = json.loads(row.test_condition)['source_file']
+        by_file.setdefault(source_file, []).append(row)
+    paths = sorted((raw / 'repo_results').glob('*.json')) + sorted(
+        path for path in (raw / 's3_trajectories').glob('*/*.json') if path.name != 'submission.json')
+    _check(set(by_file), {str(path.relative_to(raw)) for path in paths}, 'tau2 exact source-run coverage')
+    seen, used_items, used_subjects, grades = set(), set(), set(), Counter()
+    verified_items, verified_subjects = set(), set()
+    for path in paths:
+        source_file = str(path.relative_to(raw))
+        document = json.loads(path.read_text())
+        info = document['info']
+        domain = info['environment_info']['domain_name']
+        _check(domain in {'airline', 'retail', 'telecom', 'telecom-workflow'}, True, 'tau2 historical domain scope')
+        submission = json.loads(path.with_name('submission.json').read_text()) if path.with_name('submission.json').exists() else None
+        source_submission = path.parent.name if path.parent.parent.name == 's3_trajectories' else None
+        tasks = {str(task['id']): task for task in document['tasks']}
+        _check(len(tasks), len(document['tasks']), 'tau2 source task keys')
+        simulations = {simulation['id']: simulation for simulation in document['simulations']}
+        _check(len(simulations), len(document['simulations']), 'tau2 source simulation keys')
+        _check(len(by_file[source_file]), len(simulations), 'tau2 all simulations in each run')
+        run_seen = set()
+        for row in by_file[source_file]:
+            trace = json.loads(traces[row.response_id])
+            _check(set(trace), {'source_file', 'run_timestamp', 'run_info', 'submission', 'simulation', 'submission_scope'}, 'tau2 complete trace fields')
+            identifier = trace['simulation']['id']
+            _check(identifier in simulations and identifier not in seen, True, 'tau2 source-supported unique attempt')
+            native = simulations[identifier]
+            task = tasks[str(native['task_id'])]
+            _check(trace['simulation'], native, 'tau2 complete unmodified native simulation')
+            _check((trace['source_file'], trace['run_timestamp'], trace['run_info'], trace['submission'], trace['submission_scope']),
+                (source_file, document['timestamp'], info, submission, labels['submission_scope']), 'tau2 complete source configuration and submission')
+            expected_grade = (native.get('reward_info') or {}).get('reward')
+            _check(pd.isna(row.response) if expected_grade is None else row.response == expected_grade,
+                True, 'tau2 exact native reward or missing grade')
+            _check(type(native['trial']) is int and native['trial'] >= 0, True, 'tau2 original zero-based trial')
+            _check(row.trial, native['trial'] + 1, 'tau2 one-based trial conversion')
+            _check(json.loads(row.test_condition), dict(source_file=source_file,
+                recorded_settings={key: value for key, value in info.items() if key not in {'agent_info', 'user_info', 'environment_info'}}),
+                'tau2 complete recorded run conditions')
+            _check(json.loads(row.interactors), dict(recorded_user_info={key: value for key, value in info['user_info'].items()
+                if key != 'global_simulation_guidelines'}, submission_user_simulator=(submission or {}).get('methodology', {}).get('user_simulator')),
+                'tau2 both original simulator descriptions')
+            subject_key = row.subject_id, source_file
+            if subject_key not in verified_subjects:
+                subject = subjects[row.subject_id]
+                label = (submission or {}).get('model_name') or info['agent_info']['llm']
+                _check((subject['display_name'], subject['harness']), (label, labels['harness']), 'tau2 literal reported agent label')
+                configuration = dict(agent_info=info['agent_info'], git_commit=info.get('git_commit'), source_submission=source_submission)
+                features = canonicalize_features(dict(configuration_scope=labels['configuration_scope'],
+                    agent_configuration_sha256=hashlib.sha256(json.dumps(configuration, sort_keys=True, ensure_ascii=False).encode()).hexdigest(),
+                    recorded_agent_model=info['agent_info']['llm'], implementation=info['agent_info']['implementation'],
+                    recorded_harness_revision=info.get('git_commit') or 'unknown'))
+                _check(subject['subject_features_extra'], features_string(features), 'tau2 complete recorded agent configuration')
+                verified_subjects.add(subject_key)
+            item_key = row.item_id, source_file, str(native['task_id'])
+            if item_key not in verified_items:
+                item = items[row.item_id]
+                _check(item['raw_item_id'], domain + '/' + str(native['task_id']), 'tau2 original task identifier')
+                _check(json.loads(item['content']), dict(task={key: value for key, value in task.items() if key != 'evaluation_criteria'},
+                    environment_info=info['environment_info'], user_guidelines=info['user_info'].get('global_simulation_guidelines')),
+                    'tau2 complete task, policy, tools and guidelines')
+                features = canonicalize_features(dict(domain=domain, source_task_id=str(native['task_id']), input_scope=labels['input_scope']))
+                _check(item['item_features'], features_string(features), 'tau2 task provenance')
+                criterion = json.loads(item['grading_criterion'])
+                _check(criterion.get('reference_answer'), None, 'tau2 no invented reference answer')
+                _check(json.loads(criterion['rule']), dict(rule=metadata['grading']['rule'], evaluation_criteria=task['evaluation_criteria']),
+                    'tau2 untruncated actual grading criteria')
+                verifier = json.loads(item['verifier'])
+                expected_kind = 'judge' if 'NL_ASSERTION' in task['evaluation_criteria']['reward_basis'] else 'exact_matcher'
+                _check((verifier['class'], verifier.get('judged_by'), verifier.get('judge')),
+                    (expected_kind, 'llm' if expected_kind == 'judge' else None, None), 'tau2 recorded grading mode with unknown historical LLM identity')
+                _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['native'], recorded_harness_revision=info.get('git_commit')),
+                    'tau2 historical grading-version provenance')
+                _check(pd.isna(item['asset_manifest']), True, 'tau2 no invented external assets')
+                verified_items.add(item_key)
+            seen.add(identifier)
+            run_seen.add(identifier)
+            used_items.add(row.item_id)
+            used_subjects.add(row.subject_id)
+            grades['source_ungraded' if expected_grade is None else 'source_successes' if expected_grade == 1 else 'source_failures'] += 1
+        _check(run_seen, set(simulations), 'tau2 complete per-run simulation identity')
+    _check((used_items, used_subjects), (set(items), set(subjects)), 'tau2 no orphan items or subjects')
+    return dict(grades, source_responses=len(seen), source_run_files=len(paths), source_traces=len(traces))
+
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

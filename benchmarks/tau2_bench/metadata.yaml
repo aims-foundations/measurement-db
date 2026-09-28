@@ -1,0 +1,381 @@
+benchmark:
+  name: tau2-bench
+  description: Recorded customer-service agent trials in the airline, retail and telecom domains, including the
+    original telecom ablations.
+  testing_condition: Preserve each published simulation, its embedded task, policy, tools, run configuration and
+    native reward. Missing rewards remain ungraded, including logged API-error attempts with no conversation. Agent
+    configurations and harness revisions identify subjects. Task and grading revisions remain distinct items. Full
+    run and submission records retain disagreements between embedded settings and later leaderboard descriptions;
+    no historical model alias or judge is inferred. These are captured task and harness definitions, not a reconstruction
+    of every historical database or the exact prompt seen by the agent.
+  paper_url: https://arxiv.org/abs/2506.07982
+  data_source_url: https://github.com/sierra-research/tau2-bench
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@misc{barres2025tau2benchevaluatingconversational,\n      title={$\\tau^2$-Bench: Evaluating Conversational\
+    \ Agents in a Dual-Control Environment},\n      author={Victor Barres and Honghua Dong and Soham Ray and Xujie\
+    \ Si and Karthik Narasimhan},\n      year={2025},\n      eprint={2506.07982},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2506.07982},\n}"
+  tags:
+  - agent
+  - tool_use
+  - customer_service
+  - user_simulation
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  multi_single_turn: multi_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2025-06
+  release: public
+  granularity: item
+  version: 363133ada1936491fb5bcec33cd62c3518a99f65
+  one_line_description: Measures tool-using customer-service agents in dual-control conversations.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      repository_runs: repo_results/*.json
+      submitted_runs: s3_trajectories/*/*.json
+    labels:
+      harness: tau2-bench
+      configuration_scope: Literal recorded agent configuration and source submission. Embedded settings may disagree
+        with the submission description.
+      input_scope: Complete task and embedded domain policy, tool definitions and simulator guidelines. These are
+        harness inputs, not a claim that every field was shown to the agent. Historical database snapshots and custom
+        prompts are not fully recorded.
+      submission_scope: The complete captured submission description may refer to later domains or grading revisions.
+        It is retained as provenance without overriding an individual simulation.
+    domains:
+      airline: airline
+      retail: retail
+      telecom: telecom
+      telecom-workflow: telecom workflow ablation
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/sierra-research/tau2-bench
+    revision: 363133ada1936491fb5bcec33cd62c3518a99f65
+    files:
+    - match: data/tau2/results/final/(?P<filename>[^/]+\.json)
+      path: repo_results/{filename}
+    - match: (?:LICENSE|README\.md|pyproject\.toml|docs/evaluation\.md|src/tau2/config\.py|src/tau2/evaluator/[^/]+\.(?:py|md))
+      path: protocol/{path}
+  - name: submission_file_01
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-opus-4-5_sierra_2026-02-26/trajectories/claude-opus-4-5_high_airline_gpt-5.2_4trials.json
+    revision: '"490cf344a73fac09c128be1cf90ca134-3"'
+    file: s3_trajectories/claude-opus-4-5_sierra_2026-02-26/claude-opus-4-5_high_airline_gpt-5.2_4trials.json
+    size: 19870992
+    sha256: babe71cb463bca64030a91df24431cc6e1df799292dec6b8981618f286f2dc5c
+  - name: submission_file_02
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-opus-4-5_sierra_2026-02-26/trajectories/claude-opus-4-5_high_retail_gpt-5.2_4trials.json
+    revision: '"75564924d8a968d189bca447b3d9aeb0-5"'
+    file: s3_trajectories/claude-opus-4-5_sierra_2026-02-26/claude-opus-4-5_high_retail_gpt-5.2_4trials.json
+    size: 39799893
+    sha256: 7c6dd82999786546c57605ac4b3becfc9d11ac5c86a65e460983c8efc55de343
+  - name: submission_file_03
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-opus-4-5_sierra_2026-02-26/trajectories/claude-opus-4-5_high_telecom_gpt-5.2_4trials.json
+    revision: '"acc4f561c65d50739b4e2d2794351074-5"'
+    file: s3_trajectories/claude-opus-4-5_sierra_2026-02-26/claude-opus-4-5_high_telecom_gpt-5.2_4trials.json
+    size: 40951040
+    sha256: e4619cbe516a328122467a183e6ba230bf2b57a3ce6f631e050c60f59953ac4a
+  - name: submission_file_04
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-opus-4-5_sierra_2026-02-26/submission.json
+    revision: '"534c7cf42a0ea2786a49224cd87e090a"'
+    file: s3_trajectories/claude-opus-4-5_sierra_2026-02-26/submission.json
+    size: 2404
+    sha256: 9c3b8b400e21d370cea27caec3643bfe6fd8385be9ed5135b585d0b976b6e34f
+  - name: submission_file_05
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-sonnet-4-5_sierra_2026-02-26/trajectories/claude-sonnet-4-5_enabled_airline_gpt-5.2_4trials.json
+    revision: '"8496d2400dbbc4f40369cd3b0c39044a-2"'
+    file: s3_trajectories/claude-sonnet-4-5_sierra_2026-02-26/claude-sonnet-4-5_enabled_airline_gpt-5.2_4trials.json
+    size: 15733531
+    sha256: 264e805976d655c41c6085e4cf8a14399ed5f31b49aa833933631208b80185cb
+  - name: submission_file_06
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-sonnet-4-5_sierra_2026-02-26/trajectories/claude-sonnet-4-5_enabled_retail_gpt-5.2_4trials.json
+    revision: '"3bed77c686d4e1c3109c685765ea402c-5"'
+    file: s3_trajectories/claude-sonnet-4-5_sierra_2026-02-26/claude-sonnet-4-5_enabled_retail_gpt-5.2_4trials.json
+    size: 34284046
+    sha256: f344a3a63783018b693f2a1a60b80b9d4f86fce6d5df74c0fcba647baacbea00
+  - name: submission_file_07
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-sonnet-4-5_sierra_2026-02-26/trajectories/claude-sonnet-4-5_enabled_telecom_gpt-5.2_4trials.json
+    revision: '"edbc0a11fcc4b229a36a2c461139d7b1-6"'
+    file: s3_trajectories/claude-sonnet-4-5_sierra_2026-02-26/claude-sonnet-4-5_enabled_telecom_gpt-5.2_4trials.json
+    size: 44482407
+    sha256: a9ac06467cf8e2aeb3ccd61d2ac42b0b636e09b8686ad5f0a806bdeee1d9c382
+  - name: submission_file_08
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/claude-sonnet-4-5_sierra_2026-02-26/submission.json
+    revision: '"99f4cb752dc277d8bacd9799c488056b"'
+    file: s3_trajectories/claude-sonnet-4-5_sierra_2026-02-26/submission.json
+    size: 2351
+    sha256: e5ce9f12ab9e616db52e973e90b48144b7bafd29e35c4fd6c3e7fde573a9b8d8
+  - name: submission_file_09
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-flash_sierra_2026-03-02/trajectories/geminiflash-airline.json
+    revision: '"ab9891deec30e35cb736abc701db5584-4"'
+    file: s3_trajectories/gemini-3-flash_sierra_2026-03-02/geminiflash-airline.json
+    size: 32180641
+    sha256: 507c6d7a1c8dba71c7050bca608937f7588bcc7d16b707873008feeb47f346da
+  - name: submission_file_10
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-flash_sierra_2026-03-02/trajectories/geminiflash-retail.json
+    revision: '"bfa545f5852ac36bdaeabddfa3faf742-7"'
+    file: s3_trajectories/gemini-3-flash_sierra_2026-03-02/geminiflash-retail.json
+    size: 52146190
+    sha256: 36c53332fa252d410b99c62379d01c8c98e73f411479753261ffb8df381208db
+  - name: submission_file_11
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-flash_sierra_2026-03-02/trajectories/geminiflash-telecom.json
+    revision: '"3c15fc568b7937bc84bc96ce24f8494d-4"'
+    file: s3_trajectories/gemini-3-flash_sierra_2026-03-02/geminiflash-telecom.json
+    size: 30811080
+    sha256: c7801e9f5ce060e22c48d338e860624e8fae4910eb8fdcd83962b72601f5ba90
+  - name: submission_file_12
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-flash_sierra_2026-03-02/submission.json
+    revision: '"7c25ca8dd3fa11e71ffc7aa74ab4421b"'
+    file: s3_trajectories/gemini-3-flash_sierra_2026-03-02/submission.json
+    size: 2337
+    sha256: d1b7d1fc5d789662fb6eeb4a5ec01948295db397d2313df42c43c7fd8caf3637
+  - name: submission_file_13
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-pro_sierra_2026-03-02/trajectories/geminipro-airline.json
+    revision: '"c5cedee9a20d84e3fa3eb923e5c2f88d-4"'
+    file: s3_trajectories/gemini-3-pro_sierra_2026-03-02/geminipro-airline.json
+    size: 32414404
+    sha256: baade60aed15b11e0497702d7698a8812b0f90dd5aaad755bd077bd8124638f0
+  - name: submission_file_14
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-pro_sierra_2026-03-02/trajectories/geminipro-retail.json
+    revision: '"33fe995bff17cfe4ee1ac393b1ca299b-7"'
+    file: s3_trajectories/gemini-3-pro_sierra_2026-03-02/geminipro-retail.json
+    size: 57330073
+    sha256: 247c19252d5001bf8fba573e73dd7b46fc38da1afcc937008cd04ec41a658b7c
+  - name: submission_file_15
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-pro_sierra_2026-03-02/trajectories/geminipro-telecom.json
+    revision: '"fe0fce06d084d2ee81397f0bbe710919-12"'
+    file: s3_trajectories/gemini-3-pro_sierra_2026-03-02/geminipro-telecom.json
+    size: 94990196
+    sha256: 2e8beebc50230ca3fd579babdaf24eb913a80258167838df028e7903d6cc5e3f
+  - name: submission_file_16
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gemini-3-pro_sierra_2026-03-02/submission.json
+    revision: '"ff81d52cc88a2052844be755b9da9d04"'
+    file: s3_trajectories/gemini-3-pro_sierra_2026-03-02/submission.json
+    size: 2321
+    sha256: f5c7b2d432d4efc6d6c1533f87e61ae1673336579df9f5f5cf986c277f0afd18
+  - name: submission_file_17
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/glm-5-think_sierra_2026-03-02/trajectories/glm-5_enabled_airline_gpt-5.2_4trials.json
+    revision: '"c3a9222cee57fc2caf0270c81ce3698c-3"'
+    file: s3_trajectories/glm-5-think_sierra_2026-03-02/glm-5_enabled_airline_gpt-5.2_4trials.json
+    size: 17731279
+    sha256: 89559fa797b27cf96ff7a13ee0517564a2c7c59fb674aa4c6ce1a90a6a224fba
+  - name: submission_file_18
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/glm-5-think_sierra_2026-03-02/trajectories/glm-5_enabled_retail_gpt-5.2_4trials.json
+    revision: '"ad9ee26d63ffae0468791e5ff91dc9cc-5"'
+    file: s3_trajectories/glm-5-think_sierra_2026-03-02/glm-5_enabled_retail_gpt-5.2_4trials.json
+    size: 36448553
+    sha256: dc6ba4c2a47456a233d81712dacb926867cf7b30d8ab909f5ec4f79037de4263
+  - name: submission_file_19
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/glm-5-think_sierra_2026-03-02/trajectories/glm-5_enabled_telecom_gpt-5.2_4trials.json
+    revision: '"8573c9c9799aee7bc9bc0821e7f314c2-7"'
+    file: s3_trajectories/glm-5-think_sierra_2026-03-02/glm-5_enabled_telecom_gpt-5.2_4trials.json
+    size: 56311944
+    sha256: 18e41808e95cb4fbc4ad8cfd7b8fa358f2ed45c69abadd0c5d89ed3143edae0b
+  - name: submission_file_20
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/glm-5-think_sierra_2026-03-02/submission.json
+    revision: '"f37210554fba18ecb51d2b8407937377"'
+    file: s3_trajectories/glm-5-think_sierra_2026-03-02/submission.json
+    size: 2175
+    sha256: fa27b9a1a7a4c8b15517ec1329ef21fcc700be2ca12f21659b60aeda99c7de8f
+  - name: submission_file_21
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2-none_sierra_2026-02-26/trajectories/gpt-5.2_none_airline_gpt-5.2_4trials.json
+    revision: '"522518c2bf84e93992a7a4214fd20145-2"'
+    file: s3_trajectories/gpt-5-2-none_sierra_2026-02-26/gpt-5.2_none_airline_gpt-5.2_4trials.json
+    size: 14016801
+    sha256: 2c0cf8e54f8984865cf6e537f82434ec363857a46efb0643eaa8fee2435cbbc3
+  - name: submission_file_22
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2-none_sierra_2026-02-26/trajectories/gpt-5.2_none_retail_gpt-5.2_4trials.json
+    revision: '"e1e319f93684f15419a3f427d2dd2cb0-4"'
+    file: s3_trajectories/gpt-5-2-none_sierra_2026-02-26/gpt-5.2_none_retail_gpt-5.2_4trials.json
+    size: 28763441
+    sha256: edf12f712feb3e8e6ecdff4ed7cf37eff2d420df6f7e7cc8a57bdedf29e3cce8
+  - name: submission_file_23
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2-none_sierra_2026-02-26/trajectories/gpt-5.2_none_telecom_gpt-5.2_4trials.json
+    revision: '"60c9d1047aa3333128c3cc9ddd0f31db-5"'
+    file: s3_trajectories/gpt-5-2-none_sierra_2026-02-26/gpt-5.2_none_telecom_gpt-5.2_4trials.json
+    size: 34253938
+    sha256: e876e17a7313f3db912529c709da603dd0bb59e6abb2a5c7df4c9b54a8236902
+  - name: submission_file_24
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2-none_sierra_2026-02-26/submission.json
+    revision: '"64ffc8b64f54b78d2468290c000e45e7"'
+    file: s3_trajectories/gpt-5-2-none_sierra_2026-02-26/submission.json
+    size: 2374
+    sha256: e1be4bac436e8115f9253697d68b71867f17cfcb2bef5dfa6a756c0a89a70dab
+  - name: submission_file_25
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2_sierra_2026-02-26/trajectories/gpt-5.2_high_airline_gpt-5.2_4trials.json
+    revision: '"84a7fd1e9c791821bc70894c1de924d2-2"'
+    file: s3_trajectories/gpt-5-2_sierra_2026-02-26/gpt-5.2_high_airline_gpt-5.2_4trials.json
+    size: 13809245
+    sha256: 308a133d880def1326ea60a2e0a946e0992c2f9e54b8e4711c2947f24b26c9fb
+  - name: submission_file_26
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2_sierra_2026-02-26/trajectories/gpt-5.2_high_retail_gpt-5.2_4trials.json
+    revision: '"0d2e431a3631d82e809bc1879ffbb484-4"'
+    file: s3_trajectories/gpt-5-2_sierra_2026-02-26/gpt-5.2_high_retail_gpt-5.2_4trials.json
+    size: 31759718
+    sha256: 76ad0d0a0c9b7f96cd07e8ab7efda68a266ef6d9fda74620abdad57de64e0449
+  - name: submission_file_27
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2_sierra_2026-02-26/trajectories/gpt-5.2_high_telecom_gpt-5.2_4trials.json
+    revision: '"f6315bf61e44eda45561f4c88e1f5d74-5"'
+    file: s3_trajectories/gpt-5-2_sierra_2026-02-26/gpt-5.2_high_telecom_gpt-5.2_4trials.json
+    size: 36472404
+    sha256: 8c33f26a3032182d39a12511db9d45a2cbd9aa5c33d99a462cc23c836eb95176
+  - name: submission_file_28
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5-2_sierra_2026-02-26/submission.json
+    revision: '"b81e1ff2e5a462f87ecdcf447e07032c"'
+    file: s3_trajectories/gpt-5-2_sierra_2026-02-26/submission.json
+    size: 2353
+    sha256: 343687b822edbcbff42a4d4632ecc6288a58d9817a7a02c8533081c5709c0ac6
+  - name: submission_file_29
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5_sierra_2025-08-09/trajectories/gpt-5_airline_default_gpt-4.1-2025-04-14_4trials.json
+    revision: '"e010ba3282aba527fcbe42dbe712406d"'
+    file: s3_trajectories/gpt-5_sierra_2025-08-09/gpt-5_airline_default_gpt-4.1-2025-04-14_4trials.json
+    size: 7608642
+    sha256: a105bdd94410994cf5b252b409766d67b7f71a105adbe828ed6718d5f7ff721a
+  - name: submission_file_30
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5_sierra_2025-08-09/trajectories/gpt-5_retail_default_gpt-4.1-2025-04-14_4trials.json
+    revision: '"65225394b24ab92787f310b430cabf25-3"'
+    file: s3_trajectories/gpt-5_sierra_2025-08-09/gpt-5_retail_default_gpt-4.1-2025-04-14_4trials.json
+    size: 18299436
+    sha256: e85532b024b128349c547e2ebadec34b399e73c1a750ef911628072fc0a47734
+  - name: submission_file_31
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5_sierra_2025-08-09/trajectories/gpt-5_telecom_default_gpt-4.1-2025-04-14_4trials.json
+    revision: '"afb503ab97852707a538fa125b8d5291-4"'
+    file: s3_trajectories/gpt-5_sierra_2025-08-09/gpt-5_telecom_default_gpt-4.1-2025-04-14_4trials.json
+    size: 28397550
+    sha256: 015610625e69f05ef0e0acdf4c822dcf69ef70010e29ead0fd0e60bb68c84f2f
+  - name: submission_file_32
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/gpt-5_sierra_2025-08-09/submission.json
+    revision: '"18ca50853b9638486bec7451f014160d"'
+    file: s3_trajectories/gpt-5_sierra_2025-08-09/submission.json
+    size: 1452
+    sha256: 288a3ec7ff0fe305344fa7fd866a692754a67ad61fb5198c0b64ee4987a88636
+  - name: submission_file_33
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2025-10-30/trajectories/airline_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"c47653557d721164570d5461b89db677-2"'
+    file: s3_trajectories/qwen3-max_qwen_2025-10-30/airline_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    size: 12092879
+    sha256: 05751ba0ee995f0fc6affc211478dc97ca6712146a874d351766eed3c53c002e
+  - name: submission_file_34
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2025-10-30/trajectories/retail_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"0d936cd729b1ef8006dee0c3f13d9d07-3"'
+    file: s3_trajectories/qwen3-max_qwen_2025-10-30/retail_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    size: 25052685
+    sha256: 0e777a8b4e168d132328951567d8077b31f64bcce6dc4bb7dbe398fc594022ea
+  - name: submission_file_35
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2025-10-30/submission.json
+    revision: '"9a42064ee31c5177bc717fc2f1b36ee1"'
+    file: s3_trajectories/qwen3-max_qwen_2025-10-30/submission.json
+    size: 1656
+    sha256: 98bf6e4e9581ad449239e278416c9f13ddb01f7399521d7e7d674e74462d485c
+  - name: submission_file_36
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2025-10-30/trajectories/telecom_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"657cae4dd2615d1848ab068c73496dff-5"'
+    file: s3_trajectories/qwen3-max_qwen_2025-10-30/telecom_llm_agent_qwen3-max-2025-10-30_user_simulator_gpt-4.1-2025-04-14.json
+    size: 36221799
+    sha256: 603ecea0d36ad7125fb9b22db68dc154488185aa23446a73ecb0034bb1771916
+  - name: submission_file_37
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2026-01-23/trajectories/airline_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"34566864df621e180ba6ea29cc67bf22-2"'
+    file: s3_trajectories/qwen3-max_qwen_2026-01-23/airline_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    size: 14240802
+    sha256: f37372a28581fcc8913c9eaba392388b403ff313ddda47aa2c2704e00acbd2ca
+  - name: submission_file_38
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2026-01-23/trajectories/retail_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"c5bffa2bbfbe287d2c84bed22a4b6cdc-4"'
+    file: s3_trajectories/qwen3-max_qwen_2026-01-23/retail_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    size: 27890267
+    sha256: 62d1d2139d1ae090f55c164a2b1fecf279fafd90932893ac6d97bb492fdd9e66
+  - name: submission_file_39
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2026-01-23/submission.json
+    revision: '"e56156c9d85df2aff0972a992cea8d91"'
+    file: s3_trajectories/qwen3-max_qwen_2026-01-23/submission.json
+    size: 1581
+    sha256: eb480b51b464175389262778510061ed96bf8f4e6ae2b05eb80d3d2455473b5a
+  - name: submission_file_40
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3-max_qwen_2026-01-23/trajectories/telecom_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    revision: '"ae07c7cea7402810f4a124b6f3e0aa84-6"'
+    file: s3_trajectories/qwen3-max_qwen_2026-01-23/telecom_llm_agent_qwen3-max-2026-01-23_user_simulator_gpt-4.1-2025-04-14.json
+    size: 45661341
+    sha256: d3c4f70fb82d179d7d96e11d2401dd2950ae37b6fb2e899942d72360a108c74f
+  - name: submission_file_41
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3.5-397b-a17b-think_sierra_2026-03-02/trajectories/qwen3.5-397b-a17b_enabled_airline_gpt-5.2_4trials.json
+    revision: '"55768582cf547879d8714f1437672684-4"'
+    file: s3_trajectories/qwen3.5-397b-a17b-think_sierra_2026-03-02/qwen3.5-397b-a17b_enabled_airline_gpt-5.2_4trials.json
+    size: 30157029
+    sha256: 5e549cedda2cc7bc338aa0efe0dcf86a552592f0c06caf1c92d0a342aed75a89
+  - name: submission_file_42
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3.5-397b-a17b-think_sierra_2026-03-02/trajectories/qwen3.5-397b-a17b_enabled_retail_gpt-5.2_4trials.json
+    revision: '"6b3f711095ae02fefb65c0572243a839-6"'
+    file: s3_trajectories/qwen3.5-397b-a17b-think_sierra_2026-03-02/qwen3.5-397b-a17b_enabled_retail_gpt-5.2_4trials.json
+    size: 44286566
+    sha256: 1588f0835fe03a1bfb7addbe676d03b73a995fcbd544c50256f9b20e0bf5790b
+  - name: submission_file_43
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3.5-397b-a17b-think_sierra_2026-03-02/trajectories/qwen3.5-397b-a17b_enabled_telecom_gpt-5.2_4trials.json
+    revision: '"992f0abd762d35f1a915aea65d979265-9"'
+    file: s3_trajectories/qwen3.5-397b-a17b-think_sierra_2026-03-02/qwen3.5-397b-a17b_enabled_telecom_gpt-5.2_4trials.json
+    size: 71968908
+    sha256: 4038e532bef560a3aa47591b5a6c644ac0fb68a969fcc678ed2a52a9e7f3ed2d
+  - name: submission_file_44
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/qwen3.5-397b-a17b-think_sierra_2026-03-02/submission.json
+    revision: '"9c59c333e72104f13592cf639fdfcf49"'
+    file: s3_trajectories/qwen3.5-397b-a17b-think_sierra_2026-03-02/submission.json
+    size: 2349
+    sha256: 2cfb2c7d2a46e9f22154fa153dcdf155d50dbd5bf86233ecf564eccca1e5913e
+  - name: submission_file_45
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/toolorchestra_nvidia_2025-12-02/submission.json
+    revision: '"0b782a2c405bc56b29507ec71a3d7a96"'
+    file: s3_trajectories/toolorchestra_nvidia_2025-12-02/submission.json
+    size: 1714
+    sha256: 05ef54d0d64269f53b3a2b4bdd7ec5008a33b6c62a024e546d91a5a014bca77c
+  - name: submission_file_46
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/toolorchestra_nvidia_2025-12-02/trajectories/toolorchestra_airline_gpt-5_1trial.json
+    revision: '"f607afa60ae04439f44b3d9434237c65"'
+    file: s3_trajectories/toolorchestra_nvidia_2025-12-02/toolorchestra_airline_gpt-5_1trial.json
+    size: 1706580
+    sha256: dded382219e6f7304a5455903dd2c89414632693cd235cb2ee609aa6c7cd60bc
+  - name: submission_file_47
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/toolorchestra_nvidia_2025-12-02/trajectories/toolorchestra_retail_gpt-5_1trial.json
+    revision: '"6c88cb509229daf999399188cbbe2db3"'
+    file: s3_trajectories/toolorchestra_nvidia_2025-12-02/toolorchestra_retail_gpt-5_1trial.json
+    size: 3367192
+    sha256: 7d1fad69087aec303ab82601f97d7803dd0b4f97b2fd9756243150008d67c014
+  - name: submission_file_48
+    url: https://sierra-tau-bench-public.s3.us-west-2.amazonaws.com/submissions/toolorchestra_nvidia_2025-12-02/trajectories/toolorchestra_telecom_gpt-5_1trial.json
+    revision: '"3c77b5b08f879110382bcceafc085656"'
+    file: s3_trajectories/toolorchestra_nvidia_2025-12-02/toolorchestra_telecom_gpt-5_1trial.json
+    size: 4901492
+    sha256: 5eb014765e2ea931e6b4996c1c1133ad245137e7222997a6854079a35e2fc05a
+grading:
+  rule: Import the explicit reward_info.reward without regrading. One denotes native success and zero denotes native
+    failure. An absent reward is null, not zero. The native evaluator combines the components named in the embedded
+    evaluation_criteria.reward_basis; retain the complete criteria and reward evidence. Do not substitute current
+    documentation defaults for the actual recorded task.
+  verifiers:
+    native:
+      kind: published_tau2_reward
+      source: https://github.com/sierra-research/tau2-bench/blob/363133ada1936491fb5bcec33cd62c3518a99f65/src/tau2/evaluator/evaluator.py
+      version_scope: The linked captured evaluator documents the framework. The recorded run commit is retained
+        separately; private or unspecified historical evaluator versions and unreported LLM judges are unknown.
+      components:
+        DB: Compares the resulting environment state with the state obtained by replaying the reference actions.
+        COMMUNICATE: Checks that required information was communicated in the conversation.
+        ENV_ASSERTION: Checks the task assertions against the final environment.
+        ACTION: Checks for the required tool calls when selected in reward_basis.
+        NL_ASSERTION: An LLM judges natural-language assertions. The original judge model is not recorded in these
+          run files.
