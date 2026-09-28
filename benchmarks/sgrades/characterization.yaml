@@ -1,0 +1,171 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1444320
+    logical_sha256: 0e8194f7a5ed818929479215a5e9aaf7bd6e673cc609bf0f1152b16af3eb36ad
+  subjects:
+    rows: 77
+    logical_sha256: 5fb48a9fd4aa6d756ef84d3c4ccbd8c93a39c25be56b4a8822be0c81a8b683ab
+  responses:
+    rows: 1444320
+    logical_sha256: f0f3974727053c35d7cb67abf7353c7d5167ffaf4e801f36be29170214da0718
+  items:
+    rows: 40509
+    logical_sha256: 98acc39dbac152e17363efa3b0ae9d098e440554515fbc71d0720ffd2fc0ba7b
+  benchmarks:
+    rows: 1
+    logical_sha256: a6f0c6af413fd9fe7d78a3944b12d6001bfdec822a86c176f2286adeaaabb251
+source_claims:
+  source_json_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 81
+  source_json_snapshot_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1304867
+  source_csv_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 414
+  source_csv_input_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 120474
+  source_json_distinct_events:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1084054
+  source_unresolved_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1156
+  source_json_snapshot_repeats:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 220813
+  source_csv_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 361422
+  source_json_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1082898
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1444320
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 770552
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 408210
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 673768
+  source_declared_input_links:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 38
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 1444320
+  source_item_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 40509
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nlpatunt/sgrades-experiments/tree/e342b9e450253fedac756dfec5557fb63825c27e
+    locator: Original three-call FULL CSV exports and native JSON runs; categorical references from the pinned original
+      SemEval release.
+    scope: Retained original prediction slots and unambiguous native JSON events. Numeric grades and unparsed replies
+      remain null; identical export independence is unknown. Conflicting input links remain in raw.
+    expected: 77

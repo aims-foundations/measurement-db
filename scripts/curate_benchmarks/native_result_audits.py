@@ -19356,12 +19356,302 @@ def _sib200(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _sgrades_sources(directory, metadata):
+    """Read original CSV/XML/JSON records without importing the tabular builder."""
+    import ast
+    import csv
+    from collections import defaultdict
+    from decimal import Decimal, InvalidOperation
+    import hashlib
+    import xml.etree.ElementTree as ET
+    from zipfile import ZipFile
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    release = raw / parameters['paths']['release']
+    parsed = ast.parse((release / 'gpt4_mini/inductive_aggregation.py').read_text())
+    function = next(node for node in parsed.body if isinstance(node, ast.FunctionDef) and node.name == 'get_dataset_columns')
+    native_columns = next(ast.literal_eval(node.value) for node in function.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'configs' for target in node.targets))
+    for name, field in [('id_columns', 'id'), ('text_columns', 'text'), ('question_columns', 'question'), ('score_columns', 'score')]:
+        _check(parameters[name], {key: value[field] for key, value in native_columns.items()},
+            'S-GRADES original exporter columns, read without executing upstream code')
+
+    def definition(dataset, record):
+        question = parameters['question_columns'][dataset]
+        # Some captured input CSVs end a row before its trailing fields. They
+        # provide no text for those cells; the immutable raw file retains that
+        # distinction. Conflicting input versions still require disambiguation.
+        return (dataset, record[parameters['id_columns'][dataset]] or '', record.get('question_id') or '',
+            record.get(question) or '', record[parameters['text_columns'][dataset]] or '', question in record)
+
+    locations, by_id, by_file, exported = defaultdict(set), defaultdict(set), defaultdict(set), defaultdict(list)
+    csv_runs, hashes, copies = {}, {}, defaultdict(set)
+    names = sorted([*parameters['id_columns'], *parameters['dataset_aliases']], key=len, reverse=True)
+    input_files = []
+    for path in sorted(release.rglob('*.csv')):
+        relative = str(path.relative_to(release))
+        if relative in parameters['corrupt_input_files'] or any(word in relative for word in parameters['training_input_markers']):
+            continue
+        family = next((name for name in names if name in path.name), None)
+        if family is not None:
+            input_files.append((path, parameters['dataset_aliases'].get(family, family)))
+    input_files.extend((raw / path, dataset) for path, dataset in parameters['author_input_tables'].items())
+    for path, dataset in input_files:
+        relative = str(path.relative_to(raw))
+        with path.open(newline='', encoding='utf-8-sig') as stream:
+            reader = csv.DictReader(stream)
+            if not {parameters['id_columns'][dataset], parameters['text_columns'][dataset]}.issubset(reader.fieldnames or []):
+                continue
+            records = list(reader)
+        for position, record in enumerate(records):
+            key = definition(dataset, record)
+            locations[key].add((relative, position))
+            by_id[dataset, key[1]].add(key)
+            by_file[relative, dataset, key[1]].add(key)
+            exported[relative, dataset, key[1]].append(record.get(parameters['score_columns'][dataset], ''))
+        if path.name.endswith('_3call_FULL.csv'):
+            model = parameters['model_codes'][str(path.parent.parent.relative_to(release))]
+            _check(path.name, parameters['model_names'][model] + '_D_' + dataset + '_3call_FULL.csv',
+                'S-GRADES native CSV model/dataset identity')
+            csv_runs[relative] = dict(records=records, dataset=dataset, model=model,
+                strategy=path.parent.name.removesuffix('_3call_predictions'))
+            hashes[relative] = hashlib.sha256(path.read_bytes()).hexdigest()
+            copies[hashes[relative]].add(relative)
+
+    numeric = defaultdict(set)
+    for (dataset, source_id), definitions in by_id.items():
+        try:
+            number = Decimal(source_id)
+            if number.is_finite():
+                numeric[dataset, number].update(definitions)
+        except InvalidOperation:
+            pass
+
+    def comparable(value):
+        if value is None or value == '':
+            return ('missing', None)
+        if not isinstance(value, (str, int, float)):
+            return ('structured', json.dumps(value, sort_keys=True, ensure_ascii=False))
+        text = str(value).strip()
+        if not text:
+            return ('missing', None)
+        try:
+            number = Decimal(text)
+            if number.is_finite():
+                return ('number', number)
+        except InvalidOperation:
+            pass
+        return ('text', text)
+
+    references = defaultdict(list)
+    with ZipFile(raw / parameters['paths']['references']) as archive:
+        for member in sorted(archive.namelist()):
+            if not member.endswith('.xml'):
+                continue
+            _, granularity, corpus = member.split('/')[:3]
+            dataset = parameters['corpus_names'][corpus] + '_' + granularity
+            root = ET.fromstring(archive.read(member))
+            for answer in root.findall('./studentAnswers/studentAnswer'):
+                key = dataset, root.attrib['id'], (root.findtext('questionText') or '').strip(), (answer.text or '').strip()
+                references[key].append(dict(reference_file=parameters['paths']['references'],
+                    reference_member=member, reference_id=answer.attrib['id'], gold=answer.attrib['accuracy']))
+    grading, item_aliases = {}, defaultdict(set)
+    for key in locations:
+        dataset, source_id, question_id, question, answer, _ = key
+        matches = references.get((dataset, question_id, question.strip(), answer.strip()), [])
+        exact = [record for record in matches if record['reference_id'] == source_id] if dataset.startswith('SciEntSBank') else []
+        selected = exact or matches
+        values = {record['gold'] for record in selected}
+        gold = next(iter(values)) if len(values) == 1 else None
+        status = 'verified_reference' if gold is not None else 'conflicting_reference' if values else 'reference_unavailable'
+        grading[key] = dict(gold=gold, status=status, references=selected)
+        item_aliases[dataset, question.strip(), answer.strip(), gold].add(dataset + '::' + source_id)
+
+    events, counts = {}, Counter()
+    for path in sorted(release.rglob('*.json')):
+        data = json.loads(path.read_text(), parse_constant=lambda value: {'source_nonfinite': value})
+        if not isinstance(data, dict) or not isinstance(data.get('datasets'), list):
+            continue
+        if not any(isinstance(ds.get(kind), list) and ds[kind] for ds in data['datasets']
+                for kind in ['predictions', 'failed_predictions']):
+            continue
+        counts['source_json_files'] += 1
+        identity = {key: data.get(key) for key in parameters['json_run_identity_fields']}
+        run = hashlib.sha256(json.dumps(identity, sort_keys=True).encode()).hexdigest()
+        run_metadata = {key: value for key, value in data.items() if key != 'datasets'}
+        occurrences = Counter()
+        for ds_position, ds in enumerate(data['datasets']):
+            dataset = ds.get('dataset_name', ds.get('name')).removeprefix('D_')
+            dataset = parameters['dataset_aliases'].get(dataset, dataset)
+            target = (path.parent / ds['csv_output']).resolve() if isinstance(ds.get('csv_output'), str) else None
+            linked = str(target.relative_to(raw.resolve())) if target and target.is_relative_to(raw.resolve()) and target.is_file() else None
+            predictions = ds.get('predictions', [])
+            predictions = predictions if isinstance(predictions, list) else []
+            expected = {str(record.get('id', record.get('essay_id'))): record.get('prediction') for record in predictions}
+            verified = bool(expected) and all(exported.get((linked, dataset, source_id)) and
+                all(comparable(value) == comparable(prediction) for value in exported[linked, dataset, source_id])
+                for source_id, prediction in expected.items())
+            dataset_metadata = {key: value for key, value in ds.items() if key not in ['predictions', 'failed_predictions']}
+            for kind in ['predictions', 'failed_predictions']:
+                records = ds.get(kind)
+                if not isinstance(records, list):
+                    continue
+                for position, record in enumerate(records):
+                    source_id = str(record.get('id', record.get('essay_id')))
+                    encoded = json.dumps(record, sort_keys=True, ensure_ascii=False, allow_nan=False)
+                    base = run, dataset, kind, source_id, encoded
+                    occurrence = occurrences[base]
+                    occurrences[base] += 1
+                    event = hashlib.sha256(json.dumps([*base, occurrence], ensure_ascii=False).encode()).hexdigest()
+                    location = dict(source_file=str(path.relative_to(raw)), dataset_position=ds_position,
+                        kind=kind, source_row=position)
+                    counts['source_json_snapshot_records'] += 1
+                    if event in events:
+                        events[event]['locations'].append(location)
+                        continue
+                    candidates = by_id.get((dataset, source_id), set())
+                    method = 'exact_id'
+                    if not candidates:
+                        try:
+                            value = Decimal(source_id)
+                            candidates = numeric.get((dataset, value), set()) if value.is_finite() else set()
+                            method = 'numeric_id_representation'
+                        except InvalidOperation:
+                            pass
+                    declared = by_file.get((linked, dataset, source_id), set())
+                    if len(candidates) > 1 and len(declared) == 1 and verified:
+                        candidates, method = declared, 'declared_native_csv'
+                    selected = next(iter(candidates)) if len(candidates) == 1 else None
+                    events[event] = dict(record=record, location=location, locations=[location], dataset=dataset,
+                        definition=selected, method=method, linked_csv=linked, verified=bool(verified),
+                        run=run, run_metadata=run_metadata, dataset_metadata=dataset_metadata)
+    counts.update(source_csv_files=len(csv_runs), source_csv_input_rows=sum(len(run['records']) for run in csv_runs.values()),
+        source_json_distinct_events=len(events), source_unresolved_inputs=sum(event['definition'] is None for event in events.values()))
+    counts['source_json_snapshot_repeats'] = counts['source_json_snapshot_records'] - len(events)
+    counts['source_csv_observations'] = 3 * counts['source_csv_input_rows']
+    counts['source_json_observations'] = len(events) - counts['source_unresolved_inputs']
+    counts['source_responses'] = counts['source_csv_observations'] + counts['source_json_observations']
+    return dict(csv=csv_runs, hashes=hashes, copies=copies, definitions=definition,
+        locations=locations, grading=grading, item_aliases=item_aliases, events=events, counts=dict(counts))
+
+
+def _sgrades(directory, tables, metadata, source=None):
+    """Compare every retained observation with original inputs, outputs and annotations."""
+    import ast
+    from collections import defaultdict
+
+    source = source or _sgrades_sources(directory, metadata)
+    parameters, labels = metadata['build']['parameters'], metadata['build']['parameters']['labels']
+    subjects = {row.subject_id: (row, _features(row.subject_features_extra)) for row in tables['subjects'].itertuples()}
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'S-GRADES unique response/trace links')
+    _check(set(traces), set(tables['responses'].response_id), 'S-GRADES complete response/trace linkage')
+    _check(len(tables['responses']), source['counts']['source_responses'], 'S-GRADES all retained source observations')
+    pair_sizes = tables['responses'].groupby(['subject_id', 'item_id']).size().to_dict()
+    seen_csv, seen_json, used_items, used_subjects, configurations = set(), set(), set(), set(), set()
+    trials, counts = defaultdict(list), Counter(source['counts'])
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        subject, extra = subjects[row.subject_id]
+        if 'event_key' not in trace:
+            file, position, column = trace['source_file'], trace['source_row'], trace['source_column']
+            _check(column in ['prediction_1', 'prediction_2', 'prediction_3'], True, 'S-GRADES retained CSV slot')
+            run = source['csv'][file]
+            _check(type(position) is int and 0 <= position < len(run['records']), True, 'S-GRADES original CSV row position')
+            record = run['records'][position]
+            key = source['definitions'](run['dataset'], record)
+            model, strategy, kind, prediction = run['model'], run['strategy'], 'predictions', record[column]
+            event = file, position, column
+            _check(event not in seen_csv, True, 'S-GRADES no duplicated CSV record slot')
+            seen_csv.add(event)
+            expected_trace = dict(source_file=file, source_row=position, source_record=record,
+                source_column=column, retained_position=int(column[-1]), original_call_position=None,
+                export_sha256=source['hashes'][file], identical_export_files=sorted(source['copies'][source['hashes'][file]] - {file}),
+                identical_export_run_identity='not_recorded' if len(source['copies'][source['hashes'][file]]) > 1 else None,
+                input_file=file, input_row=position)
+            expected_extra = dict(provider_model_id=model, reasoning_strategy=strategy, trial_order=labels['trial_order'])
+            harness = labels['csv_harness']
+            configuration = 'csv', model, strategy
+        else:
+            event = trace['event_key']
+            native = source['events'][event]
+            key = native['definition']
+            _check(key is not None and event not in seen_json, True, 'S-GRADES unique event with an unambiguous input')
+            seen_json.add(event)
+            record, location = native['record'], native['location']
+            model, strategy = native['run_metadata']['model_code'], native['run_metadata']['reasoning_approach']
+            kind, prediction = location['kind'], record.get('prediction')
+            expected_trace = dict(**location, source_record=record, event_key=event, source_locations=native['locations'],
+                native_run_metadata=native['run_metadata'], native_dataset_metadata=native['dataset_metadata'],
+                input_method=native['method'], declared_input_csv=native['linked_csv'], declared_csv_verified=native['verified'])
+            identity = {name: native['run_metadata'].get(name) for name in parameters['json_run_identity_fields']}
+            _check(ast.literal_eval(extra['recorded_run']), identity, 'S-GRADES literal historical run identity')
+            expected_extra = dict(provider_model_id=model, reasoning_strategy=strategy,
+                recorded_run=extra['recorded_run'], configuration_status=labels['json_configuration'])
+            harness = labels['json_harness']
+            configuration = 'json', native['run']
+            counts['source_declared_input_links'] += native['method'] == 'declared_native_csv'
+        reference = source['grading'][key]
+        dataset, _, _, question, answer, question_available = key
+        protocol = dataset.rsplit('_', 1)[-1] if dataset.endswith(('_2way', '_3way')) else 'numeric'
+        normalized = prediction.strip().lower() if isinstance(prediction, str) else None
+        gold, grade, status = reference['gold'], None, reference['status']
+        if kind == 'failed_predictions' or prediction is None or normalized == '':
+            status = 'prediction_unavailable'
+        elif protocol == 'numeric':
+            status = 'numeric_reference_unavailable'
+        elif gold is not None and normalized in ['correct', 'incorrect', 'contradictory']:
+            grade, status = float(normalized == gold), 'verified_category_match'
+        elif gold is not None:
+            status = 'unparsed_reply'
+        representative = trace['representative_input']
+        _check((representative['file'], representative['row']) in source['locations'][key], True,
+            'S-GRADES original representative input location')
+        expected_trace.update(grading_status=status, question_column_available=question_available,
+            representative_input=representative, reference_records=reference['references'])
+        _check(trace, expected_trace, 'S-GRADES complete original record, input provenance and grading evidence')
+        _check(pd.isna(row.response) if grade is None else row.response == grade, True, 'S-GRADES original reference grade or explicit null')
+        _check(extra, expected_extra, 'S-GRADES recorded subject settings and unknown historical configuration')
+        _check((subject.harness, subject.display_name, pd.isna(subject.harness_version)),
+            (harness, parameters['model_names'][model], True), 'S-GRADES literal model and harness identity')
+        item = items[row.item_id]
+        _check(item['raw_item_id'] in source['item_aliases'][dataset, question.strip(), answer.strip(), gold],
+            True, 'S-GRADES recorded item alias for the same content and grading')
+        _check(item['content'], 'Question: ' + question.strip() + '\n\nStudent answer: ' + answer.strip(),
+            'S-GRADES complete known question and student-answer fields')
+        _check(_features(item['item_features']), dict(dataset=dataset, input_scope=labels['input_scope']), 'S-GRADES dataset and input limitations')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=gold, rule=metadata['grading']['verifiers'][protocol]['rule']),
+            'S-GRADES original reference category and declared grading rule')
+        verifier = json.loads(item['verifier'])
+        _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers'][protocol], dataset=dataset), 'S-GRADES original verification protocol')
+        _check(verifier['class'], 'judge' if protocol == 'numeric' else 'exact_matcher', 'S-GRADES correct verifier class')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'S-GRADES no invented historical judge')
+        _check(1 <= row.trial <= pair_sizes[row.subject_id, row.item_id], True, 'S-GRADES retained occurrence bounds')
+        _check((pd.isna(row.test_condition), pd.isna(row.interactors), pd.isna(item['asset_manifest'])),
+            (True, True, True), 'S-GRADES no invented condition, tools or assets')
+        used_items.add(row.item_id); used_subjects.add(row.subject_id); configurations.add(configuration)
+        trials[row.subject_id, row.item_id].append(row.trial)
+        counts['source_ungraded' if grade is None else 'source_graded'] += 1
+        counts['source_successes'] += int(grade or 0)
+    _check(len(seen_csv), source['counts']['source_csv_observations'], 'S-GRADES every CSV slot retained')
+    _check(seen_json, {key for key, event in source['events'].items() if event['definition'] is not None},
+        'S-GRADES every associated JSON event retained, with unresolved events excluded')
+    _check((used_items, used_subjects), (set(items), set(subjects)), 'S-GRADES no unused or omitted items or subjects')
+    _check(len(configurations), len(subjects), 'S-GRADES one subject per recorded configuration')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'S-GRADES retained occurrence numbering, not invented API-call order')
+    counts.update(source_traces=len(traces), source_item_definitions=len(items), source_configurations=len(subjects))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
