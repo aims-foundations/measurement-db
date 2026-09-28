@@ -18948,6 +18948,112 @@ def _scbench_long(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _sciarena_sources(directory, metadata):
+    """Compare the two original exports and count each human vote only once."""
+    import unicodedata
+
+    raw, layout = directory / 'raw', metadata['build']['parameters']['layout']
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import native_json_value
+    votes = native_json_value(json.loads((raw / layout['votes']).read_bytes()))
+    enriched = native_json_value(json.loads((raw / layout['paperbank']).read_bytes()))
+    subset = native_json_value(json.loads((raw / layout['duplicate_subset']).read_bytes()))
+    native = {row['id']: row for row in votes}
+    contexts = {row['id']: row for row in enriched}
+    _check((len(native), len(contexts)), (len(votes), len(enriched)), 'SciArena unique source feedback IDs')
+    _check(set(native), set(contexts), 'SciArena exact feedback correspondence across releases')
+    identities, counts, models = {}, Counter(), set()
+    for position, record in enumerate(votes):
+        row = dict(contexts[record['id']])
+        papers = row.pop('paper_bank')
+        row['question_type'] = row.pop('question type')
+        _check(row, record, 'SciArena original votes, responses, citations and annotations agree')
+        _check(isinstance(papers, list) and bool(papers), True, 'SciArena released literature context exists')
+        _check(record['vote'] in {'A', 'B', 'tie', 'bad'}, True, 'SciArena known native preference category')
+        _check(all(isinstance(record[k], str) and bool(record[k]) for k in ['question', 'modelA', 'modelB', 'responseA', 'responseB']),
+               True, 'SciArena explicit task, model and response text')
+        stimulus = dict(question=record['question'], paper_bank=papers)
+        features = dict(question_type=record['question_type'], discipline=record['subject'],
+            input_scope=metadata['build']['parameters']['labels']['input_scope'])
+        identity = unicodedata.normalize('NFC', json.dumps([stimulus, features], ensure_ascii=False, sort_keys=True))
+        identities[record['id']] = dict(position=position, identity=_digest(identity), stimulus=stimulus, features=features)
+        models.update([record['modelA'], record['modelB']])
+        counts['source_vote_' + record['vote'].lower()] += 1
+        counts['source_paper_entries'] += len(papers)
+        counts['source_empty_citation_lists'] += sum(not record[k] for k in ['citations_a', 'citations_b'])
+        counts['source_nonfinite_citation_authors'] += sum(citation.get('authors') == {'nonfinite_float': 'nan'}
+            for key in ['citations_a', 'citations_b'] for citation in record[key])
+    _check(len({row['id'] for row in subset}), len(subset), 'SciArena unique evaluation-subset IDs')
+    for record in subset:
+        _check(record, contexts[record['id']], 'SciArena evaluation subset repeats existing observations exactly')
+    _check((len(native), len(models), len(subset)), (13204, 23, 2000), 'SciArena complete pinned release census')
+    counts.update(source_votes=len(native), source_responses=2 * len(native), source_traces=2 * len(native),
+        source_models=len(models), source_items=len({r['identity'] for r in identities.values()}),
+        source_unique_questions=len({row['question'] for row in votes}), source_duplicate_subset_votes=len(subset))
+    return dict(native=native, inputs=identities, models=models, counts=dict(counts))
+
+
+def _sciarena(directory, tables, metadata, source=None):
+    """Check every preference, full response, input paper and source association."""
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = source or _sciarena_sources(directory, metadata)
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'SciArena relative-preference scale')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features.pop('model_identifier')
+        _check(features, {'historical_settings': metadata['build']['parameters']['subject']['historical_settings']},
+            'SciArena source model configuration uncertainty')
+        _check((row.display_name, row.harness), (model, 'SciArena'), 'SciArena literal model label and harness')
+        _check(pd.isna(row.harness_version), True, 'SciArena no invented historical harness version')
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({model: 1 for model in source['models']}), 'SciArena all literal model identities')
+    items, used = {}, Counter()
+    for row in tables['items'].itertuples():
+        native = source['inputs'][row.raw_item_id]
+        content, features = json.loads(row.content), _features(row.item_features)
+        _check(content, native['stimulus'], 'SciArena complete original question and all retrieved paper fields')
+        _check(features, native['features'], 'SciArena input scope and original question annotations')
+        identity = _digest(unicodedata.normalize('NFC', json.dumps([content, features], ensure_ascii=False, sort_keys=True)))
+        items[row.item_id] = identity
+        used[identity] += 1
+        _check(pd.isna(row.asset_manifest), True, 'SciArena no invented binary attachment')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+            'SciArena relative-preference grading without invented gold answers')
+        verifier = json.loads(row.verifier)
+        _check(verifier['judged_by'], 'human', 'SciArena original human rather than model judgment')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['human_vote'], 'SciArena explicit vote interpretation')
+    _check(used, Counter({r['identity']: 1 for r in source['inputs'].values()}), 'SciArena complete distinct input contexts')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'SciArena unique trace associations')
+    _check(set(traces), set(tables['responses'].response_id), 'SciArena every response has its own trace')
+    seen, trials = Counter(), {}
+    layout = metadata['build']['parameters']['layout']
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        record = source['native'][trace['record']['id']]
+        side = trace['side']
+        _check(side in {'modelA', 'modelB'}, True, 'SciArena original displayed side')
+        original = source['inputs'][record['id']]
+        _check(trace, dict(source_file=layout['votes'], source_row=original['position'],
+            paperbank_source=layout['paperbank'], side=side, record=record), 'SciArena complete native reply, citation, vote and provenance')
+        _check((subjects[row.subject_id], items[row.item_id]), (record[side], original['identity']), 'SciArena response-model-input association')
+        grade = 0.5 if record['vote'] in {'tie', 'bad'} else float(record['vote'] == side[-1])
+        _check(row.response, grade, 'SciArena native relative preference without rejudging')
+        opponent = record['modelB' if side == 'modelA' else 'modelA']
+        _check((row.interactors, row.test_condition), ('opponent=' + opponent, 'side=' + side), 'SciArena original comparator and display condition')
+        group = row.subject_id, row.item_id, row.interactors, row.test_condition
+        trials.setdefault(group, []).append(row.trial)
+        seen[record['id'], side] += 1
+    _check(seen, Counter({(key, side): 1 for key in source['native'] for side in ['modelA', 'modelB']}),
+        'SciArena exactly two observations per recorded vote, without duplicating the evaluation subset')
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True,
+        'SciArena repeated comparisons retained as consecutive trials')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18970,7 +19076,7 @@ def verify_native_results(directory, tables_directory=None):
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
             "alpacaeval": _alpacaeval, "ai2d_test": _ai2d_test, "alpha_sql": _alpha_sql,
             "alignment_faking": _alignment_faking, "arcagi": _arcagi,
-            "arena_140k": _arena, "atmossci_bench": _atmossci,
+            "arena_140k": _arena, "sciarena": _sciarena, "atmossci_bench": _atmossci,
             "auditing_sabotage_bench": _auditing_sabotage,
             "autoresearchbench": _autoresearch, "averimatec": _averimatec, "babilong": _babilong,
             "bbq": _bbq, "beavertails": _beavertails, "benger": _benger, "bedd_basalt": _bedd, "bigfinancebench": _bigfinance, "bountybench": _bounty, "bird_sql": _bird, "braveguard": _braveguard, "bridging_gap": _bridging_gap, "care_enzymes": _care, "ceobench": _ceobench, "chatgpt_drift": _drift, "chartmuseum": _chartmuseum, "ceval": _ceval, "chi_bench": _chi_bench, "chipbench": _chipbench, "classroom_ai": _classroom_ai, "cmmlu": _cmmlu, "coffeebench": _coffee, "complexbench": _complex, "csedb": _csedb, "crow": _crow, "cruxeval": _cruxeval, "das_med_hallucination": _das_med_hallucination, "cybench": _cybench, "dataclawbench": _dataclaw, "data_juicer2": _data_juicer, "dbpa": _dbpa, "decodingtrust": _decodingtrust, "dqvis": _dqvis, "disco": _disco, "doris_mae": _doris_mae, "dtap_bench": _dtap}[directory.name](directory, tables, metadata)

@@ -1,0 +1,73 @@
+benchmark:
+  name: SciArena
+  description: Recorded human preferences between scientific literature-grounded model responses, with their released questions and retrieved paper banks.
+  testing_condition: >-
+    Each original vote contributes one relative-preference observation for each of the two named models.
+    The input combines the released question and retrieved papers; current responses and votes are excluded.
+    The opponent is an interactor and displayed side is a response condition. Question type and scientific
+    discipline are source annotations. The platform applies literature retrieval and response postprocessing;
+    released responses are the displayed texts, not guaranteed to be unmodified model generations.
+    Exact historical request payloads, generation settings, judge identities and individual postprocessor
+    versions are unavailable. Preserve full replies, citations and all four vote categories in the traces.
+    Nonfinite source metadata use an explicit nonfinite_float tag in valid JSON; original bytes remain in raw.
+    The 2,000-row evaluation subset repeats training votes and adds no observations. No model or judge is run.
+  paper_url: https://arxiv.org/abs/2507.01001
+  data_source_url: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+  subject_type: model
+  item_type: question_with_literature_context
+  license: MIT, as declared by both pinned upstream dataset cards.
+  citation: Zhao et al. (2025). SciArena, an open evaluation platform for foundation models in scientific literature tasks. NeurIPS Datasets and Benchmarks; arXiv:2507.01001.
+  tags: [scientific_literature, human_preference, pairwise]
+  modality: [text]
+  domain: [science]
+  response_type: win_rate
+  response_scale:
+    kind: discrete
+    values: [0, 0.5, 1]
+    meanings: {'0': other response preferred, '0.5': neither response preferred, '1': this response preferred}
+    direction: higher_is_better
+  categorical: true
+  release_date: '2025-07-01'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      votes: release/train.json
+      paperbank: paperbank/train.json
+      duplicate_subset: paperbank/test.json
+    labels:
+      input_scope: Released question and retrieved paper bank. Exact historical API request unavailable.
+    subject:
+      harness: SciArena
+      historical_settings: Exact per-vote generation and postprocessing configuration not released.
+sources:
+  upstream:
+  - name: votes
+    url: https://huggingface.co/datasets/yale-nlp/SciArena
+    revision: 135574f2e73edc0aac658eb8f2308f1b60621446
+    files:
+    - match: 'README\.md|train\.json'
+      path: release/{path}
+  - name: paperbank
+    url: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    revision: f959cd7fedabb1c1f16d8cc23a89e7e893cea4b4
+    files:
+    - match: 'README\.md|train\.json|test\.json'
+      path: paperbank/{path}
+grading:
+  rule: >-
+    Encode the recorded relative preference as 1 for the preferred side and 0 for the other side.
+    Both tie and bad give 0.5 to each side because neither response is preferred; preserve these distinct
+    original vote categories in the traces. The bad category means both responses were judged poor,
+    not that both were correct. These numbers encode preferences against a recorded opponent and do
+    not measure factual correctness or reproduce the aggregate Bradley-Terry leaderboard.
+  verifiers:
+    human_vote:
+      kind: released_human_pairwise_preference
+      source: https://huggingface.co/datasets/yale-nlp/SciArena/blob/135574f2e73edc0aac658eb8f2308f1b60621446/README.md
+      field: vote
+      judge_identity: not released
+      scores:
+        modelA: {A: 1, B: 0, tie: 0.5, bad: 0.5}
+        modelB: {A: 0, B: 1, tie: 0.5, bad: 0.5}

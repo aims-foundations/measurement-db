@@ -946,3 +946,4 @@ SOURCE_AUDITS["robust_reasoning_benchmark"] = verify_native_results
 SOURCE_AUDITS["scale_mrt"] = verify_native_results
 
 SOURCE_AUDITS["scbench_long"] = verify_native_results
+SOURCE_AUDITS["sciarena"] = verify_native_results

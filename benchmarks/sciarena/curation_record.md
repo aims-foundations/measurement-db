@@ -1,0 +1,3 @@
+- Preserve all 13,204 human votes as 26,408 model-side observations across 23 literal model labels. The 2,000-row evaluation subset repeats training votes and adds no observations.
+- Restore the complete released question and retrieved paper bank. Preserve all replies, citations and vote categories, explicitly tagging 110 NaN author fields. Exact historical API requests and postprocessing settings are unavailable.
+- Encode relative preferences as win 1, loss 0, or neither preferred 0.5. Retain tie and both-bad categories separately in traces; these are not correctness grades. Both pinned dataset cards declare MIT.
