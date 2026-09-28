@@ -17857,6 +17857,181 @@ def _realtimeqa(directory, tables, metadata, source=None):
         source_missing_question_raw_only=source["held"]["unavailable_question"])
 
 
+def _rewardbench_sources(directory, metadata):
+    """Match complete historical releases using Arrow rows, independently of joins."""
+    import math
+    from collections import defaultdict
+    import pyarrow.parquet as pq
+
+    raw = directory / "raw"
+    banks, definitions, subsets = {}, {}, defaultdict(set)
+    for path in sorted((raw / "history").glob("*/data/filtered-00000-of-00001.parquet")):
+        name = str(path.relative_to(raw))
+        banks[name] = pq.read_table(path).to_pylist()
+        for task in banks[name]:
+            identity = task["prompt"], task["chosen"], task["rejected"]
+            definitions.setdefault(identity, task)
+            subsets[identity].add(task["subset"])
+    native, configurations, statistics = {}, {}, Counter()
+    results_root = raw / "results/eval-set-scores"
+    for path in sorted(results_root.rglob("*.json")):
+        data = json.loads(path.read_text())
+        n = len(data["results"])
+        _check(all(len(v) == n for v in data.values() if isinstance(v, list)), True,
+               "RewardBench complete aligned native columns")
+        matching = []
+        for name, bank in banks.items():
+            if len(bank) != n:
+                continue
+            valid = True
+            for index, task in enumerate(bank):
+                if data["subset"][index] != task["subset"] or ("id" in data and data["id"][index] != task["id"]):
+                    valid = False
+                    break
+                for field, answer in (("text_chosen", task["chosen"]), ("text_rejected", task["rejected"])):
+                    recorded = data[field][index]
+                    if isinstance(recorded, list):
+                        valid = (len(recorded) == 2 and recorded[0].get("role") == "user"
+                                 and recorded[1].get("role") == "assistant"
+                                 and recorded[0].get("content", "").strip() == task["prompt"].strip()
+                                 and recorded[1].get("content", "").strip() == answer.strip())
+                    else:
+                        valid = (isinstance(recorded, str) and task["prompt"].strip() in recorded
+                                 and answer.strip() in recorded)
+                    if not valid:
+                        break
+                if not valid:
+                    break
+            if valid:
+                matching.append(name)
+        _check(len(matching), 1, "RewardBench exactly one full historical bank per native result file")
+        name = matching[0]
+        bank = banks[name]
+        source_file = str(path.relative_to(raw))
+        config = {key: value for key, value in data.items() if not isinstance(value, list)}
+        scoring = "direct"
+        aggregate_path = raw / "results/eval-set" / path.relative_to(results_root)
+        aggregate = json.loads(aggregate_path.read_text()) if aggregate_path.is_file() else None
+        if aggregate is not None:
+            groups = defaultdict(list)
+            for subset, grade in zip(data["subset"], data["results"], strict=True):
+                groups[subset].append(grade)
+            for subset, grades in groups.items():
+                _check(abs(sum(grades) / len(grades) - aggregate[subset]) < 1e-12, True,
+                       "RewardBench independently published subset mean")
+            statistics["source_published_subset_means"] += len(groups)
+        else:
+            statistics["source_files_without_aggregate"] += 1
+        if data["model_type"] == "DPO":
+            free = path.name.endswith("_ref_free.json")
+            scoring = "dpo_implicit_ref_free" if free else "dpo_implicit_ref"
+            _check(aggregate is not None, True, "RewardBench DPO reference metadata available")
+            _check((aggregate["model"], aggregate["model_type"], aggregate["ref_model"] is None),
+                   (data["model"], "DPO Ref. Free" if free else "DPO", free), "RewardBench DPO source identity")
+            config["reference_model"] = aggregate["ref_model"]
+        signature = json.dumps([config, scoring], sort_keys=True)
+        configurations[signature] = dict(native=config, scoring=scoring)
+        statistics["source_result_files"] += 1
+        statistics["source_early_observations"] += n if n == 2538 else 0
+        statistics["source_" + scoring + "_configurations"] += 1
+        for index, task in enumerate(bank):
+            record = {key: value[index] if isinstance(value, list) else value for key, value in data.items()}
+            grade = record["results"]
+            _check(grade in (0, 0.5, 1) and math.isfinite(grade), True, "RewardBench original discrete grade")
+            statistics["source_half_credit"] += int(grade == 0.5)
+            nonfinite = False
+            for field in ("scores_chosen", "scores_rejected"):
+                if field in record:
+                    value = record[field]
+                    value = value[0] if isinstance(value, list) else value
+                    if isinstance(value, (int, float)) and not math.isfinite(value):
+                        statistics["source_nonfinite_" + field] += 1
+                        nonfinite = True
+            statistics["source_observations_with_nonfinite_rewards"] += int(nonfinite)
+            # Parse original JSON constants directly; null remains distinct from NaN.
+            safe = json.loads(json.dumps(record, ensure_ascii=False),
+                              parse_constant=lambda value: {"native_nonfinite_number": value})
+            trace = dict(source_file=source_file, source_row=index, task_file=name, task_row=index,
+                         association="unique_complete_historical_bank_match", native_record=safe, task_record=task)
+            native[source_file, index] = dict(trace=trace, grade=grade, configuration=signature,
+                identity=(task["prompt"], task["chosen"], task["rejected"]),
+                condition="subset=" + task["subset"] + ";scoring=" + scoring)
+    return dict(native=native, definitions=definitions, subsets=subsets, configurations=configurations,
+                statistics=dict(statistics), banks=len(banks))
+
+
+def _rewardbench(directory, tables, metadata, source=None):
+    import ast
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features
+
+    source = source or _rewardbench_sources(directory, metadata)
+    native, definitions = source["native"], source["definitions"]
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        config = ast.literal_eval(features["native_configuration"])
+        signature = json.dumps([config, features["scoring"]], sort_keys=True)
+        original = source["configurations"][signature]
+        expected = {key: value for key, value in parameters["subject_features"].items() if key != "harness"}
+        expected.update(native_configuration=config, scoring=original["scoring"])
+        _check(features, canonicalize_features(expected), "RewardBench complete native model configuration")
+        _check(row.display_name, "RewardBench / " + config["model"] + " / " + original["scoring"],
+               "RewardBench literal model identity without aggregate aliases")
+        _check(row.harness, parameters["subject_features"]["harness"], "RewardBench recorded harness")
+        for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
+            _check(pd.isna(getattr(row, field)), True, "RewardBench no guessed historical setting: " + field)
+        subjects[row.subject_id] = signature
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source["configurations"]}),
+           "RewardBench all distinct native configurations")
+    for row in tables["items"].itertuples():
+        content = json.loads(row.content)
+        _check(set(content), {"prompt", "candidate_a", "candidate_b"}, "RewardBench only full preference inputs")
+        identity = content["prompt"], content["candidate_a"], content["candidate_b"]
+        original = definitions[identity]
+        _check(row.raw_item_id, original["subset"] + ":" + str(original["id"]), "RewardBench representative task alias")
+        _check(_features(row.item_features), canonicalize_features(dict(source_subsets=sorted(source["subsets"][identity]))),
+               "RewardBench source subsets without outcome leakage")
+        _check(json.loads(row.grading_criterion), json.loads(canonical_grading_criterion(
+            dict(reference_answer="A", rule=metadata["grading"]["rule"]))), "RewardBench complete grading protocol")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
+               "RewardBench native verdict verifier without regrading")
+        _check(pd.isna(row.asset_manifest), True, "RewardBench no invented assets")
+        items[row.item_id] = identity
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), "RewardBench all distinct historical task pairs")
+    _check(len(tables.get("assets", [])), 0, "RewardBench text-only input pairs")
+    _check(len(tables["responses"]), len(native), "RewardBench all original attempts retained")
+    _check(Counter(tables["responses"].response_id).most_common(1)[0][1], 1, "RewardBench unique response IDs")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "RewardBench exactly one trace per attempt")
+    traces = tables["traces"].set_index("response_id").to_dict("index")
+    trials, occurrences = {}, Counter()
+    for key, original in native.items():
+        unit = original["configuration"], original["identity"], original["condition"]
+        occurrences[unit] += 1
+        trials[key] = occurrences[unit]
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace_row = traces[row.response_id]
+        trace = json.loads(trace_row["trace"])
+        key = trace["source_file"], trace["source_row"]
+        original = native[key]
+        _check(trace, original["trace"], "RewardBench full original inputs, rewards, verdicts and task association")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["configuration"], original["identity"]),
+               "RewardBench source model and exact historical preference pair")
+        _check(None if pd.isna(row.response) else float(row.response), original["grade"], "RewardBench unchanged native grade")
+        _check(row.trial, trials[key], "RewardBench native observation occurrence")
+        _check(row.test_condition, original["condition"], "RewardBench native subset and scoring mode")
+        _check(pd.isna(row.interactors), True, "RewardBench no fabricated interactors")
+        _check(tuple(trace_row[k] for k in ("subject_id", "item_id", "trial", "test_condition")),
+               (row.subject_id, row.item_id, row.trial, row.test_condition), "RewardBench full trace relationship")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "RewardBench every native file row exactly once")
+    return dict(source_observations=len(native), source_configurations=len(subjects), source_items=len(definitions),
+                source_task_versions=source["banks"], **source["statistics"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -17873,7 +18048,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
