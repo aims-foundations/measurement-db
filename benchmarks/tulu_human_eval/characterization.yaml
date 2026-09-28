@@ -1,0 +1,130 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2300
+    logical_sha256: 1eb5583ac42c352aa9aaa99edfdbae8a8dbc0e0156df271f705aa98680a4e833
+  subjects:
+    rows: 4
+    logical_sha256: 0befb0077b0688045c5c671e0c9e5ff6c0151552d7e5aa8e3e25ca8eedb0c7c1
+  responses:
+    rows: 2300
+    logical_sha256: c679ac2e83fadb5f867de4d0e4f7493453c2d886646d2263d410cf64fa0ea947
+  items:
+    rows: 1028
+    logical_sha256: cde7adb7e8452ef367be21b09025c707935ae6cd96c4c232b76fade387187b1a
+  benchmarks:
+    rows: 1
+    logical_sha256: 5b4c721051b22c0c6f1be2f91f2e9c57c1171519ac13277e09f084f507d22704
+source_claims:
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 1818
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 482
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 2300
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 2300
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 1028
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 332
+  source_raters:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 16
+  source_annotation_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 1150
+  source_comparison_instances:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 996
+  source_latest_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 1141
+  source_superseded_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 9
+  source_formula_completions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 6
+  source_export_discrepancies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+    locator: Pinned human_eval/data workbook and JSONL; source text read without evaluating Excel formulas.
+    scope: All individual acceptability ratings, their paired comparison context and recorded rater aliases. No
+      model or judge execution.
+    expected: 2

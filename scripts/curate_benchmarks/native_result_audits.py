@@ -21371,12 +21371,130 @@ def _truthfulqa_mc(directory, tables, metadata, source_records=None):
         source_failures=len(seen) - successes, source_runs=len(source['configurations']))
 
 
+def _tulu_human_sources(directory):
+    """Read original spreadsheet cells without pandas' formula/NA conversion."""
+    from datetime import datetime
+    import openpyxl
+
+    raw = Path(directory) / 'raw/human_eval/data'
+    workbook = openpyxl.load_workbook(raw / 'eval_annotations_tulu_1.xlsx', read_only=True, data_only=False)
+    sheet = workbook.active
+    columns = next(sheet.values)
+    native, formulas = {}, {}
+    try:
+        for index, cells in enumerate(sheet.iter_rows(min_row=2)):
+            if all(cell.value is None for cell in cells):
+                continue
+            record = dict(zip(columns, [cell.value.isoformat() if isinstance(cell.value, datetime)
+                else cell.value for cell in cells], strict=True))
+            _check(record['instance_index'] == int(record['instance_index']), True, 'Tulu integral comparison index')
+            native[index] = record
+            formulas.update({(index, name): cell.value for name, cell in zip(columns, cells, strict=True)
+                if cell.data_type == 'f'})
+    finally:
+        workbook.close()
+    instances = _jsonl(raw / 'eval_instances_tulu_1.jsonl')
+    latest, attempts, mismatches = {}, {}, []
+    for index, record in native.items():
+        instance = instances[int(record['instance_index'])]
+        _check((record['instance_id'], record['prompt']), (instance['id'], instance['prompt']), 'Tulu original comparison prompt association')
+        completions = {entry['model']: entry['completion'] for entry in instance['completions']}
+        _check(set(completions), {record['model_a'], record['model_b']}, 'Tulu original compared models')
+        key = int(record['instance_index']), record['evaluator']
+        if key not in latest or record['timestamp'] > native[latest[key]]['timestamp']:
+            latest[key] = index
+        for side in ('a', 'b'):
+            _check(record[f'completion_{side}_is_acceptable'] in ('yes', 'no'), True, 'Tulu original human binary rating')
+            attempts[index, side] = completions[record['model_' + side]]
+            if record['completion_' + side] != attempts[index, side]:
+                mismatches.append((index, side))
+    _check(set(native), set(range(len(native))), 'Tulu contiguous original worksheet rows')
+    _check(len({row['id'] for row in native.values()}), len(native), 'Tulu unique original annotation identifiers')
+    return dict(native=native, instances=instances, latest=set(latest.values()), attempts=attempts,
+        formulas=formulas, mismatches=mismatches)
+
+
+def _tulu_human_eval(directory, tables, metadata, source=None):
+    """Check every acceptability judgment, source context, formula and rater."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _tulu_human_sources(directory) if source is None else source
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'Tulu unique ' + name + ' identifiers')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(tables['responses']), len(source['attempts']), 'Tulu complete annotation coverage')
+    _check(set(traces), set(tables['responses'].response_id), 'Tulu complete trace linkage')
+    labels = metadata['build']['parameters']['labels']
+    trials, expected_trials = Counter(), {}
+    for (index, side), completion in source['attempts'].items():
+        original = source['native'][index]
+        key = original['model_' + side], original['instance_id'], original['evaluator'], int(original['instance_index']), side
+        trials[key] += 1
+        expected_trials[index, side] = trials[key]
+    seen, definitions, model_names, counts = set(), {}, {}, Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['side']
+        _check(key in source['attempts'] and key not in seen, True, 'Tulu unique source rating association')
+        _check(set(trace), {'source_file', 'source_row', 'side', 'annotation_record', 'comparison_instance',
+            'completion_exports_match', 'is_latest_annotation', 'observation_scope'}, 'Tulu complete trace fields')
+        original = source['native'][key[0]]
+        instance = source['instances'][int(original['instance_index'])]
+        _check(trace['source_file'], 'human_eval/data/eval_annotations_tulu_1.xlsx', 'Tulu original annotation file')
+        _check(trace['annotation_record'], original, 'Tulu literal complete worksheet record')
+        _check(trace['comparison_instance'], instance, 'Tulu complete original comparison instance')
+        _check(trace['completion_exports_match'], key not in source['mismatches'], 'Tulu explicit completion discrepancy')
+        _check(trace['is_latest_annotation'], key[0] in source['latest'], 'Tulu original annotation revision status')
+        _check(trace['observation_scope'], labels['observation_scope'], 'Tulu ratings are not independent generations')
+        expected_grade = float(original[f'completion_{key[1]}_is_acceptable'] == 'yes')
+        _check(row.response, expected_grade, 'Tulu unmodified human acceptability grade')
+        _check(row.trial, expected_trials[key], 'Tulu original rating occurrence order')
+        _check(row.test_condition, f"comparison_instance={int(original['instance_index'])};presentation_side={key[1]}",
+            'Tulu recorded paired presentation condition')
+        _check(pd.isna(row.interactors), True, 'Tulu no invented model interactors')
+        model = original['model_' + key[1]]
+        subject = subjects[row.subject_id]
+        _check(subject['display_name'], model, 'Tulu literal model association')
+        _check(subject['harness'], labels['harness'], 'Tulu original human evaluation harness')
+        features = dict(source_model_label=model, configuration_status=labels['configuration_status'])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)), 'Tulu explicit unknown generation configuration')
+        model_names[row.subject_id] = model
+        item = items[row.item_id]
+        _check((item['raw_item_id'], item['content']), (original['instance_id'], original['prompt']), 'Tulu original prompt identity and full text')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=metadata['grading']['rule']), 'Tulu human acceptance rubric')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judged_by'), verifier.get('judge')),
+            ('judge', 'human', original['evaluator']), 'Tulu rater belongs to grading protocol')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['human'], 'Tulu original verifier declaration')
+        _check(pd.isna(item['item_features']) and pd.isna(item['asset_manifest']), True, 'Tulu no invented item features or assets')
+        definition = original['instance_id'], original['prompt'], original['evaluator']
+        if row.item_id in definitions:
+            _check(definitions[row.item_id], definition, 'Tulu stable prompt and grading identity')
+        definitions[row.item_id] = definition
+        seen.add(key)
+        counts['source_successes' if expected_grade else 'source_failures'] += 1
+    _check(seen, set(source['attempts']), 'Tulu every original annotation side exactly once')
+    _check(set(definitions), set(items), 'Tulu no orphan items')
+    _check(len(set(definitions.values())), len(items), 'Tulu no duplicated prompt/rater definitions')
+    _check(set(model_names), set(subjects), 'Tulu no orphan subjects')
+    _check(Counter(model_names.values()), Counter({row['model_' + side]: 1 for row in source['native'].values()
+        for side in ('a', 'b')}), 'Tulu exactly the original recorded models')
+    counts.update(source_responses=len(seen), source_traces=len(traces), source_subjects=len(subjects), source_items=len(items),
+        source_questions=len({row['instance_id'] for row in source['native'].values()}), source_raters=len({row['evaluator'] for row in source['native'].values()}),
+        source_annotation_records=len(source['native']), source_comparison_instances=len(source['instances']),
+        source_latest_annotations=len(source['latest']), source_superseded_annotations=len(source['native']) - len(source['latest']),
+        source_formula_completions=len(source['formulas']), source_export_discrepancies=len(source['mismatches']))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

@@ -1,0 +1,83 @@
+benchmark:
+  name: Tulu Human Evaluation
+  description: Released Tulu 1 human acceptability judgments for four language models on 332 instruction-following
+    prompts.
+  testing_condition: Each workbook record contains two individual acceptability ratings of saved model completions.
+    Retain all annotation records, including earlier submissions by the same rater, with their original timestamps
+    and paired presentation context. Repeated ratings are not independent model generations. Rater identity is part
+    of the grading protocol. Pairwise preferences are preserved in traces, not converted into acceptability grades.
+  paper_url: https://arxiv.org/abs/2306.04751
+  data_source_url: https://github.com/allenai/open-instruct/tree/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval
+  subject_type: model
+  item_type: prompt
+  license: Apache-2.0 for the original Open Instruct release; source prompts and model outputs retain their upstream
+    terms.
+  citation: Wang et al. How Far Can Camels Go? Exploring the State of Instruction Tuning on Open Resources. NeurIPS
+    2023 Datasets and Benchmarks.
+  tags:
+  - instruction_tuning
+  - human_evaluation
+  - acceptability
+  modality:
+  - text
+  domain:
+  - instruction_following
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Human rater marked the completion unacceptable
+      '1': Human rater marked the completion acceptable
+  categorical: true
+  release_date: 2023-06
+  release: public
+  granularity: item
+  version: Tulu 1 released human annotations; 99b1ee970490a2d0d5664663eb0b1acc410b944c
+  one_line_description: Measures human acceptability of saved instruction-following model responses.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      annotations: human_eval/data/eval_annotations_tulu_1.xlsx
+      instances: human_eval/data/eval_instances_tulu_1.jsonl
+    rename:
+      completion_a_is_acceptable: acceptable_a
+      completion_b_is_acceptable: acceptable_b
+    acceptability:
+      'yes': '1'
+      'no': '0'
+    labels:
+      harness: Tulu 1 human evaluation
+      configuration_status: Literal model names from the original release. Exact historical model snapshots, generation
+        settings and prompt wrappers are not included in these exports.
+      observation_scope: One human acceptability judgment; repeated annotations do not imply new model generations.
+      condition: comparison_instance={instance_index};presentation_side={side}
+grading:
+  rule: 'Use the released human acceptability label: yes = 1, no = 0. The annotation interface asks whether the
+    output addresses the request without significant errors or meaningless text. Do not recompute judgments or substitute
+    pairwise preferences. Retain all original submissions; the trace marks the latest submission for each comparison-instance/rater,
+    since the upstream analysis removes earlier submissions.'
+  verifiers:
+    human:
+      kind: released_human_acceptability
+      source: https://github.com/allenai/open-instruct/blob/99b1ee970490a2d0d5664663eb0b1acc410b944c/human_eval/templates/index.html
+      implementation: Original annotation interface Q1 and Q2
+      context: Two completions were presented together; the interface permits external tools. Preserve their recorded
+        model order and individual rater alias.
+      export: Read Excel formula cells as literal formula text. The unchanged workbook and JSONL are separate original
+        exports; two completion strings differ in cell references and both are preserved.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/allenai/open-instruct
+    revision: 99b1ee970490a2d0d5664663eb0b1acc410b944c
+    files:
+    - match: human_eval/.*
+      path: '{path}'
+    - match: (LICENSE|README\.md)
+      path: '{path}'

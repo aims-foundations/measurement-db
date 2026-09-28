@@ -1,0 +1,3 @@
+- Preserve all 2,300 acceptability judgments from 1,150 original annotation rows: four models, 332 prompts and 16 recorded rater aliases. Raters belong to the grading protocol; repeated ratings are not new generations.
+- Join the full annotation workbook to all 996 released comparison instances. Preserve both exports, preferences and timestamps; mark superseded annotations without dropping them.
+- Read formula cells as text, restoring six completions obscured by cached Excel values. Two formula strings differ from the JSONL in cell references; retain both versions and flag the discrepancy. Historical generation configuration is unavailable.
