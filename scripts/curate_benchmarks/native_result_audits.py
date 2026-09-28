@@ -18032,6 +18032,210 @@ def _rewardbench(directory, tables, metadata, source=None):
                 source_task_versions=source["banks"], **source["statistics"])
 
 
+def _refgrader_remove_spans(text):
+    """Character-scanned reconstruction of the source formatter, including nesting."""
+    import re
+
+    while True:
+        stack, spans, index = [], [], 0
+        while index < len(text):
+            if text[index:index + 5].lower() == "<span":
+                end = text.find(">", index)
+                if end < 0:
+                    index += 1
+                    continue
+                if re.search(r'class\s*=\s*"([^"]*)"', text[index:end + 1], re.IGNORECASE):
+                    stack.append((index, end + 1))
+                index = end + 1
+            elif text[index:index + 7].lower() == "</span>":
+                if stack:
+                    start, content_start = stack.pop()
+                    spans.append((start, index + 7, text[content_start:index]))
+                index += 7
+            else:
+                index += 1
+        if not spans:
+            return text
+        for start, end, content in sorted(spans, key=lambda value: value[0], reverse=True):
+            text = text[:start] + content + text[end:]
+
+
+def _refgrader_sources(directory, metadata):
+    """Read original cache calls and additional samples without DataFrame expansion."""
+    import math
+
+    raw = directory / "raw"
+    native, definitions, configurations, stripped = {}, {}, {}, {}
+    counts = Counter()
+    prompt_paths = {"absolute": "absolute_grader.MD", "three_stage": "relative_grader_without_rubrics.MD",
+                    "FLEXIBLE": "relative_grader.MD", "FLEXIBLE_ORGANIZED": "relative_grader_organized.MD",
+                    "EXPLICIT_ERROR_ANALYSIS": "relative_grader_with_explicit_error_analysis.MD"}
+    prompts = {key: (raw / "code/prompts/graders" / name).read_text() for key, name in prompt_paths.items()}
+    labels = {"incorrect": "1", "some correct": "3", "some correct information": "3", "almost correct": "5", "correct": "7"}
+    for filename, dataset in (("imo-shortlist.json", "imo_shortlist"), ("math_arena_results.json", "matharena")):
+        records = json.loads((raw / "data" / filename).read_text(),
+                            parse_constant=lambda value: {"native_nonfinite_number": value})["data"]
+        for source_row, record in enumerate(records):
+            problem = record["problem_data"]
+            for config, cache in record["stage_cache"].items():
+                for workflow, node in cache.items():
+                    final = (workflow.startswith("absolute_grade_") or workflow.startswith("stage3_grade_")
+                             or workflow.startswith("stage5_") and not workflow.startswith("stage5_error_analysis_"))
+                    if not final:
+                        if workflow.startswith("error_analysis_"):
+                            counts["source_auxiliary_assessment_cells"] += len(node)
+                        continue
+                    for student, cell in node.items():
+                        _check(student.startswith("S") and student[1:].isdigit(), True, "RefGrader original student identifier")
+                        inputs = cell["stage_inputs"]
+                        _check(inputs["problem"], problem["problem_statement"], "RefGrader recorded problem association")
+                        solution = inputs["student_solution"]
+                        if inputs["remove_tags"]:
+                            if solution not in stripped:
+                                stripped[solution] = _refgrader_remove_spans(solution)
+                            supplied_solution = stripped[solution]
+                        else:
+                            supplied_solution = solution
+                        if workflow.startswith("absolute_grade_"):
+                            prompt_key = "absolute"
+                            suffix = f'\n[Given Student Solution]:\n{supplied_solution}\n'
+                        elif workflow.startswith("stage3_grade_"):
+                            prompt_key = "three_stage"
+                            suffix = (f"\n[Contestant's proposed solution]:\n{supplied_solution}\n"
+                                      f'\n[Reference correct solution]:\n{inputs["similar_solution"]}\n')
+                        else:
+                            prompt_key = inputs["grader_type"]
+                            suffix = (f'\n[Given Student Solution]:\n{supplied_solution}\n'
+                                      f'\n[Correct Model Solution]:\n{inputs["model_solution"]}\n'
+                                      f'\n[Detailed Rubric (out of 7 points)]:\n{inputs["rubric"]}\n')
+                        content = prompts[prompt_key] + f'\n\n--- INPUT DATA ---\n\n[Problem Statement]:\n{inputs["problem"]}\n' + suffix
+                        student_metadata = problem["student_metadata"].get(student, {})
+                        same_solution = solution == problem["student_solutions"][student]
+                        if not same_solution:
+                            reference = None
+                        elif dataset == "imo_shortlist":
+                            reference = labels.get(str(student_metadata.get("correctness", "")).strip().lower())
+                        else:
+                            human = student_metadata.get("grade")
+                            _check(human is None or float(human) in range(8), True, "RefGrader original human credit scale")
+                            reference = None if human is None else str(int(human))
+                        identity = content, reference
+                        definitions.setdefault(identity, dict(dataset=dataset, workflow=workflow,
+                            raw_item_id=f'{dataset}:{record["problem_id"]}:{student}:{workflow}',
+                            prompt_source="code/prompts/graders/" + prompt_paths[prompt_key]))
+                        samples = [cell["result"]] + cell.get("sampling_results", [])
+                        if "sampling_results" in cell:
+                            _check(cell["num_samples"], len(samples), "RefGrader original plus additional sample count")
+                        counts["source_initial_calls"] += 1
+                        counts["source_additional_calls"] += len(samples) - 1
+                        for sample_index, result in enumerate(samples):
+                            mode = "initial" if sample_index == 0 else "additional"
+                            subject = config, workflow, mode
+                            configurations[subject] = True
+                            parsed, status = result, "native_structured_result"
+                            if isinstance(result, str):
+                                text = result.strip()
+                                if text.startswith("```json\n") and text.endswith("```"):
+                                    text = text[len("```json\n"):-3]
+                                elif text.startswith("```\n") and text.endswith("```"):
+                                    text = text[len("```\n"):-3]
+                                try:
+                                    parsed = json.loads(text)
+                                    status = "decoded_native_json_string"
+                                except ValueError:
+                                    parsed, status = {}, "unparseable_native_result"
+                            assessment = parsed.get("overall_assessment", {}) if isinstance(parsed, dict) else {}
+                            grade = assessment.get("score")
+                            try:
+                                grade = float(grade)
+                                valid = math.isfinite(grade) and grade in range(8)
+                            except (ValueError, TypeError):
+                                valid = False
+                            if not valid:
+                                grade = None
+                                if status != "unparseable_native_result":
+                                    status = "invalid_or_missing_native_grade"
+                            counts["source_" + status] += 1
+                            counts["source_unmatched_human_references"] += int(not same_solution)
+                            source_file = "data/" + filename
+                            key = source_file, source_row, config, workflow, student, sample_index
+                            trace = dict(source_file=source_file, source_row=source_row,
+                                source_problem_id=record["problem_id"], source_student_id=student,
+                                model_configuration=config, workflow=workflow, sample_index=sample_index,
+                                grade_status=status, native_result=result, student_metadata=student_metadata,
+                                reference_association="matching_source_solution" if same_solution else "different_cached_solution",
+                                different_reference_solution=None if same_solution else problem["student_solutions"][student],
+                                cache_metadata={k: v for k, v in cell.items() if k not in ("result", "sampling_results")})
+                            native[key] = dict(trace=trace, grade=grade, subject=subject, identity=identity,
+                                               condition=f"dataset={dataset};method={workflow}")
+    return dict(native=native, definitions=definitions, configurations=configurations, counts=dict(counts))
+
+
+def _refgrader(directory, tables, metadata, source=None):
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = source or _refgrader_sources(directory, metadata)
+    native, definitions = source["native"], source["definitions"]
+    parameters = metadata["build"]["parameters"]
+    subjects, items = {}, {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        subject = features["source_model_configuration"], features["workflow"], features["sampling_mode"]
+        _check(subject in source["configurations"], True, "RefGrader original configuration/workflow/sample mode")
+        expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
+        expected.update(source_model_configuration=subject[0], workflow=subject[1], sampling_mode=subject[2])
+        _check(features, expected, "RefGrader configuration without invented effective API settings")
+        _check(row.display_name, "RefGrader / " + ":".join(subject), "RefGrader literal configuration labels")
+        _check(row.harness, "RefGrader", "RefGrader source harness")
+        for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
+            _check(pd.isna(getattr(row, field)), True, "RefGrader no unrecorded historical setting: " + field)
+        subjects[row.subject_id] = subject
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source["configurations"]}), "RefGrader complete configurations")
+    for row in tables["items"].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        identity = row.content, criterion.get("reference_answer")
+        _check(identity in definitions, True, "RefGrader exact input and matched human reference")
+        original = definitions[identity]
+        _check(row.raw_item_id, original["raw_item_id"], "RefGrader original task/solution/workflow alias")
+        _check(_features(row.item_features), {key: original[key] for key in ("dataset", "workflow", "prompt_source")},
+               "RefGrader stimulus metadata excludes human outcomes")
+        _check(criterion, json.loads(canonical_grading_criterion(dict(reference_answer=identity[1], rule=metadata["grading"]["rule"]))),
+               "RefGrader separate matched human reference and rating protocol")
+        verifier = json.loads(row.verifier)
+        _check((verifier["class"], json.loads(verifier["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
+               "RefGrader native rating import without new grading")
+        _check(pd.isna(row.asset_manifest), True, "RefGrader text-only grading request")
+        items[row.item_id] = identity
+    _check(Counter(items.values()), Counter({key: 1 for key in definitions}), "RefGrader exact reconstructed requests and references")
+    _check(len(tables.get("assets", [])), 0, "RefGrader no fabricated assets")
+    _check(len(tables["responses"]), len(native), "RefGrader all primary and sampled calls retained")
+    _check(tables["responses"].response_id.nunique(), len(native), "RefGrader unique native observation identities")
+    _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "RefGrader one complete selected-call trace")
+    traces = tables["traces"].set_index("response_id").to_dict("index")
+    seen, occurrences, trials = Counter(), Counter(), {}
+    for key, original in native.items():
+        group = original["subject"], original["identity"], original["condition"]
+        occurrences[group] += 1
+        trials[key] = occurrences[group]
+    for row in tables["responses"].itertuples():
+        trace_row = traces[row.response_id]
+        trace = json.loads(trace_row["trace"])
+        key = tuple(trace[k] for k in ("source_file", "source_row", "model_configuration", "workflow", "source_student_id", "sample_index"))
+        original = native[key]
+        _check(trace, original["trace"], "RefGrader complete selected result, cache metadata and reference association")
+        _check((subjects[row.subject_id], items[row.item_id]), (original["subject"], original["identity"]),
+               "RefGrader actual source-described request and grader configuration")
+        _check(None if pd.isna(row.response) else float(row.response), original["grade"], "RefGrader original assigned credit without rounding")
+        _check(row.trial, trials[key], "RefGrader additional samples preserved as recorded repetitions")
+        _check(row.test_condition, original["condition"], "RefGrader dataset and workflow condition")
+        _check(pd.isna(row.interactors), True, "RefGrader no fabricated interactors")
+        _check(tuple(trace_row[k] for k in ("subject_id", "item_id", "trial", "test_condition")),
+               (row.subject_id, row.item_id, row.trial, row.test_condition), "RefGrader complete trace relationship")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "RefGrader each released final grading call exactly once")
+    return dict(source_observations=len(native), source_configurations=len(subjects), source_items=len(items), **source["counts"])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18048,7 +18252,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
