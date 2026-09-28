@@ -20703,12 +20703,180 @@ def _swe_live_tabular(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces))
 
 
+def _swe_poly_sources(directory, metadata):
+    """Read original attempts without treating empty task-bank exports as runs."""
+    import ast
+    import csv
+    from collections import defaultdict
+    import hashlib
+    import re
+
+    raw, banks, native, configurations, counts = directory / 'raw', {}, {}, {}, Counter()
+    previous_limit = csv.field_size_limit(2**31 - 1)
+    try:
+        for split, folder in [('PB', 'bank'), ('PBVerified', 'bank_verified')]:
+            with (raw / folder / 'test.csv').open(newline='') as stream:
+                for record in csv.DictReader(stream):
+                    key = split, record['instance_id']
+                    _check(key not in banks, True, 'PolyBench unique original task keys')
+                    banks[key] = dict(record=record, file=folder + '/test.csv')
+    finally:
+        csv.field_size_limit(previous_limit)
+    release = raw / 'release'
+    definitions = set()
+    for metadata_file in sorted(release.glob('evaluation/*/*/metadata.yaml')):
+        folder = metadata_file.parent
+        run, split = str(folder.relative_to(release)), folder.parent.name
+        configurations[run] = yaml.safe_load(metadata_file.read_text())
+        predictions, results, artifacts = {}, {}, defaultdict(list)
+        for line in (folder / 'all_preds.jsonl').read_text().splitlines():
+            if line.strip():
+                record = json.loads(line)
+                _check(record['instance_id'] not in predictions, True, 'PolyBench unique original prediction IDs')
+                predictions[record['instance_id']] = record
+                counts['source_prediction_records'] += 1
+                counts['source_empty_predictions'] += not bool(record.get('model_patch'))
+        for path in sorted((folder / 'logs').glob('*_result.json')):
+            record = json.loads(path.read_text())
+            instance = record['instance_id']
+            _check((path.name.removesuffix('_result.json'), instance not in results),
+                (instance, True), 'PolyBench unique original result association')
+            _check(all(type(record[field]) is bool for field in ['generation', 'patch_applied', 'with_logs',
+                'resolved', 'all_f2p_passed', 'no_p2p_failed']), True, 'PolyBench explicit boolean source flags')
+            results[instance] = record
+            counts['source_result_records'] += 1
+        for path in sorted((folder / 'trajs').rglob('*')):
+            if not path.is_file():
+                continue
+            match = re.search(r'(?:^|/)([^/]+?__[^/]+?-\d+)(?=/|\.|$)', str(path.relative_to(folder)))
+            _check(bool(match), True, 'PolyBench original trajectory has a task ID')
+            instance = match[1]
+            _check((split, instance) in banks, True, 'PolyBench trajectory has an official task')
+            with path.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            artifacts[instance].append(dict(source_file=str(path.relative_to(raw)), sha256=digest, bytes=path.stat().st_size))
+            counts['source_trajectory_files'] += 1
+            counts['source_trajectory_bytes'] += path.stat().st_size
+        attempted = set(predictions) | set(artifacts) | {instance for instance, record in results.items()
+            if record['generation'] or record['patch_applied'] or record['with_logs']}
+        for instance in set(results) - attempted:
+            record = results[instance]
+            _check(not any(record[field] for field in ['generation', 'patch_applied', 'with_logs', 'resolved',
+                'all_f2p_passed', 'no_p2p_failed', 'passed_tests', 'failed_tests']), True,
+                'PolyBench raw-only records have no attempt evidence')
+            counts['source_default_only_raw_records'] += 1
+        for instance in sorted(attempted):
+            _check((split, instance) in banks, True, 'PolyBench every attempt has a released task')
+            task = banks[split, instance]
+            result = results.get(instance)
+            if result and result['with_logs']:
+                f2p, p2p = (set(ast.literal_eval(task['record'][field])) for field in ['F2P', 'P2P'])
+                f2p_passed = f2p <= set(result['passed_tests'])
+                p2p_passed = not bool(p2p & set(result['failed_tests']))
+                _check((result['all_f2p_passed'], result['no_p2p_failed'], result['resolved']),
+                    (f2p_passed, p2p_passed, f2p_passed and p2p_passed), 'PolyBench original test-list grading interpretation')
+            metrics = folder / 'logs' / (instance + '_metrics.json')
+            metric_record = None
+            if metrics.exists():
+                _check(json.loads(metrics.read_text())['instance_id'], instance, 'PolyBench native retrieval association')
+                with metrics.open('rb') as stream:
+                    metric_record = dict(source_file=str(metrics.relative_to(raw)),
+                        sha256=hashlib.file_digest(stream, 'sha256').hexdigest(), bytes=metrics.stat().st_size)
+            grade = float(result['resolved']) if result is not None else None
+            native[run, instance] = dict(prediction=predictions.get(instance), result=result, grade=grade,
+                artifacts=artifacts.get(instance, []), metrics=metric_record, task=task, split=split)
+            definitions.add((split, instance))
+            counts['source_trace_only_attempts'] += instance in artifacts and instance not in predictions
+            counts['source_ungraded' if grade is None else 'source_successes' if grade == 1 else 'source_failures'] += 1
+    counts.update(source_responses=len(native), source_configurations=len(configurations), source_items=len(definitions))
+    _check((len(native), len(configurations), len(definitions), counts['source_result_records'],
+            counts['source_default_only_raw_records'], counts['source_trace_only_attempts']),
+        (1871, 7, 547, 6129, 4259, 7), 'PolyBench independently reviewed original census')
+    return dict(native=native, configurations=configurations, counts=dict(counts))
+
+
+def _swe_poly_tabular(directory, tables, metadata, source=None):
+    """Reconcile each attempt, grading environment and complete original artifact."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = source or _swe_poly_sources(directory, metadata)
+    labels = metadata['build']['parameters']['labels']
+    for name, key in [('responses', 'response_id'), ('subjects', 'subject_id'), ('items', 'item_id'), ('traces', 'response_id')]:
+        _check(tables[name][key].is_unique, True, 'PolyBench unique ' + name + ' IDs')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'PolyBench complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'PolyBench exact recorded-attempt coverage')
+    seen, used_items, used_subjects = set(), set(), {}
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        _check(set(trace), {'kind', 'source_run', 'instance_id', 'prediction_file', 'prediction', 'result_file', 'result',
+            'artifacts', 'retrieval_metrics', 'task_source', 'protocol_scope'}, 'PolyBench complete trace contract')
+        key = trace['source_run'], trace['instance_id']
+        _check(key in source['native'] and key not in seen, True, 'PolyBench source-supported unique attempt')
+        expected = source['native'][key]
+        run, instance = key
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'PolyBench exact native verdict or unavailable grade')
+        _check(row.trial, 1, 'PolyBench one recorded trial per source configuration')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'PolyBench no invented response conditions')
+        subject = subjects[row.subject_id]
+        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
+            (source['configurations'][run]['name'], labels['harness'], True), 'PolyBench literal source configuration')
+        features = canonicalize_features(dict(source_submission=run, configuration_scope=labels['configuration_scope'],
+            source_readme='release/' + run + '/README.md'))
+        _check(subject['subject_features_extra'], features_string(features), 'PolyBench complete configuration provenance')
+        task, split = expected['task']['record'], expected['split']
+        item = items[row.item_id]
+        _check((item['content'], item['raw_item_id']), (task['problem_statement'], split + '/' + instance),
+            'PolyBench complete task input and split')
+        features = canonicalize_features(dict(source_instance_id=instance, split=split, repo=task['repo'],
+            base_commit=task['base_commit'], language=task['language'], task_definition_file=expected['task']['file'],
+            task_version_scope=labels['task_version_scope']))
+        _check(item['item_features'], features_string(features), 'PolyBench complete task provenance')
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion['reference_answer'], task['patch'], 'PolyBench complete reference patch')
+        _check(json.loads(criterion['rule']), dict(rule=metadata['grading']['rule'],
+            checks={field: task[field] for field in ['repo', 'base_commit', 'test_patch', 'Dockerfile', 'F2P', 'P2P', 'F2F', 'test_command']}),
+            'PolyBench complete native tests and grading environment')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')), ('exact_matcher', None, None),
+            'PolyBench native test verifier without invented judge')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published_report'], 'PolyBench original verifier provenance')
+        _check((trace['kind'], trace['protocol_scope']), ('published_attempt_record', labels['task_version_scope']), 'PolyBench explicit protocol scope')
+        _check((trace['prediction'], trace['result']), (expected['prediction'], expected['result']), 'PolyBench complete original prediction and result')
+        _check((trace['prediction_file'], trace['result_file'], trace['task_source']),
+            ('release/' + run + '/all_preds.jsonl' if expected['prediction'] is not None else None,
+             'release/' + run + '/logs/' + instance + '_result.json' if expected['result'] is not None else None,
+             expected['task']['file']), 'PolyBench exact original record associations')
+        artifacts = {}
+        for artifact in trace['artifacts']:
+            _check(set(artifact), {'source_file', 'content'}, 'PolyBench complete original artifact')
+            name = artifact['source_file']
+            _check(name not in artifacts, True, 'PolyBench unique artifact association')
+            artifacts[name] = dict(source_file=name, sha256=_digest(artifact['content']), bytes=len(artifact['content'].encode('utf-8')))
+        _check(artifacts, {record['source_file']: record for record in expected['artifacts']}, 'PolyBench unmodified complete trajectory bytes')
+        actual_metrics = trace['retrieval_metrics']
+        if actual_metrics is not None:
+            _check(set(actual_metrics), {'source_file', 'content'}, 'PolyBench complete retrieval export')
+            actual_metrics = dict(source_file=actual_metrics['source_file'], sha256=_digest(actual_metrics['content']),
+                bytes=len(actual_metrics['content'].encode('utf-8')))
+        _check(actual_metrics, expected['metrics'], 'PolyBench unmodified original retrieval export')
+        seen.add(key); used_items.add(row.item_id); used_subjects[row.subject_id] = run
+    _check(seen, set(source['native']), 'PolyBench all original attempts retained')
+    _check((used_items, set(used_subjects)), (set(items), set(subjects)), 'PolyBench no orphan entities')
+    _check(Counter(used_subjects.values()), Counter({run: 1 for run in source['configurations']}), 'PolyBench distinct source configurations')
+    _check(len(items), source['counts']['source_items'], 'PolyBench distinct full and Verified task definitions')
+    return dict(source['counts'], source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

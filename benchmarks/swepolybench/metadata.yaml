@@ -1,0 +1,107 @@
+benchmark:
+  description: Recorded coding-agent attempts on multilingual repository issues, including full and Verified task
+    definitions.
+  testing_condition: Preserve predictions, trajectories and native final verdicts by original run and task. Default
+    result exports without attempt evidence remain in raw. Full and Verified releases retain their distinct grading
+    environments.
+  paper_url: https://arxiv.org/abs/2504.08703
+  data_source_url: https://github.com/amazon-science/SWE-PolyBench
+  subject_type: agent
+  item_type: task
+  license: CC-BY-NC-4.0 for the captured submission branch; MIT for the official task banks and evaluation harness.
+  citation: "@misc{rashid2025swepolybenchmultilanguagebenchmarkrepository,\n      title={SWE-PolyBench: A multi-language\
+    \ benchmark for repository level evaluation of coding agents},\n      author={Muhammad Shihab Rashid and Christian\
+    \ Bock and Yuan Zhuang and Alexander Buchholz and Tim Esler and Simon Valentin and Luca Franceschi and Martin\
+    \ Wistuba and Prabhu Teja Sivaprasad and Woo Jung Kim and Anoop Deoras and Giovanni Zappella and Laurent Callot},\n\
+    \      year={2025},\n      eprint={2504.08703},\n      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n\
+    \      url={https://arxiv.org/abs/2504.08703},\n}"
+  tags:
+  - coding
+  modality:
+  - text
+  domain:
+  - software_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2025-04
+  release: public
+  name: SWE-PolyBench
+  version: submission:e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1
+  one_line_description: Evaluates coding-agent issue resolution using repository tests.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+    labels:
+      harness: SWE-PolyBench published agent submissions
+      configuration_scope: Literal source submission. Historical settings not recorded in the original metadata
+        or trajectories are unknown.
+      task_version_scope: Pinned full or Verified task definition. Exact evaluator and task-bank revisions for each
+        historical run are not fully recorded.
+    task_banks:
+      PB: bank/test.csv
+      PBVerified: bank_verified/test.csv
+    patterns:
+      instance_id: ([^/]+?__[^/]+?-\d+)(?=/|\.|$)
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/amazon-science/SWE-PolyBench
+    revision: e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1
+    files:
+    - match: .*
+      path: release/{path}
+  - name: harness
+    url: https://github.com/amazon-science/SWE-PolyBench
+    revision: 9c836c5d7f3cb991934132b77d29e6941d912a07
+    files:
+    - match: .*
+      path: harness/{path}
+  - name: bank
+    url: https://huggingface.co/datasets/AmazonScience/SWE-PolyBench
+    revision: d56445f9940eae4e9d2974ec66820c2f1d7754e6
+    files:
+    - match: .*
+      path: bank/{path}
+  - name: bank_verified
+    url: https://huggingface.co/datasets/AmazonScience/SWE-PolyBench_Verified
+    revision: b3fca77b637379f0c01ad86d18753a7ac1998b53
+    files:
+    - match: .*
+      path: bank_verified/{path}
+grading:
+  rule: 'Import the explicit native resolved boolean for an observed attempt: success is 1 and failure is 0. The
+    original evaluator requires every fail-to-pass test to pass and no pass-to-pass test to fail. A missing result
+    remains ungraded. Keep predictions and trajectories that ended without a patch as attempted failures when the
+    source supplies that verdict. Default result files without independent attempt evidence do not establish a model
+    attempt.'
+  verifiers:
+    published_report:
+      kind: original_repository_tests
+      source: https://github.com/amazon-science/SWE-PolyBench/blob/9c836c5d7f3cb991934132b77d29e6941d912a07/src/poly_bench_evaluation/scoring.py
+      function: instance_level_scoring
+      rule: 'Import the explicit native resolved boolean for an observed attempt: success is 1 and failure is 0.
+        The original evaluator requires every fail-to-pass test to pass and no pass-to-pass test to fail. A missing
+        result remains ungraded. Keep predictions and trajectories that ended without a patch as attempted failures
+        when the source supplies that verdict. Default result files without independent attempt evidence do not
+        establish a model attempt.'
+      task_fields:
+      - repo
+      - base_commit
+      - test_patch
+      - Dockerfile
+      - F2P
+      - P2P
+      - F2F
+      - test_command

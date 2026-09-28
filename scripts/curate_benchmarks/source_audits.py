@@ -958,3 +958,4 @@ SOURCE_AUDITS["subjective_qa"] = verify_native_results
 
 SOURCE_AUDITS["summeval"] = verify_native_results
 SOURCE_AUDITS["swebench_live"] = verify_native_results
+SOURCE_AUDITS["swepolybench"] = verify_native_results
