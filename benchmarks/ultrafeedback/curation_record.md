@@ -1,0 +1,3 @@
+- Retain 255,864 full completions and all 1,023,456 aspect annotation slots. Keep 13,723 N/A ratings ungraded and flag three out-of-scale zeros without changing their source evidence.
+- Distinguish recorded model/principle/system-prompt configurations and four grading aspects. Preserve full prompts, completions, rationales, references and native aggregate scores; remove the legacy text caps.
+- Preserve repeated instruction exports as source-record conditions. One empty completion list adds no observations. Historical judge order, exact model snapshots and some annotation-template aliases remain unavailable.

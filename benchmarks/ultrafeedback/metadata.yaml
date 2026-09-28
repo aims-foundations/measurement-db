@@ -1,0 +1,112 @@
+benchmark:
+  name: UltraFeedback
+  description: Released model completions with GPT-4 ratings for instruction following, honesty, truthfulness and
+    helpfulness.
+  testing_condition: Import recorded 1–5 aspect ratings, without executing a generator or judge. Keep N/A ratings
+    ungraded; preserve and flag the three out-of-scale zero ratings as ungraded. The 17 literal model labels have
+    743 distinct model/principle/system-prompt configurations. The original judge compares four completions together
+    after shuffling; the historical presentation order and exact GPT-4 snapshot are not recorded. Released rubric
+    variants are preserved by reference, but the example annotation script imports undefined template aliases, so
+    exact historical judge requests cannot be reconstructed. Source-record conditions distinguish repeated instruction
+    exports without asserting independent reruns. Native aggregate scores are retained as source evidence, not used
+    or recalculated as aspect grades.
+  paper_url: https://arxiv.org/abs/2310.01377
+  data_source_url: https://huggingface.co/datasets/openbmb/UltraFeedback
+  subject_type: model
+  item_type: instruction
+  license: MIT, as declared in the pinned upstream dataset card. Original attribution and card are retained.
+  citation: 'Cui et al. UltraFeedback: Boosting Language Models with Scaled AI Feedback. 2023. arXiv:2310.01377.'
+  tags:
+  - preference
+  - instruction_following
+  - llm_judge
+  modality:
+  - text
+  domain:
+  - preference
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+    meanings:
+      '1': Original level 1 of the item-specific aspect rubric
+      '2': Original level 2 of the item-specific aspect rubric
+      '3': Original level 3 of the item-specific aspect rubric
+      '4': Original level 4 of the item-specific aspect rubric
+      '5': Original level 5 of the item-specific aspect rubric
+  categorical: true
+  multi_single_turn: single_turn
+  release_date: '2023-09-26'
+  release: public
+  granularity: item
+  version: 40b436560ca83a8dba36114c22ab3c66e43f6d5e
+  one_line_description: Measures four aspects of released model completions using recorded GPT-4 feedback.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      dataset: dataset
+    labels:
+      harness: UltraFeedback
+      judge: gpt-4
+      configuration_status: Literal model alias and recorded principle prompt. Exact historical snapshots and per-run
+        inference settings are unavailable.
+      trace_scope: Full selected completion and original instruction record header. Other compared completions remain
+        in the referenced raw record. Historical shuffled judge order is unavailable.
+      released: released_grade
+      missing: not_applicable
+      invalid: invalid_rating_preserved
+grading:
+  rule: Read the selected aspect annotation Rating. Values 1 through 5 are original ordered grades. N/A is ungraded.
+    Preserve out-of-scale 0 in source evidence and flag it without inventing a valid grade.
+  verifiers:
+    instruction_following:
+      kind: published_llm_rating
+      source: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/preference_templates.py
+      implementation: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/annotate_preference.py
+      aspect: instruction_following
+      rubric: instruction_following_template
+      historical_scope: Published rubric references and recorded annotations. The example script contains undefined
+        template aliases; exact historical request and shuffled presentation order are not available.
+      execution: read_recorded_rating_only
+    honesty:
+      kind: published_llm_rating
+      source: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/preference_templates.py
+      implementation: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/annotate_preference.py
+      aspect: honesty
+      rubric: honesty_template
+      historical_scope: Published rubric references and recorded annotations. The example script contains undefined
+        template aliases; exact historical request and shuffled presentation order are not available.
+      execution: read_recorded_rating_only
+    truthfulness:
+      kind: published_llm_rating
+      source: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/preference_templates.py
+      implementation: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/annotate_preference.py
+      aspect: truthfulness
+      rubric: truthfulness_template_with_answer and truthfulness_template_without_answer
+      historical_scope: Published rubric references and recorded annotations. The example script contains undefined
+        template aliases; exact historical request and shuffled presentation order are not available.
+      execution: read_recorded_rating_only
+    helpfulness:
+      kind: published_llm_rating
+      source: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/preference_templates.py
+      implementation: https://github.com/OpenBMB/UltraFeedback/blob/bf80fd46a8c6ceecc86e8babb1ae8771f26a3cbb/src/data_annotation/annotate_preference.py
+      aspect: helpfulness
+      rubric: helpfulness_template_with_answer and helpfulness_template_without_answer
+      historical_scope: Published rubric references and recorded annotations. The example script contains undefined
+        template aliases; exact historical request and shuffled presentation order are not available.
+      execution: read_recorded_rating_only
+sources:
+  upstream:
+  - name: dataset
+    url: https://huggingface.co/datasets/openbmb/UltraFeedback
+    revision: 40b436560ca83a8dba36114c22ab3c66e43f6d5e
+    files:
+    - match: .*
+      path: dataset/{path}

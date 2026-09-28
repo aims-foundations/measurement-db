@@ -21709,12 +21709,137 @@ def _txbench_pp(directory, tables, metadata, source=None):
         source_truncated_preview_steps=sum(step.get('truncated',False) for preview in source['previews'].values() for step in preview['steps']))
 
 
+def _ultrafeedback_sources(directory):
+    """Read native JSONL independently of the builder's DataFrame operations."""
+    records, configurations, counts = {}, set(), Counter()
+    for path in sorted((Path(directory) / 'raw/dataset').glob('*.jsonl')):
+        with path.open() as stream:
+            for index, line in enumerate(stream):
+                record = json.loads(line)
+                records['dataset/' + path.name, index] = record
+                counts['source_instruction_records'] += 1
+                counts['source_empty_completion_records'] += not record['completions']
+                for completion in record['completions']:
+                    configurations.add((completion['model'], completion['principle'], completion['custom_system_prompt']))
+                    counts['source_completions'] += 1
+                    _check(set(completion['annotations']), {'instruction_following', 'honesty', 'truthfulness', 'helpfulness'},
+                        'UltraFeedback four original grading aspects')
+                    for annotation in completion['annotations'].values():
+                        rating = annotation['Rating']
+                        _check(rating in ['1', '2', '3', '4', '5', 'N/A', '0'], True, 'UltraFeedback reviewed source rating')
+                        counts['source_responses'] += 1
+                        counts['source_graded'] += rating not in ['N/A', '0']
+                        counts['source_not_applicable'] += rating == 'N/A'
+                        counts['source_invalid_ratings'] += rating == '0'
+    counts['source_subjects'] = len(configurations)
+    counts['source_models'] = len({row[0] for row in configurations})
+    counts['source_system_prompts'] = len({row[2] for row in configurations})
+    return dict(records=records, configurations=configurations, counts=dict(counts))
+
+
+def _ultrafeedback(directory, tables, metadata, source=None):
+    """Check all native ratings, complete traces and configuration associations."""
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _ultrafeedback_sources(directory) if source is None else source
+    counts = source['counts']
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'UltraFeedback unique ' + name + ' identifiers')
+    _check(len(tables['responses']), counts['source_responses'], 'UltraFeedback complete annotation coverage')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'UltraFeedback complete trace linkage')
+    labels = metadata['build']['parameters']['labels']
+    configurations = {}
+    for identity, subject in subjects.items():
+        features = _features(subject['subject_features_extra'])
+        _check(set(features), {'source_model_label', 'principle', 'system_prompt_json', 'configuration_status'},
+            'UltraFeedback complete subject features')
+        prompt = json.loads(features['system_prompt_json'])
+        configuration = subject['display_name'], features['principle'], prompt
+        _check(configuration in source['configurations'], True, 'UltraFeedback original generation configuration')
+        expected = dict(source_model_label=configuration[0], principle=configuration[1],
+            system_prompt_json=json.dumps(prompt, ensure_ascii=True).replace(';', '\\u003b').replace('=', '\\u003d'),
+            configuration_status=labels['configuration_status'])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(expected)), 'UltraFeedback full recorded system prompt and configuration')
+        _check(subject['harness'], labels['harness'], 'UltraFeedback original generation harness')
+        configurations[identity] = configuration
+    _check(Counter(configurations.values()), Counter({key: 1 for key in source['configurations']}), 'UltraFeedback every distinct configuration')
+    seen, checked_items, used_subjects, grade_counts = set(), {}, set(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        _check(set(trace), {'source_file', 'source_row', 'completion_index', 'aspect', 'instruction_record',
+            'native_completion', 'grade_status', 'scope'}, 'UltraFeedback complete trace fields')
+        original_key = trace['source_file'], trace['source_row']
+        _check(original_key in source['records'], True, 'UltraFeedback original instruction association')
+        original = source['records'][original_key]
+        ci, aspect = trace['completion_index'], trace['aspect']
+        _check(isinstance(ci, int) and not isinstance(ci, bool) and 0 <= ci < len(original['completions']), True,
+            'UltraFeedback original completion association')
+        completion = original['completions'][ci]
+        _check(aspect in completion['annotations'], True, 'UltraFeedback original aspect association')
+        key = original_key + (ci, aspect)
+        _check(key not in seen, True, 'UltraFeedback unique native annotation association')
+        _check(trace['instruction_record'], {name: value for name, value in original.items() if name != 'completions'},
+            'UltraFeedback full instruction record and references')
+        _check(trace['native_completion'], completion, 'UltraFeedback complete original generation and annotations')
+        _check(trace['scope'], labels['trace_scope'], 'UltraFeedback explicit trace scope')
+        rating = completion['annotations'][aspect]['Rating']
+        grade = None if rating in ['N/A', '0'] else float(rating)
+        status = labels['missing'] if rating == 'N/A' else labels['invalid'] if rating == '0' else labels['released']
+        _check(None if pd.isna(row.response) else row.response, grade, 'UltraFeedback original valid rating or null')
+        _check(trace['grade_status'], status, 'UltraFeedback distinct unavailable and invalid ratings')
+        _check(row.trial, 1, 'UltraFeedback one recorded annotation per source condition')
+        _check(row.test_condition, 'source_file=' + original_key[0] + ';source_row=' + str(original_key[1]),
+            'UltraFeedback original comparison record condition')
+        _check(pd.isna(row.interactors), True, 'UltraFeedback no invented interactors')
+        _check(configurations[row.subject_id], (completion['model'], completion['principle'], completion['custom_system_prompt']),
+            'UltraFeedback correct generation configuration association')
+        item = items[row.item_id]
+        _check(unicodedata.normalize('NFC', item['content']).strip(), unicodedata.normalize('NFC', original['instruction']).strip(),
+            'UltraFeedback untruncated instruction content')
+        definition = (aspect, original['source'], json.dumps(original['correct_answers'], ensure_ascii=False),
+            json.dumps(original['incorrect_answers'], ensure_ascii=False))
+        if row.item_id in checked_items:
+            _check(definition, checked_items[row.item_id], 'UltraFeedback stable item grading identity')
+        else:
+            _check(item['content'], original['instruction'], 'UltraFeedback complete first instruction representation')
+            _check(item['raw_item_id'], original_key[0] + ':' + str(original_key[1]), 'UltraFeedback original item source alias')
+            _check(item['item_features'], features_string(canonicalize_features(dict(aspect=aspect, upstream_subset=original['source']))),
+                'UltraFeedback aspect and instruction-source identity')
+            criterion = json.loads(item['grading_criterion'])
+            reference = None if original['correct_answers'] == ['None'] else json.dumps(original['correct_answers'], ensure_ascii=False)
+            _check(criterion.get('reference_answer'), reference, 'UltraFeedback original reference answers and sentinel')
+            _check(json.loads(criterion['rule']), dict(interpretation=metadata['grading']['rule'], aspect=aspect,
+                source=original['source'], correct_answers=original['correct_answers'], incorrect_answers=original['incorrect_answers']),
+                'UltraFeedback complete grading rule and reference context')
+            verifier = json.loads(item['verifier'])
+            _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')), ('judge', labels['judge'], 'llm'),
+                'UltraFeedback original recorded judge')
+            _check(json.loads(verifier['spec']), metadata['grading']['verifiers'][aspect], 'UltraFeedback correct published aspect protocol')
+            _check(pd.isna(item['asset_manifest']), True, 'UltraFeedback no invented input assets')
+            checked_items[row.item_id] = definition
+        used_subjects.add(row.subject_id)
+        seen.add(key)
+        grade_counts['source_graded'] += grade is not None
+        grade_counts['source_not_applicable'] += rating == 'N/A'
+        grade_counts['source_invalid_ratings'] += rating == '0'
+    _check(len(seen), counts['source_responses'], 'UltraFeedback every original aspect annotation')
+    _check(set(checked_items), set(items), 'UltraFeedback no orphan items')
+    _check(used_subjects, set(subjects), 'UltraFeedback no orphan subjects')
+    for key, value in grade_counts.items():
+        _check(value, counts[key], 'UltraFeedback exact ' + key)
+    return dict(counts, source_items=len(items), source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
