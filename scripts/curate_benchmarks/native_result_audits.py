@@ -20171,12 +20171,221 @@ def _statqa(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces))
 
 
+def _subjective_qa_sources(directory, metadata):
+    """Independently check source requests, aliases, prompts and human references."""
+    import ast
+    import csv
+    import re
+    import openpyxl
+
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    release = directory / 'raw' / layout['release']
+    workbook = openpyxl.load_workbook(release / layout['bank'], read_only=True, data_only=True)
+    records = workbook.active.iter_rows(values_only=True)
+    columns = next(records)
+    bank = {}
+    for position, values in enumerate(records):
+        row = dict(zip(columns, (str(value) if value is not None else '' for value in values)))
+        key = row['QUESTION'], row['ANSWER']
+        _check(key not in bank, True, 'SubjECTive-QA unique original question/answer key')
+        bank[key] = position, row
+    workbook.close()
+    formatters = {}
+    for script, name, key in [('openai_benchmarking.py', 'gpt_prompt', 'openai'),
+                               ('togetherai_benchmarking.py', 'prompt', 'together')]:
+        path = release / 'scripts' / script
+        nodes = ast.parse(path.read_text()).body
+        definitions = next(ast.literal_eval(node.value) for node in nodes
+            if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+            and node.targets[0].id == 'definition_map')
+        _check(definitions, parameters['definitions'], 'SubjECTive-QA original feature definitions')
+        function = next(node for node in nodes if isinstance(node, ast.FunctionDef) and node.name == name)
+        _check(all(isinstance(node, (ast.Assign, ast.Return)) for node in function.body), True,
+            'SubjECTive-QA inspected pure formatting function')
+        namespace = {}
+        exec(compile(ast.Module(body=[function], type_ignores=[]), str(path), 'exec'), namespace)
+        formatters[key] = namespace[name]
+    native, definitions, configurations, counts = {}, {}, {}, Counter()
+    for path in sorted((release / layout['results']).rglob('*.csv')):
+        if 'updated' in path.name:
+            continue
+        with path.open(newline='') as stream:
+            original = list(csv.DictReader(stream))
+        updates = list(path.parent.glob('*updated*'))
+        _check(len(updates) <= 1, True, 'SubjECTive-QA unique annotation export')
+        annotations = None
+        if updates:
+            with updates[0].open(newline='') as stream:
+                annotations = list(csv.DictReader(stream))
+            _check(len(annotations), len(original), 'SubjECTive-QA complete annotation export')
+        dimension, vendor = path.relative_to(release).parts[2:4]
+        for position, record in enumerate(original):
+            if annotations is not None:
+                _check({key: annotations[position][key] for key in record}, record,
+                    'SubjECTive-QA rating annotation preserves original fields')
+            bank_row, task = bank[record['questions'], record['answers']]
+            _check(record['actual_labels'], task[dimension], 'SubjECTive-QA human label matches workbook')
+            serialized = record['complete_responses']
+            settings, status = None, 'provider_repr'
+            if serialized.startswith('{'):
+                try:
+                    value = ast.literal_eval(serialized)
+                    status = 'valid_python_literal'
+                    _check(value['output']['choices'][0]['text'], record['llm_responses'],
+                        'SubjECTive-QA native message and exported output agree')
+                except (SyntaxError, ValueError) as error:
+                    if isinstance(error, ValueError) and 'SubjECTive-QA' in str(error):
+                        raise
+                    value = ast.literal_eval(serialized.partition(", 'subjobs':")[0] + '}')
+                    status = 'invalid_python_literal_preserved'
+                request_id, model = value['id'], value['model']
+                _check(len(value['prompt']), 1, 'SubjECTive-QA one recorded request prompt')
+                prompt = value['prompt'][0]
+                _check(value['args']['prompt'], prompt, 'SubjECTive-QA recorded prompt copies agree')
+                _check(all(text in prompt for text in [record['questions'], record['answers'], dimension]),
+                    True, 'SubjECTive-QA captured prompt refers to the original task')
+                _check(value['args']['model'], model, 'SubjECTive-QA recorded model copies agree')
+                settings = {key: value for key, value in value['args'].items() if key not in ['model', 'prompt']}
+                settings = json.dumps(settings, sort_keys=True)
+                messages, input_scope = [dict(role='user', content=prompt)], labels['recorded']
+            else:
+                if serialized.startswith('ChatCompletion('):
+                    call = ast.parse(serialized, mode='eval').body
+                    _check(isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+                        and call.func.id == 'ChatCompletion', True, 'SubjECTive-QA original OpenAI response representation')
+                    values = {keyword.arg: keyword.value for keyword in call.keywords}
+                    request_id, model = ast.literal_eval(values['id']), ast.literal_eval(values['model'])
+                    choice = values['choices'].elts[0]
+                    message = next(keyword.value for keyword in choice.keywords if keyword.arg == 'message')
+                    content = next(ast.literal_eval(keyword.value) for keyword in message.keywords if keyword.arg == 'content')
+                    _check(content, record['llm_responses'], 'SubjECTive-QA native message and exported output agree')
+                else:
+                    header = re.match(r"id='([^']+)' object=<[^>]+> created=\d+ model='([^']+)' choices=", serialized)
+                    _check(header is not None, True, 'SubjECTive-QA original Together response header')
+                    request_id, model = header.groups()
+                    content = re.search(r"message=ChatCompletionMessage\(role=<[^>]+>, content=('(?:\\.|[^'\\])*'|\"(?:\\.|[^\"\\])*\"), tool_calls=", serialized)
+                    _check(content is not None, True, 'SubjECTive-QA original Together message literal')
+                    _check(ast.literal_eval(content[1]), record['llm_responses'],
+                        'SubjECTive-QA native message and exported output agree')
+                engine = 'openai' if vendor == 'gpt-4o' else 'together'
+                prompt = formatters[engine](dimension, parameters['definitions'][dimension], record['questions'], record['answers'])
+                _check(parameters['templates'][engine].format(feature=dimension,
+                    definition=parameters['definitions'][dimension], question=record['questions'], answer=record['answers']),
+                    prompt, 'SubjECTive-QA released canonical prompt template')
+                _check(parameters['templates']['system'], 'You are an expert sentence classifier.',
+                    'SubjECTive-QA released system instruction')
+                messages = [dict(role='system', content='You are an expert sentence classifier.'), dict(role='user', content=prompt)]
+                input_scope = labels['reconstructed']
+            if annotations is not None:
+                text = annotations[position]['Rating']
+                rating = float(text) if text else None
+                grade_status = labels['annotation']
+            else:
+                token = next((character for character in record['llm_responses'] if character in '012'), None)
+                rating = int(token) if token is not None else None
+                grade_status = labels['fallback']
+            _check(rating is None or rating in (0, 1, 2), True, 'SubjECTive-QA valid classification rating')
+            if rating is None:
+                grade_status = labels['missing']
+            grade = float(rating == int(record['actual_labels'])) if rating is not None else None
+            content = json.dumps(messages, ensure_ascii=False)
+            configuration = model, settings
+            item = dict(content=content, reference=record['actual_labels'], dimension=dimension,
+                bank_row=bank_row, input_scope=input_scope, raw_item_id=f'{dimension}::{bank_row}')
+            export = dict(source_file=str(path.relative_to(directory / 'raw')), source_row=position,
+                source_record=record, annotation_file=str(updates[0].relative_to(directory / 'raw')) if updates else None,
+                annotation_rating=annotations[position]['Rating'] if annotations is not None else None,
+                source_serialization_status=status)
+            expected = dict(configuration=configuration, item=item, grade=grade, rating=rating,
+                grade_status=grade_status, input_scope=input_scope, output=record['llm_responses'])
+            if request_id in native:
+                _check({key: native[request_id][key] for key in expected}, expected,
+                    'SubjECTive-QA repeated request IDs preserve the same observation')
+                native[request_id]['exports'].append(export)
+                counts['source_alias_rows'] += 1
+            else:
+                native[request_id] = dict(expected, exports=[export])
+            definitions[content, record['actual_labels']] = item
+            configurations[configuration] = configuration
+            counts['source_rows'] += 1
+            counts['source_invalid_serializations'] += status == 'invalid_python_literal_preserved'
+    for request_id, record in native.items():
+        record['trace'] = dict(request_id=request_id, source_exports=record['exports'],
+            predicted_rating=int(record['rating']) if record['rating'] is not None else None,
+            grade_status=record['grade_status'], input_scope=record['input_scope'])
+        counts['source_graded' if record['grade'] is not None else 'source_ungraded'] += 1
+        counts['source_correct'] += int(record['grade'] or 0)
+        counts['source_recorded_prompts'] += record['input_scope'] == labels['recorded']
+        counts['source_legacy_parser_grades'] += record['grade_status'] == labels['fallback']
+        counts['source_annotation_grades'] += record['grade_status'] == labels['annotation']
+    counts.update(source_responses=len(native), source_configurations=len(configurations),
+        source_definitions=len(definitions), source_question_answer_pairs=len(bank))
+    return dict(native=native, configurations=configurations, definitions=definitions, counts=dict(counts))
+
+
+def _subjective_qa(directory, tables, metadata, source=None):
+    """Compare every final observation and all of its aliases with original exports."""
+    from collections import defaultdict
+
+    source = source or _subjective_qa_sources(directory, metadata)
+    labels = metadata['build']['parameters']['labels']
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'SubjECTive-QA unique ' + name + ' IDs')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'SubjECTive-QA complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'SubjECTive-QA exact original request coverage')
+    seen, used_items, configurations, trials = set(), set(), {}, defaultdict(list)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        request_id = trace['request_id']
+        _check(request_id in source['native'] and request_id not in seen, True, 'SubjECTive-QA unique native request association')
+        expected = source['native'][request_id]
+        _check(trace, expected['trace'], 'SubjECTive-QA complete original exports, aliases and parser status')
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'SubjECTive-QA explicit rating rule or unavailable rating')
+        model, settings = expected['configuration']
+        subject = subjects[row.subject_id]
+        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
+            (model, labels['harness'], True), 'SubjECTive-QA literal recorded model and harness identity')
+        _check(_features(subject['subject_features_extra']), dict(source_model_label=model,
+            inference_settings=settings if settings is not None else 'unknown',
+            configuration_status=labels['known_settings'] if settings is not None else labels['unknown_settings']),
+            'SubjECTive-QA recorded settings and explicit unknowns')
+        configurations[row.subject_id] = expected['configuration']
+        item, original = items[row.item_id], expected['item']
+        _check((item['content'], item['raw_item_id']), (original['content'], original['raw_item_id']),
+            'SubjECTive-QA full task prompt and original workbook identity')
+        _check(_features(item['item_features']), dict(dimension=original['dimension'],
+            source_bank_row=str(original['bank_row']), input_scope=original['input_scope']),
+            'SubjECTive-QA original dimension and prompt availability')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=original['reference'], rule=metadata['grading']['rule']),
+            'SubjECTive-QA original human reference and grading declaration')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], json.loads(verifier['spec'])),
+            ('exact_matcher', metadata['grading']['verifiers']['classification']), 'SubjECTive-QA explicit classification verifier')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'SubjECTive-QA no invented judge call')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'SubjECTive-QA no invented response conditions')
+        seen.add(request_id); used_items.add(row.item_id)
+        trials[row.subject_id, row.item_id].append(row.trial)
+    _check(seen, set(source['native']), 'SubjECTive-QA every native request retained')
+    _check((used_items, set(configurations)), (set(items), set(subjects)), 'SubjECTive-QA no orphan subjects or items')
+    _check(Counter(configurations.values()), Counter({key: 1 for key in source['configurations']}),
+        'SubjECTive-QA exact recorded configurations')
+    _check(len(items), len(source['definitions']), 'SubjECTive-QA complete task definitions')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'SubjECTive-QA consecutive distinct request trials')
+    return dict(source['counts'], source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
