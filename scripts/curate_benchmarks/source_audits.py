@@ -941,3 +941,4 @@ SOURCE_AUDITS["refgrader"] = verify_native_results
 SOURCE_AUDITS["reliancescope"] = verify_native_results
 
 SOURCE_AUDITS["researchclawbench"] = verify_native_results
+SOURCE_AUDITS["robust_reasoning_benchmark"] = verify_native_results

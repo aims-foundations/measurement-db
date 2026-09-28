@@ -1,0 +1,3 @@
+- Preserve 146,160 distinct recorded attempts and their complete system/user prompts. Count 5 byte-identical run exports once; retain every alias and full original output in traces.
+- Distinguish 31 recorded inference configurations across 8 literal model labels. Preserve native task grades; retain 120 explicit API errors as ungraded attempts. Text reconstruction uses its own reference text and recovery criterion.
+- Capture pinned original inputs without executing upstream code. Missing historical API settings remain unknown; pinned grader code does not establish historical grader versions. Source redistribution terms are unconfirmed, so data remain local.

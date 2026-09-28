@@ -18552,6 +18552,147 @@ def _researchclawbench(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _robust_reasoning_sources(directory, metadata):
+    """Read named native runs and their summaries without the builder's table joins."""
+    import hashlib
+    import math
+
+    raw = directory / 'raw'
+    runs = {}
+    counts = Counter()
+    for path in sorted(raw.glob('experiments/*/results/**/*.json')):
+        with path.open('rb') as stream:
+            digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+        relative = path.relative_to(raw).as_posix()
+        if path.name in runs:
+            _check(digest, runs[path.name]['digest'], 'RRB identical copies of a named run')
+            runs[path.name]['aliases'].append(relative)
+            counts['source_duplicate_exports'] += 1
+        else:
+            runs[path.name] = dict(path=path, digest=digest, aliases=[relative])
+    native, definitions, configurations, occurrences = {}, {}, set(), Counter()
+    settings = ('max_model_length', 'max_tokens', 'temperature', 'top_p')
+    for run_id, run in runs.items():
+        records = json.loads(run['path'].read_text())
+        _check(set(records[-1]), {'summary'}, 'RRB final native summary')
+        records, summary = records[:-1], records[-1]['summary']
+        parts = run['path'].relative_to(raw).parts
+        task = 'recovery' if parts[1] == 'decode_recovery' else 'math'
+        subject = parts[3], tuple(summary.get(name) for name in settings)
+        configurations.add(subject)
+        grade_field = 'recovered' if task == 'recovery' else 'correct'
+        success = sum(record[grade_field] for record in records)
+        metrics = dict(total=len(records), **{grade_field: success,
+            'recovery_rate' if task == 'recovery' else 'accuracy': success / len(records)})
+        if task == 'recovery':
+            _check(summary['char_error_threshold'], 0.02, 'RRB native reconstruction threshold')
+            exact = sum(record['exact_normalized_match'] for record in records)
+            metrics.update(exact_normalized_match=exact, exact_normalized_match_rate=exact / len(records),
+                missing_tags=sum(not record['has_recovered_tags'] for record in records),
+                estimated_cer_count=sum(record['char_error_rate_estimated'] for record in records),
+                residual_status_counts=dict(Counter(record['residual_status'] for record in records)))
+        if 'refusals' in summary:
+            refusals = sum(record.get('refusal', False) for record in records)
+            metrics.update(refusals=refusals, attempted=len(records) - refusals)
+            if len(records) > refusals:
+                metrics['accuracy_attempted'] = success / (len(records) - refusals)
+        if 'avg_output_tokens' in summary:
+            metrics['avg_output_tokens'] = sum(record['output_tokens'] for record in records) / len(records)
+        for name, value in metrics.items():
+            original = summary[name]
+            matched = math.isclose(original, value, rel_tol=1e-12, abs_tol=1e-12) if isinstance(value, float) else original == value
+            _check(matched, True, 'RRB original run summary: ' + run_id + '/' + name)
+            counts['source_summary_checks'] += 1
+        counts['source_duplicate_observations'] += len(records) * (len(run['aliases']) - 1)
+        for position, record in enumerate(records):
+            _check(type(record[grade_field]), bool, 'RRB boolean task-specific native grade')
+            _check(all(isinstance(record.get(name), str) for name in ('system_prompt', 'original', 'output')),
+                   True, 'RRB complete recorded messages and output')
+            _check(record.get('context_preview', ''), '', 'RRB no omitted separately recorded context')
+            _check(record.get('distractor_token_count', 0), 0, 'RRB context already in recorded prompt')
+            content = 'System:\n' + record['system_prompt'] + '\n\nUser:\n' + record['original']
+            reference = record['canonical_original'] if task == 'recovery' else str(record['ground_truth'])
+            identity = _digest(content), reference, task
+            definitions.setdefault(identity, dict(content=content, raw_item_id=parts[4] + ':' + str(record['id']),
+                features=dict(task=task, source_dataset=parts[4])))
+            error = record['output'].startswith('ERROR') and not record.get('refusal', False)
+            grade = None if error else float(record[grade_field])
+            trace = dict(source_files=run['aliases'], source_row=position, native_summary=summary, native_record=record)
+            occurrences[subject, identity] += 1
+            native[run_id, position] = dict(subject=subject, identity=identity, grade=grade,
+                trial=occurrences[subject, identity], trace_digest=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)))
+            counts['source_' + task + '_observations'] += 1
+            counts['source_api_errors'] += int(error)
+            counts['source_empty_outputs'] += int(record['output'] == '')
+            counts['source_refusals'] += int(record.get('refusal', False))
+    counts.update(source_observations=len(native), source_runs=len(runs), source_items=len(definitions),
+                  source_configurations=len(configurations), source_model_labels=len({key[0] for key in configurations}))
+    return dict(native=native, definitions=definitions, configurations=configurations, counts=dict(counts))
+
+
+def _robust_reasoning_benchmark(directory, tables, metadata, source=None):
+    import ast
+
+    source = source or _robust_reasoning_sources(directory, metadata)
+    subjects, items = {}, {}
+    settings = ('max_model_length', 'max_tokens', 'temperature', 'top_p')
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        configuration = ast.literal_eval(features['inference_settings'])
+        _check(set(configuration), set(settings), 'RRB only explicitly recorded inference settings')
+        key = features['recorded_model'], tuple(configuration[name] for name in settings)
+        _check(row.display_name, key[0], 'RRB literal model label')
+        _check(row.harness, 'Robust Reasoning Benchmark', 'RRB measurement harness')
+        _check(features, dict(recorded_model=key[0], inference_settings=str(configuration), historical_api_revision='not_recorded'),
+               'RRB no invented effective historical API configuration')
+        for field in ('harness_version', 'reasoning_effort', 'access_date'):
+            _check(pd.isna(getattr(row, field)), True, 'RRB unrecorded setting remains unknown: ' + field)
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'RRB all recorded configurations')
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        criterion = json.loads(row.grading_criterion)
+        task = features['task']
+        key = _digest(row.content), criterion['reference_answer'], task
+        original = source['definitions'][key]
+        _check(row.content, original['content'], 'RRB complete recorded system and user messages')
+        _check(row.raw_item_id, original['raw_item_id'], 'RRB original dataset/item alias')
+        _check(features, original['features'], 'RRB input attributes contain no outcomes')
+        _check(criterion, dict(reference_answer=key[1], rule=metadata['grading']['verifiers'][task]['rule']),
+               'RRB separate text reconstruction and mathematical reference answers')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], json.loads(verifier['spec'])), ('judge', metadata['grading']['verifiers'][task]),
+               'RRB task-specific original grading protocol')
+        _check(pd.isna(row.asset_manifest), True, 'RRB complete text-only requests')
+        items[row.item_id] = key
+    _check(Counter(items.values()), Counter({key: 1 for key in source['definitions']}), 'RRB every recorded prompt/grading definition')
+    _check(len(tables.get('assets', [])), 0, 'RRB no invented input assets')
+    _check(len(tables['responses']), len(source['native']), 'RRB every distinct native observation')
+    _check(tables['responses'].response_id.nunique(), len(source['native']), 'RRB unique response identities')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'RRB one complete trace per observation')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace_row = traces[row.response_id]
+        trace = json.loads(trace_row['trace'])
+        key = Path(trace['source_files'][0]).name, trace['source_row']
+        original = source['native'][key]
+        _check(_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), original['trace_digest'],
+               'RRB full unchanged native output, prompt, summary and provenance')
+        _check((subjects[row.subject_id], items[row.item_id]), (original['subject'], original['identity']),
+               'RRB native model configuration and actual prompt association')
+        _check(None if pd.isna(row.response) else float(row.response), original['grade'], 'RRB source grade and explicit ungraded API errors')
+        _check(row.trial, original['trial'], 'RRB original run/sample occurrence order')
+        for field in ('test_condition', 'interactors'):
+            _check(pd.isna(getattr(row, field)), True, 'RRB no invented response field: ' + field)
+        _check(tuple(trace_row[field] for field in ('subject_id', 'item_id', 'trial')),
+               (row.subject_id, row.item_id, row.trial), 'RRB complete trace association')
+        _check(pd.isna(trace_row['test_condition']), True, 'RRB matching null trace condition')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'RRB native observation imported exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18568,7 +18709,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "robust_reasoning_benchmark": _robust_reasoning_benchmark, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
