@@ -1,0 +1,156 @@
+format_version: 1
+tables:
+  traces:
+    rows: 38564
+    logical_sha256: a2231d1a3ddfcbc036de9d4881250d5f1cf5084f22c155f55d34a8beb5916a22
+  subjects:
+    rows: 38
+    logical_sha256: ba91c4d196b3ea3e78d766513aa18dd5b5953a833f2bddddccb38a9e73f84745
+  responses:
+    rows: 38564
+    logical_sha256: 3db22066ec8125188c6675dc57eb918486704c38890c08c7e9dfe75c1e682f54
+  assets:
+    rows: 1457
+    logical_sha256: b851c45ce1d8ce8954fd840e8d7d3b11a2c19c0d0668b254050e1a61176c9d67
+  items:
+    rows: 4053
+    logical_sha256: c91b7bf97445705f70fe531b4909d6431a45599f34311957e98c50ad9ca29975
+  benchmarks:
+    rows: 1
+    logical_sha256: 758c7d1f710502e7c810305cfbf89085a6db6f1b8fa5803f9e299a7de50c9002
+source_claims:
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 38562
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 24913
+  source_invalid_replies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 1
+  source_image_conflicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 1
+  source_unobserved:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 6
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 38
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 2
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 38564
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 300
+  source_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 1015
+  source_image_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 1457
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 1457
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 38
+  source_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 4053
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/yuhangsu82/SketchJudge/tree/811fde74fe57ac65abc43266f244c2da460365a5
+    locator: Original results/{NoRef,WithRef} JSONL files, the linked SketchJudge_v1 archive and released prompt/evaluator
+      code.
+    scope: Every recorded attempt and complete query/image inputs. Empty replies and conflicting input associations
+      remain ungraded. Missing model-item attempts are not invented.
+    expected: 38564

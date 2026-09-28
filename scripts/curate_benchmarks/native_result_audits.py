@@ -19857,12 +19857,172 @@ def _situat3dchange(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces), source_items=len(items), source_subjects=len(tables['subjects']))
 
 
+def _sketchjudge_sources(directory, metadata):
+    """Independently join original diagram files, prompts, expert labels and replies."""
+    import hashlib
+    import io
+    import re
+    from collections import defaultdict
+    from zipfile import ZipFile
+    from PIL import Image
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    assets, native, configurations, aliases = {}, {}, set(), defaultdict(set)
+    counts = Counter()
+    with ZipFile(raw / layout['dataset']) as archive:
+        master = json.loads(archive.read(layout['master']))
+        questions = {row['question_id']: row for row in master['questions']}
+        annotations = {row['answer_id']: row for row in master['annotations']}
+        _check((len(questions), len(annotations)), (len(master['questions']), len(master['annotations'])), 'SketchJudge unique original question and answer IDs')
+        taxonomy = json.loads(archive.read(layout['taxonomy']))
+        taxonomy_text = {category: ''.join('\n' + row['label'] + ': ' + row['description'] for row in rows)
+            for category, rows in taxonomy.items()}
+        prompts = {name: yaml.safe_load((raw / layout['release'] / 'prompts' / ('prompt_' + name + '.yaml')).read_text())
+            for name in ['baseline', 'cot', 'rubric']}
+        image_hashes = {}
+        for path in sorted((raw / layout['release'] / 'results').glob('*/*.jsonl')):
+            file = str(path.relative_to(raw))
+            setting, stem = path.parent.name, path.stem
+            family = 'cot' if stem.endswith('_cot') else 'rubric' if stem.endswith('_rubric') else 'baseline'
+            model_key = stem.removesuffix('_' + family) if family != 'baseline' else stem
+            model = parameters['models'][model_key]
+            configuration = model_key, setting, family
+            configurations.add(configuration)
+            seen = set()
+            records = [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+            for position, record in enumerate(records):
+                answer = record['answer_id']
+                _check(answer in annotations and answer not in seen, True, 'SketchJudge unique original answer in each model file')
+                seen.add(answer)
+                annotation = annotations[answer]
+                question = questions[annotation['question_id']]
+                _check(type(annotation['is_correct']) is bool, True, 'SketchJudge original expert Boolean verdict')
+                expected_images = ([question['input_image_path']] if question['requires_input_image'] else []) + (
+                    [question['gt_image_path']] if setting == 'WithRef' else []) + [annotation['image_path']]
+                columns = sorted([key for key in record if re.fullmatch(r'image_\d+', key)], key=lambda key: int(key[6:]))
+                _check(columns, ['image_' + str(i) for i in range(len(expected_images))], 'SketchJudge consecutive original image slots')
+                paths, links = [], []
+                for i, column in enumerate(columns):
+                    normalized = re.sub('/+', '/', record[column].replace('\\', '/'))
+                    match = re.search(r'(?:^|/)(images/.*)', normalized)
+                    _check(match is not None, True, 'SketchJudge recorded diagram path')
+                    image_path = match[1]
+                    paths.append(image_path)
+                    if image_path not in image_hashes:
+                        data = archive.read(layout['prefix'] + image_path)
+                        with Image.open(io.BytesIO(data)) as image:
+                            _check(image.format, 'PNG', 'SketchJudge declared image media type')
+                            image.verify()
+                        digest = hashlib.sha256(data).hexdigest()
+                        image_hashes[image_path] = digest
+                        assets[digest] = len(data)
+                    links.append(dict(asset_id=image_hashes[image_path], path=column + '.png', media_type='image/png', role=column, ordinal=i + 1))
+                template_key = ('image_' if question['requires_input_image'] else 'no_image_') + ('with_gt' if setting == 'WithRef' else 'no_gt')
+                prompt = prompts[family][template_key].replace('[[QUERY_EN]]', question['query_en']).replace(
+                    '[[TAXONOMY_BULLETED]]', taxonomy_text[annotation['category']])
+                _check(record['query'], prompt, 'SketchJudge complete original prompt template and task text')
+                try:
+                    decoded = json.loads(record['response'])
+                except (ValueError, TypeError):
+                    decoded = None
+                valid = isinstance(decoded, dict) and type(decoded.get('is_correct')) is bool and (
+                    'error_count' not in decoded or isinstance(decoded['error_count'], int)) and (
+                    'error_list' not in decoded or isinstance(decoded['error_list'], list))
+                linked = paths == expected_images
+                grade = float(decoded['is_correct'] == annotation['is_correct']) if valid and linked else None
+                input_status = labels['valid_input'] if linked else labels['conflicting_input']
+                grade_status = labels['valid_grade'] if valid and linked else labels['conflicting_input'] if not linked else labels['invalid_grade']
+                reference = json.dumps(annotation['is_correct']) if linked else None
+                definition = json.dumps([prompt, annotation['category'], input_status, reference, links], sort_keys=True)
+                aliases[definition].add(answer + '/' + setting + '/' + family)
+                trace = dict(source_file=file, source_row=position, source_record=record,
+                    dataset_archive=layout['dataset'], master_member=layout['master'], source_question=question,
+                    source_annotation=annotation, recorded_images=paths, expected_images=expected_images,
+                    input_status=input_status, grade_status=grade_status, grade_scope=labels['grade_scope'])
+                native[file, position] = dict(trace=trace, grade=grade, configuration=configuration, model=model,
+                    content=prompt, category=annotation['category'], input_status=input_status, reference=reference,
+                    definition=definition, links=links)
+                counts['source_graded' if grade is not None else 'source_ungraded'] += 1
+                counts['source_correct'] += int(grade or 0)
+                counts['source_invalid_replies'] += not valid
+                counts['source_image_conflicts'] += not linked
+            counts['source_unobserved'] += len(annotations) - len(records)
+            counts['source_result_files'] += 1
+    counts.update(source_responses=len(native), source_questions=len(questions), source_answers=len(annotations),
+        source_image_files=len(image_hashes), source_assets=len(assets), source_configurations=len(configurations),
+        source_definitions=len(aliases))
+    return dict(native=native, assets=assets, configurations=configurations, aliases=aliases, counts=dict(counts))
+
+
+def _sketchjudge(directory, tables, metadata, source=None):
+    """Check all captured observations and bytes, including the explicit source conflict."""
+    import hashlib
+    from collections import defaultdict
+
+    source = source or _sketchjudge_sources(directory, metadata)
+    labels = metadata['build']['parameters']['labels']
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id'), ('assets', 'asset_id')]:
+        _check(tables[name][column].is_unique, True, 'SketchJudge unique ' + name + ' IDs')
+    subjects = {row.subject_id: row for row in tables['subjects'].itertuples()}
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'SketchJudge complete response/trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'SketchJudge complete original observation coverage')
+    seen, used, used_subjects, configurations = set(), set(), set(), {}
+    trials = defaultdict(list)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(type(trace['source_row']) is int and key in source['native'] and key not in seen,
+            True, 'SketchJudge unique original row association')
+        expected = source['native'][key]
+        _check(trace, expected['trace'], 'SketchJudge full original record and both image-association claims')
+        _check(pd.isna(row.response) if expected['grade'] is None else row.response == expected['grade'],
+            True, 'SketchJudge original verdict grade or explicit unavailable grade')
+        model_key, setting, family = expected['configuration']
+        subject = subjects[row.subject_id]
+        _check((subject.display_name, subject.harness, pd.isna(subject.harness_version)),
+            (expected['model'], labels['harness'], True), 'SketchJudge original model and harness identity')
+        _check(_features(subject.subject_features_extra), dict(source_model_label=model_key,
+            reference_setting=setting, prompt_family=family, reported_temperature='0', configuration_status=labels['configuration_status']),
+            'SketchJudge recorded reference setting and prompt configuration')
+        configurations[row.subject_id] = expected['configuration']
+        item = items[row.item_id]
+        _check(item['raw_item_id'] in source['aliases'][expected['definition']], True, 'SketchJudge original alias for identical content and grading')
+        _check(item['content'], expected['content'], 'SketchJudge full recorded prompt')
+        _check(_features(item['item_features']), dict(category=expected['category'], input_association=expected['input_status'],
+            input_scope=labels['input_scope']), 'SketchJudge original task features and explicit association status')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=expected['reference'], rule=metadata['grading']['rule']),
+            'SketchJudge expert reference only for a verified input association')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], json.loads(verifier['spec'])), ('exact_matcher', metadata['grading']['verifiers']['verdict']),
+            'SketchJudge released parser and verification rule')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'SketchJudge no invented judge call')
+        _check(json.loads(item['asset_manifest']), expected['links'], 'SketchJudge complete ordered diagram association')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'SketchJudge no invented response conditions')
+        seen.add(key); used.add(row.item_id); used_subjects.add(row.subject_id)
+        trials[row.subject_id, row.item_id].append(row.trial)
+    _check(seen, set(source['native']), 'SketchJudge every original observation retained')
+    _check((used, used_subjects), (set(items), set(subjects)), 'SketchJudge no orphan items or subjects')
+    _check(Counter(configurations.values()), Counter({value: 1 for value in source['configurations']}), 'SketchJudge all native configurations remain distinct')
+    _check(len(items), len(source['aliases']), 'SketchJudge all distinct stimulus and grading definitions')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'SketchJudge consecutive retained attempts')
+    _check(set(tables['assets'].asset_id), set(source['assets']), 'SketchJudge exact input asset coverage')
+    for row in tables['assets'].itertuples():
+        _check((hashlib.sha256(row.data).hexdigest(), len(row.data), row.byte_size),
+            (row.asset_id, source['assets'][row.asset_id], source['assets'][row.asset_id]), 'SketchJudge unchanged complete diagram bytes')
+    return dict(source['counts'], source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
