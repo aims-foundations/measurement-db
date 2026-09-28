@@ -1,0 +1,3 @@
+- **Sources:** Original 1,600-summary annotation release, original CNN/DailyMail story archives, pinned pairing script and paper; preserve all captured bytes in `raw/`. The newer scored annotation link is unavailable.
+- **Conversion:** Join each summary to its full source article; retain all 51,200 individual 1–5 ratings and full outputs. Four dimensions and two rater groups define 800 task/grading combinations. Rater positions are repeated assessments, not independent model runs.
+- **Limits:** Historical model preprocessing, decoding settings and global annotator IDs are unavailable. Do not infer a modern checkpoint from a paper alias or label third-party news articles as MIT.

@@ -20380,12 +20380,107 @@ def _subjective_qa(directory, tables, metadata, source=None):
     return dict(source['counts'], source_traces=len(traces))
 
 
+def _summeval_sources(directory, metadata):
+    """Read every native human assessment and recover its original article."""
+    import tarfile
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    records = [json.loads(line) for line in (raw / parameters['layout']['annotations']).read_text().splitlines() if line.strip()]
+    articles, references, native, model_articles = {}, {}, {}, set()
+    paths = {record['filepath'].removeprefix('cnndm/') for record in records}
+    for filename in parameters['archives'].values():
+        with tarfile.open(raw / filename, mode='r|gz') as archive:
+            for member in archive:
+                path = member.name.removeprefix('./')
+                if path in paths:
+                    _check(member.isfile() and path not in articles, True, 'SummEval unique original story member')
+                    body = archive.extractfile(member).read().decode('utf-8').partition('@highlight')[0]
+                    articles[path] = ' '.join(filter(None, (line.strip() for line in body.splitlines())))
+    _check(set(articles), paths, 'SummEval complete original article coverage')
+    for source_row, record in enumerate(records):
+        pair = record['model_id'], record['id']
+        _check(pair not in model_articles, True, 'SummEval one source summary per model/article')
+        model_articles.add(pair)
+        _check(record['model_id'] in parameters['model_names'], True, 'SummEval known source model alias')
+        _check(record['id'].rsplit('-', 1)[1], Path(record['filepath']).stem, 'SummEval source ID/story association')
+        _check(record['references'], references.setdefault(record['id'], record['references']), 'SummEval consistent source references')
+        _check(bool(record['decoded']) and bool(articles[record['filepath'].removeprefix('cnndm/')]), True, 'SummEval full nonempty output and input')
+        for group, count in [('expert_annotations', 3), ('turker_annotations', 5)]:
+            _check(len(record[group]), count, 'SummEval native rater count')
+            for position, annotation in enumerate(record[group]):
+                _check(set(annotation), set(parameters['dimensions']), 'SummEval native four rating dimensions')
+                for dimension, grade in annotation.items():
+                    _check(grade in [1, 2, 3, 4, 5] and not isinstance(grade, bool), True, 'SummEval native ordinal scale')
+                    native[source_row, group, position, dimension] = grade
+    counts = dict(source_responses=len(native), source_summaries=len(records), source_articles=len(references),
+        source_models=len({row['model_id'] for row in records}), source_annotations=len(native) // 4,
+        source_expert_ratings=sum(key[1] == 'expert_annotations' for key in native),
+        source_crowd_ratings=sum(key[1] == 'turker_annotations' for key in native), source_definitions=len(references) * 8)
+    _check(tuple(counts.values()), (51200, 1600, 100, 16, 12800, 19200, 32000, 800), 'SummEval original release census')
+    return dict(records=records, articles=articles, native=native, counts=counts)
+
+
+def _summeval(directory, tables, metadata, source=None):
+    """Check each rating, complete summary, source article and grading protocol."""
+    source = source or _summeval_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    for name, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][key].is_unique, True, 'SummEval unique ' + name + ' IDs')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'SummEval complete trace linkage')
+    _check(len(tables['responses']), len(source['native']), 'SummEval complete rating coverage')
+    seen, configurations, used_items = set(), {}, set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['rater_group'], trace['rater_index'], trace['dimension']
+        _check(key in source['native'] and key not in seen, True, 'SummEval unique native annotation association')
+        index, group, position, dimension = key
+        record = source['records'][index]
+        expected_trace = dict(source_file=parameters['layout']['annotations'], source_row=index, source_record=record,
+            rater_group=group, rater_index=position, dimension=dimension, trial_scope=labels['trial_scope'])
+        _check(trace, expected_trace, 'SummEval complete original record and rating scope')
+        _check(row.response, source['native'][key], 'SummEval unchanged native ordinal rating')
+        _check(row.trial, position + 1, 'SummEval local rater position')
+        model = record['model_id']
+        subject = subjects[row.subject_id]
+        _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
+            ('SummEval ' + model + ' - ' + parameters['model_names'][model], labels['harness'], True), 'SummEval literal source model identity')
+        _check(_features(subject['subject_features_extra']), dict(source_model_alias=model,
+            source_model_name=parameters['model_names'][model], model_paper=parameters['model_papers'][model],
+            source_title=parameters['model_titles'][model], model_type=parameters['model_types'][model],
+            configuration_status=labels['configuration_status']), 'SummEval explicit model provenance and unknown settings')
+        configurations[row.subject_id] = model
+        item, path = items[row.item_id], record['filepath'].removeprefix('cnndm/')
+        _check((item['content'], item['raw_item_id']), (source['articles'][path], record['id'] + '::' + group + '::' + dimension), 'SummEval exact source article and task identity')
+        _check(_features(item['item_features']), dict(source_article_id=record['id'], article_file=path, dimension=dimension,
+            rater_group=parameters['groups'][group], input_scope=labels['input_scope']), 'SummEval original item attributes')
+        criterion = json.loads(item['grading_criterion'])
+        _check(json.loads(criterion['reference_answer']), record['references'], 'SummEval all eleven original reference summaries')
+        _check(criterion['rule'], parameters['dimensions'][dimension] + ' ' + metadata['grading']['rule'], 'SummEval dimension-specific grading rule')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judged_by'), verifier.get('judge')), ('judge', 'human', None), 'SummEval original human grading')
+        _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['human'], dimension=dimension,
+            rater_group=parameters['groups'][group], rater_procedure=parameters['group_procedures'][group]), 'SummEval rater-group grading protocol')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'SummEval no invented response conditions')
+        seen.add(key); used_items.add(row.item_id)
+    _check(seen, set(source['native']), 'SummEval every original human rating retained')
+    _check((used_items, set(configurations)), (set(items), set(subjects)), 'SummEval no orphan items or subjects')
+    _check(Counter(configurations.values()), Counter({record['model_id']: 1 for record in source['records']}), 'SummEval exact source model coverage')
+    _check(len(items), source['counts']['source_definitions'], 'SummEval complete article/grading definitions')
+    return dict(source['counts'], source_traces=len(traces))
+
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

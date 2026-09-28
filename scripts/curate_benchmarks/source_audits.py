@@ -955,3 +955,5 @@ SOURCE_AUDITS["sketchjudge"] = verify_native_results
 
 SOURCE_AUDITS["statqa"] = verify_native_results
 SOURCE_AUDITS["subjective_qa"] = verify_native_results
+
+SOURCE_AUDITS["summeval"] = verify_native_results

@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 51200
+    logical_sha256: 42c379a2eedf514dd8e284578c03ed6b2ab8a251378fbd92ee3772dddf34e650
+  subjects:
+    rows: 16
+    logical_sha256: 5ae419057fab9358555a7d035b7ac3ebe5ee19f575aa7803a8bb3083ecb3cdb3
+  responses:
+    rows: 51200
+    logical_sha256: dfb3da86249e257a07de3ade78f9ea5547b1e43ac8270c7179f86bdcd69db981
+  items:
+    rows: 800
+    logical_sha256: c9998127b83baea5854ee8558e9e7cada7abd455a78ef5c78f0645add28612e3
+  benchmarks:
+    rows: 1
+    logical_sha256: e3d3c8b5c5663d1eadf04bb5add5009b0b40faab5b03c58c24c59c1c4aba554e
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 51200
+  source_summaries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 1600
+  source_articles:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 100
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 16
+  source_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 12800
+  source_expert_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 19200
+  source_crowd_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 32000
+  source_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 800
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yale-LILY/SummEval/tree/81b59ad53d63cb6009764240853c91235a44e238
+    locator: Human annotations release and original CNN/DailyMail stories, paired with data_processing/pair_data.py.
+    scope: 'Original 1,600 summaries: all individual human dimension ratings, with expert/crowd protocols separate.
+      Ratings of the same summary are not independent model generations.'
+    expected: 51200
