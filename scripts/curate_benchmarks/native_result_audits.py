@@ -18693,6 +18693,159 @@ def _robust_reasoning_benchmark(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _scale_mrt_sources(directory, metadata):
+    """Independently read every native monitor result and its final-call boundaries."""
+    import hashlib
+    import math
+    import re
+
+    raw = directory / 'raw'
+    native, definitions, configurations = {}, {}, set()
+    counts, occurrences, identical = Counter(), Counter(), Counter()
+    for path in sorted(raw.glob('release/*/**/transcript_*.json')):
+        data = path.read_bytes()
+        record = json.loads(data)
+        relative = path.relative_to(raw).as_posix()
+        collection, task, condition, agent, monitor, filename = path.relative_to(raw / 'release').parts
+        counts['source_transcript_files'] += 1
+        if 'monitoring_response' not in record:
+            _check(monitor, 'unmonitored', 'MRT absent monitor attempt is explicitly unmonitored')
+            counts['source_unmonitored_trajectories'] += 1
+            continue
+        identical[hashlib.sha256(data).hexdigest()] += 1
+        output = record['monitoring_response']
+        _check(isinstance(output, str), True, 'MRT original monitor output text')
+        history = record.get('monitor_conversation')
+        if history:
+            if isinstance(history[-1], list):
+                _check(history[0]['role'], 'system', 'MRT summary-based initial system message')
+                _check(all(isinstance(chunk, list) for chunk in history[1:]), True, 'MRT nested chunk format')
+                _check(all(message['role'] == 'user' for message in history[-1]), True, 'MRT last saved summary-based request')
+                request = [history[0]] + history[-1]
+                counts['source_summary_based_requests'] += 1
+            else:
+                _check((history[-1]['role'], history[-1]['content']), ('assistant', output), 'MRT final saved assistant output')
+                request = []
+                for message in history[:-1]:
+                    if 'hierarchical' in condition and message['role'] == 'system':
+                        request = []
+                    request.append(message)
+                if 'hierarchical' in condition:
+                    _check([message['role'] for message in request], ['system', 'user'], 'MRT independent last hierarchical request')
+                    counts['source_hierarchical_requests'] += 1
+                else:
+                    counts['source_other_recorded_requests'] += 1
+            _check((request[0]['role'], request[-1]['role']), ('system', 'user'), 'MRT final request contains no final output')
+            system = request[0]['content']
+            _check(sum(marker in system for marker in ('number from 1 to 5', 'number from 0 to 100')), 1, 'MRT explicit native scale')
+            scale = 'one_to_five' if 'number from 1 to 5' in system else 'zero_to_hundred'
+            scope = 'recorded_final_monitor_request'
+        else:
+            _check(history is None, True, 'MRT missing historical request is not invented')
+            request = []
+            started = 'unaware' not in condition
+            for message in record['conversation']:
+                if message['role'] == 'assistant':
+                    started = True
+                if message['role'] == 'system' or not started:
+                    continue
+                content = message.get('content') or ''
+                _check(isinstance(content, str), True, 'MRT textual trajectory field')
+                content = re.sub(r'<(hidden_thinking|thinking|system_instructions)>.*?</\1>', '', content, flags=re.S)
+                content = re.sub(r'[^\S\n]+', ' ', content)
+                content = content.replace('<visible_thinking>', '<model_thinking>').replace('</visible_thinking>', '</model_thinking>').strip()
+                request.append(dict(role=message['role'], content=content, tool_calls=message.get('tool_calls')))
+            _check(bool(request), True, 'MRT original trajectory remains available')
+            scale = 'one_to_five' if 'likert' in condition else 'zero_to_hundred'
+            scope = 'available_agent_trajectory_historical_monitor_request_not_recorded'
+            counts['source_missing_monitor_requests'] += 1
+        text = json.dumps(request, ensure_ascii=False, allow_nan=False)
+        identity = _digest(text), scale
+        literal_model = re.sub(r'_x([0-9a-f]{2})_', lambda match: chr(int(match[1], 16)), monitor)
+        configuration = literal_model, condition
+        configurations.add(configuration)
+        definitions.setdefault(identity, dict(content_digest=identity[0], scale=scale, input_scope=scope,
+                                               raw_item_id=relative.removeprefix('release/')))
+        low, high = (1, 5) if scale == 'one_to_five' else (0, 100)
+        lower = output.lower()
+        begin = lower.find('<verdict>')
+        end = lower.find('</verdict>', begin + len('<verdict>')) if begin >= 0 else -1
+        value = None
+        if begin >= 0 and end >= 0:
+            try:
+                value = float(lower[begin + len('<verdict>'):end].strip())
+            except ValueError:
+                pass
+        status = 'no_numeric_verdict' if value is None or math.isnan(value) else 'valid' if math.isfinite(value) and low <= value <= high else 'outside_declared_scale'
+        grade = value if status == 'valid' else None
+        occurrences[configuration, identity] += 1
+        trace = dict(source_file=relative, native_record=record, input_scope=scope, rating_status=status)
+        native[relative] = dict(subject=configuration, item=identity, grade=grade, trial=occurrences[configuration, identity],
+                                trace_digest=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)))
+        counts['source_' + scale + '_assessments'] += 1
+        counts['source_' + status] += 1
+        counts['source_fractional_one_to_five_ratings'] += int(scale == 'one_to_five' and grade is not None and not grade.is_integer())
+    _check((counts['source_transcript_files'], len(native), counts['source_unmonitored_trajectories']),
+           (53187, 51491, 1696), 'MRT full native record coverage')
+    counts.update(source_observations=len(native), source_items=len(definitions), source_configurations=len(configurations),
+                  source_literal_models=len({key[0] for key in configurations}),
+                  source_identical_record_files=sum(value - 1 for value in identical.values()))
+    return dict(native=native, definitions=definitions, configurations=configurations, counts=dict(counts))
+
+
+def _scale_mrt(directory, tables, metadata, source=None):
+    """Validate every native association, rating and complete trace independently."""
+    source = source or _scale_mrt_sources(directory, metadata)
+    subjects, items = {}, {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        configuration = features['recorded_model'], features['recorded_condition']
+        _check(row.display_name, configuration[0], 'MRT literal monitor model')
+        _check(row.harness, 'Scale MRT', 'MRT native harness')
+        _check(features, dict(recorded_model=configuration[0], recorded_condition=configuration[1], historical_settings='not_recorded'),
+               'MRT original condition and unknown historical API settings')
+        for field in ('harness_version', 'reasoning_effort', 'access_date'):
+            _check(pd.isna(getattr(row, field)), True, 'MRT no invented historical setting: ' + field)
+        subjects[row.subject_id] = configuration
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'MRT complete distinct monitor configurations')
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        identity = _digest(row.content), features['rating_scale']
+        expected = source['definitions'][identity]
+        _check(row.raw_item_id, expected['raw_item_id'], 'MRT first native source alias')
+        _check(features, dict(input_scope=expected['input_scope'], rating_scale=expected['scale']), 'MRT complete versus partial input scope')
+        low, high = (1, 5) if expected['scale'] == 'one_to_five' else (0, 100)
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=None, rule=metadata['grading']['rule'], response_scale=dict(kind='interval', min=low, max=high)),
+               'MRT native rating scale and no invented binary maliciousness reference')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], json.loads(verifier['spec'])), ('judge', metadata['grading']['verifiers'][expected['scale']]), 'MRT original rating parser specification')
+        _check(pd.isna(row.asset_manifest), True, 'MRT no invented input asset attachments')
+        items[row.item_id] = identity
+    _check(Counter(items.values()), Counter({key: 1 for key in source['definitions']}), 'MRT all native input definitions')
+    _check(len(tables.get('assets', [])), 0, 'MRT no invented asset rows')
+    _check(len(tables['responses']), len(source['native']), 'MRT all recorded attempts retained')
+    _check(tables['responses'].response_id.nunique(), len(source['native']), 'MRT unique observation identifiers')
+    _check(Counter(tables['traces'].response_id), Counter(tables['responses'].response_id), 'MRT one complete trace per assessment')
+    traces = tables['traces'].set_index('response_id').to_dict('index')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        record = traces[row.response_id]
+        trace = json.loads(record['trace'])
+        original = source['native'][trace['source_file']]
+        _check(_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), original['trace_digest'], 'MRT complete native input/output record and provenance')
+        _check((subjects[row.subject_id], items[row.item_id]), (original['subject'], original['item']), 'MRT native subject/input association')
+        _check(None if pd.isna(row.response) else float(row.response), original['grade'], 'MRT original rating or explicit ungraded attempt')
+        _check(row.trial, original['trial'], 'MRT original named-file occurrence order')
+        for field in ('test_condition', 'interactors'):
+            _check(pd.isna(getattr(row, field)), True, 'MRT no invented observation field: ' + field)
+        _check(tuple(record[field] for field in ('subject_id', 'item_id', 'trial')), (row.subject_id, row.item_id, row.trial), 'MRT trace association')
+        _check(pd.isna(record['test_condition']), True, 'MRT trace condition association')
+        seen[trace['source_file']] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'MRT each named native result occurs exactly once')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -18709,7 +18862,7 @@ def verify_native_results(directory, tables_directory=None):
             "healthadminbench": _healthadmin, "hivmedqa": _hivmedqa, "hle": _hle, "igakuqa119": _igakuqa119, "ineqmath": _ineqmath, "jailbreakbench": _jailbreakbench, "jetts": _jetts, "judgetuning": _judgetuning, "katakomba": _katakomba, "kernelbench": _kernelbench, "kmmlu": _kmmlu, "kormedmcqa": _kormedmcqa, "kris_bench": _kris,
             "lambda_fp_course": _lambda_fp_course, "lawbench": _lawbench, "lexeval": _lexeval, "lingoly": _lingoly, "liveaopsbench": _liveaops, "livebench": _livebench, "llm4ir": _llm4ir, "llm_bp_tag": _llm_bp_tag, "llm_survey_simulation": _llm_survey, "llm_uncertainty_bench": _llm_uncertainty, "llms_lean_formalization": _lean_historical, "lohi_drug_discovery": _lohi,
             "matharena_platform": _matharena_platform, "mathvista_mini": _mathvista, "medagentboard": _medagentboard, "medarabiq": _medarabiq, "mmedbench": _mmedbench, "medwatermark_fws": _medwatermark, "mergebench": _mergebench, "mind2web": _mind2web, "mj_bench": _mj_bench, "mlip_arena": _mlip_arena, "mmbench_v11": _mmbench, "mmoral_bench": _mmoral, "mypcbench": _mypc, "naep_llm_students": _naep, "mvt_image_difficulty": _mvt, "nanobaselib": _nanobaselib, "naturalreasoning": _naturalreasoning, "naturebench": _naturebench,
-            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "robust_reasoning_benchmark": _robust_reasoning_benchmark, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
+            "nis3d": _nis3d, "radar": _radar, "realtimeqa": _realtimeqa, "rewardbench": _rewardbench, "refgrader": _refgrader, "reliancescope": _reliancescope, "researchclawbench": _researchclawbench, "robust_reasoning_benchmark": _robust_reasoning_benchmark, "scale_mrt": _scale_mrt, "critic_discernment_game": _critic_discernment_game, "brace": _brace,
             "biggen": _biggen, "annotating_errors_wcf": _annotating_errors_wcf,
             "bertaqa": _bertaqa, "afrimedqa": _afrimedqa, "agc_bench": _agc_bench,
             "adaptivestep": _adaptivestep, "algotune": _algotune, "aider": _aider,
