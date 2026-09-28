@@ -19054,12 +19054,170 @@ def _sciarena(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _scivis_sources(directory, metadata):
+    """Read native report events and resolve original input files independently."""
+    import hashlib
+    import html
+    import re
+    from bs4 import BeautifulSoup
+
+    raw, parameters = directory / 'raw', metadata['build']['parameters']
+    layout = parameters['layout']
+    def text(fragment):
+        fragment = re.sub(r'<br\s*/?>|</p\s*>', '\n', str(fragment), flags=re.I)
+        return html.unescape(re.sub(r'<[^>]+>', '', fragment)).replace('\r\n', '\n').replace('\r', '\n').strip()
+    def digest(path):
+        with path.open('rb') as stream:
+            return hashlib.file_digest(stream, 'sha256').hexdigest()
+    original = yaml.safe_load((raw / layout['named_tasks']).read_text())
+    anonymous = yaml.safe_load((raw / layout['anonymous_tasks']).read_text())
+    _check(len(original), len(anonymous), 'SciVis named/anonymous definition correspondence')
+    aliases = {}
+    for named, hidden in zip(original, anonymous):
+        _check(named['assert'], hidden['assert'], 'SciVis anonymous alias preserves the grading definition')
+        source = re.search(r'sci_volume_data/([^"\s]+\.raw)', named['vars']['question'])[1]
+        target = re.search(r'"([^"\s]+\.raw)"', hidden['vars']['question'])[1]
+        _check(source not in aliases, True, 'SciVis unique original anonymous source')
+        aliases[source] = target
+    resources = []
+    for path in sorted((raw / layout['tasks']).rglob('*')):
+        relative = path.relative_to(raw / layout['tasks']).as_posix()
+        if not path.is_file() or '/data/' not in relative:
+            continue
+        category, logical = relative.split('/', 1)
+        suite = parameters['data_suites'][category]
+        if suite == 'object_identification':
+            if logical not in aliases:
+                continue
+            logical = aliases[logical]
+        resources.append(dict(suite=suite, logical_path=logical, source_path=path.relative_to(raw).as_posix(),
+            sha256=digest(path), size=path.stat().st_size))
+    _check({r['logical_path'] for r in resources if r['suite'] == 'object_identification'},
+        set(aliases.values()), 'SciVis every anonymous input resolves to its captured original bytes')
+    native, counts, inputs, subjects, cases, prompts = {}, Counter(), set(), set(), set(), set()
+    for pattern in parameters['report_patterns'].values():
+        for path in sorted(raw.glob(pattern)):
+            filename = path.relative_to(raw).as_posix()
+            document = path.read_bytes().decode('utf-8')
+            header = BeautifulSoup(document, 'html.parser')
+            model = header.find('label', string='Model').find_next('value').get_text(strip=True)
+            agent = header.select_one('.agent-name').get_text(strip=True)
+            harness = parameters['harnesses'][agent]
+            generated = header.select_one('.timestamp').get_text(strip=True).removeprefix('Generated: ')
+            suite = parameters['suites'][path.relative_to(raw).parts[2]]
+            counts['source_reports'] += 1
+            subjects.add((model, harness))
+            for match in re.finditer(r'<section class="case-section[^"]*" id="([^"]+)"', document):
+                case = match[1]
+                native_html = document[match.start():document.index('</section>', match.end()) + len('</section>')]
+                node = BeautifulSoup(native_html, 'html.parser')
+                stimulus = text(node.select_one('.task-description').decode_contents())
+                score = re.fullmatch(r'([0-9.]+)/([0-9.]+)\s*\(([0-9.]+)%\)', node.select_one('.case-score').get_text(strip=True))
+                _check(score is not None, True, 'SciVis complete case numerator, denominator and percentage')
+                selected = []
+                for resource in resources:
+                    logical = resource['logical_path']
+                    if resource['suite'] != suite:
+                        continue
+                    quoted = re.findall(r'"([^"\n]+)"', stimulus)
+                    template_match = any(re.fullmatch(re.escape(q).replace(r'\{timestep\}', r'\d+'), logical)
+                        for q in quoted if '{timestep}' in q)
+                    if logical in stimulus or (logical.startswith(case + '/data/') and Path(logical).name in stimulus) or template_match:
+                        selected.append({k: v for k, v in resource.items() if k != 'suite'})
+                links, large = [], []
+                for resource in selected:
+                    if resource['size'] > int(parameters['resources']['maximum_inline_bytes']):
+                        large.append(resource)
+                        inputs.add(('external', resource['sha256']))
+                    else:
+                        links.append(dict(asset_id=resource['sha256'], path=resource['logical_path'],
+                            media_type=parameters['resources']['media_type'], role='input', ordinal=len(links) + 1))
+                        inputs.add(('inline', resource['sha256']))
+                images = []
+                for image in node.find_all('img'):
+                    if 'ground truth' in image.get('alt', '').lower():
+                        target = path.parent / image['src']
+                        images.append(dict(path=image['src'], sha256=digest(target) if target.is_file() else None))
+                        counts['source_missing_reference_image_links'] += int(not target.is_file())
+                criterion = dict(rule=json.dumps(dict(rule=metadata['grading']['rule'],
+                    vision_rubrics=[text(value) for value in node.select('.rubric-criterion')],
+                    deterministic_checks=[text(value) for value in re.findall(
+                        r'<span style="font-weight: 600; color: #333;">(.*?)</span>', native_html, re.S)]), ensure_ascii=False),
+                    reference_answer=json.dumps(dict(text_answers=[text(value.find_next('div')) for value in node.find_all('h4')
+                        if value.get_text(strip=True) == 'Questions & Correct Answers'], images=images), ensure_ascii=False))
+                trace = dict(source_file=filename, case_id=case, generated=generated, native_agent=agent, model=model,
+                    score=float(score[1]), maximum=float(score[2]), displayed_percent=float(score[3]), case_html=native_html)
+                key = filename, case
+                _check(key not in native, True, 'SciVis unique published case event')
+                native[key] = dict(trace=trace, content=stimulus, harness=harness, suite=suite, criterion=criterion,
+                    links=links, large=large, raw_item_id=suite + '/' + case,
+                    grade=float(float(score[3]) >= metadata['grading']['verifiers']['reported_case']['pass_percent']))
+                counts['source_successes'] += int(native[key]['grade'])
+                cases.add((suite, case))
+                prompts.add((suite, case, stimulus))
+    counts.update(source_responses=len(native), source_traces=len(native), source_configurations=len(subjects),
+        source_logical_cases=len(cases), source_prompt_variants=len(prompts),
+        source_inline_input_files=sum(kind == 'inline' for kind, _ in inputs),
+        source_external_input_files=sum(kind == 'external' for kind, _ in inputs))
+    return dict(native=native, counts=dict(counts), inputs=inputs, subjects=subjects)
+
+
+def _scivisagentbench(directory, tables, metadata, source=None):
+    """Check every original score, attribution, resource and full report section."""
+    import hashlib
+    source = source or _scivis_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        extra = _features(row.subject_features_extra)
+        _check(extra, dict(model_identifier=row.display_name,
+            historical_settings=parameters['labels']['historical_settings']), 'SciVis known model and unknown historical settings')
+        _check(pd.isna(row.harness_version), True, 'SciVis no invented historical harness revision')
+        subjects[row.subject_id] = row.display_name, row.harness
+    _check(Counter(subjects.values()), Counter({value: 1 for value in source['subjects']}), 'SciVis complete model/harness configurations')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'SciVis unique trace IDs')
+    _check(set(traces), set(tables['responses'].response_id), 'SciVis complete response-to-trace association')
+    seen, used, trials = Counter(), set(), {}
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['case_id']
+        expected = source['native'][key]
+        _check(trace, expected['trace'], 'SciVis exact original report block and provenance')
+        _check(row.response, expected['grade'], 'SciVis original displayed-percentage threshold without rejudging')
+        _check(subjects[row.subject_id], (trace['model'], expected['harness']), 'SciVis native model/harness attribution')
+        item = items[row.item_id]
+        _check((item['raw_item_id'], item['content']), (expected['raw_item_id'], expected['content']), 'SciVis administered task text and case identity')
+        _check(_features(item['item_features']), dict(suite=expected['suite'], input_scope=parameters['labels']['input_scope'],
+            external_input_files=json.dumps(expected['large'], sort_keys=True)), 'SciVis complete oversized input references and scope')
+        _check(json.loads(item['grading_criterion']), expected['criterion'], 'SciVis report-specific grading rules, without borrowing another run')
+        verifier = json.loads(item['verifier'])
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['reported_case'], 'SciVis released mixed-component grading interpretation')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'SciVis no unsupported historical judge identity')
+        _check(json.loads(item['asset_manifest']) if isinstance(item['asset_manifest'], str) else [],
+            expected['links'], 'SciVis original input bytes and administered anonymous/series paths')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'SciVis no invented response condition or interactor')
+        seen[key] += 1
+        used.add(row.item_id)
+        trials.setdefault((row.subject_id, row.item_id), []).append(row.trial)
+    _check(seen, Counter({key: 1 for key in source['native']}), 'SciVis all original case events exactly once')
+    _check(used, set(items), 'SciVis no omitted or orphan task definitions')
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True,
+        'SciVis repeated observations retain consecutive trials')
+    assets = tables.get('assets', pd.DataFrame())
+    _check(set(assets.asset_id), {sha for kind, sha in source['inputs'] if kind == 'inline'}, 'SciVis exact input asset coverage')
+    for row in assets.itertuples():
+        _check(hashlib.sha256(row.data).hexdigest(), row.asset_id, 'SciVis complete original asset payload')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
