@@ -20971,12 +20971,114 @@ def _tau2_bench(directory, tables, metadata):
 
 
 
+def _taubench(directory, tables, metadata):
+    """Reconcile original Sierra and HAL attempts, including errors and full logs."""
+    import base64
+    from collections import defaultdict
+    import hashlib
+    from zipfile import ZipFile
+    from cryptography.fernet import Fernet
+    from cryptography.hazmat.primitives import hashes
+    from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    check = _check
+
+    def decode(path, parameters):
+        with ZipFile(path) as archive:
+            check(len(archive.namelist()), 1, 'single source export')
+            envelope = json.loads(archive.read(archive.namelist()[0]))
+        key = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=base64.b64decode(envelope['salt']),
+            iterations=int(parameters['hal_encoding']['iterations'])).derive(parameters['hal_encoding']['public_password'].encode())
+        return json.loads(Fernet(base64.urlsafe_b64encode(key)).decrypt(base64.b64decode(envelope['encrypted_data'])))
+
+    raw, parameters = directory/'raw', metadata['build']['parameters']
+    labels = parameters['labels']
+    for name,key in [('subjects','subject_id'),('items','item_id'),('responses','response_id'),('traces','response_id')]:
+        check(tables[name][key].is_unique,True,'unique '+name+' identifiers')
+    subjects=tables['subjects'].set_index('subject_id').to_dict('index')
+    items=tables['items'].set_index('item_id').to_dict('index')
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    check(set(traces),set(tables['responses'].response_id),'complete trace linkage')
+    actual=defaultdict(dict)
+    for row in tables['responses'].itertuples():
+        condition=json.loads(row.test_condition)
+        check(condition['source_row'] not in actual[condition['source_file']],True,'unique source record identity')
+        actual[condition['source_file']][condition['source_row']]=row
+    paths=sorted((raw/'sierra/historical_trajectories').glob('*.json'))+sorted((raw/'hal/archives').glob('taubench*.zip'))
+    check(set(actual),{str(path.relative_to(raw)) for path in paths},'all source files')
+    first_hal=next(path for path in paths if path.suffix=='.zip')
+    bank_run=decode(first_hal,parameters)
+    bank={key:record['task'] for key,record in bank_run['raw_eval_results'].items()}
+    counts=Counter(); used_items=set();used_subjects=set(); sequences=defaultdict(list);aliases=defaultdict(set)
+    for path in paths:
+        source_file=str(path.relative_to(raw)); original=json.loads(path.read_text()) if path.suffix=='.json' else decode(path,parameters)
+        collection='sierra' if path.suffix=='.json' else 'hal'
+        logs=defaultdict(list)
+        if collection=='sierra':
+            rows=list(enumerate(original));domain=parameters['sierra_domains'][path.name];model=parameters['sierra_models'][path.name]
+            config=dict(collection='sierra',model=model,agent=labels['sierra_agent'],historical_settings=labels['historical_settings'])
+        else:
+            rows=list(enumerate(original['raw_eval_results'].items()));domain='airline';model=original['config']['agent_args']['model_name']
+            config={key:value for key,value in original['config'].items() if key not in {'date','run_id'}}
+            for record in original['raw_logging_results']:logs[str(record['weave_task_id'])].append(record)
+            check(set(logs)<=set(original['raw_eval_results']),True,'source-supported log associations')
+        for _,record in rows:
+            identifier=str(record['task_id']) if collection=='sierra' else record[0]
+            native=record if collection=='sierra' else record[1]
+            task=native['info']['task'] if collection=='sierra' else (native['task'] if isinstance(native,dict) else bank[identifier])
+            aliases[(domain,json.dumps(task,sort_keys=True))].add(domain+'/'+identifier)
+        check(set(actual[source_file]),set(range(len(rows))),'all source attempts')
+        for position,record in rows:
+            row=actual[source_file][position]
+            task_id=str(record['task_id']) if collection=='sierra' else record[0]
+            native=record if collection=='sierra' else record[1]
+            task=native['info']['task'] if collection=='sierra' else (native['task'] if isinstance(native,dict) else bank[task_id])
+            if collection=='hal' and isinstance(native,dict):check(task,bank[task_id],'common HAL task definition')
+            expected=native.get('reward') if isinstance(native,dict) else None
+            check(pd.isna(row.response) if expected is None else row.response==expected,True,'exact native grade or unavailable grade')
+            provenance=str(first_hal.relative_to(raw)) if not isinstance(native,dict) else source_file
+            trial=native['trial'] if collection=='sierra' else None
+            integrity=labels['fewshot_integrity'] if collection=='hal' and 'few' in config['agent_name'].lower() else labels['other_integrity']
+            check(json.loads(row.test_condition),dict(source_file=source_file,source_row=position,original_trial=trial,
+                task_definition_source=provenance,evaluation_integrity=integrity),'complete source and integrity provenance')
+            trace=json.loads(traces[row.response_id])
+            check(trace,dict(source_file=source_file,source_row=position,task_id=task_id,configuration=config,
+                run_config=original['config'] if collection=='hal' else None,result=native,logs=logs[task_id],
+                task_definition_source=provenance),'complete original result and associated logs')
+            subject=subjects[row.subject_id]
+            digest=hashlib.sha256(json.dumps(config,sort_keys=True,ensure_ascii=False,allow_nan=False).encode()).hexdigest()
+            check(subject['display_name'],model,'literal recorded model label')
+            check(subject['subject_features_extra'],features_string(canonicalize_features(dict(collection=collection,
+                recorded_configuration_sha256=digest,configuration_scope=labels['configuration_scope']))),'recorded subject configuration')
+            item=items[row.item_id]
+            check(item['raw_item_id'] in aliases[(domain,json.dumps(task,sort_keys=True))],True,'source-supported identical-task alias')
+            check(json.loads(item['content']),dict(user_id=task['user_id'],instruction=task['instruction']),'complete task instruction')
+            check(item['item_features'],features_string(canonicalize_features(dict(domain=domain,input_scope=labels['input_scope']))),'task input scope')
+            criterion=json.loads(item['grading_criterion'])
+            check(criterion.get('reference_answer'),None,'no fabricated reference answer')
+            check(json.loads(criterion['rule']),dict(rule=metadata['grading']['rule'],actions=task['actions'],outputs=task['outputs']),
+                'complete native grading criteria')
+            verifier=json.loads(item['verifier'])
+            check((verifier['class'],json.loads(verifier['spec'])),('exact_matcher',metadata['grading']['verifiers']['native']),
+                'recorded grading protocol')
+            check(pd.isna(item['asset_manifest']),True,'no invented assets')
+            sequences[(row.subject_id,row.item_id)].append((source_file,trial if trial is not None else 1e9,position,row.trial))
+            used_items.add(row.item_id);used_subjects.add(row.subject_id)
+            counts[collection+'_attempts']+=1;counts['source_ungraded' if expected is None else 'source_successes' if expected==1 else 'source_failures']+=1
+            counts['source_log_records']+=len(logs[task_id])
+    for records in sequences.values():
+        check([record[-1] for record in sorted(records)],list(range(1,len(records)+1)),'complete ordered trial sequence')
+    check((used_items,used_subjects),(set(items),set(subjects)),'no orphan items or subjects')
+    return dict(counts,source_responses=len(tables['responses']),source_traces=len(traces),source_run_files=len(paths))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

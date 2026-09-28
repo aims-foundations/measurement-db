@@ -961,3 +961,5 @@ SOURCE_AUDITS["swebench_live"] = verify_native_results
 SOURCE_AUDITS["swepolybench"] = verify_native_results
 
 SOURCE_AUDITS["tau2_bench"] = verify_native_results
+
+SOURCE_AUDITS["taubench"] = verify_native_results
