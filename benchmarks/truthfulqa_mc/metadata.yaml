@@ -1,0 +1,1579 @@
+benchmark:
+  name: TruthfulQA-MC
+  description: Original TruthfulQA-MC1 observations from the preserved 150-model Open LLM Leaderboard v1 panel.
+  testing_condition: Import the recorded MC1 correctness values. Retain complete fixed QA prompts, candidate continuations
+    and native run configurations. Each continuation was scored separately by likelihood; the choices were not appended
+    as one multiple-choice prompt. This is the original MC task and the captured leaderboard panel, not the revised
+    2025 two-option task or every leaderboard model. Recorded effective-few-shot values of -1 and 0 are preserved
+    without interpreting -1 as a count.
+  paper_url: https://arxiv.org/abs/2109.07958
+  data_source_url: https://huggingface.co/open-llm-leaderboard-old
+  subject_type: model
+  item_type: task
+  license: 'TruthfulQA questions: Apache-2.0. Leaderboard observations: public original releases; no separate data
+    license is declared in the captured dataset cards. Reference harness: MIT.'
+  citation: 'Lin, Hilton and Evans. TruthfulQA: Measuring How Models Mimic Human Falsehoods. ACL 2022. Observations
+    from the Hugging Face Open LLM Leaderboard v1.'
+  tags:
+  - truthfulness
+  - knowledge
+  - multiple_choice
+  modality:
+  - text
+  domain:
+  - knowledge
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': MC1 incorrect
+      '1': MC1 correct
+  categorical: true
+  release_date: 2021-09
+  release: public
+  granularity: item
+  version: Original MC1; captured Open LLM Leaderboard v1 panel
+  one_line_description: Measures truthfulness by the likelihood assigned to correct and misleading answers.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      runs: runs/*/run.json
+      observations: observations.parquet
+    labels:
+      request_protocol: Score each continuation separately after the common prompt; do not concatenate all alternatives
+        into one prompt.
+      configuration_scope: Original model identifier, recorded model revision, dtype and evaluation settings. The
+        exact historical lighteval source revision is retained as recorded, without claiming it resolves in the
+        current public repository.
+    non_identity_configuration_fields:
+      job_id: Orchestration job identifier; preserved in each full run record.
+grading:
+  rule: 'Preserve the original MC1 Boolean score: success when the first maximum of the candidate continuation log-likelihoods
+    is the first candidate, the single correct reference. No generations, judges or model calls are made. Native
+    MC2 scores remain in the full trace; the historical MC2 implementation splits references at the first zero label,
+    including two questions with noncontiguous labels.'
+  verifiers:
+    native:
+      kind: native_recorded_mc1
+      source: https://github.com/EleutherAI/lm-evaluation-harness/blob/62ca18400ebe0fc0dbb14274b27170d2d5ae9e3d/lm_eval/tasks/truthfulqa.py
+      implementation: TruthfulQAMultipleChoice.process_results
+      reference_scope: This reviewed reference algorithm agrees with all captured MC1/MC2 scores. It does not establish
+        the exact historical installed harness revision.
+sources:
+  upstream:
+  - name: model_001
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Aeala__GPT4-x-AlpacaDente-30b
+    revision: f173672e804125ca7cbda1809fffafab5a492cba
+    files:
+    - match: 2023\-07\-19T23:04:17\.245052/details_harness\|truthfulqa:mc\|0_2023\-07\-19T23:04:17\.245052\.parquet
+      path: runs/details_Aeala__GPT4-x-AlpacaDente-30b/observations.parquet
+    - match: results_2023\-07\-19T23:04:17\.245052\.json
+      path: runs/details_Aeala__GPT4-x-AlpacaDente-30b/run.json
+    - match: README\.md
+      path: runs/details_Aeala__GPT4-x-AlpacaDente-30b/README.md
+  - name: model_002
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Aeala__GPT4-x-AlpacaDente2-30b
+    revision: feb304dd10eb1e6c0629d2c8323f02f423a2f6a7
+    files:
+    - match: 2023\-07\-19T22:58:58\.729379/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:58:58\.729379\.parquet
+      path: runs/details_Aeala__GPT4-x-AlpacaDente2-30b/observations.parquet
+    - match: results_2023\-07\-19T22:58:58\.729379\.json
+      path: runs/details_Aeala__GPT4-x-AlpacaDente2-30b/run.json
+    - match: README\.md
+      path: runs/details_Aeala__GPT4-x-AlpacaDente2-30b/README.md
+  - name: model_003
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Aeala__GPT4-x-Alpasta-13b
+    revision: da09939c0f0417fbd9941f2dadc7c65617125eda
+    files:
+    - match: 2023\-07\-19T19:10:23\.320662/details_harness\|truthfulqa:mc\|0_2023\-07\-19T19:10:23\.320662\.parquet
+      path: runs/details_Aeala__GPT4-x-Alpasta-13b/observations.parquet
+    - match: results_2023\-07\-19T19:10:23\.320662\.json
+      path: runs/details_Aeala__GPT4-x-Alpasta-13b/run.json
+    - match: README\.md
+      path: runs/details_Aeala__GPT4-x-Alpasta-13b/README.md
+  - name: model_004
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CalderaAI__13B-BlueMethod
+    revision: a6dcc5560856e72d33db264edf947505896c391e
+    files:
+    - match: 2023\-07\-24T13:36:47\.122036/details_harness\|truthfulqa:mc\|0_2023\-07\-24T13:36:47\.122036\.parquet
+      path: runs/details_CalderaAI__13B-BlueMethod/observations.parquet
+    - match: results_2023\-07\-24T13:36:47\.122036\.json
+      path: runs/details_CalderaAI__13B-BlueMethod/run.json
+    - match: README\.md
+      path: runs/details_CalderaAI__13B-BlueMethod/README.md
+  - name: model_005
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CalderaAI__13B-Legerdemain-L2
+    revision: 39a1a4736b93a61561448a7625be1416c699100c
+    files:
+    - match: 2023\-08\-09T11:34:37\.986977/details_harness\|truthfulqa:mc\|0_2023\-08\-09T11:34:37\.986977\.parquet
+      path: runs/details_CalderaAI__13B-Legerdemain-L2/observations.parquet
+    - match: results_2023\-08\-09T11:34:37\.986977\.json
+      path: runs/details_CalderaAI__13B-Legerdemain-L2/run.json
+    - match: README\.md
+      path: runs/details_CalderaAI__13B-Legerdemain-L2/README.md
+  - name: model_006
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CalderaAI__13B-Ouroboros
+    revision: 7af9428f881feb9ef2be7ddd9d6579aa2db34e6b
+    files:
+    - match: 2023\-07\-24T14:46:48\.892044/details_harness\|truthfulqa:mc\|0_2023\-07\-24T14:46:48\.892044\.parquet
+      path: runs/details_CalderaAI__13B-Ouroboros/observations.parquet
+    - match: results_2023\-07\-24T14:46:48\.892044\.json
+      path: runs/details_CalderaAI__13B-Ouroboros/run.json
+    - match: README\.md
+      path: runs/details_CalderaAI__13B-Ouroboros/README.md
+  - name: model_007
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CalderaAI__30B-Lazarus
+    revision: 506ac83c48a8c2454347624f81f67bedb3c2489a
+    files:
+    - match: 2023\-07\-19T22:16:39\.327210/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:16:39\.327210\.parquet
+      path: runs/details_CalderaAI__30B-Lazarus/observations.parquet
+    - match: results_2023\-07\-19T22:16:39\.327210\.json
+      path: runs/details_CalderaAI__30B-Lazarus/run.json
+    - match: README\.md
+      path: runs/details_CalderaAI__30B-Lazarus/README.md
+  - name: model_008
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CobraMamba__mamba-gpt-3b
+    revision: c90ade3692d5256c65a12eedebca2ce67b69bb7a
+    files:
+    - match: 2023\-07\-19T15:20:46\.724343/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:20:46\.724343\.parquet
+      path: runs/details_CobraMamba__mamba-gpt-3b/observations.parquet
+    - match: results_2023\-07\-19T15:20:46\.724343\.json
+      path: runs/details_CobraMamba__mamba-gpt-3b/run.json
+    - match: README\.md
+      path: runs/details_CobraMamba__mamba-gpt-3b/README.md
+  - name: model_009
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CobraMamba__mamba-gpt-3b-v2
+    revision: 8c6d42a406d3539a9c514bbcda44527af5984d9e
+    files:
+    - match: 2023\-07\-27T10:38:04\.478796/details_harness\|truthfulqa:mc\|0_2023\-07\-27T10:38:04\.478796\.parquet
+      path: runs/details_CobraMamba__mamba-gpt-3b-v2/observations.parquet
+    - match: results_2023\-07\-27T10:38:04\.478796\.json
+      path: runs/details_CobraMamba__mamba-gpt-3b-v2/run.json
+    - match: README\.md
+      path: runs/details_CobraMamba__mamba-gpt-3b-v2/README.md
+  - name: model_010
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_CobraMamba__mamba-gpt-3b-v3
+    revision: c122254c55af22dc828765655976d57bdfd1173d
+    files:
+    - match: 2023\-08\-01T14:05:11\.940524/details_harness\|truthfulqa:mc\|0_2023\-08\-01T14:05:11\.940524\.parquet
+      path: runs/details_CobraMamba__mamba-gpt-3b-v3/observations.parquet
+    - match: results_2023\-08\-01T14:05:11\.940524\.json
+      path: runs/details_CobraMamba__mamba-gpt-3b-v3/run.json
+    - match: README\.md
+      path: runs/details_CobraMamba__mamba-gpt-3b-v3/README.md
+  - name: model_011
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Corianas__111m
+    revision: aacf0ad1418fc96140ad555892824098cc6ebefc
+    files:
+    - match: 2023\-07\-19T13:48:53\.093937/details_harness\|truthfulqa:mc\|0_2023\-07\-19T13:48:53\.093937\.parquet
+      path: runs/details_Corianas__111m/observations.parquet
+    - match: results_2023\-07\-19T13:48:53\.093937\.json
+      path: runs/details_Corianas__111m/run.json
+    - match: README\.md
+      path: runs/details_Corianas__111m/README.md
+  - name: model_012
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Corianas__Quokka_1.3b
+    revision: ed11d9cdce559be3444226235c7e502da9bf2b1d
+    files:
+    - match: 2023\-07\-19T14:59:51\.596909/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:59:51\.596909\.parquet
+      path: runs/details_Corianas__Quokka_1.3b/observations.parquet
+    - match: results_2023\-07\-19T14:59:51\.596909\.json
+      path: runs/details_Corianas__Quokka_1.3b/run.json
+    - match: README\.md
+      path: runs/details_Corianas__Quokka_1.3b/README.md
+  - name: model_013
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Corianas__Quokka_2.7b
+    revision: 05ea88af3c1503f9949e054ebb930a13d532f207
+    files:
+    - match: 2023\-07\-19T15:58:12\.174583/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:58:12\.174583\.parquet
+      path: runs/details_Corianas__Quokka_2.7b/observations.parquet
+    - match: results_2023\-07\-19T15:58:12\.174583\.json
+      path: runs/details_Corianas__Quokka_2.7b/run.json
+    - match: README\.md
+      path: runs/details_Corianas__Quokka_2.7b/README.md
+  - name: model_014
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Corianas__Quokka_590m
+    revision: 3ecdbaa4dea3324a2a7bbae6b294c8d373b8ea8a
+    files:
+    - match: 2023\-07\-24T09:57:25\.772408/details_harness\|truthfulqa:mc\|0_2023\-07\-24T09:57:25\.772408\.parquet
+      path: runs/details_Corianas__Quokka_590m/observations.parquet
+    - match: results_2023\-07\-24T09:57:25\.772408\.json
+      path: runs/details_Corianas__Quokka_590m/run.json
+    - match: README\.md
+      path: runs/details_Corianas__Quokka_590m/README.md
+  - name: model_015
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Corianas__gpt-j-6B-Dolly
+    revision: 6db6958462e41b6207da816453cc77a4f556df76
+    files:
+    - match: 2023\-07\-19T15:40:52\.841362/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:40:52\.841362\.parquet
+      path: runs/details_Corianas__gpt-j-6B-Dolly/observations.parquet
+    - match: results_2023\-07\-19T15:40:52\.841362\.json
+      path: runs/details_Corianas__gpt-j-6B-Dolly/run.json
+    - match: README\.md
+      path: runs/details_Corianas__gpt-j-6B-Dolly/README.md
+  - name: model_016
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__gpt-j-6b
+    revision: d7a94c6a73652919b68f419984d49681aec3ce82
+    files:
+    - match: 2023\-09\-21T23\-10\-49\.133869/details_harness\|truthfulqa:mc\|0_2023\-09\-21T23\-10\-49\.133869\.parquet
+      path: runs/details_EleutherAI__gpt-j-6b/observations.parquet
+    - match: results_2023\-09\-21T23\-10\-49\.133869\.json
+      path: runs/details_EleutherAI__gpt-j-6b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__gpt-j-6b/README.md
+  - name: model_017
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__gpt-neo-1.3B
+    revision: 82d7f82af6c4fadabde8a9b75e780d2af8179a9b
+    files:
+    - match: 2023\-07\-19T15:04:26\.148804/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:04:26\.148804\.parquet
+      path: runs/details_EleutherAI__gpt-neo-1.3B/observations.parquet
+    - match: results_2023\-07\-19T15:04:26\.148804\.json
+      path: runs/details_EleutherAI__gpt-neo-1.3B/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__gpt-neo-1.3B/README.md
+  - name: model_018
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__gpt-neo-125m
+    revision: 0a4c415b3470827e5799868d0e22ed1071b97f1d
+    files:
+    - match: 2023\-07\-19T13:58:00\.274896/details_harness\|truthfulqa:mc\|0_2023\-07\-19T13:58:00\.274896\.parquet
+      path: runs/details_EleutherAI__gpt-neo-125m/observations.parquet
+    - match: results_2023\-07\-19T13:58:00\.274896\.json
+      path: runs/details_EleutherAI__gpt-neo-125m/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__gpt-neo-125m/README.md
+  - name: model_019
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__gpt-neo-2.7B
+    revision: 17fc8e5865cba92a8b792cbd7c6d9ee817711ce9
+    files:
+    - match: 2023\-07\-19T17:18:37\.000373/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:18:37\.000373\.parquet
+      path: runs/details_EleutherAI__gpt-neo-2.7B/observations.parquet
+    - match: results_2023\-07\-19T17:18:37\.000373\.json
+      path: runs/details_EleutherAI__gpt-neo-2.7B/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__gpt-neo-2.7B/README.md
+  - name: model_020
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__gpt-neox-20b
+    revision: 009fb4a387b94a9a5bb13af3b4b8e19e1693b8a1
+    files:
+    - match: 2023\-07\-20T10:44:54\.391639/details_harness\|truthfulqa:mc\|0_2023\-07\-20T10:44:54\.391639\.parquet
+      path: runs/details_EleutherAI__gpt-neox-20b/observations.parquet
+    - match: results_2023\-07\-20T10:44:54\.391639\.json
+      path: runs/details_EleutherAI__gpt-neox-20b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__gpt-neox-20b/README.md
+  - name: model_021
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__polyglot-ko-12.8b
+    revision: 6ee356d4954362631fdd03c2499b62d6a88248bd
+    files:
+    - match: 2023\-07\-19T18:43:02\.018732/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:43:02\.018732\.parquet
+      path: runs/details_EleutherAI__polyglot-ko-12.8b/observations.parquet
+    - match: results_2023\-07\-19T18:43:02\.018732\.json
+      path: runs/details_EleutherAI__polyglot-ko-12.8b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__polyglot-ko-12.8b/README.md
+  - name: model_022
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-1.3b
+    revision: b4b2536b8e6bceb8b1783f7bcd6581e231143c69
+    files:
+    - match: 2023\-07\-19T15:01:09\.572948/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:01:09\.572948\.parquet
+      path: runs/details_EleutherAI__pythia-1.3b/observations.parquet
+    - match: results_2023\-07\-19T15:01:09\.572948\.json
+      path: runs/details_EleutherAI__pythia-1.3b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-1.3b/README.md
+  - name: model_023
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-1.4b-deduped
+    revision: 18512209ae9e70d27e0fc87c136273ef078e87fb
+    files:
+    - match: 2023\-07\-19T15:11:31\.913251/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:11:31\.913251\.parquet
+      path: runs/details_EleutherAI__pythia-1.4b-deduped/observations.parquet
+    - match: results_2023\-07\-19T15:11:31\.913251\.json
+      path: runs/details_EleutherAI__pythia-1.4b-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-1.4b-deduped/README.md
+  - name: model_024
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-12b
+    revision: 41d506d838a65b49ae4d75768d1206a9fe58d88b
+    files:
+    - match: 2023\-08\-23T22:15:03\.187761/details_harness\|truthfulqa:mc\|0_2023\-08\-23T22:15:03\.187761\.parquet
+      path: runs/details_EleutherAI__pythia-12b/observations.parquet
+    - match: results_2023\-08\-23T22:15:03\.187761\.json
+      path: runs/details_EleutherAI__pythia-12b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-12b/README.md
+  - name: model_025
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-12b-deduped
+    revision: 59be791c9d6a7d48ae862f20a057fee31990dbb3
+    files:
+    - match: 2023\-07\-19T18:15:42\.026882/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:15:42\.026882\.parquet
+      path: runs/details_EleutherAI__pythia-12b-deduped/observations.parquet
+    - match: results_2023\-07\-19T18:15:42\.026882\.json
+      path: runs/details_EleutherAI__pythia-12b-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-12b-deduped/README.md
+  - name: model_026
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-160m
+    revision: 30c73ec1ece66ffcb060174c85ed8b26d3458522
+    files:
+    - match: 2023\-07\-19T14:01:14\.258064/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:01:14\.258064\.parquet
+      path: runs/details_EleutherAI__pythia-160m/observations.parquet
+    - match: results_2023\-07\-19T14:01:14\.258064\.json
+      path: runs/details_EleutherAI__pythia-160m/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-160m/README.md
+  - name: model_027
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-160m-deduped
+    revision: 401223c80b49c2c0fc6e2c286d852db95b25ef09
+    files:
+    - match: 2023\-07\-19T14:01:37\.454131/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:01:37\.454131\.parquet
+      path: runs/details_EleutherAI__pythia-160m-deduped/observations.parquet
+    - match: results_2023\-07\-19T14:01:37\.454131\.json
+      path: runs/details_EleutherAI__pythia-160m-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-160m-deduped/README.md
+  - name: model_028
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-1b-deduped
+    revision: 41c9f908b8232edd6062843b11586296206ca15c
+    files:
+    - match: 2023\-07\-19T14:26:17\.449047/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:26:17\.449047\.parquet
+      path: runs/details_EleutherAI__pythia-1b-deduped/observations.parquet
+    - match: results_2023\-07\-19T14:26:17\.449047\.json
+      path: runs/details_EleutherAI__pythia-1b-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-1b-deduped/README.md
+  - name: model_029
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-2.7b
+    revision: ba5fb098e9c994f2265a9fd65449ab3c5bf272f1
+    files:
+    - match: 2023\-07\-19T16:50:21\.612353/details_harness\|truthfulqa:mc\|0_2023\-07\-19T16:50:21\.612353\.parquet
+      path: runs/details_EleutherAI__pythia-2.7b/observations.parquet
+    - match: results_2023\-07\-19T16:50:21\.612353\.json
+      path: runs/details_EleutherAI__pythia-2.7b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-2.7b/README.md
+  - name: model_030
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-2.8b-deduped
+    revision: da3a2ffe5a763a95c286f24ea11850ce77a8e0fb
+    files:
+    - match: 2023\-07\-19T17:26:01\.712520/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:26:01\.712520\.parquet
+      path: runs/details_EleutherAI__pythia-2.8b-deduped/observations.parquet
+    - match: results_2023\-07\-19T17:26:01\.712520\.json
+      path: runs/details_EleutherAI__pythia-2.8b-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-2.8b-deduped/README.md
+  - name: model_031
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-410m-deduped
+    revision: f7c7b91f1e8d03427a5f6f730811e8295ea3aba3
+    files:
+    - match: 2023\-07\-19T14:23:02\.980263/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:23:02\.980263\.parquet
+      path: runs/details_EleutherAI__pythia-410m-deduped/observations.parquet
+    - match: results_2023\-07\-19T14:23:02\.980263\.json
+      path: runs/details_EleutherAI__pythia-410m-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-410m-deduped/README.md
+  - name: model_032
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-6.7b
+    revision: 9da4eafb64a389c30fcc2caa18bed674bc3a0b08
+    files:
+    - match: 2023\-07\-19T17:34:10\.394938/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:34:10\.394938\.parquet
+      path: runs/details_EleutherAI__pythia-6.7b/observations.parquet
+    - match: results_2023\-07\-19T17:34:10\.394938\.json
+      path: runs/details_EleutherAI__pythia-6.7b/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-6.7b/README.md
+  - name: model_033
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-6.9b-deduped
+    revision: 5c0474146c8f21c90d56f10e8bd45acda803611a
+    files:
+    - match: 2023\-07\-19T17:40:55\.095296/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:40:55\.095296\.parquet
+      path: runs/details_EleutherAI__pythia-6.9b-deduped/observations.parquet
+    - match: results_2023\-07\-19T17:40:55\.095296\.json
+      path: runs/details_EleutherAI__pythia-6.9b-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-6.9b-deduped/README.md
+  - name: model_034
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-70m
+    revision: 26fd880b3e9e16cd7464d3a41c0fca45b8461838
+    files:
+    - match: 2023\-07\-19T13:39:51\.467973/details_harness\|truthfulqa:mc\|0_2023\-07\-19T13:39:51\.467973\.parquet
+      path: runs/details_EleutherAI__pythia-70m/observations.parquet
+    - match: results_2023\-07\-19T13:39:51\.467973\.json
+      path: runs/details_EleutherAI__pythia-70m/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-70m/README.md
+  - name: model_035
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_EleutherAI__pythia-70m-deduped
+    revision: 74db4fc37ffb3147ff91faddcedc9bc65b5322b1
+    files:
+    - match: 2023\-07\-19T13:42:51\.890470/details_harness\|truthfulqa:mc\|0_2023\-07\-19T13:42:51\.890470\.parquet
+      path: runs/details_EleutherAI__pythia-70m-deduped/observations.parquet
+    - match: results_2023\-07\-19T13:42:51\.890470\.json
+      path: runs/details_EleutherAI__pythia-70m-deduped/run.json
+    - match: README\.md
+      path: runs/details_EleutherAI__pythia-70m-deduped/README.md
+  - name: model_036
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_GeorgiaTechResearchInstitute__galpaca-30b
+    revision: 73382c53b2bb7cbb6398f3e2704b19c27c7bc184
+    files:
+    - match: 2023\-08\-09T12:18:52\.169485/details_harness\|truthfulqa:mc\|0_2023\-08\-09T12:18:52\.169485\.parquet
+      path: runs/details_GeorgiaTechResearchInstitute__galpaca-30b/observations.parquet
+    - match: results_2023\-08\-09T12:18:52\.169485\.json
+      path: runs/details_GeorgiaTechResearchInstitute__galpaca-30b/run.json
+    - match: README\.md
+      path: runs/details_GeorgiaTechResearchInstitute__galpaca-30b/README.md
+  - name: model_037
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_GeorgiaTechResearchInstitute__starcoder-gpteacher-code-instruct
+    revision: ed0e92c1356db0fe325e0858292211c04d53d433
+    files:
+    - match: 2023\-07\-19T20:31:16\.803242/details_harness\|truthfulqa:mc\|0_2023\-07\-19T20:31:16\.803242\.parquet
+      path: runs/details_GeorgiaTechResearchInstitute__starcoder-gpteacher-code-instruct/observations.parquet
+    - match: results_2023\-07\-19T20:31:16\.803242\.json
+      path: runs/details_GeorgiaTechResearchInstitute__starcoder-gpteacher-code-instruct/run.json
+    - match: README\.md
+      path: runs/details_GeorgiaTechResearchInstitute__starcoder-gpteacher-code-instruct/README.md
+  - name: model_038
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_HiTZ__alpaca-lora-65b-en-pt-es-ca
+    revision: 2510d4ece76098ad5255eff17b3acd92ed3b8896
+    files:
+    - match: 2023\-08\-04T23:39:25\.347647/details_harness\|truthfulqa:mc\|0_2023\-08\-04T23:39:25\.347647\.parquet
+      path: runs/details_HiTZ__alpaca-lora-65b-en-pt-es-ca/observations.parquet
+    - match: results_2023\-08\-04T23:39:25\.347647\.json
+      path: runs/details_HiTZ__alpaca-lora-65b-en-pt-es-ca/run.json
+    - match: README\.md
+      path: runs/details_HiTZ__alpaca-lora-65b-en-pt-es-ca/README.md
+  - name: model_039
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_HuggingFaceH4__starchat-beta
+    revision: 15ef60e7063badfc4de20d7d9f5be3a980b8a085
+    files:
+    - match: 2023\-07\-19T21:08:27\.330071/details_harness\|truthfulqa:mc\|0_2023\-07\-19T21:08:27\.330071\.parquet
+      path: runs/details_HuggingFaceH4__starchat-beta/observations.parquet
+    - match: results_2023\-07\-19T21:08:27\.330071\.json
+      path: runs/details_HuggingFaceH4__starchat-beta/run.json
+    - match: README\.md
+      path: runs/details_HuggingFaceH4__starchat-beta/README.md
+  - name: model_040
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_LLMs__AlpacaGPT4-7B-elina
+    revision: 238df92867c0406711b3d38e6f64d32a7bc19a02
+    files:
+    - match: 2023\-07\-18T12:21:37\.483871/details_harness\|truthfulqa:mc\|0_2023\-07\-18T12:21:37\.483871\.parquet
+      path: runs/details_LLMs__AlpacaGPT4-7B-elina/observations.parquet
+    - match: results_2023\-07\-18T12:21:37\.483871\.json
+      path: runs/details_LLMs__AlpacaGPT4-7B-elina/run.json
+    - match: README\.md
+      path: runs/details_LLMs__AlpacaGPT4-7B-elina/README.md
+  - name: model_041
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_LLMs__WizardLM-13B-V1.0
+    revision: 027e3b8ac2514673ce7ab9f8f99bc4c85aff8033
+    files:
+    - match: 2023\-07\-24T12:48:39\.011618/details_harness\|truthfulqa:mc\|0_2023\-07\-24T12:48:39\.011618\.parquet
+      path: runs/details_LLMs__WizardLM-13B-V1.0/observations.parquet
+    - match: results_2023\-07\-24T12:48:39\.011618\.json
+      path: runs/details_LLMs__WizardLM-13B-V1.0/run.json
+    - match: README\.md
+      path: runs/details_LLMs__WizardLM-13B-V1.0/README.md
+  - name: model_042
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lajonbot__Llama-2-13b-hf-instruct-pl-lora_unload
+    revision: 3f2a623c0cd743c0780b04eae00709e64a70801d
+    files:
+    - match: 2023\-08\-16T12:50:25\.764084/details_harness\|truthfulqa:mc\|0_2023\-08\-16T12:50:25\.764084\.parquet
+      path: runs/details_Lajonbot__Llama-2-13b-hf-instruct-pl-lora_unload/observations.parquet
+    - match: results_2023\-08\-16T12:50:25\.764084\.json
+      path: runs/details_Lajonbot__Llama-2-13b-hf-instruct-pl-lora_unload/run.json
+    - match: README\.md
+      path: runs/details_Lajonbot__Llama-2-13b-hf-instruct-pl-lora_unload/README.md
+  - name: model_043
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lajonbot__Llama-2-7b-chat-hf-instruct-pl-lora_unload
+    revision: c5ea76f353660759eb7fb04af8b838ee7eaa8a29
+    files:
+    - match: 2023\-08\-01T13:20:11\.770272/details_harness\|truthfulqa:mc\|0_2023\-08\-01T13:20:11\.770272\.parquet
+      path: runs/details_Lajonbot__Llama-2-7b-chat-hf-instruct-pl-lora_unload/observations.parquet
+    - match: results_2023\-08\-01T13:20:11\.770272\.json
+      path: runs/details_Lajonbot__Llama-2-7b-chat-hf-instruct-pl-lora_unload/run.json
+    - match: README\.md
+      path: runs/details_Lajonbot__Llama-2-7b-chat-hf-instruct-pl-lora_unload/README.md
+  - name: model_044
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lajonbot__tableBeluga-7B-instruct-pl-lora_unload
+    revision: 8c53f71bc0992a009633f6cdd502c840dc046717
+    files:
+    - match: 2023\-08\-03T09:13:12\.299308/details_harness\|truthfulqa:mc\|0_2023\-08\-03T09:13:12\.299308\.parquet
+      path: runs/details_Lajonbot__tableBeluga-7B-instruct-pl-lora_unload/observations.parquet
+    - match: results_2023\-08\-03T09:13:12\.299308\.json
+      path: runs/details_Lajonbot__tableBeluga-7B-instruct-pl-lora_unload/run.json
+    - match: README\.md
+      path: runs/details_Lajonbot__tableBeluga-7B-instruct-pl-lora_unload/README.md
+  - name: model_045
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lajonbot__vicuna-13b-v1.3-PL-lora_unload
+    revision: cdf3a8af2548244078a0a6a914138e9548eb90d1
+    files:
+    - match: 2023\-08\-02T14:55:51\.592566/details_harness\|truthfulqa:mc\|0_2023\-08\-02T14:55:51\.592566\.parquet
+      path: runs/details_Lajonbot__vicuna-13b-v1.3-PL-lora_unload/observations.parquet
+    - match: results_2023\-08\-02T14:55:51\.592566\.json
+      path: runs/details_Lajonbot__vicuna-13b-v1.3-PL-lora_unload/run.json
+    - match: README\.md
+      path: runs/details_Lajonbot__vicuna-13b-v1.3-PL-lora_unload/README.md
+  - name: model_046
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lajonbot__vicuna-7b-v1.5-PL-lora_unload
+    revision: db611247df1a6667b1c95adccffab742e610e4f4
+    files:
+    - match: 2023\-08\-02T16:36:13\.785976/details_harness\|truthfulqa:mc\|0_2023\-08\-02T16:36:13\.785976\.parquet
+      path: runs/details_Lajonbot__vicuna-7b-v1.5-PL-lora_unload/observations.parquet
+    - match: results_2023\-08\-02T16:36:13\.785976\.json
+      path: runs/details_Lajonbot__vicuna-7b-v1.5-PL-lora_unload/run.json
+    - match: README\.md
+      path: runs/details_Lajonbot__vicuna-7b-v1.5-PL-lora_unload/README.md
+  - name: model_047
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lazycuber__Janemalion-6B
+    revision: 021578895d7a8e7ba37f9bf1976b2971d3442030
+    files:
+    - match: 2023\-07\-24T11:00:29\.262151/details_harness\|truthfulqa:mc\|0_2023\-07\-24T11:00:29\.262151\.parquet
+      path: runs/details_Lazycuber__Janemalion-6B/observations.parquet
+    - match: results_2023\-07\-24T11:00:29\.262151\.json
+      path: runs/details_Lazycuber__Janemalion-6B/run.json
+    - match: README\.md
+      path: runs/details_Lazycuber__Janemalion-6B/README.md
+  - name: model_048
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Lazycuber__pyg-instruct-wizardlm
+    revision: 7c2b3fbaa42c2fd06215926fa49ee745a4db7eab
+    files:
+    - match: 2023\-07\-24T15:30:39\.317119/details_harness\|truthfulqa:mc\|0_2023\-07\-24T15:30:39\.317119\.parquet
+      path: runs/details_Lazycuber__pyg-instruct-wizardlm/observations.parquet
+    - match: results_2023\-07\-24T15:30:39\.317119\.json
+      path: runs/details_Lazycuber__pyg-instruct-wizardlm/run.json
+    - match: README\.md
+      path: runs/details_Lazycuber__pyg-instruct-wizardlm/README.md
+  - name: model_049
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__FinOPT-Franklin
+    revision: dc2a7bd03f1acfde5b88c2b6becf705f808ce1bc
+    files:
+    - match: 2023\-07\-19T12:10:37\.381661/details_harness\|truthfulqa:mc\|0_2023\-07\-19T12:10:37\.381661\.parquet
+      path: runs/details_MayaPH__FinOPT-Franklin/observations.parquet
+    - match: results_2023\-07\-19T12:10:37\.381661\.json
+      path: runs/details_MayaPH__FinOPT-Franklin/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__FinOPT-Franklin/README.md
+  - name: model_050
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__FinOPT-Lincoln
+    revision: ba642830e73387d92dab05f6636a484c3535c0a4
+    files:
+    - match: 2023\-07\-19T11:38:32\.628939/details_harness\|truthfulqa:mc\|0_2023\-07\-19T11:38:32\.628939\.parquet
+      path: runs/details_MayaPH__FinOPT-Lincoln/observations.parquet
+    - match: results_2023\-07\-19T11:38:32\.628939\.json
+      path: runs/details_MayaPH__FinOPT-Lincoln/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__FinOPT-Lincoln/README.md
+  - name: model_051
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__FinOPT-Washington
+    revision: 5a4564ab57b5a8c956da799d3229d9360e967394
+    files:
+    - match: 2023\-07\-19T19:13:02\.567190/details_harness\|truthfulqa:mc\|0_2023\-07\-19T19:13:02\.567190\.parquet
+      path: runs/details_MayaPH__FinOPT-Washington/observations.parquet
+    - match: results_2023\-07\-19T19:13:02\.567190\.json
+      path: runs/details_MayaPH__FinOPT-Washington/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__FinOPT-Washington/README.md
+  - name: model_052
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__GodziLLa-30B
+    revision: e1f1b2ce1718ed90faf8b5d700b0abb9d04a0930
+    files:
+    - match: 2023\-07\-19T22:21:46\.977528/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:21:46\.977528\.parquet
+      path: runs/details_MayaPH__GodziLLa-30B/observations.parquet
+    - match: results_2023\-07\-19T22:21:46\.977528\.json
+      path: runs/details_MayaPH__GodziLLa-30B/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__GodziLLa-30B/README.md
+  - name: model_053
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__GodziLLa-30B-plus
+    revision: fb4f6923455a53f07afc290805b41af73dd198a9
+    files:
+    - match: 2023\-08\-02T15:59:28\.566104/details_harness\|truthfulqa:mc\|0_2023\-08\-02T15:59:28\.566104\.parquet
+      path: runs/details_MayaPH__GodziLLa-30B-plus/observations.parquet
+    - match: results_2023\-08\-02T15:59:28\.566104\.json
+      path: runs/details_MayaPH__GodziLLa-30B-plus/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__GodziLLa-30B-plus/README.md
+  - name: model_054
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_MayaPH__GodziLLa2-70B
+    revision: 6aa86db9e159a538e6356de4b5abf1c41d87ef13
+    files:
+    - match: 2023\-08\-17T01:04:34\.392139/details_harness\|truthfulqa:mc\|0_2023\-08\-17T01:04:34\.392139\.parquet
+      path: runs/details_MayaPH__GodziLLa2-70B/observations.parquet
+    - match: results_2023\-08\-17T01:04:34\.392139\.json
+      path: runs/details_MayaPH__GodziLLa2-70B/run.json
+    - match: README\.md
+      path: runs/details_MayaPH__GodziLLa2-70B/README.md
+  - name: model_055
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Neko-Institute-of-Science__metharme-7b
+    revision: 3654b5f67f3dfd3d35d7c4a28bb125d6bba93a06
+    files:
+    - match: 2023\-07\-18T12:25:19\.200285/details_harness\|truthfulqa:mc\|0_2023\-07\-18T12:25:19\.200285\.parquet
+      path: runs/details_Neko-Institute-of-Science__metharme-7b/observations.parquet
+    - match: results_2023\-07\-18T12:25:19\.200285\.json
+      path: runs/details_Neko-Institute-of-Science__metharme-7b/run.json
+    - match: README\.md
+      path: runs/details_Neko-Institute-of-Science__metharme-7b/README.md
+  - name: model_056
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Neko-Institute-of-Science__pygmalion-7b
+    revision: 3ed73866118feaf71fdf091d9bc805261ad7fa5e
+    files:
+    - match: 2023\-07\-19T16:16:07\.141450/details_harness\|truthfulqa:mc\|0_2023\-07\-19T16:16:07\.141450\.parquet
+      path: runs/details_Neko-Institute-of-Science__pygmalion-7b/observations.parquet
+    - match: results_2023\-07\-19T16:16:07\.141450\.json
+      path: runs/details_Neko-Institute-of-Science__pygmalion-7b/run.json
+    - match: README\.md
+      path: runs/details_Neko-Institute-of-Science__pygmalion-7b/README.md
+  - name: model_057
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_NousResearch__Nous-Hermes-13b
+    revision: 0e045ec68762ce6eb7101bb33798dfa340730611
+    files:
+    - match: 2023\-07\-18T15:33:41\.626742/details_harness\|truthfulqa:mc\|0_2023\-07\-18T15:33:41\.626742\.parquet
+      path: runs/details_NousResearch__Nous-Hermes-13b/observations.parquet
+    - match: results_2023\-07\-18T15:33:41\.626742\.json
+      path: runs/details_NousResearch__Nous-Hermes-13b/run.json
+    - match: README\.md
+      path: runs/details_NousResearch__Nous-Hermes-13b/README.md
+  - name: model_058
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_NousResearch__Nous-Hermes-Llama2-13b
+    revision: bcf293f0bf13fb25ac4481b2f86bac8d85e48483
+    files:
+    - match: 2023\-07\-26T14:55:06\.636628/details_harness\|truthfulqa:mc\|0_2023\-07\-26T14:55:06\.636628\.parquet
+      path: runs/details_NousResearch__Nous-Hermes-Llama2-13b/observations.parquet
+    - match: results_2023\-07\-26T14:55:06\.636628\.json
+      path: runs/details_NousResearch__Nous-Hermes-Llama2-13b/run.json
+    - match: README\.md
+      path: runs/details_NousResearch__Nous-Hermes-Llama2-13b/README.md
+  - name: model_059
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_NousResearch__Nous-Hermes-llama-2-7b
+    revision: 9547f8324c5e6b6ec8f655c4d4ec88326a0e399c
+    files:
+    - match: 2023\-07\-31T15:03:15\.265717/details_harness\|truthfulqa:mc\|0_2023\-07\-31T15:03:15\.265717\.parquet
+      path: runs/details_NousResearch__Nous-Hermes-llama-2-7b/observations.parquet
+    - match: results_2023\-07\-31T15:03:15\.265717\.json
+      path: runs/details_NousResearch__Nous-Hermes-llama-2-7b/run.json
+    - match: README\.md
+      path: runs/details_NousResearch__Nous-Hermes-llama-2-7b/README.md
+  - name: model_060
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_NousResearch__Redmond-Puffin-13B
+    revision: 4874f3c7c4e17441616d7b564996d4da01f29b5c
+    files:
+    - match: 2023\-07\-25T10:58:43\.573402/details_harness\|truthfulqa:mc\|0_2023\-07\-25T10:58:43\.573402\.parquet
+      path: runs/details_NousResearch__Redmond-Puffin-13B/observations.parquet
+    - match: results_2023\-07\-25T10:58:43\.573402\.json
+      path: runs/details_NousResearch__Redmond-Puffin-13B/run.json
+    - match: README\.md
+      path: runs/details_NousResearch__Redmond-Puffin-13B/README.md
+  - name: model_061
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OpenBuddyEA__openbuddy-llama-30b-v7.1-bf16
+    revision: c22e209efe8581665dd39f1fdb8b27b19a73ac10
+    files:
+    - match: 2023\-07\-25T17:52:33\.029329/details_harness\|truthfulqa:mc\|0_2023\-07\-25T17:52:33\.029329\.parquet
+      path: runs/details_OpenBuddyEA__openbuddy-llama-30b-v7.1-bf16/observations.parquet
+    - match: results_2023\-07\-25T17:52:33\.029329\.json
+      path: runs/details_OpenBuddyEA__openbuddy-llama-30b-v7.1-bf16/run.json
+    - match: README\.md
+      path: runs/details_OpenBuddyEA__openbuddy-llama-30b-v7.1-bf16/README.md
+  - name: model_062
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OpenBuddy__openbuddy-llama-65b-v8-bf16
+    revision: 1ddda86b88a46d095bf8682fc70559d9b6739d45
+    files:
+    - match: 2023\-08\-02T21:10:34\.846324/details_harness\|truthfulqa:mc\|0_2023\-08\-02T21:10:34\.846324\.parquet
+      path: runs/details_OpenBuddy__openbuddy-llama-65b-v8-bf16/observations.parquet
+    - match: results_2023\-08\-02T21:10:34\.846324\.json
+      path: runs/details_OpenBuddy__openbuddy-llama-65b-v8-bf16/run.json
+    - match: README\.md
+      path: runs/details_OpenBuddy__openbuddy-llama-65b-v8-bf16/README.md
+  - name: model_063
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OpenBuddy__openbuddy-llama2-13b-v8.1-fp16
+    revision: 66bbadb7e112c04dbe3497782e327e2444cb50b5
+    files:
+    - match: 2023\-07\-25T10:11:44\.944856/details_harness\|truthfulqa:mc\|0_2023\-07\-25T10:11:44\.944856\.parquet
+      path: runs/details_OpenBuddy__openbuddy-llama2-13b-v8.1-fp16/observations.parquet
+    - match: results_2023\-07\-25T10:11:44\.944856\.json
+      path: runs/details_OpenBuddy__openbuddy-llama2-13b-v8.1-fp16/run.json
+    - match: README\.md
+      path: runs/details_OpenBuddy__openbuddy-llama2-13b-v8.1-fp16/README.md
+  - name: model_064
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OptimalScale__robin-13b-v2-delta
+    revision: 2008d924e19ae4669fc274e94795bfc9ba31b670
+    files:
+    - match: 2023\-08\-04T18:08:52\.244101/details_harness\|truthfulqa:mc\|0_2023\-08\-04T18:08:52\.244101\.parquet
+      path: runs/details_OptimalScale__robin-13b-v2-delta/observations.parquet
+    - match: results_2023\-08\-04T18:08:52\.244101\.json
+      path: runs/details_OptimalScale__robin-13b-v2-delta/run.json
+    - match: README\.md
+      path: runs/details_OptimalScale__robin-13b-v2-delta/README.md
+  - name: model_065
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OptimalScale__robin-65b-v2-delta
+    revision: 390b9ae35dbde078dfefe56d72d9d8164a439322
+    files:
+    - match: 2023\-08\-08T22:36:48\.972258/details_harness\|truthfulqa:mc\|0_2023\-08\-08T22:36:48\.972258\.parquet
+      path: runs/details_OptimalScale__robin-65b-v2-delta/observations.parquet
+    - match: results_2023\-08\-08T22:36:48\.972258\.json
+      path: runs/details_OptimalScale__robin-65b-v2-delta/run.json
+    - match: README\.md
+      path: runs/details_OptimalScale__robin-65b-v2-delta/README.md
+  - name: model_066
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_OptimalScale__robin-7b-v2-delta
+    revision: 52241514ce578ff40edcf9d7667c8e033a69e7af
+    files:
+    - match: 2023\-08\-04T17:26:25\.175957/details_harness\|truthfulqa:mc\|0_2023\-08\-04T17:26:25\.175957\.parquet
+      path: runs/details_OptimalScale__robin-7b-v2-delta/observations.parquet
+    - match: results_2023\-08\-04T17:26:25\.175957\.json
+      path: runs/details_OptimalScale__robin-7b-v2-delta/run.json
+    - match: README\.md
+      path: runs/details_OptimalScale__robin-7b-v2-delta/README.md
+  - name: model_067
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_PygmalionAI__metharme-1.3b
+    revision: 76f41bec0e37f72288a1a5505c502da850a741ec
+    files:
+    - match: 2023\-07\-19T14:50:43\.188696/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:50:43\.188696\.parquet
+      path: runs/details_PygmalionAI__metharme-1.3b/observations.parquet
+    - match: results_2023\-07\-19T14:50:43\.188696\.json
+      path: runs/details_PygmalionAI__metharme-1.3b/run.json
+    - match: README\.md
+      path: runs/details_PygmalionAI__metharme-1.3b/README.md
+  - name: model_068
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_PygmalionAI__pygmalion-1.3b
+    revision: 99fec25e465ccd4bfa69b3b3600dd138317e5ac1
+    files:
+    - match: 2023\-07\-19T14:47:14\.842065/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:47:14\.842065\.parquet
+      path: runs/details_PygmalionAI__pygmalion-1.3b/observations.parquet
+    - match: results_2023\-07\-19T14:47:14\.842065\.json
+      path: runs/details_PygmalionAI__pygmalion-1.3b/run.json
+    - match: README\.md
+      path: runs/details_PygmalionAI__pygmalion-1.3b/README.md
+  - name: model_069
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_PygmalionAI__pygmalion-2.7b
+    revision: 586de40c9706a6c0d81a25b5cd77f116714c9d83
+    files:
+    - match: 2023\-07\-19T16:36:05\.422128/details_harness\|truthfulqa:mc\|0_2023\-07\-19T16:36:05\.422128\.parquet
+      path: runs/details_PygmalionAI__pygmalion-2.7b/observations.parquet
+    - match: results_2023\-07\-19T16:36:05\.422128\.json
+      path: runs/details_PygmalionAI__pygmalion-2.7b/run.json
+    - match: README\.md
+      path: runs/details_PygmalionAI__pygmalion-2.7b/README.md
+  - name: model_070
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_PygmalionAI__pygmalion-350m
+    revision: 26b8234999d51200828eeef6f9f2fd51acf06893
+    files:
+    - match: 2023\-07\-19T14:13:12\.933882/details_harness\|truthfulqa:mc\|0_2023\-07\-19T14:13:12\.933882\.parquet
+      path: runs/details_PygmalionAI__pygmalion-350m/observations.parquet
+    - match: results_2023\-07\-19T14:13:12\.933882\.json
+      path: runs/details_PygmalionAI__pygmalion-350m/run.json
+    - match: README\.md
+      path: runs/details_PygmalionAI__pygmalion-350m/README.md
+  - name: model_071
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_PygmalionAI__pygmalion-6b
+    revision: 0d51c9addc722838139df810c31bbd2d6ac07841
+    files:
+    - match: 2023\-10\-08T20\-04\-23\.834964/details_harness\|truthfulqa:mc\|0_2023\-10\-08T20\-04\-23\.834964\.parquet
+      path: runs/details_PygmalionAI__pygmalion-6b/observations.parquet
+    - match: results_2023\-10\-08T20\-04\-23\.834964\.json
+      path: runs/details_PygmalionAI__pygmalion-6b/run.json
+    - match: README\.md
+      path: runs/details_PygmalionAI__pygmalion-6b/README.md
+  - name: model_072
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Rachneet__gpt2-xl-alpaca
+    revision: df5b5396d5bc308a6f8875a8127073f625d0814a
+    files:
+    - match: 2023\-07\-18T18:01:10\.182884/details_harness\|truthfulqa:mc\|0_2023\-07\-18T18:01:10\.182884\.parquet
+      path: runs/details_Rachneet__gpt2-xl-alpaca/observations.parquet
+    - match: results_2023\-07\-18T18:01:10\.182884\.json
+      path: runs/details_Rachneet__gpt2-xl-alpaca/run.json
+    - match: README\.md
+      path: runs/details_Rachneet__gpt2-xl-alpaca/README.md
+  - name: model_073
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Tap-M__Luna-AI-Llama2-Uncensored
+    revision: 9b6d10b4959d72b48e210788a4c2d5858d1c7a8c
+    files:
+    - match: 2023\-07\-24T15:10:16\.061050/details_harness\|truthfulqa:mc\|0_2023\-07\-24T15:10:16\.061050\.parquet
+      path: runs/details_Tap-M__Luna-AI-Llama2-Uncensored/observations.parquet
+    - match: results_2023\-07\-24T15:10:16\.061050\.json
+      path: runs/details_Tap-M__Luna-AI-Llama2-Uncensored/run.json
+    - match: README\.md
+      path: runs/details_Tap-M__Luna-AI-Llama2-Uncensored/README.md
+  - name: model_074
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_TigerResearch__tigerbot-7b-sft
+    revision: 7ff3ebc0b01de19d28bae4f0c4b3d6053c894e86
+    files:
+    - match: 2023\-08\-17T10:11:16\.133446/details_harness\|truthfulqa:mc\|0_2023\-08\-17T10:11:16\.133446\.parquet
+      path: runs/details_TigerResearch__tigerbot-7b-sft/observations.parquet
+    - match: results_2023\-08\-17T10:11:16\.133446\.json
+      path: runs/details_TigerResearch__tigerbot-7b-sft/run.json
+    - match: README\.md
+      path: runs/details_TigerResearch__tigerbot-7b-sft/README.md
+  - name: model_075
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_Tincando__fiction_story_generator
+    revision: 6527dad4531080e17e97932bfc9b643bb99e4c4d
+    files:
+    - match: 2023\-07\-19T19:20:01\.774519/details_harness\|truthfulqa:mc\|0_2023\-07\-19T19:20:01\.774519\.parquet
+      path: runs/details_Tincando__fiction_story_generator/observations.parquet
+    - match: results_2023\-07\-19T19:20:01\.774519\.json
+      path: runs/details_Tincando__fiction_story_generator/run.json
+    - match: README\.md
+      path: runs/details_Tincando__fiction_story_generator/README.md
+  - name: model_076
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_TinyPixel__llama2-7b-instruct
+    revision: 98e81c739b875c699f190724fd7d5de5ddcb3d1d
+    files:
+    - match: 2023\-08\-17T12:12:37\.965756/details_harness\|truthfulqa:mc\|0_2023\-08\-17T12:12:37\.965756\.parquet
+      path: runs/details_TinyPixel__llama2-7b-instruct/observations.parquet
+    - match: results_2023\-08\-17T12:12:37\.965756\.json
+      path: runs/details_TinyPixel__llama2-7b-instruct/run.json
+    - match: README\.md
+      path: runs/details_TinyPixel__llama2-7b-instruct/README.md
+  - name: model_077
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_VMware__open-llama-0.7T-7B-open-instruct-v1.1
+    revision: 122fbf1ce18dadfb30e596c461c4b2b3dd0ab859
+    files:
+    - match: 2023\-07\-19T16:57:28\.493539/details_harness\|truthfulqa:mc\|0_2023\-07\-19T16:57:28\.493539\.parquet
+      path: runs/details_VMware__open-llama-0.7T-7B-open-instruct-v1.1/observations.parquet
+    - match: results_2023\-07\-19T16:57:28\.493539\.json
+      path: runs/details_VMware__open-llama-0.7T-7B-open-instruct-v1.1/run.json
+    - match: README\.md
+      path: runs/details_VMware__open-llama-0.7T-7B-open-instruct-v1.1/README.md
+  - name: model_078
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_WizardLM__WizardCoder-15B-V1.0
+    revision: bd65f1e5a0026afe78d2eb3001da48a0484eaaf0
+    files:
+    - match: 2023\-07\-19T20:24:20\.327625/details_harness\|truthfulqa:mc\|0_2023\-07\-19T20:24:20\.327625\.parquet
+      path: runs/details_WizardLM__WizardCoder-15B-V1.0/observations.parquet
+    - match: results_2023\-07\-19T20:24:20\.327625\.json
+      path: runs/details_WizardLM__WizardCoder-15B-V1.0/run.json
+    - match: README\.md
+      path: runs/details_WizardLM__WizardCoder-15B-V1.0/README.md
+  - name: model_079
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_WizardLM__WizardLM-13B-V1.1
+    revision: e1fc8735352f81451c02d1234dd06c24ee87b667
+    files:
+    - match: 2023\-07\-26T14:16:17\.821348/details_harness\|truthfulqa:mc\|0_2023\-07\-26T14:16:17\.821348\.parquet
+      path: runs/details_WizardLM__WizardLM-13B-V1.1/observations.parquet
+    - match: results_2023\-07\-26T14:16:17\.821348\.json
+      path: runs/details_WizardLM__WizardLM-13B-V1.1/run.json
+    - match: README\.md
+      path: runs/details_WizardLM__WizardLM-13B-V1.1/README.md
+  - name: model_080
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_WizardLM__WizardLM-13B-V1.2
+    revision: 9b271dbe21b615505be9dedc096b3e7961f546c0
+    files:
+    - match: 2023\-07\-26T14:20:40\.943670/details_harness\|truthfulqa:mc\|0_2023\-07\-26T14:20:40\.943670\.parquet
+      path: runs/details_WizardLM__WizardLM-13B-V1.2/observations.parquet
+    - match: results_2023\-07\-26T14:20:40\.943670\.json
+      path: runs/details_WizardLM__WizardLM-13B-V1.2/run.json
+    - match: README\.md
+      path: runs/details_WizardLM__WizardLM-13B-V1.2/README.md
+  - name: model_081
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_WizardLM__WizardLM-70B-V1.0
+    revision: aa590211fd1c03f2cd868a5dae195771855446f8
+    files:
+    - match: 2023\-08\-17T00:01:57\.828467/details_harness\|truthfulqa:mc\|0_2023\-08\-17T00:01:57\.828467\.parquet
+      path: runs/details_WizardLM__WizardLM-70B-V1.0/observations.parquet
+    - match: results_2023\-08\-17T00:01:57\.828467\.json
+      path: runs/details_WizardLM__WizardLM-70B-V1.0/run.json
+    - match: README\.md
+      path: runs/details_WizardLM__WizardLM-70B-V1.0/README.md
+  - name: model_082
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_abhiramtirumala__DialoGPT-sarcastic-medium
+    revision: efaaeec18de43018a18ccd77fdf5f039e04a3adf
+    files:
+    - match: 2023\-07\-19T10:39:52\.332273/details_harness\|truthfulqa:mc\|0_2023\-07\-19T10:39:52\.332273\.parquet
+      path: runs/details_abhiramtirumala__DialoGPT-sarcastic-medium/observations.parquet
+    - match: results_2023\-07\-19T10:39:52\.332273\.json
+      path: runs/details_abhiramtirumala__DialoGPT-sarcastic-medium/run.json
+    - match: README\.md
+      path: runs/details_abhiramtirumala__DialoGPT-sarcastic-medium/README.md
+  - name: model_083
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_acrastt__RedPajama-INCITE-Chat-Instruct-3B-V1
+    revision: b250f9c5d5636074da052fd804e8ea61d1e94157
+    files:
+    - match: 2023\-07\-31T09:50:22\.851617/details_harness\|truthfulqa:mc\|0_2023\-07\-31T09:50:22\.851617\.parquet
+      path: runs/details_acrastt__RedPajama-INCITE-Chat-Instruct-3B-V1/observations.parquet
+    - match: results_2023\-07\-31T09:50:22\.851617\.json
+      path: runs/details_acrastt__RedPajama-INCITE-Chat-Instruct-3B-V1/run.json
+    - match: README\.md
+      path: runs/details_acrastt__RedPajama-INCITE-Chat-Instruct-3B-V1/README.md
+  - name: model_084
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_acrastt__Vicuna-3B
+    revision: ce7ef36855032b1620c8b109bdcc303caa70df71
+    files:
+    - match: 2023\-08\-17T13:42:02\.549031/details_harness\|truthfulqa:mc\|0_2023\-08\-17T13:42:02\.549031\.parquet
+      path: runs/details_acrastt__Vicuna-3B/observations.parquet
+    - match: results_2023\-08\-17T13:42:02\.549031\.json
+      path: runs/details_acrastt__Vicuna-3B/run.json
+    - match: README\.md
+      path: runs/details_acrastt__Vicuna-3B/README.md
+  - name: model_085
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_augtoma__qCammel-13
+    revision: 004e465a2b680834bf5ba6e3b2cc6e4c598fa16b
+    files:
+    - match: 2023\-07\-25T11:13:38\.716664/details_harness\|truthfulqa:mc\|0_2023\-07\-25T11:13:38\.716664\.parquet
+      path: runs/details_augtoma__qCammel-13/observations.parquet
+    - match: results_2023\-07\-25T11:13:38\.716664\.json
+      path: runs/details_augtoma__qCammel-13/run.json
+    - match: README\.md
+      path: runs/details_augtoma__qCammel-13/README.md
+  - name: model_086
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_augtoma__qCammel-70-x
+    revision: 3701e2ecd80c751c62c0421c62aa6f5e5a5f19f4
+    files:
+    - match: 2023\-07\-31T21:18:05\.927693/details_harness\|truthfulqa:mc\|0_2023\-07\-31T21:18:05\.927693\.parquet
+      path: runs/details_augtoma__qCammel-70-x/observations.parquet
+    - match: results_2023\-07\-31T21:18:05\.927693\.json
+      path: runs/details_augtoma__qCammel-70-x/run.json
+    - match: README\.md
+      path: runs/details_augtoma__qCammel-70-x/README.md
+  - name: model_087
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_beomi__KoAlpaca-Polyglot-5.8B
+    revision: 826d713313fbd57b1c9137c63093f3b724ed5e0b
+    files:
+    - match: 2023\-07\-18T12:52:43\.613378/details_harness\|truthfulqa:mc\|0_2023\-07\-18T12:52:43\.613378\.parquet
+      path: runs/details_beomi__KoAlpaca-Polyglot-5.8B/observations.parquet
+    - match: results_2023\-07\-18T12:52:43\.613378\.json
+      path: runs/details_beomi__KoAlpaca-Polyglot-5.8B/run.json
+    - match: README\.md
+      path: runs/details_beomi__KoAlpaca-Polyglot-5.8B/README.md
+  - name: model_088
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_beomi__llama-2-ko-7b
+    revision: 86b09b6b3e8b03b42cf3088bd2b65dc97447f066
+    files:
+    - match: 2023\-07\-24T11:07:33\.480523/details_harness\|truthfulqa:mc\|0_2023\-07\-24T11:07:33\.480523\.parquet
+      path: runs/details_beomi__llama-2-ko-7b/observations.parquet
+    - match: results_2023\-07\-24T11:07:33\.480523\.json
+      path: runs/details_beomi__llama-2-ko-7b/run.json
+    - match: README\.md
+      path: runs/details_beomi__llama-2-ko-7b/README.md
+  - name: model_089
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_bigcode__gpt_bigcode-santacoder
+    revision: 905c189c7c1b25c2991ce14937b9494fd1798043
+    files:
+    - match: 2023\-07\-19T19:05:43\.434285/details_harness\|truthfulqa:mc\|0_2023\-07\-19T19:05:43\.434285\.parquet
+      path: runs/details_bigcode__gpt_bigcode-santacoder/observations.parquet
+    - match: results_2023\-07\-19T19:05:43\.434285\.json
+      path: runs/details_bigcode__gpt_bigcode-santacoder/run.json
+    - match: README\.md
+      path: runs/details_bigcode__gpt_bigcode-santacoder/README.md
+  - name: model_090
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_bigcode__tiny_starcoder_py
+    revision: 202d836c64d8fb0f555a161f6e422c88d3ba2657
+    files:
+    - match: 2023\-07\-19T18:53:24\.895112/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:53:24\.895112\.parquet
+      path: runs/details_bigcode__tiny_starcoder_py/observations.parquet
+    - match: results_2023\-07\-19T18:53:24\.895112\.json
+      path: runs/details_bigcode__tiny_starcoder_py/run.json
+    - match: README\.md
+      path: runs/details_bigcode__tiny_starcoder_py/README.md
+  - name: model_091
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_camel-ai__CAMEL-13B-Combined-Data
+    revision: 6c63c8cc49774d7468b821bbf7f1222d1b85a9b0
+    files:
+    - match: 2023\-07\-19T18:34:56\.119658/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:34:56\.119658\.parquet
+      path: runs/details_camel-ai__CAMEL-13B-Combined-Data/observations.parquet
+    - match: results_2023\-07\-19T18:34:56\.119658\.json
+      path: runs/details_camel-ai__CAMEL-13B-Combined-Data/run.json
+    - match: README\.md
+      path: runs/details_camel-ai__CAMEL-13B-Combined-Data/README.md
+  - name: model_092
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_camel-ai__CAMEL-13B-Role-Playing-Data
+    revision: f4601e715c69fa19bbd94c5272eb659afb9ed578
+    files:
+    - match: 2023\-07\-19T18:40:55\.376784/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:40:55\.376784\.parquet
+      path: runs/details_camel-ai__CAMEL-13B-Role-Playing-Data/observations.parquet
+    - match: results_2023\-07\-19T18:40:55\.376784\.json
+      path: runs/details_camel-ai__CAMEL-13B-Role-Playing-Data/run.json
+    - match: README\.md
+      path: runs/details_camel-ai__CAMEL-13B-Role-Playing-Data/README.md
+  - name: model_093
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_camel-ai__CAMEL-33B-Combined-Data
+    revision: 0484e9573ebfedd80ba7452a72e659b975d55c8d
+    files:
+    - match: 2023\-08\-01T13:41:43\.051311/details_harness\|truthfulqa:mc\|0_2023\-08\-01T13:41:43\.051311\.parquet
+      path: runs/details_camel-ai__CAMEL-33B-Combined-Data/observations.parquet
+    - match: results_2023\-08\-01T13:41:43\.051311\.json
+      path: runs/details_camel-ai__CAMEL-33B-Combined-Data/run.json
+    - match: README\.md
+      path: runs/details_camel-ai__CAMEL-33B-Combined-Data/README.md
+  - name: model_094
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_clibrain__Llama-2-7b-ft-instruct-es
+    revision: 28fb6cb87a2c5f59a035340b6e8ca3b1977b0ec5
+    files:
+    - match: 2023\-08\-09T22:51:22\.839971/details_harness\|truthfulqa:mc\|0_2023\-08\-09T22:51:22\.839971\.parquet
+      path: runs/details_clibrain__Llama-2-7b-ft-instruct-es/observations.parquet
+    - match: results_2023\-08\-09T22:51:22\.839971\.json
+      path: runs/details_clibrain__Llama-2-7b-ft-instruct-es/run.json
+    - match: README\.md
+      path: runs/details_clibrain__Llama-2-7b-ft-instruct-es/README.md
+  - name: model_095
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_databricks__dolly-v2-12b
+    revision: ef200f8a9af014243e364dafe1396929fc7a2a28
+    files:
+    - match: 2023\-07\-18T13:43:42\.069045/details_harness\|truthfulqa:mc\|0_2023\-07\-18T13:43:42\.069045\.parquet
+      path: runs/details_databricks__dolly-v2-12b/observations.parquet
+    - match: results_2023\-07\-18T13:43:42\.069045\.json
+      path: runs/details_databricks__dolly-v2-12b/run.json
+    - match: README\.md
+      path: runs/details_databricks__dolly-v2-12b/README.md
+  - name: model_096
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_databricks__dolly-v2-3b
+    revision: 2c139f841dbc37885e93b0c2806abc865b715972
+    files:
+    - match: 2023\-07\-19T15:08:45\.552470/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:08:45\.552470\.parquet
+      path: runs/details_databricks__dolly-v2-3b/observations.parquet
+    - match: results_2023\-07\-19T15:08:45\.552470\.json
+      path: runs/details_databricks__dolly-v2-3b/run.json
+    - match: README\.md
+      path: runs/details_databricks__dolly-v2-3b/README.md
+  - name: model_097
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_databricks__dolly-v2-7b
+    revision: ab7e5cadacb6c9f2245daa67014b7f5cd5762c6f
+    files:
+    - match: 2023\-07\-18T11:46:56\.588473/details_harness\|truthfulqa:mc\|0_2023\-07\-18T11:46:56\.588473\.parquet
+      path: runs/details_databricks__dolly-v2-7b/observations.parquet
+    - match: results_2023\-07\-18T11:46:56\.588473\.json
+      path: runs/details_databricks__dolly-v2-7b/run.json
+    - match: README\.md
+      path: runs/details_databricks__dolly-v2-7b/README.md
+  - name: model_098
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_deepnight-research__llama-2-70B-inst
+    revision: 2cd0462ac189437e59aee2d1d29fcf26ca743501
+    files:
+    - match: 2023\-08\-10T00:26:50\.478989/details_harness\|truthfulqa:mc\|0_2023\-08\-10T00:26:50\.478989\.parquet
+      path: runs/details_deepnight-research__llama-2-70B-inst/observations.parquet
+    - match: results_2023\-08\-10T00:26:50\.478989\.json
+      path: runs/details_deepnight-research__llama-2-70B-inst/run.json
+    - match: README\.md
+      path: runs/details_deepnight-research__llama-2-70B-inst/README.md
+  - name: model_099
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_edor__Hermes-Platypus2-mini-7B
+    revision: 55e45ec7083a0362f288da011916a9994e148dbe
+    files:
+    - match: 2023\-08\-16T10:47:02\.037059/details_harness\|truthfulqa:mc\|0_2023\-08\-16T10:47:02\.037059\.parquet
+      path: runs/details_edor__Hermes-Platypus2-mini-7B/observations.parquet
+    - match: results_2023\-08\-16T10:47:02\.037059\.json
+      path: runs/details_edor__Hermes-Platypus2-mini-7B/run.json
+    - match: README\.md
+      path: runs/details_edor__Hermes-Platypus2-mini-7B/README.md
+  - name: model_100
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_edor__Stable-Platypus2-mini-7B
+    revision: d4296e81c6189094990e4d7ac97bd735de28fdfd
+    files:
+    - match: 2023\-08\-16T10:44:20\.574252/details_harness\|truthfulqa:mc\|0_2023\-08\-16T10:44:20\.574252\.parquet
+      path: runs/details_edor__Stable-Platypus2-mini-7B/observations.parquet
+    - match: results_2023\-08\-16T10:44:20\.574252\.json
+      path: runs/details_edor__Stable-Platypus2-mini-7B/run.json
+    - match: README\.md
+      path: runs/details_edor__Stable-Platypus2-mini-7B/README.md
+  - name: model_101
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_garage-bAInd__Camel-Platypus2-13B
+    revision: 01e2fa822e018e0312d16a8fc5d97f7cd9777ce4
+    files:
+    - match: 2023\-08\-09T16:10:57\.360881/details_harness\|truthfulqa:mc\|0_2023\-08\-09T16:10:57\.360881\.parquet
+      path: runs/details_garage-bAInd__Camel-Platypus2-13B/observations.parquet
+    - match: results_2023\-08\-09T16:10:57\.360881\.json
+      path: runs/details_garage-bAInd__Camel-Platypus2-13B/run.json
+    - match: README\.md
+      path: runs/details_garage-bAInd__Camel-Platypus2-13B/README.md
+  - name: model_102
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__gogpt-3b-bloom
+    revision: 9cc627710b1aa09be9a933f71a6e0920f0375e13
+    files:
+    - match: 2023\-07\-31T10:49:20\.036877/details_harness\|truthfulqa:mc\|0_2023\-07\-31T10:49:20\.036877\.parquet
+      path: runs/details_golaxy__gogpt-3b-bloom/observations.parquet
+    - match: results_2023\-07\-31T10:49:20\.036877\.json
+      path: runs/details_golaxy__gogpt-3b-bloom/run.json
+    - match: README\.md
+      path: runs/details_golaxy__gogpt-3b-bloom/README.md
+  - name: model_103
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__gogpt-7b
+    revision: 74f7161ebda5b9c07fd4f0412518c0607fabc4c1
+    files:
+    - match: 2023\-07\-24T11:32:55\.056664/details_harness\|truthfulqa:mc\|0_2023\-07\-24T11:32:55\.056664\.parquet
+      path: runs/details_golaxy__gogpt-7b/observations.parquet
+    - match: results_2023\-07\-24T11:32:55\.056664\.json
+      path: runs/details_golaxy__gogpt-7b/run.json
+    - match: README\.md
+      path: runs/details_golaxy__gogpt-7b/README.md
+  - name: model_104
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__gogpt-7b-bloom
+    revision: f3b504ef7978e96258af6e9c8a1fada1df0adf6a
+    files:
+    - match: 2023\-07\-31T10:56:27\.356745/details_harness\|truthfulqa:mc\|0_2023\-07\-31T10:56:27\.356745\.parquet
+      path: runs/details_golaxy__gogpt-7b-bloom/observations.parquet
+    - match: results_2023\-07\-31T10:56:27\.356745\.json
+      path: runs/details_golaxy__gogpt-7b-bloom/run.json
+    - match: README\.md
+      path: runs/details_golaxy__gogpt-7b-bloom/README.md
+  - name: model_105
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__gogpt2-7b
+    revision: ff6a7d53a47aa27aa7b72143901fa7c811430d22
+    files:
+    - match: 2023\-07\-26T19:03:01\.849561/details_harness\|truthfulqa:mc\|0_2023\-07\-26T19:03:01\.849561\.parquet
+      path: runs/details_golaxy__gogpt2-7b/observations.parquet
+    - match: results_2023\-07\-26T19:03:01\.849561\.json
+      path: runs/details_golaxy__gogpt2-7b/run.json
+    - match: README\.md
+      path: runs/details_golaxy__gogpt2-7b/README.md
+  - name: model_106
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__goims
+    revision: b6ce1aa4bd138600d9becfff051813066db415b3
+    files:
+    - match: 2023\-08\-09T10:57:12\.922580/details_harness\|truthfulqa:mc\|0_2023\-08\-09T10:57:12\.922580\.parquet
+      path: runs/details_golaxy__goims/observations.parquet
+    - match: results_2023\-08\-09T10:57:12\.922580\.json
+      path: runs/details_golaxy__goims/run.json
+    - match: README\.md
+      path: runs/details_golaxy__goims/README.md
+  - name: model_107
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_golaxy__gowizardlm
+    revision: 06934beb45d4a63c8d004e70ab4be7a9feda3da7
+    files:
+    - match: 2023\-08\-16T13:56:06\.243461/details_harness\|truthfulqa:mc\|0_2023\-08\-16T13:56:06\.243461\.parquet
+      path: runs/details_golaxy__gowizardlm/observations.parquet
+    - match: results_2023\-08\-16T13:56:06\.243461\.json
+      path: runs/details_golaxy__gowizardlm/run.json
+    - match: README\.md
+      path: runs/details_golaxy__gowizardlm/README.md
+  - name: model_108
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_illuin__test-custom-llama
+    revision: 7ab4db06ba647f0f76cce8f7d270d72cfe029b03
+    files:
+    - match: 2023\-07\-19T20:12:39\.825467/details_harness\|truthfulqa:mc\|0_2023\-07\-19T20:12:39\.825467\.parquet
+      path: runs/details_illuin__test-custom-llama/observations.parquet
+    - match: results_2023\-07\-19T20:12:39\.825467\.json
+      path: runs/details_illuin__test-custom-llama/run.json
+    - match: README\.md
+      path: runs/details_illuin__test-custom-llama/README.md
+  - name: model_109
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jarradh__llama2_70b_chat_uncensored
+    revision: b7b584a1a714b060955dc520b6d5731c308ca315
+    files:
+    - match: 2023\-08\-09T17:41:26\.455015/details_harness\|truthfulqa:mc\|0_2023\-08\-09T17:41:26\.455015\.parquet
+      path: runs/details_jarradh__llama2_70b_chat_uncensored/observations.parquet
+    - match: results_2023\-08\-09T17:41:26\.455015\.json
+      path: runs/details_jarradh__llama2_70b_chat_uncensored/run.json
+    - match: README\.md
+      path: runs/details_jarradh__llama2_70b_chat_uncensored/README.md
+  - name: model_110
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jlevin__guanaco-13b-llama-2
+    revision: fbe18184e0009405c79c8bdb967df9bdd130d0e0
+    files:
+    - match: 2023\-08\-09T17:17:23\.827759/details_harness\|truthfulqa:mc\|0_2023\-08\-09T17:17:23\.827759\.parquet
+      path: runs/details_jlevin__guanaco-13b-llama-2/observations.parquet
+    - match: results_2023\-08\-09T17:17:23\.827759\.json
+      path: runs/details_jlevin__guanaco-13b-llama-2/run.json
+    - match: README\.md
+      path: runs/details_jlevin__guanaco-13b-llama-2/README.md
+  - name: model_111
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jlevin__guanaco-unchained-llama-2-7b
+    revision: 6337a87b02c8e799602b5cff30da7a5d3d695d7c
+    files:
+    - match: 2023\-08\-09T20:41:35\.699742/details_harness\|truthfulqa:mc\|0_2023\-08\-09T20:41:35\.699742\.parquet
+      path: runs/details_jlevin__guanaco-unchained-llama-2-7b/observations.parquet
+    - match: results_2023\-08\-09T20:41:35\.699742\.json
+      path: runs/details_jlevin__guanaco-unchained-llama-2-7b/run.json
+    - match: README\.md
+      path: runs/details_jlevin__guanaco-unchained-llama-2-7b/README.md
+  - name: model_112
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jordiclive__Llama-2-70b-oasst-1-200
+    revision: f93246ceaebb9d4d915e8d0311a540bd1fa2b60f
+    files:
+    - match: 2023\-08\-10T00:36:08\.720698/details_harness\|truthfulqa:mc\|0_2023\-08\-10T00:36:08\.720698\.parquet
+      path: runs/details_jordiclive__Llama-2-70b-oasst-1-200/observations.parquet
+    - match: results_2023\-08\-10T00:36:08\.720698\.json
+      path: runs/details_jordiclive__Llama-2-70b-oasst-1-200/run.json
+    - match: README\.md
+      path: runs/details_jordiclive__Llama-2-70b-oasst-1-200/README.md
+  - name: model_113
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jordiclive__gpt4all-alpaca-oa-codealpaca-lora-13b
+    revision: cbb85670e94040c54136a1fd3847a292acb1b0ae
+    files:
+    - match: 2023\-08\-09T17:57:53\.688517/details_harness\|truthfulqa:mc\|0_2023\-08\-09T17:57:53\.688517\.parquet
+      path: runs/details_jordiclive__gpt4all-alpaca-oa-codealpaca-lora-13b/observations.parquet
+    - match: results_2023\-08\-09T17:57:53\.688517\.json
+      path: runs/details_jordiclive__gpt4all-alpaca-oa-codealpaca-lora-13b/run.json
+    - match: README\.md
+      path: runs/details_jordiclive__gpt4all-alpaca-oa-codealpaca-lora-13b/README.md
+  - name: model_114
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jphme__orca_mini_v2_ger_7b
+    revision: e1abd0949627f6dd24facfcf0cf107d239fb29e3
+    files:
+    - match: 2023\-07\-19T17:09:14\.589500/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:09:14\.589500\.parquet
+      path: runs/details_jphme__orca_mini_v2_ger_7b/observations.parquet
+    - match: results_2023\-07\-19T17:09:14\.589500\.json
+      path: runs/details_jphme__orca_mini_v2_ger_7b/run.json
+    - match: README\.md
+      path: runs/details_jphme__orca_mini_v2_ger_7b/README.md
+  - name: model_115
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_jxhong__CAlign-alpaca-7b
+    revision: 41c3b39e264732679190a164f423f3fcecca2acc
+    files:
+    - match: 2023\-08\-09T20:26:06\.755216/details_harness\|truthfulqa:mc\|0_2023\-08\-09T20:26:06\.755216\.parquet
+      path: runs/details_jxhong__CAlign-alpaca-7b/observations.parquet
+    - match: results_2023\-08\-09T20:26:06\.755216\.json
+      path: runs/details_jxhong__CAlign-alpaca-7b/run.json
+    - match: README\.md
+      path: runs/details_jxhong__CAlign-alpaca-7b/README.md
+  - name: model_116
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_kevinpro__Vicuna-13B-CoT
+    revision: ddce2300c40ab507627722b319ca3ebb1c24115c
+    files:
+    - match: 2023\-07\-19T18:33:25\.891730/details_harness\|truthfulqa:mc\|0_2023\-07\-19T18:33:25\.891730\.parquet
+      path: runs/details_kevinpro__Vicuna-13B-CoT/observations.parquet
+    - match: results_2023\-07\-19T18:33:25\.891730\.json
+      path: runs/details_kevinpro__Vicuna-13B-CoT/run.json
+    - match: README\.md
+      path: runs/details_kevinpro__Vicuna-13B-CoT/README.md
+  - name: model_117
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_keyfan__vicuna-chinese-replication-v1.1
+    revision: dfe6cb7418e78f9aca408a26c24fad2fe01f7fca
+    files:
+    - match: 2023\-07\-24T15:34:51\.648519/details_harness\|truthfulqa:mc\|0_2023\-07\-24T15:34:51\.648519\.parquet
+      path: runs/details_keyfan__vicuna-chinese-replication-v1.1/observations.parquet
+    - match: results_2023\-07\-24T15:34:51\.648519\.json
+      path: runs/details_keyfan__vicuna-chinese-replication-v1.1/run.json
+    - match: README\.md
+      path: runs/details_keyfan__vicuna-chinese-replication-v1.1/README.md
+  - name: model_118
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_kfkas__Llama-2-ko-7b-Chat
+    revision: 71d508f0ef0c0c3338c79b77427497c11852562b
+    files:
+    - match: 2023\-07\-27T16:15:02\.960730/details_harness\|truthfulqa:mc\|0_2023\-07\-27T16:15:02\.960730\.parquet
+      path: runs/details_kfkas__Llama-2-ko-7b-Chat/observations.parquet
+    - match: results_2023\-07\-27T16:15:02\.960730\.json
+      path: runs/details_kfkas__Llama-2-ko-7b-Chat/run.json
+    - match: README\.md
+      path: runs/details_kfkas__Llama-2-ko-7b-Chat/README.md
+  - name: model_119
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_layoric__llama-2-13b-code-alpaca
+    revision: 926a4398f0628234f8a8c0b809ef06a074f8b5d1
+    files:
+    - match: 2023\-07\-24T14:43:19\.893957/details_harness\|truthfulqa:mc\|0_2023\-07\-24T14:43:19\.893957\.parquet
+      path: runs/details_layoric__llama-2-13b-code-alpaca/observations.parquet
+    - match: results_2023\-07\-24T14:43:19\.893957\.json
+      path: runs/details_layoric__llama-2-13b-code-alpaca/run.json
+    - match: README\.md
+      path: runs/details_layoric__llama-2-13b-code-alpaca/README.md
+  - name: model_120
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_lgaalves__gpt2-dolly
+    revision: 9c8aba40b22cdaa067c073f454dcee7a66494a85
+    files:
+    - match: 2023\-09\-21T18\-57\-43\.248355/details_harness\|truthfulqa:mc\|0_2023\-09\-21T18\-57\-43\.248355\.parquet
+      path: runs/details_lgaalves__gpt2-dolly/observations.parquet
+    - match: results_2023\-09\-21T18\-57\-43\.248355\.json
+      path: runs/details_lgaalves__gpt2-dolly/run.json
+    - match: README\.md
+      path: runs/details_lgaalves__gpt2-dolly/README.md
+  - name: model_121
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_lilloukas__GPlatty-30B
+    revision: 0082b67ebaa339f9c0102fac7c40c043b8337908
+    files:
+    - match: 2023\-07\-19T22:25:28\.445280/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:25:28\.445280\.parquet
+      path: runs/details_lilloukas__GPlatty-30B/observations.parquet
+    - match: results_2023\-07\-19T22:25:28\.445280\.json
+      path: runs/details_lilloukas__GPlatty-30B/run.json
+    - match: README\.md
+      path: runs/details_lilloukas__GPlatty-30B/README.md
+  - name: model_122
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_lilloukas__Platypus-30B
+    revision: 98d4b640c6e687c7e58066d4c868a2dc3046b0ab
+    files:
+    - match: 2023\-07\-19T22:45:02\.696603/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:45:02\.696603\.parquet
+      path: runs/details_lilloukas__Platypus-30B/observations.parquet
+    - match: results_2023\-07\-19T22:45:02\.696603\.json
+      path: runs/details_lilloukas__Platypus-30B/run.json
+    - match: README\.md
+      path: runs/details_lilloukas__Platypus-30B/README.md
+  - name: model_123
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_liuxiang886__llama2-70B-qlora-gpt4
+    revision: 0f92a0e08e5eba33f1d3aa1e6c78782c28d7b882
+    files:
+    - match: 2023\-08\-09T20:45:03\.475580/details_harness\|truthfulqa:mc\|0_2023\-08\-09T20:45:03\.475580\.parquet
+      path: runs/details_liuxiang886__llama2-70B-qlora-gpt4/observations.parquet
+    - match: results_2023\-08\-09T20:45:03\.475580\.json
+      path: runs/details_liuxiang886__llama2-70B-qlora-gpt4/run.json
+    - match: README\.md
+      path: runs/details_liuxiang886__llama2-70B-qlora-gpt4/README.md
+  - name: model_124
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_lvkaokao__llama2-7b-hf-instruction-lora
+    revision: b04db1903f8bb9c0504441bce576945cf1287573
+    files:
+    - match: 2023\-08\-09T14:42:44\.392764/details_harness\|truthfulqa:mc\|0_2023\-08\-09T14:42:44\.392764\.parquet
+      path: runs/details_lvkaokao__llama2-7b-hf-instruction-lora/observations.parquet
+    - match: results_2023\-08\-09T14:42:44\.392764\.json
+      path: runs/details_lvkaokao__llama2-7b-hf-instruction-lora/run.json
+    - match: README\.md
+      path: runs/details_lvkaokao__llama2-7b-hf-instruction-lora/README.md
+  - name: model_125
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_mosaicml__mpt-30b-chat
+    revision: 072fd8fb9ac16df986a8d279a8cdde3a2c9a74f3
+    files:
+    - match: 2023\-10\-04T01\-12\-49\.842984/details_harness\|truthfulqa:mc\|0_2023\-10\-04T01\-12\-49\.842984\.parquet
+      path: runs/details_mosaicml__mpt-30b-chat/observations.parquet
+    - match: results_2023\-10\-04T01\-12\-49\.842984\.json
+      path: runs/details_mosaicml__mpt-30b-chat/run.json
+    - match: README\.md
+      path: runs/details_mosaicml__mpt-30b-chat/README.md
+  - name: model_126
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_mosaicml__mpt-30b-instruct
+    revision: 46f691d398b2def4b8e7eb1b5acd07195ecb4481
+    files:
+    - match: 2023\-07\-20T13:11:24\.937399/details_harness\|truthfulqa:mc\|0_2023\-07\-20T13:11:24\.937399\.parquet
+      path: runs/details_mosaicml__mpt-30b-instruct/observations.parquet
+    - match: results_2023\-07\-20T13:11:24\.937399\.json
+      path: runs/details_mosaicml__mpt-30b-instruct/run.json
+    - match: README\.md
+      path: runs/details_mosaicml__mpt-30b-instruct/README.md
+  - name: model_127
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_mosaicml__mpt-7b-chat
+    revision: d5d37eceaa5e6143f8146b75e2d61c67ca29bf48
+    files:
+    - match: 2023\-07\-20T10:00:41\.356813/details_harness\|truthfulqa:mc\|0_2023\-07\-20T10:00:41\.356813\.parquet
+      path: runs/details_mosaicml__mpt-7b-chat/observations.parquet
+    - match: results_2023\-07\-20T10:00:41\.356813\.json
+      path: runs/details_mosaicml__mpt-7b-chat/run.json
+    - match: README\.md
+      path: runs/details_mosaicml__mpt-7b-chat/README.md
+  - name: model_128
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_mosaicml__mpt-7b-instruct
+    revision: e03697ee5489d0bb110688a6d1239ff779651050
+    files:
+    - match: 2023\-07\-20T10:01:10\.556120/details_harness\|truthfulqa:mc\|0_2023\-07\-20T10:01:10\.556120\.parquet
+      path: runs/details_mosaicml__mpt-7b-instruct/observations.parquet
+    - match: results_2023\-07\-20T10:01:10\.556120\.json
+      path: runs/details_mosaicml__mpt-7b-instruct/run.json
+    - match: README\.md
+      path: runs/details_mosaicml__mpt-7b-instruct/README.md
+  - name: model_129
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_mosaicml__mpt-7b-storywriter
+    revision: 564c4684dd93ecfcd4cc484e74f516d50bf03bb2
+    files:
+    - match: 2023\-10\-03T22\-53\-23\.133729/details_harness\|truthfulqa:mc\|0_2023\-10\-03T22\-53\-23\.133729\.parquet
+      path: runs/details_mosaicml__mpt-7b-storywriter/observations.parquet
+    - match: results_2023\-10\-03T22\-53\-23\.133729\.json
+      path: runs/details_mosaicml__mpt-7b-storywriter/run.json
+    - match: README\.md
+      path: runs/details_mosaicml__mpt-7b-storywriter/README.md
+  - name: model_130
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_notstoic__PygmalionCoT-7b
+    revision: bad006decef1e96035a38ef381fe33ea8deae60d
+    files:
+    - match: 2023\-07\-18T12:24:33\.017908/details_harness\|truthfulqa:mc\|0_2023\-07\-18T12:24:33\.017908\.parquet
+      path: runs/details_notstoic__PygmalionCoT-7b/observations.parquet
+    - match: results_2023\-07\-18T12:24:33\.017908\.json
+      path: runs/details_notstoic__PygmalionCoT-7b/run.json
+    - match: README\.md
+      path: runs/details_notstoic__PygmalionCoT-7b/README.md
+  - name: model_131
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_pythainlp__wangchanglm-7.5B-sft-en-sharded
+    revision: a1b93849d7254021c354acea3d5d442e5313143e
+    files:
+    - match: 2023\-07\-19T15:39:12\.796428/details_harness\|truthfulqa:mc\|0_2023\-07\-19T15:39:12\.796428\.parquet
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-en-sharded/observations.parquet
+    - match: results_2023\-07\-19T15:39:12\.796428\.json
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-en-sharded/run.json
+    - match: README\.md
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-en-sharded/README.md
+  - name: model_132
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_pythainlp__wangchanglm-7.5B-sft-enth
+    revision: d95af9557f4aefcbbd3057efcbf64a1d69501cf3
+    files:
+    - match: 2023\-07\-18T11:30:03\.574829/details_harness\|truthfulqa:mc\|0_2023\-07\-18T11:30:03\.574829\.parquet
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-enth/observations.parquet
+    - match: results_2023\-07\-18T11:30:03\.574829\.json
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-enth/run.json
+    - match: README\.md
+      path: runs/details_pythainlp__wangchanglm-7.5B-sft-enth/README.md
+  - name: model_133
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_quantumaikr__KoreanLM-hf
+    revision: 2328c39c47afadfc904ba4f5a7c5aa48f339f8c3
+    files:
+    - match: 2023\-07\-24T15:37:48\.867178/details_harness\|truthfulqa:mc\|0_2023\-07\-24T15:37:48\.867178\.parquet
+      path: runs/details_quantumaikr__KoreanLM-hf/observations.parquet
+    - match: results_2023\-07\-24T15:37:48\.867178\.json
+      path: runs/details_quantumaikr__KoreanLM-hf/run.json
+    - match: README\.md
+      path: runs/details_quantumaikr__KoreanLM-hf/README.md
+  - name: model_134
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_quantumaikr__QuantumLM-70B-hf
+    revision: 40e901aa77e1f9dd9191ebe469409fb42afdbc94
+    files:
+    - match: 2023\-07\-31T17:33:51\.061360/details_harness\|truthfulqa:mc\|0_2023\-07\-31T17:33:51\.061360\.parquet
+      path: runs/details_quantumaikr__QuantumLM-70B-hf/observations.parquet
+    - match: results_2023\-07\-31T17:33:51\.061360\.json
+      path: runs/details_quantumaikr__QuantumLM-70B-hf/run.json
+    - match: README\.md
+      path: runs/details_quantumaikr__QuantumLM-70B-hf/README.md
+  - name: model_135
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_quantumaikr__llama-2-70b-fb16-guanaco-1k
+    revision: 00f617826441bea2161952e76db8c36d3eccebd5
+    files:
+    - match: 2023\-08\-10T00:33:03\.607588/details_harness\|truthfulqa:mc\|0_2023\-08\-10T00:33:03\.607588\.parquet
+      path: runs/details_quantumaikr__llama-2-70b-fb16-guanaco-1k/observations.parquet
+    - match: results_2023\-08\-10T00:33:03\.607588\.json
+      path: runs/details_quantumaikr__llama-2-70b-fb16-guanaco-1k/run.json
+    - match: README\.md
+      path: runs/details_quantumaikr__llama-2-70b-fb16-guanaco-1k/README.md
+  - name: model_136
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_quantumaikr__open_llama_7b_hf
+    revision: 60fe5810827b158f4045703f4e6735e8a84a97c4
+    files:
+    - match: 2023\-07\-19T17:01:48\.631436/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:01:48\.631436\.parquet
+      path: runs/details_quantumaikr__open_llama_7b_hf/observations.parquet
+    - match: results_2023\-07\-19T17:01:48\.631436\.json
+      path: runs/details_quantumaikr__open_llama_7b_hf/run.json
+    - match: README\.md
+      path: runs/details_quantumaikr__open_llama_7b_hf/README.md
+  - name: model_137
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_shareAI__bimoGPT-llama2-13b
+    revision: d7d6314dac7dda8025883ef5543f4044a9b33da1
+    files:
+    - match: 2023\-08\-09T18:04:32\.310000/details_harness\|truthfulqa:mc\|0_2023\-08\-09T18:04:32\.310000\.parquet
+      path: runs/details_shareAI__bimoGPT-llama2-13b/observations.parquet
+    - match: results_2023\-08\-09T18:04:32\.310000\.json
+      path: runs/details_shareAI__bimoGPT-llama2-13b/run.json
+    - match: README\.md
+      path: runs/details_shareAI__bimoGPT-llama2-13b/README.md
+  - name: model_138
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_shareAI__llama2-13b-Chinese-chat
+    revision: 2e484a794e08917a5648886ddc782fd41292efde
+    files:
+    - match: 2023\-08\-09T17:02:56\.948315/details_harness\|truthfulqa:mc\|0_2023\-08\-09T17:02:56\.948315\.parquet
+      path: runs/details_shareAI__llama2-13b-Chinese-chat/observations.parquet
+    - match: results_2023\-08\-09T17:02:56\.948315\.json
+      path: runs/details_shareAI__llama2-13b-Chinese-chat/run.json
+    - match: README\.md
+      path: runs/details_shareAI__llama2-13b-Chinese-chat/README.md
+  - name: model_139
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_shibing624__chinese-alpaca-plus-13b-hf
+    revision: 55e9400f6c11bc2357301ecb6167ae9df4bfbbf5
+    files:
+    - match: 2023\-07\-19T19:20:40\.370845/details_harness\|truthfulqa:mc\|0_2023\-07\-19T19:20:40\.370845\.parquet
+      path: runs/details_shibing624__chinese-alpaca-plus-13b-hf/observations.parquet
+    - match: results_2023\-07\-19T19:20:40\.370845\.json
+      path: runs/details_shibing624__chinese-alpaca-plus-13b-hf/run.json
+    - match: README\.md
+      path: runs/details_shibing624__chinese-alpaca-plus-13b-hf/README.md
+  - name: model_140
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_shibing624__chinese-alpaca-plus-7b-hf
+    revision: c2f04d2f2342b04edbf53f175aeb647de542f5f3
+    files:
+    - match: 2023\-07\-19T17:03:31\.157428/details_harness\|truthfulqa:mc\|0_2023\-07\-19T17:03:31\.157428\.parquet
+      path: runs/details_shibing624__chinese-alpaca-plus-7b-hf/observations.parquet
+    - match: results_2023\-07\-19T17:03:31\.157428\.json
+      path: runs/details_shibing624__chinese-alpaca-plus-7b-hf/run.json
+    - match: README\.md
+      path: runs/details_shibing624__chinese-alpaca-plus-7b-hf/README.md
+  - name: model_141
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_shibing624__chinese-llama-plus-13b-hf
+    revision: 09c701ca8637049c64784fec347e1d180aebd8b3
+    files:
+    - match: 2023\-07\-18T15:48:16\.269261/details_harness\|truthfulqa:mc\|0_2023\-07\-18T15:48:16\.269261\.parquet
+      path: runs/details_shibing624__chinese-llama-plus-13b-hf/observations.parquet
+    - match: results_2023\-07\-18T15:48:16\.269261\.json
+      path: runs/details_shibing624__chinese-llama-plus-13b-hf/run.json
+    - match: README\.md
+      path: runs/details_shibing624__chinese-llama-plus-13b-hf/README.md
+  - name: model_142
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_upstage__Llama-2-70b-instruct
+    revision: f255f85ecba8f546856e9bb450a86a379e8c831d
+    files:
+    - match: 2023\-07\-31T16:38:35\.808290/details_harness\|truthfulqa:mc\|0_2023\-07\-31T16:38:35\.808290\.parquet
+      path: runs/details_upstage__Llama-2-70b-instruct/observations.parquet
+    - match: results_2023\-07\-31T16:38:35\.808290\.json
+      path: runs/details_upstage__Llama-2-70b-instruct/run.json
+    - match: README\.md
+      path: runs/details_upstage__Llama-2-70b-instruct/README.md
+  - name: model_143
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_upstage__Llama-2-70b-instruct-v2
+    revision: 2da6608913fe626322b233db1e4ca96537fa28b6
+    files:
+    - match: 2023\-08\-03T01:46:57\.047903/details_harness\|truthfulqa:mc\|0_2023\-08\-03T01:46:57\.047903\.parquet
+      path: runs/details_upstage__Llama-2-70b-instruct-v2/observations.parquet
+    - match: results_2023\-08\-03T01:46:57\.047903\.json
+      path: runs/details_upstage__Llama-2-70b-instruct-v2/run.json
+    - match: README\.md
+      path: runs/details_upstage__Llama-2-70b-instruct-v2/README.md
+  - name: model_144
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_upstage__llama-30b-instruct
+    revision: 8e42926d59cafb036de04ef55047849d31d12910
+    files:
+    - match: 2023\-07\-19T22:33:00\.369415/details_harness\|truthfulqa:mc\|0_2023\-07\-19T22:33:00\.369415\.parquet
+      path: runs/details_upstage__llama-30b-instruct/observations.parquet
+    - match: results_2023\-07\-19T22:33:00\.369415\.json
+      path: runs/details_upstage__llama-30b-instruct/run.json
+    - match: README\.md
+      path: runs/details_upstage__llama-30b-instruct/README.md
+  - name: model_145
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_upstage__llama-30b-instruct-2048
+    revision: d40bff086051baa81088f0721ca3f366fb352e54
+    files:
+    - match: 2023\-07\-19T12:29:43\.161348/details_harness\|truthfulqa:mc\|0_2023\-07\-19T12:29:43\.161348\.parquet
+      path: runs/details_upstage__llama-30b-instruct-2048/observations.parquet
+    - match: results_2023\-07\-19T12:29:43\.161348\.json
+      path: runs/details_upstage__llama-30b-instruct-2048/run.json
+    - match: README\.md
+      path: runs/details_upstage__llama-30b-instruct-2048/README.md
+  - name: model_146
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_upstage__llama-65b-instruct
+    revision: e294ae331ecd5b9c9ab0b6d836bd955955dab02a
+    files:
+    - match: 2023\-07\-31T16:32:35\.958499/details_harness\|truthfulqa:mc\|0_2023\-07\-31T16:32:35\.958499\.parquet
+      path: runs/details_upstage__llama-65b-instruct/observations.parquet
+    - match: results_2023\-07\-31T16:32:35\.958499\.json
+      path: runs/details_upstage__llama-65b-instruct/run.json
+    - match: README\.md
+      path: runs/details_upstage__llama-65b-instruct/README.md
+  - name: model_147
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_vicgalle__alpaca-7b
+    revision: 1236c3ee96594ce5dec44c8b985501149347960d
+    files:
+    - match: 2023\-07\-18T12:34:16\.138888/details_harness\|truthfulqa:mc\|0_2023\-07\-18T12:34:16\.138888\.parquet
+      path: runs/details_vicgalle__alpaca-7b/observations.parquet
+    - match: results_2023\-07\-18T12:34:16\.138888\.json
+      path: runs/details_vicgalle__alpaca-7b/run.json
+    - match: README\.md
+      path: runs/details_vicgalle__alpaca-7b/README.md
+  - name: model_148
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_vicgalle__gpt2-alpaca
+    revision: 9f079804b6a879530a9b3ebcdf25939360f08d06
+    files:
+    - match: 2023\-07\-19T10:35:22\.548714/details_harness\|truthfulqa:mc\|0_2023\-07\-19T10:35:22\.548714\.parquet
+      path: runs/details_vicgalle__gpt2-alpaca/observations.parquet
+    - match: results_2023\-07\-19T10:35:22\.548714\.json
+      path: runs/details_vicgalle__gpt2-alpaca/run.json
+    - match: README\.md
+      path: runs/details_vicgalle__gpt2-alpaca/README.md
+  - name: model_149
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_vicgalle__gpt2-alpaca-gpt4
+    revision: a83aec27aee2586b9bce061101c3b48c1559a13a
+    files:
+    - match: 2023\-07\-19T10:37:55\.436253/details_harness\|truthfulqa:mc\|0_2023\-07\-19T10:37:55\.436253\.parquet
+      path: runs/details_vicgalle__gpt2-alpaca-gpt4/observations.parquet
+    - match: results_2023\-07\-19T10:37:55\.436253\.json
+      path: runs/details_vicgalle__gpt2-alpaca-gpt4/run.json
+    - match: README\.md
+      path: runs/details_vicgalle__gpt2-alpaca-gpt4/README.md
+  - name: model_150
+    url: https://huggingface.co/datasets/open-llm-leaderboard-old/details_victor123__WizardLM-13B-1.0
+    revision: 3241a5111f11b1e7d22e1dfce547c636b83331f3
+    files:
+    - match: 2023\-07\-18T16:18:26\.905087/details_harness\|truthfulqa:mc\|0_2023\-07\-18T16:18:26\.905087\.parquet
+      path: runs/details_victor123__WizardLM-13B-1.0/observations.parquet
+    - match: results_2023\-07\-18T16:18:26\.905087\.json
+      path: runs/details_victor123__WizardLM-13B-1.0/run.json
+    - match: README\.md
+      path: runs/details_victor123__WizardLM-13B-1.0/README.md
+  - name: reference_harness
+    url: https://github.com/EleutherAI/lm-evaluation-harness
+    revision: 62ca18400ebe0fc0dbb14274b27170d2d5ae9e3d
+    files:
+    - match: lm_eval/tasks/truthfulqa\.py
+      path: reference_harness/lm_eval/tasks/truthfulqa.py
+    - match: LICENSE\.md
+      path: reference_harness/LICENSE.md
+    - match: README\.md
+      path: reference_harness/README.md

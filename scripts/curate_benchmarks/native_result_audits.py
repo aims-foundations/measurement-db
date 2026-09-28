@@ -21280,12 +21280,103 @@ def _stanford_orb(directory, tables, metadata, source_records=None):
         source_camera_configurations=sum(map(len, source['cameras'].values())))
 
 
+def _truthfulqa_mc_sources(directory):
+    """Read the original model panels without using the builder's table joins."""
+    import pyarrow.parquet as pq
+
+    native, configurations = {}, {}
+    raw = directory / 'raw'
+    for path in sorted((raw / 'runs').glob('*/observations.parquet')):
+        relative = str(path.relative_to(raw))
+        settings = json.loads(path.with_name('run.json').read_text())
+        config = settings.get('config_general', settings.get('config'))
+        _check(isinstance(config, dict) and bool(config.get('model_name')), True, 'TruthfulQA original run configuration')
+        configurations[relative] = config
+        for index, record in enumerate(pq.read_table(path).to_pylist()):
+            native[relative, index] = record
+    _check(bool(native), True, 'TruthfulQA nonempty original result panels')
+    return dict(native=native, configurations=configurations)
+
+
+def _truthfulqa_mc(directory, tables, metadata, source_records=None):
+    """Check every original prompt, model configuration, score and complete trace."""
+    import math
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _truthfulqa_mc_sources(directory) if source_records is None else source_records
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'),
+            ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'TruthfulQA unique ' + name + ' identifiers')
+    _check(len(tables['responses']), len(source['native']), 'TruthfulQA complete original panel')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'TruthfulQA complete trace linkage')
+    parameters = metadata['build']['parameters']
+    seen, item_definitions, subject_files, questions = set(), {}, {}, set()
+    successes = 0
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        _check(set(trace), {'source_file', 'source_row', 'run_configuration', 'source_record'}, 'TruthfulQA complete trace fields')
+        key = trace['source_file'], trace['source_row']
+        _check(key in source['native'] and key not in seen, True, 'TruthfulQA unique source association')
+        native, config = source['native'][key], source['configurations'][key[0]]
+        _check(trace['source_record'], native, 'TruthfulQA complete native trace')
+        _check(trace['run_configuration'], config, 'TruthfulQA original trace configuration')
+        _check(isinstance(native['mc1'], bool), True, 'TruthfulQA native binary grade')
+        _check(row.response, float(native['mc1']), 'TruthfulQA unchanged native grade')
+        _check(row.trial, 1, 'TruthfulQA one original trial per source configuration')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'TruthfulQA no invented response conditions')
+        target = native['mc1_targets']
+        _check(target['labels'], [1] + [0] * (len(target['choices']) - 1), 'TruthfulQA single first MC1 reference')
+        scores = native['predictions'][:len(target['choices'])]
+        _check(all(math.isfinite(value) for value in scores), True, 'TruthfulQA finite native likelihoods')
+        _check(scores.index(max(scores)) == 0, native['mc1'], 'TruthfulQA original MC1 likelihood rule')
+        item = items[row.item_id]
+        _check(item['raw_item_id'], str(key[1]), 'TruthfulQA original source row identifier')
+        _check(json.loads(item['content']), dict(prompt=native['full_prompt'],
+            candidate_continuations=[' ' + choice for choice in target['choices']],
+            request_protocol=parameters['labels']['request_protocol']), 'TruthfulQA complete original prompt and choices')
+        _check(json.loads(item['grading_criterion']),
+            dict(reference_answer=target['choices'][0], rule=metadata['grading']['rule']), 'TruthfulQA original MC1 grading criterion')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')),
+            ('exact_matcher', None, None), 'TruthfulQA recorded deterministic verifier')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['native'], 'TruthfulQA original verifier description')
+        _check(pd.isna(item['item_features']) and pd.isna(item['asset_manifest']), True, 'TruthfulQA no invented item features or assets')
+        definition = native['full_prompt'], tuple(target['choices']), tuple(target['labels'])
+        if row.item_id in item_definitions:
+            _check(item_definitions[row.item_id], definition, 'TruthfulQA stable source item definition')
+        item_definitions[row.item_id] = definition
+        subject = subjects[row.subject_id]
+        _check(subject['display_name'], config['model_name'], 'TruthfulQA literal recorded model name')
+        features = dict(source_configuration={key: value for key, value in config.items() if key != 'job_id'},
+            configuration_scope=parameters['labels']['configuration_scope'])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)),
+            'TruthfulQA complete recorded subject configuration')
+        if row.subject_id in subject_files:
+            _check(subject_files[row.subject_id], key[0], 'TruthfulQA distinct source configurations')
+        subject_files[row.subject_id] = key[0]
+        successes += int(native['mc1'])
+        questions.add(native['question'])
+        seen.add(key)
+    _check(seen, set(source['native']), 'TruthfulQA all original records represented')
+    _check(set(item_definitions), set(items), 'TruthfulQA no orphan items')
+    _check(len(set(item_definitions.values())), len(items), 'TruthfulQA no duplicated item definitions')
+    _check(set(subject_files), set(subjects), 'TruthfulQA no orphan subjects')
+    _check(Counter(subject_files.values()), Counter({path: 1 for path in source['configurations']}),
+        'TruthfulQA one subject for each original configuration')
+    return dict(source_responses=len(seen), source_traces=len(traces), source_subjects=len(subjects),
+        source_items=len(items), source_questions=len(questions), source_successes=successes,
+        source_failures=len(seen) - successes, source_runs=len(source['configurations']))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
