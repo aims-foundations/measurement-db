@@ -948,3 +948,4 @@ SOURCE_AUDITS["scale_mrt"] = verify_native_results
 SOURCE_AUDITS["scbench_long"] = verify_native_results
 SOURCE_AUDITS["sciarena"] = verify_native_results
 SOURCE_AUDITS["scivisagentbench"] = verify_native_results
+SOURCE_AUDITS["sib200"] = verify_native_results

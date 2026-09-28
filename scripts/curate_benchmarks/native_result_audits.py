@@ -19212,12 +19212,156 @@ def _scivisagentbench(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _sib200_sources(directory, metadata):
+    """Read native TSV fields and literal classifier output lines independently."""
+    import csv
+    import re
+    import zipfile
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    bank, runs = {}, {}
+    for path in sorted((raw / parameters['paths']['bank']).glob('*/test.tsv')):
+        with path.open(encoding='utf-8', newline='') as stream:
+            bank[path.parent.name] = list(csv.DictReader(stream, delimiter='\t'))
+    counts, configurations, models, items = Counter(), set(), set(), set()
+    archive_path = parameters['paths']['archive']
+    with zipfile.ZipFile(raw / archive_path) as archive:
+        names = sorted(name for name in archive.namelist() if name.startswith('outputs/')
+            and Path(name).name.startswith('test_predictions_') and name.endswith('.txt'))
+        for name in names:
+            match = re.fullmatch(r'outputs/([a-z]{3}_[A-Za-z]{4})_(\w+)/test_predictions_([a-z]{3}_[A-Za-z]{4})_(\d+)\.txt', name)
+            _check(match is not None, True, 'SIB original classifier configuration path')
+            language, model, evaluated_language, run = match.groups()
+            _check(language, evaluated_language, 'SIB recorded language-specific classifier run')
+            records = []
+            for line in archive.read(name).decode('utf-8').splitlines():
+                fields = line.rsplit('\t', 1)
+                _check(len(fields), 2, 'SIB literal input text and category token')
+                records.append(dict(text=fields[0], prediction=fields[1]))
+            references = bank[language]
+            _check(len(records), len(references), 'SIB complete original classifier test sequence')
+            _check([r['text'] for r in records], [r['text'] for r in references], 'SIB every native classifier input sentence')
+            categories = (raw / parameters['paths']['bank'] / language / 'labels.txt').read_text().splitlines()
+            _check(all(r['prediction'] in categories for r in records), True, 'SIB released prediction categories')
+            grades = [float(r['prediction'] == reference['category']) for r, reference in zip(records, references)]
+            summary_text = archive.read(name.replace('test_predictions_', 'test_result_')).decode('utf-8')
+            summary = dict(line.split(' = ', 1) for line in summary_text.splitlines())
+            accuracy = sum(grades) / len(grades)
+            agrees = abs(float(summary['acc']) - accuracy) < 1e-12
+            runs[archive_path, name] = dict(protocol='classifier', records=records, grades=grades, language=language,
+                model=model, run=run, summary_text=summary_text, accuracy=accuracy, summary_agrees=agrees)
+            counts['source_classifier_files'] += 1
+            counts['source_classifier_predictions'] += len(records)
+            counts['source_correct_classifier_predictions'] += int(sum(grades))
+            counts['source_summary_disagreements'] += int(not agrees)
+            configurations.add(('classifier', model, language, run))
+            models.add(model)
+            items.update(('classifier', language, r['index_id']) for r in references)
+    for folder, column in parameters['llm_columns'].items():
+        for path in sorted((raw / parameters['paths']['llm'] / folder).glob('*.tsv')):
+            with path.open(encoding='utf-8', newline='') as stream:
+                records = [dict(('Unnamed: 0' if key == '' else key, value) for key, value in row.items())
+                    for row in csv.DictReader(stream, delimiter='\t')]
+            language, model = path.stem, parameters['llm_models'][folder]
+            references = bank[language]
+            _check(len(records), len(references), 'SIB complete original LLM test sequence')
+            for record, reference in zip(records, references):
+                _check((record['index_id'], record['text'], record['category']),
+                    (reference['index_id'], reference['text'], reference['category']), 'SIB original LLM item/label association')
+            runs[path.relative_to(raw).as_posix(), ''] = dict(protocol='llm', records=records, language=language,
+                model=model, run='', grades=[None] * len(records), summary_text=None, accuracy=None, summary_agrees=None)
+            counts['source_llm_files'] += 1
+            counts['source_llm_predictions'] += len(records)
+            counts['source_empty_llm_outputs'] += sum(record[column] == '' for record in records)
+            configurations.add(('llm', model, '', ''))
+            models.add(model)
+            items.update(('llm', language, r['index_id']) for r in references)
+    counts.update(source_responses=sum(len(run['records']) for run in runs.values()),
+        source_traces=sum(len(run['records']) for run in runs.values()), source_configurations=len(configurations),
+        source_model_labels=len(models), source_languages=len(bank), source_item_definitions=len(items),
+        source_ungraded=counts['source_llm_predictions'])
+    return dict(bank=bank, runs=runs, counts=dict(counts), configurations=configurations, items=items)
+
+
+def _sib200(directory, tables, metadata, source=None):
+    """Check all original predictions, references, configurations and full replies."""
+    source = source or _sib200_sources(directory, metadata)
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        extra = _features(row.subject_features_extra)
+        if row.harness == labels['classifier_harness']:
+            key = 'classifier', row.display_name, extra['finetuning_language'], extra['source_run']
+            wanted = dict(source_model_label=row.display_name, finetuning_language=key[2], source_run=key[3],
+                configuration_status=labels['classifier_configuration'])
+        else:
+            _check(row.harness, labels['llm_harness'], 'SIB original LLM output protocol')
+            key = 'llm', row.display_name, '', ''
+            wanted = dict(source_model_label=row.display_name, paper_model_version=parameters['paper_model_versions'][row.display_name],
+                configuration_status=labels['llm_configuration'])
+        _check(extra, wanted, 'SIB literal model/run identity and unrecorded historical settings')
+        _check(pd.isna(row.harness_version), True, 'SIB no invented historical harness revision')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key:1 for key in source['configurations']}), 'SIB all model/language/run configurations')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check((len(tables['responses']), len(tables['traces']), len(traces)),
+        (source['counts']['source_responses'], source['counts']['source_traces'], source['counts']['source_traces']),
+        'SIB no missing or duplicated source observations or traces')
+    _check(set(traces), set(tables['responses'].response_id), 'SIB complete response/trace linkage')
+    seen, used = set(), set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        group = trace['source_file'], trace['source_member']
+        native = source['runs'][group]
+        position = trace['source_row']
+        _check(type(position) is int and 0 <= position < len(native['records']), True, 'SIB original source row position')
+        record, reference = native['records'][position], source['bank'][native['language']][position]
+        protocol = native['protocol']
+        expected_trace = dict(source_file=group[0], source_member=group[1], source_row=position,
+            source_record=record, bank_file=parameters['paths']['bank'] + '/' + native['language'] + '/test.tsv',
+            reference=reference['category'], native_run_summary=native['summary_text'],
+            grading_status='reconstructed_category_match' if protocol == 'classifier' else 'original_grade_unavailable',
+            reconstructed_accuracy=native['accuracy'], summary_agrees=native['summary_agrees'])
+        _check(trace, expected_trace, 'SIB complete original output, provenance and native-summary disagreement')
+        if protocol == 'classifier':
+            _check(row.response, native['grades'][position], 'SIB exact class-token correctness without changing conflicting source summaries')
+            expected_subject = protocol, native['model'], native['language'], native['run']
+        else:
+            _check(pd.isna(row.response), True, 'SIB no invented grade from an unparsed LLM reply')
+            expected_subject = protocol, native['model'], '', ''
+        _check(subjects[row.subject_id], expected_subject, 'SIB source model/training-language/run attribution')
+        item = items[row.item_id]
+        _check((item['raw_item_id'], item['content']), ('sib200_' + native['language'] + '_' + reference['index_id'],
+            reference['text']), 'SIB complete original item text and reference identity')
+        _check(_features(item['item_features']), dict(lang=native['language'], protocol=protocol,
+            input_scope=labels[protocol + '_scope'], documented_prompt=parameters['prompts']['llm']
+            if protocol == 'llm' else 'Original test sentence'), 'SIB known stimulus context and explicit prompt limitations')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=reference['category'],
+            rule=metadata['grading']['verifiers'][protocol]['rule']), 'SIB original target category and grading availability')
+        verifier = json.loads(item['verifier'])
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers'][protocol], 'SIB protocol-specific verifier')
+        _check(verifier['class'], 'exact_matcher' if protocol == 'classifier' else 'judge', 'SIB declared verification class')
+        _check((verifier.get('judge'), verifier.get('judged_by')), (None, None), 'SIB no invented historical judge')
+        _check(pd.isna(item['asset_manifest']), True, 'SIB original text-only input')
+        _check((row.trial, pd.isna(row.test_condition), pd.isna(row.interactors)), (1, True, True),
+            'SIB one recorded observation per explicit model/run/item configuration')
+        key = group + (position,)
+        _check(key not in seen, True, 'SIB no repeated source event counted twice')
+        seen.add(key); used.add(row.item_id)
+    _check(len(seen), source['counts']['source_responses'], 'SIB complete native source coverage')
+    _check(used, set(items), 'SIB no unused or omitted item definitions')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
