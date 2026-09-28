@@ -54,6 +54,32 @@ class GradingMetadataTests(unittest.TestCase):
                 with self.assertRaisesRegex(BenchmarkMetadataError, "JSON-compatible"):
                     validate_benchmark_metadata(self.metadata)
 
+    def test_nominal_categories_have_no_score_order(self):
+        from scripts.build_measurement_tables.response_scales import resolve_categorical
+
+        benchmark = self.metadata['benchmark']
+        benchmark['response_type'] = 'nominal'
+        benchmark['response_scale'] = {'kind': 'discrete', 'values': [1, 2, 3], 'direction': 'unordered',
+            'meanings': {'1': 'compliance', '2': 'refusal', '3': 'partial refusal'}}
+        benchmark.pop('categorical', None)
+        validate_benchmark_metadata(self.metadata)
+        self.assertTrue(resolve_categorical('nominal'))
+        benchmark['categorical'] = False
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata)
+
+    def test_nominal_scales_reject_ordered_or_continuous_domains(self):
+        benchmark = self.metadata['benchmark']
+        benchmark['response_type'] = 'nominal'
+        benchmark['categorical'] = True
+        for scale in ({'kind': 'discrete', 'values': [1, 2, 3], 'direction': 'higher_is_better'},
+                {'kind': 'discrete', 'values': [1, 2, 3]},
+                {'kind': 'interval', 'min': 1, 'max': 3, 'direction': 'unordered'}):
+            with self.subTest(scale=scale):
+                benchmark['response_scale'] = scale
+                with self.assertRaises(BenchmarkMetadataError):
+                    validate_benchmark_metadata(self.metadata)
+
 
 if __name__ == "__main__":
     unittest.main()

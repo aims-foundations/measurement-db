@@ -47,7 +47,7 @@ properties:
     allOf:
       - if:
           properties:
-            response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal]}
+            response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal, nominal]}
         then:
           properties:
             categorical: {const: true}
@@ -96,6 +96,7 @@ properties:
           - likert_10
           - win_rate
           - ordinal
+          - nominal
           - fraction
           - continuous_bounded
           - continuous_unbounded
@@ -106,7 +107,7 @@ properties:
         $ref: "#/$defs/response_scale"
       categorical:
         description: >-
-          Optional for binary/error-presence, Likert, ordinal, or continuous
+          Optional for binary/error-presence, Likert, ordinal, nominal, or continuous
           types: the builder derives the classification and rejects conflicts.
           Fractions, rates, and mixed scales require an explicit boolean.
         type: boolean

@@ -94,6 +94,7 @@ RESPONSE_TYPES = (
     "likert_10",
     "win_rate",
     "ordinal",
+    "nominal",
     "fraction",
     "continuous_bounded",
     "continuous_unbounded",

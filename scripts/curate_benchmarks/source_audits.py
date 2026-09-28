@@ -968,3 +968,5 @@ SOURCE_AUDITS["stanford_orb"] = verify_native_results
 
 SOURCE_AUDITS["truthfulqa_mc"] = verify_native_results
 SOURCE_AUDITS["tulu_human_eval"] = verify_native_results
+
+SOURCE_AUDITS["xstest"] = verify_native_results

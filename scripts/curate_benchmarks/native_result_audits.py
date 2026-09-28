@@ -21489,12 +21489,135 @@ def _tulu_human_eval(directory, tables, metadata, source=None):
     return dict(counts)
 
 
+def _xstest_sources(directory):
+    """Read every original CSV record independently of the builder's joins."""
+    import ast
+    import csv
+
+    raw = Path(directory) / 'raw'
+    def read(path):
+        with path.open() as stream:
+            return list(csv.DictReader(stream))
+    historical = {row['id_v2']: row for row in read(raw / 'historical/xstest_v2_prompts.csv')}
+    current = {'v2-' + row['id']: row for row in read(raw / 'xstest_prompts.csv')}
+    _check(len(historical) == len(current) == 450, True, 'XSTest complete task banks')
+    tree = ast.parse((raw / 'evaluation/classify_completions_strmatch.py').read_text())
+    function = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == 'strmatch_label')
+    prefixes = tuple(value for node in ast.walk(function) if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute) and node.func.attr == 'startswith' for value in ast.literal_eval(node.args[0]))
+    native, attempts, paths = {}, {}, {}
+    for path in sorted((raw / 'model_completions').glob('*.csv')):
+        model = path.stem.removeprefix('xstest_v2_completions_')
+        files = dict(native=str(path.relative_to(raw)),
+            gpt='evaluation/automated_evaluation_labels/' + path.stem + '_gpteval.csv',
+            string='evaluation/automated_evaluation_labels/' + path.stem + '_streval.csv')
+        exports = {kind: read(raw / file) for kind, file in files.items()}
+        _check({len(rows) for rows in exports.values()}, {450}, 'XSTest complete source panels')
+        paths[model] = files
+        for index, (original, gpt, string) in enumerate(zip(*exports.values(), strict=True)):
+            for duplicate in (gpt, string):
+                _check({key: value for key, value in original.items() if key != 'agreement'},
+                    {key: duplicate[key] for key in original if key != 'agreement'}, 'XSTest matching duplicate exports')
+                _check(original['agreement'].lower(), duplicate['agreement'].lower(), 'XSTest equivalent boolean spelling')
+            _check(original['agreement'].lower(), str(original['annotation_1'] == original['annotation_2']).lower(), 'XSTest original agreement flags')
+            identifier = original['id']
+            _check(original['type'], historical[identifier]['type'], 'XSTest recorded prompt type')
+            _check(string['strmatch_label'], '2_full_refusal' if original['completion'].lower().strip().startswith(prefixes)
+                else '1_full_compliance', 'XSTest original prefix classifier')
+            native[model, index] = dict(native_record=original, gpt_record=gpt, string_record=string,
+                historical_record=historical[identifier], current_record=current[identifier])
+            for grader in ('annotation_1', 'annotation_2', 'final_label', 'gpt4_label', 'strmatch_label'):
+                attempts[model, index, grader] = (gpt if grader == 'gpt4_label' else string if grader == 'strmatch_label' else original)[grader]
+    _check(len(native), 2250, 'XSTest original completion coverage')
+    return dict(native=native, attempts=attempts, paths=paths)
+
+
+def _xstest(directory, tables, metadata, source=None):
+    """Check every saved judgment, grading protocol, model, prompt and full trace."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+
+    source = _xstest_sources(directory) if source is None else source
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'XSTest unique ' + name + ' identifiers')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(tables['responses']), len(source['attempts']), 'XSTest complete judgment coverage')
+    _check(set(traces), set(tables['responses'].response_id), 'XSTest complete trace linkage')
+    _check(metadata['benchmark']['response_type'], 'nominal', 'XSTest unordered category type')
+    _check(metadata['benchmark']['response_scale'], dict(kind='discrete', values=[1,2,3], direction='unordered',
+        meanings={'1':'Full compliance', '2':'Full refusal', '3':'Partial refusal'}), 'XSTest unordered native category meanings')
+    parameters = metadata['build']['parameters']
+    _check(parameters['model_identifiers'], dict(gpt4='gpt-4', llama2new='meta-llama/Llama-2-70b-chat-hf',
+        llama2orig='meta-llama/Llama-2-70b-chat-hf', mistralguard='mistralai/Mistral-7B-Instruct-v0.1',
+        mistralinstruct='mistralai/Mistral-7B-Instruct-v0.1'), 'XSTest paper-reported model identities')
+    seen, definitions, models, counts = set(), {}, {}, Counter()
+    category_values = {'1_full_compliance':1., '2_full_refusal':2., '3_partial_refusal':3.}
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_model'], trace['source_row'], trace['grader']
+        _check(key in source['attempts'] and key not in seen, True, 'XSTest unique native judgment association')
+        records, label = source['native'][key[:2]], source['attempts'][key]
+        original = records['native_record']
+        _check(set(trace), set(records) | {'source_model','source_row','source_files','grader',
+            'task_bank_prompts_match','grade_available','observation_scope'}, 'XSTest complete trace fields')
+        for name, record in records.items():
+            _check(trace[name], record, 'XSTest full original ' + name)
+        _check(trace['source_files'], source['paths'][key[0]], 'XSTest original source files')
+        matches = original['prompt'] == records['historical_record']['prompt'] == records['current_record']['prompt']
+        _check(trace['task_bank_prompts_match'], matches, 'XSTest explicit prompt-bank discrepancy')
+        _check(trace['observation_scope'], parameters['descriptions']['observation_scope'], 'XSTest judgment observation scope')
+        available = label in category_values
+        _check(trace['grade_available'], available, 'XSTest native grade availability')
+        if available:
+            _check(row.response, category_values[label], 'XSTest unchanged categorical grade')
+            counts['source_' + label] += 1
+        else:
+            _check(pd.isna(row.response) and key[2] == 'gpt4_label', True, 'XSTest unparseable judgment retained as null')
+            counts['source_ungraded'] += 1
+        _check(row.trial, 1, 'XSTest one recorded completion per configuration and task')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'XSTest no invented response conditions')
+        subject = subjects[row.subject_id]
+        _check(subject['display_name'], parameters['models'][key[0]], 'XSTest original model configuration association')
+        features = dict(source_model_key=key[0], paper_model=parameters['model_identifiers'][key[0]],
+            paper_system_prompt=parameters['system_prompts'][key[0]], paper_collection_date=parameters['collection_dates'][key[0]],
+            paper_generation=parameters['generation'])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)), 'XSTest paper-reported subject settings')
+        models[row.subject_id] = key[0]
+        item = items[row.item_id]
+        _check((item['raw_item_id'], item['content']), (original['id'], original['prompt']), 'XSTest original prompt identity and wording')
+        _check(item['item_features'], features_string(canonicalize_features(dict(source_type=original['type']))), 'XSTest original prompt category')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=metadata['grading']['rule']), 'XSTest nominal grading criterion')
+        protocol = metadata['grading']['verifiers'][key[2]]
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')),
+            ('exact_matcher', None, None) if key[2] == 'strmatch_label' else
+            ('judge', 'gpt-4', 'llm') if key[2] == 'gpt4_label' else ('judge', None, 'human'), 'XSTest original grading method')
+        _check(json.loads(verifier['spec']), protocol, 'XSTest complete grading protocol')
+        _check(protocol['source_column'], key[2], 'XSTest separate human annotation slots')
+        _check(pd.isna(item['asset_manifest']), True, 'XSTest no invented item assets')
+        definition = original['id'], original['prompt'], original['type'], key[2]
+        if row.item_id in definitions:
+            _check(definitions[row.item_id], definition, 'XSTest stable grading-aware item identity')
+        definitions[row.item_id] = definition
+        seen.add(key)
+    _check(seen, set(source['attempts']), 'XSTest every source judgment exactly once')
+    _check(set(definitions), set(items), 'XSTest no orphan items')
+    _check(len(set(definitions.values())), len(items), 'XSTest no duplicated grading definitions')
+    _check(set(models), set(subjects), 'XSTest no orphan subjects')
+    _check(Counter(models.values()), Counter({key:1 for key in source['paths']}), 'XSTest five original configurations')
+    counts.update(source_responses=len(seen), source_traces=len(traces), source_subjects=len(subjects), source_items=len(items),
+        source_completions=len(source['native']), source_questions=len({v['native_record']['id'] for v in source['native'].values()}),
+        source_prompt_discrepancies=sum(v['native_record']['prompt'] != v['historical_record']['prompt'] for v in source['native'].values()))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
