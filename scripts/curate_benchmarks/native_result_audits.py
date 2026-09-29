@@ -21834,12 +21834,219 @@ def _ultrafeedback(directory, tables, metadata, source=None):
     return dict(counts, source_items=len(items), source_traces=len(traces))
 
 
+def _visit_bench_sources(directory, metadata):
+    """Read every original observation independently, without importing the builder."""
+    import csv
+    import hashlib
+    import math
+    from collections import defaultdict
+    from zipfile import ZipFile
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+
+    def csv_records(filename):
+        with (raw / filename).open(newline='') as stream:
+            return list(csv.DictReader(stream))
+
+    singles = csv_records(layout['dataset'])
+    bank, tasks, aliases = {}, {}, defaultdict(list)
+    for position, row in enumerate(singles):
+        key = row['image'], row['instruction']
+        aliases[key].append(position)
+        if key in bank:
+            _check(bank[key]['record'], row, 'VisIT identical metadata aliases')
+        else:
+            task = layout['dataset'] + ':' + str(position)
+            bank[key] = tasks[task] = dict(record=row, task_key=task, images=[row['image']], captions=[row['instruction_conditioned_caption']])
+    for key, value in bank.items():
+        value['metadata_rows'] = aliases[key]
+    multis = csv_records(layout['multi'])
+    for position, row in enumerate(multis):
+        images, captions = json.loads(row['images']), json.loads(row['images_dense_captions'])
+        _check(all(isinstance(value, str) for value in captions[:len(images)]), True, 'VisIT complete ordered multi-image captions')
+        _check(all(isinstance(value, float) and math.isnan(value) for value in captions[len(images):]), True, 'VisIT only padded empty caption slots')
+        key = layout['multi'] + ':' + str(position)
+        tasks[key] = dict(record=row, task_key=key, images=images, captions=captions[:len(images)], metadata_rows=[position])
+    images = {}
+    with ZipFile(raw / layout['image_archive']) as archive:
+        members = set(archive.namelist())
+        for url in {url for task in tasks.values() for url in task['images']}:
+            member = layout['image_prefix'] + Path(url).name
+            if member not in members:
+                continue
+            body = archive.read(member)
+            mime = 'image/jpeg' if body[:3] == b'\xff\xd8\xff' else 'image/png' if body[:4] == b'\x89PNG' else 'image/webp' if body[:4] == b'RIFF' else None
+            _check(mime is not None, True, 'VisIT reviewed original image encoding')
+            images[url] = dict(asset_id=hashlib.sha256(body).hexdigest(), path='images/' + Path(url).name, media_type=mime, bytes=len(body))
+    native, counts = {}, Counter()
+
+    def add(row, source_file, source_row, task, protocol, *, votes=None, cache_evidence=None, source_aliases=None):
+        nonfinite = [key for key, value in row.items() if isinstance(value, float) and math.isnan(value)]
+        _check(set(nonfinite) <= {'A', 'B'}, True, 'VisIT only reviewed nonfinite generation sentinels')
+        original = {key: None if key in nonfinite else value for key, value in row.items()}
+        for side in (['A', 'B'] if votes is not None else ['']):
+            model = row[side + '_model'] if side else labels['reference_alias']
+            if votes is None:
+                _check(row['human_ratings_gpt4_correct'].lower() in ['true', 'false'], True, 'VisIT original Boolean correctness')
+                grade, opponent = float(row['human_ratings_gpt4_correct'].lower() == 'true'), ''
+            elif protocol == 'human_pairwise':
+                choice = row['model_selection.' + side]
+                _check(choice in ['TRUE', 'FALSE'], True, 'VisIT original human forced choice')
+                grade, opponent = float(choice == 'TRUE'), row[('B' if side == 'A' else 'A') + '_model']
+            else:
+                _check(len(votes) == 2 and set(votes) <= {row['A_model'], row['B_model'], 'tie'}, True, 'VisIT two native orderings')
+                # Published elo_analysis.py requires unanimity, including when one vote ties.
+                winner = votes[0] if votes[0] == votes[1] and votes[0] != 'tie' else None
+                grade, opponent = .5 if winner is None else float(winner == model), row[('B' if side == 'A' else 'A') + '_model']
+            if model == labels['reference_alias']:
+                _check(row[side] if side else row['gpt4_prediction'], task['record']['gpt4_prediction'], 'VisIT reference is the original GPT-4 generation')
+            trace = dict(source_file=source_file, source_row=source_row, side=side, protocol=protocol,
+                native_record=original, native_nonfinite_fields=nonfinite, task_record=task['record'], task_key=task['task_key'],
+                metadata_rows=task['metadata_rows'], source_aliases=source_aliases or [], cached_judgments=cache_evidence or [],
+                unavailable_grading_images=[url for url in task['images'] if url not in images], scope=labels['trace_scope'])
+            key = source_file, source_row, side
+            _check(key not in native, True, 'VisIT distinct native observation coordinates')
+            native[key] = dict(trace=trace, model=model, grade=grade, opponent=opponent, task=task, protocol=protocol)
+            counts['source_' + protocol] += 1
+            counts['source_missing_generation_slots'] += side in nonfinite
+    human = csv_records(layout['human'])
+    for i, row in enumerate(human):
+        _check(row['model_selection.A'] != row['model_selection.B'], True, 'VisIT exactly one human winner')
+        add(row, layout['human'], i, bank[row['image_url'], row['instruction']], 'human_pairwise', votes=True)
+    with ZipFile(raw / layout['judgment_archive']) as archive:
+        published = json.loads(archive.read(layout['judgment_member']))
+    def pair_identity(row):
+        return json.dumps([row['image_url'], row['instruction'], sorted([(row['A_model'], row['A']), (row['B_model'], row['B'])])], ensure_ascii=False)
+    published_pairs = set()
+    for i, row in enumerate(published):
+        _check((row['engine'], row['evaluated_with_reference']), ('gpt-4', False), 'VisIT original reference-free judge')
+        published_pairs.add(pair_identity(row))
+        add(row, layout['judgment_archive'], i, bank[row['image_url'], row['instruction']], 'gpt4_pairwise', votes=row['auto_evaluation_result'])
+    with ZipFile(raw / layout['cache_archive']) as archive:
+        cached = [json.loads(line) for line in archive.read(layout['cache_member']).splitlines() if line]
+    cache = {row['query']: dict(row, cache_row=i) for i, row in enumerate(cached)}
+    events = {}
+    for path in sorted(raw.glob(layout['queries'])):
+        for i, line in enumerate(path.read_text().splitlines()):
+            row = json.loads(line)
+            pair = pair_identity(row)
+            if pair in published_pairs:
+                counts['source_overlapping_later_exports'] += 1
+                continue
+            key = pair, row['image_dense_caption']
+            if key not in events:
+                events[key] = dict(row=row, aliases=[])
+            events[key]['aliases'].append(dict(source_file=str(path.relative_to(raw)), source_row=i))
+    for event in events.values():
+        row = event['row']
+        votes, evidence = [], []
+        for order, (a, b) in enumerate([(row['A'], row['B']), (row['B'], row['A'])]):
+            query = parameters['request']['template'].format(row['image_dense_caption'], row['instruction'], a, b)
+            saved = cache[query]
+            selected = [side for side in 'AB' if ('response ' + side.lower() + ' is better') in saved['response'].lower()]
+            extraction = None
+            if len(selected) != 1:
+                extraction = cache[saved['response'] + parameters['request']['extraction_suffix']]['response']
+                selected = [side for side in 'AB' if 'Final Answer: Response ' + side in extraction]
+            vote = 'tie' if len(selected) != 1 else row[('A_model' if order == 0 else 'B_model') if selected[0] == 'A' else ('B_model' if order == 0 else 'A_model')]
+            votes.append(vote)
+            evidence.append(dict(order=order, cache_row=saved['cache_row'], query=query, response=saved['response'], extraction_response=extraction))
+        first = event['aliases'][0]
+        add(row, first['source_file'], first['source_row'], bank[row['image_url'], row['instruction']], 'gpt4_pairwise',
+            votes=votes, cache_evidence=evidence, source_aliases=event['aliases'])
+    for filename, rows in [(layout['dataset'], singles), (layout['multi'], multis)]:
+        for i, row in enumerate(rows):
+            task = bank[row['image'], row['instruction']] if filename == layout['dataset'] else tasks[filename + ':' + str(i)]
+            add(row, filename, i, task, 'human_correctness')
+    counts.update(dict(source_responses=len(native), source_human_comparisons=len(human), source_published_comparisons=len(published),
+        source_later_comparisons=len(events), source_single_correctness=len(singles), source_multi_correctness=len(multis),
+        source_subjects=len({row['model'] for row in native.values()}), source_cache_records=len(cached), source_distinct_cache_queries=len(cache)))
+    return dict(native=native, tasks=tasks, images=images, counts=dict(counts))
+
+
+def _visit_bench(directory, tables, metadata, source=None):
+    """Check all native grades, full evidence, input modalities and original image hashes."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = _visit_bench_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    for table, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id'), ('assets', 'asset_id')]:
+        _check(tables[table][key].is_unique, True, 'VisIT unique ' + table + ' identifiers')
+    _check(len(tables['responses']), len(source['native']), 'VisIT complete original observation coverage')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'VisIT complete trace linkage')
+    models = {}
+    for identity, subject in subjects.items():
+        features = _features(subject['subject_features_extra'])
+        model = features.get('source_model_label')
+        _check(model in {row['model'] for row in source['native'].values()}, True, 'VisIT original model label')
+        mode = labels['caption_input'] if model == labels['reference_alias'] else labels['visual_input']
+        _check(subject['harness'], labels['harness'], 'VisIT original harness')
+        _check(subject['display_name'], labels['reference_model'] if model == labels['reference_alias'] else model, 'VisIT human-verified reference model identity')
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(dict(source_model_label=model, input_scope=mode,
+            configuration_status=labels['configuration_status']))), 'VisIT complete recorded subject configuration')
+        models[identity] = model
+    _check(Counter(models.values()), Counter({row['model']: 1 for row in source['native'].values()}), 'VisIT every original model')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    expected_assets = {image['asset_id']: image['bytes'] for image in source['images'].values()}
+    _check(set(assets), set(expected_assets), 'VisIT exact original image inventory')
+    for identity, asset in assets.items():
+        _check(hashlib.sha256(asset['data']).hexdigest(), identity, 'VisIT unchanged source image bytes')
+        _check(len(asset['data']), expected_assets[identity], 'VisIT complete source image size')
+    seen, checked_items, used_subjects = set(), {}, set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        coordinate = trace.get('source_file'), trace.get('source_row'), trace.get('side')
+        _check(coordinate in source['native'], True, 'VisIT original observation association')
+        _check(coordinate not in seen, True, 'VisIT nonduplicated observation association')
+        original = source['native'][coordinate]
+        _check(trace, original['trace'], 'VisIT complete original trace and source association')
+        _check(row.response, original['grade'], 'VisIT exact published grading including one-win-one-tie')
+        _check(row.trial, 1, 'VisIT one observation per source condition')
+        _check(row.test_condition, 'source_file=' + coordinate[0] + ';source_row=' + str(coordinate[1]) + ';side=' + coordinate[2], 'VisIT native source condition')
+        _check(None if pd.isna(row.interactors) else row.interactors, 'opponent=' + original['opponent'] if original['opponent'] else None, 'VisIT original comparison opponent')
+        _check(models[row.subject_id], original['model'], 'VisIT correct model association')
+        task, protocol = original['task'], original['protocol']
+        caption = original['model'] == labels['reference_alias']
+        definition = task['task_key'], protocol, caption
+        if row.item_id in checked_items:
+            _check(checked_items[row.item_id], definition, 'VisIT distinct input and grading definitions')
+        else:
+            item = items[row.item_id]
+            _check(item['raw_item_id'], task['task_key'], 'VisIT original task coordinate')
+            links = [dict(asset_id=source['images'][url]['asset_id'], path=source['images'][url]['path'], media_type=source['images'][url]['media_type'],
+                role='grading' if caption else 'input', ordinal=i + 1) for i, url in enumerate(task['images']) if url in source['images']]
+            content = dict(instruction=task['record']['instruction'], instruction_conditioned_captions=task['captions']) if caption else dict(multimedia_elements=[dict(content_type='text/plain', text=task['record']['instruction'])]
+                + [dict(content_type=link['media_type'], location=link['path']) for link in links])
+            _check(json.loads(item['content']), content, 'VisIT full original model inputs')
+            _check(json.loads(item['asset_manifest']) if pd.notna(item['asset_manifest']) else [], links, 'VisIT ordered image roles and associations')
+            missing = sum(url not in source['images'] for url in task['images'])
+            expected = dict(instruction_category=task['record']['instruction_category'], input_scope=labels['caption_input'] if caption else labels['visual_input'], unavailable_grading_images=str(missing))
+            _check(item['item_features'], features_string(canonicalize_features(expected)), 'VisIT original input scope and unavailable images')
+            spec = metadata['grading']['verifiers'][protocol]
+            _check(json.loads(item['grading_criterion']), json.loads(canonical_grading_criterion(dict(rule=spec['rule'], response_scale=spec['response_scale']))), 'VisIT separate original grading rules and scales')
+            _check(json.loads(item['verifier']), dict(**{'class': 'judge'}, judge=spec['judge'], judged_by=spec['judged_by'], spec=json.dumps(spec, sort_keys=True)), 'VisIT original human or GPT-4 verifier')
+            checked_items[row.item_id] = definition
+        seen.add(coordinate)
+        used_subjects.add(row.subject_id)
+    _check(seen, set(source['native']), 'VisIT all and only original observations')
+    _check(set(checked_items), set(items), 'VisIT no orphan item definitions')
+    _check(used_subjects, set(subjects), 'VisIT no orphan subjects')
+    return dict(source['counts'], source_items=len(items), source_assets=len(assets), source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

@@ -1,0 +1,174 @@
+format_version: 1
+tables:
+  traces:
+    rows: 71406
+    logical_sha256: 6dc0c47a96f9d806da8b2a18de1e662d62db6376b89bb343b180b6ea5b7ad465
+  subjects:
+    rows: 19
+    logical_sha256: 02354190b48117adcba742ef34dd03d7733a9d2fc3ecf8e1e5cbd2f071aa5716
+  responses:
+    rows: 71406
+    logical_sha256: f57f6b0d9bfa2e7f360c58ff00abaf5cd9ad15668b35789bb1f2eeea44c8c799
+  assets:
+    rows: 933
+    logical_sha256: 48f03aaa68d37d842f3aeb2f7e6c8ebe6d3c776389a5125437cca80fb2f38cde
+  items:
+    rows: 2391
+    logical_sha256: ff36698f739c04b0cc53abe3f14fe8eb817c3aa528c376b14d2e4aaed0503b2c
+  benchmarks:
+    rows: 1
+    logical_sha256: 483333be9f4d884bd1d698fe872fce03db13d8b9ed93b317f0362e29584b94b2
+source_claims:
+  source_human_pairwise:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 10022
+  source_missing_generation_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 144
+  source_gpt4_pairwise:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 60706
+  source_overlapping_later_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 108
+  source_human_correctness:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 678
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 71406
+  source_human_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 5011
+  source_published_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 25078
+  source_later_comparisons:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 5275
+  source_single_correctness:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 578
+  source_multi_correctness:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 100
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 19
+  source_cache_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 128163
+  source_distinct_cache_queries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 119546
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 2391
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 933
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/mlfoundations/VisIT-Bench
+    locator: Pinned human CSV, single/multi-image task CSVs, published September 2023 paired judgments and explicit
+      later requests joined to original cached judgments.
+    scope: All original human records and released comparison snapshot; add 5275 distinct later explicitly requested
+      comparisons. Preserve 144 unavailable generation fields and all native grades. No model or judge execution.
+    expected: 71406

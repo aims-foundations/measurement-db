@@ -973,3 +973,5 @@ SOURCE_AUDITS["xstest"] = verify_native_results
 
 SOURCE_AUDITS["txbench_pp"] = verify_native_results
 SOURCE_AUDITS["ultrafeedback"] = verify_native_results
+
+SOURCE_AUDITS["visit_bench"] = verify_native_results
