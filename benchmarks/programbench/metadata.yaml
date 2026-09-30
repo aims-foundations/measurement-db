@@ -1,0 +1,254 @@
+benchmark:
+  name: ProgramBench
+  description: Published ProgramBench attempts to reconstruct executable behavior from a compiled program and its
+    documentation, with native fractional behavioral-test scores and complete recorded agent trajectories.
+  testing_condition: 'The versioned official registry identifies 25 submission runs. Keep every published trajectory,
+    including the one attempt with no released evaluation. Preserve the two recorded initial messages and the exact
+    named container environment; original historical container bytes are not included and no modern image or prompt
+    is substituted. Model aliases, decoding and scaffold configurations come from the saved trajectory, not a current
+    template. There are 28 distinct recorded configurations. Keep the original test verdicts and the registry ignore
+    policy; test identifiers and grader versions are part of item grading identity. Source evaluation files can
+    repeat test identifiers; the published map uses the last result for each identifier, as in the upstream packaging
+    function. Original repeated test records remain in the trace. No model, compilation, container or grader is
+    run. This is a newer source snapshot than the legacy 15-run website scrape: sixteen legacy cells lack corresponding
+    records in these published forks and are retained in the archived old collection. Scores must be compared with
+    their source snapshot and grading scope.'
+  paper_url: https://arxiv.org/abs/2605.03546
+  data_source_url: https://github.com/facebookresearch/ProgramBench
+  subject_type: model configuration
+  item_type: task
+  license: The official registry declares MIT. The pinned result repositories do not declare redistribution terms;
+    their captured inputs and derived tables remain local pending clarification. Referenced task programs and
+    container contents retain their own upstream licenses.
+  citation: "@misc{yang2026programbench,\n  title={ProgramBench: Can Language Models Rebuild Programs From Scratch?},\n\
+    \  author={Yang, John and Lieret, Kilian and Ma, Jeffrey and Thakkar, Parth and Pedchenko, Dmitrii and Sootla,\
+    \ Sten and McMilin, Emily and Yin, Pengcheng and Hou, Rui and Synnaeve, Gabriel and Yang, Diyi and Press, Ofir},\n\
+    \  year={2026},\n  eprint={2605.03546},\n  archivePrefix={arXiv},\n}"
+  tags:
+  - agent
+  - coding
+  - reverse-engineering
+  - harness
+  - docker
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  multi_single_turn: multi_turn
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2026-05
+  granularity: item
+  version: c19e570f64719c8326ccdcc7af803447cb89d1a6
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      registry: registry.tar.gz
+    runs:
+      20260429_mini-v2.2.6_gemini-3-1-pro: runs/20260429_mini-v2.2.6_gemini-3-1-pro.tar.gz
+      20260429_mini-v2.2.6_gemini-3-flash: runs/20260429_mini-v2.2.6_gemini-3-flash.tar.gz
+      20260429_mini-v2.2.6_gpt-5-4: runs/20260429_mini-v2.2.6_gpt-5-4.tar.gz
+      20260429_mini-v2.2.6_gpt-5-4-mini: runs/20260429_mini-v2.2.6_gpt-5-4-mini.tar.gz
+      20260429_mini-v2.2.6_gpt-5-mini: runs/20260429_mini-v2.2.6_gpt-5-mini.tar.gz
+      20260429_mini-v2.2.6_haiku-4-5: runs/20260429_mini-v2.2.6_haiku-4-5.tar.gz
+      20260429_mini-v2.2.6_opus-4-7: runs/20260429_mini-v2.2.6_opus-4-7.tar.gz
+      20260429_mini-v2.2.6_sonnet-4-6: runs/20260429_mini-v2.2.6_sonnet-4-6.tar.gz
+      20260430_mini-v2.2.6_opus-4-6: runs/20260430_mini-v2.2.6_opus-4-6.tar.gz
+      20260507_mini-v2.2.6_gpt-5-5: runs/20260507_mini-v2.2.6_gpt-5-5.tar.gz
+      20260507_mini-v2.2.6_gpt-5-5-high: runs/20260507_mini-v2.2.6_gpt-5-5-high.tar.gz
+      20260507_mini-v2.2.6_opus-4-7-xhigh: runs/20260507_mini-v2.2.6_opus-4-7-xhigh.tar.gz
+      20260508_mini-v2.2.6_gpt-5-5-xhigh: runs/20260508_mini-v2.2.6_gpt-5-5-xhigh.tar.gz
+      20260717_mini-v2.4.5_glm-5.2: runs/20260717_mini-v2.4.5_glm-5.2.tar.gz
+      20260717_mini-v2.4.5_opus-4.8-xhigh: runs/20260717_mini-v2.4.5_opus-4.8-xhigh.tar.gz
+      20260729_mini-v2.2.8_gemini-3-5-flash: runs/20260729_mini-v2.2.8_gemini-3-5-flash.tar.gz
+      20260730_mini-v2.2.8_gpt-5-6-sol: runs/20260730_mini-v2.2.8_gpt-5-6-sol.tar.gz
+      20260731_mini-v2.4.2_gemini-3-6-flash: runs/20260731_mini-v2.4.2_gemini-3-6-flash.tar.gz
+      20260731_mini-v2.4.2_opus-5-xhigh: runs/20260731_mini-v2.4.2_opus-5-xhigh.tar.gz
+      20260802_mini-v2.4.2_gpt-5-6-sol-xhigh: runs/20260802_mini-v2.4.2_gpt-5-6-sol-xhigh.tar.gz
+      20260815_mini-v2.4.2_gemini-3-7-flash: runs/20260815_mini-v2.4.2_gemini-3-7-flash.tar.gz
+      20260906_mini-v2.4.2_muse-spark-1.1-xhigh: runs/20260906_mini-v2.4.2_muse-spark-1.1-xhigh.tar.gz
+      20260908_mini-v2.4.2_muse-spark-1.2-xhigh: runs/20260908_mini-v2.4.2_muse-spark-1.2-xhigh.tar.gz
+      20260910_mini-v2.4.5_muse-spark-1.3-xhigh: runs/20260910_mini-v2.4.5_muse-spark-1.3-xhigh.tar.gz
+      20260918_mini-v2.4.5_muse-spark-1.3-max: runs/20260918_mini-v2.4.5_muse-spark-1.3-max.tar.gz
+    labels:
+      harness: mini-SWE-agent
+sources:
+  upstream:
+  - name: registry
+    url: https://codeload.github.com/ProgramBench/submissions/tar.gz/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    revision: c19e570f64719c8326ccdcc7af803447cb89d1a6
+    file: registry.tar.gz
+    size: 54700419
+    sha256: 279f568eed9627d657f72460def7476ad4222f83d1f8d405ed023a71c03216fd
+  - name: run_1
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_gemini-3-1-pro/tar.gz/574aee657da3aa4aad293398bb750c22d66433fd
+    revision: 574aee657da3aa4aad293398bb750c22d66433fd
+    file: runs/20260429_mini-v2.2.6_gemini-3-1-pro.tar.gz
+    size: 39209280
+    sha256: 222840ee723baf4f65cd0c191f4d59b2979360fa6992d4b8c032362e185036d6
+  - name: run_2
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_gemini-3-flash/tar.gz/07b41d5a41abc563712e23119d63f918f22b0124
+    revision: 07b41d5a41abc563712e23119d63f918f22b0124
+    file: runs/20260429_mini-v2.2.6_gemini-3-flash.tar.gz
+    size: 35157686
+    sha256: 89b9ddbc55f874ed19d5d9724fe247a921541cf4f98edfe232cf60c945637ceb
+  - name: run_3
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_gpt-5-4/tar.gz/f43ff067bfcf052c8d3fa37cf7a580d65fde4d17
+    revision: f43ff067bfcf052c8d3fa37cf7a580d65fde4d17
+    file: runs/20260429_mini-v2.2.6_gpt-5-4.tar.gz
+    size: 14399849
+    sha256: 7327e610cbc4e2995390f4267a7beb5b9b938542dce731f6a608049a3361f56c
+  - name: run_4
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_gpt-5-4-mini/tar.gz/e52d6e0a1b6800283b9ba7c88283416a344584f3
+    revision: e52d6e0a1b6800283b9ba7c88283416a344584f3
+    file: runs/20260429_mini-v2.2.6_gpt-5-4-mini.tar.gz
+    size: 12438487
+    sha256: 2e5f54c71dbfc39b87ea258871c7f9a30ab4ac80bf43e1cfb6476f6c18d9dfb5
+  - name: run_5
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_gpt-5-mini/tar.gz/88d1c12b6e584524acd2269a0ac87ac7175fb710
+    revision: 88d1c12b6e584524acd2269a0ac87ac7175fb710
+    file: runs/20260429_mini-v2.2.6_gpt-5-mini.tar.gz
+    size: 12423542
+    sha256: 7ed629d5412de07dc51ad920d62d6fe8de58d1a5fab3d5a5ac1a665c6ce6e8a9
+  - name: run_6
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_haiku-4-5/tar.gz/859c89edf70cd5349ab91a269caf7c64b304fb04
+    revision: 859c89edf70cd5349ab91a269caf7c64b304fb04
+    file: runs/20260429_mini-v2.2.6_haiku-4-5.tar.gz
+    size: 25099123
+    sha256: d8d00c9059f522c2c14fba75387eca9b289146378a3ab2f92e9b61ae54c3c0cb
+  - name: run_7
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_opus-4-7/tar.gz/f05c718027440f872b0655f70baf06cb1c84ab70
+    revision: f05c718027440f872b0655f70baf06cb1c84ab70
+    file: runs/20260429_mini-v2.2.6_opus-4-7.tar.gz
+    size: 22491943
+    sha256: 6f778124808136cd8279e5899227c26580b16712c8d26142e24664de51fe4785
+  - name: run_8
+    url: https://codeload.github.com/ProgramBench/20260429_mini-v2.2.6_sonnet-4-6/tar.gz/62032f3a4c3a05e91572009447e8bcb079e35c11
+    revision: 62032f3a4c3a05e91572009447e8bcb079e35c11
+    file: runs/20260429_mini-v2.2.6_sonnet-4-6.tar.gz
+    size: 66953287
+    sha256: 0fd9cf4e1fc9ddcd54ea96644b138890219780cfb6dbfad651e1fc69fa51cce5
+  - name: run_9
+    url: https://codeload.github.com/ProgramBench/20260430_mini-v2.2.6_opus-4-6/tar.gz/0507100778fad689dd5175c6d3ec76d594403ca6
+    revision: 0507100778fad689dd5175c6d3ec76d594403ca6
+    file: runs/20260430_mini-v2.2.6_opus-4-6.tar.gz
+    size: 37560209
+    sha256: 795e81a33c8a6b95537057e79f1dbcfac15d02c17f7e56b0803573ff2880b288
+  - name: run_10
+    url: https://codeload.github.com/ProgramBench/20260507_mini-v2.2.6_gpt-5-5/tar.gz/281019edd6c5e8506c32cc7e9b73ff3067f52e78
+    revision: 281019edd6c5e8506c32cc7e9b73ff3067f52e78
+    file: runs/20260507_mini-v2.2.6_gpt-5-5.tar.gz
+    size: 12414871
+    sha256: d0c04762c8c91fe94c54972cbd10ce8b9404e7a3e1c7cdffb7def84972059ef4
+  - name: run_11
+    url: https://codeload.github.com/ProgramBench/20260507_mini-v2.2.6_gpt-5-5-high/tar.gz/d9356d2514a78e276eb4f92397a0d948565d09cf
+    revision: d9356d2514a78e276eb4f92397a0d948565d09cf
+    file: runs/20260507_mini-v2.2.6_gpt-5-5-high.tar.gz
+    size: 17963142
+    sha256: 47a78b9ad455915347edd9ebd0f69e3a8c7e6351d750bb2e56efc1755c1d3b28
+  - name: run_12
+    url: https://codeload.github.com/ProgramBench/20260507_mini-v2.2.6_opus-4-7-xhigh/tar.gz/beaca344edcf9ce7a09ba6788ed3582aa8770ff0
+    revision: beaca344edcf9ce7a09ba6788ed3582aa8770ff0
+    file: runs/20260507_mini-v2.2.6_opus-4-7-xhigh.tar.gz
+    size: 46657277
+    sha256: 08590fb52bdb7ce4d0b85a9af556da80d96dc440cea1f1ebec08ea87517c23e7
+  - name: run_13
+    url: https://codeload.github.com/ProgramBench/20260508_mini-v2.2.6_gpt-5-5-xhigh/tar.gz/530a7b8f969840d17efac1e1e5aaca1078cc2b3a
+    revision: 530a7b8f969840d17efac1e1e5aaca1078cc2b3a
+    file: runs/20260508_mini-v2.2.6_gpt-5-5-xhigh.tar.gz
+    size: 24233765
+    sha256: d11d97b4f3f267cd65eb8793bb75a56fa2a3bb6c2bffd5c1e77cc0acc4772f96
+  - name: run_14
+    url: https://codeload.github.com/ProgramBench/20260717_mini-v2.4.5_glm-5.2/tar.gz/c7b4bfdf8f5c3b282dc7d30bdb045e7c6c7712eb
+    revision: c7b4bfdf8f5c3b282dc7d30bdb045e7c6c7712eb
+    file: runs/20260717_mini-v2.4.5_glm-5.2.tar.gz
+    size: 77566056
+    sha256: ae92de11d0aab60d33f793d5a8cc7a30f1c87fef9c1662cc8ea14919c8e7d666
+  - name: run_15
+    url: https://codeload.github.com/ProgramBench/20260717_mini-v2.4.5_opus-4.8-xhigh/tar.gz/4297db1f8043ce3067d4c3cc0c4f29d6c0ff6a7a
+    revision: 4297db1f8043ce3067d4c3cc0c4f29d6c0ff6a7a
+    file: runs/20260717_mini-v2.4.5_opus-4.8-xhigh.tar.gz
+    size: 168644159
+    sha256: 7e7f35e4e06884d81421f84994a861d9ac6e1e4f9c0af6fdcfed90a64736ca47
+  - name: run_16
+    url: https://codeload.github.com/ProgramBench/20260729_mini-v2.2.8_gemini-3-5-flash/tar.gz/47067daddaccebd0faad4d5995716f7ba8e737c4
+    revision: 47067daddaccebd0faad4d5995716f7ba8e737c4
+    file: runs/20260729_mini-v2.2.8_gemini-3-5-flash.tar.gz
+    size: 94491818
+    sha256: c24d109922de393e7ec7bd39136a318402db2d85b97fb517d312bfe24daf44cf
+  - name: run_17
+    url: https://codeload.github.com/ProgramBench/20260730_mini-v2.2.8_gpt-5-6-sol/tar.gz/97f360a98f5773e34b9106a1ac64f026724d0a82
+    revision: 97f360a98f5773e34b9106a1ac64f026724d0a82
+    file: runs/20260730_mini-v2.2.8_gpt-5-6-sol.tar.gz
+    size: 12400103
+    sha256: 2066a3463949f3f9219e58ae271ce1638f9d5bf4a8b9f78374ad218b0f23a090
+  - name: run_18
+    url: https://codeload.github.com/ProgramBench/20260731_mini-v2.4.2_gemini-3-6-flash/tar.gz/31d37294b7e644827735d5733033e244f8047fbc
+    revision: 31d37294b7e644827735d5733033e244f8047fbc
+    file: runs/20260731_mini-v2.4.2_gemini-3-6-flash.tar.gz
+    size: 64354540
+    sha256: ae13a795cbe492cea1f868bbe999d64f0628a0625550f1d609d8451c0bdf30cc
+  - name: run_19
+    url: https://codeload.github.com/ProgramBench/20260731_mini-v2.4.2_opus-5-xhigh/tar.gz/91a55d05a8ed7ab8d3b4ef2d1f4da69bd8ccfe42
+    revision: 91a55d05a8ed7ab8d3b4ef2d1f4da69bd8ccfe42
+    file: runs/20260731_mini-v2.4.2_opus-5-xhigh.tar.gz
+    size: 172004644
+    sha256: bf1b7e04fff89c9a7f997bf032e75b261b04a56f1ae6f6aa9f706425ac734a09
+  - name: run_20
+    url: https://codeload.github.com/ProgramBench/20260802_mini-v2.4.2_gpt-5-6-sol-xhigh/tar.gz/637e25a6ce08f452cd9ff4b84029b63f54f3e8f3
+    revision: 637e25a6ce08f452cd9ff4b84029b63f54f3e8f3
+    file: runs/20260802_mini-v2.4.2_gpt-5-6-sol-xhigh.tar.gz
+    size: 24327781
+    sha256: 4c8063dd05ef2ce22b7c0eb933267ad04c76f94de69174838b01c1f435d52cd8
+  - name: run_21
+    url: https://codeload.github.com/ProgramBench/20260815_mini-v2.4.2_gemini-3-7-flash/tar.gz/59a3b064e7c1b387f18dbeccabfec959333145af
+    revision: 59a3b064e7c1b387f18dbeccabfec959333145af
+    file: runs/20260815_mini-v2.4.2_gemini-3-7-flash.tar.gz
+    size: 56021958
+    sha256: b204c266031c3da01b8c2440988072de82604afe537812a085face407396bb23
+  - name: run_22
+    url: https://codeload.github.com/ProgramBench/20260906_mini-v2.4.2_muse-spark-1.1-xhigh/tar.gz/288b6d3283e14d49eecaa297ae16c9724ae0dcff
+    revision: 288b6d3283e14d49eecaa297ae16c9724ae0dcff
+    file: runs/20260906_mini-v2.4.2_muse-spark-1.1-xhigh.tar.gz
+    size: 60801483
+    sha256: 809d897763b46311813066662b5fe00d4f6decb961813e745e35eda287072033
+  - name: run_23
+    url: https://codeload.github.com/ProgramBench/20260908_mini-v2.4.2_muse-spark-1.2-xhigh/tar.gz/c24c851aa128feb729662995f66b28a2e0c47e53
+    revision: c24c851aa128feb729662995f66b28a2e0c47e53
+    file: runs/20260908_mini-v2.4.2_muse-spark-1.2-xhigh.tar.gz
+    size: 87333786
+    sha256: 0cee2ad0d76fab0250dd71f46ca1cb655d8dbd2357f21a9ea90e5d48e4769554
+  - name: run_24
+    url: https://codeload.github.com/ProgramBench/20260910_mini-v2.4.5_muse-spark-1.3-xhigh/tar.gz/7f72e6f0e04047a4c2508fc5378b442020e3cd90
+    revision: 7f72e6f0e04047a4c2508fc5378b442020e3cd90
+    file: runs/20260910_mini-v2.4.5_muse-spark-1.3-xhigh.tar.gz
+    size: 54442975
+    sha256: ce528d4749aa5569e8aa54f9f0492a937615bc932b532ad8046bc83737a5e184
+  - name: run_25
+    url: https://codeload.github.com/ProgramBench/20260918_mini-v2.4.5_muse-spark-1.3-max/tar.gz/3559a4cd78387ead6229fbed03e9f7b3a28bc0d4
+    revision: 3559a4cd78387ead6229fbed03e9f7b3a28bc0d4
+    file: runs/20260918_mini-v2.4.5_muse-spark-1.3-max.tar.gz
+    size: 367504502
+    sha256: 0cd1a4f741dce6cfb60fee3bad99431a7f1be49271c6fe8fa15670b26973455f
+grading:
+  rule: Fraction of the released active behavioral-test verdicts that are true, using the exact per-task test identifiers
+    in this verifier and the versioned official registry ignore policy. The upstream aggregation defines an explicitly
+    published empty test map as zero. A recorded attempt with no published evaluation remains null. Preserve this
+    fraction rather than replacing it with the older 0/1/2 Resolved/Almost-Resolved categorization. Evaluation-result
+    statuses are passed only when the native status is passed; duplicate test identifiers follow the original last-result-wins
+    map.
+  verifiers:
+    published:
+      kind: published_behavioral_test_fraction
+      registry_revision: c19e570f64719c8326ccdcc7af803447cb89d1a6
+      source: https://github.com/ProgramBench/submissions/blob/c19e570f64719c8326ccdcc7af803447cb89d1a6/scripts/compile_leaderboard.py
+      field: _stats/score.json
+      selection: Remove names in ignored_tests.json for the same task.
+      empty_map: 0 only for an explicitly published empty map; absent evaluation remains null.

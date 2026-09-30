@@ -1006,3 +1006,4 @@ SOURCE_AUDITS["synthpai"] = verify_native_results
 SOURCE_AUDITS["sugarcrepe"] = verify_native_results
 
 SOURCE_AUDITS["pxplore"] = verify_native_results
+SOURCE_AUDITS["programbench"] = verify_native_results

@@ -2393,6 +2393,114 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class ProgramBenchNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'programbench'
+        self.raw = self.directory / 'raw'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/programbench'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['runs'] = {'run_a':'run_a.tar.gz', 'run_b':'run_b.tar.gz'}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.documents = {'registry': {'ignored_tests.json': {'task_one':['suite/ignored']}}}
+        for run in ['run_a','run_b']:
+            manifest = dict(schema_version=1, submission_id=run,
+                system=dict(model='Fictional '+run,provider='Fixture provider'),eval=dict(programbench_version='1.0'))
+            records = {'submission.yaml':manifest}
+            self.documents['registry'][f'submissions/{run}/submission.yaml'] = manifest
+            scores = {}
+            for task in ['task_one','task_two']:
+                config = dict(agent=dict(system_template='Fixture system',instance_template='Fixture task',step_limit=1000,
+                    output_path='/source/'+run+'/'+task),agent_type='FixtureAgent',model=dict(model_name='fixture/'+run,
+                    model_kwargs=dict(reasoning_effort='medium',temperature=0.939,max_tokens=512 if run=='run_a' and task=='task_two' else 1024)),
+                    model_type='FixtureModel',environment=dict(image='fixture/'+task+':original',cwd='/workspace',timeout=180),
+                    environment_type='FixtureEnvironment')
+                trajectory = dict(info=dict(config=config,mini_version='2.0',instance_id=task,exit_status='Submitted'),
+                    messages=[dict(role='system',content='Exact source system instructions'),
+                        dict(role='user',content='Original task '+task+' 完整'),
+                        dict(object='response',output=[dict(content='Full output 完整\n' * 2000)])])
+                records[task+'/'+task+'.traj.json'] = trajectory
+                if run=='run_b' and task=='task_two':continue
+                verdicts = {'suite/pass':True,'suite/fail':False,'suite/ignored':False} if task=='task_one' else {}
+                scores[task] = verdicts
+                results = [dict(branch='suite',name='pass',status='failure',extra={'message':'Earlier failed retry'})] if verdicts else []
+                results += [dict(branch='suite',name=name.split('/')[1],status='passed' if value else 'failure',extra={}) for name,value in verdicts.items()]
+                records[task+'/'+task+'.eval.json'] = dict(test_results=results,error_code='compile_failed' if not verdicts else None,log=[])
+            self.documents[run] = records
+            self.documents['registry'][f'submissions/{run}/_stats/score.json'] = scores
+        for name, documents in self.documents.items():
+            with tarfile.open(self.raw/(name+'.tar.gz'),'w:gz') as archive:
+                for filename, content in documents.items():
+                    data = (yaml.safe_dump(content) if filename.endswith('.yaml') else json.dumps(content,ensure_ascii=False)).encode()
+                    member = tarfile.TarInfo('original/'+filename)
+                    member.size = len(data)
+                    archive.addfile(member,io.BytesIO(data))
+        self.builder = runpy.run_path(str(folder/'build.py'))['ProgramBench']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args([
+                '--source',str(self.raw),'--output',str(self.directory.parent/'tables')])
+        self.frames = {path.stem:pd.read_parquet(path) for path in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_native_fractions_failed_retries_ungraded_attempt_and_complete_traces(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench
+        self.assertEqual(_programbench(self.directory,self.frames,self.metadata),dict(source_responses=4,
+            source_subjects=3,source_items=3,source_traces=4,source_runs=2,source_tasks=2,
+            source_native_test_verdicts=6,source_graded_attempts=3,source_evaluation_errors=1,source_ungraded_attempts=1))
+        self.assertEqual(sorted(self.frames['responses'].response.dropna()),[0.,0.5,0.5])
+        self.assertEqual(self.frames['responses'].loc[self.frames['responses'].response.eq(0.5),'item_id'].nunique(),1)
+
+    def test_audit_rejects_changed_inputs_scores_and_native_records(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _programbench, _programbench_sources
+        source = _programbench_sources(self.directory,self.metadata)
+        changes = ['fraction','null_to_zero','subject','item','prompt','image','verifier','grading_rule','trace_clip',
+            'trace_task','trace_grade','trace_settings','trace_retry','trial','condition','drop','duplicate','model','version','effort']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,subjects,traces = [frames[name] for name in ['responses','items','subjects','traces']]
+                if change=='fraction': responses.loc[responses.response.eq(0.5),'response']=1.
+                elif change=='null_to_zero': responses.loc[responses.response.isna(),'response']=0.
+                elif change=='subject': responses.loc[0,'subject_id']=next(value for value in subjects.subject_id if value!=responses.loc[0,'subject_id'])
+                elif change=='item': responses.loc[0,'item_id']=next(value for value in items.item_id if value!=responses.loc[0,'item_id'])
+                elif change in {'prompt','image'}:
+                    value=json.loads(items.loc[0,'content'])
+                    if change=='prompt':value['messages'][1]['content']='A reconstructed placeholder'
+                    else:value['environment']['image']='fixture/current:latest'
+                    items.loc[0,'content']=json.dumps(value)
+                elif change=='verifier':
+                    index=next(i for i,value in enumerate(items.verifier) if json.loads(json.loads(value)['spec'])['active_test_names'])
+                    value=json.loads(items.loc[index,'verifier']);spec=json.loads(value['spec']);spec['active_test_names'].pop();value['spec']=json.dumps(spec);items.loc[index,'verifier']=json.dumps(value)
+                elif change=='grading_rule':items.loc[0,'grading_criterion']=json.dumps(dict(rule='Binary threshold'))
+                elif change.startswith('trace_'):
+                    index=next(i for i,value in enumerate(traces.trace) if json.loads(value)['published_tests'])
+                    value=json.loads(traces.loc[index,'trace'])
+                    if change=='trace_clip':value['trajectory']['messages'][2]['output'][0]['content']='clipped'
+                    elif change=='trace_task':value['task_id']='task_two'
+                    elif change=='trace_grade':value['published_tests']['suite/pass']=False
+                    elif change=='trace_settings':value['trajectory']['info']['config']['model']['model_kwargs']['temperature']=1.
+                    else:value['evaluation']['test_results'].pop(0)
+                    traces.loc[index,'trace']=json.dumps(value)
+                elif change=='trial':responses.loc[0,'trial']=2
+                elif change=='condition':responses.loc[0,'test_condition']='different'
+                elif change=='drop':frames['responses']=responses.iloc[1:].copy()
+                elif change=='duplicate':frames['responses']=pd.concat([responses,responses.iloc[:1]],ignore_index=True)
+                elif change=='model':subjects.loc[0,'display_name']='A guessed checkpoint'
+                elif change=='version':subjects.loc[0,'harness_version']='current'
+                elif change=='effort':subjects.loc[0,'reasoning_effort']='high'
+                with self.assertRaises((ValueError,KeyError)):
+                    _programbench(self.directory,frames,self.metadata,source)
+
+
 class PxploreNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

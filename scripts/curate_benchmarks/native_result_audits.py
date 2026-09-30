@@ -24680,11 +24680,152 @@ def _pxplore(directory, tables, metadata, source=None):
         source_calls=len(source['calls']), source_sessions=len({key[1] for key in source['calls']}), **source['counts'])
 
 
+def _programbench_sources(directory, metadata):
+    """Verify registry/fork correspondence without using the builder's joins."""
+    import copy
+    import tarfile
+
+    parameters = metadata['build']['parameters']
+    with tarfile.open(directory / 'raw' / parameters['layout']['registry']) as archive:
+        registry = {'/'.join(Path(member.name).parts[1:]): archive.extractfile(member).read()
+            for member in archive if member.isfile()}
+    registered = {Path(name).parts[1] for name in registry if name.startswith('submissions/') and name.endswith('/submission.yaml')}
+    _check(set(parameters['runs']), registered, 'ProgramBench complete versioned registry scope')
+    ignored = json.loads(registry['ignored_tests.json'])
+    native, subjects, items, counts = {}, {}, {}, Counter()
+    for run, filename in parameters['runs'].items():
+        manifest = yaml.safe_load(registry[f'submissions/{run}/submission.yaml'])
+        published = json.loads(registry[f'submissions/{run}/_stats/score.json'])
+        trajectories, evaluations = {}, {}
+        with tarfile.open(directory / 'raw' / filename) as archive:
+            for member in archive:
+                name = Path(*Path(member.name).parts[1:])
+                if not member.isfile(): continue
+                if str(name) == 'submission.yaml':
+                    original_manifest = yaml.safe_load(archive.extractfile(member).read())
+                    registry_manifest = copy.deepcopy(manifest)
+                    # The registry abbreviates a display label's "xhigh reasoning" to
+                    # "xhigh". Source IDs, providers and all grading fields must match.
+                    original_manifest['system'].pop('model')
+                    registry_manifest['system'].pop('model')
+                    _check(original_manifest, registry_manifest, 'ProgramBench registry manifest matches original fork')
+                if len(name.parts) != 2: continue
+                if name.name.endswith('.traj.json'):
+                    _check(name.parent.name not in trajectories, True, 'ProgramBench unique original trajectory')
+                    trajectories[name.parent.name] = json.loads(archive.extractfile(member).read())
+                elif name.name.endswith('.eval.json'):
+                    _check(name.parent.name not in evaluations, True, 'ProgramBench unique original evaluation')
+                    evaluations[name.parent.name] = json.loads(archive.extractfile(member).read())
+        _check(set(published), set(evaluations), 'ProgramBench published grades correspond to released evaluations')
+        _check(set(evaluations) <= set(trajectories), True, 'ProgramBench original input for every graded attempt')
+        for task, trajectory in trajectories.items():
+            info, messages = trajectory['info'], trajectory['messages']
+            _check([message.get('role') for message in messages[:2]], ['system', 'user'], 'ProgramBench recorded initial request')
+            _check(info.get('instance_id', trajectory.get('instance_id', task)), task, 'ProgramBench native task association')
+            config = info['config']
+            policy = copy.deepcopy({key:config.get(key) for key in ['model', 'agent', 'environment', 'model_type', 'agent_type', 'environment_type']})
+            policy['agent'].pop('output_path', None)
+            policy['environment'].pop('image', None)
+            policy['mini_version'] = info['mini_version']
+            fingerprint = _digest(json.dumps(policy, sort_keys=True))
+            model = run, fingerprint
+            kwargs = config['model'].get('model_kwargs', {})
+            subjects[model] = dict(display=manifest['system']['model']+' / '+run+' / '+fingerprint[:12],
+                model_alias=config['model']['model_name'], provider=manifest['system']['provider'],
+                mini_version=info['mini_version'], reasoning_effort=kwargs.get('reasoning_effort') or kwargs.get('reasoning',{}).get('effort'))
+            evaluation = evaluations.get(task)
+            tests = published.get(task)
+            if tests is not None:
+                _check(isinstance(tests, dict) and all(type(value) is bool for value in tests.values()), True,
+                    'ProgramBench native boolean verdicts')
+                latest = {}
+                for result in evaluation['test_results']:
+                    latest[result['branch']+'/'+result['name']] = result['status']=='passed'
+                _check({name:latest.get(name) for name in tests}, tests, 'ProgramBench each published test equals its final native evaluation result')
+                active = {name:passed for name,passed in tests.items() if name not in ignored.get(task, [])}
+                names = sorted(active)
+                score = sum(active.values()) / len(active) if active else 0.
+                counts['source_native_test_verdicts'] += len(tests)
+                counts['source_graded_attempts'] += 1
+                counts['source_evaluation_errors'] += bool(evaluation.get('error_code'))
+            else:
+                names, score = None, None
+                counts['source_ungraded_attempts'] += 1
+            scope = _digest(json.dumps(names))
+            content = dict(messages=messages[:2], environment=dict(image=config['environment']['image'], cwd=config['environment']['cwd']))
+            version = manifest['eval']['programbench_version']
+            identity = _digest(json.dumps(content, sort_keys=True)), task, version, scope
+            items[identity] = dict(content=content, alias=task+':'+scope[:16],
+                features=dict(task_id=task, grader_version=version, test_set_sha256=scope),
+                verifier=dict(**metadata['grading']['verifiers']['published'], grader_version=version, active_test_names=names))
+            trace = dict(source_run=run, task_id=task, trajectory=trajectory, evaluation=evaluation, published_tests=tests)
+            native[run, task] = dict(subject=model, item=identity, grade=score,
+                trace_sha256=_digest(json.dumps(trace, sort_keys=True, ensure_ascii=False, allow_nan=False)), grader_version=version)
+    return dict(native=native, subjects=subjects, items=items, counts=dict(counts), runs=len(registered))
+
+
+def _programbench(directory, tables, metadata, source=None):
+    source = _programbench_sources(directory, metadata) if source is None else source
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_run'], features['configuration_sha256']
+        original = source['subjects'][key]
+        _check(features, dict(source_run=key[0], configuration_sha256=key[1], model_alias=original['model_alias'], provider=original['provider']),
+            'ProgramBench complete recorded model/configuration identity')
+        _check((row.display_name,row.harness,row.harness_version),
+            (original['display'],metadata['build']['parameters']['labels']['harness'],original['mini_version']),
+            'ProgramBench original model label, provider and scaffold version')
+        _check(pd.isna(row.provider) and pd.isna(row.normalized_name), True, 'ProgramBench no guessed canonical model mapping')
+        _check(None if pd.isna(row.reasoning_effort) else row.reasoning_effort, original['reasoning_effort'],
+            'ProgramBench original reasoning setting without inferred defaults')
+        subjects[row.subject_id] = key
+        seen_subjects[key] += 1
+    _check(seen_subjects, Counter({key:1 for key in source['subjects']}), 'ProgramBench all recorded configurations')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        content = json.loads(row.content)
+        key = _digest(json.dumps(content, sort_keys=True)), features['task_id'], features['grader_version'], features['test_set_sha256']
+        original = source['items'][key]
+        _check(features, original['features'], 'ProgramBench source task and exact grading scope')
+        _check(row.raw_item_id, original['alias'], 'ProgramBench task alias and test selection')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None,rule=metadata['grading']['rule']), 'ProgramBench native fractional scale')
+        verifier = json.loads(row.verifier)
+        _check(json.loads(verifier['spec']), original['verifier'], 'ProgramBench versioned grader and complete test-name selection')
+        _check(verifier['class'], 'judge', 'ProgramBench original grading protocol')
+        _check(pd.isna(row.asset_manifest), True, 'ProgramBench named environments are not falsely described as captured container bytes')
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key:1 for key in source['items']}), 'ProgramBench complete inputs and grading identities')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'ProgramBench unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_run'], trace['task_id']
+        original = source['native'][key]
+        _check(_digest(json.dumps(trace,sort_keys=True,ensure_ascii=False,allow_nan=False)), original['trace_sha256'],
+            'ProgramBench full native trajectory, evaluation and test verdicts')
+        _check((subjects[row.subject_id],items[row.item_id]), (original['subject'],original['item']),
+            'ProgramBench original subject-task association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'ProgramBench exact fractional score or unavailable evaluation')
+        _check(row.test_condition, 'run='+key[0]+';grader='+original['grader_version'], 'ProgramBench source run and grading version')
+        _check(row.trial, 1, 'ProgramBench one native attempt per run and task')
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in source['native']}), 'ProgramBench every published attempt exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'ProgramBench complete trace coverage')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_runs=source['runs'], source_tasks=len({key[1] for key in seen}), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'programbench':
+        return _programbench(directory, tables, metadata)
     if directory.name == 'exploitgym':
         return _exploitgym(directory, tables, metadata)
     if directory.name == 'erbench':

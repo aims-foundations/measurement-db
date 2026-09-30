@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4965
+    logical_sha256: dcd1550dede8fb6ecbfb3ba6168508ae2beb688fd0a4f960f5350bf138b32bde
+  subjects:
+    rows: 28
+    logical_sha256: 9a09e7341397610ca66c813b79a405423adece163a05a416cbcf3982ea83eb0a
+  responses:
+    rows: 4965
+    logical_sha256: 2a01a57c192ac13c4e6772207cbbe242ab795ec813d658ceebf2fd7f7771b2fe
+  items:
+    rows: 1317
+    logical_sha256: 8a393263746e2f1f76708212faba0c5b4f03a5c2012b8a32fa74ce6b382c02b6
+  benchmarks:
+    rows: 1
+    logical_sha256: e9249723e7b11cf1fa57b156bb06e05e00c85f767d6acfe7165b6ab92351318d
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 4965
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 28
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 1317
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 4965
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 25
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 200
+  source_native_test_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 6119913
+  source_graded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 4964
+  source_evaluation_errors:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 158
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ProgramBench/submissions/tree/c19e570f64719c8326ccdcc7af803447cb89d1a6
+    locator: Every submission.yaml and _stats/score.json, joined to every original .traj.json and .eval.json in
+      the pinned submission forks.
+    scope: All 25 published runs in this registry revision, including the one trajectory without a released evaluation.
+    expected: 1
