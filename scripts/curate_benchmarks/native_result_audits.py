@@ -24323,6 +24323,141 @@ def _sustainable_food(directory, tables, metadata, source=None):
             'source_missing_outputs', 'source_present_outputs', 'source_unparseable_outputs']})
 
 
+def _synthpai_sources(directory, metadata):
+    import ast
+    import hashlib
+    import re
+    from collections import defaultdict
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw/release'
+    profiles = [json.loads(line) for line in (raw / 'data/synthpai_merged_evals.jsonl').read_text().splitlines()]
+    _check(len({row['username'] for row in profiles}), len(profiles), 'SynthPAI unique merged profiles')
+    inputs, configurations = defaultdict(list), {}
+    for model, filename in parameters['inputs'].items():
+        lines = (raw / parameters['logs'][model]).read_text().splitlines(keepends=True)
+        header = lines[0].rstrip('\n')
+        stated_model = ast.literal_eval(header.split('gen_model=ModelConfig(name=', 1)[1].split(', tokenizer_name=', 1)[0])
+        _check(stated_model, model, 'SynthPAI original log model')
+        system = ast.literal_eval(header.split('system_prompt=', 1)[1].split(', individual_prompts=', 1)[0])
+        starts = [(index, int(match.group(1))) for index, line in enumerate(lines)
+                  if (match := re.fullmatch(r'=+(\d+)=+\n', line))]
+        blocks = {}
+        for position, (start, number) in enumerate(starts):
+            end = starts[position+1][0] if position+1 < len(starts) else len(lines)
+            _check(number not in blocks, True, 'SynthPAI unique original printed row')
+            blocks[number] = ''.join(lines[start+1:end])
+        configurations[model] = dict(header=header, system=system,
+            digest=hashlib.sha256(header.encode()).hexdigest())
+        records = [json.loads(line) for line in (raw / filename).read_text().splitlines()]
+        _check(set(blocks), set(range(len(records))), 'SynthPAI complete original generation/log positions')
+        for position, record in enumerate(records):
+            prediction = record['predictions'].get(model, {})
+            if 'full_answer' not in prediction: continue
+            block = blocks[position]
+            prompt, delimiter, _ = block.partition('\nhuman:\n')
+            _check(bool(delimiter), True, 'SynthPAI recorded prompt ends before reference annotations')
+            _check(prediction['full_answer'] in block, True, 'SynthPAI original logged full generation')
+            inputs[model, prediction['full_answer']].append(dict(record=record, position=position,
+                block=block, prompt=prompt, file=filename, log=parameters['logs'][model]))
+    native, expected_items, measured_calls = {}, {}, set()
+    counts = Counter()
+    for position, profile in enumerate(profiles):
+        _check(set(profile['evaluations']) <= set(profile['predictions']), True, 'SynthPAI grades refer to actual released generations')
+        for model, prediction in profile['predictions'].items():
+            candidates = inputs[model, prediction['full_answer']]
+            _check(len(candidates), 1, 'SynthPAI unique exact model/full-answer association')
+            original = candidates[0]
+            comment_text = '\n'.join(row['text'] for row in original['record']['comments'])
+            _check(comment_text in original['prompt'], True, 'SynthPAI actual model-specific comment input')
+            originals = Counter(row['text'] for row in original['record']['comments'])
+            merged = Counter(row['text'] for row in profile['comments'])
+            _check(originals <= merged, True, 'SynthPAI original comments belong to the merged profile')
+            if original['record']['username'] != profile['username']:
+                _check(original['record']['reviews'], profile['reviews'], 'SynthPAI mismatched source name still has identical native reference records')
+                counts['source_username_disagreements'] += 1
+            counts['source_joint_generations'] += 1
+            if '\n'.join(row['text'] for row in profile['comments']) not in original['prompt']:
+                counts['source_shortened_inputs'] += 1
+            evaluation = profile['evaluations'].get(model, {})
+            for attribute, ranks in evaluation.get('human_evaluated', {}).items():
+                _check('Type: ' + attribute + '\n' in original['prompt'], True, 'SynthPAI grade axis was requested in the original joint prompt')
+                _check(isinstance(ranks, list), True, 'SynthPAI native ranked grade list')
+                grade = float(ranks[0]) if ranks else None
+                _check(grade in [None, 0., .5, 1.], True, 'SynthPAI finite native first-rank scale')
+                counts['source_ungraded' if grade is None else 'source_correct' if grade == 1. else
+                       'source_partial' if grade == .5 else 'source_incorrect'] += 1
+                measured_calls.add((position, model))
+                content = configurations[model]['system'] + '\n\n' + original['prompt']
+                references = {attribute: profile['reviews']['human_evaluated'][attribute]}
+                if attribute == 'education': references['education_category'] = profile['reviews']['human_evaluated'].get('education_category')
+                criterion = dict(reference_answer=json.dumps(references, ensure_ascii=False, sort_keys=True),
+                    rule=metadata['grading']['rule'] + ' Attribute: ' + attribute + '.')
+                identity = profile['username'], attribute, content
+                expected_items[identity] = criterion
+                trace = dict(source_file='data/synthpai_merged_evals.jsonl', source_row=position,
+                    username=profile['username'], source_model=model, attribute=attribute,
+                    native_prediction=prediction, native_evaluation=evaluation, native_reviews=profile['reviews'],
+                    prediction_file=original['file'], prediction_row=original['position'], input_username=original['record']['username'],
+                    log_file=original['log'], log_configuration=configurations[model]['header'], log_block=original['block'])
+                native[position, model, attribute] = dict(grade=grade, item=identity, trace=trace)
+    return dict(native=native, items=expected_items, configurations=configurations, counts=dict(counts),
+                measured_calls=len(measured_calls), profiles=len(profiles))
+
+
+def _synthpai(directory, tables, metadata, source=None):
+    import hashlib
+    source = _synthpai_sources(directory, metadata) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model']
+        _check(features, dict(source_model=model, configuration_sha256=source['configurations'][model]['digest']),
+            'SynthPAI original model/configuration identity')
+        _check(row.display_name, 'SynthPAI / ' + model, 'SynthPAI literal original model label')
+        _check(row.harness, 'SynthPAI personal attribute inference', 'SynthPAI recorded harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'SynthPAI no inferred setting: ' + field)
+        subjects[row.subject_id] = model
+        seen_models[model] += 1
+    _check(seen_models, Counter({key[1]: 1 for key in source['native']}), 'SynthPAI exactly the measured models')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        identity = features['source_profile'], features['attribute'], row.content
+        _check(identity in source['items'], True, 'SynthPAI exact recorded system and user prompt, not merged comments or references')
+        _check(features, dict(source_profile=identity[0], attribute=identity[1]), 'SynthPAI original profile/grading axis')
+        _check(row.raw_item_id, identity[0] + '::' + identity[1] + '::' + hashlib.sha256(row.content.encode()).hexdigest()[:12],
+            'SynthPAI prompt-aware source alias')
+        _check(json.loads(row.grading_criterion), source['items'][identity], 'SynthPAI complete native grading reference')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'SynthPAI released mixed grading, not re-executed exact match')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published'], 'SynthPAI source grading protocol')
+        _check(pd.isna(row.asset_manifest), True, 'SynthPAI no invented assets')
+        items[row.item_id] = identity
+        seen_items[identity] += 1
+    _check(seen_items, Counter({key: 1 for key in source['items']}), 'SynthPAI every recorded prompt/grading variant')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'SynthPAI unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['source_model'], trace['attribute']
+        original = source['native'][key]
+        _check(trace, original['trace'], 'SynthPAI full generation, ranked grades, log block and exact original associations')
+        _check(subjects[row.subject_id], key[1], 'SynthPAI correct original model')
+        _check(items[row.item_id], original['item'], 'SynthPAI correct original prompt and grading axis')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'SynthPAI unchanged first-rank grade or null')
+        _check(row.test_condition, 'attribute=' + key[2], 'SynthPAI recorded grading dimension')
+        _check(row.trial, 1, 'SynthPAI one merged first-rank observation per model/profile/attribute')
+        _check(pd.isna(row.interactors), True, 'SynthPAI no fabricated interactions')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'SynthPAI every native grading entry exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'SynthPAI complete trace associations')
+    _check(len(tables.get('assets', [])), 0, 'SynthPAI text inputs')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_profiles=source['profiles'], source_measured_joint_calls=source['measured_calls'], **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24340,6 +24475,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'synthpai':
+        return _synthpai(directory, tables, metadata)
     if directory.name == 'sustainable_food':
         return _sustainable_food(directory, tables, metadata)
     if directory.name == 'visual_riddles':

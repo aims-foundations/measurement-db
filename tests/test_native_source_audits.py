@@ -2267,3 +2267,141 @@ class SustainableFoodNativeAuditTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SynthPAINativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'synthpai'
+        self.raw = self.directory / 'raw/release'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/synthpai'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.models = ['gpt-4', 'meta-llama/Llama-2-13b-chat-hf']
+        for name in ['inputs', 'logs']:
+            self.metadata['build']['parameters'][name] = {model: self.metadata['build']['parameters'][name][model] for model in self.models}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        profiles, source_rows = [], {model: [] for model in self.models}
+        grades = [[[1, .5], [0, None]], [[0, 1], [.5, 0]]]
+        for index, username in enumerate(['profile-a', 'profile-b']):
+            comments = [dict(text=' Complete comment 完整 ' * 1300 + str(index), username=username, pii={}),
+                        dict(text='Second original comment ' + str(index), username=username, pii={})]
+            review = {attribute: dict(estimate='GOLD_DO_NOT_INCLUDE_' + attribute, hardness=2, certainty=3, acc_gt=1)
+                      for attribute in ['age', 'sex']}
+            profile = dict(username=username, comments=comments, num_comments=2,
+                reviews=dict(human=review, human_evaluated=review), predictions={}, evaluations={})
+            for model_index, model in enumerate(self.models):
+                answer = 'Full original answer 完整 ' * 1200 + username + model
+                prediction = dict(full_answer=answer, age=dict(inference='Original reasoning', guess=['35', '40']),
+                                  sex=dict(inference='Other reasoning', guess=['male', 'female']))
+                profile['predictions'][model] = prediction
+                profile['evaluations'][model] = dict(human_evaluated={attribute: [] if grade is None else [grade, 0., .5]
+                    for attribute, grade in zip(['age', 'sex'], grades[index][model_index])})
+                source_rows[model].append(dict(username='wrong-original-name' if (index, model_index) == (0, 1) else username,
+                    comments=comments[:1] if (index, model_index) == (0, 1) else comments,
+                    reviews=profile['reviews'], predictions={model: prediction}))
+            profiles.append(profile)
+        path = self.raw / 'data/synthpai_merged_evals.jsonl'
+        path.parent.mkdir(parents=True)
+        path.write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in profiles))
+        for model in self.models:
+            # Unrelated skipped profiles share an answer; they must not make the measured join ambiguous.
+            source_rows[model] += [dict(username='unused-' + str(i), comments=[], reviews={},
+                predictions={model: dict(full_answer='*skipped*')}) for i in range(2)]
+            path = self.raw / self.metadata['build']['parameters']['inputs'][model]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in source_rows[model]))
+            header = "system_prompt='Recorded system'" + ", individual_prompts=False) gen_model=ModelConfig(name=" + repr(model) + ", tokenizer_name=None, args={'temperature': 0.1})"
+            blocks = []
+            for index, row in enumerate(source_rows[model]):
+                prompt = 'Recorded joint request\n' + '\n'.join(c['text'] for c in row['comments']) + '\nType: age\nType: sex\n\n'
+                blocks.append(str(index).center(50, '=') + '\n' + prompt + '\nhuman:\nGOLD_DO_NOT_INCLUDE\n' +
+                              model + '\n' + row['predictions'][model]['full_answer'] + '\n')
+            path = self.raw / self.metadata['build']['parameters']['logs'][model]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(header + '\n' + ''.join(blocks))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['SynthPAI']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_exact_prompts_complete_outputs_and_ungraded_entries(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _synthpai
+        result = _synthpai(self.directory, self.frames, self.metadata)
+        self.assertEqual(result, dict(source_responses=8, source_subjects=2, source_items=6, source_traces=8,
+            source_profiles=2, source_measured_joint_calls=4, source_joint_generations=4, source_correct=2,
+            source_partial=2, source_incorrect=3, source_ungraded=1, source_shortened_inputs=1,
+            source_username_disagreements=1))
+        self.assertFalse(self.frames['items'].content.str.contains('GOLD_DO_NOT_INCLUDE').any())
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(16_000).all())
+
+    def test_audit_rejects_equal_mean_grade_swaps_and_corrupted_associations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _synthpai, _synthpai_sources
+        source = _synthpai_sources(self.directory, self.metadata)
+        changes = ['grade_swap', 'null_to_zero', 'subject', 'item', 'prompt', 'reference', 'alias', 'verifier',
+                   'output', 'lower_rank', 'position', 'log_row', 'log_block', 'configuration', 'input_username',
+                   'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings', 'config_identity']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'prompt': frames['items'].loc[0, 'content'] += ' Extra guessed context'
+                elif change == 'reference': frames['items'].loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer='wrong'))
+                elif change == 'alias': frames['items'].loc[0, 'raw_item_id'] = 'wrong-profile'
+                elif change == 'verifier': frames['items'].loc[0, 'verifier'] = json.dumps(dict(class_='wrong'))
+                elif change in ['output', 'lower_rank', 'position', 'log_row', 'log_block', 'configuration', 'input_username']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'output': data['native_prediction']['full_answer'] = data['native_prediction']['full_answer'][:16000]
+                    elif change == 'lower_rank': data['native_evaluation']['human_evaluated']['age'].append(1.)
+                    elif change == 'position': data['source_row'] += 1
+                    elif change == 'log_row': data['prediction_row'] += 1
+                    elif change == 'log_block': data['log_block'] = data['log_block'][:16000]
+                    elif change == 'configuration': data['log_configuration'] += ' guessed_setting=1'
+                    else: data['input_username'] = 'guessed-name'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'Other axis'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'settings': frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                else: frames['subjects'].loc[0, 'subject_features_extra'] += ';unexpected_setting=guessed'
+                with self.assertRaises((ValueError, KeyError)):
+                    _synthpai(self.directory, frames, self.metadata, source)
+
+    def test_mismatched_log_model_is_rejected(self):
+        import contextlib
+        import io
+        path = self.raw / self.metadata['build']['parameters']['logs'][self.models[0]]
+        path.write_text(path.read_text().replace("name='gpt-4'", "name='wrong-model'", 1))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'log model differs'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+    def test_missing_generation_cannot_silently_remove_grades(self):
+        import contextlib
+        import io
+        path = self.raw / self.metadata['build']['parameters']['inputs'][self.models[0]]
+        rows = [json.loads(line) for line in path.read_text().splitlines()]
+        rows[0]['predictions'][self.models[0]]['full_answer'] += ' corrupted'
+        path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Every released grade must match'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])

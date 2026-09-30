@@ -1000,3 +1000,5 @@ SOURCE_AUDITS["mtbbench"] = verify_native_results
 SOURCE_AUDITS["real_pocqi"] = verify_native_results
 SOURCE_AUDITS["visual_riddles"] = verify_native_results
 SOURCE_AUDITS["sustainable_food"] = verify_native_results
+
+SOURCE_AUDITS["synthpai"] = verify_native_results
