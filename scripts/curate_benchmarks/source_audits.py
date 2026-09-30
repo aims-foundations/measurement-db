@@ -1008,3 +1008,4 @@ SOURCE_AUDITS["sugarcrepe"] = verify_native_results
 SOURCE_AUDITS["pxplore"] = verify_native_results
 SOURCE_AUDITS["programbench"] = verify_native_results
 SOURCE_AUDITS["psychosis_bench"] = verify_native_results
+SOURCE_AUDITS["prm800k"] = verify_native_results

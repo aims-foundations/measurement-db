@@ -1,0 +1,126 @@
+benchmark:
+  description: Released human process ratings of a fixed GPT-4-derived research generator on MATH problems.
+  testing_condition: One fixed research generator is described by the paper; generation is an annotation-selection
+    round, not a model identifier. Preserve every released model candidate, its native -1/0/+1 or unavailable rating,
+    and original pre-generated steps lacking a candidate rating as null. Phase 1 prefixes follow the selected candidate
+    or human replacement; replacements are context, never model responses. Phase 2 prefixes follow the recorded
+    pre-generated solution, including where annotations omit a selection. Candidate and pre-generated text differences
+    remain explicit; do not transfer grades between different strings. Quality-control and screening judgments remain
+    present and can repeat a generated solution; response rows count released judgments/steps, not independent inference
+    calls. Annotation timestamps and rounds are provenance, not model release dates or inference settings. Exact
+    wire prompts, decoding settings and checkpoint identifiers are not released. Keep only the reference fields
+    supplied upstream; some records have neither an answer nor a solution. Items preserve the known problem and
+    prior solution steps without including the current answer. No model, human reannotation or final-answer grader
+    is executed.
+  paper_url: https://arxiv.org/abs/2305.20050
+  data_source_url: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163
+  subject_type: model configuration
+  item_type: math problem and prior solution prefix
+  license: MIT; retain the original upstream LICENSE with the released data.
+  citation: "@misc{lightman2023letsverifystepstep,\n      title={Let's Verify Step by Step},\n      author={Hunter\
+    \ Lightman and Vineet Kosaraju and Yura Burda and Harri Edwards and Bowen Baker and Teddy Lee and Jan Leike\
+    \ and John Schulman and Ilya Sutskever and Karl Cobbe},\n      year={2023},\n      eprint={2305.20050},\n  \
+    \    archivePrefix={arXiv},\n      primaryClass={cs.LG},\n      url={https://arxiv.org/abs/2305.20050},\n}"
+  tags:
+  - reasoning
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reward_modeling
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - -1
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '-1': 'Bad: incorrect, unreasonable, inappropriate, or insufficiently explained.'
+      '0': 'Okay: a reasonable step that does not substantially advance the solution; retain the native neutral
+        rating.'
+      '1': 'Great: a correct, reasonable and useful solution step under the phase-specific human instructions.'
+  categorical: true
+  release_date: 2023-05
+  name: PRM800K
+  version: 7ecc794703b2877f63226f2477a49b34f9b25163
+  multi_single_turn: multi_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      data: prm800k/data
+    labels:
+      subject: PRM800K GPT-4-derived research generator
+      harness: PRM800K process annotation
+      judge: PRM800K human annotators
+sources:
+  upstream:
+  - name: phase1_train
+    url: https://media.githubusercontent.com/media/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data/phase1_train.jsonl
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/data/phase1_train.jsonl
+    size: 7900236
+    sha256: e9da6a73f827ffb9a8c0dc644c541d34ed76b3d4d1e4896ff5f7b37ddf5ae34d
+  - name: phase1_test
+    url: https://media.githubusercontent.com/media/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data/phase1_test.jsonl
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/data/phase1_test.jsonl
+    size: 829105
+    sha256: f4b3bc5b095e45c816453dc4d748b755c680d61d55f9895d929a335b487c727d
+  - name: phase2_train
+    url: https://media.githubusercontent.com/media/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data/phase2_train.jsonl
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/data/phase2_train.jsonl
+    size: 456135365
+    sha256: 1110237feeb51d1bc200cb37b8f965cfdc1036eac7d506094049366fe7dc1089
+  - name: phase2_test
+    url: https://media.githubusercontent.com/media/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data/phase2_test.jsonl
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/data/phase2_test.jsonl
+    size: 12240719
+    sha256: 6b172efa884ac8341a946dd82e06947c135b7254109fb3f7aa907c715d98aaad
+  - name: readme
+    url: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/README.md
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: README.md
+    size: 11718
+    sha256: a721d8d35cd77c128352acb3378dd32c223a41b5d0f6ca2e8b85fb4bfe88b5fe
+  - name: license
+    url: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/LICENSE
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: LICENSE
+    size: 1062
+    sha256: 22d61a2226e035da51c56149c3358c36d1f61716435866bc6e6fe0e54c7270db
+  - name: instructions_phase_1
+    url: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/instructions/instructions_phase_1.pdf
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/instructions/instructions_phase_1.pdf
+    size: 3294427
+    sha256: cbb66c8870c4833b9a391ba55933c21d9b35c88fc1928bb2bdae47f69745902c
+  - name: instructions_phase_2
+    url: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/instructions/instructions_phase_2.pdf
+    revision: 7ecc794703b2877f63226f2477a49b34f9b25163
+    file: prm800k/instructions/instructions_phase_2.pdf
+    size: 1908357
+    sha256: 4957b552446b25841f48c83029b66371f3db079f9f06be1217e33bf7e55ed310
+grading:
+  rule: Retain the original human step rating on the native ordered scale -1, 0, +1. Use the phase-specific annotation
+    instructions, any released MATH reference, problem and prior steps. An absent rating remains null, including
+    pre-generated steps beyond the annotated prefix. Human-written replacement steps are not generated outcomes.
+    Do not use the separate final-answer grader to replace process ratings or infer grades for unannotated steps.
+  verifiers:
+    phase1:
+      kind: released_human_process_rating
+      source: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/instructions/instructions_phase_1.pdf
+      instructions_sha256: cbb66c8870c4833b9a391ba55933c21d9b35c88fc1928bb2bdae47f69745902c
+      phase: phase1
+      field: label.steps[step].completions[candidate].rating
+    phase2:
+      kind: released_human_process_rating
+      source: https://raw.githubusercontent.com/openai/prm800k/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/instructions/instructions_phase_2.pdf
+      instructions_sha256: 4957b552446b25841f48c83029b66371f3db079f9f06be1217e33bf7e55ed310
+      phase: phase2
+      field: label.steps[step].completions[candidate].rating

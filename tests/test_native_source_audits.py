@@ -2393,6 +2393,132 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PRM800KNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import copy
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'prm800k'
+        self.raw = self.directory / 'raw/prm800k/data'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/prm800k'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        long = 'A complete generated step 完整. ' * 1500
+        first = dict(labeler='original-rater-1', timestamp='2023-01-01T00:00:00', generation=None,
+            is_quality_control_question=False, is_initial_screening_question=False,
+            question=dict(problem='A fixture math problem.', ground_truth_solution='The released solution.', ground_truth_answer='42'),
+            label=dict(total_time=111, finish_reason='solution', steps=[
+                dict(completions=[dict(text=long, rating=1, flagged=False), dict(text='Neutral', rating=0, flagged=None),
+                    dict(text='Incorrect', rating=-1, flagged=False), dict(text='', rating=None, flagged=True)],
+                    chosen_completion=None, human_completion=dict(text='A human replacement, not an AI response.')),
+                dict(completions=None, chosen_completion=None, human_completion=dict(text='A human-only continuation.')),
+                dict(completions=[dict(text='After the human replacement', rating=1, flagged=None)],
+                    chosen_completion=0, human_completion=None)]))
+        second = dict(labeler='original-rater-2', timestamp='2023-02-01T00:00:00', generation=7,
+            is_quality_control_question=True, is_initial_screening_question=False,
+            question=dict(problem='Another fixture math problem.', ground_truth_solution='Another released solution.',
+                ground_truth_answer='24', pre_generated_steps=['Generated first', 'Original second', 'Unannotated tail'],
+                pre_generated_answer='23', pre_generated_verifier_score=0.010779580529581414),
+            label=dict(total_time=222, finish_reason='give_up', steps=[
+                dict(completions=[dict(text='Generated first', rating=0, flagged=False)], chosen_completion=None, human_completion=None),
+                dict(completions=[dict(text='Alternative second', rating=-1, flagged=True),
+                    dict(text='Other alternative', rating=None, flagged=False)], chosen_completion=1, human_completion=None)]))
+        repeated = copy.deepcopy(second)
+        repeated.update(labeler='original-rater-3', generation=8, is_initial_screening_question=True)
+        repeated['label']['steps'][0]['completions'][0]['rating'] = 1
+        del second['question']['ground_truth_solution']
+        repeated['question']['ground_truth_solution'] = None
+        del repeated['question']['ground_truth_answer']
+        (self.raw / 'phase1_train.jsonl').write_text(json.dumps(first, ensure_ascii=False) + '\n')
+        (self.raw / 'phase2_train.jsonl').write_text(''.join(json.dumps(row) + '\n' for row in [second, repeated]))
+        builder = runpy.run_path(str(folder / 'build.py'))['PRM800K']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_native_scale_human_prefix_ungraded_tails_and_repeated_annotations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prm800k
+        counts = _prm800k(self.directory, self.frames, self.metadata)
+        self.assertEqual(counts['source_records'], 3)
+        self.assertEqual(counts['source_subjects'], 1)
+        self.assertEqual(counts['source_candidates'], 11)
+        self.assertEqual(counts['source_responses'], 15)
+        self.assertEqual(counts['source_traces'], 15)
+        self.assertEqual(counts['source_neutral_ratings'], 2)
+        self.assertEqual(counts['source_ungraded_candidates'], 3)
+        self.assertEqual(counts['source_ungraded_pregenerated_steps'], 4)
+        self.assertEqual(counts['source_human_replacements'], 2)
+        self.assertEqual(counts['source_missing_nonfinal_selections'], 2)
+        self.assertEqual(counts['source_pregenerated_candidate_mismatches'], 2)
+        self.assertEqual(self.frames['responses'].response.isna().sum(), 7)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+
+    def test_corruptions_of_context_scale_rater_or_source_coverage_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prm800k, _prm800k_sources
+        source = _prm800k_sources(self.directory, self.metadata)
+        changes = ['grade', 'neutral', 'null_to_zero', 'subject', 'item', 'history', 'answer_leak',
+            'scale', 'reference', 'rule', 'judge', 'instructions', 'alias', 'feature', 'trial', 'condition', 'interactors',
+            'drop', 'duplicate', 'trace_clip', 'trace_rater', 'trace_round', 'trace_origin', 'trace_grade',
+            'trace_selected', 'trace_pregenerated', 'model', 'extra_subject']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'grade': responses.loc[0, 'response'] = 0.5
+                elif change == 'neutral': responses.loc[responses.response.eq(0), 'response'] = -1.
+                elif change == 'null_to_zero': responses.loc[responses.response.isna(), 'response'] = 0.
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'invented-generator'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(value for value in items.item_id if value != responses.loc[0, 'item_id'])
+                elif change in ['history', 'answer_leak']:
+                    index = next(i for i, value in enumerate(items.content) if json.loads(value)['prior_solution_steps'])
+                    value = json.loads(items.loc[index, 'content'])
+                    if change == 'history': value['prior_solution_steps'] = []
+                    else: value['prior_solution_steps'].append('The current answer must not be part of the input')
+                    items.loc[index, 'content'] = json.dumps(value)
+                elif change in ['scale', 'reference', 'rule']:
+                    value = json.loads(items.loc[0, 'grading_criterion'])
+                    if change == 'scale': value['response_scale'] = dict(kind='discrete', values=[0, 1])
+                    elif change == 'reference': value['reference_answer'] = 'A model answer is not a reference solution'
+                    else: value['rule'] = 'Grade only the final answer'
+                    items.loc[0, 'grading_criterion'] = json.dumps(value)
+                elif change in ['judge', 'instructions']:
+                    value = json.loads(items.loc[0, 'verifier'])
+                    if change == 'judge': value['judged_by'] = 'llm'
+                    else: value['spec'] = json.dumps({'phase': 'invented'})
+                    items.loc[0, 'verifier'] = json.dumps(value)
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = 'absent.jsonl:row=999:step=999'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'phase=phase1;step_index=999'
+                elif change == 'trial': responses.loc[0, 'trial'] = 999
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'invented annotation'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented actor'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = '7'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects], ignore_index=True)
+                else:
+                    index = traces.trace.str.len().idxmax()
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['text'] = value['text'][:4000]
+                    elif change == 'trace_rater': value['annotation']['labeler'] = 'wrong-rater'
+                    elif change == 'trace_round': value['annotation']['generation'] = 99
+                    elif change == 'trace_origin': value['origin'] = 'human_completion'
+                    elif change == 'trace_grade': value['native_candidate']['rating'] = -1
+                    elif change == 'trace_selected': value['native_step']['chosen_completion'] = 0
+                    else: value['pregenerated_step'] = 'Wrong original step'
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _prm800k(self.directory, frames, self.metadata, source)
+
+
 class PsychosisBenchNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

@@ -1,0 +1,4 @@
+- Sources: four pinned PRM800K JSONL releases (101,599 annotation records), the original human instructions and MIT license; no inference or regrading.
+- Transformation: five table stages preserve 1,085,590 model candidates plus 616,181 original ungraded steps. Keep -1/0/+1 and null ratings, complete text, prefixes, rater provenance and source references.
+- Corrections: annotation rounds are not model identities; neutral ratings are not failures. The 2,598 human replacements supply context only. All 84 missing nonfinal selections have recorded phase-2 prefixes; the 37 mismatched pre-generated steps remain ungraded separately.
+- Limits and checks: the research checkpoint and exact wire prompts are unreleased; repeated quality-control judgments are not independent inference calls. Audit all original observations and prefixes, exercise corruption cases, and verify an empty-cache rebuild. The old builder is archived; no prior local table export was present.

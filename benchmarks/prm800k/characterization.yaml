@@ -1,0 +1,216 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1701771
+    logical_sha256: d8d9bec042e10612601434409922b66258d1f2fef747f5b6ccb20461aebaaa51
+  subjects:
+    rows: 1
+    logical_sha256: 5ebde0057191cb82fe964f17575b90398a8dfb5e33e2f0e7825b98f4206404aa
+  responses:
+    rows: 1701771
+    logical_sha256: 5ced48ec4518e3dd1e2544fae8c2c16b7bb2f635142e167a597998a582c845b3
+  items:
+    rows: 973120
+    logical_sha256: 13d0e9be4e9ff5ced68522a324d4210e148a02b502664af80abff989ae2a802f
+  benchmarks:
+    rows: 1
+    logical_sha256: aad377a27fab7f88e22932f58f676269abc1be0d8ca297a77186a1ab1a02e071
+source_claims:
+  source_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 101599
+  source_quality_control_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 8097
+  source_screening_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 12654
+  source_records_without_reference_solution:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 4908
+  source_records_without_reference_answer:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 3853
+  source_contexts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 1349912
+  source_annotated_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 733768
+  source_human_replacements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 2598
+  source_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 1085590
+  source_blank_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 6
+  source_flagged_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 893
+  source_positive_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 678195
+  source_negative_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 262146
+  source_neutral_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 106024
+  source_ungraded_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 39225
+  source_ungraded_pregenerated_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 616181
+  source_missing_nonfinal_selections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 84
+  source_pregenerated_candidate_mismatches:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 37
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 1701771
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 1701771
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/openai/prm800k/tree/7ecc794703b2877f63226f2477a49b34f9b25163/prm800k/data
+    locator: 'All four original labeled JSONL releases: every annotation record, model candidate and pre-generated
+      solution step.'
+    scope: Human -1/0/+1 process ratings retain their original scale; unmatched pre-generated steps are ungraded.
+      Human replacements are context only. Quality-control and screening annotations are retained.
+    expected: 655406

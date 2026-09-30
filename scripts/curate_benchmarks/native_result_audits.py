@@ -24965,11 +24965,159 @@ def _psychosis_bench(directory, tables, metadata, source=None):
                 source_scenarios=source['cases'], source_experiments=source['experiments'], **source['counts'])
 
 
+def _prm800k_sources(directory, metadata):
+    """Walk original solutions in order, independently of the builder's expansions."""
+    native, expected, contexts, counts = {}, {}, {}, Counter()
+    for path in sorted((directory / 'raw' / metadata['build']['parameters']['layout']['data']).glob('*.jsonl')):
+        phase = path.stem.split('_')[0]
+        _check(phase in ['phase1', 'phase2'], True, 'PRM800K documented annotation phase')
+        source_file = str(path.relative_to(directory / 'raw'))
+        with path.open() as stream:
+            for row_index, line in enumerate(stream):
+                record = json.loads(line)
+                record_key = source_file, row_index
+                native[record_key] = record
+                counts['source_records'] += 1
+                counts['source_quality_control_records'] += bool(record['is_quality_control_question'])
+                counts['source_screening_records'] += bool(record['is_initial_screening_question'])
+                counts['source_records_without_reference_solution'] += record['question'].get('ground_truth_solution') is None
+                counts['source_records_without_reference_answer'] += record['question'].get('ground_truth_answer') is None
+                steps = record['label']['steps']
+                generated = record['question'].get('pre_generated_steps')
+                if phase == 'phase2':
+                    _check(isinstance(generated, list) and len(generated) >= len(steps), True,
+                           'PRM800K complete pre-generated source trajectory')
+                else:
+                    _check(generated is None, True, 'PRM800K phase-1 interactive generation')
+                prefix = []
+                for step_index in range(len(generated) if generated is not None else len(steps)):
+                    step = steps[step_index] if step_index < len(steps) else None
+                    pregenerated = generated[step_index] if generated is not None else None
+                    contexts[record_key + (step_index,)] = list(prefix), pregenerated, step, phase
+                    counts['source_contexts'] += 1
+                    completions = (step['completions'] or []) if step is not None else []
+                    if step is not None:
+                        counts['source_annotated_steps'] += 1
+                        counts['source_human_replacements'] += step['human_completion'] is not None
+                    for candidate_index, candidate in enumerate(completions):
+                        grade, text = candidate['rating'], candidate['text']
+                        _check(grade is None or (type(grade) is int and grade in [-1, 0, 1]), True,
+                               'PRM800K native human rating domain')
+                        _check(isinstance(text, str), True, 'PRM800K literal candidate text')
+                        expected[record_key + (step_index, candidate_index)] = grade, text, 'candidate', candidate
+                        counts['source_candidates'] += 1
+                        counts['source_blank_candidates'] += not text
+                        counts['source_flagged_candidates'] += bool(candidate['flagged'])
+                        counts['source_ungraded_candidates' if grade is None else
+                               {-1: 'source_negative_ratings', 0: 'source_neutral_ratings', 1: 'source_positive_ratings'}[grade]] += 1
+                    if pregenerated is not None and not any(candidate['text'] == pregenerated for candidate in completions):
+                        expected[record_key + (step_index, -1)] = None, pregenerated, 'pregenerated_unrated', None
+                        counts['source_ungraded_pregenerated_steps'] += 1
+                        if step is not None: counts['source_pregenerated_candidate_mismatches'] += 1
+                    if generated is not None:
+                        if step is not None:
+                            _check(step['human_completion'] is None, True, 'PRM800K no phase-2 human continuations')
+                            chosen = step['chosen_completion']
+                            if chosen is None and step_index < len(steps) - 1:
+                                counts['source_missing_nonfinal_selections'] += 1
+                            if chosen is not None and step_index < len(steps) - 1:
+                                _check(completions[chosen]['text'], pregenerated,
+                                       'PRM800K recorded nonfinal selection agrees with original solution')
+                        prefix.append(pregenerated)
+                    elif step_index < len(steps) - 1:
+                        chosen = step['chosen_completion']
+                        if chosen is None:
+                            _check(isinstance(step['human_completion'], dict), True,
+                                   'PRM800K phase-1 continuation has an explicit replacement')
+                            prefix.append(step['human_completion']['text'])
+                        else:
+                            _check(type(chosen) is int and 0 <= chosen < len(completions), True,
+                                   'PRM800K recorded selected candidate index')
+                            prefix.append(completions[chosen]['text'])
+    counts['source_subjects'] = 1
+    counts['source_responses'] = counts['source_traces'] = len(expected)
+    counts['source_ungraded_responses'] = counts['source_ungraded_candidates'] + counts['source_ungraded_pregenerated_steps']
+    return dict(native=native, expected=expected, contexts=contexts, counts=dict(counts))
+
+
+def _prm800k(directory, tables, metadata, source=None):
+    """Check each original candidate, prefix, rater and grade, including ungraded tails."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _prm800k_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    _check(len(tables['subjects']), 1, 'PRM800K fixed generator, not annotation-round subjects')
+    subject = tables['subjects'].iloc[0]
+    _check(subject.display_name, labels['subject'], 'PRM800K documented generator identity')
+    _check(subject.harness, labels['harness'], 'PRM800K annotation protocol')
+    items = {row.item_id: row for row in tables['items'].itertuples()}
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'PRM800K unique trace links')
+    checked_items, seen, trials = {}, Counter(), {}
+    scale = json.loads(canonical_response_scale(metadata['benchmark']['response_scale']))
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), scale, 'PRM800K inherited native rating scale')
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row'], trace['step_index'], trace['candidate_index']
+        grade, text, origin, candidate = source['expected'][key]
+        original = source['native'][key[:2]]
+        question = original['question']
+        prefix, pregenerated, native_step, phase = source['contexts'][key[:3]]
+        expected_trace = dict(source_file=key[0], source_row=key[1], step_index=key[2], candidate_index=key[3],
+            origin=origin, text=text, annotation={name: original[name] for name in ['labeler', 'timestamp', 'generation',
+                'is_quality_control_question', 'is_initial_screening_question']},
+            label_metadata={name: value for name, value in original['label'].items() if name != 'steps'},
+            question_metadata={name: value for name, value in question.items() if name != 'pre_generated_steps'},
+            native_step=native_step, native_candidate=candidate, pregenerated_step=pregenerated)
+        _check(trace, expected_trace, 'PRM800K complete native step and annotation provenance without clipping')
+        _check(row.subject_id, subject.subject_id, 'PRM800K fixed generator association')
+        _check(None if pd.isna(row.response) else row.response, grade, 'PRM800K original -1/0/+1 rating or null')
+        condition = key[0] + ':row=' + str(key[1])
+        _check(row.test_condition, condition, 'PRM800K original annotation identity')
+        _check(pd.isna(row.interactors), True, 'PRM800K no invented model interactors')
+        item = items[row.item_id]
+        reference = {name: question[name] for name in ['ground_truth_solution', 'ground_truth_answer'] if question.get(name) is not None}
+        criterion = dict(rule=metadata['grading']['rule'], reference_answer=json.dumps(reference,
+            ensure_ascii=False, allow_nan=False) if reference else None)
+        stimulus = dict(problem=question['problem'], prior_solution_steps=prefix)
+        fingerprint = _digest(json.dumps([stimulus, criterion, phase], ensure_ascii=False, sort_keys=True))
+        if row.item_id not in checked_items:
+            _check(json.loads(item.content), stimulus, 'PRM800K exact problem and preceding steps, without current answer')
+            _check(json.loads(item.grading_criterion), criterion, 'PRM800K original reference solution and process scale')
+            verifier = json.loads(item.verifier)
+            _check(verifier['judge'], labels['judge'], 'PRM800K human annotation, not final-answer grading')
+            _check(verifier['judged_by'], 'human', 'PRM800K human grader type')
+            _check(json.loads(verifier['spec']), metadata['grading']['verifiers'][phase], 'PRM800K correct phase instructions')
+            _check(_features(item.item_features), dict(phase=phase, step_index=str(key[2])), 'PRM800K context features')
+            alias_file, remainder = item.raw_item_id.rsplit(':row=', 1)
+            alias_row, alias_step = map(int, remainder.split(':step='))
+            alias_key = alias_file, alias_row, alias_step
+            alias_question = source['native'][alias_key[:2]]['question']
+            alias_prefix, _, _, alias_phase = source['contexts'][alias_key]
+            _check((alias_phase, alias_question['problem'], alias_prefix), (phase, question['problem'], prefix),
+                   'PRM800K retained source alias resolves to the same stimulus')
+            checked_items[row.item_id] = fingerprint
+        _check(checked_items[row.item_id], fingerprint, 'PRM800K no cross-prefix or cross-reference item merging')
+        trials[key] = (row.item_id, condition, row.trial)
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['expected']}), 'PRM800K every released candidate and ungraded original step exactly once')
+    _check(set(checked_items), set(items), 'PRM800K no unmeasured invented items')
+    _check(set(traces), set(tables['responses'].response_id), 'PRM800K complete one-to-one response/trace association')
+    trial_counts = Counter()
+    for key in sorted(trials):
+        item_id, condition, trial = trials[key]
+        trial_counts[item_id, condition] += 1
+        _check(trial, trial_counts[item_id, condition], 'PRM800K deterministic within-annotation observation numbers')
+    return source['counts']
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'prm800k':
+        return _prm800k(directory, tables, metadata)
     if directory.name == 'psychosis_bench':
         return _psychosis_bench(directory, tables, metadata)
     if directory.name == 'programbench':
