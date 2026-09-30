@@ -1322,5 +1322,113 @@ class ExploitGymNativeAuditTests(unittest.TestCase):
                 ['--source', str(raw), '--output', str(self.directory.parent / 'invalid')])
 
 
+class ERBenchNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import csv
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'erbench'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/erbench'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['models'] = dict.fromkeys(['claude', 'gpt35'], 'fixture')
+        self.metadata['build']['parameters']['cot_results'] = {'claude/movie_foreign_year': 'fixture'}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        long_reasoning = ('完整说明 ' * 4000).strip()
+        for model in ['claude', 'gpt35']:
+            domain = 'movie_foreign_year'
+            directory = self.directory / 'raw/binary/results' / model
+            (directory / 'crafted_df').mkdir(parents=True)
+            records, blocks = [], []
+            for index, (entity, question, gold, answer, rationale) in enumerate([
+                    ('0', 'Is the title Alpha: Beta correct?', 'yes', 'yes', long_reasoning),
+                    ('1', 'Is the title Gamma correct?', 'no', 'unsure', 'I cannot tell.'),
+                    ('0', 'Is the title Alpha: Beta correct?', 'yes', 'no', 'A second recorded attempt.')]):
+                blocks.append(f'{entity}-0th question\nQ: {question}\nA:{answer.capitalize()}. {rationale}\nGold Answer: {gold}\nGold Entity: native entity\n\n')
+                records.append({'': str(index), 'question': ('Q: ' + question).split(':')[1],
+                    'entity_idx': entity, 'question_idx': '0', 'model_answer': answer,
+                    'model_reasoning': rationale.lower(), 'gold_answer': gold, 'gold_entity': 'native entity'})
+            filename = domain + ('_cot' if model == 'claude' else '') + '.log'
+            (directory / filename).write_text(''.join(blocks))
+            if model == 'claude':
+                (directory / (domain + '.log')).write_text(''.join(blocks).replace('A:Yes.', 'A:No.'))
+            with (directory / 'crafted_df' / (domain + '.csv')).open('w', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(records[0]))
+                writer.writeheader()
+                writer.writerows(records)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['ERBench']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_colon_questions_conditions_repeated_records_and_complete_outputs(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _erbench
+        counts = _erbench(self.directory, self.frames, self.metadata)
+        self.assertEqual(counts, dict(source_responses=6, source_subjects=2, source_items=2, source_traces=6,
+            source_files=2, source_successes=2, source_chain_of_thought=3, source_restored_question_rows=4))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_independent_check_rejects_changed_data_links_conditions_and_truncation(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _erbench, _erbench_sources
+        source = _erbench_sources(self.directory)
+        for change in ['grade', 'subject', 'item', 'criterion', 'verifier', 'question', 'trace', 'position',
+                       'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade':
+                    frames['responses'].loc[0, 'response'] = 1 - frames['responses'].loc[0, 'response']
+                elif change in ['subject', 'item']:
+                    column = change + '_id'
+                    current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'criterion':
+                    data = json.loads(frames['items'].loc[0, 'grading_criterion']); data['reference_answer'] = 'no'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'verifier':
+                    data = json.loads(frames['items'].loc[0, 'verifier']); data['class'] = 'judge'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change == 'question':
+                    frames['items'].loc[0, 'content'] = frames['items'].loc[0, 'content'].split(':')[0]
+                elif change in ['trace', 'position']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'trace': data['log_entry'] = data['log_entry'][:16000]
+                    else: data['source_row'] += 1
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition':
+                    data = json.loads(frames['responses'].loc[0, 'test_condition']); data['prompting'] = 'standard'
+                    frames['responses'].loc[0, 'test_condition'] = json.dumps(data)
+                elif change == 'trial':
+                    frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _erbench(self.directory, frames, self.metadata, source)
+
+    def test_missing_answer_is_rejected_without_a_failure_grade(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/binary/results/gpt35/crafted_df/movie_foreign_year.csv'
+        frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+        frame.loc[0, 'model_answer'] = ''
+        frame.to_csv(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Missing or unknown answers'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

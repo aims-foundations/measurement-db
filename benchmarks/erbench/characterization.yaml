@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 213110
+    logical_sha256: 1d1d8ec136f64390a216e08c23d20e900871740b427efac5b20912c6d3b33bad
+  subjects:
+    rows: 8
+    logical_sha256: 028e18da7ef6af15c5ae5cc68c3dfb26a9029d96ccf1cc5171a4effd0446ca4c
+  responses:
+    rows: 213110
+    logical_sha256: f5e2d80215b975deaf7d60e5fcfc10bb6f0a6282cf8751c94c924a9646c65b39
+  items:
+    rows: 32163
+    logical_sha256: e9386c17be5271b43028549ec6623bc9866c846174fa073566352d7e71aabb26
+  benchmarks:
+    rows: 1
+    logical_sha256: bc49ac8010d0fa67caba33757f1eff893f78dffef1f30e24c5852805e6b2feeb
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 213110
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 32163
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 213110
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 52
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 100550
+  source_chain_of_thought:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 32136
+  source_restored_question_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/DILAB-KAIST/ERBench/tree/2eca983dbe79d18cf3b2bf205114999764d061a3
+    locator: binary/results/*/crafted_df/*.csv for the eight text-model folders; independently matched to complete
+      original logs by every parsed row.
+    scope: All 52 released text-only binary CSV files, without the paper's known-entity filters; score is answer
+      correctness, not rationale or hallucination correctness.
+    expected: 2019

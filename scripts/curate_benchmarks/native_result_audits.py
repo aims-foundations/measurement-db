@@ -23395,6 +23395,134 @@ def _exploitgym(directory, tables, metadata, source=None):
         source_benchmark_revisions=len(source['files']), **counts)
 
 
+def _erbench_log_records(path):
+    """Read native text blocks and independently reproduce the released CSV parser."""
+    import re
+
+    text = path.read_text()
+    starts = list(re.finditer(r'(?m)^([0-9]+)-([0-9]+)th question[^\n]*\n', text))
+    records = []
+    for index, start in enumerate(starts):
+        block = text[start.start():starts[index + 1].start() if index + 1 < len(starts) else len(text)]
+        lines = block.splitlines(keepends=True)
+        question_line = next(line for line in lines if line.startswith('Q: '))
+        answer_index = next(i for i, line in enumerate(lines) if line.startswith('A:'))
+        gold_index = next(i for i, line in enumerate(lines) if line.startswith('Gold Answer: '))
+        first = lines[answer_index].lower()
+        for prefix in ['yes/no:', 'yes or no: ']:
+            if prefix in first:
+                first = first.replace(prefix, '').strip() + '.'
+        first = first.replace('yes/unsure', 'unsure').replace('no/unsure', 'unsure')
+        first = ':'.join(first.split(':')[1:]).strip()
+        answer = next((value for value in ['yes', 'no', 'unsure'] if first.startswith(value)), 'unsure')
+        if not first.startswith(('yes', 'no', 'unsure')):
+            first = 'unsure. ' + first
+        remainder = first.split(answer)[1]
+        rationale = first.split(answer + (remainder[0] if remainder else ''))[1].strip()
+        rationale += ''.join(line for line in lines[answer_index + 1:gold_index] if line.strip())
+        parsed = (start[1], start[2], question_line.split(':')[1].replace('\n', ''), answer,
+                  rationale or 'No rationale', lines[gold_index].split('Gold Answer: ')[1].strip().lower())
+        records.append(dict(parsed=parsed, question=question_line.removeprefix('Q: ').removesuffix('\n'), block=block))
+    return records
+
+
+def _erbench_sources(directory):
+    """Identify each CSV's source log by all parsed records, not filename assumptions."""
+    import csv
+
+    raw = directory / 'raw'
+    native, first_items, subjects, trials = {}, {}, set(), Counter()
+    fields = ['entity_idx', 'question_idx', 'question', 'model_answer', 'model_reasoning', 'gold_answer']
+    for path in sorted((raw / 'binary/results').glob('*/crafted_df/*.csv')):
+        with path.open(newline='') as stream:
+            rows = list(csv.DictReader(stream))
+        expected = [tuple(row[field] for field in fields) for row in rows]
+        matches = []
+        for log in sorted(path.parent.parent.glob(path.stem + '*.log')):
+            parsed = _erbench_log_records(log)
+            if [record['parsed'] for record in parsed] == expected:
+                matches.append((log, parsed))
+        _check(len(matches), 1, 'ERBench exactly one original log reproduces every CSV row in order')
+        log, parsed = matches[0]
+        model, domain = path.parent.parent.name, path.stem
+        subjects.add(model)
+        prompting = 'chain_of_thought' if log.stem == domain + '_cot' else 'standard'
+        _check(log.stem in {domain, domain + '_cot'}, True, 'ERBench known matched evaluation condition')
+        for index, (row, record) in enumerate(zip(rows, parsed, strict=True)):
+            _check(row['model_answer'] in {'yes', 'no', 'unsure'} and row['gold_answer'] in {'yes', 'no'},
+                   True, 'ERBench explicit valid released answers, never missing-as-failure')
+            key = str(path.relative_to(raw)), index
+            item = record['question'], row['gold_answer']
+            raw_id = domain + ':' + row['entity_idx'] + ':' + row['question_idx']
+            first_items.setdefault(item, (raw_id, domain))
+            _check(first_items[item][1], domain, 'ERBench identical question/criterion does not conflate domains')
+            trial_key = model, item, domain, prompting
+            trials[trial_key] += 1
+            native[key] = dict(csv=row, model=model, domain=domain, prompting=prompting,
+                question=record['question'], log_file=str(log.relative_to(raw)), log_entry=record['block'],
+                trial=trials[trial_key])
+    return dict(native=native, items=first_items, subjects=subjects)
+
+
+def _erbench(directory, tables, metadata, source=None):
+    source = _erbench_sources(directory) if source is None else source
+    native, definitions = source['native'], source['items']
+    subjects, subject_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        model = _features(row.subject_features_extra)['source_model']
+        _check(row.display_name, 'ERBench / ' + model, 'ERBench literal original model folder')
+        _check(row.harness, 'ERBench', 'ERBench named original harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'ERBench no invented configuration: ' + field)
+        subjects[row.subject_id] = model
+        subject_seen[model] += 1
+    _check(subject_seen, Counter({model: 1 for model in source['subjects']}), 'ERBench every source model exactly once')
+    items, item_seen = {}, Counter()
+    for row in tables['items'].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        key = row.content, criterion['reference_answer']
+        _check(key in definitions, True, 'ERBench complete original question and gold answer')
+        raw_id, domain = definitions[key]
+        _check(row.raw_item_id, raw_id, 'ERBench retained first upstream alias')
+        _check(_features(row.item_features), dict(domain=domain), 'ERBench original item domain')
+        _check(criterion['rule'], metadata['grading']['rule'], 'ERBench answer-correctness criterion')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'ERBench original answer matching, not an invented judge')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['answer'], 'ERBench explicit released grading protocol')
+        _check(pd.isna(row.asset_manifest), True, 'ERBench text-only scope has no invented image association')
+        items[row.item_id] = key
+        item_seen[key] += 1
+    _check(item_seen, Counter({key: 1 for key in definitions}), 'ERBench unique complete item definitions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'ERBench unique trace associations')
+    seen, counts = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(key in native, True, 'ERBench original observation exists')
+        original = native[key]
+        expected = dict(source_file=key[0], source_row=key[1], csv_record=original['csv'],
+                        log_file=original['log_file'], log_entry=original['log_entry'])
+        _check(trace, expected, 'ERBench complete source record, full logged output and exact provenance')
+        _check(subjects[row.subject_id], original['model'], 'ERBench correct subject-response association')
+        _check(items[row.item_id], (original['question'], original['csv']['gold_answer']), 'ERBench correct item-response association')
+        grade = float(original['csv']['model_answer'] == original['csv']['gold_answer'])
+        _check(row.response, grade, 'ERBench exact released answer-correctness grade')
+        _check(row.trial, original['trial'], 'ERBench recorded-order numbering after identical item definitions merge')
+        _check(json.loads(row.test_condition), dict(task='binary', domain=original['domain'], prompting=original['prompting']),
+               'ERBench source-verified prompting condition')
+        _check(pd.isna(row.interactors), True, 'ERBench no invented interaction metadata')
+        seen[key] += 1
+        counts['source_successes'] += int(grade)
+        counts['source_chain_of_thought'] += original['prompting'] == 'chain_of_thought'
+        counts['source_restored_question_rows'] += original['question'] != original['csv']['question'].strip()
+    _check(seen, Counter({key: 1 for key in native}), 'ERBench every native observation exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'ERBench complete linked trace coverage')
+    _check(len(tables.get('assets', [])), 0, 'ERBench no invented assets in the text-only scope')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+                source_traces=len(traces), source_files=len({key[0] for key in native}), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -23402,6 +23530,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'exploitgym':
         return _exploitgym(directory, tables, metadata)
+    if directory.name == 'erbench':
+        return _erbench(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
