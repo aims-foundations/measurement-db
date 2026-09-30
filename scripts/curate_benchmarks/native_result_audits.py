@@ -22449,12 +22449,107 @@ def _planbench(directory, tables, metadata, source=None):
         "source_adaptive", "source_single_prompt", "source_ungraded", "source_numeric_annotations", "source_blank_outputs"]})
 
 
+def _weavebench_sources(directory, metadata):
+    """Read the author gallery and check every screenshot link in its immutable archive."""
+    import tarfile
+
+    paths = metadata["build"]["parameters"]["paths"]
+    prefix = paths["root"] + "/"
+    native, screenshots = {}, {}
+    with tarfile.open(directory / "raw" / paths["archive"], "r:gz") as archive:
+        members = {member.name: member for member in archive if member.isfile()}
+        manifest = json.load(archive.extractfile(prefix + paths["manifest"]))
+        index = {row["id"]: row for row in manifest}
+        _check(len(index), len(manifest), "WeaveBench unique manifest tasks")
+        for name in sorted(members):
+            if not name.startswith(prefix + paths["records"]) or not name.endswith(".json"):
+                continue
+            record = json.load(archive.extractfile(name))
+            key = record["task_id"]
+            _check(key not in native, True, "WeaveBench exactly one selected gallery rollout per task")
+            _check(name, prefix + paths["records"] + key + ".json", "WeaveBench original task filename association")
+            summary = index[key]
+            _check((summary["model"], summary["harness"], summary["score"], summary["hack"], summary["steps"]),
+                   (record["model"], record["harness"], record["score"], record["is_hack"],
+                    sum(step["kind"] in ("cli", "gui") for step in record["steps"])),
+                   "WeaveBench native manifest-to-result correspondence")
+            score = record["score"]
+            _check(score is None or type(score) in (int, float) and 0 <= score <= 1, True, "WeaveBench finite published final fraction")
+            references = [prefix + "trajectories/shots/" + key + "/" + step["shot"] for step in record["steps"] if step.get("shot")]
+            for reference in references:
+                _check(reference in members and members[reference].size > 0, True, "WeaveBench complete original screenshot links")
+            native[key] = dict(source_member=name, source_record=record, screenshot_members=references)
+            screenshots.update({name: members[name].size for name in references})
+        _check(set(native), set(index), "WeaveBench complete manifest coverage")
+    return native, screenshots
+
+
+def _weavebench(directory, tables, metadata, source=None):
+    native, screenshots = _weavebench_sources(directory, metadata) if source is None else source
+    settings = metadata["build"]["parameters"]
+    subject_map = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["recorded_model_label"]
+        _check(features, dict(recorded_model_label=model, settings_status="historical_inference_settings_not_recorded"),
+               "WeaveBench literal model label without inferred historical settings")
+        _check(row.display_name, "WeaveBench / " + model + " / " + row.harness, "WeaveBench separate native model/runtime configurations")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "WeaveBench unknown historical setting: " + field)
+        subject_map[row.subject_id] = model, row.harness
+    expected_pairs = {(row["source_record"]["model"], row["source_record"]["harness"]) for row in native.values()}
+    _check(Counter(subject_map.values()), Counter({key: 1 for key in expected_pairs}), "WeaveBench all native model/runtime pairs")
+    items = {}
+    for row in tables["items"].itertuples():
+        original = native[row.raw_item_id]["source_record"]
+        _check(row.content, original["task_prompt"], "WeaveBench complete original task prompt")
+        _check(_features(row.item_features), dict(category=original["category"]), "WeaveBench native task category")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion["reference_answer"], None, "WeaveBench checks are grading rules, not a reference answer")
+        _check(json.loads(criterion["rule"]), dict(pass_rule=metadata["grading"]["rule"], checks=original["checks"],
+            deliverables=original["deliverables"]), "WeaveBench complete task grading evidence and deliverable requirements")
+        verifier = json.loads(row.verifier)
+        _check(verifier["class"], "judge", "WeaveBench final grade is an agent judgment, not execution of the check script")
+        _check(verifier["judged_by"], "llm", "WeaveBench explicit agent-as-judge protocol")
+        _check(verifier.get("judge"), None, "WeaveBench no guessed historical judge model")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["published_judge"], "WeaveBench full grader description")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in native}), "WeaveBench one complete item per original task")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    _check(len(traces), len(tables["traces"]), "WeaveBench one native trace per response")
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        key = items[row.item_id]
+        original = native[key]
+        record = original["source_record"]
+        _check(subject_map[row.subject_id], (record["model"], record["harness"]), "WeaveBench exact model/runtime/task association")
+        if record["score"] is None:
+            _check(pd.isna(row.response), True, "WeaveBench missing grade remains null")
+        else:
+            _check(row.response, float(record["score"] >= 0.8), "WeaveBench paper threshold applied to original final score")
+        _check(row.trial, 1, "WeaveBench one selected rollout, not an invented full sweep")
+        _check(row.test_condition, "author_selected_best_hybrid_rollout_per_task", "WeaveBench explicit selection bias")
+        _check(pd.isna(row.interactors), True, "WeaveBench no invented interactor settings")
+        _check(json.loads(traces[row.response_id]), dict(source_archive=settings["paths"]["archive"], **original),
+               "WeaveBench unabridged gallery record and every original screenshot link")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), "WeaveBench every selected original rollout exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "WeaveBench complete trace associations")
+    _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "WeaveBench pinned gallery revision")
+    return dict(source_responses=len(native), source_items=len(items), source_subjects=len(subject_map),
+        source_models=len({key[0] for key in subject_map.values()}), source_traces=len(traces), source_screenshots=len(screenshots),
+        source_trace_entries=sum(len(row["source_record"]["steps"]) for row in native.values()),
+        source_action_steps=sum(step["kind"] in ("cli", "gui") for row in native.values() for step in row["source_record"]["steps"]),
+        source_passes=sum(row["source_record"]["score"] is not None and row["source_record"]["score"] >= .8 for row in native.values()),
+        source_ungraded=sum(row["source_record"]["score"] is None for row in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

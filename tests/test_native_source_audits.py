@@ -454,6 +454,102 @@ class PlanBenchAuditTests(unittest.TestCase):
                     _planbench(self.directory, tables, self.metadata)
 
 
+class WeaveBenchAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "weavebench"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/weavebench"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        paths = self.metadata["build"]["parameters"]["paths"]
+        rows = [dict(task_id="task-a", model="model-a", harness="codex", score=.8),
+                dict(task_id="task-b", model="model-a", harness="openclaw", score=.7999999999999),
+                dict(task_id="task-c", model="model-b", harness="codex", score=None),
+                dict(task_id="task-d", model="model-b", harness="codex", score=0.)]
+        for i, row in enumerate(rows):
+            row.update(category="WEB", task_prompt="Original problem " + row["task_id"] + "\n" + "p" * 18000,
+                checks="def grade():\n    return 1.0\n# " + "c" * 20000,
+                deliverables=["original deliverable"], files=[["output.txt", 123]], is_hack=i == 3,
+                hack_confidence=1. if i == 3 else 0., dimensions=dict(evidence=dict(score=.9, reason="Native evidence")),
+                steps=[dict(kind="cli", thinking="Full published reasoning\n" + "t" * 22000,
+                            action="original action", shot="001.webp", output="original tool output"),
+                       dict(kind="note", thinking="Keep published notes too", action=None, shot=None, output=None)])
+        manifest = [dict(id=row["task_id"], model=row["model"], harness=row["harness"], score=row["score"],
+                         hack=row["is_hack"], steps=1) for row in rows]
+        members = {paths["root"] + "/" + paths["manifest"]: json.dumps(manifest).encode()}
+        for row in rows:
+            members[paths["root"] + "/" + paths["records"] + row["task_id"] + ".json"] = json.dumps(row).encode()
+            members[paths["root"] + "/trajectories/shots/" + row["task_id"] + "/001.webp"] = b"original screenshot bytes"
+        with tarfile.open(raw / paths["archive"], "w:gz") as archive:
+            for name, body in members.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(body)
+                archive.addfile(member, io.BytesIO(body))
+        builder = runpy.run_path(str(folder / "build.py"))["WeaveBench"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_threshold_precision_missing_grade_runtime_identity_and_full_trace(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
+        self.assertEqual(_weavebench(self.directory, self.tables, self.metadata), dict(source_responses=4,
+            source_items=4, source_subjects=3, source_models=2, source_traces=4, source_screenshots=4,
+            source_trace_entries=8, source_action_steps=4, source_passes=1, source_ungraded=1))
+
+    def test_scores_configuration_linkage_checks_screenshots_and_selection_policy(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
+        for change in ["swap", "fill_null", "subject", "item", "trial", "prompt", "checks", "clip", "screenshot", "score", "selection", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "swap":
+                    tables["responses"].loc[[0, 1], "response"] = [0., 1.]
+                elif change == "fill_null":
+                    tables["responses"].loc[tables["responses"].response.isna(), "response"] = 0.
+                elif change in {"subject", "item"}:
+                    field = change + "_id"
+                    current = tables["responses"].loc[0, field]
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != current)
+                elif change == "trial":
+                    tables["responses"].loc[0, "trial"] = 2
+                elif change == "prompt":
+                    tables["items"].loc[0, "content"] = tables["items"].loc[0, "content"][:16000]
+                elif change == "checks":
+                    criterion = json.loads(tables["items"].loc[0, "grading_criterion"])
+                    rule = json.loads(criterion["rule"])
+                    rule["checks"] = rule["checks"][:16000]
+                    criterion["rule"] = json.dumps(rule)
+                    tables["items"].loc[0, "grading_criterion"] = json.dumps(criterion)
+                elif change in {"clip", "screenshot", "score"}:
+                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    if change == "clip":
+                        trace["source_record"]["steps"][0]["thinking"] = trace["source_record"]["steps"][0]["thinking"][:16000]
+                    elif change == "screenshot":
+                        trace["screenshot_members"] = []
+                    else:
+                        trace["source_record"]["score"] = .99
+                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                elif change == "selection":
+                    tables["responses"].loc[0, "test_condition"] = "unbiased_full_evaluation"
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _weavebench(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
