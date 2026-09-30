@@ -2393,6 +2393,144 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PxploreNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import copy
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'pxplore'
+        self.raw = self.directory / 'raw/release'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/pxplore'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        for name in ['service/scripts/prompts/snippet_selection.txt', 'model/prompts/eval_profile.txt']:
+            path = self.raw / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('Complete original fixture prompt 完整\n' + name)
+        for model in ['prompt_stub', 'steering_stub', 'grpo_stub']:
+            inputs, evaluations = [], []
+            for index in range(2):
+                initial = dict(state_description='Full original learner state',
+                    long_term_objective=[dict(description='Goal A | metric: recall | threshold: >=0.8 | evidence: before', is_aligned=False),
+                                         dict(description='Goal B | evidence: before', is_aligned=False)],
+                    short_term_objective=[dict(description='Goal C | evidence: before', is_aligned=False)],
+                    implicit_motivation=[], explicit_motivation=[])
+                recommendation = dict(title='Selected lesson', content='Entire lesson')
+                after = copy.deepcopy(initial)
+                if index == 1 and model != 'grpo_stub':
+                    recommendation = None
+                elif model == 'prompt_stub':
+                    after['long_term_objective'][0].update(description='Goal A | metric: recall | threshold: >=0.8 | evidence: after', is_aligned=True)
+                    after['long_term_objective'][1] = dict(description='Added Goal D | evidence: after', is_aligned=False)
+                    after['short_term_objective'][0].pop('is_aligned')
+                elif model == 'steering_stub':
+                    after['long_term_objective'][1]['is_aligned'] = True
+                else:
+                    after['long_term_objective'][index]['is_aligned'] = True
+                record = dict(course='Course ' + str(index), student_profile=initial,
+                    interaction_history=[dict(role='Fictional learner', content='Original question 完整 ' + str(index)),
+                                         dict(role='Tutor', content='Full original reply')],
+                    recommend_candidates=[dict(content='Original candidate ' + str(index), score=0.939, metadata=dict(id='candidate-1'))],
+                    recommend_snippet_id='candidate-1', recommend_content=recommendation,
+                    recommend_reason='Full recorded recommendation explanation 完整 ' * 2000)
+                inputs.append(record)
+                evaluations.append(dict(course=record['course'], initial_state=initial, next_lesson=recommendation, next_state=after))
+            for subfolder, records in [('test', inputs), ('eval', evaluations)]:
+                path = self.raw / 'model/data' / subfolder / (model + '.json')
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(records, ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['Pxplore']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_complete_inputs_omitted_added_and_ungraded_criteria(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pxplore
+        self.assertEqual(_pxplore(self.directory, self.frames, self.metadata), dict(source_responses=19,
+            source_subjects=3, source_items=13, source_traces=19, source_calls=6, source_sessions=2,
+            source_initial_components=18, source_next_components=18, source_matched_criteria=17,
+            source_omitted_criteria=1, source_added_or_rewritten_criteria=1, source_missing_grade_fields=1,
+            source_aligned=4, source_not_aligned=13, source_ungraded=2, source_fallback_calls=2))
+
+    def test_audit_rejects_corrupted_grades_inputs_and_records(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pxplore, _pxplore_sources
+        source = _pxplore_sources(self.directory, self.metadata)
+        changes = ['grade_swap', 'null_to_zero', 'subject', 'item', 'prompt', 'candidate', 'axis', 'rule', 'verifier',
+            'answer', 'history', 'state', 'judgment', 'source_row', 'source_file', 'status', 'condition', 'trial',
+            'drop', 'duplicate', 'drop_trace', 'settings']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; old = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(old), column].iloc[0]
+                elif change in ['prompt', 'candidate']:
+                    content = json.loads(frames['items'].loc[0, 'content'])
+                    if change == 'prompt': content['messages'][0]['content'] = 'Wrong system prompt'
+                    else:
+                        user = json.loads(content['messages'][1]['content']); user['candidates'][0]['content'] = 'Wrong candidate'
+                        content['messages'][1]['content'] = json.dumps(user)
+                    frames['items'].loc[0, 'content'] = json.dumps(content, ensure_ascii=False)
+                elif change == 'axis': frames['items'].loc[0, 'item_features'] = frames['items'].loc[0, 'item_features'].replace('long_term_objective', 'short_term_objective')
+                elif change == 'rule':
+                    rule = json.loads(frames['items'].loc[0, 'grading_criterion']); rule['rule'] += ' Wrong criterion'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(rule)
+                elif change == 'verifier':
+                    verifier = json.loads(frames['items'].loc[0, 'verifier']); verifier['judged_by'] = 'human'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(verifier)
+                elif change in ['answer', 'history', 'state', 'judgment', 'source_row', 'source_file', 'status']:
+                    trace = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'answer': trace['native_input']['recommend_reason'] = trace['native_input']['recommend_reason'][:16000]
+                    elif change == 'history': trace['native_input']['interaction_history'] = []
+                    elif change == 'state': trace['native_input']['student_profile']['state_description'] = 'Wrong learner state'
+                    elif change == 'judgment': trace['native_evaluation']['next_state']['state_description'] = 'Wrong judged state'
+                    elif change == 'source_row': trace['source_row'] = 1 - trace['source_row']
+                    elif change == 'source_file': trace['source_file'] = 'unrelated.json'
+                    else: trace['component_status'] = 'wrong_status'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(trace)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'wrong_method'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _pxplore(self.directory, frames, self.metadata, source)
+
+    def test_source_checks_reject_ambiguous_keys_wrong_associations_and_nonboolean_grades(self):
+        import copy
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pxplore_sources
+        path = self.raw / 'model/data/eval/prompt_stub.json'
+        original = path.read_text()
+        for change in ['duplicate', 'grade', 'course', 'profile', 'recommendation', 'fallback']:
+            records = json.loads(original)
+            if change == 'duplicate': records[0]['next_state']['long_term_objective'].append(copy.deepcopy(records[0]['next_state']['long_term_objective'][0]))
+            elif change == 'grade': records[0]['next_state']['long_term_objective'][0]['is_aligned'] = 'false'
+            elif change == 'course': records[0]['course'] = 'Wrong course'
+            elif change == 'profile': records[0]['initial_state']['state_description'] = 'Wrong profile'
+            elif change == 'recommendation': records[0]['next_lesson']['title'] = 'Wrong lesson'
+            else: records[1]['next_state']['long_term_objective'][0]['is_aligned'] = True
+            path.write_text(json.dumps(records))
+            with self.assertRaises(ValueError): _pxplore_sources(self.directory, self.metadata)
+            path.write_text(original)
+
+
 if __name__ == "__main__":
     unittest.main()
 

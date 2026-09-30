@@ -24563,6 +24563,123 @@ def _sugarcrepe(directory, tables, metadata, source=None):
         source_assets=len(assets), source_categories=len({row['category'] for row in source['native'].values()}), **source['counts'])
 
 
+def _pxplore_sources(directory, metadata):
+    import hashlib
+    raw = directory / 'raw/release'
+    prompt = (raw / 'service/scripts/prompts/snippet_selection.txt').read_text()
+    judge_prompt = (raw / 'model/prompts/eval_profile.txt').read_text()
+    dimensions = ['long_term_objective', 'short_term_objective', 'implicit_motivation', 'explicit_motivation']
+    native, items, models, calls, counts = {}, {}, {}, {}, Counter()
+    for path in sorted((raw / 'model/data/eval').glob('*.json')):
+        model, method = path.stem, path.stem.split('_')[0]
+        _check(method in ['prompt', 'steering', 'sft', 'grpo'], True, 'Pxplore known original policy method')
+        mode = 'history' if method == 'prompt' else 'state'
+        models[model] = dict(method=method, mode=mode)
+        evaluations = json.loads(path.read_text())
+        inputs = json.loads((raw / 'model/data/test' / path.name).read_text())
+        _check(len(evaluations), len(inputs), 'Pxplore all original call/input positions')
+        for position, (evaluation, original_input) in enumerate(zip(evaluations, inputs)):
+            for left, right in [('course', 'course'), ('initial_state', 'student_profile'), ('next_lesson', 'recommend_content')]:
+                _check(evaluation[left], original_input[right], 'Pxplore complete original association: ' + left)
+            recommendation = original_input['recommend_content']
+            _check(recommendation is None or isinstance(recommendation, (dict, str)), True, 'Pxplore original recommendation or recorded failure')
+            if recommendation is None or isinstance(recommendation, str):
+                _check(evaluation['next_state'], evaluation['initial_state'], 'Pxplore native initial-state fallback')
+                counts['source_fallback_calls'] += 1
+            strategy = original_input['student_profile']
+            if mode == 'history':
+                strategy = dict(interaction_history=[entry['role'] + ': ' + entry['content'] for entry in original_input['interaction_history']])
+            content = dict(messages=[dict(role='system', content=prompt), dict(role='user', content=json.dumps(
+                dict(recommendation_strategy=strategy, candidates=original_input['recommend_candidates']), ensure_ascii=False, indent=2))])
+            calls[model, position] = dict(input=original_input, evaluation=evaluation)
+            for dimension in dimensions:
+                states = {}
+                for state in ['initial_state', 'next_state']:
+                    entries = (evaluation[state] or {}).get(dimension, [])
+                    lookup = {}
+                    for entry in entries:
+                        criterion = entry['description'].partition('| evidence')[0].strip()
+                        _check(criterion not in lookup, True, 'Pxplore unambiguous literal component key')
+                        lookup[criterion] = entry
+                    states[state] = lookup
+                    counts['source_initial_components' if state == 'initial_state' else 'source_next_components'] += len(entries)
+                before, after = states['initial_state'], states['next_state']
+                for criterion in sorted(before.keys() | after.keys()):
+                    grade = after.get(criterion, {}).get('is_aligned')
+                    _check(grade is None or type(grade) is bool, True, 'Pxplore original explicit boolean or unavailable grade')
+                    status = 'matched' if criterion in before and criterion in after else 'omitted' if criterion in before else 'added_or_rewritten'
+                    counts['source_' + status + '_criteria'] += 1
+                    if criterion in after and grade is None: counts['source_missing_grade_fields'] += 1
+                    counts['source_ungraded' if grade is None else 'source_aligned' if grade else 'source_not_aligned'] += 1
+                    digest = hashlib.sha256(criterion.encode()).hexdigest()
+                    identity = position, mode, dimension, digest, json.dumps(content, ensure_ascii=False)
+                    item = dict(criterion=criterion, content=content,
+                        alias=f's{position}:{mode}:{dimension}:{digest}',
+                        grading=dict(reference_answer=None, rule=metadata['grading']['rule'] + '\nDimension: ' + dimension + '\nCriterion: ' + criterion))
+                    if identity in items: _check(items[identity], item, 'Pxplore consistent shared literal grading axes')
+                    items[identity] = item
+                    trace = dict(source_run=model, source_row=position, source_file='model/data/eval/' + path.name,
+                        input_file='model/data/test/' + path.name, dimension=dimension, criterion=criterion,
+                        component_status=status, native_evaluation=evaluation, native_input=original_input)
+                    native[model, position, dimension, criterion] = dict(item=identity, grade=None if grade is None else float(grade), trace=trace)
+    return dict(native=native, items=items, models=models, calls=calls, counts=dict(counts), judge_prompt=judge_prompt)
+
+
+def _pxplore(directory, tables, metadata, source=None):
+    source = _pxplore_sources(directory, metadata) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_run']
+        expected = source['models'][model]
+        _check(features, dict(source_run=model, method=expected['method'], input_mode=expected['mode']), 'Pxplore literal run and input configuration')
+        _check(row.display_name, 'Pxplore / ' + model, 'Pxplore no guessed source model/checkpoint')
+        _check(row.harness, 'Pxplore learner-state alignment', 'Pxplore original evaluation protocol')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'Pxplore no guessed historical setting: ' + field)
+        subjects[row.subject_id] = model
+        seen_models[model] += 1
+    _check(seen_models, Counter({model: 1 for model in source['models']}), 'Pxplore all distinct policy configurations')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        identity = int(features['source_row']), features['input_mode'], features['dimension'], features['criterion_sha256'], row.content
+        _check(identity in source['items'], True, 'Pxplore complete actual input and literal criterion identity')
+        original = source['items'][identity]
+        _check(features, dict(source_row=str(identity[0]), input_mode=identity[1], dimension=identity[2], criterion_sha256=identity[3]),
+            'Pxplore original session, input mode and grading dimension')
+        _check(row.raw_item_id, original['alias'], 'Pxplore stable source criterion alias')
+        _check(json.loads(row.grading_criterion), original['grading'], 'Pxplore original criterion without outcome-dependent evidence in the input')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], verifier['judged_by']), ('judge', 'llm'), 'Pxplore original judge protocol')
+        _check(json.loads(verifier['spec']), dict(**metadata['grading']['verifiers']['published'], system_prompt=source['judge_prompt']),
+            'Pxplore complete source judge prompt and documented fallback')
+        _check(pd.isna(row.asset_manifest), True, 'Pxplore text inputs without invented assets')
+        items[row.item_id] = identity
+        seen_items[identity] += 1
+    _check(seen_items, Counter({key: 1 for key in source['items']}), 'Pxplore every distinct recorded input/grading axis')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Pxplore unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_run'], trace['source_row'], trace['dimension'], trace['criterion']
+        original = source['native'][key]
+        _check(trace, original['trace'], 'Pxplore complete recommendation, judgments and input provenance')
+        _check(subjects[row.subject_id], key[0], 'Pxplore correct original policy run')
+        _check(items[row.item_id], original['item'], 'Pxplore correct original input and grading axis association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'Pxplore preserved explicit grade or missing observation')
+        _check(row.test_condition, 'method=' + source['models'][key[0]]['method'] + ';src=' + key[0], 'Pxplore original run condition')
+        _check(row.trial, 1, 'Pxplore one released criterion observation per policy and session')
+        _check(pd.isna(row.interactors), True, 'Pxplore no fabricated interaction history')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Pxplore every native criterion and omitted initial criterion exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Pxplore every complete trace linked')
+    _check(len(tables.get('assets', [])), 0, 'Pxplore text-only recorded input')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_calls=len(source['calls']), source_sessions=len({key[1] for key in source['calls']}), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24580,6 +24697,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'pxplore':
+        return _pxplore(directory, tables, metadata)
     if directory.name == 'sugarcrepe':
         return _sugarcrepe(directory, tables, metadata)
     if directory.name == 'synthpai':

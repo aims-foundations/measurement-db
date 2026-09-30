@@ -1,0 +1,105 @@
+benchmark:
+  description: Recorded next-lesson recommendations from fourteen Pxplore policy configurations, with per-criterion
+    learner-state alignment judgments for fifty released sessions.
+  testing_condition: 'Retain all original next_state criterion records, plus initial criteria omitted from next_state
+    as unavailable grades. Join only exact dimension and description prefixes before the evidence suffix; do not
+    infer semantic equivalence between rewritten criteria. These are several judgments of a single recommendation,
+    not independent policy calls. Preserve the full input: prompt methods receive the recorded interaction history,
+    other methods the structured learner state, and all receive their original candidate lessons. Messages follow
+    the released test scripts; exact provider wire requests and immutable model/checkpoint configurations are unavailable.
+    Missing/error recommendations copy the initial state under the original protocol, rather than invoking a new
+    judge. Preserve explicit fallback booleans but never replace absent grade fields or omitted criteria with zero.
+    Additional judged criteria remain separate unless their literal identity agrees. The native alignment denominator
+    counts next_state components with an is_aligned field; unavailable grades are outside that denominator. Other
+    profiling, style-adaptation and human-study experiments are outside these fourteen policy result exports. No
+    model or judge is executed.'
+  paper_url: https://arxiv.org/abs/2510.13215
+  data_source_url: https://github.com/Pxplore/pxplore-algo
+  subject_type: model
+  item_type: task
+  license: No explicit license is declared in the captured author repository. Keep the original learner records
+    and derived tables local pending clarification of redistribution terms.
+  citation: "@inproceedings{lim2026pxplore,\n  title={Personalized Learning Path Planning through Goal-Driven Learner\
+    \ State Modeling},\n  author={Lim, Joy Jia Yin and He, Ye and Yu, Jifan and Cong, Xin and Zhang-Li, Daniel and\
+    \ Liu, Zhiyuan and Liu, Huiqin and Hou, Lei and Li, Juanzi and Xu, Bin},\n  booktitle={Proceedings of the ACM\
+    \ Web Conference 2026 (WWW '26)},\n  year={2026},\n}"
+  tags:
+  - education
+  - learning_path_planning
+  - personalization
+  - reinforcement_learning
+  - llm_policy
+  modality:
+  - text
+  domain:
+  - education
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The original next-state criterion is explicitly marked not aligned.
+      '1': The original next-state criterion is explicitly marked aligned.
+  categorical: true
+  release_date: 2025-10
+  name: Pxplore
+  version: 42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      evaluations: model/data/eval
+      inputs: model/data/test
+      system_prompt: service/scripts/prompts/snippet_selection.txt
+      judge_prompt: model/prompts/eval_profile.txt
+    associations:
+      course: input_course
+      initial_state: student_profile
+      next_lesson: recommend_content
+    dimensions:
+      long_term_objective: Long-term objective
+      short_term_objective: Short-term objective
+      implicit_motivation: Implicit motivation
+      explicit_motivation: Explicit motivation
+    input_modes:
+      prompt: history
+      steering: state
+      sft: state
+      grpo: state
+    parsing:
+      evidence_marker: '| evidence'
+    component_status:
+      both: matched
+      left_only: omitted
+      right_only: added_or_rewritten
+    labels:
+      subject_prefix: 'Pxplore / '
+      harness: Pxplore learner-state alignment
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/Pxplore/pxplore-algo
+    revision: 42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    files:
+    - match: (?:README[.]md|model/(?:data/(?:testset[.]json|(?:test|eval)/[^/]+[.]json)|(?:evaluation|calculate_reward|prepare_data|data_preprocessing|reward_plugin)[.]py|prompts/[^/]+[.]txt|test/[^/]+[.]py)|service/(?:scripts/prompts/snippet_selection[.]txt|llm/(?:llama|qwen)[.]py))
+      path: release/{path}
+grading:
+  rule: Preserve the original next_state component is_aligned boolean. An absent grade or omitted initial criterion
+    remains null. The original GPT-4o evaluator updates learner-state criteria after the selected lesson; when a
+    recommendation is missing or an error string, it copies the initial state. Criterion identity is the exact description
+    prefix before the evidence suffix, within its dimension. No regrading or inferred semantic matching is performed.
+  verifiers:
+    published:
+      kind: published_alignment_with_initial_state_fallback
+      source: https://github.com/Pxplore/pxplore-algo/blob/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d/model/evaluation.py
+      field: next_state[dimension][component].is_aligned
+      model: gpt-4o (source alias; immutable version unavailable)
+      fallback: If recommend_content is null or a string, next_state is copied from initial_state.
+      aggregation_source: https://github.com/Pxplore/pxplore-algo/blob/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d/model/calculate_reward.py
