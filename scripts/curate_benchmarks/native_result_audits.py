@@ -24819,11 +24819,159 @@ def _programbench(directory, tables, metadata, source=None):
         source_runs=source['runs'], source_tasks=len({key[1] for key in seen}), **source['counts'])
 
 
+def _psychosis_bench_sources(directory, metadata):
+    """Read the Markdown log in original order, independently of DataFrame extraction."""
+    import re
+    import tarfile
+
+    layout = metadata['build']['parameters']['layout']
+    with tarfile.open(directory / 'raw' / layout['archive']) as archive:
+        files = {'/'.join(Path(member.name).parts[1:]): archive.extractfile(member).read().decode()
+                 for member in archive if member.isfile()}
+    cases = {case['name']: case for case in json.loads(files[layout['cases']])['cases']}
+    text = files[layout['log']]
+    blocks = re.split(r'(?m)^## Experiment (?=\d+: )', text)[1:]
+    native, models, pairs, counts = {}, set(), set(), Counter()
+    for block in blocks:
+        heading, body = block.split('\n', 1)
+        number, heading = heading.split(': ', 1)
+        case_name, model = heading.rsplit(' × ', 1)
+        case = cases[case_name]
+        _check((model, case['id']) not in pairs, True, 'Psychosis-bench unique source model/scenario')
+        pairs.add((model, case['id']))
+        models.add(model)
+        header, conversation = body.split('\n## Conversation\n', 1)
+        for label, expected in [('Model', model), ('Test Case', case_name), ('Theme', case['theme']),
+                                ('Condition', case['condition']), ('Harm Type', case['harm_type'])]:
+            _check(re.findall(r'^- \*\*'+label+r':\*\* (.+)$', header, re.M), [expected],
+                   'Psychosis-bench logged scenario/model association')
+        conversation, configuration = conversation.split('\n## Metadata\n', 1)
+        configuration = configuration.rstrip().removesuffix('\n---').strip()
+        judges = re.findall(r'^- \*\*judge_model:\*\* (.+)$', configuration, re.M)
+        _check(len(judges), 1, 'Psychosis-bench recorded judge identity')
+        pieces = re.split(r'(?m)^### Turn ', conversation)[1:]
+        history, scores = [], {name: [] for name in ['DCS', 'HES', 'SIS']}
+        _check(len(pieces), len(case['prompts']), 'Psychosis-bench full source conversation')
+        for expected_turn, piece in enumerate(pieces, 1):
+            number_text, body = piece.split('\n', 1)
+            turn = int(number_text)
+            _check(turn, expected_turn, 'Psychosis-bench chronological source turns')
+            user, answer = body.strip().removeprefix('**👤 User:**\n').split('\n\n**🤖 Assistant:**\n', 1)
+            _check(answer.rstrip().endswith('\n\n---'), True, 'Psychosis-bench complete original turn delimiter')
+            answer = answer.rstrip().removesuffix('\n\n---')
+            answer, separator, score_text = answer.partition('\n\n**📊 Scores:**\n')
+            user, answer = user.strip(), answer.strip()
+            _check(user, case['prompts'][turn - 1], 'Psychosis-bench exact scenario-bank message')
+            _check(answer.startswith('ERROR:'), False, 'Psychosis-bench no API-error text disguised as a response')
+            counts['source_turns'] += 1
+            counts['source_blank_generations'] += not answer
+            grades = {}
+            for line in score_text.strip().splitlines():
+                match = re.fullmatch(r'- (DCS|HES|SIS) \([^)]+\): (-?\d+)', line)
+                _check(match is not None, True, 'Psychosis-bench original grade line')
+                dimension, score = match.groups()
+                _check(dimension not in grades, True, 'Psychosis-bench unique rating per dimension')
+                grades[dimension] = int(score)
+            applicable = ['DCS'] if turn >= 4 else []
+            if turn >= 7: applicable += ['HES', 'SIS']
+            _check(set(grades) <= set(applicable), True, 'Psychosis-bench rubric applicability')
+            history.append(dict(role='user', content=user))
+            for dimension in applicable:
+                grade = grades.get(dimension)
+                _check(grade in ([None, 0, 1] if dimension == 'SIS' else [None, 0, 1, 2]), True,
+                       'Psychosis-bench native dimension scale')
+                if grade is not None:
+                    scores[dimension].append(grade)
+                    counts['source_graded_responses'] += 1
+                else:
+                    counts['source_ungraded_responses'] += 1
+                counts['source_' + dimension.lower() + '_responses'] += 1
+                native[number, turn, dimension] = dict(model=model, case=case, input=list(history),
+                    grade=grade, answer=answer, judge=judges[0], configuration=configuration)
+            history.append(dict(role='assistant', content=answer))
+        # The summaries are separately published checks on the interpreted ratings.
+        for label, expected in [('Total Turns', str(len(pieces))),
+            ('Average DCS (Delusion Confirmation)', f'{sum(scores["DCS"])/len(scores["DCS"]):.3f}'),
+            ('Average HES (Harm Enablement)', f'{sum(scores["HES"])/len(scores["HES"]):.3f}'),
+            ('Total SIS (Safety Intervention)', str(sum(scores['SIS']))),
+            ('Max DCS', str(max(scores['DCS']))), ('Max HES', str(max(scores['HES'])))]:
+            _check(re.findall(r'^- \*\*'+re.escape(label)+r':\*\* (.+)$', header, re.M), [expected],
+                   'Psychosis-bench released summary recomputed from original turns')
+    _check(pairs, {(model, case['id']) for model in models for case in cases.values()},
+           'Psychosis-bench complete released model/scenario grid')
+    return dict(native=native, models=models, cases=len(cases), experiments=len(blocks), counts=dict(counts),
+                scorer=files[layout['scorer']])
+
+
+def _psychosis_bench(directory, tables, metadata, source=None):
+    source = _psychosis_bench_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['model_alias']
+        _check(features, dict(model_alias=model, inference_api=labels['inference_api']), 'Psychosis-bench original API model alias')
+        _check((row.display_name, row.harness), (model, labels['harness']), 'Psychosis-bench model/scaffold identity')
+        _check(all(pd.isna(getattr(row, key)) for key in ['access_date', 'reasoning_effort', 'harness_version']),
+               True, 'Psychosis-bench unavailable runtime settings remain unknown')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({name:1 for name in source['models']}), 'Psychosis-bench all original subjects exactly once')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        experiment, turn, dimension = row.raw_item_id.split(':')
+        key = experiment, int(turn.removeprefix('turn_')), dimension
+        original = source['native'][key]
+        case = original['case']
+        _check(json.loads(row.content), original['input'], 'Psychosis-bench full history with no current-answer leakage')
+        _check(_features(row.item_features), dict(id=case['id'], theme=case['theme'], condition=case['condition'],
+            harm_type=case['harm_type'], turn=str(key[1]), dimension=dimension), 'Psychosis-bench scenario and rubric association')
+        rubric = metadata['grading']['verifiers'][dimension]
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=None, rule=rubric['rule'], response_scale=rubric['response_scale']),
+               'Psychosis-bench complete dimension-specific grading criterion')
+        _check(criterion['response_scale']['values'], [0, 1] if dimension == 'SIS' else [0, 1, 2],
+               'Psychosis-bench original numeric scales, not the inconsistent README examples')
+        _check(criterion['response_scale']['direction'], 'higher_is_better' if dimension == 'SIS' else 'lower_is_better',
+               'Psychosis-bench safety interpretation of each dimension')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')),
+               ('judge', original['judge'], None if dimension == 'SIS' else 'llm'), 'Psychosis-bench logged judge and explicit SIS uncertainty')
+        _check(json.loads(verifier['spec']), dict(**rubric, harm_context=case['harm_type'] if dimension=='HES' else None,
+            implementation=source['scorer']), 'Psychosis-bench full original grading implementation and harm context')
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key:1 for key in source['native']}), 'Psychosis-bench complete context/rubric items')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Psychosis-bench unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        key = items[row.item_id]
+        original = source['native'][key]
+        _check(subjects[row.subject_id], original['model'], 'Psychosis-bench correct model for each conversation')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'Psychosis-bench released rating or unavailable grade')
+        _check(row.trial, 1, 'Psychosis-bench one recorded turn per rubric')
+        _check(pd.isna(row.test_condition), True, 'Psychosis-bench no invented occasion settings')
+        _check(json.loads(row.interactors), dict(user_sim=labels['user_sim']), 'Psychosis-bench scripted user, not another target model')
+        trace = json.loads(traces[row.response_id])
+        trace['configuration'] = trace['configuration'].strip()
+        _check(trace, dict(experiment=key[0], case_id=original['case']['id'], turn=key[1], dimension=key[2],
+            assistant=original['answer'], configuration=original['configuration'], released_rating=original['grade']),
+            'Psychosis-bench complete original generation and recorded configuration')
+        seen[key] += 1
+    _check(seen, Counter({key:1 for key in source['native']}), 'Psychosis-bench every applicable rating, including missing grades')
+    _check(set(traces), set(tables['responses'].response_id), 'Psychosis-bench complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=len(seen), source_traces=len(traces),
+                source_scenarios=source['cases'], source_experiments=source['experiments'], **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'psychosis_bench':
+        return _psychosis_bench(directory, tables, metadata)
     if directory.name == 'programbench':
         return _programbench(directory, tables, metadata)
     if directory.name == 'exploitgym':

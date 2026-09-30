@@ -2393,6 +2393,122 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PsychosisBenchNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'psychosis_bench'
+        self.raw = self.directory / 'raw'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/psychosis_bench'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        case = dict(id='scenario_one', name='Original scenario', theme='Fixture theme',
+                    condition='Explicit', harm_type='Original harm context', prompts=['Prompt '+str(turn) for turn in range(1, 13)])
+        sections = ['# Original batch log']
+        for experiment, model in enumerate(['fixture/model-a', 'fixture/model-b'], 1):
+            header = ['## Experiment '+str(experiment)+': '+case['name']+' × '+model, '## Experiment Details']
+            header += ['- **'+label+':** '+value for label,value in [('Model',model),('Test Case',case['name']),
+                ('Theme',case['theme']),('Condition',case['condition']),('Harm Type',case['harm_type'])]]
+            turns, scores = [], {name:[] for name in ['DCS','HES','SIS']}
+            for turn, prompt in enumerate(case['prompts'],1):
+                answer = '' if (experiment,turn)==(1,1) else model+' 完整\n' * (5000 if turn==7 else 1)
+                body = ['### Turn '+str(turn), '', '**👤 User:**', prompt, '', '**🤖 Assistant:**', answer, '']
+                applicable = ['DCS'] if turn>=4 else []
+                if turn>=7:applicable += ['HES','SIS']
+                if applicable:
+                    body += ['**📊 Scores:**']
+                    for dimension in applicable:
+                        if (experiment,turn,dimension)==(2,9,'DCS'):continue
+                        value = turn % (2 if dimension=='SIS' else 3)
+                        scores[dimension].append(value)
+                        body += ['- '+dimension+' (Published rating): '+str(value)]
+                    body += ['']
+                turns += body + ['---','']
+            summary = [('Total Turns','12'),('Average DCS (Delusion Confirmation)',f'{sum(scores["DCS"])/len(scores["DCS"]):.3f}'),
+                ('Average HES (Harm Enablement)',f'{sum(scores["HES"])/len(scores["HES"]):.3f}'),
+                ('Total SIS (Safety Intervention)',str(sum(scores['SIS']))),('Max DCS',str(max(scores['DCS']))),
+                ('Max HES',str(max(scores['HES'])))]
+            sections += header + ['', '## Summary Scores'] + ['- **'+name+':** '+value for name,value in summary]
+            sections += ['', '## Conversation'] + turns + ['## Metadata','- **judge_model:** fixture/original-judge','','---','']
+        layout = self.metadata['build']['parameters']['layout']
+        self.documents = {layout['cases']:json.dumps(dict(cases=[case])), layout['log']:'\n'.join(sections),
+                          layout['scorer']:'Original grading implementation retained as text, never executed.'}
+        with tarfile.open(self.raw/layout['archive'],'w:gz') as archive:
+            for filename, content in self.documents.items():
+                data=content.encode(); member=tarfile.TarInfo('original/'+filename); member.size=len(data)
+                archive.addfile(member,io.BytesIO(data))
+        builder = runpy.run_path(str(folder/'build.py'))['PsychosisBench']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory/'build.py')).main_from_args([
+                '--source',str(self.raw),'--output',str(self.directory.parent/'tables')])
+        self.frames={path.stem:pd.read_parquet(path) for path in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_full_histories_distinct_rubrics_and_unavailable_grade(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _psychosis_bench
+        self.assertEqual(_psychosis_bench(self.directory,self.frames,self.metadata),dict(source_subjects=2,
+            source_items=42,source_responses=42,source_traces=42,source_scenarios=1,source_experiments=2,
+            source_turns=24,source_blank_generations=1,source_graded_responses=41,source_dcs_responses=18,
+            source_hes_responses=12,source_sis_responses=12,source_ungraded_responses=1))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        self.assertEqual(self.frames['responses'].response.isna().sum(),1)
+
+    def test_changed_associations_grades_history_and_judge_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _psychosis_bench, _psychosis_bench_sources
+        source = _psychosis_bench_sources(self.directory,self.metadata)
+        changes = ['grade','null_to_zero','subject','item','history_clip','answer_leak','alias','dimension',
+            'scale','direction','rule','judge','sis_mode','trial','condition','interactors','drop','duplicate',
+            'trace_clip','trace_configuration','trace_grade','model']
+        for change in changes:
+            with self.subTest(change=change):
+                frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,subjects,traces=[frames[name] for name in ['responses','items','subjects','traces']]
+                if change=='grade':responses.loc[0,'response']=float(responses.loc[0,'response'])+0.5
+                elif change=='null_to_zero':responses.loc[responses.response.isna(),'response']=0.
+                elif change=='subject':responses.loc[0,'subject_id']=next(value for value in subjects.subject_id if value!=responses.loc[0,'subject_id'])
+                elif change=='item':responses.loc[0,'item_id']=next(value for value in items.item_id if value!=responses.loc[0,'item_id'])
+                elif change in ['history_clip','answer_leak']:
+                    value=json.loads(items.loc[0,'content'])
+                    if change=='history_clip':value=value[-1:]
+                    else:value.append(dict(role='assistant',content='Leaked current answer'))
+                    items.loc[0,'content']=json.dumps(value)
+                elif change=='alias':items.loc[0,'raw_item_id']='999:turn_4:DCS'
+                elif change=='dimension':items.loc[0,'item_features']=items.loc[0,'item_features'].replace('dimension=DCS','dimension=HES')
+                elif change in ['scale','direction','rule']:
+                    value=json.loads(items.loc[0,'grading_criterion'])
+                    if change=='scale':value['response_scale']['values']=[0,1]
+                    elif change=='direction':value['response_scale']['direction']='higher_is_better'
+                    else:value['rule']='An invented binary success criterion'
+                    items.loc[0,'grading_criterion']=json.dumps(value)
+                elif change in ['judge','sis_mode']:
+                    index=0 if change=='judge' else next(i for i,v in enumerate(items.raw_item_id) if v.endswith(':SIS'))
+                    value=json.loads(items.loc[index,'verifier'])
+                    if change=='judge':value['judge']='A guessed paper judge'
+                    else:value['judged_by']='llm'
+                    items.loc[index,'verifier']=json.dumps(value)
+                elif change=='trial':responses.loc[0,'trial']=2
+                elif change=='condition':responses.loc[0,'test_condition']='Guessed temperature'
+                elif change=='interactors':responses.loc[0,'interactors']=json.dumps(dict(user_sim='A different user model'))
+                elif change=='drop':frames['responses']=responses.iloc[1:].copy()
+                elif change=='duplicate':frames['responses']=pd.concat([responses,responses.iloc[:1]],ignore_index=True)
+                elif change.startswith('trace_'):
+                    index=traces.trace.str.len().idxmax(); value=json.loads(traces.loc[index,'trace'])
+                    if change=='trace_clip':value['assistant']=value['assistant'][:16000]
+                    elif change=='trace_configuration':value['configuration']='Guessed runtime config'
+                    else:value['released_rating']=0.5
+                    traces.loc[index,'trace']=json.dumps(value)
+                else:subjects.loc[0,'display_name']='A guessed checkpoint'
+                with self.assertRaises((ValueError,KeyError)):_psychosis_bench(self.directory,frames,self.metadata,source)
+
+
 class ProgramBenchNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

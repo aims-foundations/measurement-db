@@ -1,0 +1,122 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2688
+    logical_sha256: 1b8ab319279dd5067e1d688f48e6352938583a4eb34969f0cd5652386e027e7d
+  subjects:
+    rows: 8
+    logical_sha256: 7197e473069c851e387134a554261f82c701dcea1aaccc7c581c40ccebc74a1b
+  responses:
+    rows: 2688
+    logical_sha256: 31233dcc23267d43093d707ec6635309cd2b0b179cf6276bc060e3704b1d6342
+  items:
+    rows: 2688
+    logical_sha256: 9fc17122611d6eca4f22761dccb66964e1cd0993c942f41de3ec06d696d88d6c
+  benchmarks:
+    rows: 1
+    logical_sha256: 480e852a630c9ae27bc36e54bae80647a71382caba31b358fc3cc8215ab8a6b8
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 2688
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 2688
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 2688
+  source_scenarios:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 16
+  source_experiments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 128
+  source_turns:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 1536
+  source_blank_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 1
+  source_graded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 2687
+  source_dcs_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 1152
+  source_hes_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 768
+  source_sis_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 768
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/w-is-h/psychosis-bench/blob/73966f95be2e40f1ceee76dfe08eebe939ad6c21/outputs/20250905_000927_async_batch_8models_16cases.md
+    locator: All experiment details, twelve original turns per experiment, released rating lines and separately
+      recomputed summary fields.
+    scope: The complete 8-model by 16-scenario batch; applicable but absent ratings remain ungraded.
+    expected: 1
