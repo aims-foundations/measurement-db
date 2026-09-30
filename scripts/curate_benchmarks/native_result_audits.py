@@ -22041,12 +22041,102 @@ def _visit_bench(directory, tables, metadata, source=None):
     return dict(source['counts'], source_items=len(items), source_assets=len(assets), source_traces=len(traces))
 
 
+def _embodied_agent_interface_sources(directory, metadata):
+    """Read the native EAI archive directly, independently of table joins."""
+    import re
+    from zipfile import ZipFile
+
+    raw = directory / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    prompts = json.loads((raw / paths["prompts"]).read_text())
+    conditions = json.loads((raw / paths["conditions"]).read_text())
+    _check(set(prompts), set(conditions), "EAI all prompts have original grading references")
+    records, observed = {}, set()
+    with ZipFile(raw / paths["archive"]) as archive:
+        for member in archive.namelist():
+            match = re.fullmatch(r"helm_output/behavior/goal_interpretation/([^/]+)_outputs\.json", member)
+            if match is None:
+                continue
+            model = match[1]
+            for position, record in enumerate(json.loads(archive.read(member)), 1):
+                _check(set(record), {"identifier", "llm_output"}, "EAI native answer fields, without invented grades")
+                identifier = record["identifier"]
+                key = member, position
+                _check(key not in records and (model, identifier) not in observed, True, "EAI unique original observations")
+                _check(identifier in prompts, True, "EAI every answer has a known prompt")
+                records[key] = model, record
+                observed.add((model, identifier))
+    _check(bool(records), True, "EAI original answer records exist")
+    return prompts, conditions, records
+
+
+def _embodied_agent_interface(directory, tables, metadata, source=None):
+    prompts, conditions, records = (_embodied_agent_interface_sources(directory, metadata)
+                                    if source is None else source)
+    subjects = {}
+    for subject in tables["subjects"].itertuples():
+        extra = _features(subject.subject_features_extra)
+        model = extra["recorded_model_label"]
+        _check(subject.display_name, "Embodied Agent Interface / " + model, "EAI literal source model label")
+        _check(subject.harness, "Embodied Agent Interface", "EAI recorded harness")
+        _check(extra["historical_inference_settings"], "not_recorded", "EAI no inferred request settings")
+        for name in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(subject, name)), True, "EAI unknown setting remains null: " + name)
+        subjects[subject.subject_id] = model
+    _check(Counter(subjects.values()), Counter({model: 1 for model, _ in records.values()}),
+           "EAI exactly the original subjects, without alias repair")
+    items = {}
+    for item in tables["items"].itertuples():
+        identifier = item.raw_item_id
+        _check(item.content, prompts[identifier], "EAI complete original prompt")
+        _check(_features(item.item_features), dict(simulator="behavior", module="goal_interpretation"),
+               "EAI correct simulator and module")
+        criterion = json.loads(item.grading_criterion)
+        _check(json.loads(criterion["reference_answer"]), conditions[identifier]["goal_conditions"],
+               "EAI complete original symbolic goal references")
+        _check(criterion["rule"], metadata["grading"]["rule"], "EAI declared grading semantics")
+        verifier = json.loads(item.verifier)
+        _check(verifier.get("judged_by"), None, "EAI symbolic verifier is not an LLM or human judge")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["official_pipeline"],
+               "EAI original verifier described, not executed")
+        items[item.item_id] = identifier
+    _check(Counter(items.values()), Counter({key: 1 for key in prompts}), "EAI each original task exactly once")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for response in tables["responses"].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace["source_member"], trace["source_row"]
+        model, original = records[key]
+        identifier = original["identifier"]
+        _check(trace, dict(source_archive=metadata["build"]["parameters"]["paths"]["archive"],
+            source_member=key[0], source_row=key[1], source_record=original,
+            source_conditions=conditions[identifier], grade_status="historical_judgments_unavailable"),
+            "EAI complete native answer, source position and task conditions")
+        _check(subjects[response.subject_id], model, "EAI exact response-subject association")
+        _check(items[response.item_id], identifier, "EAI exact response-task association")
+        _check(pd.isna(response.response), True, "EAI unavailable historical grade remains null")
+        _check(response.trial, 1, "EAI one recorded answer per source model/task")
+        _check(response.test_condition,
+               "simulator=behavior;module=goal_interpretation;historical_judgments_unavailable",
+               "EAI scope and missing-grade status")
+        _check(pd.isna(response.interactors), True, "EAI no invented interactors")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "EAI every source answer exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "EAI complete trace association")
+    _check(len(tables.get("assets", [])), 0, "EAI text-only task subset")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale),
+           dict(kind="interval", min=0, max=1, direction="higher_is_better"), "EAI intended F1 scale")
+    return dict(source_responses=len(records), source_items=len(prompts), source_subjects=len(subjects),
+                source_traces=len(traces), source_ungraded=len(records),
+                source_missing_outputs=sum(record["llm_output"] is None for _, record in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

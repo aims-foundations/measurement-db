@@ -88,6 +88,98 @@ class NativeTrajectoryAuditTests(unittest.TestCase):
                 self.frames[name].to_parquet(self.tables / f"{name}.parquet", index=False)
 
 
+class EmbodiedArchiveAuditTests(unittest.TestCase):
+    def setUp(self):
+        from zipfile import ZipFile
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "embodied_agent_interface"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        self.metadata = {"build": {"parameters": {"paths": {
+            "archive": "answers.zip", "prompts": "prompts.json", "conditions": "conditions.json",
+        }}}, "grading": {"rule": "native goal comparison", "verifiers": {"official_pipeline": {"kind": "symbolic"}}}}
+        self.prompts = {"task-a": "Original full prompt A", "task-b": "Original full prompt B"}
+        conditions = {key: {"initial_conditions": {}, "goal_conditions": {"goal": [[[key]]]}}
+                      for key in self.prompts}
+        (raw / "prompts.json").write_text(json.dumps(self.prompts))
+        (raw / "conditions.json").write_text(json.dumps(conditions))
+        member = "helm_output/behavior/goal_interpretation/model-a_outputs.json"
+        records = [{"identifier": "task-a", "llm_output": "原始答案" * 5000},
+                   {"identifier": "task-b", "llm_output": None}]
+        with ZipFile(raw / "answers.zip", "w") as archive:
+            archive.writestr(member, json.dumps(records, ensure_ascii=False))
+            archive.writestr("__MACOSX/" + member, b"not JSON: macOS resource metadata")
+        subjects = [dict(subject_id="model-a", display_name="Embodied Agent Interface / model-a",
+            harness="Embodied Agent Interface",
+            subject_features_extra="recorded_model_label=model-a;historical_inference_settings=not_recorded",
+            normalized_name=None, release_date=None, access_date=None, harness_version=None, reasoning_effort=None)]
+        items, responses, traces = [], [], []
+        for index, original in enumerate(records, 1):
+            key = original["identifier"]
+            items.append(dict(item_id=key, raw_item_id=key, content=self.prompts[key],
+                item_features="simulator=behavior;module=goal_interpretation",
+                grading_criterion=json.dumps(dict(reference_answer=json.dumps(conditions[key]["goal_conditions"]),
+                                                  rule="native goal comparison")),
+                verifier=json.dumps(dict(spec=json.dumps({"kind": "symbolic"})))))
+            responses.append(dict(response_id=str(index), subject_id="model-a", item_id=key,
+                response=None, trial=1, interactors=None,
+                test_condition="simulator=behavior;module=goal_interpretation;historical_judgments_unavailable"))
+            traces.append(dict(response_id=str(index), trace=json.dumps(dict(source_archive="answers.zip",
+                source_member=member, source_row=index, source_record=original, source_conditions=conditions[key],
+                grade_status="historical_judgments_unavailable"), ensure_ascii=False)))
+        self.tables = {name: pd.DataFrame(rows) for name, rows in dict(subjects=subjects, items=items,
+            responses=responses, traces=traces, benchmarks=[dict(response_scale=json.dumps(
+                dict(kind="interval", min=0, max=1, direction="higher_is_better")))]).items()}
+
+    def test_archive_sidecars_are_ignored_and_missing_grades_and_outputs_preserved(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _embodied_agent_interface
+        observed = _embodied_agent_interface(self.directory, self.tables, self.metadata)
+        self.assertEqual(observed, dict(source_responses=2, source_items=2, source_subjects=1,
+            source_traces=2, source_ungraded=2, source_missing_outputs=1))
+
+    def test_builder_reads_only_native_members_and_preserves_null_output(self):
+        import runpy
+        folder = ROOT / "benchmarks/embodied_agent_interface"
+        metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        metadata["build"]["parameters"]["paths"] = {
+            **self.metadata["build"]["parameters"]["paths"],
+            "members": "helm_output/behavior/goal_interpretation/*_outputs.json",
+        }
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(metadata))
+        builder = runpy.run_path(str(folder / "build.py"))["EmbodiedAgentInterface"]
+        tables = builder(str(self.directory / "build.py")).build_tables()
+        self.assertEqual(len(tables["responses"]), 2)
+        self.assertTrue(tables["responses"].response.isna().all())
+        traces = [json.loads(value)["source_record"] for value in tables["traces"].trace]
+        self.assertEqual(traces, [{"identifier": "task-a", "llm_output": "原始答案" * 5000},
+                                  {"identifier": "task-b", "llm_output": None}])
+
+    def test_null_to_zero_item_swap_and_clipped_answer_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _embodied_agent_interface
+        for change in ("grade", "item", "answer", "prompt", "reference", "model"):
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "grade":
+                    tables["responses"].loc[0, "response"] = 0.
+                elif change == "item":
+                    tables["responses"].loc[0, "item_id"] = "task-b"
+                elif change == "answer":
+                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    trace["source_record"]["llm_output"] = trace["source_record"]["llm_output"][:16000]
+                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                elif change == "prompt":
+                    tables["items"].loc[0, "content"] = self.prompts["task-b"]
+                elif change == "reference":
+                    tables["items"].loc[0, "grading_criterion"] = tables["items"].loc[1, "grading_criterion"]
+                else:
+                    tables["subjects"].loc[0, "display_name"] = "Embodied Agent Interface / guessed-new-label"
+                with self.assertRaises(ValueError):
+                    _embodied_agent_interface(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
