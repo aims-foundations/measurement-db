@@ -22663,12 +22663,191 @@ def _mtbench(directory, tables, metadata, source=None):
         source_fractional_ratings=sum(entry["trace"]["judgment"]["record"]["score"] % 1 != 0 for entry in native.values()))
 
 
+def _nyu_ctf_sources(directory, metadata):
+    """Read original assessment records and hash inputs without the builder's table joins."""
+    import hashlib
+    import posixpath
+    import re
+    import tarfile
+    from collections import defaultdict
+
+    raw = directory / "raw"
+    settings = metadata["build"]["parameters"]
+    paths = settings["paths"]
+    definitions, payloads, links = {}, {}, {}
+    with tarfile.open(raw / paths["tasks_archive"], "r|gz") as archive:
+        for member in archive:
+            name = member.name.removeprefix(paths["tasks_root"] + "/")
+            if member.issym():
+                links[name] = member.linkname
+            elif member.isfile():
+                stream = archive.extractfile(member)
+                if name == paths["bank"]:
+                    bank = json.load(stream)
+                elif name.startswith("test/"):
+                    if name.endswith("/challenge.json"):
+                        definitions[name.rsplit("/", 1)[0]] = json.load(stream)
+                    else:
+                        payloads[name] = (hashlib.file_digest(stream, "sha256").hexdigest(), member.size)
+    task_paths = {record["path"]: task for task, record in bank.items()}
+    _check(len(task_paths), len(bank), "NYU CTF distinct original task paths")
+    aliases, tasks, assets = defaultdict(set), {}, {}
+    for task, record in bank.items():
+        original = definitions[record["path"]]
+        for title in [record["challenge"], original.get("name", "")]:
+            alias = re.sub("[^a-z0-9]", "", title.lower())
+            if alias:
+                aliases[record["category"], alias].add(task)
+        manifest = []
+        for ordinal, filename in enumerate(original.get("files", []), 1):
+            location = posixpath.normpath(posixpath.join(record["path"], filename))
+            parts = location.split("/")
+            for end in range(1, len(parts)):
+                ancestor = "/".join(parts[:end])
+                if ancestor in links:
+                    location = posixpath.normpath(posixpath.join(posixpath.dirname(ancestor), links[ancestor], *parts[end:]))
+                    break
+            if location in settings["external_inputs"]:
+                external = raw / settings["external_inputs"][location]
+                with external.open("rb") as stream:
+                    digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                size = external.stat().st_size
+            else:
+                digest, size = payloads[location]
+            assets[digest] = size
+            manifest.append(dict(asset_id=digest, path=posixpath.normpath(f"inputs/{task}/{filename}"), role="input",
+                ordinal=ordinal, media_type=settings["media_types"].get(Path(filename).suffix.lower(), settings["labels"]["default_media_type"])))
+        content = {field: original[field] for field in settings["public_fields"] if field in original}
+        content["files"] = [dict(location=entry["path"], content_type=entry["media_type"]) for entry in manifest]
+        tasks[task] = dict(bank=record, original=original, content=content, manifest=manifest)
+    _check(all(len(values) == 1 for values in aliases.values()), True, "NYU CTF unambiguous original task aliases")
+    summaries, records, configurations, outcomes = {}, defaultdict(list), defaultdict(set), defaultdict(list)
+    with tarfile.open(raw / paths["results_archive"], "r|gz") as archive:
+        for member in archive:
+            name = member.name.removeprefix(paths["results_root"] + "/")
+            if not member.isfile() or not name.startswith("transcripts/") or not name.endswith((".json", ".traj")):
+                continue
+            _, submission, relative = name.split("/", 2)
+            record = json.load(archive.extractfile(member))
+            if relative == "summary.json":
+                _check(submission not in summaries, True, "NYU CTF one summary per submission")
+                summaries[submission] = dict(source_member=name, record=record)
+                continue
+            if submission.startswith("baseline_"):
+                task = task_paths["test/" + relative.rsplit("/", 1)[0]]
+                setting = {field: record["args"][field] for field in settings["baseline_settings"] if field in record["args"]}
+                outcome = record["solved"]
+            elif submission.startswith("enigma_"):
+                category, title = Path(relative).stem.split("_", 1)
+                matches = aliases[category, re.sub("[^a-z0-9]", "", title.lower())]
+                _check(len(matches), 1, "NYU CTF exact Enigma task association")
+                task, setting = next(iter(matches)), {}
+                outcome = record["info"]["exit_status"] == "submitted"
+            else:
+                _check(submission.startswith(("craken_", "dcipher_")), True, "NYU CTF known native trajectory format")
+                task = Path(relative).stem
+                setting = {field: record[field] for field in settings["component_settings"] if field in record}
+                outcome = record["success"]
+            _check(task in tasks and type(outcome) is bool, True, "NYU CTF original task and Boolean outcome")
+            key = submission, task
+            records[key].append(dict(source_member=name, source_record=record))
+            configurations[submission].add(json.dumps(setting, sort_keys=True))
+            outcomes[key].append(outcome)
+    _check(all(len(values) == 1 for values in configurations.values()), True, "NYU CTF stable recorded submission configurations")
+    native = {}
+    for submission, source in summaries.items():
+        summary = source["record"]
+        protocol = summary["metadata"]["comment"]
+        _check(protocol in metadata["grading"]["verifiers"], True, "NYU CTF declared pass allowance")
+        for task, grade in summary["results"].items():
+            _check(task in tasks and (type(grade) is bool or grade is None), True, "NYU CTF declared task assessment")
+            key = submission, task
+            if grade is not None:
+                _check(grade, any(outcomes[key]), "NYU CTF published assessment agrees with released aggregation")
+            native[key] = dict(grade=grade, protocol=protocol, trace=dict(summary_member=source["source_member"], summary=summary,
+                task_id=task, task_record=tasks[task]["original"], released_traces=records[key]))
+    _check(set(records).issubset(native), True, "NYU CTF no trace without a published assessment")
+    return dict(tasks=tasks, summaries=summaries, native=native, assets=assets,
+        configurations={key: json.loads(next(iter(values))) for key, values in configurations.items()})
+
+
+def _nyu_ctf(directory, tables, metadata, source=None):
+    import ast
+    import hashlib
+
+    source = _nyu_ctf_sources(directory, metadata) if source is None else source
+    subject_map = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        submission = features["submission_id"]
+        original = source["summaries"][submission]["record"]["metadata"]
+        _check(row.display_name, "NYU CTF / " + submission, "NYU CTF preserve submission identity")
+        _check(row.harness, original["agent"], "NYU CTF original agent configuration")
+        configuration = ast.literal_eval(features.pop("recorded_configuration"))
+        _check(configuration, source["configurations"].get(submission, {}), "NYU CTF original settings without inferred defaults")
+        _check(features, dict(submission_id=submission, recorded_model_label=original["model"], submission_date=original["date"],
+            assessment_protocol=original["comment"]), "NYU CTF original model label and submission metadata")
+        for name in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, name)), True, "NYU CTF no invented historical setting: " + name)
+        subject_map[row.subject_id] = submission
+    _check(Counter(subject_map.values()), Counter({key: 1 for key in source["summaries"]}), "NYU CTF all submitted configurations separately")
+    actual_assets = tables["assets"].set_index("asset_id").to_dict("index")
+    _check(set(actual_assets), set(source["assets"]), "NYU CTF complete input payloads")
+    for digest, size in source["assets"].items():
+        actual = actual_assets[digest]
+        _check((actual["byte_size"], len(actual["data"])), (size, size), "NYU CTF exact input byte count")
+        _check(hashlib.sha256(actual["data"]).hexdigest(), digest, "NYU CTF exact original input bytes")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items = Counter(), set()
+    for row in tables["responses"].itertuples():
+        item = items[row.item_id]
+        task, protocol = item["raw_item_id"].rsplit(":", 1)
+        key = subject_map[row.subject_id], task
+        _check(key in source["native"], True, "NYU CTF never invent an absent summary key")
+        original, challenge = source["native"][key], source["tasks"][task]
+        _check(protocol, original["protocol"], "NYU CTF distinguish pass@1 and pass@5 grading")
+        _check(pd.isna(row.response) if original["grade"] is None else row.response == float(original["grade"]), True,
+               "NYU CTF exact published grade, including null")
+        _check(row.trial, 1, "NYU CTF no inferred individual trials from aggregate assessments")
+        _check(json.loads(row.test_condition), dict(kind="published_submission_assessment", protocol=protocol,
+            released_trace_files=len(original["trace"]["released_traces"])), "NYU CTF explicit aggregation and trace availability")
+        _check(pd.isna(row.interactors), True, "NYU CTF no invented interaction settings")
+        _check(json.loads(traces[row.response_id]), original["trace"], "NYU CTF complete native traces and summary associations")
+        if row.item_id not in used_items:
+            _check(json.loads(item["content"]), challenge["content"], "NYU CTF complete original public challenge definition")
+            manifest = json.loads(item["asset_manifest"]) if pd.notna(item["asset_manifest"]) else []
+            _check(manifest, challenge["manifest"], "NYU CTF ordered original input roles and byte associations")
+            expected_features = dict(task_id=task, year=str(challenge["bank"]["year"]), event=challenge["bank"]["event"],
+                category=challenge["bank"]["category"], source_path=challenge["bank"]["path"])
+            _check(_features(item["item_features"]), expected_features, "NYU CTF task identity and source location")
+            criterion = json.loads(item["grading_criterion"])
+            _check(criterion["reference_answer"], challenge["original"]["flag"], "NYU CTF original flag reference")
+            _check(criterion["rule"], metadata["grading"]["rule"] + " Protocol: " + protocol, "NYU CTF explicit published grading protocol")
+            verifier = json.loads(item["verifier"])
+            _check(verifier["class"], "exact_matcher", "NYU CTF deterministic flag verification")
+            _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"][protocol], "NYU CTF original aggregation policy")
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in source["native"]}), "NYU CTF every published assessment exactly once")
+    _check(used_items, set(items), "NYU CTF no orphan challenge definitions")
+    _check(set(traces), set(tables["responses"].response_id), "NYU CTF complete trace associations")
+    _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "NYU CTF pinned original leaderboard revision")
+    return dict(source_responses=len(seen), source_items=len(items), source_subjects=len(subject_map), source_traces=len(traces),
+        source_challenges=len(source["tasks"]), source_assets=len(actual_assets),
+        source_declared_input_files=sum(len(task["manifest"]) for task in source["tasks"].values()),
+        source_native_trace_files=sum(len(entry["trace"]["released_traces"]) for entry in source["native"].values()),
+        source_assessments_without_released_trace=sum(not entry["trace"]["released_traces"] for entry in source["native"].values()),
+        source_unpublished_cells=len(source["tasks"]) * len(subject_map) - len(seen),
+        source_passes=sum(entry["grade"] is True for entry in source["native"].values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

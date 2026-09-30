@@ -983,3 +983,5 @@ SOURCE_AUDITS["planbench"] = verify_native_results
 SOURCE_AUDITS["weavebench"] = verify_native_results
 
 SOURCE_AUDITS["mtbench"] = verify_native_results
+
+SOURCE_AUDITS["nyu_ctf_bench"] = verify_native_results

@@ -666,6 +666,147 @@ class MTBenchAuditTests(unittest.TestCase):
                     _mtbench(self.directory, tables, self.metadata)
 
 
+class NYUCTFAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        self.temporary = tempfile.TemporaryDirectory(dir=ROOT / "artifacts")
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "nyu_ctf_bench"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/nyu_ctf_bench"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        parameters = self.metadata["build"]["parameters"]
+        paths = parameters["paths"]
+        bank, definitions = {}, {}
+        for key, category, title in [("a", "rev", "Short"), ("b", "crypto", "Beta"), ("c", "misc", "Gamma")]:
+            task = f"2023q-{category}-{key}"
+            path = f"test/2023/CSAW-Quals/{category}/{title}"
+            bank[task] = dict(path=path, challenge=title, category=category, year=2023, event="CSAW-Quals")
+            definitions[path + "/challenge.json"] = dict(name="Long alternate?" if key == "a" else title, category=category,
+                description="Original challenge\n" + key * 20000, flag="flag{" + key + "}", files=[
+                    "./instruction.txt" if key == "a" else "Challenge/input.txt" if key == "b" else "external.zip"])
+        tasks = list(bank)
+        parameters["external_inputs"] = {bank[tasks[2]]["path"] + "/external.zip": "external.zip"}
+        (raw / "external.zip").write_bytes(b"original external input bytes")
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+
+        def add(archive, name, value):
+            data = value if isinstance(value, bytes) else json.dumps(value).encode()
+            info = tarfile.TarInfo(name)
+            info.size = len(data)
+            archive.addfile(info, io.BytesIO(data))
+
+        with tarfile.open(raw / paths["tasks_archive"], "w:gz") as archive:
+            prefix = paths["tasks_root"] + "/"
+            add(archive, prefix + paths["bank"], bank)
+            for name, record in definitions.items():
+                add(archive, prefix + name, record)
+            add(archive, prefix + bank[tasks[0]]["path"] + "/instruction.txt", b"exact task input A")
+            add(archive, prefix + bank[tasks[1]]["path"] + "/dist/input.txt", b"exact task input B")
+            link = tarfile.TarInfo(prefix + bank[tasks[1]]["path"] + "/Challenge")
+            link.type, link.linkname = tarfile.SYMTYPE, "dist"
+            archive.addfile(link)
+        with tarfile.open(raw / paths["results_archive"], "w:gz") as archive:
+            for submission in ["baseline_demo", "craken_demo", "craken_graph_demo", "enigma_demo"]:
+                prefix = paths["results_root"] + "/transcripts/" + submission + "/"
+                baseline, enigma = submission.startswith("baseline_"), submission.startswith("enigma_")
+                outcomes = [True, False] if baseline else [True, False, None] if enigma else [False, True, False]
+                meta = dict(agent=submission.split("_", 1)[0] + (" graph" if "graph" in submission else ""),
+                    model="same-recorded-model", date="2026-01-01", comment="pass@5" if baseline else "pass@1")
+                add(archive, prefix + "summary.json", dict(metadata=meta, results=dict(zip(tasks, outcomes))))
+                for task, outcome in zip(tasks, outcomes):
+                    if (baseline and not outcome) or outcome is None:
+                        continue
+                    if baseline:
+                        for attempt in [1, 2]:
+                            add(archive, prefix + bank[task]["path"][5:] + f"/conversation.model.{attempt}.json",
+                                dict(args=dict(model="actual-snapshot", backend="openai", max_rounds=30),
+                                     solved=attempt == 2, messages=[dict(role="assistant", content="complete output\n" + "a" * 24000)]))
+                    elif enigma:
+                        title = "longalternate" if task == tasks[0] else bank[task]["challenge"].lower()
+                        add(archive, prefix + bank[task]["category"] + "_" + title + ".traj",
+                            dict(info=dict(exit_status="submitted" if outcome else "failed"),
+                                 history=[dict(role="assistant", content="complete Enigma output\n" + "e" * 24000)]))
+                    else:
+                        add(archive, prefix + task + ".json", dict(success=outcome,
+                            planner_model="actual-snapshot", executor_model="actual-snapshot", autoprompter_model="actual-snapshot",
+                            planner=[dict(role="assistant", content="complete plan\n" + "p" * 24000)]))
+        builder = runpy.run_path(str(folder / "build.py"))["NYUCTFBench"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _nyu_ctf_sources
+        self.source = _nyu_ctf_sources(self.directory, self.metadata)
+
+    def test_native_formats_allowances_aliases_symlinks_assets_and_missingness(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _nyu_ctf
+        observed = _nyu_ctf(self.directory, self.tables, self.metadata, self.source)
+        self.assertEqual(observed, dict(source_responses=11, source_items=5, source_subjects=4, source_traces=11,
+            source_challenges=3, source_assets=3, source_declared_input_files=3, source_native_trace_files=10,
+            source_assessments_without_released_trace=2, source_unpublished_cells=1, source_passes=4))
+        self.assertEqual(self.tables["responses"].response.isna().sum(), 1)
+
+    def test_grade_protocol_trace_and_input_corruption_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _nyu_ctf
+        for change in ["grade", "fill_null", "subject", "item", "trial", "protocol", "content", "flag", "verifier",
+                       "asset_bytes", "asset_link", "configuration", "clip", "drop_trace", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "grade":
+                    tables["responses"].loc[0, "response"] = 1 - tables["responses"].loc[0, "response"]
+                elif change == "fill_null":
+                    tables["responses"].loc[tables["responses"].response.isna(), "response"] = 0.
+                elif change in {"subject", "item"}:
+                    field = change + "_id"
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != tables["responses"].loc[0, field])
+                elif change == "trial":
+                    tables["responses"].loc[0, "trial"] = 5
+                elif change == "protocol":
+                    tables["responses"].loc[0, "test_condition"] = json.dumps(dict(kind="individual_attempt", protocol="pass@1", released_trace_files=1))
+                elif change == "content":
+                    tables["items"].loc[0, "content"] = json.dumps(dict(description="wrong challenge"))
+                elif change == "flag":
+                    criterion = json.loads(tables["items"].loc[0, "grading_criterion"])
+                    criterion["reference_answer"] = "wrong flag"
+                    tables["items"].loc[0, "grading_criterion"] = json.dumps(criterion)
+                elif change == "verifier":
+                    verifier = json.loads(tables["items"].loc[0, "verifier"])
+                    spec = json.loads(verifier["spec"])
+                    spec["maximum_attempts"] = 99
+                    verifier["spec"] = json.dumps(spec)
+                    tables["items"].loc[0, "verifier"] = json.dumps(verifier)
+                elif change == "asset_bytes":
+                    original = tables["assets"].loc[0, "data"]
+                    tables["assets"].at[0, "data"] = b"x" * len(original)
+                elif change == "asset_link":
+                    manifest = json.loads(tables["items"].loc[0, "asset_manifest"])
+                    manifest[0]["role"] = "grading"
+                    tables["items"].loc[0, "asset_manifest"] = json.dumps(manifest)
+                elif change == "configuration":
+                    tables["subjects"]["subject_features_extra"] = tables["subjects"].subject_features_extra.str.replace("actual-snapshot", "invented-snapshot")
+                elif change in {"clip", "drop_trace"}:
+                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(row.trace)["released_traces"])
+                    trace = json.loads(tables["traces"].loc[index, "trace"])
+                    if change == "clip":
+                        trace["released_traces"][0]["source_record"] = {"summary": "clipped"}
+                    else:
+                        trace["released_traces"] = []
+                    tables["traces"].loc[index, "trace"] = json.dumps(trace)
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _nyu_ctf(self.directory, tables, self.metadata, self.source)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
