@@ -1678,5 +1678,136 @@ class MorphKVNativeAuditTests(unittest.TestCase):
                 ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
 
 
+class MORQANativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'morqa'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/morqa'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        parameters = self.metadata['build']['parameters']
+        selected = ['en/iiyi/test', 'zh/woundcare/valid', 'en/liveqa/test']
+        parameters['result_files'] = {key: parameters['result_files'][key] for key in selected}
+        parameters['rating_files'] = {key: parameters['rating_files'][key] for key in selected}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        for name, relative in parameters['question_files'].items():
+            dataset, split = name.split('/')
+            question = dict(encounter_id='q1', post_id='q1', split='valid' if split == 'all' else split,
+                query_title_en='Medical question', query_content_en='Full patient query.',
+                query_title_zh='问题', query_content_zh='完整问题。')
+            path = self.directory / 'raw' / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps([question], ensure_ascii=False))
+        gpt, gemini, deepseek = 'gpt-4o_##__ratings_prompt', 'gemini-1.5-pro_##__ratings_prompt', 'deepseekv3_##__ratings_prompt'
+        long_candidate = 'Complete native answer. ' + '完整 and untruncated. ' * 1500
+        cases = {
+            selected[0]: [('a', long_candidate, {gpt: .75, gemini: .5}), ('b', '', {gpt: 0., gemini: 1.})],
+            selected[1]: [('a', '中文答复', {gpt: .9}), ('b', '待评分答复', {gpt: None, deepseek: 1.})],
+            selected[2]: [('a', 'LiveQA answer', {gpt: 1., gemini: 0.})]}
+        for collection, samples in cases.items():
+            lang, dataset, split = collection.split('/')
+            records, annotations = [], []
+            for author, candidate, ratings in samples:
+                records.append(dict(post_id='q1', author_id_candidate=author, candidate=candidate,
+                    responses=[dict(author_id='expert', **{'content_' + lang: 'Native reference'})],
+                    auxiliary_metric=0.12345678901234568, **ratings))
+                metrics = [('overall', 'rater1', -2 if dataset == 'liveqa' else .5)]
+                if collection == selected[0] and author == 'a':
+                    metrics += [('overall', 'rater2', 1.), ('style', 'rater1', .5), ('style', 'rater2', 0.)]
+                for metric, rater, value in metrics:
+                    annotations.append(dict(dataset=dataset, encounter_id='q1', post_id='q1', lang=lang,
+                        system_input=candidate, author_id=author, metric=metric, author_metric=rater, value=value))
+            for key, data in [('result_files', records), ('rating_files', annotations)]:
+                path = self.directory / 'raw' / parameters[key][collection]
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(data, ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['MORQA']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_original_ratings_empty_answers_nulls_and_complete_references(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _morqa
+        self.assertEqual(_morqa(self.directory, self.frames, self.metadata), dict(
+            source_responses=9, source_subjects=3, source_items=5, source_traces=9, source_result_files=3,
+            source_candidates=5, source_empty_candidates=1, source_human_annotations=8,
+            source_off_rubric_ratings=2, source_ungraded_ratings=1, source_empty_candidate_ratings=2))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+
+    def test_audit_rejects_wrong_ratings_inputs_and_source_associations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _morqa, _morqa_sources
+        source = _morqa_sources(self.directory)
+        for change in ['snap', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'query', 'candidate', 'references',
+                       'human_rating', 'verifier', 'trace', 'position', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'snap': frames['responses'].loc[frames['responses'].response.eq(.75), 'response'] = .5
+                elif change == 'equal_sum_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change in ['query', 'candidate', 'references']:
+                    data = json.loads(frames['items'].loc[0, 'content'])
+                    data[{'query': 'query_content', 'candidate': 'candidate', 'references': 'references'}[change]] = ''
+                    frames['items'].loc[0, 'content'] = json.dumps(data)
+                elif change == 'human_rating':
+                    data = json.loads(frames['items'].loc[0, 'grading_criterion'])
+                    annotations = json.loads(data['reference_answer']); annotations[0]['native_record']['value'] = 999
+                    data['reference_answer'] = json.dumps(annotations); frames['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'verifier':
+                    data = json.loads(frames['items'].loc[0, 'verifier']); data['class'] = 'exact_matcher'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change in ['trace', 'position']:
+                    index = frames['traces'].trace.str.len().idxmax() if change == 'trace' else 0
+                    data = json.loads(frames['traces'].loc[index, 'trace'])
+                    if change == 'trace': data['native_record']['candidate'] = data['native_record']['candidate'][:16000]
+                    else: data['source_row'] += 1
+                    frames['traces'].loc[index, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'other'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _morqa(self.directory, frames, self.metadata, source)
+
+    def test_changed_annotation_text_cannot_attach_to_the_wrong_candidate(self):
+        import contextlib
+        import io
+        relative = self.metadata['build']['parameters']['rating_files']['en/iiyi/test']
+        path = self.directory / 'raw' / relative
+        records = json.loads(path.read_text()); records[0]['system_input'] = 'different answer'; path.write_text(json.dumps(records))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'exact released candidate text'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+    def test_duplicate_human_identity_requires_review(self):
+        import contextlib
+        import io
+        relative = self.metadata['build']['parameters']['rating_files']['en/iiyi/test']
+        path = self.directory / 'raw' / relative
+        records = json.loads(path.read_text()); records.append(records[0]); path.write_text(json.dumps(records))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Repeated human annotation identity'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

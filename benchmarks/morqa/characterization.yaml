@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 17136
+    logical_sha256: f4760e5d76100c6f05f30a280df82d76b30627811c880b78c47ed3529fef1858
+  subjects:
+    rows: 4
+    logical_sha256: 2cf85156adcc84f3d52688bcc6b553f30757667445fcc7efdc365201008f531d
+  responses:
+    rows: 17136
+    logical_sha256: c7e466a86dd5fddf6f6ab689832b33cd10ce35f599a3b5a1786f269a341c494e
+  items:
+    rows: 5443
+    logical_sha256: f684267c3b394961435be7f1386f05609b1ae667215e725386a7d6f7aafd6dfc
+  benchmarks:
+    rows: 1
+    logical_sha256: b6f7a0e53619aead84fb1b2bb15d1ec2baab22e56b967fd544cc732da0e44190
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 17136
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 5443
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 17136
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 11
+  source_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 5443
+  source_empty_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 2
+  source_human_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 22588
+  source_off_rubric_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 45
+  source_ungraded_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 0
+  source_empty_candidate_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wyim/morqa-eval/tree/e42dbc20600fc40b1957f075ef8cc9686530bb50
+    locator: All eleven morqa-experiments-20250928 result files; linked morqa-v1 human annotations and original
+      question banks.
+    scope: All released evaluator ratings, including reference candidates, empty answers and non-rubric values.
+      These are scalar judgments, not evaluator accuracy.
+    expected: 4

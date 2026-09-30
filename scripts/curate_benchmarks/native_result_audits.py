@@ -23779,6 +23779,116 @@ def _morphkv(directory, tables, metadata, source=None):
         source_files=len(source['models']), **source['counts'], **counts)
 
 
+def _morqa_sources(directory):
+    """Read native question/annotation identities independently of the table builder."""
+    raw = directory / 'raw'
+    questions = {}
+    for dataset, split, path in [
+        ('iiyi', 'valid', 'questions/iiyi/valid_ht_v2.json'),
+        ('iiyi', 'test', 'questions/iiyi/test_ht_spanishtestsetcorrected.json'),
+        ('woundcare', None, 'questions/woundcare/woundcarevqa.json'),
+        ('liveqa', 'test', 'annotations/datasets/liveqa_test.json'),
+        ('meddialog', None, 'annotations/datasets/meddialog_sample.json')]:
+        for row in json.loads((raw / path).read_text()):
+            key = dataset, split or row['split'], str(row['post_id'] if dataset == 'woundcare' else row['encounter_id'])
+            _check(key not in questions, True, 'MORQA unique original question identity')
+            questions[key] = row, path
+    humans = {}
+    identities = set()
+    for path in sorted((raw / 'annotations').glob('*/ratings/*.json')):
+        if 'comments' in path.name or path.name == 'iiyi_test_ratings_human.json':
+            continue
+        lang, (dataset, split) = path.parent.parent.name, path.name.split('_')[:2]
+        for position, row in enumerate(json.loads(path.read_text())):
+            key = lang, dataset, split, str(row['post_id'] if dataset == 'woundcare' else row['encounter_id']), row['author_id']
+            identity = *key, row['metric'], row['author_metric']
+            _check(identity not in identities, True, 'MORQA unique expert-metric annotation')
+            identities.add(identity)
+            humans.setdefault(key, []).append(dict(source_file=str(path.relative_to(raw)), source_row=position, native_record=row))
+    native, definitions, models, counts = {}, {}, set(), Counter()
+    for path in sorted((raw / 'release/morqa-experiments-20250928').glob('*/*/*.json')):
+        relative, lang, dataset = str(path.relative_to(raw)), path.parts[-3], path.parts[-2]
+        split = path.name.split('_', 1)[1].split('-', 1)[0]
+        counts['source_result_files'] += 1
+        for position, record in enumerate(json.loads(path.read_text())):
+            item = lang, dataset, split, str(record['post_id']), record['author_id_candidate']
+            question, question_path = questions[item[1:4]]
+            annotations = humans[item]
+            for annotation in annotations:
+                _check(annotation['native_record']['system_input'], record['candidate'], 'MORQA exact original candidate-human-rating correspondence')
+            _check(item not in definitions, True, 'MORQA unique native candidate identity')
+            definitions[item] = dict(record=record, question=question, question_path=question_path, annotations=annotations)
+            counts['source_candidates'] += 1
+            counts['source_empty_candidates'] += record['candidate'] == ''
+            counts['source_human_annotations'] += len(annotations)
+            for model, rating in record.items():
+                if not model.endswith('_##__ratings_prompt'):
+                    continue
+                models.add(model)
+                native[relative, position, model] = dict(item=item, record=record, rating=rating)
+                counts['source_off_rubric_ratings'] += rating is not None and rating not in [0., .5, 1.]
+                counts['source_ungraded_ratings'] += rating is None
+                counts['source_empty_candidate_ratings'] += record['candidate'] == ''
+    return dict(native=native, items=definitions, models=models, counts=dict(counts))
+
+
+def _morqa(directory, tables, metadata, source=None):
+    source = _morqa_sources(directory) if source is None else source
+    subjects, model_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        model = _features(row.subject_features_extra)['source_evaluator']
+        _check(row.display_name, 'MORQA / ' + model, 'MORQA literal evaluator identity')
+        _check(row.harness, 'MORQA multireference evaluation', 'MORQA source evaluation condition')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MORQA no inferred historical setting: ' + field)
+        subjects[row.subject_id] = model
+        model_seen[model] += 1
+    _check(model_seen, Counter({key: 1 for key in source['models']}), 'MORQA all released evaluators exactly once')
+    items, item_seen = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        item = features['lang'], features['dataset'], features['split'], features['query_id'], features['candidate_author']
+        original = source['items'][item]
+        record, question = original['record'], original['question']
+        _check(features, dict(lang=item[0], dataset=item[1], split=item[2], query_id=item[3], candidate_author=item[4],
+            question_file=original['question_path']), 'MORQA exact question source provenance')
+        _check(json.loads(row.content), dict(instruction=metadata['build']['parameters']['instructions'][item[0]],
+            query_title=question['query_title_' + item[0]], query_content=question['query_content_' + item[0]],
+            candidate=record['candidate'], references=record['responses']), 'MORQA full question, candidate and reference inputs')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion['rule'], metadata['grading']['rule'], 'MORQA ratings retain their original interpretation')
+        _check(json.loads(criterion['reference_answer']), original['annotations'], 'MORQA complete per-rater annotations without averaging or normalization')
+        _check(row.raw_item_id, ':'.join(item), 'MORQA original candidate alias')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'MORQA recorded LLM assessment')
+        _check(verifier.get('judged_by'), 'llm', 'MORQA scalar output is not human correctness')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published'], 'MORQA retained published interpretation')
+        _check(pd.isna(row.asset_manifest), True, 'MORQA no invented image condition')
+        items[row.item_id] = item
+        item_seen[item] += 1
+    _check(item_seen, Counter({key: 1 for key in source['items']}), 'MORQA every original candidate item exactly once')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'MORQA unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row'], trace['evaluator']
+        original = source['native'][key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], evaluator=key[2], native_record=original['record']),
+            'MORQA complete original metric record, without invented judge completion')
+        _check(subjects[row.subject_id], key[2], 'MORQA correct evaluator-response association')
+        _check(items[row.item_id], original['item'], 'MORQA correct question-candidate association')
+        _check(None if pd.isna(row.response) else row.response, original['rating'], 'MORQA exact rating without snapping or null imputation')
+        _check(row.trial, 1, 'MORQA one released assessment per evaluator and candidate')
+        _check(row.test_condition, 'source_file=' + key[0], 'MORQA source result partition')
+        _check(pd.isna(row.interactors), True, 'MORQA no fabricated runtime interactions')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'MORQA all source assessments, including empty candidates')
+    _check(set(traces), set(tables['responses'].response_id), 'MORQA complete linked trace coverage')
+    _check(len(tables.get('assets', [])), 0, 'MORQA no fabricated assets')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -23792,6 +23902,8 @@ def verify_native_results(directory, tables_directory=None):
         return _perumedqa(directory, tables, metadata)
     if directory.name == 'morphkv':
         return _morphkv(directory, tables, metadata)
+    if directory.name == 'morqa':
+        return _morqa(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
