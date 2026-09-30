@@ -24458,6 +24458,111 @@ def _synthpai(directory, tables, metadata, source=None):
         source_profiles=source['profiles'], source_measured_joint_calls=source['measured_calls'], **source['counts'])
 
 
+def _sugarcrepe_sources(directory):
+    import hashlib
+    from zipfile import ZipFile
+    raw = directory / 'raw'
+    with ZipFile(raw / 'coco/annotations_trainval2017.zip') as archive:
+        annotation = json.loads(archive.read('annotations/captions_val2017.json'))
+    images = {row['file_name']: row for row in annotation['images']}
+    licenses = {row['id']: row for row in annotation['licenses']}
+    native, assets, counts, stimuli = {}, {}, Counter(), Counter()
+    for path in sorted((raw / 'release/gpt-4v-results').glob('*/*.json')):
+        order, category = path.parent.name, path.stem.removeprefix('gpt4v-')
+        _check(order in ['positive-first', 'negative-first'], True, 'SugarCrepe known caption order')
+        bank = json.loads((raw / 'release/data' / (category + '.json')).read_text())
+        for key, record in json.loads(path.read_text()).items():
+            if key == 'accuracy':
+                _check(isinstance(record, (float, int)), True, 'SugarCrepe aggregate is not an observation')
+                continue
+            grade = record['correct']
+            _check(grade is None or type(grade) is bool, True, 'SugarCrepe boolean or unavailable grade')
+            if grade is not None:
+                _check(grade, record['answer']['multiple_choice_answer'] == record['caption'], 'SugarCrepe published grade and selected caption agree')
+            if key in bank:
+                for field in ['caption', 'negative_caption', 'filename']:
+                    _check(record[field], bank[key][field], 'SugarCrepe original bank agreement: ' + field)
+            else:
+                counts['source_historical_only_records'] += 1
+            caption1, caption2 = record['caption'], record['negative_caption']
+            if order == 'negative-first': caption1, caption2 = caption2, caption1
+            prompt = f'Which caption best describes the image?\n(1) {caption1}\n (2) {caption2}\nOutput (1) or (2).'
+            image = images[record['filename']]
+            identity = order + ':' + category + ':' + key
+            _check(identity not in native, True, 'SugarCrepe unique released record coordinates')
+            native[identity] = dict(category=category, order=order, filename=record['filename'], prompt=prompt,
+                grade=None if grade is None else float(grade), reference=record['caption'],
+                trace=dict(source_file=str(path.relative_to(raw)), source_key=key, native_record=record,
+                    coco_image=image, coco_license=licenses[image['license']]))
+            stimuli[record['filename'], prompt] += 1
+            counts['source_ungraded' if grade is None else 'source_correct' if grade else 'source_incorrect'] += 1
+    with ZipFile(raw / 'coco/val2017.zip') as archive:
+        for name in {row['filename'] for row in native.values()}:
+            data = archive.read('val2017/' + name)
+            assets[name] = dict(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+    counts['source_overlapping_stimulus_records'] = sum(count - 1 for count in stimuli.values())
+    counts['source_distinct_ordered_stimuli'] = len(stimuli)
+    return dict(native=native, assets=assets, counts=dict(counts))
+
+
+def _sugarcrepe(directory, tables, metadata, source=None):
+    import hashlib
+    source = _sugarcrepe_sources(directory) if source is None else source
+    _check(len(tables['subjects']), 1, 'SugarCrepe one literal released model label')
+    subject = tables['subjects'].iloc[0]
+    _check(subject.display_name, 'SugarCrepe / GPT-4V', 'SugarCrepe no guessed API model identifier')
+    _check(subject.harness, 'SugarCrepe two-caption image matching', 'SugarCrepe recorded evaluation task')
+    _check(_features(subject.subject_features_extra), dict(source_model='GPT-4V'), 'SugarCrepe literal upstream model')
+    for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+        _check(pd.isna(subject[field]), True, 'SugarCrepe no guessed setting: ' + field)
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(assets), len(tables['assets']), 'SugarCrepe unique image assets')
+    asset_digests = {key: dict(size=len(row['data']), sha256=hashlib.sha256(bytes(row['data'])).hexdigest()) for key, row in assets.items()}
+    items, seen_items, used_assets = {}, Counter(), set()
+    for row in tables['items'].itertuples():
+        key = row.raw_item_id
+        original = source['native'][key]
+        _check(row.content, original['prompt'], 'SugarCrepe unchanged ordered prompt without answer hints')
+        _check(_features(row.item_features), dict(category=original['category'], caption_order=original['order'], filename=original['filename']),
+            'SugarCrepe original category, order and image')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=original['reference'], rule=metadata['grading']['rule']),
+            'SugarCrepe complete positive caption kept outside model input')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'SugarCrepe selected-caption correctness')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published'], 'SugarCrepe original reported grading protocol')
+        links = json.loads(row.asset_manifest)
+        _check(len(links), 1, 'SugarCrepe exactly one input image')
+        link = links[0]
+        _check((link['path'], link['role'], link['media_type']), ('val2017/' + original['filename'], 'input', 'image/jpeg'),
+            'SugarCrepe correct original visual input association')
+        _check(asset_digests[link['asset_id']], source['assets'][original['filename']], 'SugarCrepe every original image byte')
+        used_assets.add(link['asset_id'])
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in source['native']}), 'SugarCrepe all ordered category-specific stimuli')
+    _check(used_assets, set(assets), 'SugarCrepe all and only observed images')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'SugarCrepe unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        path = Path(trace['source_file'])
+        key = path.parent.name + ':' + path.stem.removeprefix('gpt4v-') + ':' + trace['source_key']
+        original = source['native'][key]
+        _check(trace, original['trace'], 'SugarCrepe full original answer, source coordinates and COCO attribution')
+        _check(row.subject_id, subject.subject_id, 'SugarCrepe correct source model')
+        _check(items[row.item_id], key, 'SugarCrepe correct prompt, image, order and category association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'SugarCrepe unchanged published grade or null')
+        _check(row.trial, 1, 'SugarCrepe one released record per category/order/key')
+        _check(row.test_condition, 'caption_order=' + original['order'], 'SugarCrepe actual presentation order')
+        _check(pd.isna(row.interactors), True, 'SugarCrepe no fabricated interaction history')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'SugarCrepe every released observation exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'SugarCrepe complete trace associations')
+    return dict(source_responses=len(seen), source_subjects=1, source_items=len(items), source_traces=len(traces),
+        source_assets=len(assets), source_categories=len({row['category'] for row in source['native'].values()}), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24475,6 +24580,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'sugarcrepe':
+        return _sugarcrepe(directory, tables, metadata)
     if directory.name == 'synthpai':
         return _synthpai(directory, tables, metadata)
     if directory.name == 'sustainable_food':

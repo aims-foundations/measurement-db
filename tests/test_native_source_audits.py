@@ -2265,6 +2265,134 @@ class SustainableFoodNativeAuditTests(unittest.TestCase):
                 '--output', str(self.directory.parent / 'invalid')])
 
 
+class SugarCrepeNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from zipfile import ZipFile
+        from PIL import Image
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'sugarcrepe'
+        self.raw = self.directory / 'raw'
+        (self.raw / 'coco').mkdir(parents=True)
+        folder = ROOT / 'benchmarks/sugarcrepe'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        images = []
+        with ZipFile(self.raw / 'coco/val2017.zip', 'w') as archive:
+            for index, color in enumerate(['red', 'blue'], 1):
+                name = f'{index:012d}.jpg'
+                data = io.BytesIO()
+                Image.new('RGB', (2, 2), color=color).save(data, format='JPEG')
+                archive.writestr('val2017/' + name, data.getvalue())
+                images.append(dict(id=index, file_name=name, license=index, flickr_url='https://example.test/' + name))
+        licenses = [dict(id=1, name='Attribution', url='https://creativecommons.org/licenses/by/2.0/'),
+                    dict(id=2, name='Attribution Noncommercial', url='https://creativecommons.org/licenses/by-nc/2.0/')]
+        with ZipFile(self.raw / 'coco/annotations_trainval2017.zip', 'w') as archive:
+            archive.writestr('annotations/captions_val2017.json', json.dumps(dict(images=images, licenses=licenses)))
+        for category in ['add_obj', 'swap_obj']:
+            bank = {}
+            for order in ['negative-first', 'positive-first']:
+                records = {}
+                for key, image in zip(['0', '108'], images):
+                    grade = None if (category, order, key) == ('swap_obj', 'negative-first', '108') else order == 'positive-first'
+                    caption, negative = '  Original caption 完整 ' + key + '  ', 'Other caption ' + key
+                    records[key] = dict(filename=image['file_name'], caption=caption, negative_caption=negative,
+                        correct=grade, answer=dict(free_form_answer='  Complete model output 完整 ' * 2000,
+                            multiple_choice_answer=caption if grade else negative))
+                    if category != 'swap_obj' or key != '108':
+                        bank[key] = dict(filename=image['file_name'], caption=caption, negative_caption=negative)
+                path = self.raw / 'release/gpt-4v-results' / order / ('gpt4v-' + category + '.json')
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(dict(records, accuracy=0.5), ensure_ascii=False))
+            path = self.raw / 'release/data' / (category + '.json')
+            path.parent.mkdir(exist_ok=True)
+            path.write_text(json.dumps(bank, ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['SugarCrepe']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_ordered_inputs_images_full_answers_nulls_and_historical_records(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _sugarcrepe
+        self.assertEqual(_sugarcrepe(self.directory, self.frames, self.metadata), dict(source_responses=8,
+            source_subjects=1, source_items=8, source_traces=8, source_assets=2, source_categories=2,
+            source_correct=4, source_incorrect=3, source_ungraded=1, source_historical_only_records=2,
+            source_overlapping_stimulus_records=4, source_distinct_ordered_stimuli=4))
+
+    def test_audit_rejects_corrupted_observations_and_inputs(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _sugarcrepe, _sugarcrepe_sources
+        source = _sugarcrepe_sources(self.directory)
+        changes = ['grade_swap', 'null_to_zero', 'subject', 'item', 'prompt', 'order', 'reference', 'verifier',
+            'image', 'image_link', 'role', 'answer', 'source_key', 'source_file', 'attribution', 'license',
+            'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change == 'subject': frames['responses'].loc[0, 'subject_id'] = 'incorrect_model'
+                elif change == 'item': frames['responses'].loc[0, 'item_id'] = frames['items'].loc[1, 'item_id']
+                elif change == 'prompt': frames['items'].loc[0, 'content'] += '\nThe correct caption is marked positive.'
+                elif change == 'order': frames['items'].loc[0, 'item_features'] = frames['items'].loc[0, 'item_features'].replace('negative-first', 'positive-first')
+                elif change == 'reference':
+                    criterion = json.loads(frames['items'].loc[0, 'grading_criterion']); criterion['reference_answer'] = 'Wrong reference'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(criterion)
+                elif change == 'verifier':
+                    verifier = json.loads(frames['items'].loc[0, 'verifier']); verifier['class'] = 'judge'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(verifier)
+                elif change == 'image': frames['assets'].loc[0, 'data'] = bytes(frames['assets'].loc[0, 'data']) + b'corruption'
+                elif change in ['image_link', 'role']:
+                    links = json.loads(frames['items'].loc[0, 'asset_manifest'])
+                    if change == 'role': links[0]['role'] = 'source'
+                    else: links[0]['asset_id'] = frames['assets'].loc[frames['assets'].asset_id.ne(links[0]['asset_id']), 'asset_id'].iloc[0]
+                    frames['items'].loc[0, 'asset_manifest'] = json.dumps(links)
+                elif change in ['answer', 'source_key', 'source_file', 'attribution', 'license']:
+                    trace = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'answer': trace['native_record']['answer']['free_form_answer'] = trace['native_record']['answer']['free_form_answer'][:16000]
+                    elif change == 'source_key': trace['source_key'] = '108'
+                    elif change == 'source_file': trace['source_file'] = trace['source_file'].replace('negative-first', 'positive-first')
+                    elif change == 'attribution': trace['coco_image']['flickr_url'] = 'https://example.test/wrong'
+                    else: trace['coco_license']['name'] = 'Wrong license'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(trace)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'wrong_order'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _sugarcrepe(self.directory, frames, self.metadata, source)
+
+    def test_source_checker_rejects_invalid_flags_bank_drift_and_missing_images(self):
+        from zipfile import ZipFile
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _sugarcrepe_sources
+        path = self.raw / 'release/gpt-4v-results/positive-first/gpt4v-add_obj.json'
+        original = path.read_text()
+        for change in ['flag', 'bank', 'grade']:
+            record = json.loads(original)
+            if change == 'flag': record['0']['correct'] = 'false'
+            elif change == 'bank': record['0']['filename'] = '000000000002.jpg'
+            else: record['0']['correct'] = False
+            path.write_text(json.dumps(record))
+            with self.assertRaises(ValueError): _sugarcrepe_sources(self.directory)
+            path.write_text(original)
+        with ZipFile(self.raw / 'coco/val2017.zip', 'w'): pass
+        with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
+
+
 if __name__ == "__main__":
     unittest.main()
 
