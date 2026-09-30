@@ -997,3 +997,4 @@ SOURCE_AUDITS["perumedqa"] = verify_native_results
 SOURCE_AUDITS["morphkv"] = verify_native_results
 SOURCE_AUDITS["morqa"] = verify_native_results
 SOURCE_AUDITS["mtbbench"] = verify_native_results
+SOURCE_AUDITS["real_pocqi"] = verify_native_results

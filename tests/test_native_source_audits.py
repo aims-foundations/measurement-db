@@ -1929,5 +1929,109 @@ class MTBBenchNativeAuditTests(unittest.TestCase):
                 '--output', str(self.directory.parent / 'invalid')])
 
 
+class RealPOCQiNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'real_pocqi'
+        raw = self.directory / 'raw/release'
+        raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/real_pocqi'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        questions = [dict(question_id='q1', question_text='Full clinical question 完整', specialty='Cardiology'),
+                     dict(question_id='q2', question_text='A different original question', specialty='Neurology')]
+        answers = [dict(question_id=question, provider_key=provider,
+            answer_markdown=('  Full untruncated answer 完整. ' * 1500 if (question, provider) == ('q1', 'model-a') else
+                '  Complete answer for ' + question + ' / ' + provider + '  '))
+            for question in ['q1', 'q2'] for provider in ['model-a', 'model-b']]
+        ratings = [dict(question_id=question, axis=axis, choice=choice, slot_a_provider='model-a',
+            slot_b_provider='model-b', render_mode='qa_text_citations' if question == 'q1' else 'qa_text_only')
+            for question, axis, choice in [('q1', 'accuracy', 'strongly_a'), ('q1', 'accuracy', 'strongly_a'),
+                ('q1', 'clinical_utility', 'tie'), ('q2', 'accuracy', 'slightly_b'), ('q2', 'accuracy', None)]]
+        for name, records in [('questions', questions), ('answers', answers), ('ratings', ratings)]:
+            pd.DataFrame(records).to_parquet(raw / (name + '.parquet'), index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['RealPOCQi']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw.parent), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_both_perspectives_complete_answers_nulls_and_repeated_votes(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _real_pocqi
+        self.assertEqual(_real_pocqi(self.directory, self.frames, self.metadata), dict(source_responses=10,
+            source_subjects=2, source_items=3, source_traces=10, source_questions=2, source_answers=4,
+            source_rating_rows=5, source_identical_rating_rows=1, source_long_answers=1,
+            source_wins=3, source_losses=3, source_ties=2, source_ungraded=2))
+
+    def test_audit_rejects_changed_votes_dimensions_answers_and_associations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _real_pocqi, _real_pocqi_sources
+        source = _real_pocqi_sources(self.directory)
+        for change in ['grade_swap', 'null_to_tie', 'subject', 'item', 'query', 'axis', 'verifier', 'strength',
+                       'answer', 'opponent_answer', 'position', 'slot', 'condition', 'opponent', 'trial',
+                       'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_tie': frames['responses']['response'] = frames['responses'].response.fillna(.5)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'query': frames['items'].loc[0, 'content'] = 'Wrong question'
+                elif change == 'axis':
+                    criterion = json.loads(frames['items'].loc[0, 'grading_criterion']); criterion['rule'] = 'Different grading dimension'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(criterion)
+                elif change == 'verifier':
+                    verifier = json.loads(frames['items'].loc[0, 'verifier']); verifier['judged_by'] = 'llm'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(verifier)
+                elif change in ['strength', 'answer', 'opponent_answer', 'position', 'slot']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'strength': data['native_rating']['choice'] = 'slightly_a'
+                    elif change == 'answer': data['native_answer']['answer_markdown'] = data['native_answer']['answer_markdown'][:12000]
+                    elif change == 'opponent_answer': data['opponent_answer']['answer_markdown'] = 'Another answer'
+                    elif change == 'position': data['source_row'] += 1
+                    else: data['slot'] = 'slot_b_provider'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = '{}'
+                elif change == 'opponent': frames['responses'].loc[0, 'interactors'] = 'opponent=other'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _real_pocqi(self.directory, frames, self.metadata, source)
+
+    def test_unrecognized_choice_is_not_silently_a_tie(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/release/ratings.parquet'
+        ratings = pd.read_parquet(path); ratings.loc[0, 'choice'] = 'unrecognized'; ratings.to_parquet(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Unknown native preference'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+    def test_missing_opponent_answer_cannot_be_silently_dropped(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/release/answers.parquet'
+        pd.read_parquet(path).iloc[:-1].to_parquet(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'no released answer'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

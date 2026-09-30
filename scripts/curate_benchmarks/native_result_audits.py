@@ -24005,6 +24005,100 @@ def _mtbbench(directory, tables, metadata, source=None):
         source_assets=len(asset_rows), source_asset_paths=len(source['assets']), **source['counts'])
 
 
+def _real_pocqi_sources(directory):
+    import pyarrow.parquet as pq
+    raw = directory / 'raw/release'
+    questions, answers, ratings = [pq.read_table(raw / (name + '.parquet')).to_pylist()
+                                    for name in ['questions', 'answers', 'ratings']]
+    question_bank = {row['question_id']: row for row in questions}
+    answer_bank = {(row['question_id'], row['provider_key']): (position, row) for position, row in enumerate(answers)}
+    _check(len(question_bank), len(questions), 'Real-POCQi unique question source keys')
+    _check(len(answer_bank), len(answers), 'Real-POCQi unique answer source keys')
+    models, items, native = set(), set(), {}
+    for position, rating in enumerate(ratings):
+        item = rating['question_id'], rating['axis']
+        _check(item[0] in question_bank, True, 'Real-POCQi rating has an original query')
+        _check(rating['slot_a_provider'] != rating['slot_b_provider'], True, 'Real-POCQi no self-comparison')
+        items.add(item)
+        for side, opponent in [('slot_a_provider', 'slot_b_provider'), ('slot_b_provider', 'slot_a_provider')]:
+            provider, other = rating[side], rating[opponent]
+            choice = rating['choice']
+            if choice is None:
+                grade = None
+            elif choice == 'tie':
+                grade = .5
+            else:
+                _check(choice in ['strongly_a', 'slightly_a', 'slightly_b', 'strongly_b'], True, 'Real-POCQi valid native preference')
+                grade = float(choice.endswith('_a') == (side == 'slot_a_provider'))
+            models.add(provider)
+            native[position, side] = dict(item=item, provider=provider, other=other, rating=rating, grade=grade,
+                answer=answer_bank[item[0], provider], opponent=answer_bank[item[0], other])
+    duplicates = len(ratings) - len({json.dumps(row, sort_keys=True) for row in ratings})
+    return dict(questions=question_bank, answers=answer_bank, native=native, models=models, items=items,
+        counts=dict(source_questions=len(questions), source_answers=len(answers), source_rating_rows=len(ratings),
+            source_identical_rating_rows=duplicates, source_long_answers=sum(len(row['answer_markdown']) > 12000 for row in answers)))
+
+
+def _real_pocqi(directory, tables, metadata, source=None):
+    source = _real_pocqi_sources(directory) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        provider = features['source_provider']
+        _check(features, dict(source_provider=provider), 'Real-POCQi original provider identity')
+        _check(row.display_name, 'Real-POCQi / ' + provider, 'Real-POCQi literal source label')
+        _check(row.harness, 'Real-POCQi physician pairwise evaluation', 'Real-POCQi original evaluation design')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'Real-POCQi no guessed setting: ' + field)
+        subjects[row.subject_id] = provider
+        seen_models[provider] += 1
+    _check(seen_models, Counter({key: 1 for key in source['models']}), 'Real-POCQi all literal evaluated systems')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        item = features['question_id'], features['axis']
+        question = source['questions'][item[0]]
+        _check(features, dict(question_id=item[0], axis=item[1], specialty=question['specialty']), 'Real-POCQi exact query/axis association')
+        _check(row.raw_item_id, ':'.join(item), 'Real-POCQi query and grading dimension alias')
+        _check(row.content, question['question_text'], 'Real-POCQi complete unchanged query')
+        rule = metadata['grading']['rule'] + ' Rating dimension: ' + metadata['build']['parameters']['axes'][item[1]] + '.'
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=rule), 'Real-POCQi human preference grading dimension')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], verifier['judged_by']), ('judge', 'human'), 'Real-POCQi physician rather than model judgment')
+        _check(json.loads(verifier['spec']), dict(**metadata['grading']['verifiers']['physician'], axis=item[1]),
+            'Real-POCQi original judge and dimension')
+        _check(pd.isna(row.asset_manifest), True, 'Real-POCQi no fabricated rendered survey assets')
+        items[row.item_id] = item
+        seen_items[item] += 1
+    _check(seen_items, Counter({key: 1 for key in source['items']}), 'Real-POCQi one item per query and grading protocol')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Real-POCQi unique trace links')
+    seen, counts = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['slot']
+        original = source['native'][key]
+        _check(trace, dict(source_file='release/ratings.parquet', source_row=key[0], slot=key[1], native_rating=original['rating'],
+            answer_row=original['answer'][0], native_answer=original['answer'][1],
+            opponent_answer_row=original['opponent'][0], opponent_answer=original['opponent'][1]),
+            'Real-POCQi full source preference and both unmodified answers')
+        _check(subjects[row.subject_id], original['provider'], 'Real-POCQi correct model perspective')
+        _check(items[row.item_id], original['item'], 'Real-POCQi correct query and grading dimension')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'Real-POCQi unchanged win/tie/loss credit')
+        _check(row.trial, 1, 'Real-POCQi ratings are not inferred repeated model calls')
+        _check(json.loads(row.test_condition), dict(source_row=key[0], axis=original['item'][1],
+            render_mode=original['rating']['render_mode'], slot=key[1]), 'Real-POCQi original source row and display condition')
+        _check(row.interactors, 'opponent=' + original['other'], 'Real-POCQi correct recorded opponent')
+        counts['source_ungraded' if original['grade'] is None else 'source_ties' if original['grade'] == .5
+               else 'source_wins' if original['grade'] == 1 else 'source_losses'] += 1
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Real-POCQi both perspectives of every original row, including identical rows')
+    _check(set(traces), set(tables['responses'].response_id), 'Real-POCQi all full traces associated')
+    _check(len(tables.get('assets', [])), 0, 'Real-POCQi no invented media')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        **source['counts'], **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24022,6 +24116,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'real_pocqi':
+        return _real_pocqi(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,

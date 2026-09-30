@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 11560
+    logical_sha256: 10efceeb740a46819154c329bdbca82e72e31aa13e4224b567901a015e4c3087
+  subjects:
+    rows: 4
+    logical_sha256: 8a2be45679b21d256280522cb5fd35c846a2817223aa21936cf84dcb3fb08b9e
+  responses:
+    rows: 11560
+    logical_sha256: 48edb4d64243ec00d560e4ff2cf9de2d75dd23e6ca72e1a03e60ffe0ba033066
+  items:
+    rows: 3100
+    logical_sha256: a16abc9a81f617109fef094c02d49b5be618026fe58b1c6f2e117fef95eb7a68
+  benchmarks:
+    rows: 1
+    logical_sha256: eaa92ba5236c970239b8fe890676d81aae3c15929d35fe27204042c15210f125
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 11560
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 3100
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 11560
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 620
+  source_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 2480
+  source_rating_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 5780
+  source_identical_rating_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 81
+  source_long_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 2
+  source_ties:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 3298
+  source_wins:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 4131
+  source_losses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/tree/98034255fbfd53b7ca1a4ffad775700db33ac900
+    locator: questions.parquet, answers.parquet and ratings.parquet; README documents the axes and original five-level
+      preferences.
+    scope: Every released physician rating, retained twice as coupled model perspectives; no inferred rater IDs
+      or deduplication.
+    expected: 4131
