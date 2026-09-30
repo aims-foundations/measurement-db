@@ -23889,6 +23889,122 @@ def _morqa(directory, tables, metadata, source=None):
     return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces), **source['counts'])
 
 
+def _mtbbench_sources(directory):
+    """Independently join original clinical case events to released question records."""
+    import hashlib
+    raw = directory / 'raw'
+    items, assets, banks = {}, {}, {}
+    for cohort, filename in [('hancock', 'questions_hancock_bench.json'), ('msk', 'questions_msk_bench.json')]:
+        for case, events in json.loads((raw / 'tasks' / filename).read_text()).items():
+            prefix, paths, questions = [], [], []
+            for index, event in enumerate(events):
+                prefix.append({key: value for key, value in event.items() if key != 'answer'})
+                for path in event.get('file_paths', []):
+                    if path not in paths:
+                        paths.append(path)
+                    if path not in assets:
+                        body = (raw / 'tasks' / path).read_bytes()
+                        assets[path] = dict(sha256=hashlib.sha256(body).hexdigest(), size=len(body))
+                if 'question' not in event:
+                    continue
+                key = cohort, case, len(questions)
+                items[key] = dict(content=dict(cohort=cohort, case_id=case, case_events=list(prefix)),
+                    answer=event['answer'], question=event['question'], event_index=index, paths=list(paths))
+                questions.append(key)
+            banks[cohort, case] = questions
+    native, models, counts = {}, set(), Counter()
+    for path in sorted((raw / 'release').glob('agent_logs_*/*/*.json')):
+        records = json.loads(path.read_text())
+        conversations = [row['conversation'] for row in records if 'conversation' in row]
+        _check(len(conversations), 1, 'MTBBench one final conversation per case log')
+        conversation = conversations[0]
+        model = path.parent.name, json.dumps([message for message in conversation if message['role'] == 'system'],
+            ensure_ascii=False, sort_keys=True)
+        cohort, case = path.parents[1].name.removeprefix('agent_logs_'), path.name.split('_chatlog_')[0]
+        questions = banks[cohort, case]
+        positions = [i for i, row in enumerate(records) if 'question' in row]
+        _check(len(positions), len(questions), 'MTBBench complete recorded question sequence')
+        models.add(model)
+        counts['source_case_logs'] += 1
+        for item, position in zip(questions, positions):
+            record = records[position]
+            _check((record['question'], record['answer']), (items[item]['question'], items[item]['answer']),
+                'MTBBench every native question/reference matches the author task bank')
+            grade = record.get('correct')
+            _check(grade is None or type(grade) is bool, True, 'MTBBench original boolean or unavailable grade')
+            counts['source_ungraded' if grade is None else 'source_successes' if grade else 'source_failures'] += 1
+            native[str(path.relative_to(raw)), position] = dict(item=item, model=model, record=record,
+                grade=None if grade is None else float(grade), conversation=conversation)
+    return dict(items=items, assets=assets, native=native, models=models, counts=dict(counts))
+
+
+def _mtbbench(directory, tables, metadata, source=None):
+    import hashlib
+    source = _mtbbench_sources(directory) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model'], features['system_prompt']
+        _check(row.display_name, 'MTBBench / ' + model[0], 'MTBBench literal released model label')
+        _check(row.harness, 'MTBBench sequential clinical decisions', 'MTBBench recorded harness')
+        _check(features, dict(source_model=model[0], system_prompt=model[1]), 'MTBBench complete system protocol')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MTBBench no guessed historical setting: ' + field)
+        subjects[row.subject_id] = model
+        seen_models[model] += 1
+    _check(seen_models, Counter({key: 1 for key in source['models']}), 'MTBBench distinct model and recorded protocol')
+    asset_rows = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(asset_rows), len(tables['assets']), 'MTBBench unique asset identities')
+    asset_digests = {key: dict(sha256=hashlib.sha256(bytes(row['data'])).hexdigest(), size=len(row['data']))
+                     for key, row in asset_rows.items()}
+    items, seen_items, used_assets = {}, Counter(), set()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        item = features['cohort'], features['case_id'], int(features['question_index'])
+        original = source['items'][item]
+        _check(features, dict(cohort=item[0], case_id=item[1], question_index=str(item[2]),
+            event_index=str(original['event_index'])), 'MTBBench exact patient/question identity')
+        _check(row.raw_item_id, ':'.join(map(str, item)), 'MTBBench stable source question alias')
+        _check(json.loads(row.content), original['content'], 'MTBBench full available case prefix without future events or gold answers')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=original['answer'], rule=metadata['grading']['rule']),
+            'MTBBench unchanged reference and published grading rule')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'MTBBench original choice matching protocol')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published'], 'MTBBench no regrading')
+        links = json.loads(row.asset_manifest) if pd.notna(row.asset_manifest) else []
+        _check([link['path'] for link in links], original['paths'], 'MTBBench assets available by this question, in source order')
+        for link in links:
+            _check(link['role'], 'source', 'MTBBench source resource is not a claim of a model file request')
+            media = {'.txt': 'text/plain', '.csv': 'text/csv', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg'}
+            _check(link['media_type'], media[Path(link['path']).suffix], 'MTBBench original asset type')
+            _check(asset_digests[link['asset_id']], source['assets'][link['path']], 'MTBBench every original patient file byte')
+            used_assets.add(link['asset_id'])
+        items[row.item_id] = item
+        seen_items[item] += 1
+    _check(seen_items, Counter({key: 1 for key in source['items']}), 'MTBBench each case-specific question exactly once')
+    _check(used_assets, set(asset_rows), 'MTBBench no missing or unused assets')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'MTBBench unique linked traces')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = source['native'][key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], native_record=original['record'], conversation=original['conversation']),
+            'MTBBench complete native question and final conversation without clipping')
+        _check(subjects[row.subject_id], original['model'], 'MTBBench correct model/protocol-response association')
+        _check(items[row.item_id], original['item'], 'MTBBench correct patient/question-response association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'MTBBench unchanged boolean or missing grade')
+        _check(row.trial, 1, 'MTBBench one released question observation per case log')
+        _check(row.test_condition, 'source_file=' + key[0], 'MTBBench exact released case run')
+        _check(pd.isna(row.interactors), True, 'MTBBench no invented interaction metadata')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'MTBBench all source measurements exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'MTBBench complete trace associations')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_assets=len(asset_rows), source_asset_paths=len(source['assets']), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -23904,6 +24020,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morphkv(directory, tables, metadata)
     if directory.name == 'morqa':
         return _morqa(directory, tables, metadata)
+    if directory.name == 'mtbbench':
+        return _mtbbench(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,

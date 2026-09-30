@@ -1809,5 +1809,125 @@ class MORQANativeAuditTests(unittest.TestCase):
                 ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
 
 
+class MTBBenchNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'mtbbench'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/mtbbench'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'
+        for cohort, case in [('hancock', '104'), ('msk', 'P-1')]:
+            first, later = f'data/{cohort}/{case}/history.txt', f'data/{cohort}/{case}/later.txt'
+            for relative, content in [(first, 'Original patient information: ' + cohort), (later, 'Later information')]:
+                path = raw / 'tasks' / relative
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(content)
+            events = [dict(context='Patient context ' + cohort), dict(file_paths=[first]),
+                dict(question='Repeated question text?', answer='A) first'),
+                dict(context='Later clinical event'), dict(file_paths=[later]),
+                dict(question='Next question?', answer='B) second')]
+            filename = self.metadata['build']['parameters']['questions'][cohort]
+            (raw / 'tasks' / filename).write_text(json.dumps({case: events}))
+            for model, grades in [('model-a', [True, False]), ('model-b', [None, True])]:
+                conversation = [dict(role='system', content='Protocol ' + (cohort if model == 'model-b' else 'shared')),
+                    dict(role='user', content='Repeated question text?'),
+                    dict(role='assistant', content='Full answer 完整 ' * 2000),
+                    dict(role='user', content='Earlier file was accessed by you'),
+                    dict(role='user', content='Next question?'), dict(role='assistant', content='[ANSWER: B) second]')]
+                records = [dict(question=events[index]['question'], answer=events[index]['answer'],
+                    response='Native answer', files_accessed=[first], files_hallucinated=[],
+                    question_time=0.12345678901234568, **({} if grade is None else dict(correct=grade)))
+                    for index, grade in zip([2, 5], grades)]
+                records.append(dict(conversation=conversation))
+                path = raw / 'release' / ('agent_logs_' + cohort) / model / (case + '_chatlog_2025.json')
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(records, ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['MTBBench']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_case_prefixes_protocols_null_grades_and_full_conversations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mtbbench
+        self.assertEqual(_mtbbench(self.directory, self.frames, self.metadata), dict(source_responses=8,
+            source_subjects=3, source_items=4, source_traces=8, source_assets=3, source_asset_paths=4,
+            source_case_logs=4, source_successes=4, source_failures=2, source_ungraded=2))
+        self.assertGreater(self.frames['traces'].trace.str.len().min(), 16000)
+
+    def test_audit_rejects_corrupt_grades_context_assets_and_links(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mtbbench, _mtbbench_sources
+        source = _mtbbench_sources(self.directory)
+        for change in ['grade_swap', 'null_to_zero', 'subject', 'item', 'prefix', 'future', 'reference', 'verifier',
+                       'asset_bytes', 'asset_link', 'asset_role', 'system', 'trace', 'native_float', 'position',
+                       'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change in ['prefix', 'future']:
+                    data = json.loads(frames['items'].loc[0, 'content'])
+                    if change == 'prefix': data['case_events'] = data['case_events'][-1:]
+                    else: data['case_events'].append(dict(context='Unrevealed future event'))
+                    frames['items'].loc[0, 'content'] = json.dumps(data)
+                elif change == 'reference':
+                    data = json.loads(frames['items'].loc[0, 'grading_criterion']); data['reference_answer'] = 'C) other'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'verifier':
+                    data = json.loads(frames['items'].loc[0, 'verifier']); data['class'] = 'judge'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change == 'asset_bytes': frames['assets'].at[0, 'data'] = b'Altered patient file'
+                elif change in ['asset_link', 'asset_role']:
+                    links = json.loads(frames['items'].loc[0, 'asset_manifest'])
+                    if change == 'asset_link': links[0]['path'] = 'future.txt'
+                    else: links[0]['role'] = 'input'
+                    frames['items'].loc[0, 'asset_manifest'] = json.dumps(links)
+                elif change == 'system':
+                    value = frames['subjects'].loc[0, 'subject_features_extra']
+                    self.assertIn('Protocol shared', value)
+                    frames['subjects'].loc[0, 'subject_features_extra'] = value.replace('Protocol shared', 'Changed')
+                elif change in ['trace', 'native_float', 'position']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'trace': data['conversation'][2]['content'] = data['conversation'][2]['content'][:16000]
+                    elif change == 'native_float': data['native_record']['question_time'] = .12
+                    else: data['source_row'] += 1
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'other'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _mtbbench(self.directory, frames, self.metadata, source)
+
+    def test_changed_task_reference_is_rejected(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/tasks/questions_hancock_bench.json'
+        bank = json.loads(path.read_text()); bank['104'][2]['answer'] = 'C) changed'; path.write_text(json.dumps(bank))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'differs from the frozen case bank'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

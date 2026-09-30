@@ -1,0 +1,97 @@
+benchmark:
+  description: 'MTBBench evaluates multimodal LLMs on sequential clinical decision-making in oncology. Two cohorts:
+    HANCOCK (multimodal pathology — TMA images, H&E slides, cell density) and MSK-CHORD (longitudinal genomics —
+    genomic profiles, clinical timelines). Models act as agentic AI physicians, optionally using external tools
+    (DrugBank, CONCH, PubMed). Each case contains multiple multi-choice questions; correctness is binary (matched
+    vs. ground truth).'
+  testing_condition: One recorded question within a sequential patient case is an observation. Items retain the
+    ordered source events through that question, without prior gold answers or future information, and all files
+    made available by that point. File assets are source resources, not a claim that every file was requested. Subjects
+    distinguish literal model labels and the recorded system prompt, including the two cohort-specific tool protocols.
+    Historical model versions and inference settings are not inferred. Published boolean grades are retained; 15
+    missing grades remain null. Each trace contains the complete native question record and final case conversation.
+    The upstream harness removes some earlier file payloads from that final conversation, so it is not an exact
+    historical request log. Generated earlier answers are session-dependent and remain in the trace rather than
+    the common item. No model, tool, or clinical evaluation is executed.
+  paper_url: https://openreview.net/forum?id=anzoPBV4jI
+  data_source_url: https://github.com/bunnelab/MTBBench
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{jain2025mtbbench,\n  title={{MTBBench}: A Multimodal Sequential Clinical Decision-Making\
+    \ Benchmark in Oncology},\n  author={Jain, Eeshaan and others},\n  booktitle={Advances in Neural Information\
+    \ Processing Systems (NeurIPS) Datasets and Benchmarks Track},\n  year={2025},\n  url={https://openreview.net/forum?id=anzoPBV4jI}\n\
+    }"
+  tags:
+  - oncology
+  - clinical
+  - multimodal
+  - agentic
+  - sequential_decision_making
+  modality:
+  - text
+  - image
+  domain:
+  - medicine
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect recorded answer
+      '1': Correct recorded answer
+  categorical: true
+  release_date: 2025-11
+  release: public
+  name: MTBBench
+  version: ac8151bc7c659a291610f14204e5f67f0bd7b908
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      logs: agent_logs_*/*/*.json
+      tasks: tasks
+    questions:
+      hancock: questions_hancock_bench.json
+      msk: questions_msk_bench.json
+    labels:
+      subject_prefix: 'MTBBench / '
+      harness: MTBBench sequential clinical decisions
+    media_types:
+      .txt: text/plain
+      .json: application/json
+      .csv: text/csv
+      .jpg: image/jpeg
+      .png: image/png
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/bunnelab/mtbbench
+    revision: ac8151bc7c659a291610f14204e5f67f0bd7b908
+    files:
+    - match: (?:agent_logs_(?:hancock|msk)/.+[.]json|neurips25/.+|README[.]md|LICENSE)
+      path: release/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/EeshaanJain/MTBBench
+    revision: 5054ec8ebeb3998ec50fb63860dd4195f6c2a565
+    files:
+    - match: (?:README[.]md|[.]gitattributes|questions_(?:hancock|msk)_bench[.]json|data/(?:hancock|msk_bench)/cases/(?!606/)(?!.*(?:_CONCH[.]|patient_blood_data_for_question_generation[.]txt|patient_tma_measurements[.]txt)).+)
+      path: tasks/{path}
+grading:
+  rule: Preserve the released correct boolean as 0 or 1; an omitted or null grade remains null. The upstream agent
+    parses an ANSWER choice and compares its first letter to the reference, with invalid-answer strike handling.
+    Do not regrade the final response text or treat a missing grade as failure.
+  verifiers:
+    published:
+      kind: published_exact_choice_grade
+      source: https://github.com/bunnelab/mtbbench/blob/ac8151bc7c659a291610f14204e5f67f0bd7b908/neurips25/models/agent.py
+      implementation: DoctorAgent.run_case and the cohort-specific DoctorAgentWithTools variants
+      limitations: Recorded grades include parsing/strike behavior; final transcripts have upstream file-payload
+        removal.
