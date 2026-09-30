@@ -5,6 +5,8 @@ PyYAML
 jsonschema
 pyarrow
 huggingface_hub>=1.0,<2
+fsspec[http]>=2024.6
+requests>=2.31
 cryptography>=42.0
 PyMuPDF>=1.24
 openpyxl>=3.1

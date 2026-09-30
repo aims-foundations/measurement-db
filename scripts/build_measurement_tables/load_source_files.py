@@ -12,10 +12,14 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import struct
 import tempfile
+import threading
 from urllib.parse import parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from urllib.request import Request, urlopen
 from typing import Any
+import zipfile
+import zlib
 
 
 class SourceDataError(RuntimeError):
@@ -505,6 +509,151 @@ def wandb_entries(source: dict) -> list[dict]:
     return entries
 
 
+def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session) -> bytes:
+    """Read one original ZIP member by byte range and verify its native headers/CRC.
+
+    The caller pins the decompressed content with SHA-256 as well. A server that
+    ignores Range is rejected before its potentially huge response is consumed.
+    """
+    start = info.header_offset
+    end = min(archive_size - 1, start + 30 + len(info.filename.encode("utf-8")) + info.compress_size + 1024 - 1)
+    for _ in range(2):
+        with session.get(url, headers={"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"},
+                         stream=True, timeout=120) as response:
+            if response.status_code != 206 or response.headers.get("Content-Range") != f"bytes {start}-{end}/{archive_size}":
+                raise SourceDataError(f"ZIP server did not return the requested byte range (HTTP {response.status_code})")
+            blob = response.raw.read(end - start + 1)
+        if len(blob) != end - start + 1 or blob[:4] != b"PK\x03\x04":
+            raise SourceDataError("Incomplete or invalid ZIP local header")
+        flags, method = struct.unpack_from("<HH", blob, 6)
+        name_length, extra_length = struct.unpack_from("<HH", blob, 26)
+        filename = blob[30:30 + name_length].decode("utf-8" if flags & 2048 else "cp437")
+        if filename != info.filename or flags & 1 or method != info.compress_type:
+            raise SourceDataError("ZIP member header differs from the central directory")
+        offset = 30 + name_length + extra_length
+        needed = offset + info.compress_size
+        if needed > len(blob):
+            end = start + needed - 1
+            if end >= archive_size:
+                raise SourceDataError("ZIP member extends beyond the pinned archive")
+            continue
+        payload = blob[offset:needed]
+        if method == zipfile.ZIP_DEFLATED:
+            payload = zlib.decompress(payload, -15)
+        elif method != zipfile.ZIP_STORED:
+            raise SourceDataError("Selected ZIP member uses unsupported compression")
+        if len(payload) != info.file_size or zlib.crc32(payload) != info.CRC:
+            raise SourceDataError("ZIP member failed native size/CRC verification")
+        return payload
+    raise SourceDataError("Unable to read the complete ZIP member header")
+
+
+def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None) -> list[dict]:
+    """Capture selected original files from pinned ZIPs without downloading media.
+
+    Metadata selects archive names and member paths and pins a SHA-256 tree of
+    decompressed contents. Files remain unchanged. New files are installed only
+    after the complete selection passes; existing raw files are never replaced.
+    """
+    import fsspec
+    import requests
+
+    if raw_dir is None:
+        raise SourceDataError("ZIP member selections require a benchmark raw directory")
+    expected = set(source["zip_members"])
+    selected = {entry["path"]: entry for entry in archives if entry["path"] in expected}
+    if set(selected) != expected or len(expected) != len(source["zip_members"]):
+        raise SourceDataError("ZIP selection has absent or duplicate archive names")
+    root = raw_dir.resolve()
+    raw_dir.parent.mkdir(parents=True, exist_ok=True)
+    files, destinations = [], set()
+    filesystem = fsspec.filesystem("http", client_kwargs={"trust_env": True})
+    thread = threading.local()
+    sessions = []
+    try:
+        with tempfile.TemporaryDirectory(prefix=".zip-download-", dir=raw_dir.parent) as temporary, ThreadPoolExecutor(max_workers=12) as executor:
+            staging = Path(temporary)
+            for archive_name, archive_entry in sorted(selected.items()):
+                with filesystem.open(archive_entry["url"], "rb", size=archive_entry["size"], block_size=1 << 16) as stream:
+                    with zipfile.ZipFile(stream) as archive:
+                        members = archive.infolist()
+                selection = []
+                for member in members:
+                    if member.is_dir():
+                        continue
+                    relative = archive_name + "/" + member.filename
+                    rules = [(rule, match) for rule in source["files"] if (match := re.fullmatch(rule["match"], relative))]
+                    if not rules:
+                        continue
+                    if len(rules) != 1 or Path(member.filename).is_absolute() or ".." in Path(member.filename).parts or "\\" in member.filename:
+                        raise SourceDataError("ZIP selection has an ambiguous or unsafe member path")
+                    if ((member.external_attr >> 16) & 0o170000) == 0o120000 or member.flag_bits & 1:
+                        raise SourceDataError("Selected ZIP members must be regular, unencrypted files")
+                    rule, match = rules[0]
+                    destination = rule["path"].format(path=relative, **match.groupdict())
+                    destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                    target = raw_dir / destination
+                    if not target.resolve().is_relative_to(root) or Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                        raise SourceDataError("ZIP destination escapes raw/")
+                    if destination in destinations:
+                        raise SourceDataError("Duplicate ZIP member or raw destination")
+                    destinations.add(destination)
+                    selection.append((relative, destination, member))
+                if not selection:
+                    raise SourceDataError(f"No selected original files in ZIP {archive_name}")
+                # Resolve the public archive once; never expose signed redirect URLs.
+                needs_download = any(not (raw_dir / destination).is_file() for _, destination, _ in selection)
+                if needs_download:
+                    try:
+                        with requests.head(archive_entry["url"], allow_redirects=True, timeout=120) as response:
+                            if response.status_code != 200:
+                                raise SourceDataError(f"Pinned ZIP archive is unavailable (HTTP {response.status_code})")
+                            download_url = response.url
+                    except requests.RequestException as error:
+                        raise SourceDataError(f"Pinned ZIP archive request failed ({type(error).__name__})") from None
+
+                def inspect(record):
+                    relative, destination, member = record
+                    cached = raw_dir / destination
+                    if cached.exists():
+                        content = cached.read_bytes()
+                    else:
+                        if not hasattr(thread, "session"):
+                            thread.session = requests.Session()
+                            sessions.append(thread.session)
+                        try:
+                            content = read_zip_member(download_url, archive_entry["size"], member, thread.session)
+                        except requests.RequestException as error:
+                            raise SourceDataError(f"Original ZIP member request failed ({type(error).__name__})") from None
+                        cached = staging / destination
+                        cached.parent.mkdir(parents=True, exist_ok=True)
+                        cached.write_bytes(content)
+                    if len(content) != member.file_size or zlib.crc32(content) != member.CRC:
+                        raise SourceDataError("Captured ZIP member differs from its original size/CRC")
+                    return dict(path=relative, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                        hash_kind="sha256", url=archive_entry["url"] + "#member=" + quote(member.filename, safe="/"),
+                        destination=destination)
+
+                files.extend(executor.map(inspect, selection))
+            files.sort(key=lambda entry: entry["path"])
+            identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in files]
+            fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            if not files or fingerprint != source["tree_sha256"]:
+                raise SourceDataError(f"Selected ZIP contents differ from the pinned tree ({fingerprint})")
+            for entry in files:
+                destination = entry.pop("destination")
+                staged, target = staging / destination, raw_dir / destination
+                if staged.is_file():
+                    if target.exists():
+                        raise SourceDataError("A ZIP destination appeared during the download; refusing to replace it")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    staged.replace(target)
+            return files
+    finally:
+        for session in sessions:
+            session.close()
+
+
 def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: Path | None = None) -> list[dict]:
     """Resolve named upstream selections to pinned files and verify their inventory.
 
@@ -639,6 +788,10 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                         hf_repo=repository, hf_revision=revision, hf_path=entry.path, hf_repo_type=repo_type))
             elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
+            if "zip_members" in source:
+                if location.netloc != "huggingface.co" or not location.path.startswith(("/datasets/", "/spaces/")):
+                    raise SourceDataError("ZIP member selections require an immutable Hugging Face repository")
+                entries = zip_member_entries(source, entries, raw_dir)
             selected = []
             for rule in source["files"]:
                 matches = 0

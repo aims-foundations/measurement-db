@@ -9,6 +9,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -39,6 +40,138 @@ PAYLOAD = b'{"released":true}\n'
 class DownloadFixture(BenchmarkBuild):
     def build_tables(self):
         return {}
+
+
+class ZIPMemberTests(unittest.TestCase):
+    """Original ZIP slices preserve bytes and require the full content-tree pin."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name) / "fixture"
+        self.folder.mkdir()
+        self.raw = self.folder / "raw"
+        self.source = dict(name="release", url="https://huggingface.co/datasets/example/original",
+            revision="a" * 40, zip_members=["original.zip"],
+            files=[dict(match=r"original[.]zip/(?P<member>.*[.]txt)", path="members/{member}")])
+        self.members = {"task/result.txt": b"0.75\n", "task/transcript.txt": b"unaltered text\n\n"}
+        self.make_archive()
+
+    def make_archive(self, compression=zipfile.ZIP_STORED):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", compression=compression) as output:
+            for name, content in self.members.items():
+                output.writestr(name, content)
+            output.writestr("task/recording.mp4", b"unselected media")
+        self.archive = archive.getvalue()
+        self.entries = [dict(path="original.zip", url="https://example.org/original.zip", size=len(self.archive))]
+        identity = [dict(path="original.zip/" + name, size=len(content), digest=hashlib.sha256(content).hexdigest())
+                    for name, content in sorted(self.members.items())]
+        self.source["tree_sha256"] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def inspect(self, *, source=None, payload=None, status=206, integration=False):
+        from scripts.build_measurement_tables.load_source_files import zip_member_entries
+        payload = self.archive if payload is None else payload
+        opened = []
+
+        def request(url, headers, **kwargs):
+            start, end = map(int, headers["Range"].removeprefix("bytes=").split("-"))
+            opened.append((start, end))
+            response = io.BytesIO(payload[start:end + 1])
+            response.status_code, response.raw = status, response
+            response.headers = {"Content-Range": f"bytes {start}-{end}/{len(payload)}"}
+            return response
+
+        head = io.BytesIO()
+        head.url = "https://example.org/public-redirect"
+        head.status_code = 200
+        head.raise_for_status = lambda: None
+        filesystem = SimpleNamespace(open=lambda *args, **kwargs: io.BytesIO(self.archive))
+        session = SimpleNamespace(get=request, close=lambda: None)
+        with patch("fsspec.filesystem", return_value=filesystem), patch("requests.head", return_value=head), \
+                patch("requests.Session", return_value=session):
+            if integration:
+                metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+                metadata["sources"] = {"upstream": [self.source]}
+                (self.folder / "metadata.yaml").write_text(yaml.safe_dump(metadata))
+                native = SimpleNamespace(path="original.zip", size=len(self.archive), blob_id="b" * 40,
+                    lfs={"sha256": hashlib.sha256(self.archive).hexdigest()})
+                api = SimpleNamespace(list_repo_tree=lambda *args, **kwargs: [native])
+                with patch("huggingface_hub.HfApi", return_value=api), \
+                        patch("huggingface_hub.hf_hub_url", return_value=self.entries[0]["url"]):
+                    builder = DownloadFixture(str(self.folder / "build.py"))
+                    result = builder.fetch_sources("release")
+                    self.assertEqual(len(builder._source_artifacts), 2)
+            else:
+                result = zip_member_entries(source or self.source, self.entries, self.raw)
+        self.assertTrue(all(end < len(self.archive) for _, end in opened))
+        return result
+
+    def test_original_bytes_and_partial_credit_survive_stored_and_deflated_archives(self):
+        for compression in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            with self.subTest(compression=compression):
+                self.make_archive(compression)
+                result = self.inspect()
+                self.assertEqual(len(result), 2)
+                for name, content in self.members.items():
+                    self.assertEqual((self.raw / "members" / name).read_bytes(), content)
+                self.assertFalse((self.raw / "members/task/recording.mp4").exists())
+                shutil.rmtree(self.raw)
+
+    def test_shared_fetch_sources_uses_original_members_and_source_locators(self):
+        urls = self.inspect(integration=True)
+        self.assertEqual(set(urls), {"https://example.org/original.zip#member=" + name for name in self.members})
+        self.assertEqual(self.inspect(integration=True), urls)
+        self.assertEqual((self.raw / "members/task/transcript.txt").read_bytes(), self.members["task/transcript.txt"])
+
+    def test_pinned_tree_rejects_changed_selection_before_installing_files(self):
+        self.source["tree_sha256"] = "0" * 64
+        with self.assertRaisesRegex(SourceDataError, "pinned tree"):
+            self.inspect()
+        self.assertFalse(self.raw.exists())
+        self.assertFalse(list(self.folder.glob(".zip-download-*")))
+
+    def test_existing_raw_is_verified_and_never_replaced(self):
+        self.inspect()
+        target = self.raw / "members/task/result.txt"
+        target.write_bytes(b"0.00\n")
+        with self.assertRaisesRegex(SourceDataError, "size/CRC"):
+            self.inspect()
+        self.assertEqual(target.read_bytes(), b"0.00\n")
+
+    def test_corrupt_payload_and_ignored_range_are_rejected(self):
+        with self.assertRaisesRegex(SourceDataError, "size/CRC"):
+            self.inspect(payload=self.archive.replace(b"0.75\n", b"0.00\n"))
+        with self.assertRaisesRegex(SourceDataError, "requested byte range"):
+            self.inspect(status=200)
+        self.assertFalse(self.raw.exists())
+
+    def test_unsafe_members_duplicate_targets_and_missing_archives_are_rejected(self):
+        for member in ("../escape.txt", "/absolute.txt", "folder\\escape.txt"):
+            with self.subTest(member=member):
+                self.members = {member: b"original"}
+                self.make_archive()
+                with self.assertRaisesRegex(SourceDataError, "unsafe member"):
+                    self.inspect()
+        self.members = {"one.txt": b"one", "two.txt": b"two"}
+        self.make_archive()
+        self.source["files"][0]["path"] = "members/same.txt"
+        with self.assertRaisesRegex(SourceDataError, "Duplicate"):
+            self.inspect()
+        self.source["zip_members"] = ["absent.zip"]
+        with self.assertRaisesRegex(SourceDataError, "absent"):
+            self.inspect()
+        self.assertFalse(self.raw.exists())
+
+    def test_metadata_requires_immutable_archive_and_content_tree(self):
+        metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+        metadata["sources"] = {"upstream": [self.source]}
+        validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        for change in ({"revision": "main"}, {"tree_sha256": None}, {"zip_members": ["../outside.zip"]},
+                       {"url": "https://example.org/results"}, {"html_index": "another"}):
+            metadata["sources"]["upstream"] = [{**self.source, **change}]
+            with self.subTest(change=change), self.assertRaises(BenchmarkMetadataError):
+                validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
 
 
 class SnapshotTests(unittest.TestCase):

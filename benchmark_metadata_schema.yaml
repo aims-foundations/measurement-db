@@ -241,7 +241,7 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
                       url:
@@ -266,6 +266,10 @@ $defs:
                     not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
                     properties:
                       url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
+                  - required: [files, zip_members, tree_sha256]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                      url: {type: string, pattern: '^https://huggingface\.co/(?:datasets|spaces)/[^/]+/[^/]+$'}
             - if:
                 anyOf:
                   - required: [files]
@@ -313,6 +317,14 @@ $defs:
                 required: [request_json]
               then:
                 required: [file, size, sha256]
+            - if:
+                required: [zip_members]
+              then:
+                required: [name, files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [wandb_runs]}, {required: [request_json]}]}
+                properties:
+                  revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                  url: {type: string, pattern: '^https://huggingface\.co/(?:datasets|spaces)/[^/]+/[^/]+$'}
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -343,11 +355,19 @@ $defs:
               minItems: 1
               uniqueItems: true
               items: {$ref: '#/$defs/nonempty_string'}
+            zip_members:
+              description: Select exact ZIP archive paths in a pinned HF repository. The files patterns match archive.zip/member/path; only selected original member bytes are downloaded, with a SHA-256 content-tree pin.
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: string
+                pattern: '^(?!.*(?:^|/)\.\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.zip$'
             prefix:
               description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
               $ref: '#/$defs/nonempty_string'
             tree_sha256:
-              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML and JSON indexes include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes; OSF includes paths, file IDs, versions, sizes and native SHA-256 hashes; W&B includes run-relative paths, sizes and provider MD5 hashes.
+              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML, JSON and ZIP selections include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes; OSF includes paths, file IDs, versions, sizes and native SHA-256 hashes; W&B includes run-relative paths, sizes and provider MD5 hashes.
               type: string
               pattern: '^[0-9a-f]{64}$'
             html_index:
