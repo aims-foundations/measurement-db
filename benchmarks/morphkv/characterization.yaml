@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4105
+    logical_sha256: 8ff32dc3adad3b941f6d1fe40769124cafe432d333f60a5a3d6c12c943a85ca8
+  subjects:
+    rows: 11
+    logical_sha256: ac5196f747e0a07b826e6c008aebc068bc5226f8811a5ffda3e31777a213173c
+  responses:
+    rows: 4105
+    logical_sha256: 117018b63fd850443fadd23b7d69db23f56e16c46f455d21261864d0e59917f6
+  items:
+    rows: 537
+    logical_sha256: 85f4b398315a6f1676b466057b11904495e3733aa1181e3328e2387aded84c5b
+  benchmarks:
+    rows: 1
+    logical_sha256: d08aa8e0f707341147d8be0ffa9abe3118cb25276748f1b05ddef222cc80ffba
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 4105
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 537
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 4105
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 11
+  source_declared_constraints:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 6556
+  source_absent_block_constraints:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 2451
+  source_native_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 400
+  source_summary_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 7
+  source_bank_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 400
+  source_generation_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 40
+  source_graded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 3674
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 431
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ghadiaravi13/MorphKV/tree/de62fc8c49d36644fcd77872a3762c2afd840ef1
+    locator: LongGenBench/Evalution/paper_results/*.json, original Dataset_short.json and all seven paper_results.csv
+      summary rows.
+    scope: 'Every constraint with a generated output block: nine judged configurations and two released configurations
+      without judgments. Missing blocks are excluded as in the original conditional-accuracy convention.'
+    expected: 1509

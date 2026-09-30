@@ -23656,6 +23656,129 @@ def _perumedqa(directory, tables, metadata, source=None):
         source_summary_groups=len(published_totals), **counts)
 
 
+def _morphkv_sources(directory):
+    """Resolve source constraints directly, without pandas joins or builder imports."""
+    import csv
+    import math
+    import re
+
+    raw = directory / 'raw'
+    bank = json.loads((raw / 'LongGenBench/Dataset/Dataset_short.json').read_text())
+    by_prompt = {}
+    for index, row in enumerate(bank):
+        _check(row['prompt'] not in by_prompt, True, 'MorphKV unique original bank prompt')
+        by_prompt[row['prompt']] = index, row
+    native, definitions, trials, source_records = {}, {}, Counter(), {}
+    counts, totals, successes, completion = Counter(), Counter(), Counter(), {}
+    for path in sorted((raw / 'LongGenBench/Evalution/paper_results').glob('*.json')):
+        relative, model = str(path.relative_to(raw)), path.stem
+        records = json.loads(path.read_text())
+        completion[model] = []
+        for position, record in enumerate(records):
+            bank_row, definition = by_prompt[record['input']]
+            for field in ['type', 'number', 'checks_once', 'checks_range', 'checks_periodic']:
+                _check(record[field], definition[field], 'MorphKV complete original task definition: ' + field)
+            source_records[relative, position] = record
+            blocks = {}
+            for text in record['output_blocks']:
+                match = re.search(re.escape(record['type']) + r' (\d+)', text)
+                if match:
+                    blocks.setdefault(str(int(match.group(1))), text)
+            expected_blocks = set(map(str, range(1, record['number'] + 1)))
+            completion[model].append(100 * len(expected_blocks.intersection(blocks)) / len(expected_blocks))
+            for kind in ['once', 'range', 'periodic']:
+                checks, verdicts = record['checks_' + kind], record.get('results_' + kind, {})
+                _check(set(verdicts) <= set(checks).intersection(blocks), True, 'MorphKV judgments require original criteria and generated blocks')
+                _check(set(verdicts.values()) <= {'yes', 'no'}, True, 'MorphKV only released binary verdicts are grades')
+                for block_id, requirement in checks.items():
+                    counts['source_declared_constraints'] += 1
+                    if block_id not in blocks:
+                        counts['source_absent_block_constraints'] += 1
+                        continue
+                    key = relative, position, kind, block_id
+                    item = record['input'], record['type'], kind, block_id, requirement
+                    definitions.setdefault(item, dict(raw_item_id=f'bank_{bank_row}:{kind}:{block_id}', bank_row=bank_row))
+                    grade = {'yes': 1., 'no': 0.}.get(verdicts.get(block_id))
+                    trials[model, item] += 1
+                    native[key] = dict(record=record, bank_row=bank_row, item=item, grade=grade, trial=trials[model, item], model=model)
+                    if grade is not None:
+                        totals[model, kind] += 1
+                        successes[model, kind] += int(grade)
+    with (raw / 'LongGenBench/Evalution/paper_results/paper_results.csv').open(newline='') as stream:
+        summary = list(csv.DictReader(stream))
+    for row in summary:
+        model, accuracies = row['Model'], []
+        for kind in ['once', 'range', 'periodic']:
+            value = successes[model, kind] / totals[model, kind] if totals[model, kind] else 0.
+            accuracies.append(value)
+            _check(math.isclose(value, float(row['Accuracy ' + kind.title()]), abs_tol=1e-12), True, 'MorphKV published per-kind accuracy')
+        _check(math.isclose(sum(accuracies) / 3, float(row['Average Accuracy']), abs_tol=1e-12), True, 'MorphKV published macro accuracy')
+        _check(math.isclose(sum(completion[model]) / len(completion[model]), float(row['Completion Rate']), abs_tol=1e-12), True,
+               'MorphKV separate published completion rate')
+    counts.update(source_native_attempts=len(source_records), source_summary_rows=len(summary), source_bank_rows=len(bank),
+                  source_generation_tasks=len({record['input'] for record in source_records.values()}))
+    return dict(native=native, items=definitions, models=set(completion), records=source_records, counts=dict(counts))
+
+
+def _morphkv(directory, tables, metadata, source=None):
+    source = _morphkv_sources(directory) if source is None else source
+    native, definitions = source['native'], source['items']
+    subjects, subject_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        model = _features(row.subject_features_extra)['source_run']
+        _check(row.display_name, 'MorphKV / ' + model, 'MorphKV literal original run identity')
+        _check(row.harness, 'MorphKV/LongGenBench', 'MorphKV source evaluation harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'MorphKV no guessed historical setting: ' + field)
+        subjects[row.subject_id] = model
+        subject_seen[model] += 1
+    _check(subject_seen, Counter({model: 1 for model in source['models']}), 'MorphKV every released configuration exactly once')
+    items, item_seen = {}, Counter()
+    for row in tables['items'].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        rule = json.loads(criterion['rule'])
+        item = row.content, rule['block_type'], rule['kind'], rule['block_id'], rule['requirement']
+        _check(item in definitions, True, 'MorphKV complete prompt and the correct single constraint')
+        _check(row.raw_item_id, definitions[item]['raw_item_id'], 'MorphKV bank row and constraint alias')
+        _check(rule['rule'], metadata['grading']['rule'], 'MorphKV conditional-accuracy and null-grade convention')
+        _check(criterion.get('reference_answer'), None, 'MorphKV constraint is a grading rule, not a gold model output')
+        _check(_features(row.item_features), dict(source_benchmark='LongGenBench', task_type=rule['block_type']), 'MorphKV item provenance')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'judge', 'MorphKV original LLM grader')
+        _check(verifier.get('judged_by'), 'llm', 'MorphKV LLM judgment rather than exact answer matching')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published_judge'], 'MorphKV preserved evaluator declaration')
+        _check(pd.isna(row.asset_manifest), True, 'MorphKV no invented media')
+        items[row.item_id] = item
+        item_seen[item] += 1
+    _check(item_seen, Counter({key: 1 for key in definitions}), 'MorphKV one item for each content-and-grading definition')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'MorphKV unique trace association')
+    seen, counts, attempts = Counter(), Counter(), set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row'], trace['kind'], trace['block_id']
+        original = native[key]
+        _check(trace, dict(source_file=key[0], source_row=key[1], bank_row=original['bank_row'], kind=key[2], block_id=key[3],
+            native_record=original['record']), 'MorphKV full original generation, all output blocks, verdicts and source coordinates')
+        _check(subjects[row.subject_id], original['model'], 'MorphKV subject-response link')
+        _check(items[row.item_id], original['item'], 'MorphKV task and specific constraint association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'MorphKV exact source verdict or ungraded attempt')
+        _check(row.trial, original['trial'], 'MorphKV ordered occurrences for repeated task definitions')
+        _check(row.test_condition, 'source_file=' + key[0], 'MorphKV source run file')
+        _check(pd.isna(row.interactors), True, 'MorphKV no fabricated interaction metadata')
+        seen[key] += 1
+        attempts.add(key[:2])
+        counts['source_graded_observations'] += original['grade'] is not None
+        counts['source_ungraded_observations'] += original['grade'] is None
+        counts['source_successes'] += original['grade'] == 1
+    _check(seen, Counter({key: 1 for key in native}), 'MorphKV every available output constraint exactly once')
+    _check(attempts, set(source['records']), 'MorphKV every released generation represented in complete traces')
+    _check(set(traces), set(tables['responses'].response_id), 'MorphKV complete linked trace coverage')
+    _check(len(tables.get('assets', [])), 0, 'MorphKV no fabricated assets')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_files=len(source['models']), **source['counts'], **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -23667,6 +23790,8 @@ def verify_native_results(directory, tables_directory=None):
         return _erbench(directory, tables, metadata)
     if directory.name == 'perumedqa':
         return _perumedqa(directory, tables, metadata)
+    if directory.name == 'morphkv':
+        return _morphkv(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,

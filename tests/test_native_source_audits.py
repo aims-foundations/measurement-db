@@ -1551,5 +1551,132 @@ class PeruMedQANativeAuditTests(unittest.TestCase):
             _perumedqa(self.directory, self.frames, self.metadata, source)
 
 
+class MorphKVNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'morphkv'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/morphkv'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        models = ['Llama_1000_snapkv', 'Qwen30B_1000_snapkv']
+        self.metadata['build']['parameters']['runs'] = dict.fromkeys(models, 'fixture')
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        bank = [dict(prompt='Write a diary.\n#*# Week 1:', type='Week', number=3, prefix='#*# Week 1:',
+            checks_once={'1': 'rain', '3': 'sports'}, checks_range={'2': 'music'}, checks_periodic={'1': 'sleep'}),
+            dict(prompt='Design a building.\n#*# Floor 1:', type='Floor', number=2, prefix='#*# Floor 1:',
+                checks_once={'1': 'lobby'}, checks_range={}, checks_periodic={'2': 'lift'}),
+            dict(prompt='Plan menus.\n#*# Menu Week 1:', type='Menu Week', number=2, prefix='#*# Menu Week 1:',
+                checks_once={'2': 'beans'}, checks_range={}, checks_periodic={'1': 'fruit'})]
+        bank_path = self.directory / 'raw/LongGenBench/Dataset/Dataset_short.json'
+        bank_path.parent.mkdir(parents=True)
+        bank_path.write_text(json.dumps(bank))
+        blocks = [['Introduction', 'Week 1 first ' + '完整 explanation ' * 2000, 'Week 1 duplicate context', 'Week 2 music'],
+                  ['Floor 1 lobby', 'Floor 2 lift'], ['Menu Week 1 fruit', 'Menu Week 2 beans']]
+        for model in models:
+            records = []
+            indices = [0, 1, 0] if model == models[0] else [0, 2]
+            for position, index in enumerate(indices):
+                row = {key: value for key, value in bank[index].items() if key not in ['prompt', 'prefix']}
+                row.update(input=bank[index]['prompt'], output_blocks=blocks[index], word_count=123,
+                           source_note='Keep every original field.')
+                if model == models[0]:
+                    grades = [({'1': 'yes'}, {'2': 'no'}, {'1': 'yes'}),
+                              ({'1': 'no'}, {}, {'2': 'yes'}),
+                              ({'1': 'no'}, {'2': 'yes'}, {'1': 'no'})][position]
+                    for kind, values in zip(['once', 'range', 'periodic'], grades):
+                        row['results_' + kind] = values
+                        row['count_' + kind] = len(values)
+                records.append(row)
+            path = self.directory / 'raw/LongGenBench/Evalution/paper_results' / (model + '.json')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(records, ensure_ascii=False))
+        pd.DataFrame([{'Model': models[0], 'Completion Rate': (200 / 3 + 100 + 200 / 3) / 3,
+            'Accuracy Once': 1 / 3, 'Accuracy Range': .5, 'Accuracy Periodic': 2 / 3, 'Average Accuracy': .5}]).to_csv(
+            self.directory / 'raw/LongGenBench/Evalution/paper_results/paper_results.csv', index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['MorphKV']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_constraint_identity_complete_outputs_and_ungraded_generations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _morphkv
+        self.assertEqual(_morphkv(self.directory, self.frames, self.metadata), dict(
+            source_responses=13, source_subjects=2, source_items=7, source_traces=13, source_files=2,
+            source_declared_constraints=16, source_absent_block_constraints=3, source_native_attempts=5,
+            source_summary_rows=1, source_bank_rows=3, source_generation_tasks=3,
+            source_graded_observations=8, source_ungraded_observations=5, source_successes=4))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_audit_rejects_corrupt_grades_links_constraints_and_traces(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _morphkv, _morphkv_sources
+        source = _morphkv_sources(self.directory)
+        for change in ['grade', 'equal_sum_swap', 'null_to_zero', 'subject', 'item', 'criterion', 'verifier', 'prompt',
+                       'trace', 'position', 'bank_index', 'constraint', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade': frames['responses'].loc[0, 'response'] = 0.
+                elif change == 'equal_sum_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    frames['responses'].loc[0, 'response'] = 0.; frames['responses'].loc[zero, 'response'] = 1.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'
+                    current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'criterion':
+                    data = json.loads(frames['items'].loc[0, 'grading_criterion']); rule = json.loads(data['rule']); rule['requirement'] = 'changed'
+                    data['rule'] = json.dumps(rule); frames['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'verifier':
+                    data = json.loads(frames['items'].loc[0, 'verifier']); data['class'] = 'exact_matcher'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change == 'prompt': frames['items'].loc[0, 'content'] = frames['items'].loc[0, 'content'].split('\n')[0]
+                elif change in ['trace', 'position', 'bank_index', 'constraint']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'trace': data['native_record']['output_blocks'][1] = data['native_record']['output_blocks'][1][:16000]
+                    elif change == 'position': data['source_row'] += 1
+                    elif change == 'bank_index': data['bank_row'] += 1
+                    else: data['block_id'] = '3'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'another run'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _morphkv(self.directory, frames, self.metadata, source)
+
+    def test_judgment_for_absent_block_cannot_be_silently_discarded(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/LongGenBench/Evalution/paper_results/Llama_1000_snapkv.json'
+        records = json.loads(path.read_text()); records[0]['results_once']['3'] = 'no'; path.write_text(json.dumps(records))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'matching generated-block constraint'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+    def test_bank_grading_changes_require_review(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/LongGenBench/Dataset/Dataset_short.json'
+        bank = json.loads(path.read_text()); bank[0]['checks_once']['1'] = 'different requirement'; path.write_text(json.dumps(bank))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'original bank definition'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()
