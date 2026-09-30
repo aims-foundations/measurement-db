@@ -24099,6 +24099,116 @@ def _real_pocqi(directory, tables, metadata, source=None):
         **source['counts'], **counts)
 
 
+def _visual_riddles_sources(directory):
+    import ast
+    import csv
+    import hashlib
+    raw = directory / 'raw/release/test'
+    with (raw / 'metadata.csv').open(newline='') as stream:
+        riddles = list(csv.DictReader(stream))
+    bank, items, native, models, assets, counts = {}, {}, {}, set(), {}, Counter()
+    for position, riddle in enumerate(riddles):
+        image_id = riddle['image_id']
+        _check(image_id not in bank, True, 'Visual Riddles unique source image IDs')
+        bank[image_id] = riddle
+        path = 'release/test/' + riddle['file_name']
+        data = (directory / 'raw' / path).read_bytes()
+        assets[path] = dict(size=len(data), sha256=hashlib.sha256(data).hexdigest())
+        for entry, answer in enumerate(ast.literal_eval(riddle['model_rated_answers-open_ended'])):
+            if answer['type'] == 'human':
+                counts['source_human_responses'] += 1
+                continue
+            kind = answer['type']
+            _check(kind in ['LVLM', 'human-caption_LLM', 'gemini-1.5-pro-caption_LLM'], True, 'Visual Riddles known native pipeline')
+            mode = 'human_caption' if kind == 'human-caption_LLM' else 'image'
+            item = image_id, mode
+            items[item] = riddle
+            model = answer['model_name'], kind
+            models.add(model)
+            grade = answer.get('human_rating')
+            _check(grade is None or type(grade) is bool, True, 'Visual Riddles original boolean or missing grade')
+            native[position, entry] = dict(item=item, model=model, answer=answer, grade=None if grade is None else float(grade))
+            counts['source_ungraded' if grade is None else 'source_successes' if grade else 'source_failures'] += 1
+            counts[{'LVLM': 'source_direct_responses', 'human-caption_LLM': 'source_human_caption_responses',
+                'gemini-1.5-pro-caption_LLM': 'source_generated_caption_responses'}[kind]] += 1
+    return dict(bank=bank, items=items, native=native, models=models, assets=assets, counts=dict(counts))
+
+
+def _visual_riddles(directory, tables, metadata, source=None):
+    import hashlib
+    source = _visual_riddles_sources(directory) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model'], features['source_type']
+        _check(features, dict(source_model=model[0], source_type=model[1],
+            input_pipeline=metadata['build']['parameters']['pipelines'][model[1]]), 'Visual Riddles correct evaluated pipeline')
+        _check(row.display_name, 'Visual Riddles / ' + ' / '.join(model), 'Visual Riddles literal model and pipeline label')
+        _check(row.harness, 'Visual Riddles open-ended human-rated evaluation', 'Visual Riddles original evaluation design')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'Visual Riddles no inferred setting: ' + field)
+        subjects[row.subject_id] = model
+        seen_models[model] += 1
+    _check(seen_models, Counter({key: 1 for key in source['models']}), 'Visual Riddles all separate evaluated pipelines')
+    asset_rows = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(asset_rows), len(tables['assets']), 'Visual Riddles unique image assets')
+    asset_digests = {key: dict(size=len(row['data']), sha256=hashlib.sha256(bytes(row['data'])).hexdigest())
+        for key, row in asset_rows.items()}
+    items, seen_items, used_assets = {}, Counter(), set()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        item = features['image_id'], features['input_mode']
+        riddle = source['items'][item]
+        _check(features, dict(image_id=item[0], input_mode=item[1], category=riddle['category'],
+            difficulty_level_index=riddle['difficulty_level_index']), 'Visual Riddles original image and task attributes')
+        _check(row.raw_item_id, ':'.join(item), 'Visual Riddles stimulus-specific source alias')
+        if item[1] == 'human_caption':
+            _check(json.loads(row.content), dict(question=riddle['question'], human_caption=riddle['human-caption']),
+                'Visual Riddles unchanged human-caption input without injected answers')
+        else:
+            _check(row.content, riddle['question'], 'Visual Riddles exact image question without injected hints')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=riddle['ground_truth_answer'],
+            rule=metadata['grading']['rule']), 'Visual Riddles original reference answer and human correctness rule')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], verifier['judged_by']), ('judge', 'human'), 'Visual Riddles human rather than automatic ratings')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['human'], 'Visual Riddles released majority judgment')
+        links = json.loads(row.asset_manifest)
+        _check(len(links), 1, 'Visual Riddles exactly one original image association')
+        link = links[0]
+        path = 'release/test/' + riddle['file_name']
+        _check((link['path'], link['role'], link['media_type']),
+            (path, 'source' if item[1] == 'human_caption' else 'input', 'image/jpeg'), 'Visual Riddles correct image and input role')
+        _check(asset_digests[link['asset_id']], source['assets'][path], 'Visual Riddles every original image byte')
+        used_assets.add(link['asset_id'])
+        items[row.item_id] = item
+        seen_items[item] += 1
+    _check(seen_items, Counter({key: 1 for key in source['items']}), 'Visual Riddles no merging of different stimuli')
+    _check(used_assets, set(asset_rows), 'Visual Riddles all and only associated image assets')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Visual Riddles unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['source_entry']
+        original = source['native'][key]
+        _check(trace, dict(source_file='release/test/metadata.csv', source_row=key[0], source_entry=key[1],
+            image_id=original['item'][0], native_record=original['answer']), 'Visual Riddles complete native answer and original positions')
+        _check(subjects[row.subject_id], original['model'], 'Visual Riddles correct model and caption pipeline association')
+        _check(items[row.item_id], original['item'], 'Visual Riddles correct image or human-caption stimulus')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'Visual Riddles unchanged human grade')
+        _check(row.trial, 1, 'Visual Riddles one published answer per pipeline and riddle')
+        _check(row.test_condition, 'source_type=' + original['model'][1], 'Visual Riddles original response condition')
+        _check(pd.isna(row.interactors), True, 'Visual Riddles no fabricated interaction data')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Visual Riddles every released AI response exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Visual Riddles every full trace linked')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_riddles=len(source['bank']), source_assets=len(asset_rows),
+        source_caption_items=sum(key[1] == 'human_caption' for key in source['items']),
+        **{key: source['counts'].get(key, 0) for key in ['source_human_responses', 'source_direct_responses',
+            'source_human_caption_responses', 'source_generated_caption_responses', 'source_successes', 'source_failures', 'source_ungraded']})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24116,6 +24226,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'visual_riddles':
+        return _visual_riddles(directory, tables, metadata)
     if directory.name == 'real_pocqi':
         return _real_pocqi(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,

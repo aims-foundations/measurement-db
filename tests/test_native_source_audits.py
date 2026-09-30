@@ -2033,5 +2033,126 @@ class RealPOCQiNativeAuditTests(unittest.TestCase):
                 '--output', str(self.directory.parent / 'invalid')])
 
 
+class VisualRiddlesNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from PIL import Image
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'visual_riddles'
+        raw = self.directory / 'raw/release/test'
+        raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/visual_riddles'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        records = []
+        for image_id, color, grade in [('image-a', 'red', True), ('image-b', 'blue', None)]:
+            Image.new('RGB', (2, 2), color=color).save(raw / (image_id + '.jpg'))
+            answers = [dict(type='LVLM', model_name='same-model', human_rating=grade,
+                model_answer='  A complete answer 完整 ' * 2000),
+                dict(type='gemini-1.5-pro-caption_LLM', model_name='same-model', human_rating=False, model_answer='Different pipeline'),
+                dict(type='human', model_name='human_1', human_rating=True, model_answer='Human response')]
+            if image_id == 'image-a':
+                answers.append(dict(type='human-caption_LLM', model_name='same-model', human_rating=True, model_answer='Caption answer'))
+            records.append(dict(file_name=image_id + '.jpg', image_id=image_id, question='Same question for different images',
+                ground_truth_answer='Reference for ' + image_id, category='World knowledge', difficulty_level_index='2',
+                **{'human-caption': '  Original human caption 完整 ' + image_id + '  ',
+                   'model_rated_answers-open_ended': repr(answers)}))
+        pd.DataFrame(records).to_csv(raw / 'metadata.csv', index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['VisualRiddles']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_images_captions_pipelines_full_answers_and_missing_grades(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _visual_riddles
+        self.assertEqual(_visual_riddles(self.directory, self.frames, self.metadata), dict(source_responses=5,
+            source_subjects=3, source_items=3, source_traces=5, source_riddles=2, source_assets=2,
+            source_caption_items=1, source_human_responses=2, source_direct_responses=2,
+            source_human_caption_responses=1, source_generated_caption_responses=2,
+            source_successes=2, source_failures=2, source_ungraded=1))
+
+    def test_audit_rejects_corrupt_grades_inputs_images_and_source_associations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _visual_riddles, _visual_riddles_sources
+        source = _visual_riddles_sources(self.directory)
+        for change in ['grade_swap', 'null_to_zero', 'subject', 'item', 'question', 'caption', 'reference', 'verifier',
+                       'image', 'image_link', 'role', 'answer', 'position', 'entry', 'condition', 'trial',
+                       'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'question': frames['items'].loc[0, 'content'] = 'Another question'
+                elif change == 'caption':
+                    index = frames['items'].index[frames['items'].raw_item_id.str.endswith(':human_caption')][0]
+                    content = json.loads(frames['items'].loc[index, 'content']); content['human_caption'] = 'Wrong caption'
+                    frames['items'].loc[index, 'content'] = json.dumps(content)
+                elif change == 'reference':
+                    criterion = json.loads(frames['items'].loc[0, 'grading_criterion']); criterion['reference_answer'] = 'Wrong reference'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(criterion)
+                elif change == 'verifier':
+                    verifier = json.loads(frames['items'].loc[0, 'verifier']); verifier['judged_by'] = 'llm'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(verifier)
+                elif change == 'image': frames['assets'].loc[0, 'data'] = bytes(frames['assets'].loc[0, 'data']) + b'corruption'
+                elif change in ['image_link', 'role']:
+                    links = json.loads(frames['items'].loc[0, 'asset_manifest'])
+                    if change == 'role': links[0]['role'] = 'source'
+                    else: links[0]['asset_id'] = frames['assets'].loc[frames['assets'].asset_id.ne(links[0]['asset_id']), 'asset_id'].iloc[0]
+                    frames['items'].loc[0, 'asset_manifest'] = json.dumps(links)
+                elif change in ['answer', 'position', 'entry']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'answer': data['native_record']['model_answer'] = data['native_record']['model_answer'][:12000]
+                    elif change == 'position': data['source_row'] += 1
+                    else: data['source_entry'] += 1
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'Other protocol'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _visual_riddles(self.directory, frames, self.metadata, source)
+
+    def test_nonboolean_source_grade_is_not_coerced_to_success(self):
+        import ast
+        import contextlib
+        import io
+        path = self.directory / 'raw/release/test/metadata.csv'
+        table = pd.read_csv(path, keep_default_na=False)
+        answers = ast.literal_eval(table.loc[0, 'model_rated_answers-open_ended']); answers[0]['human_rating'] = 'false'
+        table.loc[0, 'model_rated_answers-open_ended'] = repr(answers); table.to_csv(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'must be boolean'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+    def test_unknown_source_pipeline_cannot_be_silently_dropped(self):
+        import ast
+        import contextlib
+        import io
+        path = self.directory / 'raw/release/test/metadata.csv'
+        table = pd.read_csv(path, keep_default_na=False)
+        answers = ast.literal_eval(table.loc[0, 'model_rated_answers-open_ended']); answers[0]['type'] = 'unknown'
+        table.loc[0, 'model_rated_answers-open_ended'] = repr(answers); table.to_csv(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Unrecognized released answer type'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

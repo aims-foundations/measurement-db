@@ -1,0 +1,133 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3186
+    logical_sha256: 4fb978297ebc1d57117ef5f13c6843130a9f4d8129255f20f9997ad5d9e5eaa6
+  subjects:
+    rows: 8
+    logical_sha256: 89689cf1e29e92622a2ef1fa40b0367ff4a60985b43f3232956cd95cfbdb7639
+  responses:
+    rows: 3186
+    logical_sha256: 42ca4cd77851bd70513dc3a1551bc4027d1543da19556afeabdbcb32a3c23168
+  assets:
+    rows: 400
+    logical_sha256: 5c1ae11288a4edbeb144a1ba55689a24f9a36efe992a692b828555b8b97b1434
+  items:
+    rows: 793
+    logical_sha256: 32a0e75cb63081a19415d430962008d1718e368e0a8fb8a4108a4fb57ffc8a9a
+  benchmarks:
+    rows: 1
+    logical_sha256: 19ef30aa3642ecfd6bb794dc9f42757ec9fa7ac9d9d8a015e4703c8e27d1f0e5
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 3186
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 793
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 3186
+  source_riddles:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 400
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 400
+  source_caption_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 393
+  source_human_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 1200
+  source_direct_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 2400
+  source_human_caption_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 393
+  source_generated_caption_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 393
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 868
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 2318
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/visual-riddles/visual_riddles/tree/f944390e356887f91be078458ec492adb23a4e2a
+    locator: 'test/metadata.csv: model_rated_answers-open_ended, human-caption and file_name; original image files.'
+    scope: All released human-rated AI answers, separated by image/caption stimulus and model/pipeline; human answers
+      excluded.
+    expected: 0
