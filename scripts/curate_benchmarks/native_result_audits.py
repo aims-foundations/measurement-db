@@ -25415,11 +25415,110 @@ def _prism(directory, tables, metadata, source=None):
         source_empty_output_markers=sum(row['utterance']['model_response'] == 'EMPTY STRING' for row in source['native'].values()))
 
 
+def _pku_saferlhf_sources(directory, metadata):
+    """Read native comparison records and hashes independently of the table projection."""
+    import hashlib
+    import unicodedata
+
+    native, prompts, models, outputs = {}, {}, set(), {}
+    counts = Counter(source_safe=0, source_unsafe=0, source_empty_outputs=0, source_category_disagreements=0)
+    categories = set(metadata['grading']['verifiers']['safety']['harm_categories'])
+    for path in sorted((directory / 'raw').glob(metadata['build']['parameters']['layout']['results'])):
+        name = str(path.relative_to(directory / 'raw'))
+        with path.open() as stream:
+            for index, line in enumerate(stream):
+                row = json.loads(line)
+                _check(isinstance(row['prompt'], str) and bool(row['prompt'].strip()), True, 'PKU-SafeRLHF native prompt')
+                native[name, index] = row
+                normalized = unicodedata.normalize('NFC', row['prompt']).strip()
+                prompts.setdefault(normalized, (name + ':' + str(index), row['prompt']))
+                for side in [0, 1]:
+                    model, text, safe = row[f'response_{side}_source'], row[f'response_{side}'], row[f'is_response_{side}_safe']
+                    _check(isinstance(model, str) and bool(model) and isinstance(text, str), True, 'PKU-SafeRLHF native model and output')
+                    _check(type(safe) is bool, True, 'PKU-SafeRLHF original boolean grade')
+                    _check(row[f'response_{side}_sha256'], hashlib.sha256((row['prompt'] + text).encode()).hexdigest(),
+                           'PKU-SafeRLHF hash covers prompt concatenated with output')
+                    harm = row[f'response_{side}_harm_category']
+                    _check(set(harm), categories, 'PKU-SafeRLHF complete original harm categories')
+                    _check(all(type(value) is bool for value in harm.values()), True, 'PKU-SafeRLHF category booleans')
+                    _check(row[f'response_{side}_severity_level'] in [0, 1, 2, 3], True, 'PKU-SafeRLHF original severity domain')
+                    _check(row['better_response_id'] in [0, 1] and row['safer_response_id'] in [0, 1], True,
+                           'PKU-SafeRLHF original pairwise preferences')
+                    counts['source_safe' if safe else 'source_unsafe'] += 1
+                    counts['source_empty_outputs'] += text == ''
+                    counts['source_category_disagreements'] += safe != (not any(harm.values()))
+                    key = model, row['prompt'], text
+                    _check(outputs.setdefault(key, safe), safe, 'PKU-SafeRLHF repeated published output has consistent safety')
+                    models.add(model)
+    _check(bool(native), True, 'PKU-SafeRLHF source records are present')
+    counts['source_prompt_variants'] = len({row['prompt'] for row in native.values()})
+    return dict(native=native, prompts=prompts, models=models, distinct_outputs=len(outputs), counts=dict(counts))
+
+
+def _pku_saferlhf(directory, tables, metadata, source=None):
+    """Reconcile all source-side labels, full texts, annotations and associations."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    import unicodedata
+
+    source = _pku_saferlhf_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_label']
+        _check(features, dict(source_model_label=model), 'PKU-SafeRLHF original model attribution')
+        _check((row.display_name, row.harness), (model, labels['harness']), 'PKU-SafeRLHF generating model and collection protocol')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'PKU-SafeRLHF unknown historical settings stay unknown')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({model: 1 for model in source['models']}), 'PKU-SafeRLHF exact generating-model roster')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        normalized = unicodedata.normalize('NFC', row.content).strip()
+        _check((row.raw_item_id, row.content), source['prompts'][normalized], 'PKU-SafeRLHF first complete prompt under shared item normalization')
+        _check(_features(row.item_features), dict(input_scope=labels['input_scope']), 'PKU-SafeRLHF no output or safety leakage into items')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+               'PKU-SafeRLHF safety criterion without an invented gold answer')
+        _check(json.loads(row.verifier), dict(**{'class': 'judge'}, judge=labels['judge'], judged_by='human',
+            spec=json.dumps(metadata['grading']['verifiers']['safety'], sort_keys=True)),
+            'PKU-SafeRLHF original assisted-human annotation protocol')
+        items[row.item_id] = normalized
+        seen_items[normalized] += 1
+    _check(seen_items, Counter({prompt: 1 for prompt in source['prompts']}), 'PKU-SafeRLHF complete distinct prompt coverage')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'PKU-SafeRLHF binary safety interpretation')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'PKU-SafeRLHF unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        name, index, side = trace['source_file'], trace['source_row'], trace['side']
+        _check(side in [0, 1], True, 'PKU-SafeRLHF original response side')
+        original = source['native'][name, index]
+        _check(subjects[row.subject_id], original[f'response_{side}_source'], 'PKU-SafeRLHF correct model for each response')
+        _check(items[row.item_id], unicodedata.normalize('NFC', original['prompt']).strip(), 'PKU-SafeRLHF correct canonical prompt for each response')
+        _check(row.response, float(original[f'is_response_{side}_safe']), 'PKU-SafeRLHF released label, not recomputed category grade')
+        _check(row.trial, 1, 'PKU-SafeRLHF one original side per source occasion')
+        _check(row.test_condition, name + ':' + str(index) + ':' + str(side), 'PKU-SafeRLHF source occasion without invented independent reruns')
+        _check(pd.isna(row.interactors), True, 'PKU-SafeRLHF no invented individual rater')
+        _check(trace, dict(source_file=name, source_row=index, side=side, record=original),
+               'PKU-SafeRLHF full native comparison including empty text, annotations and hashes')
+        seen[name, index, side] += 1
+    _check(seen, Counter({(name, index, side): 1 for name, index in source['native'] for side in [0, 1]}),
+           'PKU-SafeRLHF every original response side exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'PKU-SafeRLHF complete trace coverage')
+    return dict(source_pairs=len(source['native']), source_subjects=len(subjects), source_items=len(items),
+        source_responses=sum(seen.values()), source_traces=len(traces), source_distinct_outputs=source['distinct_outputs'], **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'pku_saferlhf':
+        return _pku_saferlhf(directory, tables, metadata)
     if directory.name == 'prism':
         return _prism(directory, tables, metadata)
     if directory.name == 'preference_dissection':

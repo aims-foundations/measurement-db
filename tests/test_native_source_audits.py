@@ -2393,6 +2393,127 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import copy
+        import hashlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'pku_saferlhf'
+        folder = ROOT / 'benchmarks/pku_saferlhf'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.raw_file = self.directory / 'raw/data/fixture/train.jsonl'
+        self.raw_file.parent.mkdir(parents=True)
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        categories = self.metadata['grading']['verifiers']['safety']['harm_categories']
+        self.native = []
+        for index, prompt in enumerate(['Complete prompt 完整. ' * 1000, 'Another prompt']):
+            row = dict(prompt=prompt, prompt_source='released prompt pool', better_response_id=1, safer_response_id=0)
+            for side in [0, 1]:
+                text = ('Full original output 完整. ' * 1000) if index == 0 else ('Output' if side == 0 else '')
+                row.update({f'response_{side}': text, f'response_{side}_source': 'model-' + str(side),
+                    f'is_response_{side}_safe': side == 0,
+                    f'response_{side}_harm_category': {name: (side == 1 or index == 1) and i == 0 for i, name in enumerate(categories)},
+                    f'response_{side}_severity_level': side * 3,
+                    f'response_{side}_sha256': hashlib.sha256((prompt + text).encode()).hexdigest()})
+            self.native.append(row)
+        self.native.append(copy.deepcopy(self.native[0]))
+        variant = copy.deepcopy(self.native[0])
+        variant['prompt'] = variant['prompt'] + ' \n'
+        for side in [0, 1]:
+            variant[f'response_{side}_sha256'] = hashlib.sha256((variant['prompt'] + variant[f'response_{side}']).encode()).hexdigest()
+        self.native.append(variant)
+        self.raw_file.write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in self.native))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['PKUSafeRLHF']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_full_outputs_empty_text_repeated_records_and_original_disagreement(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pku_saferlhf
+        self.assertEqual(_pku_saferlhf(self.directory, self.frames, self.metadata), dict(
+            source_pairs=4, source_subjects=2, source_items=2, source_responses=8, source_traces=8,
+            source_distinct_outputs=6, source_safe=4, source_unsafe=4, source_empty_outputs=1,
+            source_category_disagreements=1, source_prompt_variants=3))
+        self.assertGreater(self.frames['items'].content.str.len().max(), 16000)
+        self.assertTrue(self.frames['responses'].trial.eq(1).all())
+        self.assertEqual(self.frames['responses'].test_condition.nunique(), 8)
+
+    def test_nonboolean_grade_and_wrong_hash_are_rejected(self):
+        import copy
+        import hashlib
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pku_saferlhf_sources
+        for value in [None, 1, 'true']:
+            with self.subTest(value=value):
+                rows = copy.deepcopy(self.native)
+                rows[0]['is_response_0_safe'] = value
+                self.raw_file.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+                with self.assertRaises(ValueError):
+                    _pku_saferlhf_sources(self.directory, self.metadata)
+                with self.assertRaisesRegex(ValueError, 'original boolean'):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+        rows = copy.deepcopy(self.native)
+        rows[0]['response_0_sha256'] = hashlib.sha256(rows[0]['response_0'].encode()).hexdigest()
+        self.raw_file.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+        with self.assertRaisesRegex(ValueError, 'hash covers prompt'):
+            _pku_saferlhf_sources(self.directory, self.metadata)
+
+    def test_wrong_associations_grades_and_truncated_or_rewritten_source_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _pku_saferlhf, _pku_saferlhf_sources
+        source = _pku_saferlhf_sources(self.directory, self.metadata)
+        changes = ['grade', 'same_sum_swap', 'subject', 'item', 'prompt', 'rule', 'verifier', 'alias', 'feature',
+            'trial', 'condition', 'interactors', 'drop', 'duplicate', 'model', 'configuration', 'extra_subject',
+            'scale', 'trace_text', 'empty_text', 'category', 'safety_flag', 'hash', 'source_file', 'source_row', 'side']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'grade': responses.loc[0, 'response'] = .5
+                elif change == 'same_sum_swap':
+                    indices = [responses.index[responses.response.eq(value)][0] for value in [0, 1]]
+                    responses.loc[indices, 'response'] = [1., 0.]
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'human-rater'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(key for key in items.item_id if key != responses.loc[0, 'item_id'])
+                elif change == 'prompt': items.loc[0, 'content'] = items.loc[0, 'content'][:16000]
+                elif change == 'rule': items.loc[0, 'grading_criterion'] = json.dumps(dict(rule='Factual correctness'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(spec='{}'))
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = 'different-source-position'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'safe=true'
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'independent rerun'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented-rater'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'GPT-4'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = 'source_model_label=wrong-model'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=100))
+                else:
+                    index = 0
+                    if change == 'empty_text':
+                        index = next(i for i, value in enumerate(traces.trace) if json.loads(value)['record']['response_1'] == '')
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_text': value['record']['response_0'] = value['record']['response_0'][:16000]
+                    elif change == 'empty_text': value['record']['response_1'] = 'Invented output'
+                    elif change == 'category': value['record']['response_0_harm_category'] = {}
+                    elif change == 'safety_flag': value['record']['is_response_0_safe'] = False
+                    elif change == 'hash': value['record']['response_0_sha256'] = '0' * 64
+                    elif change == 'source_file': value['source_file'] = 'other.jsonl'
+                    elif change == 'source_row': value['source_row'] = 99
+                    else: value['side'] = 1 - value['side']
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _pku_saferlhf(self.directory, frames, self.metadata, source)
+
+
 class PRISMNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib
