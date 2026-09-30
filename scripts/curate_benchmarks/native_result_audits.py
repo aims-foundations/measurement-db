@@ -22961,12 +22961,135 @@ def _perfcodebench(directory, tables, metadata, source=None):
         source_tasks_with_interface=sum(bool(task["interface"]) for task in source["tasks"].values()))
 
 
+
+def _osworld_sources(directory, metadata):
+    """Read native files by directory coordinates independently of pandas pivots."""
+    import math
+    import re
+
+    parameters = metadata["build"]["parameters"]
+    raw = directory / "raw"
+    tasks = {}
+    for path in (raw / parameters["paths"]["tasks"]).rglob("*.json"):
+        key = str(path.relative_to(raw / parameters["paths"]["tasks"])).removesuffix(".json")
+        record = json.loads(path.read_bytes())
+        _check(record["id"], key.rsplit("/", 1)[-1], "OSWorld original task ID")
+        tasks[key] = record
+    native, settings = {}, {}
+    for path in sorted((raw / parameters["paths"]["results"]).rglob("*")):
+        if not path.is_file():
+            continue
+        relative = str(path.relative_to(raw / parameters["paths"]["results"]))
+        relative = re.sub(r"_x([0-9a-f]+)_", lambda match: chr(int(match[1], 16)), relative)
+        archive, member = relative.split("/", 1)
+        parts = member.split("/")
+        if parts[-1] == "args.json":
+            record = json.loads(path.read_bytes())
+            prefix = member.removesuffix("args.json")
+            _check((archive, prefix) not in settings, True, "OSWorld unique run configuration")
+            settings[archive, prefix] = {key: record[key] for key in parameters["settings"] if key in record}
+        if len(parts) < 3 or parts[-1] not in {"result.txt", "traj.jsonl", "runtime.log", "instruction.txt"}:
+            continue
+        task = "/".join(parts[-3:-1])
+        _check(task in tasks, True, "OSWorld attempt has a released task definition")
+        prefix = "/".join(parts[:-3]) + "/" if parts[:-3] else ""
+        key = archive, prefix, task
+        original = native.setdefault(key, {})
+        _check(parts[-1] not in original, True, "OSWorld one original file per archive/run/task/type")
+        original[parts[-1]] = path.read_bytes().decode("utf-8")
+    attempts = {}
+    for key, files in native.items():
+        if "result.txt" not in files and not files.get("traj.jsonl") and not files.get("runtime.log"):
+            continue
+        grade = float(files["result.txt"]) if "result.txt" in files else None
+        if grade is not None:
+            _check(math.isfinite(grade) and 0 <= grade <= 1, True, "OSWorld finite partial-credit score")
+        match = re.search(r"(?:^|/)turn_([1-9][0-9]*)/$", key[1])
+        attempts[key] = dict(files=files, grade=grade, trial=int(match[1]) if match else 1,
+            configuration=settings.get(key[:2], {}), has_trace=bool(files.get("traj.jsonl") or files.get("runtime.log")))
+    return dict(tasks=tasks, native=attempts)
+
+
+def _osworld(directory, tables, metadata, source=None):
+    source = _osworld_sources(directory, metadata) if source is None else source
+    parameters = metadata["build"]["parameters"]
+    subjects, configurations = {}, Counter()
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        archive = features["source_archive"]
+        configuration = json.loads(features["recorded_configuration"])
+        _check(set(features), {"source_archive", "recorded_configuration", "configuration_scope"}, "OSWorld limited recorded subject metadata")
+        _check(features["configuration_scope"], parameters["labels"]["configuration_scope"], "OSWorld archival configuration scope")
+        _check(row.display_name, parameters["labels"]["subject_prefix"] + archive.removesuffix(".zip"), "OSWorld original archive identity")
+        _check(row.harness, "OSWorld", "OSWorld recorded harness family")
+        for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "OSWorld no invented historical model setting: " + field)
+        subjects[row.subject_id] = archive, configuration
+        configurations[archive, json.dumps(configuration, sort_keys=True)] += 1
+    expected_configurations = {(key[0], json.dumps(original["configuration"], sort_keys=True)) for key, original in source["native"].items()}
+    _check(configurations, Counter({key: 1 for key in expected_configurations}), "OSWorld exact original configurations without merging archives")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, checked_items, expected_trace_ids = Counter(), set(), set()
+    for row in tables["responses"].itertuples():
+        item = items[row.item_id]
+        condition = json.loads(row.test_condition)
+        _check(set(condition), {"source_archive", "run_prefix"}, "OSWorld original run locator")
+        key = condition["source_archive"], condition["run_prefix"], item["raw_item_id"]
+        _check(key in source["native"], True, "OSWorld no fabricated task attempts")
+        original = source["native"][key]
+        _check(subjects[row.subject_id], (key[0], original["configuration"]), "OSWorld exact run-to-subject association")
+        _check(None if pd.isna(row.response) else row.response, original["grade"], "OSWorld exact score or explicit missing grade")
+        _check(row.trial, original["trial"], "OSWorld trial follows native turn ID, not file-list order")
+        _check(pd.isna(row.interactors), True, "OSWorld no invented interactors")
+        if original["has_trace"]:
+            expected_trace_ids.add(row.response_id)
+            _check(row.response_id in traces, True, "OSWorld every available original execution trace")
+            _check(json.loads(traces[row.response_id]), dict(source_archive=key[0], run_prefix=key[1], task=key[2],
+                native_files=original["files"], media_capture=parameters["labels"]["media_capture"]),
+                "OSWorld complete native text and exact grade/trace association")
+        else:
+            _check(row.response_id not in traces, True, "OSWorld absent execution traces remain absent")
+        if row.item_id not in checked_items:
+            task = source["tasks"][key[2]]
+            _check(item["content"], original["files"].get("instruction.txt", task["instruction"]), "OSWorld complete recorded instruction or provider fallback")
+            _check(_features(item["item_features"]), dict(domain=key[2].split("/")[0], snapshot=task["snapshot"],
+                definition_provenance=parameters["labels"]["definition_provenance"]), "OSWorld explicit task-definition scope")
+            criterion = json.loads(item["grading_criterion"])
+            _check(json.loads(criterion["rule"]), dict(interpretation=metadata["grading"]["rule"], task_definition=task),
+                "OSWorld complete original setup and evaluator specification")
+            _check(criterion.get("reference_answer"), None, "OSWorld no invented reference solution")
+            _check(json.loads(item["verifier"])["class"], "exact_matcher", "OSWorld recorded task evaluator")
+            _check(json.loads(json.loads(item["verifier"])["spec"]), metadata["grading"]["verifiers"]["published_result"],
+                "OSWorld grading source provenance")
+            _check(pd.isna(item["asset_manifest"]), True, "OSWorld source environments/media not represented as captured assets")
+        checked_items.add(row.item_id)
+        _check(item["content"], original["files"].get("instruction.txt", source["tasks"][key[2]]["instruction"]),
+               "OSWorld response uses its own historical instruction variant")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source["native"]}), "OSWorld every native task attempt exactly once")
+    _check(checked_items, set(items), "OSWorld no unused canonical task records")
+    _check(set(traces), expected_trace_ids, "OSWorld exact trace coverage")
+    _check(json.loads(tables["benchmarks"].iloc[0].response_scale), metadata["benchmark"]["response_scale"], "OSWorld preserved continuous response scale")
+    originals = list(source["native"].values())
+    return dict(source_responses=len(seen), source_graded=sum(row["grade"] is not None for row in originals),
+        source_ungraded=sum(row["grade"] is None for row in originals), source_items=len(items), source_subjects=len(subjects),
+        source_traces=len(traces), source_archives=len({key[0] for key in seen}),
+        source_partial_credit=sum(row["grade"] is not None and 0 < row["grade"] < 1 for row in originals),
+        source_nonempty_trajectories=sum(bool(row["files"].get("traj.jsonl")) for row in originals),
+        source_nonempty_runtime_logs=sum(bool(row["files"].get("runtime.log")) for row in originals),
+        source_task_ids=len({key[2] for key in seen}),
+        source_recorded_instructions=sum("instruction.txt" in row["files"] for row in originals),
+        source_changed_instructions=sum("instruction.txt" in row["files"] and row["files"]["instruction.txt"] != source["tasks"][key[2]]["instruction"]
+                                        for key, row in source["native"].items()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

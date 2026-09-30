@@ -929,6 +929,137 @@ class PerfCodeBenchAuditTests(unittest.TestCase):
                     _perfcodebench(self.directory, tables, self.metadata, self.source)
 
 
+class OSWorldAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(self.temporary.name) / "osworld"
+        self.directory.mkdir()
+        folder = ROOT / "benchmarks/osworld"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / "raw"
+        tasks = ["11111111-1111-1111-1111-111111111111", "22222222-2222-2222-2222-222222222222"]
+        for index, task in enumerate(tasks):
+            path = raw / "tasks/chrome" / (task + ".json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(dict(id=task, snapshot="chrome", instruction=f"Current task {index}",
+                config=[dict(command="original setup; preserve=exactly")], related_apps=["chrome"],
+                evaluator=dict(func="original_check", expected=index))))
+        self.long_trace = '{"response":"' + "原始轨迹" * 5000 + '"}\n'
+        self.records = [
+            ("release.zip", "agent:desktop/turn_2/", tasks[0], "1\n", "{malformed original JSONL\n", "Historical wording"),
+            ("release.zip", "agent:desktop/turn_1/", tasks[0], "0.028626288575876013\n", self.long_trace, None),
+            ("release.zip", "agent:desktop/turn_1/", tasks[1], None, None, None),
+            ("results_only.zip", "", tasks[0], "0\n", None, None),
+        ]
+        for archive, prefix, task, score, trace, instruction in self.records:
+            safe_prefix = prefix.replace(":", "_x3a_")
+            folder_path = raw / "native" / archive / safe_prefix / "chrome" / task
+            folder_path.mkdir(parents=True, exist_ok=True)
+            if score is not None:
+                (folder_path / "result.txt").write_bytes(score.encode())
+            if trace is not None:
+                (folder_path / "traj.jsonl").write_bytes(trace.encode())
+            if archive == "release.zip":
+                (folder_path / "runtime.log").write_bytes(b"Original runtime log.\n\n")
+                args = raw / "native" / archive / safe_prefix / "args.json"
+                args.write_text(json.dumps(dict(model="recorded-model", temperature=0.4, stop_token=";=",
+                    client_password="not subject metadata", model_api_key="do-not-copy-api-value")))
+            if instruction is not None:
+                (folder_path / "instruction.txt").write_bytes(instruction.encode())
+        # A definition or empty log alone does not establish an attempted run.
+        empty = raw / "native/results_only.zip/chrome" / tasks[1]
+        empty.mkdir(parents=True)
+        (empty / "runtime.log").write_bytes(b"")
+        (empty / "instruction.txt").write_bytes(b"Unattempted task")
+        output = self.directory.parent / "tables"
+        builder = runpy.run_path(str(folder / "build.py"))["OSWorld"]
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_original_scores_missing_grades_turns_and_instruction_variants_are_preserved(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _osworld
+        result = _osworld(self.directory, self.frames, self.metadata)
+        self.assertEqual(result, dict(source_responses=4, source_graded=3, source_ungraded=1, source_items=3,
+            source_subjects=2, source_traces=3, source_archives=2, source_partial_credit=1,
+            source_nonempty_trajectories=2, source_nonempty_runtime_logs=3, source_task_ids=2,
+            source_recorded_instructions=1, source_changed_instructions=1))
+        grades = self.frames["responses"].response.dropna().tolist()
+        self.assertIn(float("0.028626288575876013"), grades)
+        original = [json.loads(value)["native_files"].get("traj.jsonl") for value in self.frames["traces"].trace]
+        self.assertIn(self.long_trace, original)
+        self.assertIn("{malformed original JSONL\n", original)
+        self.assertNotIn("do-not-copy-api-value", " ".join(self.frames["subjects"].subject_features_extra))
+
+    def test_native_grades_trace_associations_settings_and_historical_wording_reject_corruption(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _osworld
+        responses = self.frames["responses"]
+        fractional = responses.index[responses.response.between(0, 1, inclusive="neither")][0]
+        missing = responses.index[responses.response.isna()][0]
+        historical = responses.index[responses.trial.eq(2)][0]
+        trace_row = self.frames["traces"].index[self.frames["traces"].response_id.eq(responses.loc[fractional, "response_id"])][0]
+        for change in ["grade", "rounding", "null_to_zero", "clip", "trial", "run", "subject", "item", "historical_wording",
+                       "setup", "verifier", "settings", "drop_ungraded", "duplicate", "missing_trace", "scale"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == "grade":
+                    tables["responses"].loc[[fractional, historical], "response"] = responses.loc[[historical, fractional], "response"].to_numpy()
+                elif change == "rounding":
+                    tables["responses"].loc[fractional, "response"] = pd.to_numeric(pd.Series(["0.028626288575876013"]))[0]
+                elif change == "null_to_zero":
+                    tables["responses"].loc[missing, "response"] = 0.
+                elif change == "clip":
+                    record = json.loads(tables["traces"].loc[trace_row, "trace"])
+                    record["native_files"]["traj.jsonl"] = record["native_files"]["traj.jsonl"][:16000]
+                    tables["traces"].loc[trace_row, "trace"] = json.dumps(record)
+                elif change == "trial":
+                    tables["responses"].loc[historical, "trial"] = 1
+                elif change == "run":
+                    tables["responses"].loc[fractional, "test_condition"] = json.dumps(dict(source_archive="release.zip", run_prefix="agent:desktop/turn_2/"))
+                elif change == "subject":
+                    other = responses.loc[responses.response.eq(0), "subject_id"].iloc[0]
+                    tables["responses"].loc[fractional, "subject_id"] = other
+                elif change == "item":
+                    tables["responses"].loc[fractional, "item_id"] = responses.loc[missing, "item_id"]
+                elif change == "historical_wording":
+                    tables["responses"].loc[historical, "item_id"] = responses.loc[fractional, "item_id"]
+                elif change in {"setup", "verifier"}:
+                    index = tables["items"].index[tables["items"].item_id.eq(responses.loc[fractional, "item_id"])][0]
+                    column = "grading_criterion" if change == "setup" else "verifier"
+                    record = json.loads(tables["items"].loc[index, column])
+                    if change == "setup":
+                        rule = json.loads(record["rule"])
+                        rule["task_definition"]["config"] = []
+                        record["rule"] = json.dumps(rule)
+                    else:
+                        record["spec"] = json.dumps(dict(kind="different grader"))
+                    tables["items"].loc[index, column] = json.dumps(record)
+                elif change == "settings":
+                    index = tables["subjects"].index[tables["subjects"].subject_id.eq(responses.loc[fractional, "subject_id"])][0]
+                    tables["subjects"].loc[index, "subject_features_extra"] = tables["subjects"].loc[index, "subject_features_extra"].replace("0.4", "0.9")
+                elif change == "drop_ungraded":
+                    tables["responses"] = tables["responses"].drop(index=missing)
+                elif change == "duplicate":
+                    tables["responses"] = pd.concat([tables["responses"], tables["responses"].loc[[fractional]]], ignore_index=True)
+                elif change == "missing_trace":
+                    tables["traces"] = tables["traces"].drop(index=trace_row)
+                else:
+                    tables["benchmarks"].loc[0, "response_scale"] = json.dumps(dict(kind="discrete", values=[0, 1]))
+                with self.assertRaises(ValueError):
+                    _osworld(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
