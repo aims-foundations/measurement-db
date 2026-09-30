@@ -234,8 +234,11 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
     base = source["url"].rstrip("/") + "/"
     paths = {}
     for record in records:
+        # Some original manifests list IDs directly rather than wrapping each ID.
+        if type(record) in (str, int):
+            record = {"value": record}
         if not isinstance(record, dict):
-            raise SourceDataError(f"{name}: JSON index records must be objects")
+            raise SourceDataError(f"{name}: JSON index records must be objects or string/integer IDs")
         try:
             relative = selector["path"].format_map(record)
         except KeyError as exc:

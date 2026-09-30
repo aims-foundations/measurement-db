@@ -23084,12 +23084,177 @@ def _osworld(directory, tables, metadata, source=None):
                                         for key, row in source["native"].items()))
 
 
+def _tabarena_sources(directory, metadata):
+    """Read native row locators with CSV/Arrow, independently of pandas joins."""
+    import csv
+    import io
+    import math
+    from zipfile import ZipFile
+    import numpy as np
+    import pyarrow.parquet as pq
+
+    parameters = metadata['build']['parameters']
+    raw = directory / 'raw'
+    inputs = raw / parameters['paths']['inputs']
+    fold, repeat = int(parameters['paths']['fold']), int(parameters['paths']['repeat'])
+    tasks, configurations, native, original_items = {}, {}, {}, {}
+    for method in parameters['methods']:
+        root = raw / parameters['paths']['methods'] / method
+        for record in pq.read_table(root / 'task_metadata.parquet').to_pylist():
+            task = record['tid'], record['did']
+            _check(tasks.get(record['dataset'], task), task, 'TabArena consistent source task IDs')
+            tasks[record['dataset']] = task
+        default = method + parameters['paths']['config_suffix']
+        settings = json.loads((root / 'configs_hyperparameters.json').read_text())[default]
+        for record in pq.read_table(root / 'configs.parquet').to_pylist():
+            if record['fold'] != fold or record['framework'] != default:
+                continue
+            dataset = record['dataset']
+            key = method, dataset
+            _check(key not in configurations, True, 'TabArena unique source configuration')
+            _check(record['tid'], tasks[dataset][0], 'TabArena configuration task ID')
+            configurations[key] = dict(record=record, settings=settings)
+            folder = root / 'model_predictions' / dataset / str(fold)
+            specification = json.loads((folder / 'metadata.json').read_text())
+            _check((specification['dataset'], specification['fold'], specification['dtype']),
+                   (dataset, fold, 'float32'), 'TabArena original array metadata')
+            array = np.fromfile(folder / 'pred-test.dat', dtype='<f4').reshape(specification['pred_test_shape'])
+            prediction = array[specification['models'].index(default)]
+            with ZipFile(folder / 'label-test.csv.zip') as archive:
+                _check(archive.namelist(), ['label-test.csv'], 'TabArena original label member')
+                reader = csv.DictReader(io.StringIO(archive.read('label-test.csv').decode()))
+                target = reader.fieldnames[1]
+                labels = list(reader)
+            _check(len(prediction), len(labels), 'TabArena prediction/label row count')
+            for position, (label, output) in enumerate(zip(labels, prediction, strict=True)):
+                rowid = int(label[''])
+                locator = method, dataset, rowid
+                _check(locator not in native, True, 'TabArena unique native row locator')
+                native[locator] = dict(position=position, prediction=output.tolist(), target=float(label[target]),
+                                       target_name=target, problem_type=record['problem_type'])
+    for dataset, (tid, did) in tasks.items():
+        description = json.loads((inputs / f'data-{did}.json').read_text())['data_set_description']
+        task = json.loads((inputs / f'task-{tid}.json').read_text())['task']
+        declaration = next(value['data_set'] for value in task['input'] if value['name'] == 'source_data')
+        target = description['default_target_attribute']
+        _check((int(declaration['data_set_id']), declaration['target_feature']), (did, target), 'TabArena declared target')
+        with (inputs / f'splits-{tid}.arff').open() as stream:
+            for line in stream:
+                if line.strip().lower() == '@data':
+                    break
+            selected = [int(row[1]) for row in csv.reader(stream) if row and row[0] == 'TEST'
+                        and int(row[2]) == repeat and int(row[3]) == fold]
+        _check(len(set(selected)), len(selected), 'TabArena distinct original test indices')
+        frame = pq.read_table(inputs / f'data-{did}.parquet').take(selected).to_pylist()
+        excluded = {target}
+        for field in ['ignore_attribute', 'row_id_attribute']:
+            if description.get(field):
+                excluded.update(description[field].split(','))
+        for position, (rowid, record) in enumerate(zip(selected, frame, strict=True)):
+            features = {key: None if isinstance(value, float) and math.isnan(value) else value
+                        for key, value in record.items() if key not in excluded}
+            original_items[dataset, rowid] = dict(position=position, content=dict(dataset=dataset, features=features),
+                target=record[target], target_name=target, tid=tid, did=did, description=description)
+    for (method, dataset, rowid), result in native.items():
+        _check(result['position'], original_items[dataset, rowid]['position'], 'TabArena exact native test order')
+        _check(result['target_name'], original_items[dataset, rowid]['target_name'], 'TabArena native label column')
+    return dict(native=native, configurations=configurations, items=original_items, tasks=tasks)
+
+
+def _tabarena(directory, tables, metadata, source=None):
+    import math
+    source = _tabarena_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    fold, repeat = int(parameters['paths']['fold']), int(parameters['paths']['repeat'])
+    subjects, subject_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        attributes = _features(row.subject_features_extra)
+        key = attributes['method'], attributes['training_dataset']
+        _check(key in source['configurations'], True, 'TabArena no unobserved fitted configuration')
+        original = source['configurations'][key]
+        _check(json.loads(attributes['recorded_configuration']), original['settings'], 'TabArena original fit settings')
+        _check(attributes['openml_task_id'], str(original['record']['tid']), 'TabArena task-specific fitted model')
+        _check((attributes['outer_fold'], attributes['outer_repeat']), (str(fold), str(repeat)), 'TabArena original model split')
+        _check(attributes['default_config'], original['record']['framework'], 'TabArena original default model')
+        _check(row.display_name, parameters['labels']['subject_prefix'] + key[0] + ' / ' + key[1], 'TabArena literal model identity')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'TabArena no invented historical setting: ' + field)
+        subjects[row.subject_id] = key
+        subject_seen[key] += 1
+    _check(subject_seen, Counter({key: 1 for key in source['configurations']}), 'TabArena every fitted model exactly once')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'TabArena distinct trace associations')
+    seen, checked, kinds, encodings = Counter(), set(), Counter(), {}
+    for row in tables['responses'].itertuples():
+        item = items[row.item_id]
+        dataset, separator, index = item['raw_item_id'].rpartition('/row')
+        _check(separator, '/row', 'TabArena original row locator')
+        method, model_dataset = subjects[row.subject_id]
+        _check(model_dataset, dataset, 'TabArena fitted model matches target dataset')
+        key = method, dataset, int(index)
+        _check(key in source['native'], True, 'TabArena no fabricated observations')
+        native, original = source['native'][key], source['items'][key[1:]]
+        _check(row.response_id in traces, True, 'TabArena every original output retained')
+        _check(json.loads(traces[row.response_id]), dict(dataset=dataset, original_row_index=int(index),
+            source_position=native['position'], prediction=native['prediction'], released_target=native['target'],
+            problem_type=native['problem_type']), 'TabArena complete original prediction and exact association')
+        if native['problem_type'] == 'regression':
+            # A float64 square is one multiplication. Scalar libm pow(x, 2)
+            # can differ by one ULP and is not the array operation being audited.
+            difference = native['prediction'] - native['target']
+            expected = difference * difference
+            _check(math.isclose(float(original['target']), native['target'], rel_tol=1e-13, abs_tol=1e-13), True,
+                   'TabArena regression target in original input')
+            kind = 'regression'
+        else:
+            value = native['prediction']
+            predicted = int(value > 0.5) if native['problem_type'] == 'binary' else max(range(len(value)), key=value.__getitem__)
+            expected = float(predicted == native['target'])
+            mapping = dataset, str(original['target'])
+            _check(encodings.get(mapping, native['target']), native['target'], 'TabArena consistent original category coding')
+            encodings[mapping] = native['target']
+            kind = 'classification'
+        _check(row.response, expected, 'TabArena exact derived individual-row grade')
+        _check((row.trial, row.test_condition), (1, f'fold={fold};repeat={repeat}'), 'TabArena single observed outer-split response')
+        _check(pd.isna(row.interactors), True, 'TabArena no invented interactors')
+        if row.item_id not in checked:
+            _check(json.loads(item['content']), original['content'], 'TabArena complete untruncated source features without target leakage')
+            attributes = _features(item['item_features'])
+            _check((attributes['dataset'], attributes['openml_task_id'], attributes['openml_data_id'], attributes['original_row_index']),
+                   (dataset, str(original['tid']), str(original['did']), index), 'TabArena exact source item metadata')
+            _check(json.loads(attributes['data_provenance']), dict(license=original['description'].get('licence'),
+                citation=original['description'].get('citation'), source_url=original['description'].get('original_data_url')),
+                'TabArena complete individual dataset attribution')
+            criterion = json.loads(item['grading_criterion'])
+            _check(json.loads(criterion['reference_answer']), dict(original_target=original['target'], released_target=native['target']),
+                   'TabArena source and serialized reference targets')
+            specification = metadata['grading']['verifiers'][kind]
+            _check(criterion['rule'], specification['rule'], 'TabArena explicit derived grading rule')
+            _check(criterion['response_scale'], specification['response_scale'], 'TabArena per-item scale and direction')
+            verifier = json.loads(item['verifier'])
+            _check(verifier['class'], 'exact_matcher', 'TabArena deterministic verifier')
+            _check(json.loads(verifier['spec']), specification, 'TabArena complete verifier description')
+            _check(pd.isna(item['asset_manifest']), True, 'TabArena no invented assets')
+        checked.add(row.item_id)
+        seen[key] += 1
+        kinds[kind] += 1
+    _check(len(set((key[0], value) for key, value in encodings.items())), len(encodings), 'TabArena one-to-one released category codes')
+    _check(seen, Counter({key: 1 for key in source['native']}), 'TabArena every selected native observation exactly once')
+    _check(checked, set(items), 'TabArena exact item coverage')
+    _check(set(traces), set(tables['responses'].response_id), 'TabArena exact trace coverage')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), {'kind': 'mixed'}, 'TabArena mixed per-row grading scales')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_datasets=len(source['tasks']), source_methods=len({key[0] for key in source['configurations']}),
+        source_classification_responses=kinds['classification'], source_regression_responses=kinds['regression'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

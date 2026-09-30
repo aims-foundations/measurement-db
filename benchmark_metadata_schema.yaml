@@ -407,7 +407,7 @@ $defs:
                 latest_step: {$ref: '#/$defs/nonempty_string'}
                 step_files: {$ref: '#/$defs/nonempty_string'}
             json_index:
-              description: Select same-site files from records in a pinned JSON manifest or another JSON-indexed collection; expand nested object/list fields in records order, then format path using each record. An empty records list selects the root object or root array of objects. Every collection pins its complete selected contents with tree_sha256.
+              description: Select same-site files from records in a pinned JSON manifest or another JSON-indexed collection; expand nested object/list fields in records order, then format path using each record. An empty records list selects the root object or root array. String or integer IDs are available as {value}; object records use their field names. Every collection pins its complete selected contents with tree_sha256.
               type: object
               additionalProperties: false
               required: [source, records, path]

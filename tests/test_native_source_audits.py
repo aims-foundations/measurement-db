@@ -1079,5 +1079,118 @@ class PublishedHTMLAuditTests(unittest.TestCase):
             _algotune_html(source.removesuffix('</div>'))
 
 
+class TabArenaNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import numpy as np
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'tabarena'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/tabarena'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['methods'] = {'CatBoost': 'CatBoost', 'KNeighbors': 'KNeighbors'}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'
+        inputs = raw / 'openml'
+        inputs.mkdir(parents=True)
+        tasks = pd.DataFrame([dict(dataset=kind, tid=i + 11, did=i + 21)
+                              for i, kind in enumerate(['binary', 'multiclass', 'regression'])])
+        predictions = {'binary': [0.5, 0.9], 'multiclass': [[0.25, 0.5, 0.25], [0.5, 0.25, 0.25]],
+                       'regression': [16.994932174682617, 2.5]}
+        labels = {'binary': [1, 0], 'multiclass': [1, 2], 'regression': [17.65, -8.25]}
+        originals = {'binary': ['zebra', 'unused', 'ant'], 'multiclass': ['two', 'unused', 'one'],
+                     'regression': [-8.25, 99., 17.65]}
+        for row in tasks.itertuples():
+            pd.DataFrame({'feature': [0.12345678901234567, None, 3.5],
+                          'text': ['original ' * 500, 'training only', 'test'],
+                          'ignored': ['not an input'] * 3, 'target': originals[row.dataset]}).to_parquet(inputs / f'data-{row.did}.parquet')
+            (inputs / f'data-{row.did}.json').write_text(json.dumps({'data_set_description': dict(
+                default_target_attribute='target', ignore_attribute='ignored', licence='CC0', citation='Fixture source; second citation\nOriginal line', original_data_url='https://example.org/source?version=1')}))
+            (inputs / f'task-{row.tid}.json').write_text(json.dumps({'task': {'input': [dict(name='source_data',
+                data_set=dict(data_set_id=str(row.did), target_feature='target'))]}}))
+            (inputs / f'splits-{row.tid}.arff').write_text('@relation fixture\n@attribute type {TRAIN,TEST}\n'
+                '@attribute rowid numeric\n@attribute repeat numeric\n@attribute fold numeric\n@data\n'
+                'TRAIN,1,0,0\nTEST,2,0,0\nTEST,0,0,0\n')
+        for method in ['CatBoost', 'KNeighbors']:
+            method_root = raw / 'methods' / method
+            method_root.mkdir(parents=True)
+            tasks.to_parquet(method_root / 'task_metadata.parquet')
+            default = method + '_c1_BAG_L1'
+            (method_root / 'configs_hyperparameters.json').write_text(json.dumps({default: {'setting': 'original;value=1'}}))
+            configurations = []
+            for row in tasks.itertuples():
+                if method == 'KNeighbors' and row.dataset == 'multiclass':
+                    continue
+                configurations.append(dict(dataset=row.dataset, tid=row.tid, fold=0, framework=default, problem_type=row.dataset))
+                path = method_root / 'model_predictions' / row.dataset / '0'
+                path.mkdir(parents=True)
+                values = np.array([predictions[row.dataset], predictions[row.dataset]], dtype='float32')
+                values[0] = 0
+                values.tofile(path / 'pred-test.dat')
+                (path / 'metadata.json').write_text(json.dumps(dict(dataset=row.dataset, fold=0, dtype='float32',
+                    models=['unselected', default], pred_test_shape=list(values.shape))))
+                pd.DataFrame({'target': labels[row.dataset]}, index=[2, 0]).to_csv(path / 'label-test.csv.zip',
+                    compression={'method': 'zip', 'archive_name': 'label-test.csv'})
+            pd.DataFrame(configurations).to_parquet(method_root / 'configs.parquet')
+        output = self.directory.parent / 'tables'
+        builder = runpy.run_path(str(folder / 'build.py'))['TabArena']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_full_features_prediction_precision_and_fitted_models_are_preserved(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _tabarena
+        counts = _tabarena(self.directory, self.frames, self.metadata)
+        self.assertEqual(counts, dict(source_responses=10, source_subjects=5, source_items=6, source_traces=10,
+            source_datasets=3, source_methods=2, source_classification_responses=6, source_regression_responses=4))
+        self.assertTrue(self.frames['items'].content.str.len().max() > 1500)
+
+    def test_independent_audit_rejects_corrupt_grades_inputs_outputs_and_links(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _tabarena, _tabarena_sources
+        original = _tabarena_sources(self.directory, self.metadata)
+        for change in ['grade', 'item', 'subject', 'trace', 'clip', 'reference', 'scale', 'settings', 'trial', 'condition', 'drop', 'duplicate', 'drop_trace']:
+            with self.subTest(change=change):
+                tables = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
+                if change == 'grade':
+                    tables['responses'].loc[0, 'response'] += 0.125
+                elif change == 'item':
+                    tables['responses'].loc[0, 'item_id'] = tables['responses'].loc[1, 'item_id']
+                elif change == 'subject':
+                    tables['responses'].loc[0, 'subject_id'] = tables['subjects'].subject_id.iloc[-1]
+                elif change == 'trace':
+                    data = json.loads(tables['traces'].loc[0, 'trace']); data['prediction'] = 0.333
+                    tables['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'clip':
+                    data = json.loads(tables['items'].loc[0, 'content']); data['features']['text'] = 'truncated'
+                    tables['items'].loc[0, 'content'] = json.dumps(data)
+                elif change in ['reference', 'scale']:
+                    data = json.loads(tables['items'].loc[0, 'grading_criterion'])
+                    data['reference_answer' if change == 'reference' else 'response_scale'] = 'wrong'
+                    tables['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'settings':
+                    tables['subjects'].loc[0, 'subject_features_extra'] = tables['subjects'].loc[0, 'subject_features_extra'].replace('original', 'changed')
+                elif change == 'trial':
+                    tables['responses'].loc[0, 'trial'] = 2
+                elif change == 'condition':
+                    tables['responses'].loc[0, 'test_condition'] = 'fold=1;repeat=0'
+                elif change == 'drop':
+                    tables['responses'] = tables['responses'].iloc[1:]
+                elif change == 'duplicate':
+                    tables['responses'] = pd.concat([tables['responses'], tables['responses'].iloc[:1]])
+                else:
+                    tables['traces'] = tables['traces'].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _tabarena(self.directory, tables, self.metadata, original)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -996,6 +996,35 @@ class SnapshotTests(unittest.TestCase):
             with self.assertRaisesRegex(SourceDataError, 'duplicate indexed source path'):
                 upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
 
+    def test_json_index_accepts_original_scalar_ids_without_an_intermediate_manifest(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+
+        contents = {'1.json': b'{"label":0}', '2.json': b'{"label":1}'}
+        identity = [dict(path=name, size=len(body), digest=hashlib.sha256(body).hexdigest())
+                    for name, body in contents.items()]
+        source = dict(name='tasks', url='https://provider.example/task', revision=None,
+                      json_index=dict(source='suite', records=['study', 'tasks'], path='{value}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='tasks/{path}')])
+        for values, error in [([1, '2'], None), ([1, '1'], 'duplicate indexed source path'),
+                              (['../outside'], 'unsafe indexed source path'),
+                              ([True], 'records must be objects'), ([None], 'records must be objects'),
+                              ([1.5], 'records must be objects')]:
+            body = json.dumps({'study': {'tasks': values}}).encode()
+            index = dict(name='suite', url='https://provider.example/suite.json', revision=None,
+                         file='suite.json', size=len(body), sha256=hashlib.sha256(body).hexdigest())
+            pages = {index['url']: body, **{'https://provider.example/task/' + k: v for k, v in contents.items()}}
+            with self.subTest(values=values), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                    side_effect=lambda request, **kwargs: io.BytesIO(pages[request.full_url])):
+                if error:
+                    with self.assertRaisesRegex(SourceDataError, error):
+                        upstream_artifacts([index, source], ('tasks',))
+                else:
+                    self.metadata['sources']['upstream'] = [index, source]
+                    validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+                    artifacts = upstream_artifacts([index, source], ('tasks',))
+                    self.assertEqual([entry['file'] for entry in artifacts], ['tasks/1.json', 'tasks/2.json'])
+
     def test_json_index_collection_preserves_every_manifest_and_referenced_asset(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         manifest = b'{"runs":[{"id":"a"},{"id":"b"}]}'
