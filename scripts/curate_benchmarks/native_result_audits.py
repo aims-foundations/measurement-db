@@ -23523,6 +23523,139 @@ def _erbench(directory, tables, metadata, source=None):
                 source_traces=len(traces), source_files=len({key[0] for key in native}), **counts)
 
 
+def _perumedqa_sources(directory):
+    """Read original Arrow records, bank rows and generation declarations directly."""
+    import ast
+    import csv
+    import re
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    with (raw / '01.Datasets/combined_exam_dataset.csv').open(newline='') as stream:
+        bank = list(csv.DictReader(stream))
+    for row in bank:
+        row['year'] = int(row['year'])
+    native, definitions, subjects, trials = {}, {}, {}, Counter()
+    for path in sorted((raw / '02.LLMs_x20_Results').rglob('*.parquet')):
+        table = pq.read_table(path)
+        index = json.loads(table.schema.metadata[b'pandas'])['index_columns']
+        _check(len(index), 1, 'PeruMedQA one preserved question-bank index')
+        if isinstance(index[0], dict):
+            _check(index[0]['kind'], 'range', 'PeruMedQA declared range index')
+            positions = list(range(index[0]['start'], index[0]['stop'], index[0]['step']))
+        else:
+            positions = table[index[0]].to_pylist()
+            table = table.drop([index[0]])
+        _check(len(positions), table.num_rows, 'PeruMedQA index covers every native attempt')
+        scripts = sorted(path.parent.glob('*.py'))
+        _check(len(scripts), 1, 'PeruMedQA original generation script association')
+        syntax = ast.parse(scripts[0].read_text())
+        identifiers = [node.value.value for node in ast.walk(syntax) if isinstance(node, ast.Assign)
+            and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)
+            and any(isinstance(target, ast.Name) and target.id == 'model_name' for target in node.targets)]
+        _check(len(identifiers), 1, 'PeruMedQA literal declared generation model')
+        for position, row in enumerate(table.to_pylist()):
+            dataset_row = positions[position]
+            _check(type(dataset_row) is int and 0 <= dataset_row < len(bank), True, 'PeruMedQA valid bank index')
+            _check({key: row[key] for key in bank[dataset_row]}, bank[dataset_row], 'PeruMedQA exact bank-to-result correspondence')
+            _check(all(row[key] is not None for key in row), True, 'PeruMedQA no missing native fields')
+            _check(row['correct_answer'] in 'ABCDE' and len(row['correct_answer']) == 1, True, 'PeruMedQA reference letter')
+            model, definition = row['model_basename'], (row['question'], row['correct_answer'])
+            subject = subjects.setdefault(model, dict(identifier=identifiers[0], scripts=set()))
+            _check(subject['identifier'], identifiers[0], 'PeruMedQA chunk model identifiers agree')
+            subject['scripts'].add(str(scripts[0].relative_to(raw)))
+            definitions.setdefault(definition, 'row_' + str(dataset_row))
+            match = re.search(r'Respuesta final:\s?\(?([ABCDE])\)?', row['answer_llm'])
+            grade = None if match is None else float(match.group(1) == row['correct_answer'])
+            partition = None
+            if model == 'medgemma4B_TF':
+                partition = 'held_out_year' if row['year'] == 2025 else 'training_or_validation_year'
+            condition = dict(exam=row['source_file'], year=row['year'], source_folder=row['source_folder'], fine_tuning_partition=partition)
+            trial_key = model, definition, json.dumps(condition, sort_keys=True)
+            trials[trial_key] += 1
+            native[str(path.relative_to(raw)), position] = dict(record=row, dataset_row=dataset_row,
+                grade=grade, condition=condition, trial=trials[trial_key])
+    with (raw / '02.LLMs_x20_Results/All_Models_Results_2026-01-21.csv').open(newline='') as stream:
+        summary = list(csv.DictReader(stream))
+    return dict(native=native, items=definitions, subjects=subjects, bank=bank, summary=summary)
+
+
+def _perumedqa(directory, tables, metadata, source=None):
+    source = _perumedqa_sources(directory) if source is None else source
+    native, definitions = source['native'], source['items']
+    subjects, subject_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model']
+        declared = source['subjects'][model]
+        _check(row.display_name, 'PeruMedQA / ' + model, 'PeruMedQA literal recorded model identity')
+        _check(row.harness, 'PeruMedQA', 'PeruMedQA source harness')
+        _check(features['declared_model'], declared['identifier'], 'PeruMedQA model identifier from original generation code')
+        _check(json.loads(features['inference_sources']), sorted(declared['scripts']), 'PeruMedQA original generation code paths')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'PeruMedQA no inferred historical configuration: ' + field)
+        subjects[row.subject_id] = model
+        subject_seen[model] += 1
+    _check(subject_seen, Counter({model: 1 for model in source['subjects']}), 'PeruMedQA all original models exactly once')
+    items, item_seen = {}, Counter()
+    for row in tables['items'].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        key = row.content, criterion['reference_answer']
+        _check(key in definitions, True, 'PeruMedQA complete original question and reference')
+        _check(row.raw_item_id, definitions[key], 'PeruMedQA first original bank alias')
+        _check(_features(row.item_features), dict(lang='es'), 'PeruMedQA original question language')
+        _check(criterion['rule'], metadata['grading']['rule'], 'PeruMedQA documented parsing and missing-grade semantics')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'PeruMedQA matching verifier')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['answer'], 'PeruMedQA original parsing protocol')
+        _check(pd.isna(row.asset_manifest), True, 'PeruMedQA no invented media')
+        items[row.item_id] = key
+        item_seen[key] += 1
+    _check(item_seen, Counter({key: 1 for key in definitions}), 'PeruMedQA unique content-and-grading definitions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'PeruMedQA unique trace associations')
+    seen, counts, totals, successes = Counter(), Counter(), Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = native[key]
+        record = original['record']
+        _check(trace, dict(source_file=key[0], source_row=key[1], source_dataset_row=original['dataset_row'], native_record=record),
+               'PeruMedQA full native record, output, file position and original bank index')
+        _check(subjects[row.subject_id], record['model_basename'], 'PeruMedQA subject-response association')
+        _check(items[row.item_id], (record['question'], record['correct_answer']), 'PeruMedQA item-response association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'PeruMedQA original grade with unparseable answers left null')
+        _check(row.trial, original['trial'], 'PeruMedQA record order for repeated question definitions')
+        _check(json.loads(row.test_condition), original['condition'], 'PeruMedQA original exam, year and fine-tuning pool')
+        _check(pd.isna(row.interactors), True, 'PeruMedQA no invented interactors')
+        seen[key] += 1
+        counts['source_graded_observations'] += original['grade'] is not None
+        counts['source_ungraded_observations'] += original['grade'] is None
+        counts['source_empty_outputs'] += record['answer_llm'] == ''
+        counts['source_successes'] += original['grade'] == 1
+        counts['source_finetuned_development_observations'] += original['condition']['fine_tuning_partition'] == 'training_or_validation_year'
+        counts['source_finetuned_held_out_year_observations'] += original['condition']['fine_tuning_partition'] == 'held_out_year'
+        if original['grade'] is not None:
+            group = metadata['build']['parameters']['aggregate_models'][record['model_basename']], record['source_file'], record['year']
+            totals[group] += 1
+            successes[group] += int(original['grade'])
+    _check(seen, Counter({key: 1 for key in native}), 'PeruMedQA every released attempt exactly once')
+    published_totals, published_successes = {}, {}
+    for row in source['summary']:
+        group = row['model_name'], row['source_file'], int(row['year'])
+        _check(group not in published_totals, True, 'PeruMedQA unique published aggregate group')
+        published_totals[group] = int(row['total_rows'])
+        published_successes[group] = int(row['count_of_matches'])
+        _check(round(100 * successes[group] / totals[group], 2), float(row['percent_correct']), 'PeruMedQA published rounded accuracy')
+    _check(dict(totals), published_totals, 'PeruMedQA every published valid-answer denominator')
+    _check(dict(successes), published_successes, 'PeruMedQA every published correct-answer count')
+    _check(set(traces), set(tables['responses'].response_id), 'PeruMedQA complete linked trace coverage')
+    _check(len(tables.get('assets', [])), 0, 'PeruMedQA no fabricated assets')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        source_traces=len(traces), source_files=len({key[0] for key in native}), source_bank_rows=len(source['bank']),
+        source_summary_groups=len(published_totals), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -23532,6 +23665,8 @@ def verify_native_results(directory, tables_directory=None):
         return _exploitgym(directory, tables, metadata)
     if directory.name == 'erbench':
         return _erbench(directory, tables, metadata)
+    if directory.name == 'perumedqa':
+        return _perumedqa(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,

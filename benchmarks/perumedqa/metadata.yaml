@@ -1,0 +1,124 @@
+benchmark:
+  description: Spanish medical multiple-choice questions from Peruvian residency examinations, with released outputs
+    from eleven medical model configurations.
+  testing_condition: 'Preserve all 92,180 published attempts on 8,380 question-bank rows. The authors exclude unparseable
+    answers from accuracy: 85,107 attempts receive binary grades and 7,073 retain null grades, including 1,904 empty
+    decoded strings. Repeated question text and grading share an item; original bank positions remain in traces.
+    For the fine-tuned medgemma4B_TF configuration, pre-2025 rows belong to the training/validation pool and 2025
+    rows to the held-out-year pool; individual training/validation membership and cross-year content leakage are
+    not inferred. Released generation scripts declare model identifiers and settings but do not establish exact
+    historical checkpoint revisions or complete run-level API requests. The separately published shuffled-options
+    stress analysis supplies aggregate results only and is outside this item-level result scope.'
+  paper_url: https://arxiv.org/abs/2509.11517
+  data_source_url: https://github.com/rodrigo-carrillo/PeruMedQA
+  subject_type: model
+  item_type: question
+  license: Apache-2.0
+  citation: "@article{carrillolarco2025perumedqa,\n  title={PeruMedQA: Benchmarking Large Language Models (LLMs)\
+    \ on Peruvian Medical Exams -- Dataset Construction and Evaluation},\n  author={Carrillo-Larco, Rodrigo M. and\
+    \ Lov\\'on Melgarejo, Jesus and Castillo-Cara, Manuel and Bravo-Rocca, Gusseppe},\n  journal={arXiv preprint\
+    \ arXiv:2509.11517},\n  year={2025},\n}"
+  tags:
+  - medical
+  - clinical
+  - multilingual
+  - spanish
+  - peru
+  - mcqa
+  modality:
+  - text
+  domain:
+  - medicine
+  - knowledge
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': A parsed answer differs from the reference letter
+      '1': A parsed answer matches the reference letter
+  categorical: true
+  release_date: 2025-09
+  release: public
+  name: PeruMedQA
+  version: 709158accc32fed76e32b0c9b6c3b0ef759766ab
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: 02.LLMs_x20_Results
+      bank: 01.Datasets/combined_exam_dataset.csv
+      summary: 02.LLMs_x20_Results/All_Models_Results_2026-01-21.csv
+    labels:
+      subject_prefix: 'PeruMedQA / '
+      language: es
+      fine_tuned_model: medgemma4B_TF
+      held_out_year: '2025'
+      development: training_or_validation_year
+      held_out: held_out_year
+    patterns:
+      answer: Respuesta final:\s?\(?([ABCDE])\)?
+    model_identifiers:
+      medgemma-4b-it: google/medgemma-4b-it
+      BioMistral-7B-DARE: BioMistral/BioMistral-7B-DARE
+      MediPhi-Instruct: microsoft/MediPhi-Instruct
+      Llama3-OpenBioLLM-8B: aaditya/Llama3-OpenBioLLM-8B
+      JSL-MedLlama-3-8B-v2.0: johnsnowlabs/JSL-MedLlama-3-8B-v2.0
+      medgemma-27b-text-it: google/medgemma-27b-text-it
+      Llama3-OpenBioLLM-70B: aaditya/Llama3-OpenBioLLM-70B
+      meditron-7b: epfl-llm/meditron-7b
+      medgemma4B_TF: /scratch/rmcarri/Examenes_Residentado_Peru/trainer_output/checkpoint-12564
+      OctoMed-7B: OctoMed/OctoMed-7B
+      medgemma-1.5-4b-it: google/medgemma-1.5-4b-it
+    inference_sources:
+      medgemma-4b-it: '["02.LLMs_x20_Results/01.medgemma-4b-it/LLMs_Answers.py"]'
+      BioMistral-7B-DARE: '["02.LLMs_x20_Results/02.BioMistral_x20_DARE_x20_7B/LLMs_Answers_BioMistral_DARE_7B.py"]'
+      MediPhi-Instruct: '["02.LLMs_x20_Results/03.MediPhi-Instruct/LLMs_Answers_MediPhi.py"]'
+      Llama3-OpenBioLLM-8B: '["02.LLMs_x20_Results/04.OpenBioLLM-8B/LLMs_Answers_OpenBioLLM-8B_v03.py"]'
+      JSL-MedLlama-3-8B-v2.0: '["02.LLMs_x20_Results/05.JSL-MedLlama_x20_3_x20_8B_x20_v2.0/LLMs_Answers_JSL_MedLlama_v04.py"]'
+      medgemma-27b-text-it: '["02.LLMs_x20_Results/06.medgemma-27b-text-it/LLMs_Answers.py"]'
+      Llama3-OpenBioLLM-70B: '["02.LLMs_x20_Results/07.OpenBioLLM-70B/LLMs_Answers_OpenBioLLM-70B_v03.py"]'
+      meditron-7b: '["02.LLMs_x20_Results/08.meditron_x20_7B/LLMs_Answers_meditron-7B_v02.py"]'
+      medgemma4B_TF: '["02.LLMs_x20_Results/09.medgemma-4b-it_x20_Fine_x20_Tuned/LLMs_Answers.py"]'
+      OctoMed-7B: '["02.LLMs_x20_Results/10.OctoMed-7B/Chunk_1/LLMs_Answers.py", "02.LLMs_x20_Results/10.OctoMed-7B/Chunk_2/LLMs_Answers.py"]'
+      medgemma-1.5-4b-it: '["02.LLMs_x20_Results/11.medgemma-1_5-4b-it/LLMs_Answers.py"]'
+    aggregate_models:
+      medgemma-4b-it: medgemma-4b-it
+      BioMistral-7B-DARE: BioMistral-7B-DARE
+      MediPhi-Instruct: MediPhi-Instruct 3.8B
+      Llama3-OpenBioLLM-8B: OpenBioLLM-8B
+      JSL-MedLlama-3-8B-v2.0: JSL-MedLlama 3 8B v2.0
+      medgemma-27b-text-it: medgemma-27b-text-it
+      Llama3-OpenBioLLM-70B: OpenBioLLM-70B
+      meditron-7b: meditron 7B
+      medgemma4B_TF: medgemma-4b-it-FT
+      OctoMed-7B: OctoMed-7B
+      medgemma-1.5-4b-it: medgemma-1.5-4b-it
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/rodrigo-carrillo/PeruMedQA
+    revision: 709158accc32fed76e32b0c9b6c3b0ef759766ab
+    files:
+    - match: (?:README[.]md|LICENSE|CONAREME/README[.]md|01[.]Datasets/(?:README[.]md|combined_exam_dataset[.]csv)|03[.]Stress
+        Evaluation Shuffle/README[.]md|02[.]LLMs Results/(?:README[.]md|All_Models_Results_2026-01-21[.]csv|.+/(?:[^/]+[.]parquet|[^/]+[.]py|Analysis[^/]+[.]ipynb|Chunks[.]ipynb)))
+      path: '{path}'
+grading:
+  rule: Extract the first case-sensitive Respuesta final answer matching the released regular expression. A valid
+    letter receives 1 if equal to correct_answer and 0 otherwise. An unparseable output is an ungraded attempt (null),
+    excluded from the published accuracy denominator.
+  verifiers:
+    answer:
+      kind: regex_then_exact_match
+      pattern: Respuesta final:\s?\(?([ABCDE])\)?
+      source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab/02.LLMs%20Results
+      implementation: 'Analysis*.ipynb: str.extract, dropna(subset=letra_respuesta), then comparison with correct_answer'
+      flags: case_sensitive
+      match: first
+      missing: 'null'

@@ -1430,5 +1430,126 @@ class ERBenchNativeAuditTests(unittest.TestCase):
                 ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
 
 
+class PeruMedQANativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'perumedqa'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/perumedqa'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        params = self.metadata['build']['parameters']
+        files = [('medgemma4B_TF', '09.finetuned', 0, 4), ('OctoMed-7B', '10.OctoMed/Chunk_1', 0, 2),
+                 ('OctoMed-7B', '10.OctoMed/Chunk_2', 2, 4)]
+        params['model_identifiers'] = {model: params['model_identifiers'][model] for model in ['medgemma4B_TF', 'OctoMed-7B']}
+        params['inference_sources'] = {model: json.dumps(['02.LLMs_x20_Results/' + directory + '/LLMs_Answers.py'
+            for name, directory, _, _ in files if name == model]) for model in params['model_identifiers']}
+        params['aggregate_models'] = {model: params['aggregate_models'][model] for model in params['model_identifiers']}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        bank = pd.DataFrame([dict(questions=question, option_A='Sí', option_B='No', option_C='Otra',
+            option_D='Ninguna', option_E='NA', correct_answer=gold, source_file='Examen', source_folder='Year' + str(year), year=year)
+            for question, gold, year in [('¿Primera?', 'A', 2024), ('¿Primera?', 'A', 2024),
+                                        ('¿Primera?', 'B', 2025), ('¿Otra?\nLínea dos.', 'C', 2025)]])
+        bank_path = self.directory / 'raw/01.Datasets/combined_exam_dataset.csv'
+        bank_path.parent.mkdir(parents=True)
+        bank.to_csv(bank_path, index=False)
+        outputs = {'medgemma4B_TF': ['Respuesta final: A\nRespuesta final: B\n' + 'Explicación 完整 ' * 2000,
+            'respuesta final: A', 'Respuesta final: A', ''],
+            'OctoMed-7B': ['Respuesta final: (A)', 'Respuesta final: B', 'Respuesta final: B', 'Respuesta final: C']}
+        for model, directory, start, stop in files:
+            path = self.directory / 'raw/02.LLMs_x20_Results' / directory
+            path.mkdir(parents=True)
+            frame = bank.iloc[start:stop].copy()
+            frame['question'] = frame.questions + '\nA) Sí\nB) No\nC) Otra\nD) Ninguna\nE) NA'
+            frame['answer_llm'] = outputs[model][start:stop]
+            frame['model_basename'] = model
+            frame.to_parquet(path / 'results.parquet')
+            (path / 'LLMs_Answers.py').write_text('model_name = ' + repr(params['model_identifiers'][model]) + '\n')
+        pd.DataFrame([dict(source_file='Examen', year=year, count_of_matches=correct, total_rows=total,
+            percent_correct=100 * correct / total, model_name=params['aggregate_models'][model], source_file_eng='Exam')
+            for model, year, correct, total in [('medgemma4B_TF', 2024, 1, 1), ('medgemma4B_TF', 2025, 0, 1),
+                ('OctoMed-7B', 2024, 1, 2), ('OctoMed-7B', 2025, 2, 2)]]).to_csv(
+                    self.directory / 'raw/02.LLMs_x20_Results/All_Models_Results_2026-01-21.csv', index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['PeruMedQA']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_first_match_missing_grades_chunk_indices_and_training_pool(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perumedqa
+        self.assertEqual(_perumedqa(self.directory, self.frames, self.metadata), dict(
+            source_responses=8, source_subjects=2, source_items=3, source_traces=8, source_files=3,
+            source_bank_rows=4, source_summary_groups=4, source_graded_observations=6, source_ungraded_observations=2,
+            source_empty_outputs=1, source_successes=4, source_finetuned_development_observations=2,
+            source_finetuned_held_out_year_observations=2))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_independent_check_rejects_changed_grades_links_indices_and_output(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perumedqa, _perumedqa_sources
+        source = _perumedqa_sources(self.directory)
+        for change in ['grade', 'null_to_zero', 'subject', 'item', 'criterion', 'verifier', 'question',
+                       'trace', 'position', 'bank_index', 'condition', 'trial', 'drop', 'duplicate', 'drop_trace', 'settings']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade': frames['responses'].loc[0, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'
+                    current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'criterion':
+                    data = json.loads(frames['items'].loc[0, 'grading_criterion']); data['reference_answer'] = 'D'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'verifier':
+                    data = json.loads(frames['items'].loc[0, 'verifier']); data['class'] = 'judge'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change == 'question': frames['items'].loc[0, 'content'] = frames['items'].loc[0, 'content'].split('\n')[0]
+                elif change in ['trace', 'position', 'bank_index']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'trace': data['native_record']['answer_llm'] = data['native_record']['answer_llm'][:16000]
+                    elif change == 'position': data['source_row'] += 1
+                    else: data['source_dataset_row'] += 1
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition':
+                    data = json.loads(frames['responses'].loc[0, 'test_condition']); data['fine_tuning_partition'] = 'held_out_year'
+                    frames['responses'].loc[0, 'test_condition'] = json.dumps(data)
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                else: frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                with self.assertRaises((ValueError, KeyError)):
+                    _perumedqa(self.directory, frames, self.metadata, source)
+
+    def test_shifted_chunk_index_cannot_silently_join_to_another_question(self):
+        import contextlib
+        import io
+        path = self.directory / 'raw/02.LLMs_x20_Results/10.OctoMed/Chunk_2/results.parquet'
+        frame = pd.read_parquet(path).reset_index(drop=True)
+        frame.to_parquet(path)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'question-bank row'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'invalid')])
+
+    def test_published_summary_is_an_independent_denominator_check(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perumedqa, _perumedqa_sources
+        source = _perumedqa_sources(self.directory)
+        source['summary'][0]['total_rows'] = '2'
+        with self.assertRaisesRegex(ValueError, 'denominator'):
+            _perumedqa(self.directory, self.frames, self.metadata, source)
+
+
 if __name__ == "__main__":
     unittest.main()

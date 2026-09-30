@@ -993,3 +993,4 @@ SOURCE_AUDITS["osworld"] = verify_native_results
 SOURCE_AUDITS["tabarena"] = verify_native_results
 SOURCE_AUDITS["exploitgym"] = verify_native_results
 SOURCE_AUDITS["erbench"] = verify_native_results
+SOURCE_AUDITS["perumedqa"] = verify_native_results
