@@ -1,0 +1,4 @@
+- Scope: 38,061 recorded planning attempts across 17 native model labels, including 180 adaptive feedback runs. Prompting configurations remain distinct; historical model settings are not inferred.
+- Grading: preserve Boolean validator verdicts. Numeric annotation codes remain uninterpreted in the full traces; unsolvable instances use the author's phrase-recognition rule. No model or grader is rerun.
+- Provenance: preserve complete original records, reference plans, blank outputs and all export locations. Adaptive items contain the initial task; subsequent feedback remains in the trace.
+- Migration: all 37,881 older grades and 37,872 nonempty traces reconcile exactly. Restore 180 adaptive attempts, deduplicate 31 identical export copies, and exclude 2,859 query-only entries. Shared checks and a clean upstream rebuild verify the tables.

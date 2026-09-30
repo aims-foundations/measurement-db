@@ -22326,12 +22326,135 @@ def _frontieror(directory, tables, metadata, source=None):
         source_self_evolution=sum(row["kind"] == "self_evolve" for row in records.values()))
 
 
+def _planbench_sources(directory, metadata):
+    """Inspect original JSON records, including adaptive transcripts and export copies."""
+    raw = directory / "raw"
+    records, identities, locations = {}, {}, {}
+    counts = Counter()
+    for path in sorted(raw.glob(metadata["build"]["parameters"]["paths"]["results"])):
+        payload = json.loads(path.read_text())
+        header = {key: value for key, value in payload.items() if key != "instances"}
+        variant = path.stem.removeprefix("task_1_")
+        file_identities = set()
+        for position, row in enumerate(payload["instances"]):
+            verdicts = [row[field] for field in ["act_correct", "correct", "llm_correct"] if type(row.get(field)) is bool]
+            _check(len(set(verdicts)) <= 1, True, "PlanBench consistent Boolean final verdicts")
+            attempted = "llm_raw_response" in row or any(message.get("role") == "assistant" for message in row.get("messages", []))
+            if not attempted and not verdicts:
+                counts["source_query_only"] += 1
+                continue
+            key = str(path.relative_to(raw)), position
+            signature = json.dumps([header, variant, row], sort_keys=True, ensure_ascii=False, allow_nan=False)
+            _check(signature not in file_identities, True, "PlanBench no unexplained identical repetitions within one run")
+            file_identities.add(signature)
+            location = dict(source_file=key[0], source_row=key[1])
+            if signature in identities:
+                primary = identities[signature]
+                records[primary]["source_locations"].append(location)
+                counts["source_duplicate_exports"] += 1
+            else:
+                primary = key
+                identities[signature] = primary
+                records[primary] = dict(source_header=header, source_record=row, source_locations=[location],
+                                        variant=variant, grade=float(verdicts[0]) if verdicts else None)
+            locations[key] = primary
+    return records, locations, counts
+
+
+def _planbench(directory, tables, metadata, source=None):
+    native, locations, counts = _planbench_sources(directory, metadata) if source is None else source
+    counts = counts.copy()
+    subjects = tables["subjects"].set_index("subject_id").to_dict("index")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    trace_rows = tables["traces"]
+    traces = trace_rows.set_index("response_id").trace.to_dict()
+    _check(len(traces), len(trace_rows), "PlanBench one complete native trace per response")
+    seen, subjects_seen, items_seen, trials = Counter(), set(), set(), Counter()
+    models, protocols = set(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_locations"][0]
+        primary = locations[(key["source_file"], key["source_row"])]
+        original = native[primary]
+        header, record = original["source_header"], original["source_record"]
+        _check(trace, {key: original[key] for key in ["source_locations", "source_header", "source_record"]},
+               "PlanBench complete original record, all export locations and exact header association")
+        grade = original["grade"]
+        if grade is None:
+            _check(pd.isna(row.response), True, "PlanBench ungraded attempts remain null")
+        else:
+            _check(row.response, grade, "PlanBench actual Boolean verdict, not numeric annotation or intermediate feedback")
+        domain, engine, variant = header["domain"], header["engine"], original["variant"]
+        messages = record.get("messages")
+        system_messages = [message for message in messages or [] if message["role"] == "system"]
+        expected_features = dict(recorded_model_label=engine, prompt_variant=variant, prompt_type=header["prompt_type"],
+            system_messages=system_messages,
+            recorded_parameters={key: header[key] for key in ["additional_task_info", "tempertures"] if key in header},
+            settings_status="only_native_recorded_settings")
+        subject = subjects[row.subject_id]
+        _check(subject["display_name"], "PlanBench / " + engine + " / " + variant, "PlanBench literal model and configuration label")
+        _check(subject["harness"], "PlanBench", "PlanBench original evaluation harness")
+        _check(_features(subject["subject_features_extra"]), {key: str(value).strip() for key, value in expected_features.items()},
+               "PlanBench native model and prompting settings")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(subject[field]), True, "PlanBench no inferred historical setting: " + field)
+        if messages is not None:
+            first_user = next(index for index, message in enumerate(messages) if message["role"] == "user")
+            _check(all(message["role"] == "system" for message in messages[:first_user]), True,
+                   "PlanBench initial prompt must precede all assistant output and feedback")
+            content = messages[first_user]["content"]
+            counts["source_adaptive"] += 1
+        else:
+            content = record["query"]
+            counts["source_single_prompt"] += 1
+        reference = record.get("ground_truth_plan")
+        if isinstance(reference, dict):
+            reference = reference.get("plan")
+        elif isinstance(reference, list):
+            _check(all(isinstance(action, str) for action in reference), True, "PlanBench reference actions are text")
+            reference = "\n".join(reference)
+        reference = reference if isinstance(reference, str) and reference.strip() else None
+        kind = "unsolvable" if "unsolvable" in domain else "plan"
+        item = items[row.item_id]
+        _check(item["content"], content, "PlanBench full initial prompt, without later feedback or answer leakage")
+        _check(item["raw_item_id"], domain + "/instance_" + str(record["instance_id"]), "PlanBench original instance identity")
+        _check(_features(item["item_features"]), dict(domain=domain, instance_id=str(record["instance_id"])), "PlanBench native item domain")
+        _check(json.loads(item["grading_criterion"]), dict(reference_answer=reference, rule=metadata["grading"]["verifiers"][kind]["rule"]),
+               "PlanBench complete reference and correct grading rule")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "exact_matcher", "PlanBench final decision is a deterministic recorded validation")
+        _check(json.loads(verifier["spec"]), dict(protocol=metadata["grading"]["verifiers"][kind],
+            native_domain=domain, native_instance_id=record["instance_id"]), "PlanBench full grading protocol and native task linkage")
+        _check(row.test_condition, "domain=" + domain + ";variant=" + variant, "PlanBench exact experiment condition")
+        _check(pd.isna(row.interactors), True, "PlanBench no guessed interacting model configuration")
+        trial_key = row.subject_id, row.item_id, row.test_condition
+        trials[trial_key] += 1
+        _check(row.trial, trials[trial_key], "PlanBench recorded attempts, excluding copied exports")
+        seen[primary] += 1
+        subjects_seen.add(row.subject_id)
+        items_seen.add(row.item_id)
+        models.add(engine)
+        protocols.add(json.dumps(expected_features, sort_keys=True))
+        counts["source_ungraded"] += grade is None
+        counts["source_numeric_annotations"] += type(record.get("correct")) is int
+        counts["source_blank_outputs"] += "llm_raw_response" in record and not record["llm_raw_response"].strip()
+    _check(seen, Counter({key: 1 for key in native}), "PlanBench every original attempt exactly once")
+    _check(subjects_seen, set(subjects), "PlanBench no orphan or missing subjects")
+    _check(items_seen, set(items), "PlanBench no orphan or missing items")
+    _check(len(subjects), len(protocols), "PlanBench exactly one subject per recorded configuration")
+    _check(set(traces), set(tables["responses"].response_id), "PlanBench every recorded attempt has a full trace")
+    _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "PlanBench pinned original result revision")
+    return dict(source_responses=len(native), source_items=len(items), source_subjects=len(subjects), source_models=len(models),
+        source_traces=len(traces), **{key: counts[key] for key in ["source_query_only", "source_duplicate_exports",
+        "source_adaptive", "source_single_prompt", "source_ungraded", "source_numeric_annotations", "source_blank_outputs"]})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

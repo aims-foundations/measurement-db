@@ -1,0 +1,101 @@
+benchmark:
+  description: 'Published PlanBench planning results: complete prompts, recorded outputs and original plan-validity
+    judgments, including adaptive feedback runs.'
+  paper_url: https://arxiv.org/abs/2206.10498
+  data_source_url: https://github.com/karthikv792/LLMs-Planning
+  license: MIT
+  citation: "@inproceedings{valmeekam2023planbench,\n  title={PlanBench: An Extensible Benchmark for Evaluating\
+    \ Large Language Models on Planning and Reasoning about Change},\n  author={Valmeekam, Karthik and Marquez,\
+    \ Matthew and Olmo, Alberto and Sreedharan, Sarath and Kambhampati, Subbarao},\n  booktitle={Advances in Neural\
+    \ Information Processing Systems (NeurIPS) Datasets and Benchmarks Track},\n  year={2023}\n}\nRelated result\
+    \ releases: Valmeekam et al. (2023), On the Planning Abilities of Large Language Models; Valmeekam et al. (2025),\
+    \ A Systematic Evaluation of the Planning and Scheduling Abilities of the Reasoning Model o1. See the original\
+    \ README for full citations."
+  tags:
+  - planning
+  - reasoning
+  - agent
+  - pddl
+  - blocksworld
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': invalid plan or recorded unsuccessful attempt
+      '1': valid plan or correctly recognized unsolvable problem
+  categorical: true
+  release_date: 2022-06
+  release: public
+  name: PlanBench
+  one_line_description: Measures whether language models produce valid plans in classical planning domains.
+  testing_condition: Pinned original result JSON from the authors' LLMs-Planning repository. Preserve single-prompt
+    and backprompting assessments, and distinguish literal model and prompting configurations. Grades use the published
+    Boolean verdicts act_correct, correct or llm_correct; numeric correct annotation codes, including -1 and -2,
+    are retained without reinterpretation in the full traces. A grade records published final plan validity, not
+    exact equality with one reference plan. Current evaluator source documents the grading procedure; exact historical
+    request and translator settings are unavailable unless recorded in the native header. Query-only entries have
+    no evidence of an attempt and do not become response rows. Identical records under identical headers and filenames
+    in two exports are counted once, with both source locations retained.
+  subject_type: model
+  item_type: planning problem
+  granularity: item
+  multi_single_turn: multi_turn, single_turn
+  version: fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: llm_planning_analysis/results/**/*.json
+    labels:
+      subject_prefix: 'PlanBench / '
+      harness: PlanBench
+      settings_status: only_native_recorded_settings
+grading:
+  rule: Preserve the published final judgment; the item verifier distinguishes plan validity from recognition of
+    an unsolvable problem. No planning or grading is executed by this builder.
+  verifiers:
+    plan:
+      kind: published_plan_validation
+      source: https://github.com/karthikv792/LLMs-Planning/blob/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/response_evaluation.py
+      validator: https://github.com/karthikv792/LLMs-Planning/blob/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/utils/__init__.py
+      rule: 'The published final plan-validity judgment: actions must be executable from the initial state and reach
+        the goal. A reference plan is illustrative; alternative valid plans pass. Preserve recorded parser and execution
+        failures as failures, without rerunning a planner or judge.'
+      adaptive_validator: https://github.com/karthikv792/LLMs-Planning/blob/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/back_prompting_parallel.py
+      final_fields:
+      - act_correct
+      - correct
+      - llm_correct
+      interpretation: llm_correct is the plan validator's verdict, sometimes after LLM-assisted plan extraction;
+        it is not a self-judgment. act_correct is final validity, distinct from intermediate feedback.
+      historical_request_and_translation_settings: not_fully_recorded
+      executed_by_builder: false
+    unsolvable:
+      kind: published_unsolvability_recognition
+      source: https://github.com/karthikv792/LLMs-Planning/blob/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/utils/__init__.py
+      function: validate_plan_unsolvable
+      rule: The published unsolvable-instance judgment. The released validator tests whether the extracted answer
+        contains the exact phrase 'no plan possible'; this is a recognition rule, not a proof of unsolvability.
+      final_field: Boolean llm_correct
+      numeric_correct_annotations: Retained verbatim in traces; do not coerce undocumented -2, -1, 0 or 1 codes
+        into Boolean judgments.
+      comparison: 'case-sensitive substring: no plan possible'
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/karthikv792/LLMs-Planning
+    revision: fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284
+    files:
+    - match: llm_planning_analysis/results/.*\.json
+      path: '{path}'
+    - match: LICENSE|README\.md|llm_planning_analysis/Executor/__init__\.py|llm_planning_analysis/README\.md|llm_planning_analysis/back_prompting\.py|llm_planning_analysis/back_prompting_parallel\.py|llm_planning_analysis/configs/unsolvable_blocksworld\.yaml|llm_planning_analysis/configs/unsolvable_obfuscated_randomized_blocksworld\.yaml|llm_planning_analysis/full_validator/__init__\.py|llm_planning_analysis/llm_plan_pipeline\.py|llm_planning_analysis/model_parser/__init__\.py|llm_planning_analysis/model_parser/constants\.py|llm_planning_analysis/model_parser/parser_new\.py|llm_planning_analysis/model_parser/writer_new\.py|llm_planning_analysis/obfuscator\.py|llm_planning_analysis/problem_generators\.py|llm_planning_analysis/prompt_generation\.py|llm_planning_analysis/response_evaluation\.py|llm_planning_analysis/response_generation\.py|llm_planning_analysis/stats_generation\.py|llm_planning_analysis/utils/__init__\.py|llm_planning_analysis/utils/llm_utils\.py|llm_planning_analysis/utils/pddl_to_text\.py|llm_planning_analysis/utils/task_utils\.py|llm_planning_analysis/utils/text_to_pddl\.py
+      path: '{path}'

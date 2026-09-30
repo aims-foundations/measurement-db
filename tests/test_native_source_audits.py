@@ -349,6 +349,111 @@ class FrontierORAuditTests(unittest.TestCase):
                     _frontieror(self.directory, tables, self.metadata)
 
 
+class PlanBenchAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "planbench"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/planbench"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        rows = [dict(instance_id=1, query="Original planning prompt one\n", ground_truth_plan=["a", "b"],
+                     llm_raw_response="original output\n" + "x" * 20000, llm_correct=True),
+                dict(instance_id=2, query="Original planning prompt two\n", ground_truth_plan=" \n",
+                     llm_raw_response="", llm_correct=False),
+                dict(instance_id=3, query="Attempt without judgment", llm_raw_response="ungraded plan"),
+                dict(instance_id=4, query="Query only; no recorded attempt")]
+        header = dict(task="t1", engine="model-a", domain="blocksworld", prompt_type="oneshot")
+        adaptive = dict(instance_id=1, messages=[dict(role="system", content="Original system instructions"),
+            dict(role="user", content="Original adaptive problem\n"), dict(role="assistant", content="wrong plan"),
+            dict(role="user", content="Private later feedback, excluded from item content"),
+            dict(role="assistant", content="corrected plan")], act_correct=True, verifier_states_correct=False,
+            steps=2, feedback_messages=["original feedback"])
+        variants = [
+            ("blocksworld/model-a/task_1_plan_generation.json", dict(header, instances=rows)),
+            ("blocksworld/copy/task_1_plan_generation.json", dict(header, instances=[rows[0]])),
+            ("blocksworld/model-b/task_1_plan_generation_backprompting.json", dict(header, engine="model-b", instances=[adaptive])),
+            ("unsolvable_blocksworld/model-a/task_1_plan_generation.json", dict(header, domain="unsolvable_blocksworld", instances=[
+                dict(instance_id=5, query="Unsolvable prompt", llm_raw_response="No valid plan", correct=-2, llm_correct=False)])),
+        ]
+        for name, data in variants:
+            path = raw / "llm_planning_analysis/results" / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data))
+        builder = runpy.run_path(str(folder / "build.py"))["PlanBench"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_adaptive_and_ungraded_attempts_duplicate_exports_and_native_annotation_codes(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _planbench
+        self.assertEqual(_planbench(self.directory, self.tables, self.metadata), dict(source_responses=5,
+            source_items=5, source_subjects=2, source_models=2, source_traces=5, source_query_only=1,
+            source_duplicate_exports=1, source_adaptive=1, source_single_prompt=4, source_ungraded=1,
+            source_numeric_annotations=1, source_blank_outputs=1))
+
+    def test_changed_associations_feedback_leakage_clipping_and_imputed_grades_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _planbench
+        for change in ["swap", "fill_null", "subject", "item", "trial", "feedback", "clip", "grade_code",
+                       "alias", "header", "reference", "grader", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "swap":
+                    positive = tables["responses"].index[tables["responses"].response.eq(1.)][0]
+                    negative = tables["responses"].index[tables["responses"].response.eq(0.)][0]
+                    tables["responses"].loc[[positive, negative], "response"] = [0., 1.]
+                elif change == "fill_null":
+                    tables["responses"].loc[tables["responses"].response.isna(), "response"] = 0.
+                elif change in {"subject", "item"}:
+                    field = change + "_id"
+                    current = tables["responses"].loc[0, field]
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != current)
+                elif change == "trial":
+                    tables["responses"].loc[0, "trial"] = 3
+                elif change == "feedback":
+                    tables["items"].loc[0, "content"] += "\nLater feedback must not leak here"
+                elif change in {"clip", "grade_code", "alias", "header"}:
+                    for index, body in tables["traces"].trace.items():
+                        trace = json.loads(body)
+                        record = trace["source_record"]
+                        if change == "clip" and len(record.get("llm_raw_response", "")) > 16000:
+                            record["llm_raw_response"] = record["llm_raw_response"][:16000]
+                        elif change == "grade_code" and type(record.get("correct")) is int:
+                            record["correct"] = 0
+                        elif change == "alias" and len(trace["source_locations"]) > 1:
+                            trace["source_locations"] = trace["source_locations"][:1]
+                        elif change == "header":
+                            trace["source_header"]["engine"] = "guessed-model"
+                        else:
+                            continue
+                        tables["traces"].loc[index, "trace"] = json.dumps(trace)
+                        break
+                    else:
+                        self.fail("Missing fixture for corruption: " + change)
+                elif change == "reference":
+                    tables["items"].loc[0, "grading_criterion"] = json.dumps(dict(reference_answer="guessed", rule="incorrect"))
+                elif change == "grader":
+                    verifier = json.loads(tables["items"].loc[0, "verifier"])
+                    verifier["class"] = "judge"
+                    tables["items"].loc[0, "verifier"] = json.dumps(verifier)
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _planbench(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
