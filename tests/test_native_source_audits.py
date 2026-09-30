@@ -2393,6 +2393,107 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PreferenceDissectionNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'preference_dissection'
+        folder = ROOT / 'benchmarks/preference_dissection'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.raw_file = self.directory / 'raw' / self.metadata['build']['parameters']['layout']['data']
+        self.raw_file.parent.mkdir(parents=True)
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.native = [dict(query='Full original query 完整. ' * 1000,
+            response_1=dict(content='Full first candidate 完整. ' * 1000, model='candidate-author-a', num_words=2000),
+            response_2=dict(content='Second candidate', model='candidate-author-b', num_words=2),
+            preference_labels={'fixture-judge-a':'response_1', 'fixture-judge-b':'response_2', 'human':'response_2'}),
+            dict(query='Another query', response_1=dict(content='A', model='author-a', num_words=1),
+                 response_2=dict(content='', model='author-b', num_words=0),
+                 preference_labels={'fixture-judge-a':'response_2', 'fixture-judge-b':'response_1', 'human':'response_1'})]
+        import copy
+        self.native.append(copy.deepcopy(self.native[0]))
+        self.native[2]['response_1']['num_words'] = 1999
+        pd.DataFrame(self.native).to_parquet(self.raw_file, index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['PreferenceDissection']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem:pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_full_candidates_unordered_labels_and_repeated_source_rows(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _preference_dissection
+        self.assertEqual(_preference_dissection(self.directory, self.frames, self.metadata), dict(
+            source_pairs=3, source_subjects=2, source_items=2, source_responses=6, source_traces=6,
+            source_response_1=3, source_response_2=3, source_empty_candidate_texts=1))
+        self.assertGreater(self.frames['items'].content.str.len().max(), 16000)
+        self.assertTrue(self.frames['responses'].trial.eq(1).all())
+        self.assertEqual(self.frames['responses'].test_condition.nunique(), 3)
+        self.assertTrue(all('trace' not in json.loads(value) for value in self.frames['traces'].trace))
+
+    def test_unknown_or_missing_native_label_is_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _preference_dissection_sources
+        import copy
+        for value in [None, 'tie', 'response_A']:
+            with self.subTest(value=value):
+                rows = copy.deepcopy(self.native)
+                rows[0]['preference_labels']['fixture-judge-a'] = value
+                pd.DataFrame(rows).to_parquet(self.raw_file, index=False)
+                with self.assertRaises(ValueError):
+                    _preference_dissection_sources(self.directory, self.metadata)
+                with self.assertRaisesRegex(ValueError, 'original response_1/response_2 label'):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+
+    def test_wrong_choices_links_clipped_stimuli_and_invented_reasoning_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _preference_dissection, _preference_dissection_sources
+        source = _preference_dissection_sources(self.directory, self.metadata)
+        changes = ['grade', 'same_sum_swap', 'subject', 'item', 'query_clip', 'candidate_clip', 'leak',
+            'gold', 'verifier', 'alias', 'feature', 'trial', 'condition', 'interactors', 'drop', 'duplicate',
+            'model', 'extra_subject', 'scale', 'trace_label', 'trace_model', 'source_file', 'source_row', 'reasoning']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,subjects,traces = [frames[name] for name in ['responses','items','subjects','traces']]
+                if change == 'grade': responses.loc[0, 'response'] = .5
+                elif change == 'same_sum_swap': responses.loc[[0, 1], 'response'] = responses.loc[[1, 0], 'response'].to_numpy()
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'human'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(key for key in items.item_id if key != responses.loc[0, 'item_id'])
+                elif change in ['query_clip', 'candidate_clip', 'leak']:
+                    value = json.loads(items.loc[0, 'content'])
+                    if change == 'query_clip': value['query'] = value['query'][:4000]
+                    elif change == 'candidate_clip': value['response_1'] = value['response_1'][:8000]
+                    else: value['preferred_response'] = 'response_1'
+                    items.loc[0, 'content'] = json.dumps(value)
+                elif change == 'gold': items.loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer='A selected candidate'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(spec='{}'))
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = '99'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'preferred=response_1'
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'independent rerun'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'human'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses,responses.iloc[:1]],ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'candidate-author-a'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects,subjects.iloc[:1]],ignore_index=True)
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='discrete',values=[0,1],direction='higher_is_better'))
+                else:
+                    value = json.loads(traces.loc[0, 'trace'])
+                    if change == 'trace_label': value['preference_label'] = 'response_2'
+                    elif change == 'trace_model': value['source_model_label'] = 'candidate-author-a'
+                    elif change == 'source_file': value['source_file'] = 'other.parquet'
+                    elif change == 'source_row': value['source_row'] = 99
+                    else: value['trace'] = 'Endorsed candidate falsely called judge reasoning'
+                    traces.loc[0, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _preference_dissection(self.directory, frames, self.metadata, source)
+
+
 class PredictionArenaNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

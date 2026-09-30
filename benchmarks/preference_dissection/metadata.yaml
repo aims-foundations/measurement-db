@@ -1,0 +1,80 @@
+benchmark:
+  description: Preference Dissection records which of two candidate replies to the same prompt each model judge
+    prefers, turning the judges themselves into the systems being measured.
+  testing_condition: The released train split contains 5,240 comparison records and preferences from 32 AI judges.
+    Items contain the complete query and both candidate answers; subjects are the model judges. The paper collects
+    A/B next-token log-probabilities in both candidate orders and averages them before choosing a side. This builder
+    imports the final published label without repeating inference or recomputing it. Values identify the chosen
+    side and do not measure correctness or agreement with a human. Human preferences and GPT-4 property annotations
+    remain in the original source, outside these AI-subject observations. Two source rows share a comparison stimulus;
+    retain both published records under their source-row conditions, without claiming independent trials. Exact
+    runtime checkpoints, original per-order log-probabilities and judge reasoning are unavailable. Traces retain
+    the native preference label and source position, not the candidate text as a judge output.
+  paper_url: https://arxiv.org/abs/2402.11296
+  data_source_url: https://huggingface.co/datasets/GAIR/preference-dissection
+  subject_type: model
+  item_type: task
+  license: CC-BY-NC-4.0; retain attribution, upstream model-output terms and prohibition on re-identification; see
+    raw/README.md.
+  citation: "@inproceedings{li-etal-2024-dissecting,\n      title={Dissecting Human and {LLM} Preferences},\n  \
+    \    author={Li, Junlong and Zhou, Fan and Sun, Shichao and Zhang, Yikai and Zhao, Hai and Liu, Pengfei},\n\
+    \      editor={Ku, Lun-Wei and Martins, Andre and Srikumar, Vivek},\n      booktitle={Proceedings of the 62nd\
+    \ Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},\n      month={August},\n\
+    \      year={2024},\n      address={Bangkok, Thailand},\n      publisher={Association for Computational Linguistics},\n\
+    \      url={https://aclanthology.org/2024.acl-long.99/},\n      doi={10.18653/v1/2024.acl-long.99},\n      pages={1790--1811},\n\
+    }"
+  tags:
+  - preference
+  - pairwise
+  modality:
+  - text
+  domain:
+  - preference
+  response_type: nominal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: unordered
+    meanings:
+      '0': The model judge preferred response_2.
+      '1': The model judge preferred response_1.
+  categorical: true
+  release_date: 2024-02
+  release: public
+  name: Preference Dissection
+  version: 2bf4bfe786fe3d37d730f1efc0300ac69db0d453
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      data: data/train-00000-of-00001-ef26d1478acef50b.parquet
+    labels:
+      harness: Preference Dissection pairwise preference
+      human: human
+      input_scope: query_and_two_candidate_answers
+      test_condition_prefix: split=train;source_row=
+    preference_values:
+      response_1: '1'
+      response_2: '0'
+grading:
+  rule: 'Record the released model preference: 1 for response_1, 0 for response_2. Neither category is a correct
+    answer; do not replace it with a human or property annotation.'
+  verifiers:
+    preference:
+      kind: released_preference_label
+      source: https://aclanthology.org/2024.acl-long.99/
+      field: preference_labels[model]
+      collection: Mean A/B log-probabilities over the two candidate orders; order-specific values are not released.
+      execution: Map the published categorical label without new inference or annotation.
+sources:
+  upstream:
+  - name: comparisons
+    url: https://huggingface.co/datasets/GAIR/preference-dissection
+    revision: 2bf4bfe786fe3d37d730f1efc0300ac69db0d453
+    files:
+    - match: README\.md|data/train-00000-of-00001-ef26d1478acef50b\.parquet
+      path: '{path}'

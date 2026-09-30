@@ -25207,11 +25207,93 @@ def _prediction_arena(directory, tables, metadata, source=None):
                 source_traces=len(traces), **source['counts'])
 
 
+def _preference_dissection_sources(directory, metadata):
+    """Read every native nested choice without using the builder's melt/join."""
+    import pyarrow.parquet as pq
+
+    path = directory / 'raw' / metadata['build']['parameters']['layout']['data']
+    rows = pq.read_table(path).to_pylist()
+    native, stimuli, judges, counts = {}, {}, set(), Counter()
+    for index, row in enumerate(rows):
+        content = dict(query=row['query'], response_1=row['response_1']['content'], response_2=row['response_2']['content'])
+        _check(bool(content['query']) and all(isinstance(value, str) for value in content.values()), True,
+               'Preference Dissection complete native comparison texts')
+        counts['source_empty_candidate_texts'] += sum(content[field] == '' for field in ['response_1', 'response_2'])
+        key = json.dumps(content, ensure_ascii=False, sort_keys=True)
+        stimuli.setdefault(key, str(index))
+        for model, label in row['preference_labels'].items():
+            if model == 'human':
+                continue
+            _check(label in {'response_1', 'response_2'}, True, 'Preference Dissection original categorical preference')
+            native[index, model] = dict(content=content, preference_label=label)
+            judges.add(model)
+            counts['source_response_1' if label == 'response_1' else 'source_response_2'] += 1
+    return dict(native=native, stimuli=stimuli, judges=judges, rows=len(rows), counts=dict(counts))
+
+
+def _preference_dissection(directory, tables, metadata, source=None):
+    """Check every model choice, full comparison stimulus and original source position."""
+    source = _preference_dissection_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_label']
+        _check(features, dict(source_model_label=model), 'Preference Dissection model attribution')
+        _check((row.display_name, row.harness), (model, labels['harness']), 'Preference Dissection source model judge and protocol')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'Preference Dissection unknown historical inference settings')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({model: 1 for model in source['judges']}), 'Preference Dissection all AI judges, without a human subject')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        content = json.loads(row.content)
+        key = json.dumps(content, ensure_ascii=False, sort_keys=True)
+        _check(row.raw_item_id, source['stimuli'][key], 'Preference Dissection first source alias for identical comparison stimuli')
+        _check(_features(row.item_features), dict(input_scope=labels['input_scope']), 'Preference Dissection no target-choice features')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+               'Preference Dissection choice has no gold candidate answer')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Preference Dissection released choice mapping')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['preference'], 'Preference Dissection documented choice protocol')
+        items[row.item_id] = content
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in source['stimuli']}), 'Preference Dissection all complete distinct comparisons')
+    scale = json.loads(tables['benchmarks'].iloc[0].response_scale)
+    _check(scale, dict(kind='discrete', values=[0., 1.], direction='unordered', meanings={
+        '0':'The model judge preferred response_2.', '1':'The model judge preferred response_1.'}),
+        'Preference Dissection unordered preferred-side scale, not accuracy')
+    _check(tables['benchmarks'].iloc[0].response_type, 'nominal', 'Preference Dissection nominal response interpretation')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Preference Dissection unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], subjects[row.subject_id]
+        original = source['native'][key]
+        _check(items[row.item_id], original['content'], 'Preference Dissection correct full comparison for each choice')
+        _check(row.response, float(original['preference_label'] == 'response_1'), 'Preference Dissection original model choice')
+        _check(row.trial, 1, 'Preference Dissection one published choice per source-row condition')
+        _check(row.test_condition, labels['test_condition_prefix'] + str(key[0]), 'Preference Dissection distinct source occasions without invented reruns')
+        _check(pd.isna(row.interactors), True, 'Preference Dissection no invented human annotator in AI measurement')
+        _check(trace, dict(source_file=parameters['layout']['data'], source_row=key[0], source_model_label=key[1],
+            preference_label=original['preference_label']), 'Preference Dissection native label provenance, not candidate text as judge reasoning')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Preference Dissection every original preference exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Preference Dissection complete trace coverage')
+    return dict(source_pairs=source['rows'], source_subjects=len(subjects), source_items=len(items),
+        source_responses=len(seen), source_traces=len(traces), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'preference_dissection':
+        return _preference_dissection(directory, tables, metadata)
     if directory.name == 'prediction_arena':
         return _prediction_arena(directory, tables, metadata)
     if directory.name == 'prm800k':

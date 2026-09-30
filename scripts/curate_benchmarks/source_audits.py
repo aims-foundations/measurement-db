@@ -1010,3 +1010,4 @@ SOURCE_AUDITS["programbench"] = verify_native_results
 SOURCE_AUDITS["psychosis_bench"] = verify_native_results
 SOURCE_AUDITS["prm800k"] = verify_native_results
 SOURCE_AUDITS["prediction_arena"] = verify_native_results
+SOURCE_AUDITS["preference_dissection"] = verify_native_results

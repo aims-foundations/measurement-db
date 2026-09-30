@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 167680
+    logical_sha256: 1cfd63a9b7ad2f2e0e43cc51a70c0b77095bbc7df311049b31b803ea49fdc580
+  subjects:
+    rows: 32
+    logical_sha256: b827cfae1e3468d0e6837319106f1ca20e827843b027cac12e6f83c16ae758b5
+  responses:
+    rows: 167680
+    logical_sha256: 0275335c4d1f81ef71378068a4094eb0a01df0701fd508ccfe685c3f5e0001b7
+  items:
+    rows: 5239
+    logical_sha256: 699a9a6251d716c9159201fe563feba54043981ff69346e2fb0f7022b20a2f9c
+  benchmarks:
+    rows: 1
+    logical_sha256: 127158d39d8d60acd187f6fe6af2797df5a63b121569f2c9ae3a121f05e56abf
+source_claims:
+  source_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 5240
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 32
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 5239
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 167680
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 167680
+  source_empty_candidate_texts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 6
+  source_response_2:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 83639
+  source_response_1:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GAIR/preference-dissection
+    locator: 'Pinned native train Parquet at 2bf4bfe786fe3d37d730f1efc0300ac69db0d453: query, both candidate contents
+      and preference_labels.'
+    scope: AI-judge labels only; human and property annotations are retained in raw. Two source rows share a comparison
+      stimulus, and both remain recorded.
+    expected: 84041
