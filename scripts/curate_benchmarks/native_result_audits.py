@@ -25287,11 +25287,141 @@ def _preference_dissection(directory, tables, metadata, source=None):
         source_responses=len(seen), source_traces=len(traces), **source['counts'])
 
 
+def _prism_sources(directory, metadata):
+    """Read original utterances and reconstruct each selected path independently."""
+    from collections import defaultdict
+    import math
+
+    raw = directory / 'raw'
+    layout = metadata['build']['parameters']['layout']
+    utterances = [json.loads(line) for line in (raw / layout['utterances']).read_text().splitlines()]
+    conversations = [json.loads(line) for line in (raw / layout['conversations']).read_text().splitlines()]
+    models = {row['long_name']: row for row in
+        (json.loads(line) for line in (raw / layout['models']).read_text().splitlines())}
+    annotations = {row['utterance_id']: row for row in
+        (json.loads(line) for line in (raw / layout['metadata']).read_text().splitlines()) if row['column_id'] == 'model_response'}
+    # Upstream writes NaN for unavailable manual PII review. Traces use JSON null;
+    # the original non-standard JSONL remains unchanged in raw.
+    for row in annotations.values():
+        if isinstance(row.get('pii_manual_flag'), float) and math.isnan(row['pii_manual_flag']):
+            row['pii_manual_flag'] = None
+    contexts, outputs = {}, {}
+    for conversation in conversations:
+        by_turn = defaultdict(list)
+        for message in conversation['conversation_history']:
+            by_turn[message['turn']].append(message)
+        history = []
+        for turn in sorted(by_turn):
+            messages = by_turn[turn]
+            users = [message for message in messages if message['role'] == 'user']
+            _check(len(users), 1, 'PRISM one original user message per conversation turn')
+            history.append(dict(role='user', content=users[0]['content']))
+            contexts[conversation['conversation_id'], turn] = list(history)
+            candidates = [message for message in messages if message['role'] == 'model']
+            selected = {message['content'] for message in candidates if message['if_chosen']}
+            _check(len(selected), 1, 'PRISM one distinct selected text, including duplicated chosen outputs')
+            for candidate in candidates:
+                key = conversation['conversation_id'], turn, candidate['within_turn_id']
+                _check(key not in outputs, True, 'PRISM unique native conversation candidate')
+                outputs[key] = dict(user_id=conversation['user_id'], user_prompt=users[0]['content'],
+                    model_name=candidate['model_name'], model_provider=candidate['model_provider'],
+                    model_response=candidate['content'], score=candidate['score'], if_chosen=candidate['if_chosen'],
+                    conversation_type=conversation['conversation_type'], included_in_balanced_subset=conversation['included_in_balanced_subset'])
+            history.append(dict(role='assistant', content=next(iter(selected))))
+    native, stimuli, seen_outputs = {}, {}, set()
+    for row in utterances:
+        uid = row['utterance_id']
+        _check(uid not in native, True, 'PRISM unique original utterance ID')
+        key = row['conversation_id'], row['turn'], row['within_turn_id']
+        _check(key not in seen_outputs, True, 'PRISM one utterance per original candidate')
+        _check({field:row[field] for field in outputs[key]}, outputs[key], 'PRISM exact utterance-to-conversation links')
+        _check(type(row['score']) is int and 1 <= row['score'] <= 100, True, 'PRISM native integer slider rating')
+        _check(type(row['if_chosen']) is bool, True, 'PRISM native boolean selection')
+        _check(row['model_name'] in models, True, 'PRISM original generating model configuration')
+        _check(annotations[uid]['user_id'], row['user_id'], 'PRISM metadata belongs to the same anonymous rater')
+        content = contexts[row['conversation_id'], row['turn']]
+        key_text = json.dumps(content, ensure_ascii=False, sort_keys=True)
+        stimuli.setdefault(key_text, row['conversation_id'] + ':turn_' + str(row['turn']))
+        native[uid] = dict(utterance=row, content=content, metadata=annotations[uid])
+        seen_outputs.add(key)
+    _check(seen_outputs, set(outputs), 'PRISM all original conversation candidates are represented')
+    _check(set(annotations), set(native), 'PRISM exact model-output metadata coverage')
+    return dict(native=native, stimuli=stimuli, models=models, conversations=len(conversations), turns=len(contexts))
+
+
+def _prism(directory, tables, metadata, source=None):
+    """Check every human rating and choice against its original AI output and context."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _prism_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    labels, grading = parameters['labels'], metadata['grading']['verifiers']
+    models = {row['utterance']['model_name']: row['utterance']['model_provider'] for row in source['native'].values()}
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_name']
+        configuration = source['models'][model]
+        _check((row.display_name, row.harness), (model, labels['harness']), 'PRISM generating AI, not human rater, is the subject')
+        _check(features, dict(source_model_name=model, source_model_provider=models[model],
+            documented_header=configuration['header'], documented_generation_settings=json.dumps(configuration['selected_params'], sort_keys=True)),
+            'PRISM exact published model configuration, without guessed header assignment')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({model:1 for model in models}), 'PRISM complete generating-model roster')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        content = json.loads(row.content)
+        key_text = json.dumps(content, ensure_ascii=False, sort_keys=True)
+        features = _features(row.item_features)
+        dimension = features['dimension']
+        _check(features, dict(dimension=dimension, input_scope=labels['input_scope']), 'PRISM item has no target grade or answer features')
+        _check(row.raw_item_id, source['stimuli'][key_text] + ':' + dimension, 'PRISM original conversation-turn alias')
+        domain = json.loads(canonical_response_scale(grading[dimension]['response_scale']))
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=grading[dimension]['rule'], response_scale=domain),
+               'PRISM measurement-specific human rating or choice scale')
+        verifier = json.loads(row.verifier)
+        _check((verifier['class'], verifier['judge'], verifier['judged_by']), ('judge', labels['judge'], 'human'), 'PRISM original human feedback')
+        _check(json.loads(verifier['spec']), grading[dimension], 'PRISM documented grading protocol')
+        items[row.item_id] = content, dimension
+        seen_items[key_text, dimension] += 1
+    _check(seen_items, Counter({(key, dimension):1 for key in source['stimuli'] for dimension in ['score','if_chosen']}),
+           'PRISM complete context-by-measure item coverage')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), dict(kind='mixed'), 'PRISM mixed response scale')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'PRISM unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        uid, dimension = trace['utterance']['utterance_id'], trace['dimension']
+        original = source['native'][uid]
+        utterance = original['utterance']
+        _check(subjects[row.subject_id], utterance['model_name'], 'PRISM correct generating model per utterance')
+        _check(items[row.item_id], (original['content'], dimension), 'PRISM original selected context and correct measure')
+        _check(row.response, float(utterance[dimension]), 'PRISM unchanged native human feedback')
+        _check((row.trial, row.test_condition), (1, labels['test_condition_prefix'] + uid + ';measure=' + dimension),
+               'PRISM same utterance under separate measures, not independent runs')
+        _check(json.loads(row.interactors), dict(human_rater=utterance['user_id']), 'PRISM anonymous original human rater')
+        _check(trace, dict(source_file=parameters['layout']['utterances'], dimension=dimension, utterance=utterance,
+            metadata=original['metadata']), 'PRISM complete original output, rating, choice and moderation metadata')
+        seen[uid, dimension] += 1
+    _check(seen, Counter({(uid, dimension):1 for uid in source['native'] for dimension in ['score','if_chosen']}),
+           'PRISM every original utterance and measure exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'PRISM complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=len(seen), source_traces=len(traces),
+        source_utterances=len(source['native']), source_conversations=source['conversations'], source_turns=source['turns'],
+        source_human_raters=len({row['utterance']['user_id'] for row in source['native'].values()}),
+        source_chosen=sum(row['utterance']['if_chosen'] for row in source['native'].values()),
+        source_empty_output_markers=sum(row['utterance']['model_response'] == 'EMPTY STRING' for row in source['native'].values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'prism':
+        return _prism(directory, tables, metadata)
     if directory.name == 'preference_dissection':
         return _preference_dissection(directory, tables, metadata)
     if directory.name == 'prediction_arena':

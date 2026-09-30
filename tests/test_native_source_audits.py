@@ -2393,6 +2393,126 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PRISMNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'prism'
+        self.raw = self.directory / 'raw'
+        (self.raw / 'protocol/data').mkdir(parents=True)
+        folder = ROOT / 'benchmarks/prism'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.utterances = []
+        history = []
+        for turn in [0, 1]:
+            prompt = 'Original user question ' + str(turn)
+            history.append(dict(role='user', turn=turn, content=prompt))
+            for within in [0, 1]:
+                model = 'prism-fixture-a' if turn or within == 0 else 'prism-fixture-b'
+                text = ('Full selected output 完整. ' * 1000 if turn == 0 and within == 0 else
+                    'EMPTY STRING' if turn == 0 else 'Same selected response')
+                score = (90 if within == 0 else 1) if turn == 0 else 50
+                chosen = bool(turn or within == 0)
+                record = dict(utterance_id='u' + str(len(self.utterances)), interaction_id='i' + str(turn),
+                    conversation_id='c0', user_id='anonymous-rater', turn=turn, within_turn_id=within,
+                    conversation_type='unguided', user_prompt=prompt, model_response=text, model_name=model,
+                    model_provider='fixture-api', score=score, if_chosen=chosen, included_in_balanced_subset=True)
+                self.utterances.append(record)
+                history.append(dict(role='model', turn=turn, within_turn_id=within, content=text,
+                    model_name=model, model_provider='fixture-api', score=score, if_chosen=chosen))
+        conversations = [dict(conversation_id='c0', user_id='anonymous-rater', conversation_type='unguided',
+            included_in_balanced_subset=True, conversation_history=history)]
+        annotations = [dict(column_id='model_response', user_id='anonymous-rater', conversation_id='c0',
+            interaction_id=row['interaction_id'], utterance_id=row['utterance_id'], pii_flag=False,
+            pii_manual_flag=float('nan'), language_flag='en', en_flag=True,
+            moderation_flag=dict(flagged=False, category_scores=dict(harm=0.010779580529581414))) for row in self.utterances]
+        models = [dict(long_name=model, model_provider='configuration-provider', header='Original header for ' + model,
+            selected_params=dict(temperature='1.0', max_tokens='256')) for model in ['prism-fixture-a', 'prism-fixture-b']]
+        for relative,rows in [('utterances.jsonl',self.utterances),('conversations.jsonl',conversations),
+            ('metadata.jsonl',annotations),('protocol/data/models.jsonl',models)]:
+            (self.raw / relative).write_text(''.join(json.dumps(row,ensure_ascii=False) + '\n' for row in rows))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['PRISM']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source',str(self.raw),'--output',str(self.directory.parent / 'tables')])
+        self.frames = {path.stem:pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_original_ratings_duplicate_choices_and_selected_history(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prism
+        self.assertEqual(_prism(self.directory,self.frames,self.metadata), dict(source_subjects=2,source_items=4,
+            source_responses=8,source_traces=8,source_utterances=4,source_conversations=1,source_turns=2,
+            source_human_raters=1,source_chosen=3,source_empty_output_markers=1))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        self.assertGreater(self.frames['items'].content.str.len().max(),16000)
+        self.assertEqual(self.frames['responses'].response.max(),90)
+
+    def test_out_of_range_or_noninteger_native_ratings_are_rejected(self):
+        import copy
+        for value in [0,101,1.5,None,float('inf')]:
+            with self.subTest(value=value):
+                rows=copy.deepcopy(self.utterances)
+                rows[0]['score']=value
+                (self.raw/'utterances.jsonl').write_text(''.join(json.dumps(row)+'\n' for row in rows))
+                with self.assertRaisesRegex(ValueError,'finite integers from 1 through 100'):
+                    self.builder(str(self.directory/'build.py')).build_tables()
+
+    def test_wrong_context_rater_scale_or_output_associations_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prism,_prism_sources
+        source=_prism_sources(self.directory,self.metadata)
+        changes=['score','chosen','subject','item','context','leak','scale','rule','judge','alias','feature',
+            'condition','trial','rater','drop','duplicate','model','configuration','extra_subject','trace_text',
+            'trace_score','trace_chosen','metadata_precision','trace_rater','trace_dimension','source_file']
+        for change in changes:
+            with self.subTest(change=change):
+                frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,subjects,traces=[frames[name] for name in ['responses','items','subjects','traces']]
+                if change=='score':
+                    index=responses.index[responses.test_condition.str.endswith(';measure=score')][0]
+                    responses.loc[index,'response']/=100
+                elif change=='chosen':
+                    index=responses.index[responses.test_condition.str.endswith(';measure=if_chosen')][0]
+                    responses.loc[index,'response']=1-responses.loc[index,'response']
+                elif change=='subject':responses.loc[0,'subject_id']='anonymous-rater'
+                elif change=='item':responses.loc[0,'item_id']=next(key for key in items.item_id if key!=responses.loc[0,'item_id'])
+                elif change=='context':
+                    index=items.content.str.len().idxmax();value=json.loads(items.loc[index,'content']);value[1]['content']=value[1]['content'][:16000];items.loc[index,'content']=json.dumps(value)
+                elif change=='leak':
+                    value=json.loads(items.loc[0,'content']);value.append(dict(role='assistant',content='Current target answer'));items.loc[0,'content']=json.dumps(value)
+                elif change=='scale':items.loc[0,'grading_criterion']=json.dumps(dict(rule='normalized',response_scale=dict(kind='interval',min=0,max=1)))
+                elif change=='rule':items.loc[0,'grading_criterion']=json.dumps(dict(rule='objective correctness'))
+                elif change=='judge':items.loc[0,'verifier']=json.dumps(dict(spec='{}'))
+                elif change=='alias':items.loc[0,'raw_item_id']='other-conversation'
+                elif change=='feature':items.loc[0,'item_features']='dimension=unknown'
+                elif change=='condition':responses.loc[0,'test_condition']='independent rerun'
+                elif change=='trial':responses.loc[0,'trial']=2
+                elif change=='rater':responses.loc[0,'interactors']=json.dumps(dict(human_rater='different-rater'))
+                elif change=='drop':frames['responses']=responses.iloc[1:].copy()
+                elif change=='duplicate':frames['responses']=pd.concat([responses,responses.iloc[:1]],ignore_index=True)
+                elif change=='model':subjects.loc[0,'display_name']='anonymous-rater'
+                elif change=='configuration':subjects.loc[0,'subject_features_extra']='source_model_name=wrong-model'
+                elif change=='extra_subject':frames['subjects']=pd.concat([subjects,subjects.iloc[:1]],ignore_index=True)
+                else:
+                    value=json.loads(traces.loc[0,'trace'])
+                    if change=='trace_text':value['utterance']['model_response']=value['utterance']['model_response'][:16000]
+                    elif change=='trace_score':value['utterance']['score']=.9
+                    elif change=='trace_chosen':value['utterance']['if_chosen']=False
+                    elif change=='metadata_precision':value['metadata']['moderation_flag']['category_scores']['harm']=0.0107795805
+                    elif change=='trace_rater':value['utterance']['user_id']='different-rater'
+                    elif change=='trace_dimension':value['dimension']='score' if value['dimension']=='if_chosen' else 'if_chosen'
+                    else:value['source_file']='different.jsonl'
+                    traces.loc[0,'trace']=json.dumps(value)
+                with self.assertRaises((ValueError,KeyError)):
+                    _prism(self.directory,frames,self.metadata,source)
+
+
 class PreferenceDissectionNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib
