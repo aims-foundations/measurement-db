@@ -1,0 +1,4 @@
+- Scope: 5,440 published turn-level judgments across 34 models and 80 two-turn questions. Retain original model labels, including three differing filename/internal labels.
+- Grading: preserve all 5,436 existing ratings, including 38 fractional scores; restore four unparseable attempts with null grades. Keep task references separate from references actually supplied to GPT-4.
+- Context and traces: follow-up items include the first question, the model's first answer and the follow-up question. All 5,440 grading prompts match the original joined conversations; traces retain complete native records. Historical generation settings are unknown. No evaluation is rerun.
+- Release: the original Space declares an unspecified `other` license. Code is published separately; raw and formatted data remain local pending clarification. The separate human-preference dataset's CC-BY license is not assumed to apply.

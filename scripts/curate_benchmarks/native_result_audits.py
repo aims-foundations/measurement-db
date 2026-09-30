@@ -22544,12 +22544,131 @@ def _weavebench(directory, tables, metadata, source=None):
         source_ungraded=sum(row["source_record"]["score"] is None for row in native.values()))
 
 
+def _mtbench_sources(directory, metadata):
+    """Reconcile all native JSONL records independently of the builder's joins."""
+    import math
+
+    raw, groups = directory / "raw", {}
+    for name, pattern in metadata["build"]["parameters"]["paths"].items():
+        values = {}
+        for path in sorted(raw.glob(pattern)):
+            for position, line in enumerate(path.read_text().splitlines()):
+                row = json.loads(line)
+                key = ((path.stem, row["question_id"]) if name == "answers" else row["name"] if name == "prompts" else
+                       (row["model"], row["question_id"], row["turn"]) if name == "judgments" else row["question_id"])
+                _check(key not in values, True, "MT-Bench unique native " + name + " key")
+                values[key] = dict(file=str(path.relative_to(raw)), row=position, record=row)
+        groups[name] = values
+    native = {}
+    for key, judgment in groups["judgments"].items():
+        model, question_id, turn = key
+        record = judgment["record"]
+        question, answer = groups["questions"][question_id], groups["answers"][model, question_id]
+        prompt, reference = groups["prompts"][record["judge"][1]], groups["references"].get(question_id)
+        q, a, p = question["record"], answer["record"], prompt["record"]
+        _check(turn in (1, 2), True, "MT-Bench two-turn native protocol")
+        _check(record["judge"][0], "gpt-4", "MT-Bench recorded judge label")
+        _check(record["judge"][1], "single-" + ("math-v1" if "math" in p["name"] else "v1") +
+               ("-multi-turn" if turn == 2 else ""), "MT-Bench template matches the judged turn")
+        _check(len(a["choices"]), 1, "MT-Bench exactly one published candidate answer")
+        _check(a["choices"][0]["index"], 0, "MT-Bench native choice zero")
+        _check(len(q["turns"]), 2, "MT-Bench complete two-turn questions")
+        _check(len(a["choices"][0]["turns"]), 2, "MT-Bench complete two-turn answers")
+        answers = a["choices"][0]["turns"]
+        refs = reference["record"]["choices"][0]["turns"] if reference else [None, None]
+        rendered = p["prompt_template"].format(question=q["turns"][0], question_1=q["turns"][0], question_2=q["turns"][1],
+            answer=answers[0], answer_1=answers[0], answer_2=answers[1], ref_answer_1=refs[0], ref_answer_2=refs[1])
+        _check(rendered, record["user_prompt"], "MT-Bench exact native judge/answer/question/reference association")
+        _check(type(record["score"]) in (int, float) and math.isfinite(record["score"]) and
+               (record["score"] == -1 or 1 <= record["score"] <= 10), True, "MT-Bench native score or unparsed sentinel")
+        content = q["turns"][0] if turn == 1 else json.dumps([
+            dict(role="user", content=q["turns"][0]), dict(role="assistant", content=answers[0]),
+            dict(role="user", content=q["turns"][1])], ensure_ascii=False)
+        criterion = dict(reference_answer=q.get("reference", [None, None])[turn - 1] or None,
+            rule=json.dumps(dict(rule=metadata["grading"]["rule"], judge_reference=reference["record"] if "math" in p["name"] else None),
+                            ensure_ascii=False))
+        native[key] = dict(content=content, criterion=criterion,
+            verifier=dict(**metadata["grading"]["verifiers"]["published_judge"], prompt=p),
+            features=dict(question_id=str(question_id), turn=str(turn), category=q["category"]),
+            trace=dict(judgment=judgment, question=question, answer=answer, prompt=prompt, reference=reference))
+    _check({key[:2] for key in native}, set(groups["answers"]), "MT-Bench each published answer has judgments")
+    return native
+
+
+def _mtbench(directory, tables, metadata, source=None):
+    native = _mtbench_sources(directory, metadata) if source is None else source
+    subject_map = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["recorded_model_label"]
+        labels = {entry["trace"]["answer"]["record"]["model_id"] for key, entry in native.items() if key[0] == model}
+        _check(labels, {features["internal_model_label"]}, "MT-Bench preserve differing filename and internal model labels")
+        _check(features, dict(recorded_model_label=model, internal_model_label=next(iter(labels)),
+            settings_status="historical_generation_settings_not_recorded"), "MT-Bench explicit limits of historical settings")
+        _check(row.display_name, "MT-Bench / " + model, "MT-Bench literal published model identity")
+        for field in ["normalized_name", "release_date", "access_date", "harness", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "MT-Bench unknown historical setting: " + field)
+        subject_map[row.subject_id] = model
+    _check(Counter(subject_map.values()), Counter({key[0]: 1 for key in native}), "MT-Bench all published model labels")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items = Counter(), set()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        original = trace["judgment"]["record"]
+        key = original["model"], original["question_id"], original["turn"]
+        expected = native[key]
+        _check(trace, expected["trace"], "MT-Bench complete original answer, prompt, reference and judgment records")
+        _check(subject_map[row.subject_id], key[0], "MT-Bench exact model/response association")
+        item = items[row.item_id]
+        _check(item["content"], expected["content"], "MT-Bench complete stimulus excludes current answer and includes prior history")
+        _check(_features(item["item_features"]), expected["features"], "MT-Bench source question/category/turn")
+        criterion = json.loads(item["grading_criterion"])
+        _check(criterion["reference_answer"], expected["criterion"]["reference_answer"], "MT-Bench source task reference solution")
+        _check(json.loads(criterion["rule"]), json.loads(expected["criterion"]["rule"]), "MT-Bench separate actual judge references and grading rule")
+        verifier = json.loads(item["verifier"])
+        _check(verifier["class"], "judge", "MT-Bench LLM grading")
+        _check(verifier["judged_by"], "llm", "MT-Bench LLM judge type")
+        _check(verifier.get("judge"), None, "MT-Bench no invented historical judge snapshot")
+        _check(json.loads(verifier["spec"]), expected["verifier"], "MT-Bench exact grading prompt template")
+        score = expected["trace"]["judgment"]["record"]["score"]
+        if score == -1:
+            _check(pd.isna(row.response), True, "MT-Bench unparseable native judgment remains null")
+        else:
+            _check(row.response, score, "MT-Bench exact native rating without rounding or regrading")
+        _check(row.trial, 1, "MT-Bench no invented repeated trials")
+        _check(row.test_condition, "published_single_answer_gpt4_judgment", "MT-Bench single-answer scoring condition")
+        _check(pd.isna(row.interactors), True, "MT-Bench no invented interactors")
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in native}), "MT-Bench every published judgment exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "MT-Bench all full trace associations")
+    _check(used_items, set(items), "MT-Bench no unused items")
+    for item in items.values():
+        feature = _features(item["item_features"])
+        prefix = feature["question_id"] + "_turn" + feature["turn"]
+        if feature["turn"] == "1":
+            _check(item["raw_item_id"], prefix, "MT-Bench original first-turn question identifier")
+        else:
+            _check(item["raw_item_id"].startswith(prefix + "@"), True, "MT-Bench follow-up identity includes its conversation")
+            key = item["raw_item_id"][len(prefix) + 1:], int(feature["question_id"]), 2
+            _check(item["content"], native[key]["content"], "MT-Bench retained upstream conversation alias")
+    expected_items = {(entry["content"], json.dumps(entry["criterion"], sort_keys=True), json.dumps(entry["verifier"], sort_keys=True))
+                      for entry in native.values()}
+    _check(len(items), len(expected_items), "MT-Bench distinct content-and-grading stimuli")
+    _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "MT-Bench pinned original release")
+    return dict(source_responses=len(native), source_items=len(items), source_subjects=len(subject_map),
+        source_questions=len({key[1] for key in native}), source_conversations=len({key[:2] for key in native}),
+        source_traces=len(traces), source_ungraded=sum(entry["trace"]["judgment"]["record"]["score"] == -1 for entry in native.values()),
+        source_fractional_ratings=sum(entry["trace"]["judgment"]["record"]["score"] % 1 != 0 for entry in native.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

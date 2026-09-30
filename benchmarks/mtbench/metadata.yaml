@@ -1,0 +1,83 @@
+benchmark:
+  description: Published GPT-4 single-answer ratings of 34 chat models on 80 two-turn conversations, with full answers,
+    grading prompts and judgments.
+  testing_condition: Each turn is one observed response. A follow-up item contains the initial user message, the
+    model's preceding answer and the second user message; its stimulus therefore depends on that recorded conversation.
+    Use the released answer filenames as model keys, as the upstream browser does, and retain differing internal
+    model labels. Preserve fractional ratings and unparseable judgments as null. Exact historical model snapshots,
+    generation settings and system wrappers are unavailable. Judge templates and reference answers are matched against
+    every released grading prompt. This builder only reads existing results.
+  paper_url: https://arxiv.org/abs/2306.05685
+  data_source_url: https://huggingface.co/spaces/lmsys/mt-bench
+  subject_type: model
+  item_type: task
+  license: The original lmsys/mt-bench Space declares 'other' without additional data terms. FastChat code and templates
+    are Apache-2.0. The CC-BY-4.0 license on the separate six-model human-preference dataset must not be assumed
+    to cover this 34-model single-answer release. Data redistribution is pending clarification.
+  citation: "@misc{zheng2023judgingllmasajudgemtbenchchatbot,\n      title={Judging LLM-as-a-Judge with MT-Bench\
+    \ and Chatbot Arena},\n      author={Lianmin Zheng and Wei-Lin Chiang and Ying Sheng and Siyuan Zhuang and Zhanghao\
+    \ Wu and Yonghao Zhuang and Zi Lin and Zhuohan Li and Dacheng Li and Eric P. Xing and Hao Zhang and Joseph E.\
+    \ Gonzalez and Ion Stoica},\n      year={2023},\n      eprint={2306.05685},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2306.05685},\n}"
+  tags:
+  - conversation
+  - multi-turn
+  - llm-as-a-judge
+  modality:
+  - text
+  domain:
+  - language_understanding
+  - reasoning
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 1
+    max: 10
+    direction: higher_is_better
+  categorical: false
+  release_date: 2023-06
+  release: public
+  name: MT-Bench
+  version: a4b674ca573c24143824ac7f60d9173e7081e37d
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      judgments: space/data/mt_bench/model_judgment/gpt-4_single.jsonl
+      questions: space/data/mt_bench/question.jsonl
+      answers: space/data/mt_bench/model_answer/*.jsonl
+      prompts: harness/fastchat/llm_judge/data/judge_prompts.jsonl
+      references: harness/fastchat/llm_judge/data/mt_bench/reference_answer/gpt-4.jsonl
+    labels:
+      subject_prefix: 'MT-Bench / '
+      settings_status: historical_generation_settings_not_recorded
+      condition: published_single_answer_gpt4_judgment
+grading:
+  rule: Retain the original GPT-4 single-answer score on the 1-to-10 scale, including fractional ratings. The second-turn
+    judgment targets the follow-up answer with the prior conversation in context. The released score -1 means the
+    rating was unparseable and is stored as null, not a failure or a regraded score. References supplied to the
+    judge are distinct from optional task-bank reference solutions. No judgment is rerun.
+  verifiers:
+    published_judge:
+      kind: published_single_answer_judgment
+      model_label: gpt-4
+      source: https://huggingface.co/spaces/lmsys/mt-bench/blob/a4b674ca573c24143824ac7f60d9173e7081e37d/common.py
+      reference_templates_revision: 587d5cfa1609a43d192cedb8441cac3c17db105d
+      historical_model_snapshot: not_recorded
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/spaces/lmsys/mt-bench
+    revision: a4b674ca573c24143824ac7f60d9173e7081e37d
+    files:
+    - match: README\.md|common\.py|app\.py|data/mt_bench/question\.jsonl|data/mt_bench/model_judgment/gpt-4_single\.jsonl|data/mt_bench/model_answer/[^/]+\.jsonl
+      path: space/{path}
+  - name: harness
+    url: https://github.com/lm-sys/FastChat
+    revision: 587d5cfa1609a43d192cedb8441cac3c17db105d
+    files:
+    - match: LICENSE|README\.md|fastchat/llm_judge/README\.md|fastchat/llm_judge/data/judge_prompts\.jsonl|fastchat/llm_judge/data/mt_bench/reference_answer/gpt\-4\.jsonl|fastchat/llm_judge/download_mt_bench_pregenerated\.py
+      path: harness/{path}

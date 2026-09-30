@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5440
+    logical_sha256: 90c4c3feac5102c3c71154422bc2d2b29c29b2f9f29e0cbb04367fb33810c456
+  subjects:
+    rows: 34
+    logical_sha256: bd4c9240c58271d7a8f42ee5f24b4b8f494941954149ae1723629cfe232a9205
+  responses:
+    rows: 5440
+    logical_sha256: e02710c4e448d7d04a20ded087268ff5748aa95bfb7f8ebf969e24d0e787d6bb
+  items:
+    rows: 2716
+    logical_sha256: 1fcb87acd35955bf3b25274a6b8ffa8e9479a36a28333ae45dcdda89d769cdf0
+  benchmarks:
+    rows: 1
+    logical_sha256: 38365ad92d70ca18886863655835504294b107d3fe1f73b6984d57e8b3eb4b13
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 5440
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 2716
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 34
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 80
+  source_conversations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 2720
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 5440
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 4
+  source_fractional_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/spaces/lmsys/mt-bench/tree/a4b674ca573c24143824ac7f60d9173e7081e37d
+    locator: Original questions, model_answer/*.jsonl and model_judgment/gpt-4_single.jsonl; independent source-to-table
+      audit
+    scope: One GPT-4 rating per published model/question/turn, with null unparseable judgments and distinct follow-up
+      contexts.
+    expected: 38

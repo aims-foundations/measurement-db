@@ -773,15 +773,16 @@ class BenchmarkBuild(ABC):
                 temporary = Path(staging) / "input"
                 if "hf_repo" in artifact:
                     from huggingface_hub import hf_hub_download, try_to_load_from_cache
+                    repo_type = artifact.get("hf_repo_type", "dataset")
                     # Keep byte ranges and checksums on the original representation;
                     # compressed CDN responses can break streamed/resumed downloads.
                     # The source commit and expected digest are already pinned.
                     # Reusing its verified cache avoids a HEAD request per image.
                     cached = try_to_load_from_cache(artifact["hf_repo"], artifact["hf_path"],
-                                                   repo_type="dataset", revision=artifact["hf_revision"])
+                                                   repo_type=repo_type, revision=artifact["hf_revision"])
                     if not isinstance(cached, str):
                         cached = hf_hub_download(artifact["hf_repo"], artifact["hf_path"],
-                                                repo_type="dataset", revision=artifact["hf_revision"],
+                                                repo_type=repo_type, revision=artifact["hf_revision"],
                                                 headers={"Accept-Encoding": "identity"})
                     cached = Path(cached)
                     _source_snapshots.verify_snapshot_file(cached, artifact)

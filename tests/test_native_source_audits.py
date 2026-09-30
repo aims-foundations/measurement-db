@@ -550,6 +550,122 @@ class WeaveBenchAuditTests(unittest.TestCase):
                     _weavebench(self.directory, tables, self.metadata)
 
 
+class MTBenchAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        self.temporary = tempfile.TemporaryDirectory(dir=ROOT / "artifacts")
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "mtbench"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/mtbench"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        paths = self.metadata["build"]["parameters"]["paths"]
+
+        def write(name, records):
+            target = raw / name
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text("\n".join(json.dumps(row) for row in records) + "\n")
+
+        questions = [dict(question_id=81, category="writing", turns=["First question\n" + "q" * 18000, "Follow-up question"], reference=["Task reference", ""]),
+                     dict(question_id=82, category="math", turns=["Math question", "Math follow-up"], reference=["Task math reference", "Task second reference"])]
+        reference = dict(question_id=82, answer_id="reference-id", model_id="gpt-4", choices=[dict(index=0, turns=["Judge reference 1", "Judge reference 2"])])
+        prompts = []
+        for math in [False, True]:
+            for turn in [1, 2]:
+                name = "single-" + ("math-v1" if math else "v1") + ("-multi-turn" if turn == 2 else "")
+                text = "Q: {question}\nA: {answer}" if turn == 1 else "Q1: {question_1}\nA1: {answer_1}\nQ2: {question_2}\nA2: {answer_2}"
+                if math:
+                    text += "\nR1: {ref_answer_1}\nR2: {ref_answer_2}"
+                prompts.append(dict(name=name, type="single", system_prompt="Rate the answer from 1 to 10", prompt_template=text, output_format="[[rating]]"))
+        lookup = {row["name"]: row for row in prompts}
+        judgments = []
+        scores = iter([8.5, -1, 5, 6, 7, 9.5, 3, 1])
+        for model in ["model-a", "model-b"]:
+            answers = []
+            for q in questions:
+                a = dict(question_id=q["question_id"], answer_id=model + str(q["question_id"]), model_id="internal-" + model,
+                         choices=[dict(index=0, turns=[model + " first answer\n" + "a" * 20000, model + " current answer"])], tstamp=123.456)
+                answers.append(a)
+                for turn in [1, 2]:
+                    template = "single-" + ("math-v1" if q["category"] == "math" else "v1") + ("-multi-turn" if turn == 2 else "")
+                    p = lookup[template]
+                    at, qt = a["choices"][0]["turns"], q["turns"]
+                    user_prompt = p["prompt_template"].format(question=qt[0], question_1=qt[0], question_2=qt[1],
+                        answer=at[0], answer_1=at[0], answer_2=at[1], ref_answer_1="Judge reference 1", ref_answer_2="Judge reference 2")
+                    judgments.append(dict(model=model, question_id=q["question_id"], turn=turn, judge=["gpt-4", template],
+                        score=next(scores), judgment="Full native assessment\n" + "j" * 24000, user_prompt=user_prompt, tstamp=234.567))
+            write(paths["answers"].replace("*", model), answers)
+        for name, rows in [("questions", questions), ("judgments", judgments), ("prompts", prompts), ("references", [reference])]:
+            write(paths[name], rows)
+        builder = runpy.run_path(str(folder / "build.py"))["MTBench"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_fractional_ratings_nulls_distinct_references_and_complete_turn_history(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mtbench
+        self.assertEqual(_mtbench(self.directory, self.tables, self.metadata), dict(source_responses=8, source_items=6,
+            source_subjects=2, source_questions=2, source_conversations=4, source_traces=8, source_ungraded=1, source_fractional_ratings=2))
+
+    def test_source_associations_history_judging_and_full_traces_reject_corruption(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mtbench
+        for change in ["swap", "fill_null", "round", "subject", "item", "trial", "prompt", "history", "reference",
+                       "judge_reference", "judge_prompt", "clip", "model_alias", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "swap":
+                    tables["responses"].loc[[0, 2], "response"] = list(reversed(tables["responses"].loc[[0, 2], "response"].tolist()))
+                elif change == "fill_null":
+                    tables["responses"].loc[tables["responses"].response.isna(), "response"] = 1.
+                elif change == "round":
+                    tables["responses"]["response"] = tables["responses"].response.round()
+                elif change in {"subject", "item"}:
+                    field = change + "_id"
+                    tables["responses"].loc[0, field] = next(x for x in tables["responses"][field] if x != tables["responses"].loc[0, field])
+                elif change == "trial":
+                    tables["responses"].loc[0, "trial"] = 2
+                elif change == "prompt":
+                    tables["items"].loc[0, "content"] = "Wrong question"
+                elif change == "history":
+                    index = next(i for i, row in tables["items"].iterrows() if "_turn2@" in row.raw_item_id)
+                    tables["items"].loc[index, "content"] = json.loads(tables["items"].loc[index, "content"])[-1]["content"]
+                elif change in {"reference", "judge_reference"}:
+                    index = next(i for i, row in tables["items"].iterrows() if row.raw_item_id.startswith("82_"))
+                    criterion = json.loads(tables["items"].loc[index, "grading_criterion"])
+                    if change == "reference":
+                        criterion["reference_answer"] = "Wrong task reference"
+                    else:
+                        rule = json.loads(criterion["rule"])
+                        rule["judge_reference"] = None
+                        criterion["rule"] = json.dumps(rule)
+                    tables["items"].loc[index, "grading_criterion"] = json.dumps(criterion)
+                elif change == "judge_prompt":
+                    verifier = json.loads(tables["items"].loc[0, "verifier"])
+                    spec = json.loads(verifier["spec"])
+                    spec["prompt"]["system_prompt"] = "Different rubric"
+                    verifier["spec"] = json.dumps(spec)
+                    tables["items"].loc[0, "verifier"] = json.dumps(verifier)
+                elif change == "clip":
+                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    trace["judgment"]["record"]["judgment"] = trace["judgment"]["record"]["judgment"][:16000]
+                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                elif change == "model_alias":
+                    tables["subjects"].loc[0, "subject_features_extra"] = tables["subjects"].loc[0, "subject_features_extra"].replace("internal-model", "invented-model")
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _mtbench(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html

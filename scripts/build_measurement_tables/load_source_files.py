@@ -622,20 +622,21 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                         entries.append(dict(path=entry["path"], size=entry["size"],
                             hash_kind="git_sha1", digest=entry["sha"],
                             url=f"https://raw.githubusercontent.com/{repository}/{revision}/{quote(entry['path'], safe='/')}"))
-            elif location.netloc == "huggingface.co" and location.path.startswith("/datasets/"):
+            elif location.netloc == "huggingface.co" and location.path.startswith(("/datasets/", "/spaces/")):
                 from huggingface_hub import HfApi, hf_hub_url
-                repository = location.path.removeprefix("/datasets/").rstrip("/")
+                collection, repository = location.path.strip("/").split("/", 1)
+                repo_type = {"datasets": "dataset", "spaces": "space"}[collection]
                 if len(repository.split("/")) != 2:
-                    raise SourceDataError(f"{name}: expected a Hugging Face dataset URL")
-                for entry in HfApi().list_repo_tree(repository, repo_type="dataset", revision=revision, recursive=True):
+                    raise SourceDataError(f"{name}: expected a Hugging Face {repo_type} URL")
+                for entry in HfApi().list_repo_tree(repository, repo_type=repo_type, revision=revision, recursive=True):
                     if not hasattr(entry, "blob_id"):
                         continue
                     lfs = entry.lfs
                     digest = (lfs["sha256"] if isinstance(lfs, dict) else lfs.sha256) if lfs else entry.blob_id
                     entries.append(dict(path=entry.path, size=entry.size,
                         hash_kind="sha256" if lfs else "git_sha1", digest=digest,
-                        url=hf_hub_url(repository, entry.path, repo_type="dataset", revision=revision),
-                        hf_repo=repository, hf_revision=revision, hf_path=entry.path))
+                        url=hf_hub_url(repository, entry.path, repo_type=repo_type, revision=revision),
+                        hf_repo=repository, hf_revision=revision, hf_path=entry.path, hf_repo_type=repo_type))
             elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
             selected = []
