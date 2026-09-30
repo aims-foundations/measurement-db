@@ -807,6 +807,128 @@ class NYUCTFAuditTests(unittest.TestCase):
                     _nyu_ctf(self.directory, tables, self.metadata, self.source)
 
 
+class PerfCodeBenchAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        self.temporary = tempfile.TemporaryDirectory(dir=ROOT / "artifacts")
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "perfcodebench"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/perfcodebench"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        paths = self.metadata["build"]["parameters"]["paths"]
+        with tarfile.open(raw / paths["archive"], "w:gz") as archive:
+            def add(name, value):
+                data = value.encode() if isinstance(value, str) else json.dumps(value).encode()
+                member = tarfile.TarInfo(paths["root"] + "/" + name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+            for index, task in enumerate(["task-a", "task-b", "task-c"]):
+                root = f"executable_tasks/{task}/"
+                filename = "solution.py" if index == 1 else "solution.cpp"
+                record = dict(task_id=task, title="Original task " + task, goal="Preserve the result while optimizing",
+                    metric="elapsed nanoseconds", correctness_rule="Match the original oracle", allowed_external_includes=["original-library"],
+                    build=dict(compiler="original-compiler", sources=["{variant_dir}/" + filename]))
+                if index == 1:
+                    record["solution_filename"] = filename
+                add(root + "instance.json", record)
+                add(root + "baseline/" + filename, "  original baseline\n" + "b" * 21000)
+                add(root + "reference/" + filename, "  original reference\n" + "r" * 22000)
+                add(root + "harness/oracle.txt", "Original task-specific oracle " + task)
+                if index == 0:
+                    add(root + "harness/interface.h", "First original interface\n" + "h" * 23000)
+                    add(root + "harness/interface.hpp", "Unused second interface")
+                if index == 2:
+                    add(root + "harness/interface.txt", "Original text interface")
+                for model in ["vendor/model-a", "vendor/model-b"]:
+                    name = root + "candidate/" + model.replace("/", "__") + "/"
+                    status = (["ok", "error", "missing_candidate"] if model.endswith("a") else ["timeout", "ok", "ok"])[index]
+                    candidate = dict(task_id=task, variant="candidate", runs=3, status=status)
+                    if status == "missing_candidate":
+                        add(name + "eval_result.json", dict(task_id=task, model=model, status=status, candidate=dict(status=status, all_ok=False)))
+                        continue
+                    code = "" if status == "error" else "original generated source\n" + "c" * 24000
+                    add(name + filename, code)
+                    if status == "ok":
+                        candidate.update(all_ok=index != 1, median_elapsed_ns=123, all_elapsed_ns=[122, 123, 124])
+                    else:
+                        candidate.update(error_type="CalledProcessError" if status == "error" else "TimeoutExpired", error="Original execution diagnostic\n" + "e" * 25000)
+                    add(name + "eval_result.json", dict(task_id=task, model=model, dry_run=False, candidate_path=name + filename,
+                        benchmark_timeout_sec=5 + index, model_output_summary="original reasoning summary", model_output_solution_source=code,
+                        baseline=dict(status="ok", median_elapsed_ns=345), reference=dict(status="ok", median_elapsed_ns=100), candidate=candidate))
+        builder = runpy.run_path(str(folder / "build.py"))["PerfCodeBench"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {p.stem: pd.read_parquet(p) for p in output.glob("*.parquet")}
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perfcode_sources
+        self.source = _perfcode_sources(self.directory, self.metadata)
+
+    def test_original_prompts_interfaces_statuses_and_full_execution_records(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perfcodebench
+        self.assertEqual(_perfcodebench(self.directory, self.tables, self.metadata, self.source),
+            dict(source_responses=5, source_items=3, source_subjects=2, source_traces=5, source_passes=2,
+                source_missing_candidates=1, source_errors=1, source_timeouts=1, source_empty_solutions=1, source_tasks_with_interface=2))
+
+    def test_grades_prompt_contracts_grading_and_native_records_reject_corruption(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _perfcodebench
+        for change in ["grade", "subject", "item", "trial", "timeout", "prompt", "interface", "reference", "oracle",
+                       "model_alias", "trace_code", "trace_error", "trace_time", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "grade":
+                    tables["responses"].loc[0, "response"] = 1 - tables["responses"].loc[0, "response"]
+                elif change in {"subject", "item"}:
+                    field = change + "_id"
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != tables["responses"].loc[0, field])
+                elif change == "trial":
+                    tables["responses"].loc[0, "trial"] = 3
+                elif change == "timeout":
+                    condition = json.loads(tables["responses"].loc[0, "test_condition"])
+                    condition["timeout_sec"] = 99
+                    tables["responses"].loc[0, "test_condition"] = json.dumps(condition)
+                elif change == "prompt":
+                    tables["items"].loc[0, "content"] = "Task name only"
+                elif change == "interface":
+                    index = next(i for i, row in tables["items"].iterrows() if "First original interface" in row.content)
+                    tables["items"].loc[index, "content"] = tables["items"].loc[index, "content"].replace("First original interface", "Wrong interface")
+                elif change in {"reference", "oracle"}:
+                    criterion = json.loads(tables["items"].loc[0, "grading_criterion"])
+                    if change == "reference":
+                        criterion["reference_answer"] = "Wrong reference source"
+                    else:
+                        rule = json.loads(criterion["rule"])
+                        rule["harness_sources"] = []
+                        criterion["rule"] = json.dumps(rule)
+                    tables["items"].loc[0, "grading_criterion"] = json.dumps(criterion)
+                elif change == "model_alias":
+                    tables["subjects"]["subject_features_extra"] = tables["subjects"].subject_features_extra.str.replace("vendor/model", "wrong/model")
+                elif change.startswith("trace_"):
+                    index = next(i for i, row in tables["traces"].iterrows() if json.loads(row.trace)["source_record"]["candidate"]["status"] == ("error" if change == "trace_error" else "ok"))
+                    trace = json.loads(tables["traces"].loc[index, "trace"])
+                    record = trace["source_record"]
+                    if change == "trace_code":
+                        record["model_output_solution_source"] = record["model_output_solution_source"][:16000]
+                    elif change == "trace_error":
+                        record["candidate"]["error"] = "clipped"
+                    else:
+                        record["candidate"]["median_elapsed_ns"] = 999
+                    tables["traces"].loc[index, "trace"] = json.dumps(trace)
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _perfcodebench(self.directory, tables, self.metadata, self.source)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html

@@ -22842,12 +22842,131 @@ def _nyu_ctf(directory, tables, metadata, source=None):
         source_passes=sum(entry["grade"] is True for entry in source["native"].values()))
 
 
+def _perfcode_sources(directory, metadata):
+    """Walk original archive records independently of the builder's DataFrame joins."""
+    import tarfile
+    from collections import defaultdict
+
+    paths = metadata["build"]["parameters"]["paths"]
+    files, tasks, native, conditions = {}, {}, {}, defaultdict(set)
+    with tarfile.open(directory / "raw" / paths["archive"], "r|gz") as archive:
+        for member in archive:
+            if member.isfile():
+                files[member.name.removeprefix(paths["root"] + "/")] = archive.extractfile(member).read()
+    missing = 0
+    for name, body in files.items():
+        if not name.endswith("/eval_result.json"):
+            continue
+        record = json.loads(body)
+        task, model_alias = name.split("/")[1], name.split("/candidate/", 1)[1].rsplit("/", 1)[0]
+        _check(record["task_id"], task, "PerfCodeBench native task coordinate")
+        _check(record["model"].replace("/", "__"), model_alias, "PerfCodeBench literal original model identity")
+        candidate = record["candidate"]
+        if candidate["status"] == "missing_candidate":
+            _check(record["status"], "missing_candidate", "PerfCodeBench explicit absent candidate placeholder")
+            missing += 1
+            continue
+        _check(record["dry_run"], False, "PerfCodeBench actual recorded evaluation")
+        _check(candidate["task_id"], task, "PerfCodeBench candidate task association")
+        _check(candidate["status"] in {"ok", "error", "timeout"}, True, "PerfCodeBench known execution outcome")
+        if candidate["status"] == "ok":
+            _check(type(candidate["all_ok"]) is bool, True, "PerfCodeBench explicit oracle verdict")
+            grade = float(candidate["all_ok"])
+        else:
+            grade = 0.
+        key = record["model"], task
+        _check(key not in native, True, "PerfCodeBench one generated candidate per model/task")
+        _check(files[record["candidate_path"]].decode(), record["model_output_solution_source"], "PerfCodeBench saved source and logged code agree")
+        conditions[task].add((candidate["runs"], record["benchmark_timeout_sec"]))
+        native[key] = dict(grade=grade, trace=dict(source_archive=paths["archive"], source_member=name, source_record=record,
+            task_member=f"executable_tasks/{task}/instance.json", candidate_source_member=record["candidate_path"]))
+    _check(all(len(value) == 1 for value in conditions.values()), True, "PerfCodeBench one grading allowance per original task")
+    for task, allowance in conditions.items():
+        root = f"executable_tasks/{task}/"
+        record = json.loads(files[root + "instance.json"])
+        _check(record["task_id"], task, "PerfCodeBench original task definition")
+        filename = record.get("solution_filename", "solution.cpp")
+        baseline = files[root + "baseline/" + filename].decode()
+        reference = files[root + "reference/" + filename].decode()
+        interface = next((files[root + name].decode() for name in ["harness/interface.h", "harness/interface.hpp", "harness/interface.txt"]
+            if root + name in files), "")
+        prompt = ("Optimize the following implementation for performance while preserving correctness.\n"
+            f"Return a full, complete, compilable replacement for {filename}.\n"
+            "Do not change the externally required function signature or entrypoint used by the harness.\n"
+            "You may use only the dependencies already compiled by this task.\n\n"
+            f"Task ID: {task}\nTitle: {record['title']}\nGoal: {record['goal']}\nMetric: {record['metric']}\n"
+            f"Correctness rule: {record['correctness_rule']}\nAllowed external includes: {', '.join(record.get('allowed_external_includes', []))}\n\n"
+            + (f"Interface / task contract:\n{interface}\n\n" if interface else "")
+            + f"Current baseline {filename}:\n{baseline}\n")
+        runs, timeout = next(iter(allowance))
+        rule = dict(metric=metadata["grading"]["rule"], correctness_rule=record["correctness_rule"],
+            execution_repetitions=runs, timeout_sec=timeout, build=record["build"], run=record.get("run"),
+            harness_sources=[dict(source_member=name, text=body.decode()) for name, body in files.items() if name.startswith(root + "harness/")])
+        tasks[task] = dict(content=prompt, reference=reference, rule=rule, interface=interface,
+            language=metadata["build"]["parameters"]["languages"][Path(filename).suffix])
+    return dict(native=native, tasks=tasks, missing_candidates=missing)
+
+
+def _perfcodebench(directory, tables, metadata, source=None):
+    source = _perfcode_sources(directory, metadata) if source is None else source
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features["recorded_model_label"]
+        _check(row.display_name, "PerfCodeBench / " + model, "PerfCodeBench no invented model alias")
+        _check(row.harness, "PerfCodeBench", "PerfCodeBench original harness")
+        _check(features, dict(recorded_model_label=model, settings_status="historical_generation_settings_not_logged"),
+            "PerfCodeBench no current defaults assigned to historical generations")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "PerfCodeBench unknown historical setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source["native"]}), "PerfCodeBench every evaluated model exactly once")
+    items = tables["items"].set_index("item_id").to_dict("index")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen, used_items = Counter(), set()
+    for row in tables["responses"].itertuples():
+        item = items[row.item_id]
+        key = subjects[row.subject_id], item["raw_item_id"]
+        _check(key in source["native"], True, "PerfCodeBench no fabricated missing-candidate observation")
+        original, task = source["native"][key], source["tasks"][key[1]]
+        _check(row.response, original["grade"], "PerfCodeBench exact strict correctness-and-runnability grade")
+        _check(row.trial, 1, "PerfCodeBench repeated timings do not create generated trials")
+        _check(json.loads(row.test_condition), dict(metric="correct_and_runnable", execution_repetitions=task["rule"]["execution_repetitions"],
+            timeout_sec=task["rule"]["timeout_sec"]), "PerfCodeBench recorded execution allowance")
+        _check(pd.isna(row.interactors), True, "PerfCodeBench no invented interactors")
+        _check(json.loads(traces[row.response_id]), original["trace"], "PerfCodeBench full code, errors, timings and source links")
+        if row.item_id not in used_items:
+            _check(item["content"], task["content"], "PerfCodeBench complete original prompt including interface and baseline")
+            _check(_features(item["item_features"]), dict(source_task_id=key[1], lang=task["language"],
+                prompt_basis="published_harness_reconstruction_not_logged_api_request"), "PerfCodeBench task identity and prompt evidence")
+            criterion = json.loads(item["grading_criterion"])
+            _check(criterion["reference_answer"], task["reference"], "PerfCodeBench released reference implementation")
+            _check(json.loads(criterion["rule"]), task["rule"], "PerfCodeBench full task oracle, build/run contract and allowance")
+            verifier = json.loads(item["verifier"])
+            _check(verifier["class"], "exact_matcher", "PerfCodeBench deterministic original task checks")
+            _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["correct_and_runnable"], "PerfCodeBench grading provenance")
+            _check(pd.isna(item["asset_manifest"]), True, "PerfCodeBench all released prompt inputs are text")
+        seen[key] += 1
+        used_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in source["native"]}), "PerfCodeBench every recorded evaluated candidate exactly once")
+    _check(used_items, set(items), "PerfCodeBench no orphan tasks")
+    _check(set(traces), set(tables["responses"].response_id), "PerfCodeBench one full record per assessment including empty code")
+    _check(tables["benchmarks"].iloc[0].version, metadata["benchmark"]["version"], "PerfCodeBench pinned original source revision")
+    native = [entry["trace"]["source_record"] for entry in source["native"].values()]
+    return dict(source_responses=len(seen), source_items=len(items), source_subjects=len(subjects), source_traces=len(traces),
+        source_passes=sum(entry["grade"] == 1 for entry in source["native"].values()), source_missing_candidates=source["missing_candidates"],
+        source_errors=sum(row["candidate"]["status"] == "error" for row in native),
+        source_timeouts=sum(row["candidate"]["status"] == "timeout" for row in native),
+        source_empty_solutions=sum(not row["model_output_solution_source"] for row in native),
+        source_tasks_with_interface=sum(bool(task["interface"]) for task in source["tasks"].values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
