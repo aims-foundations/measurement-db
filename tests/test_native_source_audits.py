@@ -2154,5 +2154,116 @@ class VisualRiddlesNativeAuditTests(unittest.TestCase):
                 '--output', str(self.directory.parent / 'invalid')])
 
 
+class SustainableFoodNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import html
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'sustainable_food'
+        self.raw = self.directory / 'raw/release/recipe-rating-prediction'
+        self.raw.mkdir(parents=True)
+        folder = ROOT / 'benchmarks/sustainable_food'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        paragraphs = self.metadata['build']['parameters']['instructions']['prefix'].split('\n\n')
+        (self.directory / 'raw/paper.html').write_text(''.join('<span id="A4.F10.pic1.2.' + str(i) + '.1">' +
+            html.escape(text) + '</span>' for i, text in enumerate(paragraphs, 1)))
+        models = list(self.metadata['build']['parameters']['parsers'])
+        output_columns = [['Answer: 1', '2', '1'], ['', '1', '2'],
+            ['Recipe 2 appears before Recipe 1. ' + 'Complete answer 完整. ' * 2000, 'Recipe 2', '1'],
+            ['2', '1', 'not a selection'], ['1', '1', '2'], ['2 explanation', '2', '1']]
+        pairs, outputs = [], []
+        for position, (key, gold) in enumerate([('9', '1.0'), ('4', '2.0'), ('2', '2.0')]):
+            pairs.append({'': key, 'index': str(100 + position), 'id_1': 'first-' + key, 'id_2': 'second-' + key,
+                'text_1': '  Recipe one 完整 for ' + key + '\n', 'text_2': '\nRecipe two for ' + key + '  ',
+                'ground_truth': gold, 'actual_score_1': '4.8' if gold == '1.0' else '3.9', 'actual_score_2': '4.5'})
+            outputs.append({'': key, **{model: output_columns[index][position] for index, model in enumerate(models)}})
+        pd.DataFrame(pairs).to_csv(self.raw / 'pairs_metadata.csv', index=False)
+        pd.DataFrame(outputs[::-1]).to_csv(self.raw / 'collected_outputs.csv', index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['SustainableFood']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_reordered_keys_native_parser_precedence_and_ungraded_attempts(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _sustainable_food
+        self.assertEqual(_sustainable_food(self.directory, self.frames, self.metadata), dict(source_responses=18,
+            source_subjects=6, source_items=3, source_traces=18, source_successes=8, source_failures=8,
+            source_ungraded=2, source_missing_outputs=1, source_present_outputs=17, source_unparseable_outputs=1))
+
+    def test_audit_rejects_corrupt_grades_prompts_outputs_and_joins(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _sustainable_food, _sustainable_food_sources
+        source = _sustainable_food_sources(self.directory)
+        for change in ['grade_swap', 'null_to_zero', 'subject', 'item', 'instructions', 'recipe', 'reference', 'verifier',
+                       'output', 'pair', 'position', 'row_key', 'column', 'condition', 'trial',
+                       'drop', 'duplicate', 'drop_trace', 'settings', 'request_options']:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'grade_swap':
+                    zero = frames['responses'].index[frames['responses'].response.eq(0.)][0]
+                    one = frames['responses'].index[frames['responses'].response.eq(1.)][0]
+                    frames['responses'].loc[zero, 'response'] = 1.; frames['responses'].loc[one, 'response'] = 0.
+                elif change == 'null_to_zero': frames['responses']['response'] = frames['responses'].response.fillna(0.)
+                elif change in ['subject', 'item']:
+                    column = change + '_id'; current = frames['responses'].loc[0, column]
+                    frames['responses'].loc[0, column] = frames[change + 's'].loc[frames[change + 's'][column].ne(current), column].iloc[0]
+                elif change == 'instructions': frames['items'].loc[0, 'content'] = frames['items'].loc[0, 'content'].split('Recipe 1:')[1]
+                elif change == 'recipe': frames['items'].loc[0, 'content'] += ' Wrong added input'
+                elif change == 'reference':
+                    criterion = json.loads(frames['items'].loc[0, 'grading_criterion']); criterion['reference_answer'] = 'Wrong recipe'
+                    frames['items'].loc[0, 'grading_criterion'] = json.dumps(criterion)
+                elif change == 'verifier':
+                    verifier = json.loads(frames['items'].loc[0, 'verifier']); verifier['class'] = 'judge'
+                    frames['items'].loc[0, 'verifier'] = json.dumps(verifier)
+                elif change in ['output', 'pair', 'position', 'row_key', 'column']:
+                    data = json.loads(frames['traces'].loc[0, 'trace'])
+                    if change == 'output': data['native_output'] += ' altered'
+                    elif change == 'pair': data['native_pair']['id_1'] = 'other recipe'
+                    elif change == 'position': data['source_row'] += 1
+                    elif change == 'row_key': data['row_key'] = 'other row'
+                    else: data['source_column'] = 'other-model'
+                    frames['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'condition': frames['responses'].loc[0, 'test_condition'] = 'Other release'
+                elif change == 'trial': frames['responses'].loc[0, 'trial'] += 1
+                elif change == 'drop': frames['responses'] = frames['responses'].iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([frames['responses'], frames['responses'].iloc[:1]])
+                elif change == 'drop_trace': frames['traces'] = frames['traces'].iloc[1:]
+                elif change == 'settings': frames['subjects'].loc[0, 'reasoning_effort'] = 'high'
+                else:
+                    text = frames['subjects'].loc[0, 'subject_features_extra']
+                    self.assertIn('"echo_prompt": false', text)
+                    frames['subjects'].loc[0, 'subject_features_extra'] = text.replace('"echo_prompt": false', '"echo_prompt": true')
+                with self.assertRaises((ValueError, KeyError)):
+                    _sustainable_food(self.directory, frames, self.metadata, source)
+
+    def test_unmatched_source_rows_cannot_be_silently_truncated(self):
+        import contextlib
+        import io
+        path = self.raw / 'collected_outputs.csv'
+        pd.read_csv(path, keep_default_na=False).iloc[:-1].to_csv(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'exactly matching row keys'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+    def test_unknown_model_column_cannot_be_silently_dropped(self):
+        import contextlib
+        import io
+        path = self.raw / 'collected_outputs.csv'
+        table = pd.read_csv(path, keep_default_na=False); table['another-model'] = '1'; table.to_csv(path, index=False)
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'model columns differ'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()

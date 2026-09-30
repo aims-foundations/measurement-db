@@ -1,0 +1,105 @@
+benchmark:
+  description: Six LLMs predict which of two Food.com recipes has the higher average user rating on 500 author-selected
+    pairs.
+  testing_condition: Preserve all 3000 released output cells, including one unavailable Claude output as an ungraded
+    attempt. Join pairs and outputs by their exported CSV row keys, not truncated positional alignment. Keep the
+    exact six dated model identifiers and declared HELM request options. Items contain the paper Figure 10 instructions,
+    the full ordered recipe texts, and the collection notebook answer suffix. The actual prompt.txt file and historical
+    request logs are absent; prompt_task_4.txt contains only a placeholder. Task instructions are therefore documented
+    from the paper, not claimed to be byte-identical historical requests. Preserve the authors model-specific choice
+    parsing and exact comparison to the released preferred-recipe label. No missing output becomes a failure. The
+    paper accuracy denominator includes all 500 pairs; a mean over non-null Claude grades instead uses 499. Recent-recipe
+    robustness experiments and private protein data are outside this release scope. No models, API calls, or optimization
+    solvers are executed.
+  paper_url: https://arxiv.org/abs/2503.04734
+  data_source_url: https://github.com/thomasat/llms-sustainable-food
+  subject_type: model
+  item_type: task
+  license: MIT (author repository); CC-BY-4.0 (paper)
+  citation: "@inproceedings{thomas2025sustainablefood,\n  title={What Can Large Language Models Do for Sustainable\
+    \ Food?},\n  author={Thomas, Anna T. and Yee, Adam and Mayne, Andrew and Mathur, Maya B. and Jurafsky, Dan and\
+    \ Gligori\\'c, Kristina},\n  booktitle={International Conference on Machine Learning (ICML)},\n  year={2025},\n\
+    \  url={https://github.com/thomasat/llms-sustainable-food},\n}"
+  tags:
+  - preference_prediction
+  - food
+  - sustainability
+  - pairwise_ranking
+  modality:
+  - text
+  domain:
+  - preference
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Parsed choice differs from the higher-rated recipe
+      '1': Parsed choice matches the higher-rated recipe
+  categorical: true
+  release_date: 2025-02
+  release: public
+  name: Sustainable Food Recipe Preference Prediction
+  version: 916e6474d322554dcd5477e2f4e1caa5f7de9ba8
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      pairs: release/recipe-rating-prediction/pairs_metadata.csv
+      outputs: release/recipe-rating-prediction/collected_outputs.csv
+    labels:
+      subject_prefix: 'Sustainable Food / '
+      harness: HELM RemoteService recipe preference prediction
+    parsers:
+      openai/o1-preview-2024-09-12: o1_initial
+      anthropic/claude-3-5-sonnet-20240620: numeric
+      openai/gpt-3.5-turbo-0125: recipe_label
+      openai/gpt-4o-2024-05-13: numeric
+      meta/llama-3.1-70b-instruct-turbo: numeric
+      google/gemini-1.5-pro-001: initial
+    request_options:
+      openai/o1-preview-2024-09-12: '{"echo_prompt": false, "max_tokens": 32768}'
+      anthropic/claude-3-5-sonnet-20240620: '{"echo_prompt": false}'
+      openai/gpt-3.5-turbo-0125: '{"echo_prompt": false}'
+      openai/gpt-4o-2024-05-13: '{"echo_prompt": false}'
+      meta/llama-3.1-70b-instruct-turbo: '{"echo_prompt": false}'
+      google/gemini-1.5-pro-001: '{"echo_prompt": false}'
+    instructions:
+      prefix: 'You are an expert online recipe writer. Which online recipe would people prefer, recipe 1 or recipe
+        2?
+
+
+        Output a number only (1 or 2). You must choose one. If unsure, provide your best guess.'
+      source: https://arxiv.org/html/2503.04734v1#A4.F10
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/thomasat/llms-sustainable-food
+    revision: 916e6474d322554dcd5477e2f4e1caa5f7de9ba8
+    files:
+    - match: (?:README[.]md|LICENSE|recipe-rating-prediction/(?:pairs_metadata[.]csv|collected_outputs[.]csv|prompt_task_4[.]txt|task_4_step_[123]_.+[.]ipynb))
+      path: release/{path}
+  - name: paper
+    url: https://arxiv.org/html/2503.04734v1
+    revision: 2503.04734v1
+    file: paper.html
+    size: 597935
+    sha256: 210e68366d73ecf203500aa0c9319aa1c5c8c77d8c64b8a141ad18eceeb79e1c
+grading:
+  rule: 'Apply the released model-specific parser and compare the numeric choice to ground_truth (1 or 2). GPT-3.5
+    checks Recipe 1 before Recipe 2, then numeric conversion. Gemini takes the first character. o1 takes the first
+    character after the notebook character-set strip when Answer: is present. Other models use numeric conversion.
+    Missing or unparseable outputs remain ungraded; original text is retained.'
+  verifiers:
+    published:
+      kind: released_model_specific_parser_then_exact_match
+      source: https://github.com/thomasat/llms-sustainable-food/blob/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction/task_4_step_3_performance_analysis.ipynb
+      implementation: process_responses_gpt_3, process_responses_gemini, process_responses_o1; numeric comparison
+        to ground_truth
+      limitation: Preserve original parser precedence; do not rerun models or silently count unavailable output
+        as failure.

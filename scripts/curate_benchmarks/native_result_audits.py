@@ -24209,6 +24209,120 @@ def _visual_riddles(directory, tables, metadata, source=None):
             'source_human_caption_responses', 'source_generated_caption_responses', 'source_successes', 'source_failures', 'source_ungraded']})
 
 
+def _sustainable_food_sources(directory):
+    import csv
+    import html
+    import math
+    import re
+    raw = directory / 'raw/release/recipe-rating-prediction'
+    with (raw / 'pairs_metadata.csv').open(newline='') as stream:
+        pairs = list(csv.DictReader(stream))
+    with (raw / 'collected_outputs.csv').open(newline='') as stream:
+        outputs = list(csv.DictReader(stream))
+    bank = {row['']: (position, row) for position, row in enumerate(pairs)}
+    _check(len(bank), len(pairs), 'Sustainable Food unique native pair row keys')
+    _check(Counter(row[''] for row in outputs), Counter(bank.keys()), 'Sustainable Food exactly matching exported row keys')
+    paper = (directory / 'raw/paper.html').read_text()
+    paragraphs = [html.unescape(re.search('id="A4.F10.pic1.2.' + str(i) + r'.1"[^>]*>([^<]+)</span>', paper).group(1))
+        for i in [1, 2]]
+    prefix = '\n\n'.join(paragraphs)
+    native, models, counts = {}, set(), Counter()
+    for position, row in enumerate(outputs):
+        key = row['']
+        pair_position, pair = bank[key]
+        gold = float(pair['ground_truth'])
+        _check(gold in [1., 2.], True, 'Sustainable Food valid preferred-recipe label')
+        _check(gold, 1. if float(pair['actual_score_1']) > float(pair['actual_score_2']) else 2.,
+            'Sustainable Food preferred recipe agrees with the released user ratings')
+        for model, output in row.items():
+            if model == '': continue
+            models.add(model)
+            # Independently reproduce the small, published Python string parsers.
+            parsed = output
+            if model == 'openai/gpt-3.5-turbo-0125':
+                if output == 'Recipe 2': parsed = '2'
+                elif 'Recipe 1' in output: parsed = '1'
+                elif 'Recipe 2' in output: parsed = '2'
+            elif model == 'google/gemini-1.5-pro-001': parsed = output[:1]
+            elif model == 'openai/o1-preview-2024-09-12':
+                parsed = (output.strip('Answer: ') if 'Answer: ' in output else output)[:1]
+            else:
+                _check(model in ['anthropic/claude-3-5-sonnet-20240620', 'openai/gpt-4o-2024-05-13',
+                    'meta/llama-3.1-70b-instruct-turbo'], True, 'Sustainable Food declared original model parser')
+            try:
+                choice = float(parsed)
+                grade = None if math.isnan(choice) else float(choice == gold)
+            except ValueError:
+                grade = None
+            counts['source_ungraded' if grade is None else 'source_successes' if grade else 'source_failures'] += 1
+            counts['source_missing_outputs' if not output else 'source_present_outputs'] += 1
+            if output and grade is None: counts['source_unparseable_outputs'] += 1
+            native[position, model] = dict(item=key, pair_position=pair_position, pair=pair, output=output, grade=grade)
+    return dict(bank=bank, native=native, models=models, prefix=prefix, counts=dict(counts))
+
+
+def _sustainable_food(directory, tables, metadata, source=None):
+    source = _sustainable_food_sources(directory) if source is None else source
+    subjects, seen_models = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model']
+        options = dict(echo_prompt=False)
+        if model == 'openai/o1-preview-2024-09-12': options['max_tokens'] = 32768
+        _check(features, dict(source_model=model, declared_request_options=json.dumps(options, sort_keys=True)),
+            'Sustainable Food only original model ID and declared request options')
+        _check(row.display_name, 'Sustainable Food / ' + model, 'Sustainable Food exact dated model identifier')
+        _check(row.harness, 'HELM RemoteService recipe preference prediction', 'Sustainable Food original harness')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'Sustainable Food no inferred setting: ' + field)
+        subjects[row.subject_id] = model
+        seen_models[model] += 1
+    _check(seen_models, Counter({key: 1 for key in source['models']}), 'Sustainable Food every source model')
+    items, seen_items = {}, Counter()
+    aliases = {pair['index']: (key, pair) for key, (_, pair) in source['bank'].items()}
+    _check(len(aliases), len(source['bank']), 'Sustainable Food unique original pair identifiers')
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        key, pair = aliases[features['pair_id']]
+        _check(features, dict(pair_id=pair['index'], recipe_1_id=pair['id_1'], recipe_2_id=pair['id_2']),
+            'Sustainable Food correct ordered recipe identities')
+        _check(row.raw_item_id, 'foodcom::pair::' + pair['index'], 'Sustainable Food original pair alias')
+        content = source['prefix'] + '\n\nRecipe 1:\n' + pair['text_1'] + '\n\nRecipe 2:\n' + pair['text_2'] + '\n\nAnswer:'
+        _check(row.content, content, 'Sustainable Food paper instructions, exact recipe texts and collection suffix')
+        _check(json.loads(row.grading_criterion), dict(reference_answer='Recipe ' + str(int(float(pair['ground_truth']))),
+            rule=metadata['grading']['rule']), 'Sustainable Food original preferred-recipe label')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Sustainable Food deterministic source choice matching')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['published'], 'Sustainable Food published parsing protocol')
+        _check(pd.isna(row.asset_manifest), True, 'Sustainable Food no invented assets')
+        items[row.item_id] = key
+        seen_items[key] += 1
+    _check(seen_items, Counter({key: 1 for key in source['bank']}), 'Sustainable Food every ordered source pair')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Sustainable Food unique full trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_row'], trace['source_column']
+        original = source['native'][key]
+        _check(trace, dict(source_file='release/recipe-rating-prediction/collected_outputs.csv', source_row=key[0],
+            pair_source_row=original['pair_position'], row_key=original['item'], source_column=key[1],
+            native_output=original['output'], native_pair=original['pair']), 'Sustainable Food full original output and pair record')
+        _check(subjects[row.subject_id], key[1], 'Sustainable Food exact model-output association')
+        _check(items[row.item_id], original['item'], 'Sustainable Food correct pair-output association despite row order')
+        _check(None if pd.isna(row.response) else row.response, original['grade'], 'Sustainable Food native parser grade or unavailable result')
+        _check(row.trial, 1, 'Sustainable Food one released output cell per pair and model')
+        _check(row.test_condition, 'source_file=release/recipe-rating-prediction/collected_outputs.csv', 'Sustainable Food original output release')
+        _check(pd.isna(row.interactors), True, 'Sustainable Food no inferred interactions')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Sustainable Food all original output cells exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Sustainable Food complete trace associations')
+    _check(len(tables.get('assets', [])), 0, 'Sustainable Food text-only source inputs')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        **{key: source['counts'].get(key, 0) for key in ['source_successes', 'source_failures', 'source_ungraded',
+            'source_missing_outputs', 'source_present_outputs', 'source_unparseable_outputs']})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -24226,6 +24340,8 @@ def verify_native_results(directory, tables_directory=None):
         return _morqa(directory, tables, metadata)
     if directory.name == 'mtbbench':
         return _mtbbench(directory, tables, metadata)
+    if directory.name == 'sustainable_food':
+        return _sustainable_food(directory, tables, metadata)
     if directory.name == 'visual_riddles':
         return _visual_riddles(directory, tables, metadata)
     if directory.name == 'real_pocqi':
