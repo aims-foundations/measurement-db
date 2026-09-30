@@ -25111,11 +25111,109 @@ def _prm800k(directory, tables, metadata, source=None):
     return source['counts']
 
 
+def _prediction_arena_sources(directory, metadata):
+    """Read original settlement/market associations without using the builder's joins."""
+    import math
+
+    raw = directory / 'raw'
+    layout = metadata['build']['parameters']['layout']
+    roster = json.loads((raw / layout['agents']).read_text())
+    agents = {row['id']: row for row in roster}
+    _check(len(agents), len(roster), 'Prediction Arena unique source agent IDs')
+    native, markets, counts = {}, {}, Counter()
+    for path in sorted(raw.glob(layout['settlements'])):
+        agent = agents[path.stem]
+        for index, record in enumerate(json.loads(path.read_text())):
+            key = record['id']
+            _check(key not in native, True, 'Prediction Arena unique native settlement IDs')
+            _check(type(record['realized_pnl']) in (int, float) and math.isfinite(record['realized_pnl']),
+                   True, 'Prediction Arena finite original profit')
+            market_path = raw / 'markets' / (key + '.json')
+            document = json.loads(market_path.read_text())
+            _check((document['cursor'], len(document['markets'])), ('', 1), 'Prediction Arena complete single-market query')
+            market = document['markets'][0]
+            _check((market['ticker'], market['result']), (record['ticker'], record['result']),
+                   'Prediction Arena native market identity and resolved outcome')
+            _check(bool(market['title']) and bool(market['rules_primary']), True, 'Prediction Arena original question and rules')
+            content = {field: market.get(field) for field in ['ticker', 'event_ticker', 'title', 'subtitle',
+                'yes_sub_title', 'no_sub_title', 'close_time', 'rules_primary', 'rules_secondary']}
+            if record['ticker'] in markets:
+                _check(content, markets[record['ticker']], 'Prediction Arena consistent repeated market definitions')
+            markets[record['ticker']] = content
+            native[key] = dict(agent=agent, settlement=record, market=market,
+                source_file=str(path.relative_to(raw)), source_row=index,
+                market_source_file=str(market_path.relative_to(raw)))
+            counts['source_positive_profit'] += record['realized_pnl'] > 0
+            counts['source_zero_profit'] += record['realized_pnl'] == 0
+            counts['source_negative_profit'] += record['realized_pnl'] < 0
+    _check({path.stem for path in raw.glob(layout['markets'])}, set(native), 'Prediction Arena exact source market-file coverage')
+    return dict(agents=agents, native=native, markets=markets, counts=dict(counts))
+
+
+def _prediction_arena(directory, tables, metadata, source=None):
+    """Reconcile every settlement, model, original definition and profit label."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _prediction_arena_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        agent = source['agents'][features['source_agent_id']]
+        _check(features, dict(source_agent_id=agent['id'], source_model_id=agent['model_id']), 'Prediction Arena original agent/model identifiers')
+        _check((row.display_name, row.harness), (agent['model_id'], labels['harness']), 'Prediction Arena original model alias and scaffold')
+        _check(all(pd.isna(getattr(row, field)) for field in ['access_date', 'reasoning_effort', 'harness_version']),
+               True, 'Prediction Arena unavailable historical settings remain unknown')
+        subjects[row.subject_id] = agent['id']
+        seen_subjects[agent['id']] += 1
+    _check(seen_subjects, Counter({key: 1 for key in source['agents']}), 'Prediction Arena exact source roster')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        ticker = row.raw_item_id
+        _check(json.loads(row.content), source['markets'][ticker], 'Prediction Arena original market inputs, without resolution or profit leakage')
+        _check(_features(row.item_features), dict(platform=labels['platform'], input_scope=labels['input_scope']), 'Prediction Arena market scope features')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+               'Prediction Arena profit criterion, not a yes/no reference answer')
+        verifier = json.loads(row.verifier)
+        _check(verifier['class'], 'exact_matcher', 'Prediction Arena deterministic profit comparison')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['settlement_profit'], 'Prediction Arena documented profit threshold')
+        items[row.item_id] = ticker
+        seen_items[ticker] += 1
+    _check(seen_items, Counter({key: 1 for key in source['markets']}), 'Prediction Arena exact distinct market coverage')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'Prediction Arena inherited profit scale')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Prediction Arena unique trace links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['settlement']['id']
+        original = source['native'][key]
+        record, agent = original['settlement'], original['agent']
+        _check(subjects[row.subject_id], agent['id'], 'Prediction Arena correct subject for each settlement')
+        _check(items[row.item_id], record['ticker'], 'Prediction Arena correct market for each settlement')
+        _check(row.response, float(record['realized_pnl'] > 0), 'Prediction Arena positive-profit label, including zero as failure')
+        _check(row.trial, 1, 'Prediction Arena one observation per source settlement')
+        _check(row.test_condition, labels['test_condition_prefix'] + key, 'Prediction Arena stable original settlement occasion')
+        _check(pd.isna(row.interactors), True, 'Prediction Arena no invented historical actors')
+        _check(trace, dict(source_file=original['source_file'], source_row=original['source_row'],
+            source_agent_id=agent['id'], source_model_id=agent['model_id'], settlement=record,
+            market_source_file=original['market_source_file'], market=original['market']),
+            'Prediction Arena complete native settlement and original market provenance')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Prediction Arena every native settlement exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Prediction Arena complete trace associations')
+    return dict(source_subjects=len(subjects), source_markets=len(items), source_responses=len(seen),
+                source_traces=len(traces), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'prediction_arena':
+        return _prediction_arena(directory, tables, metadata)
     if directory.name == 'prm800k':
         return _prm800k(directory, tables, metadata)
     if directory.name == 'psychosis_bench':

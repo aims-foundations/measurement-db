@@ -1,0 +1,111 @@
+benchmark:
+  description: Published Kalshi market settlements of Prediction Arena trading agents, with their original market
+    descriptions and rules.
+  testing_condition: The September 30, 2026 API capture contains 798 settlements for ten source model aliases on
+    621 markets. The endpoint returns at most 100 records per agent; this is neither a complete trading history
+    nor the paper's fixed evaluation window. The response measures whether the settled position earned positive
+    realized profit, not binary forecast accuracy. Market descriptions and settlement rules are original Kalshi
+    data, without a reconstructed question. Historical prices, portfolio state, full dynamic prompts and inference
+    settings are not present in the settlement release. Current roster balances and beliefs are not historical model
+    inputs. Exact checkpoints and harness revisions are unknown. The native mystery-model-alpha alias is retained;
+    the paper associates it with grok-4-20-checkpoint. Traces contain complete settlement records and market provenance,
+    not unreleased reasoning transcripts. All 598 records shared with the previous local capture are unchanged;
+    200 IDs for Claude Opus 4.6 and GLM-5 differ. The entire older collection is archived separately, without merging
+    snapshots or inventing repeated runs. No trading, inference or new grading.
+  paper_url: https://arxiv.org/abs/2604.07355
+  data_source_url: https://www.predictionarena.ai
+  subject_type: model configuration
+  item_type: prediction market
+  license: No explicit redistribution license was found for the live API or Kalshi payloads; data publication is
+    pending review.
+  citation: "@article{zhang2026predictionarena,\n  title={Prediction Arena: Benchmarking AI Models on Real-World\
+    \ Prediction Markets},\n  author={Zhang, Jaden and Liu, Gardenia and Johansson, Oliver and Yitayew, Hileamlak\
+    \ and Ohly, Kamryn and Li, Grace},\n  journal={arXiv preprint arXiv:2604.07355},\n  year={2026}\n}"
+  tags:
+  - prediction-markets
+  - kalshi
+  - trading-agents
+  - forecasting
+  - autonomous-agents
+  - frontier-models
+  modality:
+  - text
+  domain:
+  - finance
+  - agents_and_tool_use
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The recorded realized profit is zero or negative.
+      '1': The recorded realized profit is strictly positive.
+  categorical: true
+  release_date: 2026-03
+  name: Prediction Arena
+  version: api-capture-2026-09-30
+  release: public
+  multi_single_turn: multi_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      agents: agents.json
+      settlements: settlements/*.json
+      markets: markets/*.json
+    labels:
+      platform: kalshi
+      harness: Prediction Arena Kalshi trading agents
+      input_scope: original_market_definition_dynamic_prompt_unreleased
+      test_condition_prefix: platform=kalshi;settlement_id=
+grading:
+  rule: A settled position succeeds if and only if the native realized_pnl is strictly positive. Zero and negative
+    profit are failures. The native profit already summarizes the trading position; market yes/no resolution alone
+    cannot establish profitability without the held side, prices and costs. Keep the original monetary values and
+    resolution in the trace; do not infer a forecasting probability or recompute PnL.
+  verifiers:
+    settlement_profit:
+      kind: released_profit_threshold
+      source: https://arxiv.org/html/2604.07355v1#S8.SS1
+      field: realized_pnl
+      operator: '>'
+      threshold: 0
+      scope: settled_position_profit
+      execution: no_trading_or_PnL_recalculation
+sources:
+  upstream:
+  - name: agents
+    url: https://www.predictionarena.ai/api/agents
+    revision: null
+    file: agents.json
+    size: 12770
+    sha256: 0b92bcca84a7c9c2c72ddb99973834cdb9799eba0d670ab28b453ad4ef2ae80a
+  - name: settlements
+    url: https://www.predictionarena.ai/api/agents
+    revision: null
+    json_index:
+      source: agents
+      records: []
+      path: '{id}/settlements'
+    files:
+    - match: (?P<agent>[^/]+)/settlements
+      path: settlements/{agent}.json
+    tree_sha256: 984186fa5cd81b456710411c7551f60defb62106c0303712199ac9a41166976b
+  - name: market_definitions
+    url: https://external-api.kalshi.com/trade-api/v2/historical/markets
+    revision: null
+    json_index:
+      source: settlements
+      records: []
+      path: '{id}.json'
+      query:
+        tickers: '{ticker}'
+    files:
+    - match: .*\.json
+      path: markets/{path}
+    tree_sha256: 409c5d760a3b932a9150a3f56ece394fe361b56c8dfcba7aa613cd93bc1dc3b9

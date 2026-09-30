@@ -300,7 +300,7 @@ class BenchmarkBuild(ABC):
                 temporary_path = Path(temporary.name)
                 if body is not None or expected_size is None or expected_size <= chunk_size:
                     request = urllib.request.Request(url, headers=headers, data=body)
-                    with urllib.request.urlopen(request, timeout=timeout) as response:
+                    with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as response:
                         shutil.copyfileobj(response, temporary)
                 else:
                     failures = 0

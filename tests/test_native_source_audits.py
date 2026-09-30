@@ -2393,6 +2393,116 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class PredictionArenaNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'prediction_arena'
+        self.raw = self.directory / 'raw'
+        (self.raw / 'settlements').mkdir(parents=True)
+        (self.raw / 'markets').mkdir()
+        folder = ROOT / 'benchmarks/prediction_arena'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        agents = [dict(id='agent-a', model_id='prediction-arena-fixture-a', account_value=100, current_beliefs='Later state'),
+                  dict(id='agent-b', model_id='prediction-arena-fixture-b', account_value=200, current_beliefs='Another later state')]
+        (self.raw / 'agents.json').write_text(json.dumps(agents))
+        records = [dict(id='settlement-a', ticker='market-a', result='yes', payout=20, realized_pnl=3.5,
+                       settled_at='2026-01-01T00:00:00Z', created_at='2026-01-01T00:00:01Z'),
+                   dict(id='settlement-b', ticker='market-b', result='yes', payout=20, realized_pnl=0.,
+                       settled_at='2026-01-02T00:00:00Z', created_at='2026-01-02T00:00:01Z'),
+                   dict(id='settlement-c', ticker='market-a', result='yes', payout=0, realized_pnl=-2.5,
+                       settled_at='2026-01-01T00:00:00Z', created_at='2026-01-01T00:00:01Z')]
+        (self.raw / 'settlements/agent-a.json').write_text(json.dumps(records[:2]))
+        (self.raw / 'settlements/agent-b.json').write_text(json.dumps(records[2:]))
+        for record in records:
+            market = dict(ticker=record['ticker'], event_ticker='event-' + record['ticker'], title='Original market question ' + record['ticker'],
+                subtitle='Original subtitle', yes_sub_title='Yes', no_sub_title='No', close_time='2026-01-01T00:00:00Z',
+                rules_primary='Original complete rules 完整. ' * 1000, rules_secondary='Original supplementary rules',
+                result=record['result'], last_price_dollars='0.99', settlement_value_dollars='1.00')
+            (self.raw / 'markets' / (record['id'] + '.json')).write_text(json.dumps(dict(markets=[market], cursor=''), ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['PredictionArena']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_settlement_profit_is_distinct_from_resolution_and_context_is_preserved(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prediction_arena
+        self.assertEqual(_prediction_arena(self.directory, self.frames, self.metadata),
+            dict(source_subjects=2, source_markets=2, source_responses=3, source_traces=3,
+                 source_positive_profit=1, source_zero_profit=1, source_negative_profit=1))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertGreater(self.frames['items'].content.str.len().max(), 16000)
+        self.assertEqual(self.frames['responses'].response.sum(), 1.)
+
+    def test_invalid_source_profit_is_not_silently_converted_to_failure(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prediction_arena_sources
+        path = self.raw / 'settlements/agent-a.json'
+        original = json.loads(path.read_text())
+        for value in [None, float('nan'), float('inf'), float('-inf')]:
+            with self.subTest(value=value):
+                records = [dict(row) for row in original]
+                records[0]['realized_pnl'] = value
+                path.write_text(json.dumps(records))
+                with self.assertRaises(ValueError):
+                    _prediction_arena_sources(self.directory, self.metadata)
+                with self.assertRaisesRegex(ValueError, 'finite realized profit'):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+        path.write_text(json.dumps(original))
+
+    def test_corruptions_of_profit_market_subject_and_source_coverage_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _prediction_arena, _prediction_arena_sources
+        source = _prediction_arena_sources(self.directory, self.metadata)
+        changes = ['grade', 'zero', 'subject', 'market', 'question', 'rules', 'leak', 'criterion', 'verifier',
+            'alias', 'feature', 'trial', 'condition', 'interactors', 'drop', 'duplicate', 'clip', 'native_profit',
+            'native_resolution', 'native_market', 'source_file', 'source_row', 'model', 'extra_subject', 'scale']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'grade': responses.loc[0, 'response'] = .5
+                elif change == 'zero': responses.loc[responses.response.eq(0), 'response'] = 1.
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'invented-model'
+                elif change == 'market': responses.loc[0, 'item_id'] = next(value for value in items.item_id if value != responses.loc[0, 'item_id'])
+                elif change in ['question', 'rules', 'leak']:
+                    value = json.loads(items.loc[0, 'content'])
+                    if change == 'question': value['title'] = 'Question guessed from a ticker'
+                    elif change == 'rules': value['rules_primary'] = value['rules_primary'][:16000]
+                    else: value['result'] = 'yes'
+                    items.loc[0, 'content'] = json.dumps(value)
+                elif change == 'criterion': items.loc[0, 'grading_criterion'] = json.dumps(dict(rule='Predict yes correctly'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(class_='judge', spec='{}'))
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = 'absent-market'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'platform=polymarket'
+                elif change == 'trial': responses.loc[0, 'trial'] = 99
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'invented occasion'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented actor'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'model-inferred-from-profit'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='discrete', values=[0, 2]))
+                else:
+                    value = json.loads(traces.loc[0, 'trace'])
+                    if change == 'clip': value['market']['rules_primary'] = value['market']['rules_primary'][:16000]
+                    elif change == 'native_profit': value['settlement']['realized_pnl'] += .01
+                    elif change == 'native_resolution': value['settlement']['result'] = 'no'
+                    elif change == 'native_market': value['market']['ticker'] = 'wrong-market'
+                    elif change == 'source_file': value['source_file'] = 'wrong.json'
+                    else: value['source_row'] = 99
+                    traces.loc[0, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _prediction_arena(self.directory, frames, self.metadata, source)
+
+
 class PRM800KNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

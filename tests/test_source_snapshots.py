@@ -42,6 +42,62 @@ class DownloadFixture(BenchmarkBuild):
         return {}
 
 
+class HTTPSourceRetryTests(unittest.TestCase):
+    def test_index_retries_rate_limit_and_keeps_original_bytes(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import _read_index_source
+
+        url = 'https://provider.example/original.json'
+        error = HTTPError(url, 429, 'Limited', {'Retry-After': '2'}, None)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[error, io.BytesIO(PAYLOAD)]) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            self.assertEqual(_read_index_source(url, 'original.json', None), PAYLOAD)
+            self.assertEqual(download.call_count, 2)
+            sleep.assert_called_once_with(2.)
+
+    def test_retries_are_bounded_and_do_not_retry_access_denials(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for status, header, expected_calls, pauses in [(503, None, 4, [5, 10, 20]),
+                (403, None, 1, []), (404, None, 1, []), (429, '120', 1, [])]:
+            error = HTTPError('https://provider.example', status, 'HTTP error',
+                              {} if header is None else {'Retry-After': header}, None)
+            with self.subTest(status=status, header=header), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=error) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(HTTPError):
+                    open_http_source('https://provider.example', timeout=10)
+                self.assertEqual(download.call_count, expected_calls)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], pauses)
+                error.close()
+
+    def test_file_download_retries_and_still_rejects_wrong_hash(self):
+        from urllib.error import HTTPError
+
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder) / 'source.json'
+            builder = object.__new__(DownloadFixture)
+            builder.slug = 'fixture'
+            for payload, should_pass in [(PAYLOAD, True), (b'x' * len(PAYLOAD), False)]:
+                error = HTTPError('https://provider.example', 429, 'Limited', {'Retry-After': '0'}, None)
+                with self.subTest(should_pass=should_pass), \
+                     patch('build_base.urllib.request.urlopen', side_effect=[error, io.BytesIO(payload)]) as download, \
+                     patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+                    if should_pass:
+                        builder._download('https://provider.example', destination, expected_size=len(PAYLOAD),
+                                          expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                        destination.unlink()
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://provider.example', destination, expected_size=len(PAYLOAD),
+                                              expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+                        self.assertFalse(destination.exists())
+                    self.assertEqual(download.call_count, 2)
+
+
 class ZIPMemberTests(unittest.TestCase):
     """Original ZIP slices preserve bytes and require the full content-tree pin."""
 

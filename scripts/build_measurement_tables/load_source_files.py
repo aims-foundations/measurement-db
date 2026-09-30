@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from fnmatch import fnmatchcase
 import hashlib
 from html.parser import HTMLParser
@@ -15,6 +17,8 @@ import subprocess
 import struct
 import tempfile
 import threading
+import time
+from urllib.error import HTTPError
 from urllib.parse import parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from urllib.request import Request, urlopen
 from typing import Any
@@ -24,6 +28,31 @@ import zlib
 
 class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
+
+
+def open_http_source(request, *, timeout, opener=None):
+    """Bound retries for temporary throttling; preserve ordinary HTTP failures."""
+    opener = urlopen if opener is None else opener
+    for attempt in range(4):
+        try:
+            return opener(request, timeout=timeout)
+        except HTTPError as error:
+            if error.code not in (429, 503) or attempt == 3:
+                raise
+            delay = 5 * 2 ** attempt
+            retry_after = (error.headers or {}).get('Retry-After')
+            if retry_after is not None:
+                try:
+                    delay = float(retry_after)
+                except ValueError:
+                    try:
+                        delay = max(0, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+                    except (TypeError, ValueError, OverflowError):
+                        pass
+            if not 0 <= delay <= 60:
+                raise  # Leave a long server-requested pause to the caller; do not retry early.
+            error.close()
+            time.sleep(delay)
 
 
 def github_tree_entries(repository: str, revision: str, paths: list[str] | None = None) -> list[dict]:
@@ -113,7 +142,7 @@ def _read_index_source(url, destination, raw_dir, request_json=None):
     if request_json is not None:
         body = json.dumps(request_json, allow_nan=False).encode('utf-8')
         headers['Content-Type'] = 'application/json'
-    with urlopen(Request(url, data=body, headers=headers), timeout=120) as response:
+    with open_http_source(Request(url, data=body, headers=headers), timeout=120) as response:
         return response.read()
 
 
