@@ -2393,6 +2393,121 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class OODPredictionNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'ood_prediction'
+        folder = ROOT / 'benchmarks/ood_prediction'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.directory.mkdir()
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.long_prompt = 'Complete original prompt 完整. ' * 1000
+        self.native = {}
+        for fold in [0, 1]:
+            self.native[f'data/ioi_task/ioi_task_Meta-Llama-3-8B-Instruct_ood_fixture_split_{fold}.json'] = dict(
+                train=dict(correct=[self.long_prompt], wrong=['Wrong IOI']), val=dict(correct=[], wrong=[]),
+                test=dict(correct=['Other IOI'], wrong=[]))
+        self.native['data/ioi_task/ioi_task_gpt2_primitive_test.json'] = dict(train=dict(correct=['GPT-only prompt'], wrong=[self.long_prompt]))
+        for task in ['whp', 'mmlu', 'ravel_task', 'pricetag_task']:
+            self.native[f'data/{task}/{task}_Meta-Llama-3-8B-Instruct_in_distribution_split_0.json'] = dict(
+                train=dict(correct=[task + ' original first prompt'], wrong=[task + ' original second prompt']))
+        for name, data in self.native.items():
+            path = self.directory / 'raw' / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(data, ensure_ascii=False))
+        self.builder = runpy.run_path(str(folder / 'build.py'))['OODPrediction']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_reused_folds_shared_prompts_and_task_specific_rules(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _ood_prediction
+        self.assertEqual(_ood_prediction(self.directory, self.frames, self.metadata), dict(
+            source_subjects=2, source_items=12, source_responses=13, source_traces=13,
+            source_correct_occurrences=9, source_wrong_occurrences=7, source_files=7, source_occurrences=16,
+            source_reused_keys=3, source_correct_observations=7, source_wrong_observations=6))
+        self.assertGreater(self.frames['items'].content.str.len().max(), 16000)
+        self.assertTrue(self.frames['responses'].trial.eq(1).all())
+        self.assertTrue(all('generated_answer' not in json.loads(value) for value in self.frames['traces'].trace))
+        whp = self.frames['items'][self.frames['items'].item_features.str.contains('task=whp')]
+        self.assertTrue(all(json.loads(value)['class'] == 'judge' for value in whp.verifier))
+
+    def test_conflicting_or_unrecognized_native_labels_are_rejected(self):
+        import copy
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _ood_prediction_sources
+        name = next(iter(self.native))
+        for change in ['conflicting', 'unknown']:
+            with self.subTest(change=change):
+                data = copy.deepcopy(self.native[name])
+                if change == 'conflicting': data['train']['wrong'].append(self.long_prompt)
+                else: data['train']['ungraded'] = ['Unrecognized bucket']
+                (self.directory / 'raw' / name).write_text(json.dumps(data))
+                with self.assertRaises(ValueError): _ood_prediction_sources(self.directory, self.metadata)
+                with self.assertRaises(ValueError): self.builder(str(self.directory / 'build.py')).build_tables()
+
+    def test_changed_verdicts_links_and_fold_provenance_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _ood_prediction, _ood_prediction_sources
+        source = _ood_prediction_sources(self.directory, self.metadata)
+        changes = ['grade', 'same_sum_swap', 'subject', 'item', 'prompt', 'rule', 'gold', 'verifier', 'alias', 'feature',
+            'trial', 'condition', 'interactors', 'drop', 'duplicate', 'model', 'configuration', 'extra_subject', 'scale',
+            'trace_prompt', 'trace_label', 'trace_model', 'trace_task', 'trace_setting', 'source_file', 'source_row',
+            'source_split', 'drop_occurrence', 'extra_occurrence', 'invented_completion']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'grade': responses.loc[0, 'response'] = .5
+                elif change == 'same_sum_swap':
+                    indices = [responses.index[responses.response.eq(value)][0] for value in [0, 1]]
+                    responses.loc[indices, 'response'] = [1., 0.]
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'correctness-predictor'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(key for key in items.item_id if key != responses.loc[0, 'item_id'])
+                elif change == 'prompt':
+                    index = items.content.str.len().idxmax(); items.loc[index, 'content'] = items.loc[index, 'content'][:16000]
+                elif change == 'rule': items.loc[0, 'grading_criterion'] = json.dumps(dict(rule='Different task'))
+                elif change == 'gold':
+                    value = json.loads(items.loc[0, 'grading_criterion']); value['reference_answer'] = 'Guessed answer'; items.loc[0, 'grading_criterion'] = json.dumps(value)
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(spec='{}'))
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = 'correct'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'task=ioi_task;correct=true'
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'task=ioi;setting=wrong'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented-rater'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'correctness-predictor'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = 'source_model_label=wrong-model'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=100))
+                else:
+                    index = 0
+                    if change == 'trace_prompt': index = next(i for i, value in enumerate(traces.trace) if len(json.loads(value)['prompt']) > 16000)
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_prompt': value['prompt'] = value['prompt'][:16000]
+                    elif change == 'trace_label': value['label'] = 'wrong' if value['label'] == 'correct' else 'correct'
+                    elif change == 'trace_model': value['source_model_label'] = 'invented-model'
+                    elif change == 'trace_task': value['task'] = 'unknown-task'
+                    elif change == 'trace_setting': value['setting'] = 'unknown-setting'
+                    elif change == 'source_file': value['occurrences'][0]['source_file'] = 'other.json'
+                    elif change == 'source_row': value['occurrences'][0]['source_row'] = 999
+                    elif change == 'source_split': value['occurrences'][0]['split'] = 'unknown'
+                    elif change == 'drop_occurrence': value['occurrences'] = value['occurrences'][1:]
+                    elif change == 'extra_occurrence': value['occurrences'].append(value['occurrences'][0])
+                    else: value['generated_answer'] = 'Unreleased model completion'
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _ood_prediction(self.directory, frames, self.metadata, source)
+
+
 class PKUSafeRLHFNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

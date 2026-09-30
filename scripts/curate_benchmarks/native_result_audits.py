@@ -25512,11 +25512,116 @@ def _pku_saferlhf(directory, tables, metadata, source=None):
         source_responses=sum(seen.values()), source_traces=len(traces), source_distinct_outputs=source['distinct_outputs'], **source['counts'])
 
 
+def _ood_prediction_sources(directory, metadata):
+    """Read nested buckets directly, preserving all repeated fold memberships."""
+    import hashlib
+    import unicodedata
+
+    native, stimuli, models, files = {}, {}, set(), []
+    counts = Counter(source_correct_occurrences=0, source_wrong_occurrences=0)
+    for path in sorted((directory / 'raw').glob(metadata['build']['parameters']['layout']['results'])):
+        name = str(path.relative_to(directory / 'raw'))
+        tasks = [task for task in metadata['grading']['verifiers'] if path.stem.startswith(task + '_')]
+        _check(len(tasks), 1, 'OOD-Prediction unambiguous native task name')
+        task = tasks[0]
+        model, setting = path.stem[len(task) + 1:].split('_', 1)
+        if '_split_' in setting:
+            setting, fold = setting.rsplit('_split_', 1)
+            _check(fold.isdigit(), True, 'OOD-Prediction numeric fold suffix')
+        for split, buckets in json.loads(path.read_text()).items():
+            _check(split in ['train', 'val', 'test'], True, 'OOD-Prediction released split')
+            _check(set(buckets), {'correct', 'wrong'}, 'OOD-Prediction original correctness buckets')
+            for label, prompts in buckets.items():
+                _check(isinstance(prompts, list), True, 'OOD-Prediction native prompt list')
+                for index, prompt in enumerate(prompts):
+                    _check(isinstance(prompt, str) and bool(prompt.strip()), True, 'OOD-Prediction complete nonempty prompt')
+                    key = task, model, setting, prompt
+                    row = native.setdefault(key, dict(label=label, occurrences=[]))
+                    _check(row['label'], label, 'OOD-Prediction repeated prompt has a consistent original verdict')
+                    row['occurrences'].append(dict(source_file=name, split=split, label=label, source_row=index))
+                    normalized = unicodedata.normalize('NFC', prompt).strip()
+                    stimuli.setdefault((task, normalized), (task + ':' + hashlib.sha256(prompt.encode()).hexdigest(), prompt))
+                    models.add(model)
+                    counts['source_' + label + '_occurrences'] += 1
+        files.append(name)
+    _check(bool(native), True, 'OOD-Prediction original observations are available')
+    counts['source_files'] = len(files)
+    counts['source_occurrences'] = sum(len(row['occurrences']) for row in native.values())
+    counts['source_reused_keys'] = sum(len(row['occurrences']) > 1 for row in native.values())
+    counts['source_correct_observations'] = sum(row['label'] == 'correct' for row in native.values())
+    counts['source_wrong_observations'] = sum(row['label'] == 'wrong' for row in native.values())
+    return dict(native=native, stimuli=stimuli, models=models, counts=dict(counts))
+
+
+def _ood_prediction(directory, tables, metadata, source=None):
+    """Check every target label and fold association without inventing model outputs."""
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _ood_prediction_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_label']
+        _check(features, dict(source_model_label=model), 'OOD-Prediction original target model')
+        _check((row.display_name, row.harness), (model, labels['harness']), 'OOD-Prediction target rather than correctness predictor')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'OOD-Prediction unavailable historical settings')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({model: 1 for model in source['models']}), 'OOD-Prediction complete target-model roster')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        features = _features(row.item_features)
+        task = features['task']
+        normalized = unicodedata.normalize('NFC', row.content).strip()
+        _check(features, dict(task=task, input_scope=labels['input_scope']), 'OOD-Prediction item features do not disclose the label')
+        _check((row.raw_item_id, row.content), source['stimuli'][task, normalized], 'OOD-Prediction full source stimulus and label-free alias')
+        protocol = metadata['grading']['verifiers'][task]
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=protocol['criterion']),
+               'OOD-Prediction supported task rule without inferred instance-level answer')
+        verifier = dict(**{'class': 'exact_matcher'}, spec=json.dumps(protocol, sort_keys=True))
+        if 'verification' in protocol:
+            verifier.update({'class': 'judge', 'judged_by': 'human'})
+        _check(json.loads(row.verifier), verifier, 'OOD-Prediction original task-specific parsing and manual verification')
+        items[row.item_id] = task, normalized
+        seen_items[task, normalized] += 1
+    _check(seen_items, Counter({key: 1 for key in source['stimuli']}), 'OOD-Prediction all distinct complete stimuli')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'OOD-Prediction released binary task outcome')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'OOD-Prediction unique provenance links')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['task'], trace['source_model_label'], trace['setting'], trace['prompt']
+        task, model, setting, prompt = key
+        original = source['native'][key]
+        _check(subjects[row.subject_id], model, 'OOD-Prediction original subject for every label')
+        _check(items[row.item_id], (task, unicodedata.normalize('NFC', prompt).strip()), 'OOD-Prediction correct prompt and task for every label')
+        _check(row.response, float(original['label'] == 'correct'), 'OOD-Prediction native verdict, not predictor performance')
+        _check(row.trial, 1, 'OOD-Prediction fold reuse is not a new trial')
+        _check(row.test_condition, 'task=' + parameters['task_labels'][task] + ';setting=' + setting, 'OOD-Prediction original distribution setting')
+        _check(pd.isna(row.interactors), True, 'OOD-Prediction no invented interaction record')
+        _check(trace, dict(task=task, source_model_label=model, setting=setting, prompt=prompt,
+            label=original['label'], occurrences=original['occurrences']),
+            'OOD-Prediction all original label memberships without fabricated completions')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'OOD-Prediction every distinct original observation exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'OOD-Prediction complete provenance coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=sum(seen.values()),
+        source_traces=len(traces), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'ood_prediction':
+        return _ood_prediction(directory, tables, metadata)
     if directory.name == 'pku_saferlhf':
         return _pku_saferlhf(directory, tables, metadata)
     if directory.name == 'prism':

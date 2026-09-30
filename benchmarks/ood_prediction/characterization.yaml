@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 142805
+    logical_sha256: 284567a8926e0d792fec1d51db82d84ad1d463f7ae25f83a1e8f254b827f8c25
+  subjects:
+    rows: 2
+    logical_sha256: 0c659538523a7b3275ce981d22ecdb67161616fea40874d44e7bb097ff239262
+  responses:
+    rows: 142805
+    logical_sha256: 7a851d3cdb44fd4359937d6eb03f13dbb58708f70a4ebf70daffebff024bedc5
+  items:
+    rows: 142805
+    logical_sha256: 64dc9ecd8633a332a5c6190cd863e77c24644fb1db2f3df65dac8bf3848e7f0c
+  benchmarks:
+    rows: 1
+    logical_sha256: 7925b4d604289b69493acecd0a2104fe12265b3be6860db7f37c7168c6f71970
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 2
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 142805
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 142805
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 142805
+  source_correct_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 79360
+  source_wrong_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 79360
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 46
+  source_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 158720
+  source_reused_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 12395
+  source_correct_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 72887
+  source_wrong_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/explanare/ood-prediction
+    locator: Pinned data/*/*.json at afc5d433f92757b0afdb35b4eee76d34bebfd8d3, nested split/correct-or-wrong buckets.
+    scope: Preserve all fold memberships as provenance; consolidate repeated task/model/setting/prompt records rather
+      than invent new trials.
+    expected: 69918
