@@ -1,0 +1,114 @@
+format_version: 1
+tables:
+  traces:
+    rows: 64360
+    logical_sha256: b3e40efacc63adc8f9a471c8e9d873cef5798b3a2550e096b19fc53592c9dcbf
+  subjects:
+    rows: 647
+    logical_sha256: c16c456a6a3e61f9c85fa4b2f66021f24291878936c993a1d1625c54d974e91d
+  responses:
+    rows: 64360
+    logical_sha256: 70c32fa54a63939e5aed1a116be7556c24715bcb1b3847cf7d394792b9037651
+  items:
+    rows: 280
+    logical_sha256: 5b2b1de4a4aa2d7b221fd0ce26a12bc1b846b6dbd8e7a88aa91881c50efb6795
+  benchmarks:
+    rows: 1
+    logical_sha256: dd0a7630f5d2cb32a17f509ed7f3efde3413aa0e84026652669b73da410d8f7b
+source_claims:
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 40
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 647
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 280
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 64360
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 64360
+  source_null_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 6832
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 141
+  source_long_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 499
+  source_fractional_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 1
+  source_zero_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 1
+  source_judge_explanations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 4560
+  source_model_question_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi
+    locator: Pinned data/judgements/*/yuzuai__rakuda-questions/*.json at 59d832e37b0486f9f127b9ee24bdb5e8b083387f.
+    scope: All original physical JSONL records; verify the 40 questions against the pinned yuzuai/rakuda-questions
+      dataset. Distinct judges define separate grading protocols.
+    expected: 757

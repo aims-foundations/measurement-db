@@ -25615,11 +25615,114 @@ def _ood_prediction(directory, tables, metadata, source=None):
         source_traces=len(traces), **source['counts'])
 
 
+def _rakuda_sources(directory, metadata):
+    """Read each physical JSONL record, including missing grades and Unicode separators."""
+    from collections import defaultdict
+    import hashlib
+    import math
+
+    layout = metadata['build']['parameters']['layout']
+    with (directory / 'raw' / layout['questions']).open() as stream:
+        questions = {row['question_id']: row for row in (json.loads(line) for line in stream if line.strip())}
+    native, models, combinations = {}, set(), set()
+    outputs = defaultdict(set)
+    counts = Counter(source_null_scores=0, source_empty_outputs=0, source_long_outputs=0,
+        source_fractional_scores=0, source_zero_scores=0, source_judge_explanations=0)
+    for path in sorted((directory / 'raw').glob(layout['judgments'])):
+        name, model, group = str(path.relative_to(directory / 'raw')), path.stem, path.parts[-3]
+        if model == 'qwen__qwen3.6-plus_x3a_free':
+            model = 'qwen__qwen3.6-plus:free'  # Original upstream filename; shared downloader escapes colons.
+        _check(group in metadata['grading']['verifiers'], True, 'Rakuda released judge group has a declared protocol')
+        with path.open() as stream:
+            for index, line in enumerate(line for line in stream if line.strip()):
+                row = json.loads(line)
+                qid = row['question_id']
+                _check((row['Question'], row['category']), (questions[qid]['text'], questions[qid]['category']),
+                       'Rakuda question and category agree with the original question bank')
+                score = row['score']
+                _check(score is None or (type(score) in [int, float] and math.isfinite(score) and 0 <= score <= 10),
+                       True, 'Rakuda original finite numeric rating or explicit unavailable grade')
+                _check(isinstance(row['ModelAnswer'], str), True, 'Rakuda full native judged answer')
+                native[name, index] = dict(record=row, model=model, judge_group=group)
+                models.add(model); combinations.add((qid, group))
+                counts['source_null_scores'] += score is None
+                counts['source_empty_outputs'] += row['ModelAnswer'] == ''
+                counts['source_long_outputs'] += len(row['ModelAnswer']) > 8000
+                counts['source_fractional_scores'] += score is not None and score != int(score)
+                counts['source_zero_scores'] += score == 0
+                counts['source_judge_explanations'] += isinstance(row.get('judge_output'), str) and bool(row['judge_output'])
+                outputs[model, qid].add(hashlib.sha256(row['ModelAnswer'].encode()).hexdigest())
+    _check(bool(native), True, 'Rakuda original judgment records are present')
+    counts['source_model_question_variants'] = sum(len(variants) > 1 for variants in outputs.values())
+    return dict(questions=questions, native=native, models=models, combinations=combinations, counts=dict(counts))
+
+
+def _rakuda(directory, tables, metadata, source=None):
+    """Check every rating against the original model, question, judge and complete answer."""
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _rakuda_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    subjects, seen_subjects = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['source_model_filename']
+        _check(features, dict(source_model_filename=model), 'Rakuda original generating-model alias')
+        _check((row.display_name, row.harness), (model, labels['harness']), 'Rakuda generating model rather than judge is the subject')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'Rakuda unknown historical model settings remain unknown')
+        subjects[row.subject_id] = model
+        seen_subjects[model] += 1
+    _check(seen_subjects, Counter({model: 1 for model in source['models']}), 'Rakuda complete judged-model roster')
+    items, seen_items = {}, Counter()
+    for row in tables['items'].itertuples():
+        qid, group = row.raw_item_id.split(':', 1)
+        question, protocol = source['questions'][qid], metadata['grading']['verifiers'][group]
+        _check(row.content, question['text'], 'Rakuda complete original Japanese question')
+        _check(_features(row.item_features), dict(category=question['category'], judge_group=group,
+            input_scope=labels['input_scope']), 'Rakuda original category and distinct judge protocol without score leakage')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+               'Rakuda numeric rating criterion without a fabricated gold answer')
+        _check(json.loads(row.verifier), dict(**{'class': 'judge'}, judge=protocol['judge'], judged_by='llm',
+            spec=json.dumps(protocol, sort_keys=True)), 'Rakuda original judge alias and rubric-version limitations')
+        items[row.item_id] = qid, group
+        seen_items[qid, group] += 1
+    _check(seen_items, Counter({key: 1 for key in source['combinations']}), 'Rakuda complete question/judge combinations')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'Rakuda original rating units, including documented exceptions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['traces']), 'Rakuda unique trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = source['native'][key]
+        record = original['record']
+        _check(subjects[row.subject_id], original['model'], 'Rakuda correct original model for each judgment')
+        _check(items[row.item_id], (record['question_id'], original['judge_group']), 'Rakuda correct question and judge for each rating')
+        if record['score'] is None:
+            _check(pd.isna(row.response), True, 'Rakuda ungraded attempt remains unavailable rather than zero')
+        else:
+            _check(row.response, float(record['score']), 'Rakuda original rating without rescaling, rounding or clipping')
+        _check(row.trial, 1, 'Rakuda one published record per source occasion')
+        _check(row.test_condition, key[0] + ':' + str(key[1]), 'Rakuda original judgment occasion without assumed shared generations')
+        _check(pd.isna(row.interactors), True, 'Rakuda no invented historical runtime actors')
+        _check(trace, dict(source_file=key[0], source_row=key[1], record=record),
+               'Rakuda full original answer, missing values, judge explanation and source metadata')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in source['native']}), 'Rakuda every original judgment, including unavailable scores, exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'Rakuda complete trace coverage')
+    return dict(source_questions=len(source['questions']), source_subjects=len(subjects), source_items=len(items),
+        source_responses=sum(seen.values()), source_traces=len(traces), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'rakuda':
+        return _rakuda(directory, tables, metadata)
     if directory.name == 'ood_prediction':
         return _ood_prediction(directory, tables, metadata)
     if directory.name == 'pku_saferlhf':

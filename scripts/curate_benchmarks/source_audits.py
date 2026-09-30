@@ -1014,3 +1014,4 @@ SOURCE_AUDITS["preference_dissection"] = verify_native_results
 SOURCE_AUDITS["prism"] = verify_native_results
 SOURCE_AUDITS["pku_saferlhf"] = verify_native_results
 SOURCE_AUDITS["ood_prediction"] = verify_native_results
+SOURCE_AUDITS["rakuda"] = verify_native_results

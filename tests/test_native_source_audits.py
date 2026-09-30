@@ -2393,6 +2393,121 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class RakudaNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'rakuda'
+        folder = ROOT / 'benchmarks/rakuda'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        self.directory.mkdir()
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        questions = [dict(question_id='question-' + str(index), category='社会', text=text)
+            for index, text in enumerate(['完全な質問。\u2028' * 2000, 'もう一つの質問。'])]
+        bank = self.directory / 'raw' / self.metadata['build']['parameters']['layout']['questions']
+        bank.parent.mkdir(parents=True)
+        bank.write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in questions))
+        self.native = {}
+        for group_index, group in enumerate(list(self.metadata['grading']['verifiers'])[:3]):
+            for model in ['model-alpha', 'qwen__qwen3.6-plus:free']:
+                rows = []
+                for index, question in enumerate(questions):
+                    score = None if group_index == 2 and index == 1 else 8
+                    if group_index == 0 and model == 'model-alpha' and index == 0: score = 5.8
+                    if group_index == 1 and model == 'qwen__qwen3.6-plus:free' and index == 0: score = 0
+                    answer = (('Original complete answer 完整。\u2028' * 1000) if index == 0 else 'Answer ') + group + model
+                    if group_index == 1 and model == 'qwen__qwen3.6-plus:free' and index == 1: answer = ''
+                    row = dict(question_id=question['question_id'], category=question['category'], Question=question['text'],
+                        ModelAnswer=answer, score=score, judge_output='Published explanation',
+                        metadata=dict(probability=0.0123456789012345))
+                    if group_index == 0 and model == 'model-alpha' and index == 1: row.pop('judge_output')
+                    rows.append(row)
+                name = f'data/judgements/{group}/yuzuai__rakuda-questions/{model}.json'
+                name = name.replace(':', '_x3a_')
+                path = self.directory / 'raw' / name; path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in rows))
+                self.native[name] = rows
+        self.builder = runpy.run_path(str(folder / 'build.py'))['Rakuda']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_original_scale_nulls_full_unicode_outputs_and_distinct_judges(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _rakuda
+        self.assertEqual(_rakuda(self.directory, self.frames, self.metadata), dict(
+            source_questions=2, source_subjects=2, source_items=6, source_responses=12, source_traces=12,
+            source_null_scores=2, source_empty_outputs=1, source_long_outputs=6, source_fractional_scores=1,
+            source_zero_scores=1, source_judge_explanations=11, source_model_question_variants=4))
+        self.assertIn('qwen__qwen3.6-plus:free', set(self.frames['subjects'].display_name))
+        self.assertTrue(self.frames['responses'].trial.eq(1).all())
+        self.assertEqual(self.frames['responses'].response.isna().sum(), 2)
+
+    def test_invalid_native_score_is_flagged(self):
+        import copy
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _rakuda_sources
+        name = next(iter(self.native))
+        for value in [True, float('inf'), '9', -1, 11]:
+            with self.subTest(value=value):
+                rows = copy.deepcopy(self.native[name]); rows[0]['score'] = value
+                (self.directory / 'raw' / name).write_text(''.join(json.dumps(row, ensure_ascii=False) + '\n' for row in rows))
+                with self.assertRaisesRegex(ValueError, 'finite numeric rating'):
+                    _rakuda_sources(self.directory, self.metadata)
+
+    def test_changed_units_missing_attempts_wrong_judges_and_truncation_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _rakuda, _rakuda_sources
+        source = _rakuda_sources(self.directory, self.metadata)
+        changes = ['rescale', 'null_to_zero', 'round', 'clip_zero', 'subject', 'item', 'question', 'rule', 'verifier',
+            'alias', 'feature', 'trial', 'condition', 'interactors', 'drop', 'duplicate', 'model', 'configuration',
+            'extra_subject', 'scale', 'trace_clip', 'unicode_separator', 'trace_grade', 'judge_explanation', 'precision',
+            'source_file', 'source_row', 'share_different_answer']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'rescale': responses['response'] = responses.response / 10
+                elif change == 'null_to_zero': responses.loc[responses.response.isna(), 'response'] = 0
+                elif change == 'round': responses.loc[responses.response.eq(5.8), 'response'] = 6
+                elif change == 'clip_zero': responses.loc[responses.response.eq(0), 'response'] = 1
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'judge'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(key for key in items.item_id if key != responses.loc[0, 'item_id'])
+                elif change == 'question': items.loc[0, 'content'] = 'Incomplete question'
+                elif change == 'rule': items.loc[0, 'grading_criterion'] = json.dumps(dict(rule='Binary correctness'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(spec='{}'))
+                elif change == 'alias': items.loc[0, 'raw_item_id'] = 'unknown:unknown'
+                elif change == 'feature': items.loc[0, 'item_features'] = 'category=wrong'
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'independent rerun'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented-system'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:].copy()
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'gpt-4-judge'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = 'source_model_filename=wrong-model'
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                else:
+                    index = next(i for i, value in enumerate(traces.trace) if len(json.loads(value)['record']['ModelAnswer']) > 16000)
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['record']['ModelAnswer'] = value['record']['ModelAnswer'][:8000]
+                    elif change == 'unicode_separator': value['record']['ModelAnswer'] = value['record']['ModelAnswer'].replace('\u2028', '')
+                    elif change == 'trace_grade': value['record']['score'] = .5
+                    elif change == 'judge_explanation': value['record']['judge_output'] = 'New explanation'
+                    elif change == 'precision': value['record']['metadata']['probability'] = 0.0123456789
+                    elif change == 'source_file': value['source_file'] = 'wrong.json'
+                    elif change == 'source_row': value['source_row'] = 99
+                    else: value['record']['ModelAnswer'] = 'Substituted answer from another judge'
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _rakuda(self.directory, frames, self.metadata, source)
+
+
 class OODPredictionNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib
