@@ -509,7 +509,7 @@ def wandb_entries(source: dict) -> list[dict]:
     return entries
 
 
-def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session) -> bytes:
+def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session, *, etag: str | None = None) -> bytes:
     """Read one original ZIP member by byte range and verify its native headers/CRC.
 
     The caller pins the decompressed content with SHA-256 as well. A server that
@@ -518,10 +518,15 @@ def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session)
     start = info.header_offset
     end = min(archive_size - 1, start + 30 + len(info.filename.encode("utf-8")) + info.compress_size + 1024 - 1)
     for _ in range(2):
-        with session.get(url, headers={"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"},
+        headers = {"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"}
+        if etag is not None:
+            headers["If-Match"] = etag
+        with session.get(url, headers=headers,
                          stream=True, timeout=120) as response:
             if response.status_code != 206 or response.headers.get("Content-Range") != f"bytes {start}-{end}/{archive_size}":
                 raise SourceDataError(f"ZIP server did not return the requested byte range (HTTP {response.status_code})")
+            if etag is not None and response.headers.get("ETag") != etag:
+                raise SourceDataError("ZIP byte range differs from the pinned ETag")
             blob = response.raw.read(end - start + 1)
         if len(blob) != end - start + 1 or blob[:4] != b"PK\x03\x04":
             raise SourceDataError("Incomplete or invalid ZIP local header")
@@ -567,13 +572,23 @@ def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None)
     root = raw_dir.resolve()
     raw_dir.parent.mkdir(parents=True, exist_ok=True)
     files, destinations = [], set()
-    filesystem = fsspec.filesystem("http", client_kwargs={"trust_env": True})
     thread = threading.local()
     sessions = []
     try:
         with tempfile.TemporaryDirectory(prefix=".zip-download-", dir=raw_dir.parent) as temporary, ThreadPoolExecutor(max_workers=12) as executor:
             staging = Path(temporary)
             for archive_name, archive_entry in sorted(selected.items()):
+                etag = archive_entry.get("etag")
+                version_headers = {"If-Match": etag} if etag is not None else {}
+                if etag is not None:
+                    try:
+                        with requests.head(archive_entry["url"], headers=version_headers, allow_redirects=True, timeout=120) as response:
+                            if response.status_code != 200 or response.headers.get("ETag") != etag or response.headers.get("Content-Length") != str(archive_entry["size"]):
+                                raise SourceDataError("ZIP archive differs from its pinned size/ETag")
+                            download_url = response.url
+                    except requests.RequestException as error:
+                        raise SourceDataError(f"Pinned ZIP archive request failed ({type(error).__name__})") from None
+                filesystem = fsspec.filesystem("http", client_kwargs={"trust_env": True}, **({"headers": version_headers} if version_headers else {}))
                 with filesystem.open(archive_entry["url"], "rb", size=archive_entry["size"], block_size=1 << 16) as stream:
                     with zipfile.ZipFile(stream) as archive:
                         members = archive.infolist()
@@ -603,7 +618,7 @@ def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None)
                     raise SourceDataError(f"No selected original files in ZIP {archive_name}")
                 # Resolve the public archive once; never expose signed redirect URLs.
                 needs_download = any(not (raw_dir / destination).is_file() for _, destination, _ in selection)
-                if needs_download:
+                if needs_download and etag is None:
                     try:
                         with requests.head(archive_entry["url"], allow_redirects=True, timeout=120) as response:
                             if response.status_code != 200:
@@ -622,7 +637,7 @@ def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None)
                             thread.session = requests.Session()
                             sessions.append(thread.session)
                         try:
-                            content = read_zip_member(download_url, archive_entry["size"], member, thread.session)
+                            content = read_zip_member(download_url, archive_entry["size"], member, thread.session, etag=etag)
                         except requests.RequestException as error:
                             raise SourceDataError(f"Original ZIP member request failed ({type(error).__name__})") from None
                         cached = staging / destination
@@ -685,7 +700,15 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
         else:
             location = urlparse(url)
             entries = []
-            if "wandb_runs" in source:
+            http_zip = "zip_members" in source and location.netloc != "huggingface.co"
+            if http_zip:
+                archive_name = Path(location.path).name
+                if (location.scheme != "https" or not archive_name.endswith(".zip") or source["zip_members"] != [archive_name]
+                        or not isinstance(source.get("size"), int) or isinstance(source["size"], bool) or source["size"] <= 0
+                        or not re.fullmatch(r'"[^"\r\n]+"', str(source.get("revision", "")))):
+                    raise SourceDataError(f"{name}: HTTPS ZIP selection requires its exact filename, positive size and strong ETag revision")
+                entries = [dict(path=archive_name, url=url, size=source["size"], etag=source["revision"])]
+            elif "wandb_runs" in source:
                 entries = wandb_entries(source)
             elif "json_index" in source:
                 entries = json_index_entries(source, named, raw_dir)
@@ -760,7 +783,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc in {"drive.google.com", "api.osf.io"}:
+            if http_zip or "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc in {"drive.google.com", "api.osf.io"}:
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")
@@ -789,8 +812,8 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
             elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
             if "zip_members" in source:
-                if location.netloc != "huggingface.co" or not location.path.startswith(("/datasets/", "/spaces/")):
-                    raise SourceDataError("ZIP member selections require an immutable Hugging Face repository")
+                if not http_zip and (location.netloc != "huggingface.co" or not location.path.startswith(("/datasets/", "/spaces/"))):
+                    raise SourceDataError("ZIP member selections require a pinned Hugging Face repository or size/ETag-pinned HTTPS archive")
                 entries = zip_member_entries(source, entries, raw_dir)
             selected = []
             for rule in source["files"]:

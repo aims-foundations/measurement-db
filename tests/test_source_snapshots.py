@@ -69,7 +69,7 @@ class ZIPMemberTests(unittest.TestCase):
                     for name, content in sorted(self.members.items())]
         self.source["tree_sha256"] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
-    def inspect(self, *, source=None, payload=None, status=206, integration=False):
+    def inspect(self, *, source=None, payload=None, status=206, integration=False, head_overrides=None, range_etag=None):
         from scripts.build_measurement_tables.load_source_files import zip_member_entries
         payload = self.archive if payload is None else payload
         opened = []
@@ -80,11 +80,15 @@ class ZIPMemberTests(unittest.TestCase):
             response = io.BytesIO(payload[start:end + 1])
             response.status_code, response.raw = status, response
             response.headers = {"Content-Range": f"bytes {start}-{end}/{len(payload)}"}
+            if self.source["url"].startswith("https://example.org/"):
+                self.assertEqual(headers.get("If-Match"), self.source["revision"])
+                response.headers["ETag"] = range_etag or self.source["revision"]
             return response
 
         head = io.BytesIO()
         head.url = "https://example.org/public-redirect"
         head.status_code = 200
+        head.headers = {"ETag": self.source["revision"], "Content-Length": str(len(self.archive)), **(head_overrides or {})}
         head.raise_for_status = lambda: None
         filesystem = SimpleNamespace(open=lambda *args, **kwargs: io.BytesIO(self.archive))
         session = SimpleNamespace(get=request, close=lambda: None)
@@ -123,6 +127,40 @@ class ZIPMemberTests(unittest.TestCase):
         self.assertEqual(set(urls), {"https://example.org/original.zip#member=" + name for name in self.members})
         self.assertEqual(self.inspect(integration=True), urls)
         self.assertEqual((self.raw / "members/task/transcript.txt").read_bytes(), self.members["task/transcript.txt"])
+
+    def test_https_archive_requires_version_and_complete_content_pin(self):
+        self.source.update(url="https://example.org/original.zip", revision='"original-version"', size=len(self.archive))
+        urls = self.inspect(integration=True)
+        self.assertEqual(set(urls), {"https://example.org/original.zip#member=" + name for name in self.members})
+        for name, body in self.members.items():
+            self.assertEqual((self.raw / "members" / name).read_bytes(), body)
+        # A stale source must fail even when every selected member is already cached.
+        with self.assertRaisesRegex(SourceDataError, "pinned size/ETag"):
+            self.inspect(integration=True, head_overrides={"ETag": '"changed-version"'})
+        with self.assertRaisesRegex(SourceDataError, "pinned size/ETag"):
+            self.inspect(integration=True, head_overrides={"Content-Length": str(len(self.archive) + 1)})
+        shutil.rmtree(self.raw)
+        with self.assertRaisesRegex(SourceDataError, "pinned ETag"):
+            self.inspect(integration=True, range_etag='"changed-during-download"')
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob("*")))
+        self.source["tree_sha256"] = "0" * 64
+        with self.assertRaisesRegex(SourceDataError, "pinned tree"):
+            self.inspect(integration=True)
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob("*")))
+
+    def test_https_archive_metadata_and_filename_are_validated(self):
+        self.source.update(url="https://example.org/original.zip", revision='"original-version"', size=len(self.archive))
+        metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+        metadata["sources"] = {"upstream": [self.source]}
+        validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        for change in ({"revision": "unversioned"}, {"revision": 'W/"weak-version"'}, {"revision": '"line\nbreak"'},
+                       {"size": None}, {"tree_sha256": None}, {"zip_members": ["one.zip", "two.zip"]}):
+            metadata["sources"]["upstream"] = [{**self.source, **change}]
+            with self.subTest(change=change), self.assertRaises(BenchmarkMetadataError):
+                validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        self.source["zip_members"] = ["different-name.zip"]
+        with self.assertRaisesRegex(SourceDataError, "exact filename"):
+            self.inspect(integration=True)
 
     def test_pinned_tree_rejects_changed_selection_before_installing_files(self):
         self.source["tree_sha256"] = "0" * 64
