@@ -762,6 +762,37 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaises(BenchmarkMetadataError):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
+    def test_json_index_root_array_is_pinned_and_duplicate_paths_are_rejected(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+
+        body = b'[{"id":"a"},{"id":"b"}]'
+        pages = {'a.json': b'{"score":0}', 'b.json': b'{"score":1}'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='manifest.json', size=len(body), sha256=hashlib.sha256(body).hexdigest())
+        identity = [dict(path=name, size=len(data), digest=hashlib.sha256(data).hexdigest())
+                    for name, data in pages.items()]
+        source = dict(name='results', url='https://provider.example/results', revision=None,
+                      json_index=dict(source='manifest', records=[], path='{id}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[ab]\.json', path='results/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        (self.raw / 'manifest.json').write_bytes(body)
+        (self.raw / 'results').mkdir()
+        for name, data in pages.items():
+            (self.raw / 'results' / name).write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            artifacts = upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+            self.assertEqual([row['file'] for row in artifacts], ['results/a.json', 'results/b.json'])
+            (self.raw / 'results/b.json').write_bytes(b'{"score":0}')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+            body = b'[{"id":"a"},{"id":"a"}]'
+            (self.raw / 'manifest.json').write_bytes(body)
+            index.update(size=len(body), sha256=hashlib.sha256(body).hexdigest())
+            with self.assertRaisesRegex(SourceDataError, 'duplicate indexed source path'):
+                upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+
     def test_json_index_collection_preserves_every_manifest_and_referenced_asset(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         manifest = b'{"runs":[{"id":"a"},{"id":"b"}]}'

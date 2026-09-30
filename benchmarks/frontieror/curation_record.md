@@ -1,0 +1,4 @@
+- Scope: 2,230 published task-level assessments on 180 optimization problems: twelve one-shot models and three self-evolution configurations. Each fraction summarizes five instances; individual instance outcomes are unavailable.
+- Grading: retain exact feasibility fractions and distinguish them from solution quality or QTE. Current reference checkers do not establish the original runs' checker versions. No evaluation is rerun.
+- Provenance: preserve full descriptions, input/output schemas, reference checkers and native metric records. Exact prompts, candidate-to-score links and historical request settings remain unknown.
+- Migration: all 1,323 older assessments reconcile by task/configuration; 401 grades changed upstream and 907 assessments were added. The older local capture remains archived separately. Full source audits, shared checks and clean upstream rebuilding verify this snapshot.

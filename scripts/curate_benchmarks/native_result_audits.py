@@ -22235,12 +22235,103 @@ def _swe_together(directory, tables, metadata, source=None):
                 missing_replicates=missing, missing_model_task_cells=len(tasks) * len(subjects) - cells)
 
 
+def _frontieror_sources(directory, metadata):
+    """Read published task aggregates without inferring individual executions."""
+    import csv
+
+    raw = directory / "raw"
+    paths = metadata["build"]["parameters"]["paths"]
+    index = json.loads((raw / paths["index"]).read_text())
+    tasks, records = {}, {}
+    with (raw / paths["website_index"]).open() as stream:
+        website = list(csv.DictReader(stream))
+    _check(Counter(row["paper_id"] for row in website), Counter(row["paper_id"] for row in index),
+           "FrontierOR original website and task bank coverage")
+    for task in index:
+        key = task["paper_id"]
+        _check(key not in tasks, True, "FrontierOR unique task definitions")
+        native = json.loads((raw / paths["details"].format(paper_id=key)).read_text())
+        _check(native["paper_id"], key, "FrontierOR exact source filename-to-task association")
+        tasks[key] = {field: (raw / paths[field].format(paper_id=key)).read_text()
+                      for field in ["description", "instance_schema", "solution_schema", "checker"]}
+        for record in native["per_model"]:
+            pair = key, record["model"]
+            _check(pair not in records, True, "FrontierOR unique native task/configuration result")
+            score = record["feasibility"]
+            _check(score is None or type(score) in (int, float) and score in [0., .2, .4, .6, .8, 1.],
+                   True, "FrontierOR native fraction over five instances")
+            records[pair] = record
+    return tasks, records
+
+
+def _frontieror(directory, tables, metadata, source=None):
+    tasks, records = _frontieror_sources(directory, metadata) if source is None else source
+    config = metadata["build"]["parameters"]
+    labels, paths = config["labels"], config["paths"]
+    models = {}
+    for row in tables["subjects"].itertuples():
+        extra = _features(row.subject_features_extra)
+        model = extra["recorded_model_label"]
+        kinds = {record["kind"] for (_, name), record in records.items() if name == model}
+        _check(len(kinds), 1, "FrontierOR one native evaluation kind per model label")
+        kind = kinds.pop()
+        _check(row.display_name, "FrontierOR / " + model, "FrontierOR literal model/configuration label")
+        harness = "FrontierOR one-shot" if kind == "model" else "FrontierOR " + model.split(" + ")[-1] + " self-evolution"
+        _check(row.harness, harness, "FrontierOR distinct recorded evolution harness")
+        _check(extra, dict(recorded_model_label=model, evaluation_kind=kind, result_snapshot=labels["snapshot"],
+                           historical_inference_settings="not_recorded"), "FrontierOR recorded settings and snapshot")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "FrontierOR unknown historical setting: " + field)
+        models[row.subject_id] = model
+    _check(Counter(models.values()), Counter({key[1]: 1 for key in records}), "FrontierOR exact native configurations")
+    items = {}
+    for row in tables["items"].itertuples():
+        native = tasks[row.raw_item_id]
+        content = (native["description"] + "\n\n# Instance Data Schema (instance_schema.json)\n\n" + native["instance_schema"] +
+                   "\n\n# Solution Output Schema (solution_schema.json)\n\n" + native["solution_schema"])
+        _check(row.content, content, "FrontierOR complete problem description and input/output schemas")
+        _check(_features(row.item_features), dict(task_artifact_revision=labels["task_revision"]), "FrontierOR reference artifact revision")
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata["grading"]["rule"]),
+               "FrontierOR feasibility rule, without a fake reference solution")
+        verifier = json.loads(row.verifier)
+        _check(verifier.get("judged_by"), None, "FrontierOR numeric assessment is not an LLM judgment")
+        _check(json.loads(verifier["spec"]), dict(protocol=metadata["grading"]["verifiers"]["published_feasibility"],
+            reference_checker=native["checker"]), "FrontierOR complete captured reference checker and historical limitation")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in tasks}), "FrontierOR exact task bank")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        key = items[row.item_id], models[row.subject_id]
+        original = records[key]
+        _check(json.loads(traces[row.response_id]), dict(record_type="published_task_metrics",
+            source_file=paths["details"].format(paper_id=key[0]), source_task=key[0], source_record=original,
+            snapshot=labels["snapshot"], generated_output_available=False, constituent_instance_results_available=False),
+            "FrontierOR full published assessment and its exact model/task association")
+        if original["feasibility"] is None:
+            _check(pd.isna(row.response), True, "FrontierOR unpublished grade remains null")
+        else:
+            _check(row.response, original["feasibility"], "FrontierOR exact feasibility, not QTE, quality or a rounded value")
+        _check(row.trial, 1, "FrontierOR one published aggregate, not five inferred trials")
+        _check(row.test_condition, "published_task_aggregate;five_large_instances;historical_settings_unavailable",
+               "FrontierOR explicit aggregate unit")
+        _check(pd.isna(row.interactors), True, "FrontierOR no guessed interactor")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "FrontierOR each published assessment exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "FrontierOR every assessment has its native record")
+    _check(tables["benchmarks"].iloc[0].version, labels["snapshot"], "FrontierOR explicit result snapshot")
+    return dict(source_responses=len(records), source_tasks=len(tasks), source_subjects=len(models), source_traces=len(traces),
+        source_ungraded=sum(row["feasibility"] is None for row in records.values()),
+        source_one_shot=sum(row["kind"] == "model" for row in records.values()),
+        source_self_evolution=sum(row["kind"] == "self_evolve" for row in records.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,

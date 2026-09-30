@@ -216,7 +216,9 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
         raise SourceDataError(f"{name}: cyclic JSON index sources")
     index = named.get(selector["source"], {})
 
-    records = _json_index_documents(index, named, raw_dir, (*_trail, name))
+    documents = _json_index_documents(index, named, raw_dir, (*_trail, name))
+    records = [record for document in documents
+               for record in (document if isinstance(document, list) else [document])]
     for field in selector["records"]:
         nested = []
         for record in records:

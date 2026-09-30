@@ -978,3 +978,4 @@ SOURCE_AUDITS["visit_bench"] = verify_native_results
 
 SOURCE_AUDITS["embodied_agent_interface"] = verify_native_results
 SOURCE_AUDITS["swe_together"] = verify_native_results
+SOURCE_AUDITS["frontieror"] = verify_native_results

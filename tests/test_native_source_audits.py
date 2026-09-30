@@ -263,6 +263,92 @@ class SweTogetherAuditTests(unittest.TestCase):
                     _swe_together(self.directory, tables, self.metadata)
 
 
+class FrontierORAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "frontieror"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/frontieror"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        paths = self.metadata["build"]["parameters"]["paths"]
+        tasks = [dict(paper_id="task-a"), dict(paper_id="task-b")]
+        values = [dict(model="model-a", kind="model", feasibility=.2, sol_quality=0., qte=0.),
+                  dict(model="model-b", kind="model", feasibility=.6, sol_quality=.2, qte=.4),
+                  dict(model="model-a", kind="model", feasibility=None, sol_quality=None, qte=None),
+                  dict(model="GPT-5.3-Codex + CoRAL", kind="self_evolve", feasibility=1., sol_quality=.2, qte=.2)]
+        index = raw / paths["index"]
+        index.parent.mkdir(parents=True)
+        index.write_text(json.dumps(tasks))
+        index = raw / paths["website_index"]
+        index.parent.mkdir(parents=True)
+        index.write_text("paper_id\ntask-a\ntask-b\n")
+        for i, task in enumerate(tasks):
+            identifier = task["paper_id"]
+            path = raw / paths["details"].format(paper_id=identifier)
+            path.parent.mkdir(parents=True)
+            path.write_text(json.dumps(dict(paper_id=identifier, per_model=values[2*i:2*i+2])))
+            for field, text in dict(description="Original task " + identifier + "\n", instance_schema='{"input": "original"}\n',
+                    solution_schema='{"objective_value": "number"}\n', checker="# original checker\n" + "# " + "x" * 20000).items():
+                path = raw / paths[field].format(paper_id=identifier)
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(text)
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        builder = runpy.run_path(str(folder / "build.py"))["FrontierOR"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_fractional_grades_unknown_grade_and_distinct_harnesses(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _frontieror
+        self.assertEqual(_frontieror(self.directory, self.tables, self.metadata), dict(source_responses=4,
+            source_tasks=2, source_subjects=3, source_traces=4, source_ungraded=1, source_one_shot=3, source_self_evolution=1))
+
+    def test_aggregate_preserving_swaps_null_filling_and_source_corruption_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _frontieror
+        for change in ["swap", "fill_null", "model", "item", "replicate", "score", "checker", "schema", "snapshot", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "swap":
+                    tables["responses"].loc[[0, 1], "response"] = [.6, .2]
+                elif change == "fill_null":
+                    tables["responses"].loc[tables["responses"].response.isna(), "response"] = 0.
+                elif change in {"model", "item"}:
+                    field = "subject_id" if change == "model" else "item_id"
+                    current = tables["responses"].loc[0, field]
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != current)
+                elif change == "replicate":
+                    tables["responses"].loc[0, "trial"] = 5
+                elif change in {"score", "snapshot"}:
+                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    if change == "score": trace["source_record"]["feasibility"] = .4
+                    else: trace["snapshot"] = "older-version"
+                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                elif change == "checker":
+                    verifier = json.loads(tables["items"].loc[0, "verifier"])
+                    spec = json.loads(verifier["spec"])
+                    spec["reference_checker"] = spec["reference_checker"][:16000]
+                    verifier["spec"] = json.dumps(spec)
+                    tables["items"].loc[0, "verifier"] = json.dumps(verifier)
+                elif change == "schema":
+                    tables["items"].loc[0, "content"] = "Original task task-a\n"
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:]
+                with self.assertRaises(ValueError):
+                    _frontieror(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html
