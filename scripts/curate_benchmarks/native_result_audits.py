@@ -23249,11 +23249,159 @@ def _tabarena(directory, tables, metadata, source=None):
         source_classification_responses=kinds['classification'], source_regression_responses=kinds['regression'])
 
 
+def _exploitgym_sources(directory, metadata):
+    """Read original result arrays and task archives without the builder's joins."""
+    import tarfile
+
+    raw = directory / 'raw'
+    submissions, native, views = {}, {}, {}
+    for path in sorted((raw / 'results/submissions').glob('*/metadata.yml')):
+        text = path.read_text()
+        submissions[path.parent.name] = dict(record=yaml.safe_load(text), text=text)
+    for path in sorted((raw / 'results/submissions').glob('*/*.json')):
+        _check(path.name in {'results.json', 'results-2h.json'}, True, 'ExploitGym known native result view')
+        _check(path.parent.name in submissions, True, 'ExploitGym result has original metadata')
+        seen = set()
+        for index, row in enumerate(json.loads(path.read_text())):
+            for field in ['on_target', 'flag_captured', 'mitigation_enabled']:
+                _check(type(row[field]) is bool, True, 'ExploitGym original Boolean ' + field)
+            _check(not row['on_target'] or row['flag_captured'], True, 'ExploitGym on-target requires flag capture')
+            _check(isinstance(row['judge_models'], list) and all(isinstance(x, str) for x in row['judge_models']),
+                   True, 'ExploitGym recorded judge identifiers')
+            _check(set(row['models']) <= set(submissions[path.parent.name]['record']['models']),
+                   True, 'ExploitGym usage models agree with submission metadata')
+            key = row['task_id'], row['mitigation_enabled']
+            _check(key not in seen, True, 'ExploitGym unique source task/profile within each view')
+            seen.add(key)
+            native[str(path.relative_to(raw)), index] = dict(record=row, submission=path.parent.name,
+                view={'results.json': 'complete_run', 'results-2h.json': 'two_hour_view'}[path.name])
+        views[path.parent.name, path.name] = seen
+    for (submission, view), keys in views.items():
+        if view == 'results-2h.json':
+            _check(keys, views[submission, 'results.json'], 'ExploitGym two-hour view covers the same task/profile keys')
+    tasks, files = {}, {}
+    revisions = {entry['record']['benchmark_commit'] for entry in submissions.values()}
+    for revision in sorted(revisions):
+        with tarfile.open(raw / 'archives' / (revision + '.tar.gz')) as archive:
+            captured = {}
+            for member in archive:
+                if member.isfile():
+                    name = member.name.split('/', 1)[1]
+                    _check(name not in captured, True, 'ExploitGym unique archive paths')
+                    captured[name] = archive.extractfile(member).read()
+        template_prefix = 'src/cybergym/task/workspace/templates/'
+        templates = {name.removeprefix(template_prefix): value.decode('utf-8') for name, value in captured.items()
+                     if name.startswith(template_prefix) and name.endswith('.md.j2')}
+        for domain, filename in [('user', 'metadata.json'), ('kernel', 'kernel_metadata.json'), ('v8', 'v8_metadata.json')]:
+            for record in json.loads(captured['src/cybergym/task/' + filename]):
+                task = domain + ':' + record['entry_name']
+                prefix = 'data/tasks/' + domain + '/' + record['entry_name'] + '/'
+                materials = {name.removeprefix(prefix): value for name, value in captured.items() if name.startswith(prefix)}
+                description = materials[{'user': 'description.txt', 'kernel': 'docs/vulnerability.md',
+                                      'v8': 'pov/description.md'}[domain]].decode('utf-8')
+                _check(bool(description.strip()) and bool(materials), True, 'ExploitGym meaningful original task content')
+                key = revision, task
+                _check(key not in tasks, True, 'ExploitGym unique task definition per revision')
+                tasks[key] = dict(record=record, domain=domain, assets=materials,
+                    content=dict(description=description, instruction_template=templates[domain + '.md.j2'],
+                                 included_templates={name: value for name, value in templates.items() if name.startswith('_includes/')},
+                                 input_scope='released_task_definition_not_recorded_prompt'))
+        files[revision] = captured
+    return dict(native=native, submissions=submissions, tasks=tasks, files=files)
+
+
+def _exploitgym(directory, tables, metadata, source=None):
+    source = _exploitgym_sources(directory, metadata) if source is None else source
+    native, submissions, task_bank = source['native'], source['submissions'], source['tasks']
+    subjects, subject_seen = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        fields = _features(row.subject_features_extra)
+        submission = fields['submission']
+        original = submissions[submission]['record']
+        _check(row.display_name, 'ExploitGym / ' + submission, 'ExploitGym literal source agent identity')
+        _check(row.harness, original['name'], 'ExploitGym original agent harness')
+        _check(json.loads(fields['model_identifiers']), original['models'], 'ExploitGym exact model identifiers')
+        _check(fields['benchmark_revision'], original['benchmark_commit'], 'ExploitGym original benchmark revision')
+        for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
+            _check(pd.isna(getattr(row, field)), True, 'ExploitGym no invented historical setting: ' + field)
+        subjects[row.subject_id] = submission
+        subject_seen[submission] += 1
+    _check(subject_seen, Counter({key: 1 for key in submissions}), 'ExploitGym every source agent exactly once')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(traces), len(tables['traces']), 'ExploitGym unique trace associations')
+    seen, checked_items, item_protocols, used_assets, attempts = Counter(), set(), {}, set(), set()
+    counts = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(key in native, True, 'ExploitGym no fabricated source observations')
+        entry = native[key]
+        original, submission, view = entry['record'], entry['submission'], entry['view']
+        expected_trace = dict(source_file=key[0], source_row=key[1], record=original,
+            submission_metadata=submissions[submission]['text'], result_view=view,
+            trace_scope='published_result_summary_not_agent_trajectory')
+        _check(trace, expected_trace, 'ExploitGym full original result and source metadata without truncation')
+        _check(subjects[row.subject_id], submission, 'ExploitGym correct agent-response association')
+        _check(row.response, float(original['on_target']), 'ExploitGym exact native on-target grade')
+        _check(row.trial, 1, 'ExploitGym result views are not numbered as independent retries')
+        _check(json.loads(row.test_condition), dict(mitigation_enabled=original['mitigation_enabled'], result_view=view),
+               'ExploitGym mitigation profile and result view preserved')
+        _check(pd.isna(row.interactors), True, 'ExploitGym no invented interactors')
+        item = items[row.item_id]
+        revision = submissions[submission]['record']['benchmark_commit']
+        task = task_bank[revision, original['task_id']]
+        _check(item['raw_item_id'], original['task_id'], 'ExploitGym correct task-response association')
+        _check(json.loads(item['content']), task['content'], 'ExploitGym full original description and unrendered templates')
+        features = _features(item['item_features'])
+        _check(features['benchmark_revision'], revision, 'ExploitGym task belongs to the recorded revision')
+        _check(features['domain'], task['domain'], 'ExploitGym source domain')
+        _check(features['input_scope'], 'released_task_definition_not_recorded_prompt', 'ExploitGym no claim of a captured prompt')
+        _check(json.loads(features['released_task_metadata']), task['record'], 'ExploitGym complete original task metadata')
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion, dict(reference_answer=None, rule=metadata['grading']['rule']),
+               'ExploitGym criterion without a fabricated reference solution')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier['judged_by']), ('judge', 'llm'), 'ExploitGym released judgment, not patch exact matching')
+        _check(json.loads(verifier['spec']), dict(protocol=metadata['grading']['verifiers']['released_pipeline'],
+            benchmark_commit=revision), 'ExploitGym original versioned judging procedure')
+        protocol = revision, original['task_id']
+        _check(item_protocols.get(row.item_id, protocol), protocol, 'ExploitGym no conflated task or judging protocols')
+        item_protocols[row.item_id] = protocol
+        if row.item_id not in checked_items:
+            manifest = json.loads(item['asset_manifest'])
+            _check(len(manifest), len(task['assets']), 'ExploitGym complete task-material manifest')
+            material = {}
+            for link in manifest:
+                _check(link['path'] not in material, True, 'ExploitGym unique task-material paths')
+                _check(link['role'], 'upstream_task_material', 'ExploitGym source material not a claimed runtime workspace')
+                _check(link['media_type'], 'application/octet-stream', 'ExploitGym literal uninterpreted task material')
+                material[link['path']] = assets[link['asset_id']]['data']
+                used_assets.add(link['asset_id'])
+            _check(material, task['assets'], 'ExploitGym every original task-material byte')
+        checked_items.add(row.item_id)
+        seen[key] += 1
+        attempts.add((submission, original['task_id'], original['mitigation_enabled']))
+        counts['source_successes'] += original['on_target']
+        counts['source_primary_results' if view == 'complete_run' else 'source_two_hour_views'] += 1
+    _check(seen, Counter({key: 1 for key in native}), 'ExploitGym every native measurement exactly once')
+    _check(checked_items, set(items), 'ExploitGym no unused or missing items')
+    _check(len(set(item_protocols.values())), len(item_protocols), 'ExploitGym unique canonical task/protocol items')
+    _check(used_assets, set(assets), 'ExploitGym no unused or missing task assets')
+    _check(set(traces), set(tables['responses'].response_id), 'ExploitGym complete trace coverage')
+    return dict(source_responses=len(seen), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_assets=len(assets), source_unique_attempt_keys=len(attempts), source_task_ids=len({key[1] for key in task_bank}),
+        source_benchmark_revisions=len(source['files']), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'exploitgym':
+        return _exploitgym(directory, tables, metadata)
     return {"tabarena": _tabarena, "osworld": _osworld, "perfcodebench": _perfcodebench, "nyu_ctf_bench": _nyu_ctf, "mtbench": _mtbench, "weavebench": _weavebench, "planbench": _planbench, "frontieror": _frontieror, "swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,

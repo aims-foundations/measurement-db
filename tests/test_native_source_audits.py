@@ -1192,5 +1192,135 @@ class TabArenaNativeAuditTests(unittest.TestCase):
                     _tabarena(self.directory, tables, self.metadata, original)
 
 
+class ExploitGymNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from measurement_db.build_base import _tables
+
+        scratch = ROOT / 'artifacts'
+        scratch.mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'exploitgym'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/exploitgym'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'
+        (raw / 'archives').mkdir(parents=True)
+        template_prefix = 'src/cybergym/task/workspace/templates/'
+        for index, revision in enumerate(['a' * 40, 'b' * 40]):
+            files = {}
+            for domain, filename, description_path in [('user', 'metadata.json', 'description.txt'),
+                    ('kernel', 'kernel_metadata.json', 'docs/vulnerability.md'),
+                    ('v8', 'v8_metadata.json', 'pov/description.md')]:
+                records = [dict(task_id=domain + ':hashed-id', entry_name='fixture/task',
+                                attributes='Original; annotation=1')] if domain == 'user' else []
+                files['src/cybergym/task/' + filename] = json.dumps(records).encode()
+                files[template_prefix + domain + '.md.j2'] = (f'Original version {index}: {{{{ configuration }}}}').encode()
+                if records:
+                    prefix = 'data/tasks/user/fixture/task/'
+                    files[prefix + description_path] = ('完整描述 ' * 5000 + '\n').encode()
+                    files[prefix + 'original.bin'] = b'\x00\xfforiginal task bytes'
+            files[template_prefix + '_includes/environment.md.j2'] = b'Original shared template\n'
+            with tarfile.open(raw / 'archives' / (revision + '.tar.gz'), 'w:gz') as archive:
+                for name, content in files.items():
+                    member = tarfile.TarInfo('exploitgym-' + revision + '/' + name)
+                    member.size = len(content)
+                    archive.addfile(member, io.BytesIO(content))
+            submission = raw / 'results/submissions' / ('agent-' + str(index))
+            submission.mkdir(parents=True)
+            (submission / 'metadata.yml').write_text(yaml.safe_dump(dict(name='Original harness',
+                models=['model-' + str(index)], benchmark_commit=revision, date='2026-06-30')))
+            complete = [dict(task_id='user:fixture/task', mitigation_enabled=mitigation,
+                flag_captured=not mitigation, on_target=not mitigation, judge_models=[] if mitigation else ['judge-a'],
+                models={'model-' + str(index): {'input_tokens': 123}}, time=9000.0, total={'input_tokens': 123})
+                for mitigation in [False, True]]
+            (submission / 'results.json').write_text(json.dumps(complete))
+            if index == 1:
+                shorter = [dict(row, on_target=False, flag_captured=False, time=7200.0, judge_models=['judge-b']) for row in complete]
+                (submission / 'results-2h.json').write_text(json.dumps(shorter))
+        builder = runpy.run_path(str(folder / 'build.py'))['ExploitGym']
+        self.builder = builder
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_original_views_tasks_grading_and_complete_materials_are_preserved(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _exploitgym
+        counts = _exploitgym(self.directory, self.frames, self.metadata)
+        self.assertEqual(counts, dict(source_responses=6, source_subjects=2, source_items=2,
+            source_traces=6, source_assets=2, source_unique_attempt_keys=4, source_task_ids=1,
+            source_benchmark_revisions=2, source_successes=2, source_primary_results=4, source_two_hour_views=2))
+        self.assertTrue(self.frames['items'].content.str.len().min() > 16000)
+
+    def test_audit_rejects_changed_grades_links_protocols_materials_and_clipping(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _exploitgym, _exploitgym_sources
+        source = _exploitgym_sources(self.directory, self.metadata)
+        for change in ['grade', 'item', 'subject', 'trace', 'clip', 'criterion', 'judge', 'settings',
+                       'trial', 'condition', 'drop', 'duplicate', 'drop_trace', 'asset', 'asset_link']:
+            with self.subTest(change=change):
+                tables = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
+                if change == 'grade':
+                    tables['responses'].loc[0, 'response'] = 1 - tables['responses'].loc[0, 'response']
+                elif change == 'item':
+                    current = tables['responses'].loc[0, 'item_id']
+                    tables['responses'].loc[0, 'item_id'] = tables['items'].loc[tables['items'].item_id.ne(current), 'item_id'].iloc[0]
+                elif change == 'subject':
+                    current = tables['responses'].loc[0, 'subject_id']
+                    tables['responses'].loc[0, 'subject_id'] = tables['subjects'].loc[tables['subjects'].subject_id.ne(current), 'subject_id'].iloc[0]
+                elif change == 'trace':
+                    data = json.loads(tables['traces'].loc[0, 'trace']); data['record']['time'] = 1.
+                    tables['traces'].loc[0, 'trace'] = json.dumps(data)
+                elif change == 'clip':
+                    data = json.loads(tables['items'].loc[0, 'content']); data['description'] = data['description'][:16000]
+                    tables['items'].loc[0, 'content'] = json.dumps(data)
+                elif change == 'criterion':
+                    data = json.loads(tables['items'].loc[0, 'grading_criterion']); data['reference_answer'] = 'invented'
+                    tables['items'].loc[0, 'grading_criterion'] = json.dumps(data)
+                elif change == 'judge':
+                    data = json.loads(tables['items'].loc[0, 'verifier']); spec = json.loads(data['spec'])
+                    spec['recorded_judge_models'] = ['outcome-dependent']; data['spec'] = json.dumps(spec)
+                    tables['items'].loc[0, 'verifier'] = json.dumps(data)
+                elif change == 'settings':
+                    tables['subjects'].loc[0, 'subject_features_extra'] = tables['subjects'].loc[0, 'subject_features_extra'].replace('model-', 'changed-')
+                elif change == 'trial':
+                    tables['responses'].loc[0, 'trial'] = 2
+                elif change == 'condition':
+                    data = json.loads(tables['responses'].loc[0, 'test_condition']); data['mitigation_enabled'] = not data['mitigation_enabled']
+                    tables['responses'].loc[0, 'test_condition'] = json.dumps(data)
+                elif change == 'drop':
+                    tables['responses'] = tables['responses'].iloc[1:]
+                elif change == 'duplicate':
+                    tables['responses'] = pd.concat([tables['responses'], tables['responses'].iloc[:1]])
+                elif change == 'drop_trace':
+                    tables['traces'] = tables['traces'].iloc[1:]
+                elif change == 'asset':
+                    tables['assets'].loc[0, 'data'] = b'truncated'
+                else:
+                    data = json.loads(tables['items'].loc[0, 'asset_manifest']); data[0]['role'] = 'runtime_workspace'
+                    tables['items'].loc[0, 'asset_manifest'] = json.dumps(data)
+                with self.assertRaises((ValueError, KeyError)):
+                    _exploitgym(self.directory, tables, self.metadata, source)
+
+    def test_missing_verdict_is_not_converted_to_failure(self):
+        import contextlib
+        import io
+        raw = self.directory / 'raw'
+        source = raw / 'results/submissions/agent-0/results.json'
+        original = json.loads(source.read_text())
+        original[0]['on_target'] = None
+        source.write_text(json.dumps(original))
+        with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Boolean on_target'):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(self.directory.parent / 'invalid')])
+
+
 if __name__ == "__main__":
     unittest.main()
