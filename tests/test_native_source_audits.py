@@ -180,6 +180,89 @@ class EmbodiedArchiveAuditTests(unittest.TestCase):
                     _embodied_agent_interface(self.directory, tables, self.metadata)
 
 
+class SweTogetherAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from scripts.build_measurement_tables import reload
+
+        reload()
+        self.addCleanup(reload)
+
+        scratch = ROOT / "artifacts"
+        scratch.mkdir(exist_ok=True)
+        self.temporary = tempfile.TemporaryDirectory(dir=scratch)
+        self.addCleanup(self.temporary.cleanup)
+        self.directory = Path(self.temporary.name) / "swe_together"
+        raw = self.directory / "raw"
+        raw.mkdir(parents=True)
+        folder = ROOT / "benchmarks/swe_together"
+        self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
+        self.metadata["build"]["parameters"]["paths"] = {
+            "metrics": "metrics.js", "tasks": "tasks.jsonl", "website_tasks": "tasks.js"}
+        self.metadata["build"]["parameters"]["task_aliases"] = {"task-b-short": "task-b-shortened"}
+        (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
+        tasks = []
+        for identifier in ["task-a", "task-b-shortened"]:
+            tasks.append(dict(task_id=identifier, instruction="Native instruction " + identifier + "\n",
+                repo="author/project", repo_url="https://example.org/author/project", base_commit="abcdef",
+                language=None, difficulty="hard", category="bugfix", tags=["code"], docker_image="example:commit",
+                allow_internet=False, agent_timeout_sec=3600.0, reference_patch="  patch " + identifier + "\n",
+                completeness_goals='[{"goal": "original goal"}]', oracle_intents='["original user intent"]',
+                fail_to_pass=["test_new"], pass_to_pass=["test_existing"], test_manifest="{}", test_cmd=None,
+                log_parser=None))
+        (raw / "tasks.jsonl").write_text("\n".join(json.dumps(row) for row in tasks) + "\n")
+        (raw / "tasks.js").write_text("window.TASKS = " + json.dumps([dict(name=row["task_id"]) for row in tasks]) + ";")
+        self.metrics = {
+            "task-a": {"models": {"model-a": {"trials": [0.85, None], "j": 0.85},
+                                     "model-b": {"trials": [0.84, 0.], "j": 0.42}}},
+            "task-b-short": {"models": {"model-a": {"trials": [None, 1.], "j": 1.}}},
+        }
+        (raw / "metrics.js").write_text("window.METRICS = " + json.dumps(self.metrics) + ";")
+        builder = runpy.run_path(str(folder / "build.py"))["SweTogether"]
+        output = self.directory / "test_tables"
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            builder(str(self.directory / "build.py")).main_from_args(["--source", str(raw), "--output", str(output)])
+        self.tables = {path.stem: pd.read_parquet(path) for path in output.glob("*.parquet")}
+
+    def test_missing_slots_threshold_and_original_replicate_positions(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_together
+        self.assertEqual(_swe_together(self.directory, self.tables, self.metadata), dict(
+            source_responses=4, source_tasks=2, source_subjects=2, source_traces=4,
+            source_successes=2, missing_replicates=2, missing_model_task_cells=1))
+        trace = next(json.loads(value) for value in self.tables["traces"].trace
+                     if json.loads(value)["source_task"] == "task-b-short")
+        self.assertEqual(trace["source_trial"], 2)
+        self.assertEqual(trace["source_score"], 1.)
+
+    def test_wrong_associations_grades_references_and_snapshot_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_together
+        for change in ["grade", "model", "item", "replicate", "score", "reference", "prompt", "snapshot", "missing"]:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                if change == "grade":
+                    tables["responses"].loc[0, "response"] = 1. - tables["responses"].loc[0, "response"]
+                elif change in {"model", "item"}:
+                    field = "subject_id" if change == "model" else "item_id"
+                    current = tables["responses"].loc[0, field]
+                    tables["responses"].loc[0, field] = next(value for value in tables["responses"][field] if value != current)
+                elif change == "replicate":
+                    tables["responses"].loc[0, "trial"] = 3
+                elif change in {"score", "snapshot"}:
+                    trace = json.loads(tables["traces"].loc[0, "trace"])
+                    trace["source_score" if change == "score" else "snapshot"] = 0.123 if change == "score" else "old-export"
+                    tables["traces"].loc[0, "trace"] = json.dumps(trace)
+                elif change == "reference":
+                    tables["items"].loc[0, "grading_criterion"] = tables["items"].loc[1, "grading_criterion"]
+                elif change == "prompt":
+                    tables["items"].loc[0, "content"] = "truncated prompt"
+                else:
+                    tables["responses"] = tables["responses"].iloc[1:].copy()
+                with self.assertRaises(ValueError):
+                    _swe_together(self.directory, tables, self.metadata)
+
+
 class PublishedHTMLAuditTests(unittest.TestCase):
     def test_algotune_preserves_multiple_final_files_and_code_whitespace(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _algotune_html

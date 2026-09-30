@@ -22131,12 +22131,116 @@ def _embodied_agent_interface(directory, tables, metadata, source=None):
                 source_missing_outputs=sum(record["llm_output"] is None for _, record in records.values()))
 
 
+def _swe_together_sources(directory, metadata):
+    """Read native JSON dictionaries independently of the builder's melt/join."""
+    import math
+
+    raw = directory / "raw"
+    config = metadata["build"]["parameters"]
+    paths = config["paths"]
+    task_rows = [json.loads(line) for line in (raw / paths["tasks"]).read_text().splitlines() if line.strip()]
+    tasks = {row["task_id"]: row for row in task_rows}
+    _check(len(tasks), len(task_rows), "SWE-Together unique native task definitions")
+    website = json.JSONDecoder().raw_decode((raw / paths["website_tasks"]).read_text().split("window.TASKS = ", 1)[1])[0]
+    website_ids = {row["name"] for row in website}
+    _check(website_ids, set(tasks), "SWE-Together full website task IDs match the task bank")
+    for alias, target in config["task_aliases"].items():
+        _check([key for key in tasks if key.startswith(alias)], [target], "SWE-Together unambiguous shortened task alias")
+    text = (raw / paths["metrics"]).read_text()
+    payload = json.JSONDecoder().raw_decode(text.split("window.METRICS = ", 1)[1])[0]
+    records, missing, cells = {}, 0, 0
+    mapped = [config["task_aliases"].get(key, key) for key in payload]
+    _check(Counter(mapped), Counter({key: 1 for key in tasks}), "SWE-Together bijective metrics-to-task mapping")
+    for source_task, task in payload.items():
+        for model, cell in task["models"].items():
+            cells += 1
+            _check(len(cell["trials"]), 2, "SWE-Together two published replicate slots")
+            for trial, score in enumerate(cell["trials"], 1):
+                if score is None:
+                    missing += 1
+                    continue
+                _check(type(score) in (float, int) and math.isfinite(score) and 0 <= score <= 1,
+                       True, "SWE-Together finite original judge score")
+                records[source_task, model, trial] = cell, score, config["task_aliases"].get(source_task, source_task)
+    return tasks, records, missing, cells
+
+
+def _swe_together(directory, tables, metadata, source=None):
+    tasks, records, missing, cells = _swe_together_sources(directory, metadata) if source is None else source
+    config = metadata["build"]["parameters"]
+    snapshot = config["labels"]["snapshot"]
+    subjects = {}
+    for row in tables["subjects"].itertuples():
+        extra = _features(row.subject_features_extra)
+        model = extra["recorded_model_label"]
+        _check(row.display_name, "SWE-Together / " + model, "SWE-Together literal model label")
+        _check(row.harness, "opencode", "SWE-Together published harness")
+        _check(extra, dict(recorded_model_label=model, result_snapshot=snapshot,
+                           historical_inference_settings="not_recorded"), "SWE-Together snapshot and unknown settings")
+        for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
+            _check(pd.isna(getattr(row, field)), True, "SWE-Together no inferred setting: " + field)
+        subjects[row.subject_id] = model
+    _check(Counter(subjects.values()), Counter({key[1]: 1 for key in records}), "SWE-Together exact recorded models")
+    items = {}
+    for row in tables["items"].itertuples():
+        original = tasks[row.raw_item_id]
+        lines = []
+        for label, field in [("Repository", "repo"), ("Base commit", "base_commit"), ("Language", "language")]:
+            if original[field]:
+                lines.append(f"{label}: {original[field]}")
+        prefix = "\n".join(lines) + "\n\n" if lines else ""
+        _check(row.content, prefix + original["instruction"], "SWE-Together complete instruction and repository context")
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion.get("reference_answer"), original["reference_patch"] or None, "SWE-Together complete reference patch")
+        _check(json.loads(criterion["rule"]), dict(pass_rule=metadata["grading"]["rule"], task_grading={
+            field: original[field] for field in ["completeness_goals", "oracle_intents", "fail_to_pass", "pass_to_pass",
+                                                  "test_manifest", "test_cmd", "log_parser"]}),
+            "SWE-Together complete original grading goals and user intents")
+        features = _features(row.item_features)
+        for field in ["repo", "repo_url", "base_commit", "language", "difficulty", "category", "tags",
+                      "docker_image", "allow_internet", "agent_timeout_sec"]:
+            expected = original[field]
+            feature = "lang" if field == "language" else field
+            if expected is not None:
+                _check(features[feature], str(expected), "SWE-Together native item feature: " + field)
+            else:
+                _check(feature not in features, True, "SWE-Together unknown feature remains absent: " + field)
+        verifier = json.loads(row.verifier)
+        _check(verifier["judged_by"], "llm", "SWE-Together published LLM judge")
+        _check(json.loads(verifier["spec"]), metadata["grading"]["verifiers"]["published_judge"], "SWE-Together recorded grading interpretation")
+        _check(json.loads(verifier["spec"])["pass_threshold"], 0.85, "SWE-Together author success threshold")
+        items[row.item_id] = row.raw_item_id
+    _check(Counter(items.values()), Counter({key: 1 for key in tasks}), "SWE-Together exact original task bank")
+    traces = tables["traces"].set_index("response_id").trace.to_dict()
+    seen = Counter()
+    for row in tables["responses"].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace["source_task"], trace["source_model"], trace["source_trial"]
+        cell, score, task = records[key]
+        _check(trace, dict(record_type="published_metrics_cell", source_file=config["paths"]["metrics"], snapshot=snapshot,
+            source_task=key[0], source_model=key[1], source_trial=key[2], source_score=score,
+            source_cell=cell, generated_output_available=False), "SWE-Together full original assessment, not an invented conversation")
+        _check((subjects[row.subject_id], items[row.item_id], row.trial), (key[1], task, key[2]),
+               "SWE-Together exact model, task and replicate association")
+        _check(row.response, float(score >= 0.85), "SWE-Together correct per-replicate success threshold")
+        _check(row.test_condition, "opencode;published_replicate_slot;historical_request_settings_unavailable",
+               "SWE-Together declared historical scope")
+        _check(pd.isna(row.interactors), True, "SWE-Together no guessed interactor identity")
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in records}), "SWE-Together every non-null score exactly once")
+    _check(set(traces), set(tables["responses"].response_id), "SWE-Together complete assessment association")
+    _check(tables["benchmarks"].iloc[0].version, snapshot, "SWE-Together explicit result version")
+    return dict(source_responses=len(records), source_tasks=len(tasks), source_subjects=len(subjects),
+                source_traces=len(traces), source_successes=sum(score >= 0.85 for _, score, _ in records.values()),
+                missing_replicates=missing, missing_model_task_cells=len(tasks) * len(subjects) - cells)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
-    return {"embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
+    return {"swe_together": _swe_together, "embodied_agent_interface": _embodied_agent_interface, "visit_bench": _visit_bench, "ultrafeedback": _ultrafeedback, "txbench_pp": _txbench_pp, "xstest": _xstest, "tulu_human_eval": _tulu_human_eval, "truthfulqa_mc": _truthfulqa_mc, "stanford_orb": _stanford_orb, "taubench": _taubench, "tau2_bench": _tau2_bench, "swepolybench": _swe_poly_tabular, "swebench_live": _swe_live_tabular, "summeval": _summeval, "subjective_qa": _subjective_qa, "statqa": _statqa, "sketchjudge": _sketchjudge, "situat3dchange": _situat3dchange, "sgrades": _sgrades, "sib200": _sib200, "scivisagentbench": _scivisagentbench, "openbiorq": _openbiorq, "fewshot_ttt_bbh": _fewshot, "prox": _prox,
             "cseo_bench": _cseo, "risebench": _risebench,
             "clasheval": _clasheval, "engdesign": _engdesign, "phyblock": _phyblock,
             "scigym": _scigym, "advprompter": _advprompter,
