@@ -1,0 +1,151 @@
+format_version: 1
+tables:
+  traces:
+    rows: 61384
+    logical_sha256: cbaa9983894388b42ec97737fbecfb364df03684c705037a655f2d2b9c3a306e
+  subjects:
+    rows: 6
+    logical_sha256: 1e1e79528bb8440b1a0887d2621ad6cfb807701171af093c4cf76642969cc4a7
+  responses:
+    rows: 61384
+    logical_sha256: c2756aef8fe6bd5928369195ed1eb64e4f55d1048325aa362f933537d4d04adf
+  assets:
+    rows: 190
+    logical_sha256: 3e5dd337ead2aa0f09d6747e1c0e0e1171965296f9a7d0fd7c113c84f2f99248
+  items:
+    rows: 36458
+    logical_sha256: be286210133c75cd3e52d1ccc82db6a0bd90c306e6314f83593d6f5e4f51b619
+  benchmarks:
+    rows: 1
+    logical_sha256: 0b4e1f5bfca41594ad02a1919aba1eba7c1530d99d956db2fff6864f9668efba
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 6
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 36458
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 61384
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 61384
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 190
+  source_csv_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 10231
+  source_attempt_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 14829
+  source_unavailable_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 3
+  source_inapplicable_order_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 12761
+  source_long_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 0
+  source_empty_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 118
+  source_custom_contexts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 40
+  source_spider_contexts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/spapicchio/QATCH
+    locator: All nine released generated_tests CSVs, verified against original Git LFS objects at 82fa7ad7d6fb607977b525f853d39dc056a95911;
+      author-linked Spider archive.
+    scope: Every applicable published metric with its complete original record and model-specific table context.
+      Different metrics define different grading protocols; repeated publication records are not asserted to be
+      independent generations.
+    expected: 931

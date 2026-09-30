@@ -2393,6 +2393,198 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class QatchNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import csv
+        import io
+        import runpy
+        import sqlite3
+        import zipfile
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'qatch'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/qatch'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'; raw.mkdir()
+        self.native = {}
+        metrics = list(self.metadata['grading']['verifiers'])
+        for task, model, values in [('question-answering', 'chatgpt', [[1, 2], [3, 4]]),
+                ('question-answering', 'tapas-wtq', [[10, 20], [30, 40]]),
+                ('semantic-parsing', 'resdsql', [[1, 2], [3, 4]])]:
+            rows = []
+            for index, (query, target, tag) in enumerate([
+                    ('SELECT * FROM t', values, 'SELECT'),
+                    ('SELECT a FROM t', [[row[0]] for row in values], 'SELECT'),
+                    ('SELECT b FROM t', [[row[1]] for row in values], 'SELECT'),
+                    ('SELECT a FROM t ORDER BY a DESC', [[row[0]] for row in reversed(values)], 'ORDERBY'),
+                    ('SELECT count(*) FROM t', [[999]], 'SIMPLEAGGR')]):
+                row = dict(db_id='example', tbl_name='t', sql_tags=tag, query=query,
+                    question='Question ' + str(index) + ' — complete text.\u2028', query_result=repr(target), predictions='DROP TABLE t;',
+                    source_extra='0.0123456789012345', **{metric: '0.0123456789012345' for metric in metrics})
+                if index != 3: row['tuple_order'] = ''
+                if task == 'question-answering' and model == 'chatgpt' and index == 0:
+                    row['predictions'] = 'A complete answer.\n\u2028' * 1200
+                if model == 'tapas-wtq' and index == 4: row['predictions'] = ''
+                rows.append(row)
+            name = f'generated_tests/{task}/custom-data/{model}/tests_with_results.csv'
+            self.native[name] = rows
+        official = [dict(db_id='example', question='Spider full table', query='SELECT * FROM t'),
+            dict(db_id='example', question='Spider ordered values', query='SELECT a FROM t ORDER BY a DESC')]
+        merged, single = [], []
+        for index, original in enumerate(official):
+            row = dict(**original, tbl_name='t', sql_tags='SELECT' if index == 0 else 'ORDERBY',
+                query_result=repr([[1, 2], [3, 4]] if index == 0 else [[3], [1]]), source_extra='unchanged')
+            many = dict(row)
+            for model in self.metadata['build']['parameters']['merged_models']:
+                many[model + '_predictions'] = 'Original output for ' + model
+                for metric in metrics:
+                    many[metric + '_' + model] = '' if metric == 'tuple_order' and index == 0 else '0.5'
+            if index == 0: many['cell_precision_chatgpt'] = ''
+            merged.append(many)
+            single.append(dict(row, predictions='Original SQL output', **{metric: '' if metric == 'tuple_order' and index == 0 else '0.5' for metric in metrics}))
+        self.native[self.metadata['build']['parameters']['layout']['merged']] = merged
+        self.native['generated_tests/semantic-parsing/spider/resdsql-large/tests_with_results_dev.csv'] = single
+        for name, rows in self.native.items():
+            if '/semantic-parsing/' in name:
+                self.native[name] = [dict({'': str(index)}, **row) for index, row in enumerate(rows)]
+        self._write_results()
+        database = self.directory / 'fixture.sqlite'
+        connection = sqlite3.connect(database)
+        connection.execute('CREATE TABLE t(a INTEGER, b INTEGER)')
+        connection.executemany('INSERT INTO t VALUES(?,?)', [(1, 2), (3, 4)])
+        connection.commit(); connection.close()
+        self.database_bytes = database.read_bytes()
+        schema = [dict(db_id='example', table_names_original=['t'], column_names_original=[[-1, '*'], [0, 'a'], [0, 'b']])]
+        layout = self.metadata['build']['parameters']['layout']
+        with zipfile.ZipFile(raw / layout['spider'], 'w') as archive:
+            archive.writestr(layout['spider_prefix'] + 'tables.json', json.dumps(schema))
+            archive.writestr(layout['spider_prefix'] + 'train_spider.json', json.dumps(official))
+            archive.writestr(layout['spider_prefix'] + 'dev.json', '[]')
+            archive.writestr(layout['spider_prefix'] + 'database/example/example.sqlite', self.database_bytes)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['QATCH']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def _write_results(self):
+        import csv
+        import io
+        import zipfile
+        path = self.directory / 'raw' / self.metadata['build']['parameters']['layout']['results']
+        with zipfile.ZipFile(path, 'w') as archive:
+            for name, rows in self.native.items():
+                stream = io.StringIO(newline='')
+                writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+                writer.writeheader(); writer.writerows(rows)
+                archive.writestr(name, stream.getvalue())
+
+    def test_complete_contexts_native_precision_missing_grades_and_separate_protocols(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch
+        self.assertEqual(_qatch(self.directory, self.frames, self.metadata), dict(
+            source_subjects=5, source_items=81, source_responses=99, source_traces=99, source_assets=3,
+            source_csv_rows=19, source_attempt_records=23, source_unavailable_grades=1,
+            source_inapplicable_order_fields=16, source_long_predictions=1, source_empty_predictions=1,
+            source_custom_contexts=3, source_spider_contexts=2))
+        self.assertEqual(self.frames['responses'].response.isna().sum(), 1)
+        self.assertTrue(self.frames['responses'].response.eq(0.0123456789012345).any())
+
+    def test_corrupted_scores_records_contexts_and_trace_links_are_rejected(self):
+        import hashlib
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch, _qatch_sources
+        source = _qatch_sources(self.directory, self.metadata)
+        changes = ['score', 'precision', 'null_to_zero', 'subject', 'item', 'trial', 'condition', 'interactors',
+            'drop', 'duplicate', 'extra_subject', 'extra_item', 'extra_asset', 'model', 'configuration', 'scale',
+            'question', 'column_order', 'reference', 'verifier', 'metric', 'asset_bytes', 'asset_path', 'asset_role',
+            'trace_clip', 'trace_precision', 'missing_field', 'source_file', 'source_row', 'source_model']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 0.75
+                elif change == 'precision': responses.loc[responses.response.eq(0.0123456789012345), 'response'] = 0.0123456789
+                elif change == 'null_to_zero': responses.loc[responses.response.isna(), 'response'] = 0
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'unknown'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(key for key in items.item_id if key != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'new trial'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'extra_item': frames['items'] = pd.concat([items, items.iloc[:1]], ignore_index=True)
+                elif change == 'extra_asset': frames['assets'] = pd.concat([assets, assets.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Other model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = 'prediction_task=wrong'
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=100))
+                elif change in ['question', 'column_order']:
+                    value = json.loads(items.loc[0, 'content'])
+                    if change == 'question': value['question'] = 'Different question'
+                    else: value['columns'] = list(reversed(value['columns']))
+                    items.loc[0, 'content'] = json.dumps(value, sort_keys=True, ensure_ascii=False)
+                elif change == 'reference': items.loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer='Corrected reference', rule='New rule'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(**{'class': 'exact_matcher'}, spec='{}'))
+                elif change == 'metric':
+                    verifier = json.loads(items.loc[0, 'verifier'])
+                    protocol = json.loads(verifier['spec'])
+                    protocol['metric'] = 'unknown'
+                    verifier['spec'] = json.dumps(protocol)
+                    items.loc[0, 'verifier'] = json.dumps(verifier)
+                elif change == 'asset_bytes': assets.loc[0, 'data'] = assets.loc[0, 'data'][:-1]
+                elif change in ['asset_path', 'asset_role']:
+                    value = json.loads(items.loc[0, 'asset_manifest'])
+                    value[0]['path' if change == 'asset_path' else 'role'] = 'wrong'
+                    items.loc[0, 'asset_manifest'] = json.dumps(value)
+                else:
+                    index = next(i for i, text in enumerate(traces.trace) if len(json.loads(text)['record'].get('predictions', '')) > 16000)
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['record']['predictions'] = value['record']['predictions'][:16000]
+                    elif change == 'trace_precision': value['record']['source_extra'] = '0.0123456789'
+                    elif change == 'missing_field': value['record'].pop('source_extra')
+                    elif change == 'source_file': value['source_file'] = 'wrong.csv'
+                    elif change == 'source_row': value['source_row'] = 999
+                    elif change == 'source_model': value['source_model'] = 'resdsql-large'
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _qatch(self.directory, frames, self.metadata, source)
+
+    def test_invalid_native_scores_are_flagged(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch_sources
+        first = next(iter(self.native))
+        for value in ['true', 'inf', 'nan', '-0.1', '1.1']:
+            with self.subTest(value=value):
+                self.native[first][0]['cell_precision'] = value
+                self._write_results()
+                with self.assertRaises(ValueError):
+                    _qatch_sources(self.directory, self.metadata)
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+
+    def test_missing_column_evidence_is_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _qatch_sources
+        first = next(iter(self.native))
+        self.native[first][1]['query'] = 'SELECT a FROM t WHERE a > 0'
+        self._write_results()
+        with self.assertRaisesRegex(ValueError, 'unambiguous'):
+            _qatch_sources(self.directory, self.metadata)
+        with self.assertRaisesRegex(ValueError, 'unambiguous'):
+            self.builder(str(self.directory / 'build.py')).build_tables()
+
+    def test_published_wrong_reference_and_sql_output_are_preserved_without_execution(self):
+        references = [json.loads(row)['reference_answer'] for row in self.frames['items'].grading_criterion]
+        self.assertTrue(any(json.loads(value)['released_target'] == '[[999]]' for value in references))
+        records = [json.loads(value)['record'] for value in self.frames['traces'].trace]
+        self.assertTrue(any(row.get('predictions') == 'DROP TABLE t;' for row in records))
+        self.assertIn(self.database_bytes, self.frames['assets'].data.tolist())
+
+
 class RakudaNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

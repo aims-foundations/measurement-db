@@ -25716,11 +25716,205 @@ def _rakuda(directory, tables, metadata, source=None):
         source_responses=sum(seen.values()), source_traces=len(traces), **source['counts'])
 
 
+def _qatch_sources(directory, metadata):
+    """Read original CSV records and establish their input contexts without pandas reshaping."""
+    import ast
+    import csv
+    from fnmatch import fnmatch
+    import io
+    import math
+    import re
+    import sys
+    from zipfile import ZipFile
+
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    records, measurements, contexts, model_tasks = {}, {}, {}, set()
+    counts = Counter(source_csv_rows=0, source_attempt_records=0, source_unavailable_grades=0,
+        source_inapplicable_order_fields=0, source_long_predictions=0, source_empty_predictions=0)
+    previous_limit = csv.field_size_limit(sys.maxsize)
+    try:
+        with ZipFile(directory / 'raw' / layout['results']) as archive:
+            for name in sorted(archive.namelist()):
+                if name != layout['merged'] and not fnmatch(name, layout['result_pattern']):
+                    continue
+                task, dataset = Path(name).parts[1:3]
+                aliases = list(parameters['merged_models']) if name == layout['merged'] else [Path(name).parts[3]]
+                with archive.open(name) as stream:
+                    rows = list(csv.DictReader(io.TextIOWrapper(stream, encoding='utf-8-sig', newline='')))
+                for index, record in enumerate(rows):
+                    records[name, index] = record
+                    counts['source_csv_rows'] += 1
+                    for alias in aliases:
+                        model = parameters['models'][alias]
+                        model_tasks.add((task, model))
+                        counts['source_attempt_records'] += 1
+                        prediction = record[alias + '_predictions'] if name == layout['merged'] else record['predictions']
+                        counts['source_long_predictions'] += len(prediction) > 16000
+                        counts['source_empty_predictions'] += prediction == ''
+                        for metric in metadata['grading']['verifiers']:
+                            text = record[metric + '_' + alias] if name == layout['merged'] else record[metric]
+                            if metric == 'tuple_order' and 'orderby' not in record['sql_tags'].lower():
+                                _check(text, '', 'QATCH no invented order grade outside applicable tasks')
+                                counts['source_inapplicable_order_fields'] += 1
+                                continue
+                            score = None if text == '' else float(text)
+                            _check(score is None or (math.isfinite(score) and 0 <= score <= 1), True,
+                                   'QATCH finite original metric value within its native scale')
+                            counts['source_unavailable_grades'] += score is None
+                            measurements[name, index, alias, metric] = dict(task=task, dataset=dataset, model=model, score=score,
+                                context_key=(name, record['db_id'], record['tbl_name']))
+                if dataset != 'custom-data':
+                    continue
+                groups = {}
+                for record in rows:
+                    groups.setdefault((record['db_id'], record['tbl_name']), []).append(record)
+                for (db, table), group in groups.items():
+                    selected, projections = [], []
+                    for record in group:
+                        match = re.fullmatch(r'\s*select\s+(.*?)\s+from\s+[^\s;]+\s*;?\s*', record['query'], re.I)
+                        if not match:
+                            continue
+                        fields = match[1].strip()
+                        if fields == '*':
+                            selected.append(record)
+                        elif not fields.lower().startswith('distinct '):
+                            names = [field.strip().strip('"`[]') for field in fields.split(',')]
+                            values = list(zip(*ast.literal_eval(record['query_result'])))
+                            _check(len(names), len(values), 'QATCH source projection width')
+                            projections.extend(zip(names, values))
+                    _check(len(selected), 1, 'QATCH one complete native table per model-specific context')
+                    cells = selected[0]['query_result']
+                    vectors = list(zip(*ast.literal_eval(cells)))
+                    columns = []
+                    for vector in vectors:
+                        matches = {name for name, projected in projections if tuple(projected) == tuple(vector)}
+                        _check(len(matches), 1, 'QATCH unambiguous original table-column association')
+                        columns.append(next(iter(matches)))
+                    _check(len(set(columns)), len(columns), 'QATCH distinct recovered column names')
+                    contexts[name, db, table] = dict(columns=columns, data=cells.encode('utf8'),
+                        path=labels['table_attachment'], media_type='text/plain', role='input', kind='released_complete_table_cells')
+    finally:
+        csv.field_size_limit(previous_limit)
+    with ZipFile(directory / 'raw' / layout['spider']) as archive:
+        schemas = {row['db_id']: row for row in json.loads(archive.read(layout['spider_prefix'] + 'tables.json'))}
+        official = {(row['db_id'], row['question'], row['query']) for split in ['train_spider.json', 'dev.json']
+            for row in json.loads(archive.read(layout['spider_prefix'] + split))}
+        files = {}
+        for (name, _), record in records.items():
+            if Path(name).parts[2] != 'spider':
+                continue
+            key = name, record['db_id'], record['tbl_name']
+            _check((record['db_id'], record['question'], record['query']) in official, True,
+                   'QATCH source question/database/SQL matches the official Spider bank')
+            if key in contexts:
+                continue
+            db, table = record['db_id'], record['tbl_name']
+            schema = schemas[db]
+            indices = [i for i, original in enumerate(schema['table_names_original']) if original.lower() == table.lower()]
+            _check(len(indices), 1, 'QATCH original Spider table identity')
+            columns = [column for index, column in schema['column_names_original'] if index == indices[0]]
+            if db not in files:
+                files[db] = archive.read(layout['spider_prefix'] + f'database/{db}/{db}.sqlite')
+            contexts[key] = dict(columns=columns, data=files[db], path=labels['database_attachment'],
+                media_type='application/vnd.sqlite3', role='input', kind='official_spider_database')
+    _check(bool(measurements), True, 'QATCH original item-level observations are present')
+    counts['source_custom_contexts'] = sum(row['kind'] == 'released_complete_table_cells' for row in contexts.values())
+    counts['source_spider_contexts'] = sum(row['kind'] == 'official_spider_database' for row in contexts.values())
+    return dict(records=records, measurements=measurements, contexts=contexts, model_tasks=model_tasks, counts=dict(counts))
+
+
+def _qatch(directory, tables, metadata, source=None):
+    """Check every published metric, full trace, task context and original byte attachment."""
+    import hashlib
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _qatch_sources(directory, metadata) if source is None else source
+    labels = metadata['build']['parameters']['labels']
+    subjects, roster = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        task = features['prediction_task']
+        _check(features, dict(prediction_task=task), 'QATCH explicit QA/SP configuration')
+        _check(row.harness, labels['harness'], 'QATCH source harness')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'QATCH unknown historical runtime fields remain unknown')
+        subjects[row.subject_id] = task, row.display_name
+        roster[task, row.display_name] += 1
+    _check(roster, Counter({pair: 1 for pair in source['model_tasks']}), 'QATCH complete original model/task roster')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'QATCH original metric units')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(items), len(tables['items']), 'QATCH unique item IDs')
+    _check(len(traces), len(tables['traces']), 'QATCH unique trace associations')
+    _check(len(assets), len(tables['assets']), 'QATCH unique attachment IDs')
+    for identity, row in assets.items():
+        _check(hashlib.sha256(row['data']).hexdigest(), identity, 'QATCH content-addressed source bytes')
+        _check(row['byte_size'], len(row['data']), 'QATCH original attachment length')
+    seen, seen_items, seen_assets = Counter(), set(), set()
+    checked_items = set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        name, index, alias = trace['source_file'], trace['source_row'], trace['source_model']
+        original = source['records'][name, index]
+        item = items[row.item_id]
+        metric = json.loads(json.loads(item['verifier'])['spec'])['metric']
+        key = name, index, alias, metric
+        measurement = source['measurements'][key]
+        context = source['contexts'][measurement['context_key']]
+        task, dataset = measurement['task'], measurement['dataset']
+        _check(subjects[row.subject_id], (task, measurement['model']), 'QATCH correct model and task for every metric')
+        if measurement['score'] is None:
+            _check(pd.isna(row.response), True, 'QATCH unavailable applicable grade remains null')
+        else:
+            _check(row.response, measurement['score'], 'QATCH original metric without rounding, rescaling or regrading')
+        _check(row.trial, 1, 'QATCH original publication occasion rather than invented reruns')
+        _check(row.test_condition, name + ':' + str(index) + ';model=' + alias, 'QATCH exact source position and model')
+        _check(pd.isna(row.interactors), True, 'QATCH no invented runtime actors')
+        _check(trace == dict(source_file=name, source_row=index, source_model=alias, record=original), True,
+               f'QATCH complete source record at {name}:{index}:{alias}')
+        descriptor = measurement['context_key'], original['question'], original['query'], original['query_result'], metric
+        if (row.item_id, descriptor) not in checked_items:
+            content = json.dumps(dict(question=original['question'], task=task, dataset=dataset, database=original['db_id'],
+                table=original['tbl_name'], columns=context['columns'], context_kind=context['kind'], table_resource=context['path']),
+                ensure_ascii=False, sort_keys=True)
+            _check(item['content'], unicodedata.normalize('NFC', content).strip(), 'QATCH full question and correct table context')
+            _check(_features(item['item_features']), dict(task=task, dataset=dataset, database=original['db_id'],
+                table=original['tbl_name']), 'QATCH original task attributes without grading metadata')
+            protocol = metadata['grading']['verifiers'][metric]
+            reference = json.dumps(dict(sql=original['query'], released_target=original['query_result']), ensure_ascii=False, sort_keys=True)
+            _check(json.loads(item['grading_criterion']) == dict(reference_answer=reference, rule=protocol['rule']), True,
+                   'QATCH released reference retained even when upstream is inconsistent')
+            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'}, spec=json.dumps(protocol, sort_keys=True)),
+                   'QATCH original deterministic grading protocol')
+            manifest = json.loads(item['asset_manifest'])
+            _check(len(manifest), 1, 'QATCH complete single table resource')
+            asset_id = hashlib.sha256(context['data']).hexdigest()
+            _check(manifest, [dict(asset_id=asset_id, path=context['path'], media_type=context['media_type'], role=context['role'], ordinal=1)],
+                   'QATCH exact original table resource association')
+            _check(assets[asset_id]['data'] == context['data'], True, 'QATCH complete unmodified table bytes')
+            seen_assets.add(asset_id)
+            checked_items.add((row.item_id, descriptor))
+        seen[key] += 1
+        seen_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in source['measurements']}), 'QATCH every original applicable metric exactly once')
+    _check(seen_items, set(items), 'QATCH no extra or unused items')
+    _check(seen_assets, set(assets), 'QATCH no omitted or unrelated table resources')
+    _check(set(traces), set(tables['responses'].response_id), 'QATCH complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=sum(seen.values()),
+        source_traces=len(traces), source_assets=len(assets), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'qatch':
+        return _qatch(directory, tables, metadata)
     if directory.name == 'rakuda':
         return _rakuda(directory, tables, metadata)
     if directory.name == 'ood_prediction':
