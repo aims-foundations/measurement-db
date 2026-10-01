@@ -28940,11 +28940,193 @@ def _wmt_mqm(directory, tables, metadata):
     return dict(counts)
 
 
+def _image2struct(directory, tables, metadata):
+    """Check every selected metric against native per-instance statistics."""
+    import gzip
+    import hashlib
+    import math
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='Image2Struct native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    metrics = {'earth_mover_similarity','pixel_similarity','lpips_similarity','ssim_similarity',
+               'fid_similarity','edit_similarity','compilation_success'}
+    _check(set(metadata['grading']['verifiers']), metrics, 'Image2Struct retained seven grading channels')
+    _check(set(parameters['included_domains']), {'image2latex','image2musicsheet'}, 'Image2Struct published stimulus scope')
+    _check(set(parameters['stimulus_fields']), {'prompt','multimodal_prompt'}, 'Image2Struct native stimulus fields')
+    _check(metadata['benchmark']['response_scale'], {'kind':'mixed'}, 'Image2Struct explicit mixed scales')
+    for metric, profile in metadata['grading']['verifiers'].items():
+        scale = profile['response_scale']
+        _check(scale['direction'], 'higher_is_better', 'Image2Struct metric direction')
+        expected = dict(kind='interval', min=None, max=None, direction='higher_is_better')
+        if metric in ['pixel_similarity','edit_similarity']:
+            expected.update(min=0, max=1)
+        if metric == 'compilation_success':
+            expected = dict(kind='discrete', values=[0,1], direction='higher_is_better',
+                meanings={'0':'Compilation failed.','1':'Compilation produced a rendered image.'})
+        _check(scale, expected, 'Image2Struct no unjustified common bounded scale')
+
+    index_rows = json.loads((raw / 'run_specs.json').read_text())
+    indexed = {row['name']:row for row in index_rows}
+    _check(len(indexed), len(index_rows), 'Image2Struct distinct indexed runs')
+    native, seen_runs, images, original_assets, counts = {}, set(), {}, {}, Counter()
+    for path in sorted((raw / 'runs').glob('*/run_spec.json.gz')):
+        data = {}
+        for kind in ['run_spec','instances','display_predictions','display_requests','per_instance_stats']:
+            with gzip.open(path.with_name(kind + '.json.gz'),'rt') as stream:
+                data[kind] = json.load(stream)
+        spec = data['run_spec']; run = spec['name']; domain = run.split(':')[0]
+        _check(run in indexed and run not in seen_runs, True, 'Image2Struct one source directory per indexed run')
+        _check(spec, indexed[run], 'Image2Struct complete release-index configuration')
+        seen_runs.add(run)
+        instances = {row['id']:row for row in data['instances']}
+        requests = {(row['instance_id'],row['train_trial_index']):row for row in data['display_requests']}
+        predictions = {(row['instance_id'],row['train_trial_index']):row for row in data['display_predictions']}
+        for table, records in [('instances',instances),('display_requests',requests),('display_predictions',predictions)]:
+            _check(len(records), len(data[table]), 'Image2Struct distinct native '+table+' keys')
+        _check(set(requests), set(predictions), 'Image2Struct complete request/prediction correspondence')
+        statistics = defaultdict(dict)
+        for packet in data['per_instance_stats']:
+            key = packet['instance_id'],packet['train_trial_index']
+            _check(key in predictions, True, 'Image2Struct statistics belong to a recorded attempt')
+            for statistic in packet['stats']:
+                metric = statistic['name']['name']
+                if metric not in metrics:
+                    continue
+                _check(metric not in statistics[key], True, 'Image2Struct unique native per-item metric')
+                statistics[key][metric] = statistic
+        configured = (set(spec['metric_specs'][0]['args']['metric_names']) & metrics) | {'compilation_success'}
+        for key, prediction in predictions.items():
+            instance, request_record = instances[key[0]], requests[key]
+            request = request_record['request']
+            counts['source_native_attempts'] += 1
+            _check(request['model'], spec['adapter_spec']['model'], 'Image2Struct actual model agrees with run')
+            _check(set(prediction['stats']) & metrics, configured, 'Image2Struct only configured metric channels')
+            _check(set(statistics[key]), configured, 'Image2Struct all configured native statistics')
+            for metric in configured:
+                statistic, value = statistics[key][metric], prediction['stats'][metric]
+                _check(statistic['count'], 1, 'Image2Struct statistic measures one attempt')
+                _check(statistic['mean'], value, 'Image2Struct display/native per-item grade agreement')
+                _check(value is not None and math.isfinite(value), True, 'Image2Struct finite published grades')
+            if domain == 'image2webpage':
+                _check('[redacted]' in json.dumps(request) and prediction['predicted_text'] == '[redacted]',
+                       True, 'Image2Struct raw-only webpage redactions')
+                counts['source_withheld_redacted_attempts'] += 1
+                continue
+            _check(domain in {'image2latex','image2musicsheet'}, True, 'Image2Struct recognized source domain')
+            _check('[redacted]' not in json.dumps([request,instance,prediction]), True, 'Image2Struct complete selected records')
+            settings = {k:v for k,v in request.items() if k not in ['prompt','multimodal_prompt']}
+            links = []
+            for medium in request['multimodal_prompt']['media_objects']:
+                if not medium.get('location'):
+                    continue
+                location = medium['location']
+                _check(medium['content_type'], 'image/png', 'Image2Struct original PNG input')
+                if location not in images:
+                    payload = (raw / location).read_bytes()
+                    _check(payload.startswith(b'\x89PNG\r\n\x1a\n'), True, 'Image2Struct original image signature')
+                    identity = hashlib.sha256(payload).hexdigest()
+                    images[location] = identity
+                    original_assets[identity] = payload
+                links.append(dict(asset_id=images[location],path=location,media_type='image/png',role='input',ordinal=len(links)+1))
+            _check(bool(links), True, 'Image2Struct complete input asset attachment')
+            input_locations = [medium['location'] for medium in instance['input']['multimedia_content']['media_objects'] if medium.get('location')]
+            reference_locations = [medium['location'] for ref in instance['references'] if 'correct' in ref['tags']
+                for medium in ref['output'].get('multimedia_content',{}).get('media_objects',[]) if medium.get('location')]
+            _check(input_locations, [link['path'] for link in links], 'Image2Struct request and task image agreement')
+            _check(reference_locations, input_locations, 'Image2Struct reference image is original input')
+            texts = [ref['output']['text'] for ref in instance['references'] if 'correct' in ref['tags'] and ref['output'].get('text')]
+            reference_answer = json.dumps(texts,ensure_ascii=False) if texts else None
+            trace = dict(source_run=run,source_directory=str(path.parent.relative_to(raw)),
+                         request=request_record,prediction=prediction,instance=instance)
+            content = {key:request[key] for key in ['prompt','multimodal_prompt']}
+            native[run,*key] = dict(settings=settings,content=content,reference_answer=reference_answer,
+                links=links,spec=spec,trace=trace,statistics=statistics[key],domain=domain)
+            counts['source_included_attempts'] += 1
+            counts['source_outputs_over_legacy_cap'] += len(prediction['predicted_text']) > 8000
+            counts['source_included_runs'] += key == next(iter(predictions))
+            counts['source_out_of_unit_interval_metric_values'] += sum(
+                not 0 <= statistic['mean'] <= 1 for statistic in statistics[key].values())
+    _check(seen_runs, set(indexed), 'Image2Struct exact release-index coverage')
+    counts['source_indexed_runs'] = len(indexed)
+
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(set(assets), set(original_assets), 'Image2Struct every original selected image')
+    for identity, row in assets.items():
+        _check(row['data'], original_assets[identity], 'Image2Struct byte-identical PNG payload')
+        _check(row['byte_size'], len(original_assets[identity]), 'Image2Struct exact image size')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    subject_settings = {}
+    for identity, subject in subjects.items():
+        features = _features(subject['subject_features_extra'])
+        settings = json.loads(features.pop('request_settings'))
+        _check(features, {k:v for k,v in parameters['subject_features'].items() if k != 'harness'}, 'Image2Struct historical configuration status')
+        _check(subject['display_name'], settings['model'], 'Image2Struct source model identifier')
+        _check(subject['harness'], 'HELM', 'Image2Struct recorded evaluation harness')
+        for field in ['harness_version','reasoning_effort','access_date']:
+            _check(pd.isna(subject[field]), True, 'Image2Struct unknown '+field)
+        subject_settings[identity] = settings
+    expected_settings = {json.dumps(unit['settings'],sort_keys=True) for unit in native.values()}
+    _check(Counter(json.dumps(value,sort_keys=True) for value in subject_settings.values()),
+           Counter({value:1 for value in expected_settings}), 'Image2Struct distinct recorded model configurations')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'Image2Struct complete trace coverage')
+    seen, checked_items, checked_traces, identities = defaultdict(set), {}, {}, {}
+    for response in tables['responses'].itertuples():
+        condition = json.loads(response.test_condition)
+        _check(set(condition), {'source_run','instance_id','train_trial_index','metric'}, 'Image2Struct complete source coordinate')
+        key = condition['source_run'],condition['instance_id'],condition['train_trial_index']
+        metric = condition['metric']; original = native[key]; spec = original['spec']
+        _check(metric not in seen[key], True, 'Image2Struct no duplicated grading channel')
+        seen[key].add(metric)
+        _check(response.response, original['statistics'][metric]['mean'], 'Image2Struct original per-item grade')
+        _check(subject_settings[response.subject_id], original['settings'], 'Image2Struct grade-model/configuration association')
+        _check((response.trial,pd.isna(response.interactors)), (1,True), 'Image2Struct one recorded metric observation')
+        text = traces[response.response_id]
+        if key not in checked_traces:
+            _check(json.loads(text), original['trace'], 'Image2Struct full original request, output, annotations and task')
+            checked_traces[key] = text
+        else:
+            _check(text, checked_traces[key], 'Image2Struct every metric retains its complete native trace')
+        identity = json.dumps([original['content'],original['reference_answer'],metric,spec['metric_specs'][0],spec['annotators']],sort_keys=True)
+        if response.item_id in checked_items:
+            _check(checked_items[response.item_id], identity, 'Image2Struct no stimulus or grading-protocol collapse')
+            continue
+        item = items[response.item_id]
+        _check(json.loads(item['content']), original['content'], 'Image2Struct full ordered native multimodal stimulus')
+        _check(json.loads(item['asset_manifest']), original['links'], 'Image2Struct exact ordered image attachments')
+        _check(item['raw_item_id'], key[0].split(',model=')[0]+'/'+key[1]+'/'+metric, 'Image2Struct original item coordinate')
+        features = _features(item['item_features'])
+        _check(features['domain'], original['domain'], 'Image2Struct source domain')
+        _check(json.loads(features['scenario']), spec['scenario_spec'], 'Image2Struct original scenario settings')
+        _check(set(features), {'domain','scenario'}, 'Image2Struct no outcome features in items')
+        profile = metadata['grading']['verifiers'][metric]
+        criterion = json.loads(item['grading_criterion'])
+        expected = dict(rule=metadata['grading']['rule']+' Metric: '+profile['description'],
+            reference_answer=original['reference_answer'],response_scale=profile['response_scale'])
+        _check(criterion, expected, 'Image2Struct original reference, rule and effective scale')
+        _check(json.loads(item['verifier']), {'class':'exact_matcher','spec':json.dumps(dict(profile,
+            metric=metric,metric_spec=spec['metric_specs'][0],annotators=spec['annotators']),sort_keys=True)},
+            'Image2Struct recorded metric/compilation protocol')
+        _check(identity not in identities, True, 'Image2Struct no duplicated canonical measurement definition')
+        identities[identity] = response.item_id
+        checked_items[response.item_id] = identity
+    _check({key:values for key,values in seen.items()}, {key:set(unit['statistics']) for key,unit in native.items()},
+           'Image2Struct all and only original selected metric observations')
+    _check(set(checked_items), set(items), 'Image2Struct no unused task definitions')
+    return dict(counts,source_responses=sum(len(unit['statistics']) for unit in native.values()),
+        source_subjects=len(subjects),source_items=len(items),source_assets=len(assets),source_image_locations=len(images),
+        source_traces=len(traces))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'image2struct':
+        return _image2struct(directory, tables, metadata)
     if directory.name == 'wmt_mqm':
         return _wmt_mqm(directory, tables, metadata)
     if directory.name == 'worldcentralbanks':

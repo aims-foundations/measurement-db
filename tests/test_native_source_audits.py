@@ -40,6 +40,158 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _world
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _wmt_mqm
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _image2struct
+
+
+class Image2StructAuditTests(unittest.TestCase):
+    def setUp(self):
+        import gzip
+        from PIL import Image
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'image2struct'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/image2struct') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata,sort_keys=False))
+        self.sources = {}
+        specs = []
+        for number,(domain,model) in enumerate([('image2latex','Recorded-A'),('image2latex','Recorded-B'),
+                ('image2musicsheet','Recorded-A'),('image2webpage','Recorded-A')]):
+            folder = self.directory/'raw/runs'/str(number)
+            folder.mkdir(parents=True)
+            metrics = list(self.metadata['grading']['verifiers'])
+            if domain != 'image2latex':metrics.remove('edit_similarity')
+            spec = dict(name=domain+':subset=fixture:difficulty=easy,model='+model,
+                scenario_spec=dict(class_name='RecordedScenario',args=dict(subset='fixture',difficulty='easy')),
+                adapter_spec=dict(model=model),metric_specs=[dict(class_name='RecordedImageMetrics',
+                args=dict(metric_names=[m for m in metrics if m!='compilation_success']+['block_emd']))],
+                annotators=[dict(class_name='RecordedCompiler',args={})])
+            specs.append(spec)
+            instances,requests,predictions,statistics=[],[],[],[]
+            for index in range(2):
+                location=f'images/original-{index}.png'
+                image=self.directory/'raw'/location;image.parent.mkdir(exist_ok=True)
+                if not image.exists():Image.new('RGB',(3,2),(20+index,50,90)).save(image)
+                media=[dict(content_type='text/plain',text=f'Original {domain} task {index}. {{braces}} aye\u0301\n'),
+                    dict(content_type='image/png',location=location)]
+                multimedia=dict(media_objects=media)
+                reference='\\text{Original reference}' if domain=='image2latex' else ''
+                instance=dict(id='id'+str(index),input=dict(text='',multimedia_content=multimedia),split='valid',
+                    references=[dict(output=dict(text=reference,multimedia_content=dict(media_objects=[media[1]])),tags=['correct'])])
+                request=dict(model=model,model_deployment=model,prompt='',multimodal_prompt=dict(media_objects=[
+                    dict(content_type='text/plain',text='Recorded global prefix.\n')]+media),temperature=0.0,max_tokens=2000)
+                values={'earth_mover_similarity':-0.4,'pixel_similarity':0.7,'lpips_similarity':1.02,
+                    'ssim_similarity':-0.002,'fid_similarity':1.00000006,'edit_similarity':0.6,'compilation_success':1.0}
+                scores={metric:values[metric] for metric in metrics}
+                prediction=dict(instance_id=instance['id'],train_trial_index=0,
+                    predicted_text=('complete native output\n'*900 if index else '  generated code\n'),
+                    stats=dict(scores,num_output_tokens=100),annotations={'compiler':[{'error':'full diagnostic\n'}]},base64_images=[])
+                if domain=='image2webpage':
+                    instance['input']=dict(text='[redacted]')
+                    request.update(prompt='[redacted]',multimodal_prompt=None)
+                    prediction['predicted_text']='[redacted]'
+                requests.append(dict(instance_id=instance['id'],train_trial_index=0,request=request))
+                instances.append(instance);predictions.append(prediction)
+                statistics.append(dict(instance_id=instance['id'],train_trial_index=0,stats=[
+                    dict(name=dict(name=metric,split='valid'),count=1,mean=value,sum=value,min=value,max=value)
+                    for metric,value in scores.items()]))
+                statistics.append(dict(instance_id=instance['id'],train_trial_index=0,
+                    stats=[dict(name=dict(name='num_output_tokens'),count=1,mean=100)]))
+            for name,value in dict(run_spec=spec,instances=instances,display_requests=requests,
+                    display_predictions=predictions,per_instance_stats=statistics).items():
+                path=folder/(name+'.json.gz');path.write_bytes(gzip.compress(json.dumps(value).encode(),mtime=0))
+                self.sources[path]=value
+        (self.directory/'raw/run_specs.json').write_text(json.dumps(specs))
+        self.builder=runpy.run_path(str((ROOT / 'benchmarks/image2struct')/'build.py'))['Image2Struct']
+        output=self.directory.parent/'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),'--output',str(output)])
+        self.frames={path.stem:pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_original_metrics_images_and_complete_outputs(self):
+        observed=_image2struct(self.directory,self.frames,self.metadata)
+        self.assertEqual(observed['source_native_attempts'],8)
+        self.assertEqual(observed['source_included_attempts'],6)
+        self.assertEqual(observed['source_withheld_redacted_attempts'],2)
+        self.assertEqual(observed['source_responses'],40)
+        self.assertEqual(observed['source_subjects'],2)
+        self.assertEqual(observed['source_items'],26)
+        self.assertEqual(observed['source_assets'],2)
+        self.assertEqual(observed['source_outputs_over_legacy_cap'],3)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        reordered={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_image2struct(self.directory,reordered,self.metadata),observed)
+
+    def test_changed_measurements_assets_and_provenance_are_detected(self):
+        changes=['grade','null_grade','trial','subject_link','item_link','harness','request_settings','content',
+            'raw_id','item_features','reference','rule','scale','verifier','asset_link','image_bytes','condition',
+            'drop_response','duplicate_response','drop_trace','duplicate_trace','clipped_output','compiler_annotation',
+            'request_prompt','trace_instance','trace_directory']
+        for change in changes:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,subjects,items,traces=(frames[name] for name in ['responses','subjects','items','traces'])
+            if change=='grade':responses.loc[0,'response']=0.91
+            elif change=='null_grade':responses.loc[0,'response']=None
+            elif change=='trial':responses.loc[0,'trial']=99
+            elif change=='subject_link':responses.loc[0,'subject_id']=subjects.subject_id.iloc[-1]
+            elif change=='item_link':responses.loc[0,'item_id']=items.item_id.iloc[-1]
+            elif change=='harness':subjects.loc[0,'harness']='invented'
+            elif change=='request_settings':subjects.loc[0,'subject_features_extra']='request_settings={}'
+            elif change=='content':items.loc[0,'content']='changed'
+            elif change=='raw_id':items.loc[0,'raw_item_id']='changed'
+            elif change=='item_features':items.loc[0,'item_features']='domain=wrong'
+            elif change in ['reference','rule','scale']:
+                value=json.loads(items.loc[0,'grading_criterion'])
+                value[{'reference':'reference_answer','rule':'rule','scale':'response_scale'}[change]]='wrong'
+                items.loc[0,'grading_criterion']=json.dumps(value)
+            elif change=='verifier':items.loc[0,'verifier']='{}'
+            elif change=='asset_link':items.loc[0,'asset_manifest']='[]'
+            elif change=='image_bytes':frames['assets'].at[0,'data']=b'changed image'
+            elif change=='condition':responses.loc[0,'test_condition']='{}'
+            elif change=='drop_response':frames['responses']=responses.iloc[1:]
+            elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
+            elif change=='drop_trace':frames['traces']=traces.iloc[1:]
+            elif change=='duplicate_trace':frames['traces']=pd.concat([traces,traces.iloc[:1]])
+            else:
+                index=traces.trace.str.len().idxmax() if change=='clipped_output' else 0
+                value=json.loads(traces.loc[index,'trace'])
+                if change=='clipped_output':value['prediction']['predicted_text']=value['prediction']['predicted_text'][:8000]
+                elif change=='compiler_annotation':value['prediction']['annotations']={}
+                elif change=='request_prompt':value['request']['request']['multimodal_prompt']['media_objects'][0]['text']='wrong'
+                elif change=='trace_instance':value['instance']['references']=[]
+                elif change=='trace_directory':value['source_directory']='wrong'
+                traces.loc[index,'trace']=json.dumps(value)
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _image2struct(self.directory,frames,self.metadata)
+
+    def test_native_disagreement_missing_image_and_wrong_index_are_detected(self):
+        import gzip
+
+        changes=['native_mean','display_grade','request_model','source_image','release_index','missing_prediction']
+        for change in changes:
+            root=self.directory/'raw/runs/0'
+            filename={'native_mean':'per_instance_stats','display_grade':'display_predictions',
+                'request_model':'display_requests','missing_prediction':'display_predictions'}.get(change)
+            if filename:
+                path=root/(filename+'.json.gz');original=path.read_bytes();value=copy.deepcopy(self.sources[path])
+                if change=='native_mean':value[0]['stats'][0]['mean']=0.123
+                elif change=='display_grade':value[0]['stats']['earth_mover_similarity']=0.123
+                elif change=='request_model':value[0]['request']['model']='wrong'
+                else:value.pop()
+                path.write_bytes(gzip.compress(json.dumps(value).encode(),mtime=0))
+            else:
+                path=self.directory/'raw'/('images/original-0.png' if change=='source_image' else 'run_specs.json')
+                original=path.read_bytes()
+                path.write_bytes(b'wrong image' if change=='source_image' else b'[]')
+            try:
+                with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                    _image2struct(self.directory,self.frames,self.metadata)
+            finally:path.write_bytes(original)
+
+
 class WmtMqmAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

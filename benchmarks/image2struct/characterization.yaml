@@ -1,0 +1,151 @@
+format_version: 1
+tables:
+  assets:
+    rows: 1502
+    logical_sha256: 63b0b068a3967f834641d1b1bfe27f705a26132256a8d772167f9ee94eb84a54
+  benchmarks:
+    rows: 1
+    logical_sha256: 091d8606eff3739cc612181df60db8a5bcc605cbc627e737687ade0adf297773
+  items:
+    rows: 30636
+    logical_sha256: 3348d322a33949ed4ca956a5e9a12a218930ae118ebb997e248d518151ea03a6
+  responses:
+    rows: 142968
+    logical_sha256: 170f110d75e36b369371873ac5cd6d5656b9389d315589faae238f7975b81a3f
+  subjects:
+    rows: 14
+    logical_sha256: 9fb5105a122b9f25b8fc1ff86c5eeb88540e6b2e0aed25468da7eeaf00705efa
+  traces:
+    rows: 142968
+    logical_sha256: 74b638d3f56e4d6d40fe4d1b10432ddb43f78163a37c9fcc3563473ab6f213e3
+source_claims:
+  source_native_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 33656
+  source_included_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 21028
+  source_outputs_over_legacy_cap:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 99
+  source_included_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 224
+  source_out_of_unit_interval_metric_values:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 103
+  source_withheld_redacted_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 12628
+  source_indexed_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 364
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 142968
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 14
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 30636
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 1502
+  source_image_locations:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 1502
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+    locator: 'The 364 indexed native run directories: run_spec, instances, display_requests, display_predictions
+      and per_instance_stats, plus original unredacted PNGs.'
+    scope: Every unredacted LaTeX/music attempt and configured legacy grading channel, independently reconciled
+      against native per-instance statistics. Redacted webpage attempts remain raw-only and are counted separately.
+      Metrics are not independent generations.
+    expected: 142968
