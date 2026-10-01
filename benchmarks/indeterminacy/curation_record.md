@@ -1,0 +1,3 @@
+- Preserve 193,120 native paired trials from nine raters across eleven tasks, yielding 386,240 separate forced-choice and response-set judgments. Inputs follow the saved ratings.csv order and original prompt text.
+- Correct the legacy tensor-axis interpretation. Responses are unordered category selections, not accuracy; retain 3,283 invalid-parser outcomes as explicitly ungraded, and do not invent observations for 480 empty paired-trial positions. Original generation text is unavailable.
+- Keep original source bytes, model/provider labels and per-format scales. Full native reconciliation, shared checks and an empty-directory rebuild verify the migration; exact historical API settings remain unknown.

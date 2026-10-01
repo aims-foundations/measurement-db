@@ -48,6 +48,134 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _tengu
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _igakuqa
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _indeterminacy
+
+class IndeterminacyAuditTests(unittest.TestCase):
+    def setUp(self):
+        import numpy as np
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'indeterminacy'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/indeterminacy') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        raw = self.directory / 'raw'
+        configuration, prompts, self.sources = {}, {}, {}
+        for task, fc, rs in [('binary_task', ['A', 'B'], ['A', 'B', 'AB']),
+                             ('ternary_task', ['A', 'B', 'C'], ['A', 'B', 'C', 'AB', 'AC', 'BC', 'ABC'])]:
+            configuration[task] = dict(n_options=len(fc), n_response_sets=len(rs), valid_fc_tokens=fc,
+                valid_rs_tokens=rs, prompt_fields=['content'])
+            prompts[task] = {fmt: task + '\nInput: {content}\n' + ('Select exactly one.' if fmt == 'FC' else 'Select all applicable.')
+                            for fmt in ['FC', 'RS']}
+            directory = raw / 'experiments/runs/main-run' / task
+            directory.mkdir(parents=True)
+            pd.DataFrame([dict(id=i, content='Input' + str(0 if task == 'binary_task' else i) + '\n{braces} e\u0301\u2028preserved')
+                          for i in range(2)]).to_csv(directory / 'ratings.csv', index=False)
+            for model in ['Recorded-A', 'Recorded-B']:
+                array = np.zeros((2, len(fc) + 1, len(rs) + 1, 3), dtype=int)
+                array[0, 1, 0, 0] = 1
+                array[0, 0, 2, 1] = 1
+                array[0, len(fc), len(rs), 2] = 1
+                array[1, 0, 1, 0] = 1
+                array[1, 1, 1, 2] = 1  # trial 1 is an empty recorded joint position.
+                data = dict(model_info=dict(provider='recorded', model=model), resp_table=array.tolist(), p_judge_hat={})
+                path = directory / (model + '.json')
+                path.write_text(json.dumps(data) + '\n')
+                self.sources[path] = data
+        (raw / 'experiments/runs/main-run/task_config.json').write_text(json.dumps(configuration) + '\n')
+        self.prompt_path = raw / 'code/config/prompts.py'
+        self.prompt_path.parent.mkdir(parents=True)
+        self.prompt_path.write_text('PROMPTS = ' + repr(prompts) + '\n')
+        self.rating_path = raw / 'experiments/runs/main-run/binary_task/ratings.csv'
+        output = self.directory.parent / 'tables'
+        builder = runpy.run_path(str((ROOT / 'benchmarks/indeterminacy') / 'build.py'))['Indeterminacy']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_both_categories_all_trials_and_invalid_outputs(self):
+        observed = _indeterminacy(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed['source_joint_records'], 20)
+        self.assertEqual(observed['source_responses'], 40)
+        self.assertEqual(observed['source_items'], 6)
+        self.assertEqual(observed['source_input_definitions'], 8)
+        self.assertEqual(observed['source_duplicate_stimulus_aliases'], 2)
+        self.assertEqual(observed['source_empty_joint_trial_positions'], 4)
+        self.assertEqual(observed['source_invalid_fc'] + observed['source_invalid_rs'], 8)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_indeterminacy(self.directory, shuffled, self.metadata), observed)
+
+    def test_changed_tables_are_detected(self):
+        changes = ['category', 'invalid_to_zero', 'trial', 'subject_link', 'item_link', 'harness',
+            'source_model', 'content', 'raw_id', 'features', 'reference', 'rule', 'scale', 'verifier',
+            'condition', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace',
+            'source_file', 'source_row', 'source_trial', 'source_format', 'native_category', 'status', 'invented_text']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'traces'])
+            if change == 'category':
+                index = responses.response.notna().idxmax()
+                responses.loc[index, 'response'] = 0 if responses.loc[index, 'response'] != 0 else 1
+            elif change == 'invalid_to_zero': responses.loc[responses.response.isna().idxmax(), 'response'] = 0
+            elif change == 'trial': responses.loc[0, 'trial'] = 99
+            elif change == 'subject_link':
+                responses.loc[0, 'subject_id'] = next(s for s in subjects.subject_id if s != responses.loc[0, 'subject_id'])
+            elif change == 'item_link':
+                responses.loc[0, 'item_id'] = next(i for i in items.item_id if i != responses.loc[0, 'item_id'])
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'source_model': subjects.loc[0, 'subject_features_extra'] = 'recorded_configuration={}'
+            elif change == 'content': items.loc[0, 'content'] = 'wrong'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong:0:FC'
+            elif change == 'features': items.loc[0, 'item_features'] = 'task=wrong'
+            elif change in ['reference', 'rule', 'scale']:
+                value = json.loads(items.loc[0, 'grading_criterion'])
+                if change == 'scale': value['response_scale']['direction'] = 'higher_is_better'
+                else: value['reference_answer' if change == 'reference' else 'rule'] = 'wrong'
+                items.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'drop_trace': frames['traces'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': frames['traces'] = pd.concat([traces, traces.iloc[:1]])
+            else:
+                value = json.loads(traces.loc[0, 'trace'])
+                field, replacement = {
+                    'source_file': ('source_file', 'wrong'), 'source_row': ('item_index', 9999),
+                    'source_trial': ('trial_index', 9999), 'source_format': ('elicitation_format', 'wrong'),
+                    'native_category': ('native_category', 9999), 'status': ('grade_status', 'wrong'),
+                    'invented_text': ('output_text_available', True)}[change]
+                value[field] = replacement
+                traces.loc[0, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _indeterminacy(self.directory, frames, self.metadata)
+
+    def test_changed_native_coordinates_and_inputs_are_detected(self):
+        path = next(iter(self.sources))
+        for change in ['category', 'duplicate_pair', 'nonbinary', 'model', 'input', 'prompt']:
+            changed_path = self.rating_path if change == 'input' else self.prompt_path if change == 'prompt' else path
+            original = changed_path.read_bytes()
+            if change == 'input': changed_path.write_bytes(original.replace(b'Input0', b'Wrong0'))
+            elif change == 'prompt': changed_path.write_bytes(original.replace(b'Select exactly one.', b'Changed instruction.'))
+            else:
+                record = copy.deepcopy(self.sources[path])
+                if change == 'category':
+                    record['resp_table'][0][1][0][0] = 0
+                    record['resp_table'][0][0][0][0] = 1
+                elif change == 'duplicate_pair': record['resp_table'][0][0][0][0] = 1
+                elif change == 'nonbinary': record['resp_table'][0][1][0][0] = 2
+                else: record['model_info']['model'] = 'Changed model'
+                changed_path.write_text(json.dumps(record) + '\n')
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _indeterminacy(self.directory, self.frames, self.metadata)
+            finally:
+                changed_path.write_bytes(original)
+
+
 class IgakuQaAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

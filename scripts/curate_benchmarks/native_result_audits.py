@@ -29325,11 +29325,131 @@ def _igakuqa(directory, tables, metadata):
         source_subjects=len(subjects), source_items=len(item_definitions), source_responses=len(native), source_traces=len(traces), **counts)
 
 
+def _indeterminacy(directory, tables, metadata):
+    """Compare every stored categorical judgment with the original one-hot tensor."""
+    import ast
+    import csv
+    import numpy as np
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='Indeterminacy native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    tasks = json.loads((raw / layout['tasks']).read_text())
+    parsed = ast.parse((raw / layout['prompts']).read_text())
+    assignment = next(node for node in parsed.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'PROMPTS' for target in node.targets))
+    prompts = ast.literal_eval(assignment.value)
+    ratings = {}
+    for path in sorted(raw.glob(layout['ratings'])):
+        with path.open() as stream:
+            ratings[path.parent.name] = list(csv.DictReader(stream))
+    native, models, expected_items = {}, {}, set()
+    counts = Counter(source_joint_records=0, source_empty_joint_trial_positions=0,
+        source_invalid_fc=0, source_invalid_rs=0)
+    source_files = []
+    for path in sorted(raw.glob(layout['runs'])):
+        record = json.loads(path.read_text())
+        task, name = path.parent.name, str(path.relative_to(raw))
+        configuration = record['model_info']
+        model_key = json.dumps(configuration, sort_keys=True)
+        models[model_key] = configuration
+        array = np.asarray(record['resp_table'])
+        conf = tasks[task]
+        _check(array.ndim, 4, 'Indeterminacy four native tensor axes')
+        _check(tuple(array.shape[:3]), (len(ratings[task]), conf['n_options'] + 1, conf['n_response_sets'] + 1),
+            'Indeterminacy original input order and category-axis extents')
+        _check(bool(np.isin(array, [0, 1]).all()), True, 'Indeterminacy binary one-hot tensor entries')
+        totals = array.sum(axis=(1, 2))
+        _check(bool(np.isin(totals, [0, 1]).all()), True, 'Indeterminacy at most one category pair per trial')
+        counts['source_empty_joint_trial_positions'] += int((totals == 0).sum())
+        for item, fc, rs, trial in zip(*np.nonzero(array)):
+            item, fc, rs, trial = map(int, (item, fc, rs, trial))
+            counts['source_joint_records'] += 1
+            for fmt, category in [('FC', fc), ('RS', rs)]:
+                tokens = conf['valid_fc_tokens' if fmt == 'FC' else 'valid_rs_tokens']
+                invalid = category == len(tokens)
+                counts['source_invalid_' + fmt.lower()] += invalid
+                native[name, item, trial, fmt] = dict(model_key=model_key, item=(task, item, fmt),
+                    category=category, grade=None if invalid else float(category),
+                    status='unparseable_native_output' if invalid else 'recorded_category')
+                expected_items.add((task, item, fmt))
+        source_files.append(name)
+    _check(bool(native), True, 'Indeterminacy released observations are present')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        configuration = ast.literal_eval(features['recorded_configuration'])
+        model_key = json.dumps(configuration, sort_keys=True)
+        _check(configuration, models[model_key], 'Indeterminacy exact recorded model and provider')
+        _check(features, dict(recorded_configuration=str(configuration),
+            historical_configuration=labels['historical_configuration']), 'Indeterminacy no invented execution settings')
+        _check((row.display_name, row.harness),
+            (configuration['provider'] + '/' + configuration['model'], labels['harness']), 'Indeterminacy rater identity')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+            True, 'Indeterminacy unknown historical execution fields')
+        subjects[row.subject_id] = model_key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in models}), 'Indeterminacy complete source rater roster')
+    # Repeated source rows can contain exactly the same stimulus. They share a
+    # canonical item, while every source row/trial stays distinct in the traces.
+    signatures = {}
+    for task, position, fmt in expected_items:
+        original = ratings[task][position]
+        fields = {field: original[field] if original[field] != '' else 'nan' for field in tasks[task]['prompt_fields']}
+        signatures[task, position, fmt] = task, fmt, prompts[task][fmt].format_map(fields)
+    items = {}
+    for row in tables['items'].itertuples():
+        task, position, fmt = row.raw_item_id.split(':')
+        position = int(position)
+        _check((task, position, fmt) in expected_items, True, 'Indeterminacy retained source item alias')
+        original = ratings[task][position]
+        conf = tasks[task]
+        tokens = conf['valid_fc_tokens' if fmt == 'FC' else 'valid_rs_tokens']
+        fields = {field: original[field] if original[field] != '' else 'nan' for field in conf['prompt_fields']}
+        _check(row.content, prompts[task][fmt].format_map(fields), 'Indeterminacy complete original format-specific prompt')
+        _check(_features(row.item_features), dict(task=task, elicitation_format=fmt, input_scope=labels['input_scope']),
+            'Indeterminacy elicitation format and input scope')
+        scale = dict(kind='discrete', values=list(range(len(tokens))),
+            meanings={str(index): token for index, token in enumerate(tokens)}, direction='unordered')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion, dict(reference_answer=None, rule=metadata['grading']['rule'], response_scale=scale),
+            'Indeterminacy native categories without an invented human-consensus gold answer')
+        _check(json.loads(row.verifier), dict(**{'class': 'exact_matcher'},
+            spec=json.dumps(metadata['grading']['verifiers'][fmt], sort_keys=True)), 'Indeterminacy original parser definition')
+        items[row.item_id] = signatures[task, position, fmt]
+    _check(Counter(items.values()), Counter({signature: 1 for signature in signatures.values()}),
+        'Indeterminacy every distinct stimulus and format with original aliases preserved in traces')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'Indeterminacy complete parsed-observation trace coverage')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['item_index'], trace['trial_index'], trace['elicitation_format']
+        original = native[key]
+        _check(subjects[row.subject_id], original['model_key'], 'Indeterminacy original rater association')
+        _check(items[row.item_id], signatures[original['item']], 'Indeterminacy original input, task and format association')
+        _check(None if pd.isna(row.response) else row.response, original['grade'],
+            'Indeterminacy unchanged native category or explicitly unavailable parser result')
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)),
+            (key[2] + 1, key[0] + ':item=' + str(key[1]), True), 'Indeterminacy native trial index and occasion')
+        _check(trace, dict(source_file=key[0], item_index=key[1], trial_index=key[2], elicitation_format=key[3],
+            native_category=original['category'], grade_status=original['status'], output_text_available=False),
+            'Indeterminacy exact native parsed category without fabricated generation text')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), 'Indeterminacy no dropped judgments or invented empty-trial observations')
+    return dict(source_files=len(source_files), source_tasks=len({item[0] for item in expected_items}),
+        source_subjects=len(subjects), source_items=len(items), source_input_definitions=len(expected_items),
+        source_duplicate_stimulus_aliases=len(expected_items)-len(items),
+        source_responses=len(native), source_traces=len(traces), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'indeterminacy':
+        return _indeterminacy(directory, tables, metadata)
     if directory.name == 'igakuqa':
         return _igakuqa(directory, tables, metadata)
     if directory.name == 'tengu':
