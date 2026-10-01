@@ -25908,11 +25908,185 @@ def _qatch(directory, tables, metadata, source=None):
         source_traces=len(traces), source_assets=len(assets), **source['counts'])
 
 
+def _intercode_sources(directory, metadata):
+    """Read every original episode and its input context without calling the builder."""
+    import math
+    import re
+    from zipfile import ZipFile
+
+    parameters = metadata['build']['parameters']
+    layout = parameters['layout']
+    records, expected, model_configs = {}, {}, set()
+    counts = Counter(source_result_files=0, source_wrapped_files=0, source_human_records_excluded=0,
+        source_negative_scores=0, source_long_records=0, source_question_variants=0,
+        source_ctf_unknown_references=0, source_turn_count_differences=0, source_best_step_index_differences=0)
+    with ZipFile(directory / 'raw' / layout['archive']) as archive:
+        names = {name[len(layout['prefix']):]: name for name in archive.namelist()
+            if name.startswith(layout['prefix']) and not name.endswith('/')}
+        banks = {name: json.loads(archive.read(names[name])) for name in set(parameters['task_banks'].values())}
+        resources = {name: archive.read(full) for name, full in names.items()
+            if name.startswith(('data/ctf/task_assets/', 'docker/', 'data/sql/'))}
+        for name in sorted(names):
+            if not name.startswith(layout['results']) or not name.endswith('.json'):
+                continue
+            data = json.loads(archive.read(names[name]))
+            episodes = data.get('logs', data)
+            if '/human/' in name:
+                counts['source_human_records_excluded'] += len(episodes)
+                continue
+            counts['source_result_files'] += 1
+            counts['source_wrapped_files'] += 'logs' in data
+            model = next((model for model in parameters['models'] if model in Path(name).name), Path(name).parent.name)
+            _check(model in parameters['models'], True, 'InterCode explicit released model alias')
+            strategy = next((value for value in ['plan_solve_refine', 'plan_solve', 'react'] if value in Path(name).name), 'try_again')
+            if name in parameters['initial_ctf_files']:
+                strategy = 'initial_ctf'
+            meta = data.get('meta')
+            for source_record, record in episodes.items():
+                key = name, source_record
+                _check(key not in records, True, 'InterCode unique source file/record')
+                _check(str(record['task_id']), source_record, 'InterCode record key is the task-bank position')
+                grade = record['summary']['max_reward']
+                _check(isinstance(grade, (int, float)) and not isinstance(grade, bool) and math.isfinite(grade), True,
+                       'InterCode finite original grade')
+                rewards = record['turn_history']['rewards']
+                _check(bool(rewards), True, 'InterCode original recorded reward sequence')
+                _check(grade, max(rewards), 'InterCode summary agrees with the recorded maximum, without new grading')
+                if 'max_reward_idx' in record['summary']:
+                    counts['source_best_step_index_differences'] += record['summary']['max_reward_idx'] != rewards.index(grade)
+                configuration = dict(environment=record['environment'], strategy=strategy,
+                    max_turns=record['summary'].get('turns_max'), refine_turns=meta.get('refine_turns') if meta else None)
+                descriptor = model, json.dumps(configuration, sort_keys=True)
+                model_configs.add(descriptor)
+                bank = parameters['task_banks'][record['dataset']]
+                position = record['task_id']
+                _check(isinstance(position, int) and not isinstance(position, bool) and 0 <= position < len(banks[bank]),
+                       True, 'InterCode valid original task position')
+                task = banks[bank][position]
+                if record['query'] != task['query']:
+                    source_key = name + ':' + source_record
+                    _check(record['query'], parameters['question_variants'][source_key], 'InterCode documented original question wording')
+                    _check(task['query'], parameters['definition_variants'][source_key], 'InterCode documented later definition wording')
+                    counts['source_question_variants'] += 1
+                _check(isinstance(record['query'], str) and bool(record['query'].strip()), True, 'InterCode complete question')
+                environment = record['environment']
+                protocol_name = 'ic_ctf_initial' if name in parameters['initial_ctf_files'] else environment
+                protocol = metadata['grading']['verifiers'][protocol_name]
+                scale = protocol['response_scale']
+                if scale['kind'] == 'interval':
+                    _check(scale['min'] <= grade <= scale['max'], True, 'InterCode native interval')
+                else:
+                    _check(grade in scale['values'], True, 'InterCode native discrete score')
+                files = {path: body for path, body in resources.items()
+                    if re.fullmatch(parameters['resources'][bank].format(task=position), path)
+                    and '/solution/' not in path and not Path(path).name.startswith('.')}
+                stimulus = dict(question=record['query'], environment=environment, task_bank=bank,
+                    task_position=position, resource_revision=parameters['labels']['resource_revision'])
+                if environment == 'ic_sql':
+                    stimulus['database'] = task['db']
+                    if 'handicap' in Path(name).name:
+                        stimulus['provided_schema'] = task['db_tables']
+                criterion = dict(reference_answer=None, rule=protocol['rule'], response_scale=scale)
+                if environment != 'ic_ctf':
+                    criterion['reference_answer'] = task['gold'] if isinstance(task['gold'], str) else json.dumps(task['gold'], ensure_ascii=False)
+                else:
+                    counts['source_ctf_unknown_references'] += 1
+                if environment == 'ic_python':
+                    criterion['rule'] = json.dumps(dict(description=protocol['rule'], tests=task['tests'],
+                        test_setup_code=task['test_setup_code']), ensure_ascii=False, sort_keys=True)
+                records[key] = dict(source_file=name, source_record=source_record, run_metadata=meta, record=record)
+                expected[key] = dict(subject=descriptor, grade=grade, stimulus=stimulus,
+                    criterion=criterion, protocol=protocol, resources=files,
+                    features=dict(environment=environment, task_bank=bank))
+                counts['source_negative_scores'] += grade < 0
+                counts['source_long_records'] += len(json.dumps(record, ensure_ascii=False)) > 16000
+                counts['source_turn_count_differences'] += ('turns_taken' in record['summary'] and
+                    record['summary']['turns_taken'] != len(record['turn_history']['actions']))
+    return dict(records=records, expected=expected, model_configs=model_configs, counts=dict(counts))
+
+
+def _intercode(directory, tables, metadata, source=None):
+    """Reconcile all result fields, task/subject associations, rewards and resource bytes."""
+    import hashlib
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _intercode_sources(directory, metadata) if source is None else source
+    parameters = metadata['build']['parameters']
+    subjects, roster = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        configuration = dict(environment=features['environment'], strategy=features['strategy'],
+            max_turns=int(features['max_turns']) if 'max_turns' in features else None,
+            refine_turns=int(features['refine_turns']) if 'refine_turns' in features else None)
+        _check(features, {key: str(value) for key, value in configuration.items() if value is not None},
+               'InterCode exact recorded configuration')
+        _check(row.harness, parameters['labels']['harness'], 'InterCode original harness label')
+        _check(all(pd.isna(getattr(row, field)) for field in ['harness_version', 'reasoning_effort', 'access_date']),
+               True, 'InterCode unknown historical runtime fields stay unknown')
+        descriptor = row.display_name, json.dumps(configuration, sort_keys=True)
+        subjects[row.subject_id] = descriptor
+        roster[descriptor] += 1
+    _check(roster, Counter({key: 1 for key in source['model_configs']}), 'InterCode complete model/configuration roster')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), dict(kind='mixed'), 'InterCode environment-specific scales')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(len(items), len(tables['items']), 'InterCode unique item IDs')
+    _check(len(traces), len(tables['traces']), 'InterCode unique trace links')
+    _check(len(assets), len(tables['assets']), 'InterCode unique resource IDs')
+    for identity, row in assets.items():
+        _check(hashlib.sha256(row['data']).hexdigest(), identity, 'InterCode content-addressed input bytes')
+        _check(row['byte_size'], len(row['data']), 'InterCode complete resource lengths')
+    seen, seen_items, seen_assets, checked_items = Counter(), set(), set(), set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_record']
+        expected = source['expected'][key]
+        _check(trace == source['records'][key], True, 'InterCode complete original episode and run metadata')
+        _check(subjects[row.subject_id], expected['subject'], 'InterCode correct model/configuration for every response')
+        _check(row.response, expected['grade'], 'InterCode original maximum reward without rescaling or rounding')
+        _check(row.test_condition, key[0] + ':' + key[1], 'InterCode exact publication occasion')
+        _check(row.trial, 1, 'InterCode published records are not invented repeat trials')
+        _check(pd.isna(row.interactors), True, 'InterCode no invented external actors')
+        item = items[row.item_id]
+        signature = row.item_id, json.dumps(expected['stimulus'], sort_keys=True), expected['protocol']['environment']
+        if signature not in checked_items:
+            content = json.dumps(expected['stimulus'], ensure_ascii=False, sort_keys=True)
+            _check(item['content'], unicodedata.normalize('NFC', content).strip(), 'InterCode exact question and task context')
+            _check(_features(item['item_features']), expected['features'], 'InterCode correct task-bank context')
+            criterion = dict(expected['criterion'])
+            criterion['response_scale'] = json.loads(canonical_response_scale(criterion['response_scale']))
+            _check(json.loads(item['grading_criterion']), criterion, 'InterCode original reference, rule and effective scale')
+            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'}, spec=json.dumps(expected['protocol'], sort_keys=True)),
+                   'InterCode correct historical grading protocol')
+            manifest = json.loads(item['asset_manifest']) if not pd.isna(item['asset_manifest']) else []
+            wanted = []
+            for ordinal, (path, body) in enumerate(sorted(expected['resources'].items()), 1):
+                identity = hashlib.sha256(body).hexdigest()
+                media_type = parameters['media_types'].get(Path(path).suffix, 'application/octet-stream')
+                wanted.append(dict(asset_id=identity, path=path, media_type=media_type, role='input', ordinal=ordinal))
+                _check(assets[identity]['data'] == body, True, 'InterCode unmodified source task resource')
+                seen_assets.add(identity)
+            _check(manifest, wanted, 'InterCode exact input-resource links; solutions are not inputs')
+            checked_items.add(signature)
+        seen[key] += 1
+        seen_items.add(row.item_id)
+    _check(seen, Counter({key: 1 for key in source['expected']}), 'InterCode every released AI episode exactly once')
+    _check(seen_items, set(items), 'InterCode no extra items')
+    _check(seen_assets, set(assets), 'InterCode no extra or omitted input resources')
+    _check(set(traces), set(tables['responses'].response_id), 'InterCode complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=sum(seen.values()),
+        source_traces=len(traces), source_assets=len(assets), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'intercode':
+        return _intercode(directory, tables, metadata)
     if directory.name == 'qatch':
         return _qatch(directory, tables, metadata)
     if directory.name == 'rakuda':

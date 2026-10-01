@@ -1017,3 +1017,4 @@ SOURCE_AUDITS["ood_prediction"] = verify_native_results
 SOURCE_AUDITS["rakuda"] = verify_native_results
 
 SOURCE_AUDITS["qatch"] = verify_native_results
+SOURCE_AUDITS["intercode"] = verify_native_results

@@ -2393,6 +2393,185 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class InterCodeNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'intercode'
+        (self.directory / 'raw').mkdir(parents=True)
+        folder = ROOT / 'benchmarks/intercode'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.files, self.results = {}, {}
+        sql = 'data/sql/spider/ic_spider_dev.json'
+        python = 'data/python/mbpp/ic_mbpp.json'
+        ctf = 'data/ctf/ic_ctf.json'
+        self.files[sql] = json.dumps([dict(query='SQL question ' + str(i), db='database_' + str(i),
+            gold='SELECT ' + str(i), db_tables=['table_' + str(i)], hardness='easy') for i in range(2)]).encode()
+        self.files[python] = json.dumps([dict(query='Python task', gold='def f(): return 1', tests=['assert f() == 1'],
+            task_id=987, test_setup_code='')]).encode()
+        initial = next(iter(self.metadata['build']['parameters']['initial_ctf_files']))
+        initial_key = initial + ':0'
+        self.files[ctf] = json.dumps([dict(query=self.metadata['build']['parameters']['definition_variants'][initial_key],
+            gold='CURRENT_FLAG_NOT_KNOWN_TO_BE_HISTORICAL', task_id=0, source='Released fixture')]).encode()
+        self.files['data/sql/spider/ic_spider_dbs.sql'] = b'CREATE TABLE example(id INTEGER);'
+        self.files['data/ctf/task_assets/0/input.txt'] = b'original task input\n'
+        self.files['data/ctf/task_assets/0/solution/README.md'] = b'not an input'
+        self.files['data/ctf/task_assets/0/.placeholder'] = b''
+        self.files['docker/nl2bash.Dockerfile'] = b'FROM declared-image\n'
+        for i in range(1, 5):
+            self.files[f'data/nl2bash/nl2bash_fs_{i}.json'] = json.dumps([dict(query='Bash task', gold='ls')]).encode()
+            self.files[f'docker/bash_scripts/setup_nl2b_fs_{i}.sh'] = f'echo filesystem-{i}\n'.encode()
+
+        def episode(env, dataset, index, query, score, turns=10):
+            return dict(environment=env, dataset=dataset, task_id=index, query=query,
+                turn_history=dict(actions=['Original command'], rewards=[score], observations=['Full observation\u2028']),
+                summary=dict(max_reward=score, max_reward_idx=0, turns_taken=1, turns_max=turns),
+                original_extra='complete source field')
+
+        self.sql_file = 'data/results/sql/gpt-3.5/ic_sql_multiturn_gpt-3.5_10_turns.json'
+        self.results[self.sql_file] = {str(i): episode('ic_sql', './data/spider/dev_spider.json', i,
+            'SQL question ' + str(i), score) for i, score in enumerate([-0.18, 0.0123456789012345])}
+        self.results[self.sql_file]['0']['turn_history']['actions'][0] = 'Long original command\n' * 1300
+        self.results['data/results/sql/gpt-3.5/ic_sql_multiturn_gpt-3.5_10_turns_handicap.json'] = {
+            '0': episode('ic_sql', './data/spider/dev_spider.json', 0, 'SQL question 0', 0.8)}
+        plan = episode('ic_sql', './data/spider/dev_spider.json', 0, 'SQL question 0', 0)
+        plan['summary'] = dict(max_reward=0, max_reward_idx=-1)
+        self.results['data/results/sql/gpt-3.5/ic_sql_plan_solve_refine_3_turns.json'] = dict(
+            meta=dict(refine=True, refine_turns=3, seed=32, proportion=0.05), logs={'0': plan})
+        self.results['data/results/python/gpt-3.5/ic_python_multiturn_gpt-4_7_turns.json'] = {
+            '0': episode('ic_python', './' + python, 0, 'Python task', 1 / 3, 7)}
+        for i in [1, 2]:
+            self.results[f'data/results/bash/gpt-4/ic_bash_multiturn_gpt-4_10_turns_fs_{i}.json'] = {
+                '0': episode('ic_bash', f'./data/nl2bash/nl2bash_fs_{i}.json', 0, 'Bash task', 0.7100000000000001)}
+        original_query = self.metadata['build']['parameters']['question_variants'][initial_key]
+        self.results[initial] = {'0': episode('ic_ctf', './data/ctf/ctf_test.json', 0, original_query, 0, 15)}
+        self.results[initial]['0']['summary']['turns_taken'] = 3
+        self.results['data/results/ctf/ic_ctf_multiturn_gpt-4_10_turns.json'] = {
+            '0': episode('ic_ctf', './' + ctf, 0, json.loads(self.files[ctf])[0]['query'], 1)}
+        self.results['data/results/sql/human/human.json'] = {'0': episode('ic_sql', './data/spider/dev_spider.json', 0, 'SQL question 0', 1)}
+        self._write_archive()
+        self.builder = runpy.run_path(str(folder / 'build.py'))['InterCode']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def _write_archive(self):
+        import zipfile
+        layout = self.metadata['build']['parameters']['layout']
+        with zipfile.ZipFile(self.directory / 'raw' / layout['archive'], 'w') as archive:
+            for path, body in self.files.items():
+                archive.writestr(layout['prefix'] + path, body)
+            for path, records in self.results.items():
+                archive.writestr(layout['prefix'] + path, json.dumps(records))
+
+    def test_complete_records_signed_scales_task_positions_and_configurations(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _intercode
+        observed = _intercode(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed['source_responses'], 9)
+        self.assertEqual(observed['source_subjects'], 6)
+        self.assertEqual(observed['source_items'], 8)
+        self.assertEqual(observed['source_result_files'], 8)
+        self.assertEqual(observed['source_wrapped_files'], 1)
+        self.assertEqual(observed['source_human_records_excluded'], 1)
+        self.assertEqual(observed['source_negative_scores'], 1)
+        self.assertEqual(observed['source_long_records'], 1)
+        self.assertEqual(observed['source_question_variants'], 1)
+        self.assertEqual(observed['source_ctf_unknown_references'], 2)
+        self.assertEqual(observed['source_turn_count_differences'], 1)
+        self.assertEqual(observed['source_best_step_index_differences'], 1)
+        self.assertTrue(self.frames['responses'].response.eq(0.0123456789012345).any())
+        self.assertFalse(self.frames['items'].grading_criterion.str.contains('CURRENT_FLAG').any())
+        self.assertFalse(self.frames['items'].asset_manifest.fillna('').str.contains('/solution/').any())
+
+    def test_corruption_of_data_contexts_configurations_and_trace_links_is_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _intercode, _intercode_sources
+        source = _intercode_sources(self.directory, self.metadata)
+        changes = ['score', 'precision', 'clip_negative', 'subject', 'item', 'trial', 'condition', 'interactors',
+            'drop', 'duplicate', 'extra_subject', 'extra_item', 'extra_asset', 'model', 'configuration', 'benchmark_scale',
+            'question', 'schema', 'reference', 'verifier', 'effective_scale', 'asset_bytes', 'asset_path', 'asset_role',
+            'trace_clip', 'missing_field', 'source_file', 'source_record', 'run_metadata', 'turn_count', 'trace_drop']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 0.5
+                elif change == 'precision': responses.loc[responses.response.eq(0.0123456789012345), 'response'] = 0.0123456789
+                elif change == 'clip_negative': responses.loc[responses.response.lt(0), 'response'] = 0
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'unknown'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(value for value in items.item_id if value != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 2
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'invented run'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'extra_item': frames['items'] = pd.concat([items, items.iloc[:1]], ignore_index=True)
+                elif change == 'extra_asset': frames['assets'] = pd.concat([assets, assets.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Another model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] += ';invented_setting=yes'
+                elif change == 'benchmark_scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                elif change in ['question', 'schema']:
+                    index = next(i for i, text in enumerate(items.content) if 'provided_schema' in text)
+                    content = json.loads(items.loc[index, 'content'])
+                    content['question' if change == 'question' else 'provided_schema'] = 'wrong'
+                    items.loc[index, 'content'] = json.dumps(content, ensure_ascii=False, sort_keys=True)
+                elif change in ['reference', 'effective_scale']:
+                    value = json.loads(items.loc[0, 'grading_criterion'])
+                    value['reference_answer' if change == 'reference' else 'response_scale'] = ('invented' if change == 'reference' else dict(kind='interval', min=-100, max=100))
+                    items.loc[0, 'grading_criterion'] = json.dumps(value)
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(**{'class': 'exact_matcher'}, spec='{}'))
+                elif change == 'asset_bytes': assets.loc[0, 'data'] = assets.loc[0, 'data'][:-1]
+                elif change in ['asset_path', 'asset_role']:
+                    index = next(i for i, value in enumerate(items.asset_manifest) if isinstance(value, str) and value != '[]')
+                    value = json.loads(items.loc[index, 'asset_manifest']); value[0]['path' if change == 'asset_path' else 'role'] = 'wrong'
+                    items.loc[index, 'asset_manifest'] = json.dumps(value)
+                elif change == 'trace_drop': frames['traces'] = traces.iloc[1:]
+                else:
+                    index = next(i for i, text in enumerate(traces.trace) if len(text) > 16000)
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['record']['turn_history']['actions'][0] = value['record']['turn_history']['actions'][0][:16000]
+                    elif change == 'missing_field': value['record'].pop('original_extra')
+                    elif change == 'source_file': value['source_file'] = 'wrong.json'
+                    elif change == 'source_record': value['source_record'] = '999'
+                    elif change == 'run_metadata': value['run_metadata'] = {'seed': 999}
+                    elif change == 'turn_count': value['record']['summary']['turns_taken'] = 999
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _intercode(self.directory, frames, self.metadata, source)
+
+    def test_invalid_scores_and_undocumented_task_mapping_are_rejected(self):
+        import contextlib
+        import io
+        from measurement_db.build_base import BuildContractError
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _intercode_sources
+        record = self.results[self.sql_file]['0']
+        for value in [float('inf'), float('nan'), True, -1.1, 1.1]:
+            with self.subTest(value=value):
+                record['summary']['max_reward'] = value
+                self._write_archive()
+                with self.assertRaises(ValueError):
+                    _intercode_sources(self.directory, self.metadata)
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaises((ValueError, BuildContractError)):
+                    self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                        '--output', str(self.directory.parent / 'invalid')])
+        record['summary']['max_reward'] = -0.18
+        record['query'] = 'Wrong task'
+        self._write_archive()
+        with self.assertRaises((ValueError, KeyError)):
+            _intercode_sources(self.directory, self.metadata)
+        with self.assertRaisesRegex(ValueError, 'undocumented'):
+            self.builder(str(self.directory / 'build.py')).build_tables()
+
+
 class QatchNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib
