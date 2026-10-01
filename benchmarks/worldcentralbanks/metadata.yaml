@@ -1,0 +1,247 @@
+benchmark:
+  name: 'WorldCentralBanks: released LLM classifications'
+  description: Released sentence-level predictions of central-bank monetary-policy stance, time orientation and
+    certainty.
+  testing_condition: Import the original 2,704 CSV exports (405,600 rows) from 25 central banks across three tasks,
+    preserving the complete response text, export dates and split seeds. Reconstruct the original prompt strings
+    and message roles from pinned author templates, annotation guides and few-shot examples; preserve their whitespace
+    and Unicode. Gemini receives joined message content, as in the source client. Exact executed inference settings
+    are not established by all saved configuration files; do not infer a missing configuration from a filename.
+    No API, model inference, training or external grading runs during this build.
+  paper_url: https://openreview.net/forum?id=cU5W9Z3r8p
+  data_source_url: https://github.com/gtfintechlab/WorldCentralBanks
+  subject_type: model
+  item_type: sentence_classification
+  license: CC-BY-NC-SA-4.0
+  citation: 'Shah et al. (2025). Words That Unite The World: A Unified Framework for Deciphering Central Bank Communications.
+    NeurIPS Datasets and Benchmarks.'
+  tags:
+  - central_banks
+  - classification
+  - finance
+  modality:
+  - text
+  domain:
+  - natural_language_processing
+  - finance
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': A completed prediction disagrees with the reference label.
+      '1': The extracted prediction matches the reference label.
+  categorical: true
+  release_date: 2025-05
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      outputs: llm_inference_outputs/**/*.csv
+      output_pattern: llm_inference_outputs/llm_inference_output_(?P<regime>[^/]+)/(?P<bank>[^/]+)/(?P<task>stance|time|certain)_(?P<provider>[^/]+)/(?P<organization>[^/]+)/(?P<source_model>.+)_(?P<date>[0-9]{8})_(?P<seed>[0-9]+)\.csv
+      guides: src/llm_benchmarking/annotation_guides/{bank}/{task}.tex
+      examples: src/llm_benchmarking/few_shot_examples/{bank}/{task}/examples_{seed}.txt
+    prompts:
+      stance_philippines: "You are given a sentence related to the {bank_name}' monetary policy meeting. Your task\
+        \ is to classify its monetary policy stance and briefly justify your choice.\n \n        Input:\n      \
+        \  - Sentence: {sentence}\n        \n        Instructions:\n        1. Assign one of the following labels\
+        \ under the `label` key:\n        \"hawkish\", \"neutral\", \"dovish\", or \"irrelevant\".\n        \n \
+        \       2. Provide a concise explanation for your classification using the `justification` key. Limit the\
+        \ justification to one sentence.\n        \n        3. Your output must follow this structure:\n       \
+        \ {{\n        \"label\": \"hawkish | dovish | neutral | irrelevant\",\n        \"justification\": \"One-sentence\
+        \ explanation for the assigned label\"\n        }}"
+      stance: "You are given a sentence related to the {bank_name}'s monetary policy meeting. Your task is to classify\
+        \ its monetary policy stance and briefly justify your choice.\n    \n        Input:\n        - Sentence:\
+        \ {sentence}\n        \n        Instructions:\n        1. Assign one of the following labels under the `label`\
+        \ key:\n        \"hawkish\", \"neutral\", \"dovish\", or \"irrelevant\".\n        \n        2. Provide a\
+        \ concise explanation for your classification using the `justification` key. Limit the justification to\
+        \ one sentence.\n        \n        3. Your output must follow this structure:\n        {{\n        \"label\"\
+        : \"hawkish | dovish | neutral | irrelevant\",\n        \"justification\": \"One-sentence explanation for\
+        \ the assigned label\"\n        }}"
+      time_philippines: "You are given a sentence related to the {bank_name}' monetary policy meeting. Your task\
+        \ is to classify whether it is forward looking or not forward looking and briefly justify your choice.\n\
+        \ \n        Input:\n        - Sentence: {sentence}\n        \n        Instructions:\n        1. Assign one\
+        \ of the following labels under the `label` key:\n        \"forward looking\", \"not forward looking\".\n\
+        \        \n        2. Provide a concise explanation for your classification using the `justification` key.\
+        \ Limit the justification to one sentence.\n        \n        3. Your output must follow this structure:\n\
+        \        {{\n        \"label\": \"forward looking | not forward looking\",\n        \"justification\": \"\
+        One-sentence explanation for the assigned label\"\n        }}"
+      time: "You are given a sentence related to the {bank_name}'s monetary policy meeting. Your task is to classify\
+        \ whether it is forward looking or not forward looking and briefly justify your choice.\n \n        Input:\n\
+        \        - Sentence: {sentence}\n        \n        Instructions:\n        1. Assign one of the following\
+        \ labels under the `label` key:\n        \"forward looking\", \"not forward looking\".\n        \n     \
+        \   2. Provide a concise explanation for your classification using the `justification` key. Limit the justification\
+        \ to one sentence.\n        \n        3. Your output must follow this structure:\n        {{\n        \"\
+        label\": \"forward looking | not forward looking\",\n        \"justification\": \"One-sentence explanation\
+        \ for the assigned label\"\n        }}"
+      certain_philippines: "You are given a sentence related to the {bank_name}' monetary policy meeting. Your task\
+        \ is to classify whether it is certain or uncertain and briefly justify your choice.\n \n        Input:\n\
+        \        - Sentence: {sentence}\n        \n        Instructions:\n        1. Assign one of the following\
+        \ labels under the `label` key:\n        \"certain\", \"uncertain\".\n        \n        2. Provide a concise\
+        \ explanation for your classification using the `justification` key. Limit the justification to one sentence.\n\
+        \        \n        3. Your output must follow this structure:\n        {{\n        \"label\": \"certain\
+        \ | uncertain\",\n        \"justification\": \"One-sentence explanation for the assigned label\"\n     \
+        \   }}"
+      certain: "You are given a sentence related to the {bank_name}'s monetary policy meeting. Your task is to classify\
+        \ whether it is certain or uncertain and briefly justify your choice.\n \n        Input:\n        - Sentence:\
+        \ {sentence}\n        \n        Instructions:\n        1. Assign one of the following labels under the `label`\
+        \ key:\n        \"certain\", \"uncertain\".\n        \n        2. Provide a concise explanation for your\
+        \ classification using the `justification` key. Limit the justification to one sentence.\n        \n   \
+        \     3. Your output must follow this structure:\n        {{\n        \"label\": \"certain | uncertain\"\
+        ,\n        \"justification\": \"One-sentence explanation for the assigned label\"\n        }}"
+      guide_system_philippines: "You are given one sentence related to the {bank_name}' monetary policy meeting.\
+        \ You are also given an annotation guide for the feature: {feature}.\n            Strictly follow the guide;\
+        \ do not invent new criteria or labels.\n\n            Your task is to classify whether it is {labels} and\
+        \ briefly justify your choice.\n            \n            Instructions:\n            1. Assign one of the\
+        \ following labels under the `label` key:\n            {labels}\n            \n            2. Provide a\
+        \ concise explanation for your classification using the `justification` key. Limit the justification to\
+        \ one sentence.\n            \n            3. Your output must follow this structure:\n            {{\n\
+        \            \"label\": \"{label_format}\",\n            \"justification\": \"One-sentence explanation for\
+        \ the assigned label\"\n            }}"
+      guide_system: "You are given one sentence related to the {bank_name}'s monetary policy meeting. You are also\
+        \ given an annotation guide for the feature: {feature}.\n            Strictly follow the guide; do not invent\
+        \ new criteria or labels.\n\n            Your task is to classify whether it is {labels} and briefly justify\
+        \ your choice.\n            \n            Instructions:\n            1. Assign one of the following labels\
+        \ under the `label` key:\n            {labels}\n            \n            2. Provide a concise explanation\
+        \ for your classification using the `justification` key. Limit the justification to one sentence.\n    \
+        \        \n            3. Your output must follow this structure:\n            {{\n            \"label\"\
+        : \"{label_format}\",\n            \"justification\": \"One-sentence explanation for the assigned label\"\
+        \n            }}"
+      stance_prompt_with_guide_user: "Input:\n\n                ### Annotation Guide: {guide_text}\n\n\n       \
+        \         ### Sentence: {sentence}\n                "
+      time_prompt_with_guide_user: "Input:\n\n                ### Annotation Guide: {guide_text}\n\n\n         \
+        \       ### Sentence: {sentence}\n                "
+      certain_prompt_with_guide_user: "Input:\n\n                ### Annotation Guide: {guide_text}\n\n\n      \
+        \          ### Sentence: {sentence}\n                "
+      few_shot_system: "You are given one sentence related to {bank_phrase}. You are also given a set of few-shot\
+        \ examples for the feature: {feature}.\n            Follow these examples; do not invent new criteria or\
+        \ labels.\n\n            Your task is to classify whether it is {labels} and briefly justify your choice.\n\
+        \            \n            Instructions:\n            1. Assign one of the following labels under the `label`\
+        \ key:\n            {labels}\n            \n            2. Provide a concise explanation for your classification\
+        \ using the `justification` key. Limit the justification to one sentence.\n            \n            3.\
+        \ Your output must follow this structure:\n            {{\n            \"label\": \"{label_format}\",\n\
+        \            \"justification\": \"One-sentence explanation for the assigned label\"\n            }}"
+      few_shot_user: "Input:\n\"\n                ### Few‑shot Examples\n{examples}\n\n\"\n                ### Sentence\n\
+        {sentence}"
+      finma: 'You are given a sentence related to the {bank}{apostrophe} monetary policy meeting. Your task is to
+        classify its {task} and briefly justify your choice.
+
+
+        Input:
+
+        - Sentence: {sent}
+
+
+        Instructions:
+
+        1. Assign one of the following labels under the `label` key:
+
+        {choices}
+
+        2. Provide a concise explanation for your classification using the `justification` key. Limit it to one
+        sentence.
+
+        3. Your output must follow **exactly** this JSON:
+
+        {{
+
+        "label": "...",
+
+        "justification": "..."
+
+        }}
+
+
+        ### Response:
+
+        '
+    banks:
+      bank_negara_malaysia: Bank Negara Malaysia
+      bank_of_canada: Bank of Canada
+      bank_of_the_republic_colombia: Bank of the Republic (Colombia)
+      bank_of_england: Bank of England
+      bank_of_israel: Bank of Israel
+      bank_of_japan: Bank of Japan
+      bank_of_korea: Bank of Korea
+      bank_of_mexico: Bank of Mexico
+      central_bank_of_the_philippines: Central Bank of the Philippines
+      bank_of_thailand: Bank of Thailand
+      central_bank_of_brazil: Central Bank of Brazil
+      central_bank_of_chile: Central Bank of Chile
+      central_bank_of_egypt: Central Bank of Egypt
+      central_bank_of_the_russian_federation: Central Bank of the Russian Federation
+      central_bank_republic_of_turkey: Central Bank of Turkey
+      central_bank_of_china_taiwan: Central Bank of China (Taiwan)
+      central_reserve_bank_of_peru: Central Reserve Bank of Peru
+      european_central_bank: European Central Bank
+      federal_reserve_system: Federal Reserve System
+      monetary_authority_of_singapore: Monetary Authority of Singapore
+      national_bank_of_poland: National Bank of Poland
+      peoples_bank_of_china: People's Bank of China
+      reserve_bank_of_india: Reserve Bank of India
+      reserve_bank_of_australia: Reserve Bank of Australia
+      swiss_national_bank: Swiss National Bank
+    labels:
+      stance: '"hawkish", "neutral", "dovish", or "irrelevant"'
+      time: '"forward looking" or "not forward looking"'
+      certain: '"certain" or "uncertain"'
+    label_formats:
+      stance: hawkish | dovish | neutral | irrelevant
+      time: forward looking | not forward looking
+      certain: certain | uncertain
+    finma_tasks:
+      stance: monetary policy stance
+      time: time-orientation (forward looking or not)
+      certain: certainty (certain or uncertain)
+    finma_choices:
+      stance: '"hawkish", "neutral", "dovish", or "irrelevant".'
+      time: '"forward looking", "not forward looking".'
+      certain: '"certain", "uncertain".'
+    protocol:
+      harness: WorldCentralBanks released LLM classification pipeline
+      philippines: Central Bank of the Philippines
+      finma_model: finma-7b-full
+      gemini_provider: gemini
+grading:
+  rule: 'Per-row label correctness using the authors'' released clean.ipynb post-processing: for API outputs, remove
+    fences, retain the first JSON block, normalize doubled and curly quotes, then use JSON, literal-dictionary or
+    the original single-word label-regex fallback. FinMA uses the original JSON-or-plain-label parser and rejects
+    categories absent from the run''s reference labels. Compare trimmed lowercase labels with the reference. Preserve
+    the original fallback semantics, including its handling of multiword labels. Empty or explicitly errored requests
+    remain ungraded (null); other unparseable completed answers are incorrect. Accuracy is derived per recorded
+    attempt, not copied from a corpus-level classification report.'
+  verifiers:
+    native:
+      kind: derived_released_label_correctness
+      rule: 'Per-row label correctness using the authors'' released clean.ipynb post-processing: for API outputs,
+        remove fences, retain the first JSON block, normalize doubled and curly quotes, then use JSON, literal-dictionary
+        or the original single-word label-regex fallback. FinMA uses the original JSON-or-plain-label parser and
+        rejects categories absent from the run''s reference labels. Compare trimmed lowercase labels with the reference.
+        Preserve the original fallback semantics, including its handling of multiword labels. Empty or explicitly
+        errored requests remain ungraded (null); other unparseable completed answers are incorrect. Accuracy is
+        derived per recorded attempt, not copied from a corpus-level classification report.'
+      source: https://github.com/gtfintechlab/WorldCentralBanks/blob/70a90d3c004a8fdb6d74df9e88455a42c0654022/src/llm_benchmarking/inference.py
+      original_parser: clean.ipynb cell 0 parse_llm_responses and cell 3 safe_pred; only deterministic string parsing
+        is reproduced.
+      cleanup_source: https://github.com/gtfintechlab/WorldCentralBanks/blob/70a90d3c004a8fdb6d74df9e88455a42c0654022/llm_inference_outputs/llm_inference_output_no_guide/clean.ipynb
+sources:
+  upstream:
+  - name: original_protocol
+    url: https://github.com/gtfintechlab/WorldCentralBanks
+    revision: 70a90d3c004a8fdb6d74df9e88455a42c0654022
+    files:
+    - match: src/llm_benchmarking/.*|configs/.*|llm_inference_logs/.*|llm_inference_outputs/.*\.(?:py|ipynb)|utils/.*|README\.md|LICENSE|requirements\.txt|\.gitattributes
+      path: '{path}'
+  - name: original_prediction_and_reference_tables
+    url: https://github.com/gtfintechlab/WorldCentralBanks
+    revision: 70a90d3c004a8fdb6d74df9e88455a42c0654022
+    git_lfs: true
+    files:
+    - match: (?:llm_inference_outputs|final_data)/.*\.csv
+      path: '{path}'

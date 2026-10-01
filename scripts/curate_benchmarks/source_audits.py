@@ -1044,3 +1044,4 @@ SOURCE_AUDITS["multi_moe"] = verify_native_results
 
 SOURCE_AUDITS["visual_memory"] = verify_native_results
 SOURCE_AUDITS["afrieval"] = verify_native_results
+SOURCE_AUDITS["worldcentralbanks"] = verify_native_results

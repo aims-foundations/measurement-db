@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 349f5fe631cc5089b2987b4bf0d105100dfa39ef269cf6853bcb8ff8043b9df0
+  items:
+    rows: 119925
+    logical_sha256: 6555c9ede417570745089cb227c0f6476b9c27117d70883ea95a4ed9f05292d9
+  responses:
+    rows: 405600
+    logical_sha256: 5186a0e12bf8855a982228367e7c7eca5428f1fe22b5f5ab075586f01bb97d97
+  subjects:
+    rows: 10
+    logical_sha256: 20fb752189f3fe320d1dc2bde856b867ceee036bf2d4e47ec5ba7a83062a5145
+  traces:
+    rows: 405600
+    logical_sha256: f9c75a47d63335b0e44bc24af9dc607b1e9941c37381887298b10a2774f37276
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 10
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 119925
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 405600
+  source_prediction_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 2704
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 405600
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 258106
+  source_ungraded_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/WorldCentralBanks/tree/70a90d3c004a8fdb6d74df9e88455a42c0654022
+    locator: All original CSV rows under llm_inference_outputs, original prompt definitions and clean.ipynb string
+      parsers.
+    scope: Every released prediction, complete input, native reference, exact model label and original coordinate;
+      failed requests retained as null.
+    expected: 42

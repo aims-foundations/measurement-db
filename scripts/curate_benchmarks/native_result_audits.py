@@ -28549,11 +28549,216 @@ def _afrieval(directory, tables, metadata):
         source_reference_files=len(references), **dict(counts))
 
 
+def _worldcentralbanks(directory, tables, metadata):
+    """Compare every source row without importing or executing upstream code."""
+    import ast
+    import csv
+    import re
+    from functools import lru_cache
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='WorldCentralBanks native source audit')
+    raw = directory / 'raw'
+
+    # Read only literal/f-string definitions from the original code. No source
+    # module, model client or notebook cell is imported or executed.
+    functions = {node.name: node for node in ast.parse(
+        (raw / 'src/llm_benchmarking/prompts.py').read_text()).body if isinstance(node, ast.FunctionDef)}
+    finma_tree = ast.parse((raw / 'src/llm_benchmarking/finma_inference.py').read_text())
+    finma_functions = {node.name: node for node in finma_tree.body if isinstance(node, ast.FunctionDef)}
+    banks = ast.literal_eval(next(node.value for node in finma_tree.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'bank_map' for target in node.targets)))
+
+    def render(node, values):
+        if isinstance(node, ast.JoinedStr):
+            return ''.join(render(part, values) for part in node.values)
+        if isinstance(node, ast.Constant):
+            return node.value
+        if isinstance(node, ast.Name):
+            return values[node.id]
+        if isinstance(node, ast.Subscript):
+            return render(node.value, values)[render(node.slice, values)]
+        if isinstance(node, ast.FormattedValue):
+            _check(node.conversion == -1 and node.format_spec is None, True, 'WCB simple source formatting')
+            return str(render(node.value, values))
+        raise ValueError('Unreviewed source prompt expression: ' + type(node).__name__)
+
+    def returned(function):
+        return next(node.value for node in function.body if isinstance(node, ast.Return))
+
+    def maps(function):
+        return {node.targets[0].id: ast.literal_eval(node.value) for node in function.body
+                if isinstance(node, ast.Assign) and isinstance(node.value, ast.Dict)}
+
+    @lru_cache(None)
+    def context_file(path):
+        return path.read_text(encoding='utf-8')
+
+    def prompt(sentence, bank, task, regime, seed, model):
+        bank_name = banks[bank]
+        philippines = bank_name == 'Central Bank of the Philippines'
+        values = dict(sentence=sentence, bank_name=bank_name, feature=task)
+        if model == 'finma-7b-full':
+            call = returned(finma_functions[task + '_prompt'])
+            _check(isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == '_prompt',
+                   True, 'WCB original FinMA prompt wrapper')
+            values.update(task=ast.literal_eval(call.args[0]), choices=ast.literal_eval(call.args[3]),
+                          sent=sentence, bank=bank_name, apostrophe="'" if philippines else "'s")
+            return render(returned(finma_functions['_prompt']), values)
+        if regime == 'no_guide':
+            conditional = next(node for node in functions[task + '_prompt'].body if isinstance(node, ast.If))
+            branch = conditional.body if philippines else conditional.orelse
+            return render(next(node.value for node in branch if isinstance(node, ast.Assign)), values)
+        if regime == 'with_guide':
+            header = functions['system_header']
+            values.update(maps(header))
+            conditional = next(node for node in header.body if isinstance(node, ast.If))
+            branch = conditional.body if philippines else conditional.orelse
+            system = render(next(node.value for node in branch if isinstance(node, ast.Return)), values)
+            values['guide_text'] = context_file(raw / 'src/llm_benchmarking/annotation_guides' / bank / (task + '.tex'))
+            messages = returned(functions[task + '_prompt_with_guide'])
+        elif regime == 'few_shot':
+            header = functions['system_header_few_shot']
+            values.update(maps(header))
+            values['bank_phrase'] = (f"the {bank_name}' monetary‑policy meeting" if philippines else
+                                     f"{bank_name}'s monetary‑policy meeting")
+            system = render(returned(header), values)
+            values['examples'] = context_file(raw / 'src/llm_benchmarking/few_shot_examples' / bank / task /
+                                               ('examples_' + str(seed) + '.txt')).strip()
+            messages = returned(functions['prompt_with_examples'])
+        else:
+            raise ValueError('Unreviewed original prompt regime')
+        _check(isinstance(messages, ast.List) and len(messages.elts) == 2, True, 'WCB original message structure')
+        fields = [{ast.literal_eval(key): value for key, value in zip(message.keys, message.values)}
+                  for message in messages.elts]
+        roles = [ast.literal_eval(message['role']) for message in fields]
+        _check(roles, ['system', 'user'], 'WCB source message roles')
+        return [dict(role=roles[0], content=system), dict(role=roles[1], content=render(fields[1]['content'], values))]
+
+    def parse_label(output, finma, valid):
+        # Independent scalar transcription of clean.ipynb's original string
+        # parsers. In particular, its regex fallback captures only one word.
+        text = output.strip()
+        if finma:
+            try:
+                parsed = json.loads(text) if text.startswith('{') else text
+                label = (parsed.get('label') if isinstance(parsed, dict) else str(parsed)).strip().lower()
+            except (ValueError, TypeError, AttributeError):
+                label = 'error'
+            return label if label in valid else 'error'
+        text = re.sub(r'^```(?:json)?\s*|```', '', text, flags=re.I).strip()
+        brace = text.find('{')
+        if brace != -1:
+            text = text[brace:]
+        text = re.sub(r'""([^"]+)""', r'"\1"', text).replace('“', '"').replace('”', '"')
+        match = re.search(r'\{[\s\S]*?\}', text, re.M)
+        text = (match.group(0) if match else text).replace('""', '"').rstrip(',')
+        try:
+            label = json.loads(text).get('label', '').strip().lower()
+        except json.JSONDecodeError:
+            try:
+                parsed = ast.literal_eval(text)
+                label = str(parsed.get('label', '')).strip().lower() if isinstance(parsed, dict) else ''
+            except (ValueError, SyntaxError, TypeError):
+                match = re.search(r'"?label"?\s*:\s*"?([a-zA-Z]+)"?', text, re.I)
+                label = match.group(1).lower() if match else 'error'
+        return label or 'error'
+
+    # Independently verify the CSV copies of the reference annotations.
+    references = defaultdict(set)
+    for path in sorted((raw / 'final_data').glob('*/final_data.csv')):
+        with path.open(newline='') as stream:
+            for row in csv.DictReader(stream):
+                for task in ['stance', 'time', 'certain']:
+                    references[path.parent.name, row['sentences'], task].add(row[task + '_label'])
+
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    traces = {}
+    for row in tables['traces'].itertuples():
+        trace = json.loads(row.trace)
+        key = trace['source_file'], trace['source_row']
+        _check(key not in traces, True, 'WCB unique native observation coordinates')
+        traces[key] = row.response_id, trace
+    _check(set(tables['traces'].response_id), set(responses), 'WCB trace coverage')
+    counts, occurrences = Counter(), Counter()
+    seen, used_subjects, used_items = set(), set(), set()
+    aliases = defaultdict(set)
+    for path in sorted((raw / 'llm_inference_outputs').rglob('*.csv')):
+        source = str(path.relative_to(raw))
+        parts = path.relative_to(raw).parts
+        _check(len(parts), 6, 'WCB native output hierarchy')
+        regime = parts[1].removeprefix('llm_inference_output_')
+        bank = parts[2]
+        task, provider = parts[3].split('_', 1)
+        model, date, seed = path.stem.rsplit('_', 2)
+        if model.startswith(task + '_'):
+            model = model[len(task) + 1:]
+        with path.open(newline='') as stream:
+            native = list(csv.DictReader(stream))
+        valid = {row['actual_labels'].lower() for row in native}
+        labels = [parse_label(row['llm_responses'], model == 'finma-7b-full', valid) for row in native]
+        counts['source_prediction_files'] += 1
+        for index, (record, label) in enumerate(zip(native, labels)):
+            key = source, index
+            response_id, trace = traces[key]
+            _check(trace, dict(source_file=source, source_row=index, original_record=record, derived_label=label),
+                   'WCB complete native fields and original label parser')
+            response = responses[response_id]
+            subject = subjects[response['subject_id']]
+            features = _features(subject['subject_features_extra'])
+            _check(features['source_model_label'], model, 'WCB exact released model variant')
+            _check(features['source_provider'], provider, 'WCB source provider association')
+            _check(subject['harness'], metadata['build']['parameters']['protocol']['harness'], 'WCB harness')
+            _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+                   'WCB unavailable runtime details remain unknown')
+            sentence = record['documents']
+            _check(references[bank, sentence, task], {record['actual_labels']},
+                   'WCB independent published annotation and no conflicting reference')
+            request = prompt(sentence, bank, task, regime, int(seed), model)
+            if provider == 'gemini' and isinstance(request, list):
+                request = '\n'.join(message['content'] for message in request)
+            expected_input = dict(kind='plain_text', prompt=request) if isinstance(request, str) else dict(
+                kind='chat_messages', messages=request)
+            item = items[response['item_id']]
+            _check(json.loads(item['content']), expected_input, 'WCB complete original prompt, whitespace and roles')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=record['actual_labels'],
+                rule=metadata['grading']['rule']), 'WCB native reference label')
+            _check(_features(item['item_features']), dict(bank=bank, task=task), 'WCB original bank and task')
+            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)), 'WCB grading protocol')
+            unavailable = record['llm_responses'].strip() in ['', 'error'] or not record['actual_labels'].strip()
+            grade = None if unavailable else float(label == record['actual_labels'].strip().lower())
+            _check(None if pd.isna(response['response']) else response['response'], grade,
+                   'WCB original cleanup-parser grade or explicitly ungraded request')
+            condition = f'task={task};regime={regime};split_seed={seed}'
+            _check(response['test_condition'], condition, 'WCB source regime and split seed')
+            occurrence = response['subject_id'], response['item_id'], condition
+            occurrences[occurrence] += 1
+            _check(response['trial'], occurrences[occurrence], 'WCB repeated source observations')
+            _check(pd.isna(response['interactors']), True, 'WCB no invented interaction')
+            aliases[response['item_id']].add(source + '/row/' + str(index))
+            seen.add(key)
+            used_subjects.add(response['subject_id'])
+            used_items.add(response['item_id'])
+            counts['source_responses'] += 1
+            counts['source_successes'] += int(grade or 0)
+            counts['source_ungraded_requests'] += unavailable
+    _check(set(traces), seen, 'WCB all original rows exactly once')
+    _check(set(subjects), used_subjects, 'WCB no unused or omitted models')
+    _check(set(items), used_items, 'WCB no unused or omitted inputs')
+    for item_id, choices in aliases.items():
+        _check(items[item_id]['raw_item_id'] in choices, True, 'WCB retained original item alias')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_traces=len(traces), **dict(counts))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'worldcentralbanks':
+        return _worldcentralbanks(directory, tables, metadata)
     if directory.name == 'afrieval':
         return _afrieval(directory, tables, metadata)
     if directory.name == 'visual_memory':

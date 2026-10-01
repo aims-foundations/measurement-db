@@ -34,6 +34,223 @@ from measurement_db.build_base import _tables
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _afrieval
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _worldcentralbanks
+
+
+class WorldCentralBanksAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'worldcentralbanks'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/worldcentralbanks') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'
+        parameters = self.metadata['build']['parameters']
+        banks = dict(list(parameters['banks'].items())[:1])
+        banks.update({slug: name for slug, name in parameters['banks'].items() if name == 'Central Bank of the Philippines'})
+        templates = parameters['prompts']
+
+        def fstring(name):
+            template = templates[name].replace('{labels}', '{lbl_map[feature]}').replace('{label_format}', '{instruct_map[feature]}')
+            return 'f' + repr(template)
+
+        # Synthetic upstream source follows the published prompt syntax. The
+        # audit reads these literals but never executes this file.
+        definitions = []
+        for task in ['stance', 'time', 'certain']:
+            definitions.append(f"def {task}_prompt(sentence, bank_name):\n"
+                "    if bank_name == 'Central Bank of the Philippines':\n"
+                f"        prompt = {fstring(task + '_philippines')}\n"
+                f"    else:\n        prompt = {fstring(task)}\n    return prompt\n")
+            definitions.append(f"def {task}_prompt_with_guide(sentence, bank_slug, bank_official):\n"
+                "    return [{'role': 'system', 'content': system_header('" + task + "', bank_official)}, "
+                "{'role': 'user', 'content': " + fstring(task + '_prompt_with_guide_user') + "}]\n")
+        literal_maps = (f"    lbl_map = {parameters['labels']!r}\n"
+                        f"    instruct_map = {parameters['label_formats']!r}\n")
+        definitions.append('def system_header(feature, bank_name):\n' + literal_maps +
+            "    if bank_name == 'Central Bank of the Philippines':\n"
+            f"        return {fstring('guide_system_philippines')}\n"
+            f"    else:\n        return {fstring('guide_system')}\n")
+        definitions.append('def system_header_few_shot(feature, bank_name):\n' + literal_maps +
+                           '    return ' + fstring('few_shot_system') + '\n')
+        definitions.append("def prompt_with_examples(sentence, bank_slug, bank_official, feature, seed):\n"
+            "    return [{'role': 'system', 'content': system_header_few_shot(feature, bank_official)}, "
+            "{'role': 'user', 'content': " + fstring('few_shot_user') + "}]\n")
+        path = raw / 'src/llm_benchmarking/prompts.py'
+        path.parent.mkdir(parents=True)
+        path.write_text('\n'.join(definitions))
+        finma = [f'bank_map = {banks!r}', 'def _prompt(task, sent, bank, choices):\n    return ' + fstring('finma')]
+        for task in ['stance', 'time', 'certain']:
+            finma.append(f"def {task}_prompt(s, b):\n    return _prompt({parameters['finma_tasks'][task]!r}, s, b, {parameters['finma_choices'][task]!r})\n")
+        (path.parent / 'finma_inference.py').write_text('\n'.join(finma))
+
+        self.sources = {}
+        self.expected = {}
+        for bank in banks:
+            reference_rows = {}
+            for task in ['stance', 'time', 'certain']:
+                gold = dict(stance='hawkish', time='forward looking', certain='certain')[task]
+                cases = [
+                    ('json', json.dumps(dict(label=gold)), 1.0, 1.0),
+                    ('wrong', '{"label": "unrecognized"}', 0.0, 0.0),
+                    ('fenced', '```json\n' + json.dumps(dict(label=gold)) + '\n```', 1.0, 0.0),
+                    ('literal', repr(dict(label=gold)), 1.0, 0.0),
+                    ('regex', 'label: ' + gold, 0.0 if task == 'time' else 1.0, 0.0),
+                    ('empty', '', None, None),
+                    ('error', 'error', None, None),
+                    ('na_text', 'NA', 0.0, 0.0),
+                    ('long', json.dumps(dict(label=gold, justification='Full output. ' * 2000)), 1.0, 1.0),
+                    ('double_quotes', '{""label"": ""' + gold + '""}', 1.0, 0.0),
+                    ('smart_quotes', '{“label”: “' + gold + '”}', 1.0, 0.0),
+                    ('json', json.dumps(dict(label=gold)), 1.0, 1.0),
+                ]
+                for regime in ['no_guide', 'with_guide', 'few_shot']:
+                    for seed in ['5768', '78516']:
+                        guide = raw / parameters['paths']['guides'].format(bank=bank, task=task)
+                        guide.parent.mkdir(parents=True, exist_ok=True)
+                        guide.write_text('Original guide with {braces} and a\nsecond line.\n')
+                        example = raw / parameters['paths']['examples'].format(bank=bank, task=task, seed=seed)
+                        example.parent.mkdir(parents=True, exist_ok=True)
+                        example.write_text('\nOriginal few-shot examples, seed=' + seed + '.\n')
+                        models = [('openrouter', 'gpt-4o-mini'), ('gemini', 'gemini-2.0-flash')]
+                        if regime == 'no_guide':
+                            models.append(('openrouter', 'finma-7b-full'))
+                        for provider, model in models:
+                            relative = (f'llm_inference_outputs/llm_inference_output_{regime}/{bank}/'
+                                f'{task}_{provider}/native/{model}_20250501_{seed}.csv')
+                            path = raw / relative
+                            rows = []
+                            for index, (case, output, standard_grade, finma_grade) in enumerate(cases):
+                                sentence = 'Original ' + case + ' input, {braces}, "quotes", aye\u0301.\nSecond line.'
+                                rows.append(dict(documents=sentence, llm_responses=output, actual_labels=gold, native_extra='preserve this'))
+                                self.expected[relative, index] = finma_grade if model == 'finma-7b-full' else standard_grade
+                                reference_rows[sentence] = dict(sentences=sentence, stance_label='hawkish',
+                                    time_label='forward looking', certain_label='certain', year='2025')
+                            path.parent.mkdir(parents=True, exist_ok=True)
+                            with path.open('w', newline='') as stream:
+                                writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+                                writer.writeheader(); writer.writerows(rows)
+                            self.sources[path] = rows
+            path = raw / f'final_data/{bank}/final_data.csv'
+            path.parent.mkdir(parents=True)
+            with path.open('w', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(next(iter(reference_rows.values()))))
+                writer.writeheader(); writer.writerows(reference_rows.values())
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/worldcentralbanks') / 'build.py'))['WorldCentralBanks']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_full_prompts_original_parsers_and_failed_requests(self):
+        observed = _worldcentralbanks(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed['source_responses'], len(self.expected))
+        self.assertEqual(observed['source_successes'], sum(grade or 0 for grade in self.expected.values()))
+        self.assertEqual(observed['source_ungraded_requests'], sum(grade is None for grade in self.expected.values()))
+        self.assertEqual(observed['source_prediction_files'], len(self.sources))
+        responses = self.frames['responses'].set_index('response_id')
+        for trace in self.frames['traces'].itertuples():
+            native = json.loads(trace.trace)
+            actual = responses.loc[trace.response_id, 'response']
+            self.assertEqual(None if pd.isna(actual) else actual, self.expected[native['source_file'], native['source_row']])
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertGreater(self.frames['responses'].trial.max(), 1)
+        reversed_tables = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_worldcentralbanks(self.directory, reversed_tables, self.metadata), observed)
+
+    def test_corrupted_tables_fail(self):
+        changes = ['grade', 'null_grade', 'trial', 'subject_link', 'item_link', 'source_model', 'provider',
+            'harness', 'runtime', 'content', 'reference', 'rule', 'verifier', 'item_features', 'raw_id',
+            'condition', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace',
+            'source_file', 'source_row', 'native_input', 'native_output', 'native_extra', 'derived_label', 'clipped_trace']
+        for change in changes:
+            tables = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces = (tables[name] for name in ['responses', 'subjects', 'items', 'traces'])
+            if change == 'grade': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+            elif change == 'null_grade': responses.loc[0, 'response'] = None
+            elif change == 'trial': responses.loc[0, 'trial'] = 999
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = subjects.subject_id.iloc[-1]
+            elif change == 'item_link': responses.loc[0, 'item_id'] = items.item_id.iloc[-1]
+            elif change in ['source_model', 'provider']:
+                subjects.loc[0, 'subject_features_extra'] = 'source_model_label=wrong; source_provider=wrong'
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'runtime': subjects.loc[0, 'harness_version'] = 'invented'
+            elif change == 'content': items.loc[0, 'content'] = '{}'
+            elif change in ['reference', 'rule']:
+                value = json.loads(items.loc[0, 'grading_criterion'])
+                value['reference_answer' if change == 'reference' else 'rule'] = 'wrong'
+                items.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{"class":"exact_matcher","spec":"wrong"}'
+            elif change == 'item_features': items.loc[0, 'item_features'] = 'bank=wrong; task=wrong'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': tables['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': tables['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'drop_trace': tables['traces'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': tables['traces'] = pd.concat([traces, traces.iloc[:1]])
+            else:
+                value = json.loads(traces.loc[0, 'trace'])
+                if change == 'source_file': value['source_file'] = 'wrong'
+                elif change == 'source_row': value['source_row'] = 999
+                elif change == 'native_input': value['original_record']['documents'] = 'wrong'
+                elif change == 'native_output': value['original_record']['llm_responses'] = 'wrong'
+                elif change == 'native_extra': value['original_record'].pop('native_extra')
+                elif change == 'derived_label': value['derived_label'] = 'wrong'
+                elif change == 'clipped_trace':
+                    idx = traces.trace.str.len().idxmax()
+                    value = json.loads(traces.loc[idx, 'trace'])
+                    value['original_record']['llm_responses'] = value['original_record']['llm_responses'][:16000]
+                    traces.loc[idx, 'trace'] = json.dumps(value)
+                    value = None
+                if value is not None: traces.loc[0, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _worldcentralbanks(self.directory, tables, self.metadata)
+
+    def test_changed_native_sources_fail_without_executing_code(self):
+        path = next(iter(self.sources))
+        original = path.read_bytes()
+        for change in ['input', 'output', 'reference', 'missing_row', 'extra_row']:
+            rows = copy.deepcopy(self.sources[path])
+            if change == 'input': rows[0]['documents'] = 'wrong'
+            elif change == 'output': rows[0]['llm_responses'] = '{"label":"wrong"}'
+            elif change == 'reference': rows[0]['actual_labels'] = 'wrong'
+            elif change == 'missing_row': rows.pop()
+            else: rows.append(rows[0].copy())
+            with path.open('w', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _worldcentralbanks(self.directory, self.frames, self.metadata)
+            finally:
+                path.write_bytes(original)
+        raw = self.directory / 'raw'
+        reference = next((raw / 'final_data').glob('*/final_data.csv'))
+        reference_original = reference.read_bytes()
+        reference.write_text(reference.read_text().replace('hawkish', 'wrong'))
+        try:
+            with self.assertRaises(ValueError): _worldcentralbanks(self.directory, self.frames, self.metadata)
+        finally:
+            reference.write_bytes(reference_original)
+        prompt_path = raw / 'src/llm_benchmarking/prompts.py'
+        # Even a top-level side effect is not executed: the reader only walks
+        # definitions. A call embedded in a prompt is rejected, not evaluated.
+        marker = self.directory / 'must-not-exist'
+        source = prompt_path.read_text()
+        prompt_path.write_text(f'open({str(marker)!r}, "w").write("unexpected")\n' + source)
+        _worldcentralbanks(self.directory, self.frames, self.metadata)
+        self.assertFalse(marker.exists())
+        prompt_path.write_text(source.replace('{sentence}', '{open("must-not-exist", "w")}'))
+        try:
+            with self.assertRaises((ValueError, SyntaxError)):
+                _worldcentralbanks(self.directory, self.frames, self.metadata)
+        finally:
+            prompt_path.write_text(source)
+        self.assertFalse(marker.exists())
+
+
 class MasakhaNERAuditTests(unittest.TestCase):
     def setUp(self):
         (ROOT / 'artifacts').mkdir(exist_ok=True)
