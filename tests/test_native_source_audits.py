@@ -58,6 +58,100 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _image
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _imgedit
 
+from collections import Counter
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _interchangeable_token_embeddings
+
+class LTLReleasedAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')
+        self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'interchangeable_token_embeddings';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/interchangeable_token_embeddings')/'metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata,sort_keys=False))
+        raw=self.directory/'raw';raw.mkdir()
+        card=[]
+        outcomes=['exact match','semantically correct','incorrect','invalid','timeout','runtime error']
+        for model in self.metadata['build']['parameters']['model_names']:
+            folder=raw/model;folder.mkdir(parents=True)
+            limited='limited' in model
+            card.append('| '+('Limited' if limited else 'Perturbed')+' Alpha-Renaming | `'+model+'` |')
+            (folder/'config.json').write_text(json.dumps(dict(vocab={'aps':['a','b']},num_layers=8)))
+            (folder/'command-log.txt').write_text('Arguments:\n'+json.dumps(dict(seed=42,
+                ds_name='ltl-35' if limited else 'ltl-35-perturbed',train_max_samples=80000 if limited else None)))
+            for split in ['test','val']:
+                target=folder/'results'/('ltl-35-'+split+'-b3');target.mkdir(parents=True)
+                records=[dict(formula=('X' if split=='test' else 'XX')+str(i)+'a',trace='!a;{b}',
+                    prediction='invalid syntax' if status=='invalid' else '1;{b}',result=status,time=30 if status=='timeout' else .025,
+                    **({'error':'verifier stopped unexpectedly'} if status=='runtime error' else {})) for i,status in enumerate(outcomes)]
+                (target/'evaluation.json').write_text(json.dumps(records))
+                (target/'summary.json').write_text(json.dumps(dict(Counter(outcomes),correct=2)))
+                (target/'summary.txt').write_text('Command Line Arguments:\n--model-path='+model+' eval-ted --beam-size=3\nEVALUATION SUMMARY\n')
+        (raw/'README.md').write_text('\n'.join(card))
+        builder=runpy.run_path(str((ROOT/'benchmarks/interchangeable_token_embeddings')/'build.py'))['InterchangeableTokenEmbeddings']
+        output=self.directory.parent/'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory/'build.py')).main_from_args(['--source',str(raw),'--output',str(output)])
+        self.frames={p.stem:pd.read_parquet(p) for p in output.glob('*.parquet')}
+
+    def test_original_verdicts_references_and_ungraded_attempts(self):
+        observed=_interchangeable_token_embeddings(self.directory,self.frames,self.metadata)
+        self.assertEqual(observed,dict(source_subjects=2,source_items=12,source_responses=24,source_traces=24,
+            source_ungraded_attempts=8,source_invalid_predictions=4,source_correct_predictions=8,source_summary_files_reconciled=4))
+        shuffled={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_interchangeable_token_embeddings(self.directory,shuffled,self.metadata),observed)
+
+    def test_changed_tables_are_detected(self):
+        changes=['grade','ungraded_to_failure','invalid_to_null','trial','subject_link','item_link','subject_label','harness',
+            'subject_features','content','raw_id','item_features','criterion','verifier','condition','missing_response',
+            'duplicate_response','missing_trace','trace_row','trace_prediction','trace_timing','trace_error']
+        for change in changes:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,items,subjects,traces=[frames[n] for n in ['responses','items','subjects','traces']]
+            if change=='grade':responses.loc[responses.response.notna(),'response']=1-responses.loc[responses.response.notna(),'response']
+            elif change=='ungraded_to_failure':responses.loc[responses.response.isna(),'response']=0.
+            elif change=='invalid_to_null':
+                rid=next(row.response_id for row in traces.itertuples() if json.loads(row.trace)['native_record']['result']=='invalid')
+                responses.loc[responses.response_id.eq(rid),'response']=float('nan')
+            elif change=='trial':responses.loc[0,'trial']=2
+            elif change=='subject_link':responses.loc[0,'subject_id']=next(x for x in subjects.subject_id if x!=responses.loc[0,'subject_id'])
+            elif change=='item_link':responses.loc[0,'item_id']=next(x for x in items.item_id if x!=responses.loc[0,'item_id'])
+            elif change=='subject_label':subjects.loc[0,'display_name']='wrong'
+            elif change=='harness':subjects.loc[0,'harness']='wrong'
+            elif change=='subject_features':subjects.loc[0,'subject_features_extra']='model_run=wrong'
+            elif change=='content':items.loc[0,'content']='wrong formula'
+            elif change=='raw_id':items.loc[0,'raw_item_id']='wrong'
+            elif change=='item_features':items.loc[0,'item_features']='input_format=wrong'
+            elif change=='criterion':items.loc[0,'grading_criterion']=json.dumps({'reference_answer':'wrong','rule':'wrong'})
+            elif change=='verifier':items.loc[0,'verifier']='{}'
+            elif change=='condition':responses.loc[0,'test_condition']='wrong'
+            elif change=='missing_response':frames['responses']=responses.iloc[1:]
+            elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
+            elif change=='missing_trace':frames['traces']=traces.iloc[1:]
+            else:
+                trace=json.loads(traces.loc[0,'trace'])
+                if change=='trace_row':trace['source_row']=999
+                else:trace['native_record'][{'trace_prediction':'prediction','trace_timing':'time','trace_error':'error'}[change]]='wrong'
+                traces.loc[0,'trace']=json.dumps(trace)
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _interchangeable_token_embeddings(self.directory,frames,self.metadata)
+
+    def test_changed_native_sources_are_detected(self):
+        raw=self.directory/'raw';result=next(raw.rglob('evaluation.json'));model=result.parents[2]
+        for change in ['verdict','prediction','reference','summary','configuration','training','model_card']:
+            if change in ['verdict','prediction','reference']:
+                path=result;data=json.loads(path.read_text());data[0][{'verdict':'result','prediction':'prediction','reference':'trace'}[change]]='wrong'
+            elif change=='summary':path=result.with_name('summary.json');data=json.loads(path.read_text());data['correct']=999
+            elif change=='configuration':path=model/'config.json';data=json.loads(path.read_text());data['num_layers']=99
+            elif change=='training':path=model/'command-log.txt';data=None
+            else:path=raw/'README.md';data=None
+            original=path.read_bytes()
+            path.write_text(json.dumps(data) if data is not None else original.decode().replace('42','43').replace('Alpha-Renaming','Proposed Method'))
+            try:
+                with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                    _interchangeable_token_embeddings(self.directory,self.frames,self.metadata)
+            finally:path.write_bytes(original)
+
+
 class ImgEditAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

@@ -603,23 +603,23 @@ class SnapshotTests(unittest.TestCase):
             with self.assertRaises(BenchmarkMetadataError):
                 validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
-    def test_huggingface_spaces_keep_repository_type_and_original_hashes(self):
-        from types import SimpleNamespace
+    def test_huggingface_repositories_keep_type_and_original_hashes(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
-        source = dict(name='release', url='https://huggingface.co/spaces/provider/evaluation', revision='a' * 40,
-                      files=[dict(match=r'results/.*\.jsonl', path='{path}')])
         entries = [SimpleNamespace(path='results/small.jsonl', size=12, blob_id='b' * 40, lfs=None),
                    SimpleNamespace(path='results/large.jsonl', size=100, blob_id='c' * 40,
                                    lfs=dict(sha256='d' * 64)), SimpleNamespace(path='results')]
-        with patch('huggingface_hub.HfApi.list_repo_tree', return_value=entries) as tree:
-            artifacts = upstream_artifacts([source], ('release',))
-        tree.assert_called_once_with('provider/evaluation', repo_type='space', revision='a' * 40, recursive=True)
-        by_path = {row['file']: row for row in artifacts}
-        self.assertEqual(by_path['results/small.jsonl']['digest'], 'b' * 40)
-        self.assertEqual(by_path['results/large.jsonl']['digest'], 'd' * 64)
-        for artifact in artifacts:
-            self.assertEqual(artifact['hf_repo_type'], 'space')
-            self.assertIn('/spaces/provider/evaluation/resolve/' + 'a' * 40, artifact['url'])
+        for prefix, repo_type in [('spaces/', 'space'), ('datasets/', 'dataset'), ('', 'model')]:
+            source = dict(name='release', url='https://huggingface.co/' + prefix + 'provider/evaluation', revision='a' * 40,
+                          files=[dict(match=r'results/.*\.jsonl', path='{path}')])
+            with self.subTest(repo_type=repo_type), patch('huggingface_hub.HfApi.list_repo_tree', return_value=entries) as tree:
+                artifacts = upstream_artifacts([source], ('release',))
+                tree.assert_called_once_with('provider/evaluation', repo_type=repo_type, revision='a' * 40, recursive=True)
+                by_path = {row['file']: row for row in artifacts}
+                self.assertEqual(by_path['results/small.jsonl']['digest'], 'b' * 40)
+                self.assertEqual(by_path['results/large.jsonl']['digest'], 'd' * 64)
+                for artifact in artifacts:
+                    self.assertEqual(artifact['hf_repo_type'], repo_type)
+                    self.assertIn('/' + prefix + 'provider/evaluation/resolve/' + 'a' * 40, artifact['url'])
 
     def test_scoped_github_trees_keep_hashes_and_skip_unselected_assets(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts

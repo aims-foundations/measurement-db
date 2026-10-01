@@ -1,0 +1,106 @@
+benchmark:
+  description: Recorded symbolic-trace predictions for LTLRandom35 formulas from two alpha-renaming baseline configurations
+    released with the Interchangeable Token Embeddings paper.
+  testing_condition: 'Use all four original evaluation.json files: 99,989 formulas in each of the test and validation
+    splits for each of two models. The author model card identifies these as Limited Alpha-Renaming and Perturbed
+    Alpha-Renaming, not the proposed method. Original summary commands specify beam size three. Preserve all native
+    prediction, reference, verdict, timing and error fields. Exact-match or semantically-correct verdicts map to
+    one, incorrect or syntactically invalid predictions map to zero. Verifier timeouts and runtime errors remain
+    null because they contain no semantic correctness decision; their native status remains in the trace. The source
+    correct/total statistic can be recovered by treating those nulls as unsuccessful verification, but differs from
+    the mean over available correctness grades. No model or solver is rerun.'
+  paper_url: https://arxiv.org/abs/2410.17161
+  data_source_url: https://huggingface.co/necrashter/interchangeable-token-embeddings
+  subject_type: model
+  item_type: linear_temporal_logic_formula
+  license: Apache-2.0 for the original Hugging Face release; MIT for the author code.
+  citation: "@inproceedings{isik2025interchangeable,\n  title={Interchangeable Token Embeddings for Extendable Vocabulary\
+    \ and Alpha-Equivalence},\n  author={Isik, Ilker and Cinbis, Ramazan Gokberk and Aydin Gol, Ebru},\n  booktitle={International\
+    \ Conference on Machine Learning (ICML)},\n  year={2025}\n}"
+  tags:
+  - ltl
+  - formal-logic
+  - alpha-equivalence
+  - interchangeable-tokens
+  - embeddings
+  - intervention
+  - trace-generation
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect or syntactically invalid predicted trace
+      '1': reference-equivalent or semantically satisfying predicted trace
+  categorical: true
+  release_date: 2024-10
+  name: 'Interchangeable Token Embeddings: released LTL alpha-renaming runs'
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: models/adacos/s005-rope-*-s42/results/*/evaluation.json
+    splits:
+      ltl-35-test-b3: test
+      ltl-35-val-b3: val
+    model_names:
+      models/adacos/s005-rope-limited-s42: 'TED Transformer: limited alpha-renaming (seed 42)'
+      models/adacos/s005-rope-perturbed-s42: 'TED Transformer: perturbed alpha-renaming (seed 42)'
+    training_data:
+      models/adacos/s005-rope-limited-s42: ltl-35 / first 80000 training examples
+      models/adacos/s005-rope-perturbed-s42: ltl-35-perturbed
+    subject_features:
+      harness: autoregltl
+      paper_method: alpha-renaming baseline
+      training_seed: '42'
+      beam_size: '3'
+      historical_configuration: Original architecture, training command log and evaluation command summaries are
+        captured. Evaluation hardware and exact package builds are not recorded.
+    labels:
+      condition: beam=3
+      item_format: network-polish
+    verdicts:
+      exact match: '1'
+      semantically correct: '1'
+      incorrect: '0'
+      invalid: '0'
+      timeout: ''
+      runtime error: ''
+grading:
+  rule: Generate a symbolic ultimately periodic trace satisfying the original linear temporal logic formula. The
+    released checker first tests extended equality with the reference trace, then uses Spot automata containment.
+    An invalid prediction is incorrect. Preserve the recorded verdict without rerunning Spot; verifier timeout or
+    runtime error does not establish correctness.
+  verifiers:
+    spot:
+      kind: released_spot_trace_verification
+      source: https://github.com/necrashter/interchangeable-token-embeddings/blob/b5045cf706e1dab24df6b88c3333a660e9385707/autoregltl/ltl/trace_check.py
+      functions: process_ltl_item and evaluate_ltl
+      reference_format: network-polish
+      missing_grade: timeout and runtime error indicate incomplete semantic verification
+      original_summary: correct = exact match + semantically correct. The original denominator includes every attempted
+        verification.
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/necrashter/interchangeable-token-embeddings
+    revision: 2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    files:
+    - match: README\.md|models/adacos/s005-rope-(?:limited|perturbed)-s42/(?:config\.json|command-log\.txt|results/ltl-35-(?:test|val)-b3/(?:evaluation\.json|summary\.json|summary\.txt))
+      path: '{path}'
+  - name: harness
+    url: https://codeload.github.com/necrashter/interchangeable-token-embeddings/tar.gz/b5045cf706e1dab24df6b88c3333a660e9385707
+    revision: b5045cf706e1dab24df6b88c3333a660e9385707
+    file: harness.tar.gz
+    size: 476284
+    sha256: bfb195f5a5720c7d2b4290ea08cfb2692502b0e7ef592e212b0d2258dd8a520b

@@ -1053,3 +1053,4 @@ SOURCE_AUDITS["indeterminacy"] = verify_native_results
 SOURCE_AUDITS["infibench"] = verify_native_results
 SOURCE_AUDITS["imagenet_hard"] = verify_native_results
 SOURCE_AUDITS["imgedit"] = verify_native_results
+SOURCE_AUDITS["interchangeable_token_embeddings"] = verify_native_results

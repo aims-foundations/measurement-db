@@ -29847,11 +29847,103 @@ def _imgedit(directory, tables, metadata):
         source_saved_grades=len(scores), source_ungraded_attempts=dimensions[0], source_aggregate_scores_reconciled=len(summary))
 
 
+def _interchangeable_token_embeddings(directory, tables, metadata):
+    """Reconcile original formulas, model identities, native statuses and full evidence."""
+    import re
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='LTL original evaluation audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    verdicts = {'exact match':1., 'semantically correct':1., 'incorrect':0., 'invalid':0., 'timeout':None, 'runtime error':None}
+    _check(parameters['verdicts'], {key:'' if value is None else str(int(value)) for key,value in verdicts.items()},
+        'LTL known verdicts distinguish invalid predictions from incomplete verification')
+    card = (raw / 'README.md').read_text()
+    native, definitions, configurations, summaries = {}, {}, {}, 0
+    for path in sorted(raw.glob(parameters['layout']['results'])):
+        relative = str(path.relative_to(raw))
+        model = str(path.parents[2].relative_to(raw))
+        split = parameters['splits'][path.parent.name]
+        records = json.loads(path.read_text())
+        counts = Counter(row['result'] for row in records)
+        _check(set(counts) <= set(verdicts), True, 'LTL only documented source verdicts')
+        expected = dict(counts, correct=counts['exact match'] + counts['semantically correct'])
+        _check(json.loads(path.with_name('summary.json').read_text()), expected, 'LTL every released status and success count')
+        command = path.with_name('summary.txt').read_text().split('EVALUATION SUMMARY')[0]
+        _check('--model-path=' + model in command and '--beam-size=3' in command, True, 'LTL original evaluation command')
+        summaries += 1
+        if model not in configurations:
+            architecture = json.loads((raw / model / 'config.json').read_text())
+            training = json.JSONDecoder().raw_decode((raw / model / 'command-log.txt').read_text().split('Arguments:\n', 1)[1])[0]
+            method = 'Limited Alpha-Renaming' if training.get('train_max_samples') is not None else 'Perturbed Alpha-Renaming'
+            _check(re.search(r'\|\s*' + re.escape(method) + r'\s*\|\s*`' + re.escape(model) + r'`\s*\|', card) is not None,
+                True, 'LTL author model card identifies alpha-renaming baselines')
+            _check(training['seed'], int(parameters['subject_features']['training_seed']), 'LTL original training seed')
+            training_data = training['ds_name']
+            if training.get('train_max_samples') is not None:
+                training_data += ' / first ' + str(training['train_max_samples']) + ' training examples'
+            _check(parameters['training_data'][model], training_data, 'LTL original training population')
+            configurations[model] = architecture
+        for index, row in enumerate(records):
+            _check(isinstance(row['formula'],str) and bool(row['formula']) and isinstance(row['trace'],str),
+                True, 'LTL original input and reference strings')
+            key = row['formula'], row['trace']
+            definitions.setdefault(key, split + ':' + str(index))
+            native[relative, index] = dict(model=model, split=split, key=key, record=row)
+    subject_keys = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        model = features['model_run']
+        _check(model in configurations, True, 'LTL only released per-item model runs')
+        expected = dict(parameters['subject_features'], model_run=model, training_data=parameters['training_data'][model],
+            architecture_config=json.dumps(configurations[model], sort_keys=True))
+        harness = expected.pop('harness')
+        _check((row.display_name, row.harness, features), (parameters['model_names'][model], harness, expected),
+            'LTL exact recorded architecture and model configuration')
+        _check(features['paper_method'], 'alpha-renaming baseline', 'LTL corrected model classification')
+        subject_keys[row.subject_id] = model
+    _check(Counter(subject_keys.values()), Counter({model:1 for model in configurations}), 'LTL no missing or invented subjects')
+    item_keys = {}
+    for row in tables['items'].itertuples():
+        criterion = json.loads(row.grading_criterion)
+        key = row.content, criterion['reference_answer']
+        _check(key in definitions, True, 'LTL original formula and complete reference trace')
+        _check(row.raw_item_id, definitions[key], 'LTL first source alias of the definition')
+        _check(criterion, dict(reference_answer=key[1], rule=metadata['grading']['rule']), 'LTL complete semantic grading criterion')
+        _check(_features(row.item_features), dict(input_format=parameters['labels']['item_format']), 'LTL declared input notation')
+        _check(json.loads(row.verifier), dict(**{'class':'exact_matcher'},
+            spec=json.dumps(metadata['grading']['verifiers']['spot'], sort_keys=True)), 'LTL declared native checker')
+        item_keys[row.item_id] = key
+    _check(Counter(item_keys.values()), Counter({key:1 for key in definitions}), 'LTL exact task-definition coverage')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'LTL every observation has original evidence')
+    seen, outcomes = Counter(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_file'], trace['source_row']
+        _check(key in native and type(key[1]) is int, True, 'LTL valid original source position')
+        source = native[key]
+        _check(trace, dict(source_file=key[0],source_row=key[1],native_record=source['record']),
+            'LTL every original prediction, reference, verdict, error and timing field')
+        expected_grade = verdicts[source['record']['result']]
+        _check(None if pd.isna(row.response) else row.response, expected_grade, 'LTL exact semantic verdict or unavailable grade')
+        _check((subject_keys[row.subject_id], item_keys[row.item_id], row.trial, row.test_condition, pd.isna(row.interactors)),
+            (source['model'],source['key'],1,'split='+source['split']+';'+parameters['labels']['condition'],True),
+            'LTL exact model, formula, split and decoding association')
+        seen[key] += 1
+        outcomes[source['record']['result']] += 1
+    _check(seen, Counter({key:1 for key in native}), 'LTL no omitted, repeated or fabricated observations')
+    return dict(source_subjects=len(configurations),source_items=len(definitions),source_responses=len(native),source_traces=len(traces),
+        source_ungraded_attempts=outcomes['timeout']+outcomes['runtime error'],source_invalid_predictions=outcomes['invalid'],
+        source_correct_predictions=outcomes['exact match']+outcomes['semantically correct'],source_summary_files_reconciled=summaries)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'interchangeable_token_embeddings':
+        return _interchangeable_token_embeddings(directory, tables, metadata)
     if directory.name == 'imgedit':
         return _imgedit(directory, tables, metadata)
     if directory.name == 'imagenet_hard':

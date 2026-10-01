@@ -826,10 +826,14 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                         entries.append(dict(path=entry["path"], size=entry["size"],
                             hash_kind="git_sha1", digest=entry["sha"],
                             url=f"https://raw.githubusercontent.com/{repository}/{revision}/{quote(entry['path'], safe='/')}"))
-            elif location.netloc == "huggingface.co" and location.path.startswith(("/datasets/", "/spaces/")):
+            elif location.netloc == "huggingface.co":
                 from huggingface_hub import HfApi, hf_hub_url
-                collection, repository = location.path.strip("/").split("/", 1)
-                repo_type = {"datasets": "dataset", "spaces": "space"}[collection]
+                repository = location.path.strip("/")
+                if repository.startswith(("datasets/", "spaces/")):
+                    collection, repository = repository.split("/", 1)
+                    repo_type = {"datasets": "dataset", "spaces": "space"}[collection]
+                else:
+                    repo_type = "model"
                 if len(repository.split("/")) != 2:
                     raise SourceDataError(f"{name}: expected a Hugging Face {repo_type} URL")
                 for entry in HfApi().list_repo_tree(repository, repo_type=repo_type, revision=revision, recursive=True):
@@ -844,7 +848,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
             elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
             if "zip_members" in source:
-                if not http_zip and (location.netloc != "huggingface.co" or not location.path.startswith(("/datasets/", "/spaces/"))):
+                if not http_zip and location.netloc != "huggingface.co":
                     raise SourceDataError("ZIP member selections require a pinned Hugging Face repository or size/ETag-pinned HTTPS archive")
                 entries = zip_member_entries(source, entries, raw_dir)
             selected = []

@@ -1,0 +1,3 @@
+- Preserve all 399,956 native LTL attempts, both 99,989-formula splits, full predictions and checker evidence. Original result/configuration files and author code remain unchanged.
+- Correct the two model descriptions to the author model card's limited and perturbed alpha-renaming baselines. The older builder mislabeled them as the proposed method and understated the validation-set size.
+- Preserve 225 verifier timeouts or runtime errors as ungraded attempts; keep actual invalid predictions as failures. All original status counts and correct totals reconcile. No model inference or solver rerun.
