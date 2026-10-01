@@ -5016,6 +5016,86 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         path.write_text(text)
 
 
+class TensorTrustAuditTests(unittest.TestCase):
+    def setUp(self):
+        import bz2
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _tensortrust
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'tensortrust'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/tensortrust/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.audit = _tensortrust
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/tensortrust/build.py'))['TensorTrust']
+        common = dict(opening_defense='Original opening defense', closing_defense='Original closing defense',
+            access_code='literal input', llm_choice='literal-choice-A', timestamp='2024-01-01T00:00:00+00:00',
+            defender_id_anonymized=9007199254740991)
+        self.records = [dict(common, attack_id=1, attacker_input='literal input', output_is_access_granted=True, llm_output='Access granted'),
+            dict(common, attack_id=2, attacker_input='literal input', output_is_access_granted=False, llm_output='denied'),
+            dict(common, attack_id=3, attacker_input=None, output_is_access_granted=False, llm_output=None),
+            dict(common, attack_id=4, attacker_input=None, output_is_access_granted=False, llm_output='def invalid(\n' * 9000)]
+        self.records[0]['attacker_balance_before'] = float('nan')
+        for record in self.records[1:]:
+            record['attacker_balance_before'] = None
+        defense = dict(common, defense_id=1, llm_choice='literal-choice-B', output_is_access_granted=True, llm_output='ACCESS GRANTED!')
+        self.source = self.directory / 'raw/raw-data/v2/raw_dump_attacks.jsonl.bz2'
+        self.source.parent.mkdir(parents=True)
+        for path, records in [(self.source, self.records), (self.source.with_name('raw_dump_defenses.jsonl.bz2'), [defense])]:
+            with bz2.open(path, 'wt') as stream:
+                stream.write(''.join(json.dumps(r) + '\n' for r in records))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_repeats_redactions_and_full_outputs_are_preserved(self):
+        expected = dict(source_responses=5, source_subjects=2, source_items=3, source_traces=5, source_assets=0,
+            attack_records=4, defense_records=1, access_granted=2, withheld_outputs=1, empty_outputs=0, incomplete_inputs=2,
+            normalized_missing_values=1)
+        self.assertEqual(self.audit(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(self.audit(self.directory, {n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()}, self.metadata), expected)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 100000)
+
+    def test_wrong_scores_inputs_models_and_source_links_are_detected(self):
+        changes = ['equal_sum_swap', 'wrong_subject', 'wrong_item', 'drop_response', 'clip_trace', 'source_id',
+            'source_file', 'question', 'criterion', 'verifier', 'subject_configuration', 'trial', 'raw_alias']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {n:f.copy(deep=True) for n,f in self.frames.items()}
+                responses, items, traces = [frames[n] for n in ['responses', 'items', 'traces']]
+                if change == 'equal_sum_swap':
+                    a,b = responses.index[responses.response.eq(0)][0], responses.index[responses.response.eq(1)][0]
+                    responses.loc[[a,b], 'response'] = [1., 0.]
+                elif change == 'wrong_subject':responses.loc[0, 'subject_id'] = next(v for v in frames['subjects'].subject_id if v != responses.loc[0, 'subject_id'])
+                elif change == 'wrong_item':responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+                elif change == 'drop_response':frames['responses'] = responses.iloc[1:]
+                elif change == 'question':items.loc[0, 'content'] = '{}'
+                elif change == 'criterion':items.loc[0, 'grading_criterion'] = '{}'
+                elif change == 'verifier':items.loc[0, 'verifier'] = '{}'
+                elif change == 'raw_alias':items.loc[0, 'raw_item_id'] = 'invented'
+                elif change == 'subject_configuration':frames['subjects'].loc[0, 'subject_features_extra'] = 'recorded_model_choice=invented'
+                elif change == 'trial':responses.loc[0, 'trial'] = 0
+                else:
+                    value = json.loads(traces.loc[0, 'trace'])
+                    if change == 'clip_trace':value['record']['llm_output'] = 'clipped'
+                    elif change == 'source_id':value['record']['attack_id'] = 999
+                    elif change == 'source_file':value['source_file'] = 'wrong-source.jsonl.bz2'
+                    traces.loc[0, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, RuntimeError, KeyError, StopIteration)):
+                    self.audit(self.directory, frames, self.metadata)
+
+    def test_non_boolean_source_flags_are_rejected(self):
+        import bz2
+        for invalid in [None, 2, 'false', float('inf')]:
+            with self.subTest(invalid=invalid):
+                records = copy.deepcopy(self.records); records[0]['output_is_access_granted'] = invalid
+                with bz2.open(self.source, 'wt') as stream:
+                    stream.write(''.join(json.dumps(r) + '\n' for r in records))
+                with self.assertRaises((ValueError, RuntimeError)):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+
+
 class MultimodalStemAuditTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts');self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()

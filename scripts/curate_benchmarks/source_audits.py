@@ -1031,3 +1031,4 @@ SOURCE_AUDITS["wikihow_agent"] = verify_native_results
 
 SOURCE_AUDITS["visualwebarena"] = verify_native_results
 SOURCE_AUDITS["multimodal_stem_ai"] = verify_native_results
+SOURCE_AUDITS["tensortrust"] = verify_native_results
