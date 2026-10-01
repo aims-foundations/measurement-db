@@ -26913,11 +26913,116 @@ def _wikihow_agent(directory, tables, metadata):
         distinct_conversation_ids=len(native_ids), source_traces=len(tables['traces']), **observed)
 
 
+def _visualwebarena(directory, tables, metadata):
+    import csv, hashlib, mimetypes, re
+    from urllib.parse import urlsplit
+    from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    validate_dataset(tables, context='VisualWebArena source audit')
+    raw=directory/'raw';layout=metadata['build']['parameters']['layout'];grading=metadata['grading']['verifiers']
+    with ZipFile(raw/layout['task_archive']) as archive:
+        bank_rows=json.loads(archive.read(layout['task_member']))
+    bank={row['task_id']:row for row in bank_rows}
+    _check(len(bank),len(bank_rows),'VisualWebArena globally unique historical task IDs')
+    ratings={}
+    for number,row in enumerate(csv.DictReader((raw/'data/annotations.csv').open())):
+        if row['benchmark']=='visualwebarena':ratings[number]=row
+    trace_index={}
+    responses=tables['responses'].set_index('response_id').to_dict('index')
+    subjects=tables['subjects'].set_index('subject_id').to_dict('index')
+    items=tables['items'].set_index('item_id').to_dict('index')
+    assets=tables['assets'].set_index('asset_id').to_dict('index')
+    for row in tables['traces'].itertuples():
+        trace=json.loads(row.trace)
+        _check(set(trace),{'source_file','record','grading_protocol','annotation_file','annotation_row','annotation'},'VisualWebArena explicit original trace fields')
+        key=trace['source_file'],trace['grading_protocol'],trace['annotation_row']
+        _check(key not in trace_index,True,'VisualWebArena each original judgment exactly once')
+        trace_index[key]=trace,responses[row.response_id]
+    _check(tables['benchmarks'].iloc[0].response_scale,canonical_response_scale(metadata['benchmark']['response_scale']),'VisualWebArena binary scale')
+    expected_keys,seen_ratings,seen_assets=set(),set(),set()
+    subject_definitions,item_definitions,trials={},{},defaultdict(list)
+    counts=Counter();tasks_seen=set();checked_images=set()
+    paths=sorted((raw/'cleaned/visualwebarena').glob('*/*/*.json'))
+    _check(bool(paths),True,'VisualWebArena native trajectories present')
+    for path in paths:
+        native=json.loads(path.read_text());source_file=str(path.relative_to(raw));number=int(path.stem.rsplit('.',1)[-1]);task=bank[number]
+        tasks_seen.add(number)
+        _check(native['benchmark'],'visualwebarena','VisualWebArena original benchmark association')
+        _check(native['goal'].split('\nInput image ')[0].strip(),task['intent'].strip(),'VisualWebArena exact historical task instruction')
+        image_urls=task.get('image') or []
+        if isinstance(image_urls,str):image_urls=[image_urls]
+        image_paths=[url.removeprefix('__HOMEPAGE__/static/input_images/') for url in image_urls]
+        recorded=[urlsplit(url).path.removeprefix('/static/input_images/') for url in re.findall(r"url: '([^']+)'",native['goal'])]
+        _check(recorded,image_paths,'VisualWebArena original ordered input-image correspondence')
+        configuration={key:native[key] for key in ['agent','model','model_args','flags','package_version']}
+        subject_signature=json.dumps(configuration,sort_keys=True)
+        matching=[(i,r) for i,r in ratings.items() if (r['model_name'],r['exp_name'],r['task_id'])==(native['agent'],native['experiment'],path.stem)]
+        _check(bool(matching),True,'VisualWebArena every trajectory has its released human annotation')
+        judgments=[('automatic',None,None)]+[('human',i,r) for i,r in matching]
+        for protocol,index,annotation in judgments:
+            key=source_file,protocol,index;expected_keys.add(key)
+            trace,response=trace_index[key]
+            _check(trace['record']==native,True,'VisualWebArena complete unmodified released trajectory')
+            _check(trace['annotation'],annotation,'VisualWebArena unmodified human rating or explicit no human rating')
+            _check(trace['annotation_file'],'data/annotations.csv' if protocol=='human' else None,'VisualWebArena grading provenance')
+            if protocol=='human':
+                _check(annotation['trajectory_success'] in ['Successful','Unsuccessful'],True,'VisualWebArena original human verdict')
+                grade=float(annotation['trajectory_success']=='Successful');seen_ratings.add(index)
+                counts['human_successes']+=int(grade)
+                counts['grading_disagreements']+=native['summary_info']['cum_reward']!=grade
+            else:
+                grade=native['summary_info']['cum_reward'];counts['automatic_successes']+=int(grade)
+            _check(type(grade) in (int,float) and grade in (0,1),True,'VisualWebArena binary native grade')
+            _check(response['response'],grade,'VisualWebArena preserve exact grade for its protocol')
+            subject,item=subjects[response['subject_id']],items[response['item_id']]
+            _check(subject['display_name'],native['model'],'VisualWebArena literal model name')
+            _check(subject['harness'],metadata['build']['parameters']['labels']['harness'],'VisualWebArena native harness')
+            _check(json.loads(_features(subject['subject_features_extra'])['source_configuration']),configuration,'VisualWebArena complete recorded configuration')
+            _check(item['raw_item_id'],str(number),'VisualWebArena global rather than site-local task ID')
+            _check(_features(item['item_features']),dict(grading_channel=protocol,task_number=str(number)),'VisualWebArena separate grading protocol identities')
+            elements=[dict(content_type='text/plain',text=task['intent'])]+[dict(content_type=mimetypes.guess_type(name)[0],location='input_images/'+name) for name in image_paths]
+            _check(json.loads(item['content']),dict(multimedia_elements=elements),'VisualWebArena full instruction and ordered image locators')
+            manifest=[]
+            for ordinal,name in enumerate(image_paths,1):
+                body=(raw/layout['input_images']/name).read_bytes();identity=hashlib.sha256(body).hexdigest()
+                manifest.append(dict(asset_id=identity,path='input_images/'+name,media_type=mimetypes.guess_type(name)[0],role='input',ordinal=ordinal))
+                if identity not in checked_images:
+                    _check(assets[identity]['data']==body,True,'VisualWebArena exact archived input-image bytes')
+                    _check(assets[identity]['byte_size'],len(body),'VisualWebArena complete image length');checked_images.add(identity)
+                seen_assets.add(identity)
+            actual_manifest=[] if pd.isna(item['asset_manifest']) else json.loads(item['asset_manifest'])
+            _check(actual_manifest,manifest,'VisualWebArena complete ordered input asset manifest')
+            _check(json.loads(item['grading_criterion']),dict(reference_answer=None,rule=grading[protocol]['rule']),'VisualWebArena protocol-specific grading criterion')
+            verifier=json.loads(item['verifier']);spec=grading[protocol]['spec']
+            if protocol=='automatic':
+                _check(verifier['class'],'exact_matcher','VisualWebArena automatic verifier');spec=dict(**spec,task_configuration=task)
+            else:
+                _check((verifier['class'],verifier['judge'],verifier['judged_by']),('judge',grading['human']['judge'],'human'),'VisualWebArena human verifier')
+            _check(json.loads(verifier['spec']),spec,'VisualWebArena full protocol and historical task-specific grading data')
+            definition=number,protocol
+            if response['item_id'] in item_definitions:_check(item_definitions[response['item_id']],definition,'VisualWebArena stable item/protocol identity')
+            if response['subject_id'] in subject_definitions:_check(subject_definitions[response['subject_id']],subject_signature,'VisualWebArena stable complete configuration')
+            item_definitions[response['item_id']]=definition;subject_definitions[response['subject_id']]=subject_signature
+            trials[response['subject_id'],response['item_id']].append(response['trial'])
+    _check(set(trace_index),expected_keys,'VisualWebArena every original automatic and human judgment retained')
+    _check(seen_ratings,set(ratings),'VisualWebArena no lost human ratings')
+    _check(seen_assets,set(assets),'VisualWebArena exact referenced asset coverage')
+    _check((len(responses),len(tables['traces'])),(len(expected_keys),len(expected_keys)),'VisualWebArena one complete trace per judgment')
+    _check((len(subjects),len(set(subject_definitions.values()))),(len(subject_definitions),len(subject_definitions)),'VisualWebArena unique complete subject coverage')
+    _check((len(items),len(set(item_definitions.values()))),(len(item_definitions),len(item_definitions)),'VisualWebArena unique complete item/protocol coverage')
+    for group in trials.values():_check(sorted(group),list(range(1,len(group)+1)),'VisualWebArena trials count judgments within a protocol')
+    return dict(source_trajectories=len(paths),source_human_ratings=len(ratings),source_task_bank=len(bank),source_tasks=len(tasks_seen),
+        source_subjects=len(subjects),source_items=len(items),source_responses=len(responses),source_traces=len(tables['traces']),source_assets=len(assets),**counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'visualwebarena':
+        return _visualwebarena(directory, tables, metadata)
     if directory.name == 'wikihow_agent':
         return _wikihow_agent(directory, tables, metadata)
     if directory.name == 'swe_smith':

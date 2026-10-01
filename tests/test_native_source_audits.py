@@ -1,6 +1,8 @@
 """Native-source audits must distinguish wrong grades, missing grades and clipped traces."""
 
 import contextlib
+import base64
+from zipfile import ZipFile
 import copy
 import csv
 import io
@@ -22,6 +24,7 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _os_ha
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _workarena as _audit_workarena
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_smith as _audit_swe_smith
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _wikihow_agent as _audit_wikihow_agent
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _visualwebarena as _audit_visualwebarena
 from measurement_db.build_base import _tables
 
 
@@ -4926,3 +4929,87 @@ class WikiHowAgentAuditTests(unittest.TestCase):
         path.write_text(json.dumps(data))
         with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
         path.write_text(json.dumps(original))
+
+
+class VisualWebArenaAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts');self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'visualwebarena';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/visualwebarena')/'metadata.yaml').read_text());(self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw=self.directory/'raw';layout=self.metadata['build']['parameters']['layout']
+        task_bank=[dict(task_id=i,intent=f'Complete task {i}.',image='__HOMEPAGE__/static/input_images/fixture.png' if i==0 else None,
+            eval={'eval_types':['program_html'],'program_html':[{'url':'last','locator':'document.title','required_contents':{'must_include':['done']}}]}) for i in range(2)]
+        path=raw/layout['task_archive'];path.parent.mkdir(parents=True)
+        with ZipFile(path,'w') as archive:archive.writestr(layout['task_member'],json.dumps(task_bank))
+        image=raw/layout['input_images']/'fixture.png';image.parent.mkdir(parents=True)
+        image.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='))
+        annotations=[]
+        for agent,task,auto,human in [('a',0,1,'Unsuccessful'),('a',1,0,'Unsuccessful'),('b',0,0,'Successful')]:
+            goal=task_bank[task]['intent']
+            if task==0:goal+="\nInput image 1/1 below (local path: PosixPath('/tmp/example.png'), url: 'https://fixture.example/static/input_images/fixture.png')\n"
+            record=dict(benchmark='visualwebarena',agent='Agent-'+agent,model='model-'+agent,valid=True,experiment='experiment-'+agent,goal=goal,seed=0,
+                model_args=dict(temperature=0.),flags=dict(vision=True),package_version='browsergym-visualwebarena==0.13.3\nlibvisualwebarena==0.0.15',
+                summary_info=dict(cum_reward=float(auto)),steps=[dict(action='def broken(',message='unmodified text ' * 10000,image_url='REMOVED',screenshot_path='external/screenshot.png')])
+            path=raw/f'cleaned/visualwebarena/Agent-{agent}/experiment-{agent}/visualwebarena.{task}.json';path.parent.mkdir(parents=True,exist_ok=True);path.write_text(json.dumps(record))
+            annotation=dict(annotator_name='A',benchmark='visualwebarena',task_id=f'visualwebarena.{task}',model_name='Agent-'+agent,exp_name='experiment-'+agent,trajectory_success=human)
+            annotations.append(annotation)
+        annotations.append(dict(annotations[0],annotator_name='B',trajectory_success='Successful'))
+        path=raw/'data/annotations.csv';path.parent.mkdir()
+        with path.open('w',newline='') as stream:
+            writer=csv.DictWriter(stream,fieldnames=list(annotations[0]));writer.writeheader();writer.writerows(annotations)
+        self.builder=runpy.run_path(str((ROOT/'benchmarks/visualwebarena')/'build.py'))['VisualWebArena']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(raw),'--output',str(self.directory.parent/'tables')])
+        self.frames={p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_all_judgments_and_original_assets_survive(self):
+        expected=dict(source_trajectories=3,source_human_ratings=4,source_task_bank=2,source_tasks=2,source_subjects=2,source_items=4,source_responses=7,source_traces=7,source_assets=1,human_successes=2,automatic_successes=1,grading_disagreements=2)
+        self.assertEqual(_audit_visualwebarena(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(_audit_visualwebarena(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertEqual(self.frames['responses'].trial.max(),2)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(100000).all())
+
+    def test_corrupt_conversions_and_crossed_grading_are_detected(self):
+        changes=['equal_sum_swap','wrong_subject','wrong_item','drop_judgment','clipped_record','source_file','annotation_row',
+            'image_bytes','image_order','replace_instruction','verifier','protocol','subject_configuration','trial']
+        for change in changes:
+            with self.subTest(change=change):
+                frames={n:f.copy(deep=True) for n,f in self.frames.items()};responses,items,traces=[frames[n] for n in ['responses','items','traces']]
+                if change=='equal_sum_swap':
+                    a,b=responses.index[responses.response.eq(0)][0],responses.index[responses.response.eq(1)][0];responses.loc[[a,b],'response']=[1.,0.]
+                elif change=='wrong_subject':responses.loc[0,'subject_id']=next(v for v in frames['subjects'].subject_id if v!=responses.loc[0,'subject_id'])
+                elif change=='wrong_item':responses.loc[0,'item_id']=next(v for v in items.item_id if v!=responses.loc[0,'item_id'])
+                elif change=='drop_judgment':frames['responses']=responses.iloc[1:]
+                elif change=='image_bytes':frames['assets'].loc[0,'data']=b'truncated'
+                elif change=='image_order':
+                    i=items.index[items.asset_manifest.notna()][0];v=json.loads(items.loc[i,'asset_manifest']);v[0]['path']='wrong.png';items.loc[i,'asset_manifest']=json.dumps(v)
+                elif change=='replace_instruction':
+                    v=json.loads(items.loc[0,'content']);v['multimedia_elements'][0]['text']='wrong site task';items.loc[0,'content']=json.dumps(v)
+                elif change=='verifier':
+                    v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
+                elif change=='subject_configuration':frames['subjects'].loc[0,'subject_features_extra']='source_configuration={}'
+                elif change=='trial':responses.loc[0,'trial']=0
+                else:
+                    v=json.loads(traces.loc[0,'trace'])
+                    if change=='clipped_record':v['record']['steps']=[]
+                    elif change=='source_file':v['source_file']='invented.json'
+                    elif change=='annotation_row':v['annotation_row']=999
+                    elif change=='protocol':v['grading_protocol']='automatic' if v['grading_protocol']=='human' else 'human'
+                    traces.loc[0,'trace']=json.dumps(v)
+                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration)):
+                    _audit_visualwebarena(self.directory,frames,self.metadata)
+
+    def test_unknown_grades_and_bad_source_matches_are_rejected(self):
+        raw=self.directory/'raw';path=next((raw/'cleaned/visualwebarena').rglob('*.json'));original=json.loads(path.read_text())
+        for field,value in [('grade',0.5),('instruction','wrong task'),('image',"\nInput image 1/1 below (url: 'https://fixture.example/static/input_images/wrong.png')")]:
+            with self.subTest(field=field):
+                record=copy.deepcopy(original)
+                if field=='grade':record['summary_info']['cum_reward']=value
+                elif field=='instruction':record['goal']=value
+                else:record['goal']=record['goal'].split('\nInput image ')[0]+value
+                path.write_text(json.dumps(record))
+                with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        path.write_text(json.dumps(original))
+        path=raw/'data/annotations.csv';text=path.read_text();path.write_text(text.replace('Unsuccessful','Unknown'))
+        with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        path.write_text(text)
