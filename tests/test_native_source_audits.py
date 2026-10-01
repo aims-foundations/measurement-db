@@ -29,6 +29,133 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _multi
 from measurement_db.build_base import _tables
 
 
+class MochiAuditTests(unittest.TestCase):
+    def setUp(self):
+        from PIL import Image
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mochi
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'mochi'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/mochi/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/mochi/build.py'))['Mochi']
+        self.audit = _mochi
+        self.svm, self.distance, self.bank = [], [], []
+        metrics = ['cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan', 'seuclidean',
+                   'correlation', 'minkowski', 'chebyshev', 'braycurtis', 'canberra']
+        for row, (dataset, condition, count) in enumerate([
+                ('barense', 'familiar_hisim', 4), ('hvm', 'animals', 3), ('shapegen', 'abstract0', 3)]):
+            names, images = [], []
+            for index in range(count):
+                name = f'task{row}_image{index}_' + ('oddity' if index == count - 1 else 'typical') + '.png'
+                stream = io.BytesIO(); Image.new('RGB', (3, 3), (row * 70, index * 50, 40)).save(stream, format='PNG')
+                names.append(name); images.append(dict(path=name, bytes=stream.getvalue()))
+            values = [(-.5, 0., .6)[row] + .02 * index for index in range(12)]
+            pooled = sum(values) / len(values)
+            native = dict(dataset=dataset, trial=f'task{row}', condition=condition, images=repr(names),
+                          oddity_index=str(count - 1), human_accuracy='.25', object_names='')
+            native[''] = str(row)  # Upstream CSVs retain an unnamed index column.
+            grade = (-.5, .25, 1.)[row]
+            self.svm.append(dict(native, **{'dinov2-base_svm_avg': str(grade),
+                'dinov2-giant_svm_avg': str(grade), 'dino_distance_avg': str(pooled)}))
+            distance = dict(native, **{'dino_' + metric + '_avg': str(value) for metric, value in zip(metrics, values)},
+                            dino_distance_avg=str(pooled))
+            if row == 0: distance['condition'] = 'familiar_objects_complex'
+            if row == 1:
+                distance['images'] = repr(names[::-1]); distance['oddity_index'] = '0'
+            self.distance.append(distance)
+            self.bank.append(dict(dataset='majaj' if dataset == 'hvm' else dataset, trial=f'task{row}',
+                condition=condition, n_objects=count, oddity_index=count - 1, images=images, DINOv2G_avg=grade))
+        self.write_sources()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def write_sources(self):
+        for name, rows in [('benchmark.csv', self.svm), ('df_behavior_wdistance.csv', self.distance)]:
+            path = self.directory / 'raw/github/assets' / name; path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open('w', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+        path = self.directory / 'raw/hf/data/train-00000-of-00001.parquet'; path.parent.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(self.bank).to_parquet(path, index=False)
+
+    def test_original_images_permutations_averages_and_duplicate_exports(self):
+        expected = dict(source_image_sets=3, source_subjects=15, source_items=5, source_responses=45,
+            source_traces=45, source_assets=10, source_negative_estimates=15,
+            corroborating_pooled_exports=3, corroborating_giant_exports=3)
+        self.assertEqual(self.audit(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(self.audit(self.directory, {n: f.iloc[::-1].reset_index(drop=True)
+            for n, f in self.frames.items()}, self.metadata), expected)
+        self.assertEqual(len(self.frames['responses'].loc[self.frames['responses'].response < 0]), 15)
+
+    def test_corrupted_grades_stimuli_associations_and_provenance_are_rejected(self):
+        for change in ['clip_negative', 'null_grade', 'model', 'subject_features', 'item_features', 'reference',
+                       'image_order', 'image_bytes', 'asset_path', 'answer_in_input', 'drop_response',
+                       'duplicate_response', 'drop_asset', 'drop_trace', 'native_record', 'source_row',
+                       'source_file', 'score_column', 'image_source_row', 'image_source_file', 'trial', 'raw_alias', 'verifier']:
+            with self.subTest(change=change):
+                tables = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                if change == 'clip_negative': tables['responses'].loc[tables['responses'].response < 0, 'response'] = 0.
+                elif change == 'null_grade': tables['responses'].loc[0, 'response'] = None
+                elif change == 'model': tables['subjects'].loc[0, 'display_name'] = 'wrong-model'
+                elif change == 'subject_features': tables['subjects'].loc[0, 'subject_features_extra'] = 'readout=cosine'
+                elif change == 'item_features': tables['items'].loc[0, 'item_features'] = 'dataset=wrong'
+                elif change == 'reference':
+                    value = json.loads(tables['items'].loc[0, 'grading_criterion']); value['reference_answer'] = '99'
+                    tables['items'].loc[0, 'grading_criterion'] = json.dumps(value)
+                elif change in ['image_order', 'asset_path']:
+                    value = json.loads(tables['items'].loc[0, 'asset_manifest'])
+                    if change == 'image_order': value[0]['asset_id'], value[1]['asset_id'] = value[1]['asset_id'], value[0]['asset_id']
+                    else: value[0]['path'] = 'correct_answer.png'
+                    tables['items'].loc[0, 'asset_manifest'] = json.dumps(value)
+                elif change == 'image_bytes': tables['assets'].at[0, 'data'] = b'changed-image'
+                elif change == 'answer_in_input':
+                    value = json.loads(tables['items'].loc[0, 'content']); value['oddity_index'] = 3
+                    tables['items'].loc[0, 'content'] = json.dumps(value)
+                elif change == 'drop_response': tables['responses'] = tables['responses'].iloc[1:].copy()
+                elif change == 'duplicate_response': tables['responses'] = pd.concat([tables['responses'], tables['responses'].iloc[:1]])
+                elif change == 'drop_asset': tables['assets'] = tables['assets'].iloc[1:].copy()
+                elif change == 'drop_trace': tables['traces'] = tables['traces'].iloc[1:].copy()
+                elif change in ['native_record', 'source_row', 'source_file', 'score_column', 'image_source_row', 'image_source_file']:
+                    value = json.loads(tables['traces'].loc[0, 'trace'])
+                    if change == 'native_record': value['native_record']['human_accuracy'] = 'invented'
+                    elif change in ['source_row', 'image_source_row']: value[change] = 99
+                    else: value[change] = 'wrong-source'
+                    tables['traces'].loc[0, 'trace'] = json.dumps(value)
+                elif change == 'trial': tables['responses'].loc[0, 'trial'] = 100
+                elif change == 'raw_alias': tables['items'].loc[0, 'raw_item_id'] = 'wrong-task'
+                elif change == 'verifier': tables['items'].loc[0, 'verifier'] = '{"class":"judge","spec":"{}"}'
+                with self.assertRaises((ValueError, KeyError, RuntimeError)):
+                    self.audit(self.directory, tables, self.metadata)
+
+    def test_conflicting_native_sources_require_review(self):
+        originals = copy.deepcopy((self.svm, self.distance, self.bank))
+        for change in ['duplicate_task', 'missing_image_set', 'wrong_reference', 'svm_order',
+                       'condition', 'giant_copy', 'pooled_copy', 'invalid_index', 'filename_conflict']:
+            with self.subTest(change=change):
+                self.svm, self.distance, self.bank = copy.deepcopy(originals)
+                if change == 'duplicate_task': self.svm.append(copy.deepcopy(self.svm[0]))
+                elif change == 'missing_image_set': self.bank.pop()
+                elif change == 'wrong_reference': self.distance[1]['oddity_index'] = '1'
+                elif change == 'svm_order':
+                    import ast
+                    self.svm[1]['images'] = repr(ast.literal_eval(self.svm[1]['images'])[::-1]); self.svm[1]['oddity_index'] = '0'
+                elif change == 'condition': self.distance[0]['condition'] = 'unrecognized'
+                elif change == 'giant_copy': self.bank[0]['DINOv2G_avg'] = .9
+                elif change == 'pooled_copy': self.distance[0]['dino_distance_avg'] = '.9'
+                elif change == 'invalid_index': self.svm[0]['oddity_index'] = '-1'
+                elif change == 'filename_conflict':
+                    self.bank[1]['images'][0]['path'] = self.bank[0]['images'][0]['path']
+                    import ast
+                    names = ast.literal_eval(self.svm[1]['images']); names[0] = self.bank[0]['images'][0]['path']
+                    self.svm[1]['images'] = repr(names); self.distance[1]['images'] = repr(names[::-1])
+                self.write_sources()
+                with self.assertRaises((ValueError, KeyError)):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+        self.svm, self.distance, self.bank = originals; self.write_sources()
+
+
 class MMLUProAuditTests(unittest.TestCase):
     def setUp(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _mmlupro

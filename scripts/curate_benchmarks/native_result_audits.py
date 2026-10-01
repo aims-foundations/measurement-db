@@ -27693,11 +27693,180 @@ def _mmlupro(directory, tables, metadata, source_records=None):
                 raw_only_summary_files=len(summaries), **observations)
 
 
+def _mochi_source_records(directory):
+    """Read native CSV cells and image bytes independently of the builder's joins."""
+    import ast
+    import csv
+    import hashlib
+    import math
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    source_files = ['github/assets/benchmark.csv', 'github/assets/df_behavior_wdistance.csv']
+    image_file = 'hf/data/train-00000-of-00001.parquet'
+    bank, image_bytes = {}, {}
+    for position, record in enumerate(pq.read_table(raw / image_file).to_pylist()):
+        key = ('hvm' if record['dataset'] == 'majaj' else record['dataset']), record['trial']
+        _check(key not in bank, True, 'MOCHI unique native image-set identifiers')
+        names = [image['path'] for image in record['images']]
+        _check(len(names), record['n_objects'], 'MOCHI original image count')
+        _check(len(names) in (3, 4) and len(set(names)) == len(names), True, 'MOCHI distinct original images')
+        _check(type(record['oddity_index']) is int and 0 <= record['oddity_index'] < len(names),
+               True, 'MOCHI image-bank reference index')
+        for image in record['images']:
+            _check(isinstance(image['bytes'], bytes) and image['bytes'].startswith(b'\x89PNG\r\n\x1a\n'),
+                   True, 'MOCHI original PNG payload')
+            if image['path'] in image_bytes:
+                _check(image_bytes[image['path']], image['bytes'], 'MOCHI repeated filename retains exact bytes')
+            image_bytes[image['path']] = image['bytes']
+        bank[key] = dict(position=position, record=record, names=names)
+    records, observations, by_task = {}, {}, {}
+    aliases = dict(familiar_objects_complex='familiar_hisim', familiar_objects_simple='familiar_lowsim',
+                   greebles_complex='abstract_hisim', greebles_simple='abstract_lowsim')
+    metrics = {'distance', 'cityblock', 'cosine', 'euclidean', 'l1', 'l2', 'manhattan',
+               'seuclidean', 'correlation', 'minkowski', 'chebyshev', 'braycurtis', 'canberra'}
+    for filename in source_files:
+        with (raw / filename).open(newline='') as stream:
+            reader = csv.DictReader(stream)
+            _check(len(reader.fieldnames), len(set(reader.fieldnames)), 'MOCHI unique original CSV columns')
+            for position, record in enumerate(reader):
+                key = record['dataset'], record['trial']
+                _check((filename, key) not in by_task, True, 'MOCHI unique task per native result table')
+                _check(key in bank, True, 'MOCHI native task has original images')
+                names = ast.literal_eval(record['images'])
+                _check(isinstance(names, list) and len(set(names)) == len(names), True, 'MOCHI original image list')
+                index = int(record['oddity_index'])
+                _check(0 <= index < len(names), True, 'MOCHI native reference is in range')
+                original = bank[key]
+                _check(set(names), set(original['names']), 'MOCHI matching original image set')
+                _check(names[index], original['names'][original['record']['oddity_index']],
+                       'MOCHI same reference image after recorded permutation')
+                _check(aliases.get(record['condition'], record['condition']), original['record']['condition'],
+                       'MOCHI documented condition aliases')
+                if filename == source_files[0]:
+                    _check(names, original['names'], 'MOCHI SVM order matches the original image bank')
+                    _check(math.isclose(float(record['dinov2-giant_svm_avg']), original['record']['DINOv2G_avg'],
+                           rel_tol=0, abs_tol=1e-12), True, 'MOCHI duplicated DINOv2-G estimate agrees')
+                    columns = [name for name in record if name.endswith('_svm_avg')]
+                else:
+                    columns = [name for name in record if name.startswith('dino_') and name.endswith('_avg')]
+                    _check(set(columns), {'dino_' + metric + '_avg' for metric in metrics},
+                           'MOCHI all twelve distances and their pooled estimate')
+                    mean = sum(float(record['dino_' + metric + '_avg']) for metric in metrics - {'distance'}) / 12
+                    _check(math.isclose(mean, float(record['dino_distance_avg']), rel_tol=0, abs_tol=1e-12),
+                           True, 'MOCHI distance pooled estimate is not a cosine-only result')
+                _check(bool(columns), True, 'MOCHI nonempty native model score columns')
+                signature = (record['dataset'], record['condition'], index,
+                             tuple(hashlib.sha256(image_bytes[name]).hexdigest() for name in names))
+                coordinate = filename, position
+                records[coordinate] = dict(native=record, signature=signature, image_row=original['position'])
+                by_task[filename, key] = record
+                for column in columns:
+                    score = float(record[column])
+                    _check(math.isfinite(score) and -0.5 <= score <= 1, True, 'MOCHI finite normalized native estimate')
+                    observations[filename, position, column] = score
+        _check({key for source, key in by_task if source == filename}, set(bank),
+               'MOCHI complete image-set coverage in each original result table')
+    for key in bank:
+        _check(float(by_task[source_files[0], key]['dino_distance_avg']),
+               float(by_task[source_files[1], key]['dino_distance_avg']), 'MOCHI duplicate pooled exports agree')
+    _check(bool(observations), True, 'MOCHI native measurements exist')
+    return dict(records=records, observations=observations, images=image_bytes, image_sets=len(bank), image_file=image_file)
+
+
+def _mochi(directory, tables, metadata, source_records=None):
+    """Check all native score, model, image-order and reference associations."""
+    import hashlib
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _mochi_source_records(directory) if source_records is None else source_records
+    for name, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'),
+                      ('traces', 'response_id'), ('assets', 'asset_id')]:
+        _check(tables[name][key].is_unique, True, 'MOCHI unique ' + name + ' keys')
+    _check(len(tables['benchmarks']), 1, 'MOCHI one benchmark')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'MOCHI normalized accuracy scale')
+    _check(metadata['benchmark']['response_scale'], dict(kind='interval', min=-0.5, max=1., direction='higher_is_better'),
+           'MOCHI below-chance grades remain representable')
+    assets = {hashlib.sha256(payload).hexdigest(): payload for payload in source['images'].values()}
+    _check(set(tables['assets'].asset_id), set(assets), 'MOCHI exact native image payload set')
+    for asset in tables['assets'].itertuples():
+        _check(asset.data == assets[asset.asset_id] and asset.byte_size == len(assets[asset.asset_id]),
+               True, 'MOCHI exact original bytes, without re-encoding')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = {row.response_id: row for row in tables['responses'].itertuples()}
+    _check(len(responses), len(source['observations']), 'MOCHI every native estimate counted once')
+    _check(set(tables['traces'].response_id), set(responses), 'MOCHI complete trace association')
+    first, trial_numbers, trial_counts = {}, {}, Counter()
+    for key in source['observations']:
+        record = source['records'][key[:2]]
+        first.setdefault(record['signature'], record['native'])
+        trial_counts[key[2], record['signature']] += 1
+        trial_numbers[key] = trial_counts[key[2], record['signature']]
+    seen, used_items, used_subjects = Counter(), {}, {}
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        key = trace['source_file'], trace['source_row'], trace['score_column']
+        _check(type(key[1]) is int and key in source['observations'], True, 'MOCHI original score coordinates')
+        record = source['records'][key[:2]]
+        _check(trace, dict(source_file=key[0], source_row=key[1], score_column=key[2], native_record=record['native'],
+               image_source_file=source['image_file'], image_source_row=record['image_row']),
+               'MOCHI full unmodified source row and correct image-bank association')
+        seen[key] += 1
+        response = responses[trace_row.response_id]
+        _check(response.response, source['observations'][key], 'MOCHI original float64 estimate, without clipping')
+        _check(response.trial, trial_numbers[key], 'MOCHI source occurrence count, not invented repetitions')
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, 'MOCHI no invented occasion settings')
+        model, readout, suffix = key[2].rsplit('_', 2)
+        subject = subjects[response.subject_id]
+        _check(subject['display_name'], model, 'MOCHI literal source model label')
+        _check(subject['harness'], 'MOCHI', 'MOCHI recorded evaluation framework')
+        features = dict(readout=readout, statistic='normalized_average_accuracy', source_column=key[2])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)),
+               'MOCHI distinct model/readout/statistic configuration')
+        if response.subject_id in used_subjects:
+            _check(used_subjects[response.subject_id], key[2], 'MOCHI different readouts remain distinct')
+        used_subjects[response.subject_id] = key[2]
+        signature = record['signature']
+        dataset, condition, reference, image_hashes = signature
+        item = items[response.item_id]
+        manifest = [dict(asset_id=value, path=f'image_{index}.png', media_type='image/png', role='input', ordinal=index + 1)
+                    for index, value in enumerate(image_hashes)]
+        _check(json.loads(item['asset_manifest']), manifest, 'MOCHI exact recorded image order and neutral filenames')
+        _check(json.loads(item['content']), dict(instruction=metadata['build']['parameters']['labels']['instruction'],
+               images=[value['path'] for value in manifest]), 'MOCHI task input contains images without reference labels')
+        _check(item['item_features'], features_string(canonicalize_features(dict(dataset=dataset, condition=condition))),
+               'MOCHI original source dataset and condition')
+        _check(item['raw_item_id'], first[signature]['dataset'] + '/' + first[signature]['trial'], 'MOCHI original task alias')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=str(reference), rule=metadata['grading']['rule']),
+               'MOCHI zero-based reference corresponds to stored image order')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], 'exact_matcher', 'MOCHI native index-comparison protocol')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['native'], 'MOCHI released protocol description')
+        if response.item_id in used_items:
+            _check(used_items[response.item_id], signature, 'MOCHI distinct recorded stimuli remain distinct')
+        used_items[response.item_id] = signature
+    _check(seen, Counter({key: 1 for key in source['observations']}), 'MOCHI complete coverage without duplicated exports')
+    _check(set(used_subjects), set(subjects), 'MOCHI exact source subject set')
+    _check(Counter(used_subjects.values()), Counter({key[2]: 1 for key in source['observations']}), 'MOCHI exact configuration mapping')
+    _check(set(used_items), set(items), 'MOCHI exact evaluated item set')
+    _check(Counter(used_items.values()), Counter({value['signature']: 1 for value in source['records'].values()}),
+           'MOCHI canonical items preserve source image orders and conditions')
+    return dict(source_image_sets=source['image_sets'], source_subjects=len(subjects), source_items=len(items),
+                source_responses=len(responses), source_traces=len(tables['traces']), source_assets=len(assets),
+                source_negative_estimates=sum(score < 0 for score in source['observations'].values()),
+                corroborating_pooled_exports=source['image_sets'], corroborating_giant_exports=source['image_sets'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'mochi':
+        return _mochi(directory, tables, metadata)
     if directory.name == 'mmlupro':
         return _mmlupro(directory, tables, metadata)
     if directory.name == 'wildvision':
