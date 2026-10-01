@@ -1,0 +1,3 @@
+- Preserve every original harness record and archived Arena-Hard generation, with exact export coordinates, complete prompts/outputs and recorded model configurations. Source occurrences are not necessarily independent executions; matching answer text alone does not establish duplicate trials.
+- Keep all published GSM8K/MMLU grades unchanged. Restore ungraded Arena-Hard records as null and retain MMLU likelihoods and telemetry in traces; no model or judge is executed.
+- Older judgment inputs record only task text and filename-level model/precision labels. Keep missing runtime settings unknown, preserve planned grading inputs, and decode serialized patterns without compiling or applying them.

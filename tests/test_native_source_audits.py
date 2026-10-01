@@ -29,6 +29,125 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _multi
 from measurement_db.build_base import _tables
 
 
+class MoECAPAuditTests(unittest.TestCase):
+    def setUp(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _moe_cap
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'moe_cap'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/moe_cap/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/moe_cap/build.py'))['MoECAP']
+        self.audit = _moe_cap
+        baseline = dict(model_id='baseline', choices=[dict(turns=[dict(content='An original baseline answer.')])])
+        prompt = 'An original few-shot example.\n' * 700 + 'A target question\nAnswer:'
+        mmlu = dict(doc_id=0, doc=dict(question='A target question', choices=['A', 'B', 'C', 'D'], answer=1, subject='test'),
+            target=1, arguments=[[prompt, ' ' + letter] for letter in 'ABCD'],
+            resps=[[[[-3., False], .1]], [[[-1., False], .1]], [[[-4., False], .1]], [[[-5., False], .1]]],
+            filtered_resps=[[-3., False], [-1., False], [-4., False], [-5., False]], acc=1.)
+        wrong = copy.deepcopy(mmlu); wrong.update(doc_id=1, target=2, acc=0.); wrong['doc']['answer'] = 2
+        gsm = dict(doc_id=0, doc=dict(question='What is 1+1?', answer='One plus one is two. #### 2'),
+            target='One plus one is two. #### 2', arguments=[['Question: What is 1+1?\nAnswer:', {'temperature': 0.}]],
+            resps=[[['A full answer.\n' * 2000 + '#### 2', .1]]], filtered_resps=[['2', .1]], exact_match=1., end_to_end_time=float('nan'))
+        arena = dict(doc_id=0, doc=dict(question_id='q0', content='An original instruction.', model_answer=baseline), target='q0',
+            arguments=[['An original instruction.\n', {'max_gen_toks': 100}]], resps=[[['An original answer.', .1]]],
+            filtered_resps=[['An original answer.', .1]], score=-1)
+        self.export = dict(config=dict(model_name='model-a', inference_framework='engine-a', model_args='dtype=bfloat16', batch_size=1),
+            git_hash='abc123', upper_git_hash=None, configs={task:dict(output_type=kind, num_fewshot=5)
+                for task,kind in [('mmlu_test','multiple_choice'),('gsm8k_custom','generate_until'),('arena_hard','generate_until')]},
+            samples=dict(mmlu_test=[mmlu,wrong],gsm8k_custom=[gsm],arena_hard=[arena]))
+        import re
+        self.judgment_inputs = [dict(question=dict(question_id=f'q{i}', content=f'Original instruction {i}', model_answer=baseline),
+            answer='An original answer.', reference=None, baseline_answer=baseline,
+            configs=dict(judge_model='planned-judge', pairwise=True), endpoint_dict={'endpoints': []},
+            regex_pattern=re.compile(r'\[\[([^\]]+)\]\]')) for i in range(2)]
+        self.write_sources()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source',str(self.directory / 'raw'),
+                '--output',str(self.directory.parent / 'tables')])
+        self.frames = {p.stem:pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def write_sources(self):
+        import pickle
+        for name, size in [('one.json',1),('two.json',8)]:
+            data = copy.deepcopy(self.export); data['config']['batch_size'] = size
+            path = self.directory / 'raw/results/model' / name; path.parent.mkdir(parents=True,exist_ok=True)
+            path.write_text(json.dumps(data))
+        for precision in ['bf16','4bit']:
+            path = self.directory / 'raw/legacy_harness/arena_hard_results' / f'qwen-{precision}-judgment_kwargs.pkl'
+            path.parent.mkdir(parents=True,exist_ok=True); path.write_bytes(pickle.dumps(self.judgment_inputs,protocol=4))
+
+    def test_complete_requests_outputs_unknown_grades_and_configurations(self):
+        expected = dict(source_responses=12, source_traces=12, source_subjects=4, source_items=6,
+            source_harness_exports=2, source_judgment_exports=2, source_mmlu_records=4, source_gsm8k_records=2,
+            source_arena_records=6, source_graded_records=6, source_ungraded_records=6, source_successes=4)
+        self.assertEqual(self.audit(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(self.audit(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        traces = [json.loads(value) for value in self.frames['traces'].trace]
+        gsm = next(row for row in traces if row['source_task']=='gsm8k_custom')
+        self.assertEqual(gsm['native_record']['end_to_end_time'], {'nonfinite_float':'nan'})
+        judge = next(row for row in traces if row['source_file'].endswith('.pkl'))
+        self.assertEqual(judge['native_record']['regex_pattern']['stored_type'],'re._compile')
+
+    def test_corrupted_associations_and_silently_dropped_attempts_are_rejected(self):
+        for change in ['invent_grade','flip_grade','drop_ungraded','duplicate_response','drop_trace','model',
+                       'configuration','serving_framework','prompt','continuations','reference','grading_scale',
+                       'task_config','raw_alias','source_file','source_task','source_row','clip_trace','trial','export_provenance','input_scope']:
+            with self.subTest(change=change):
+                tables = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                if change=='invent_grade':tables['responses'].loc[tables['responses'].response.isna(),'response']=0.
+                elif change=='flip_grade':tables['responses'].loc[tables['responses'].response.eq(1),'response']=0.
+                elif change=='drop_ungraded':tables['responses']=tables['responses'].loc[tables['responses'].response.notna()].copy()
+                elif change=='duplicate_response':tables['responses']=pd.concat([tables['responses'],tables['responses'].iloc[:1]])
+                elif change=='drop_trace':tables['traces']=tables['traces'].iloc[1:].copy()
+                elif change=='model':tables['subjects'].loc[0,'display_name']='wrong-model'
+                elif change=='configuration':tables['subjects'].loc[0,'subject_features_extra']='batch_size=99'
+                elif change=='serving_framework':tables['subjects'].loc[0,'harness']='invented-engine'
+                elif change in ['prompt','continuations']:
+                    value=json.loads(tables['items'].loc[0,'content'])
+                    if change=='prompt':value['prompt']='clipped prompt'
+                    else:value['continuations'].reverse()
+                    tables['items'].loc[0,'content']=json.dumps(value)
+                elif change in ['reference','grading_scale']:
+                    value=json.loads(tables['items'].loc[0,'grading_criterion'])
+                    if change=='reference':value['reference_answer']='99'
+                    else:value['response_scale']={'kind':'interval','min':None,'max':None}
+                    tables['items'].loc[0,'grading_criterion']=json.dumps(value)
+                elif change=='task_config':
+                    value=json.loads(tables['items'].loc[0,'verifier']);value['spec']='{}'
+                    tables['items'].loc[0,'verifier']=json.dumps(value)
+                elif change=='raw_alias':tables['items'].loc[0,'raw_item_id']='wrong-task'
+                elif change in ['source_file','source_task','source_row','clip_trace']:
+                    value=json.loads(tables['traces'].loc[0,'trace'])
+                    if change=='clip_trace':value['native_record']['resps']=[]
+                    elif change=='source_row':value['source_row']=999
+                    else:value[change]='wrong-source'
+                    tables['traces'].loc[0,'trace']=json.dumps(value)
+                elif change=='trial':tables['responses'].loc[0,'trial']=99
+                elif change=='export_provenance':tables['responses'].loc[0,'test_condition']='task=mmlu_test'
+                elif change=='input_scope':tables['items'].loc[0,'item_features']='input_scope=invented'
+                with self.assertRaises((ValueError,KeyError,RuntimeError)):
+                    self.audit(self.directory,tables,self.metadata)
+
+    def test_changed_source_formats_or_grading_require_review(self):
+        original = copy.deepcopy(self.export)
+        for change in ['nonbinary_grade','new_arena_grade','missing_model','unknown_task','missing_continuation','different_prompt','invalid_generation_request']:
+            with self.subTest(change=change):
+                self.export = copy.deepcopy(original)
+                if change=='nonbinary_grade':self.export['samples']['mmlu_test'][0]['acc']=float('inf')
+                elif change=='new_arena_grade':self.export['samples']['arena_hard'][0]['score']=1
+                elif change=='missing_model':del self.export['config']['model_name']
+                elif change=='unknown_task':self.export['samples']['new_task']=[]
+                elif change=='missing_continuation':self.export['samples']['mmlu_test'][0]['arguments'].pop()
+                elif change=='different_prompt':self.export['samples']['mmlu_test'][0]['arguments'][1][0]='different prompt'
+                elif change=='invalid_generation_request':self.export['samples']['gsm8k_custom'][0]['arguments'][0][1]='unknown options'
+                self.write_sources()
+                with self.assertRaises((ValueError,KeyError)):
+                    self.builder(str(self.directory/'build.py')).build_tables()
+        self.export=original;self.write_sources()
+
+
 class MochiAuditTests(unittest.TestCase):
     def setUp(self):
         from PIL import Image

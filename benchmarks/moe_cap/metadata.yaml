@@ -1,0 +1,112 @@
+benchmark:
+  name: MoE-CAP
+  description: Released requests, outputs and correctness results for mixture-of-experts models under different serving configurations.
+  testing_condition: >-
+    Import all records from the published harness exports and archived Arena-Hard judgment-input files. Harness
+    records retain full recorded prompts, ordered likelihood continuations, model configuration and code revisions.
+    Older judgment inputs supply task text, model-output strings and filename-level model/precision labels; their
+    serving framework, exact model checkpoint and full rendered request are not recorded. These gaps are not filled
+    using a text match against a later export. Retain original export coordinates: some question/output pairs occur
+    in multiple files, and source occurrences do not establish independent executions. Export counts are therefore
+    not counts of independent model trials. GSM8K exact_match and MMLU acc are imported unchanged. All Arena-Hard
+    score=-1 placeholders and unjudged generations remain null; a planned judge configuration is not a completed
+    judgment. Traces preserve complete original records, including likelihoods and timing telemetry. No model,
+    evaluator or external judge is run during curation. Serialized patterns are preserved as inert data.
+  paper_url: https://arxiv.org/abs/2505.11415
+  data_source_url: https://huggingface.co/datasets/auto-cap/results
+  subject_type: model
+  item_type: question
+  license: Apache-2.0 (original HF dataset card and author repository LICENSE); constituent tasks retain their upstream terms.
+  citation: >-
+    Jiang, Yinsicheng et al. (2025). MoE-CAP: Benchmarking Cost, Accuracy and Performance of Sparse
+    Mixture-of-Experts Systems. NeurIPS Datasets and Benchmarks. arXiv:2505.11415.
+  tags: [mixture_of_experts, llm_serving, systems_benchmark]
+  modality: [text]
+  domain: [mathematics, knowledge, instruction_following]
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-12
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results/**/*.json
+      judgment_inputs: legacy_harness/arena_hard_results/*.pkl
+    labels:
+      judgment_suffix: -judgment_kwargs.pkl
+      arena_task: arena_hard
+    grade_fields:
+      gsm8k: exact_match
+      mmlu: acc
+      arena: score
+    judgment_fields:
+      question: question
+      answer: answer
+      reference: reference
+      baseline_answer: baseline_answer
+      configs: configs
+      endpoint_dict: endpoint_dict
+      regex_pattern: regex_pattern
+grading:
+  verifiers:
+    gsm8k:
+      rule: >-
+        Import the original exact_match field. The recorded task configuration defines answer extraction and
+        normalization against the released solution, including its final #### answer. Do not parse the generation
+        again or choose a different filter when the exporter supplies only one per-record result.
+      response_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: higher_is_better
+        meanings:
+          '0': Recorded extracted answer does not match the reference.
+          '1': Recorded extracted answer matches the reference.
+      source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/blob/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b/src/backend/tasks/gsm8k/gsm8k-custom.yaml
+      implementation: Original lm-evaluation-harness exact_match field and stored task/filter configuration.
+    mmlu:
+      rule: >-
+        Import the original acc field for the correct option under the recorded likelihood-based task protocol.
+        Preserve the full prompt, all four ordered continuations and their recorded likelihoods. The original target
+        is the zero-based correct option index. Do not replace the released verdict with a new scorer.
+      response_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: higher_is_better
+        meanings:
+          '0': Recorded selected option is incorrect.
+          '1': Recorded selected option is correct.
+      source: https://huggingface.co/datasets/auto-cap/results/tree/3a710349b806e39b7ff7e07cd52b1964d7dddc4b
+      implementation: Original lm-evaluation-harness acc field and each run's embedded MMLU task configuration.
+    arena:
+      rule: >-
+        Arena-Hard intends a pairwise judgment against the recorded baseline answer. The captured wrapper saves
+        judgment inputs and returns -1 without executing the judge. Neither these placeholders nor the archived
+        judgment-input files contain an observed per-item grade. Store response=null. No numeric per-item scale is
+        established by these ungraded exports, so numeric bounds and direction remain unspecified; do not invent
+        a binary win/loss label or substitute an aggregate Elo or win-rate statistic.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+      source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/blob/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b/src/backend/tasks/arena_hard/task.py
+      implementation: ArenaHard.process_results saves planned judge arguments and returns the ungraded -1 sentinel.
+      judge_status: Planned judge only; no judge execution or verdict is established for the imported records.
+sources:
+  upstream:
+  - name: original_harness_exports
+    url: https://huggingface.co/datasets/auto-cap/results
+    revision: 3a710349b806e39b7ff7e07cd52b1964d7dddc4b
+    files:
+    - match: .*\.json|README\.md
+      path: results/{path}
+  - name: original_judgment_inputs_and_protocol
+    url: https://github.com/Auto-CAP/open-moe-llm-leaderboard
+    revision: b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    files:
+    - match: arena_hard_results/.*\.pkl|src/backend/tasks/arena_hard/(?:[^/]+\.py|configs/[^/]+\.yaml|arena_hard\.yaml)|src/backend/tasks/gsm8k/gsm8k-custom\.yaml|src/backend/tasks/eval_metrics\.py|src/backend/(?:manage_requests|run_eval_suite|hflm_with_measurement|vllm)\.py|requirements\.txt|LICENSE|README\.md|judgement\.py
+      path: legacy_harness/{path}

@@ -27860,11 +27860,174 @@ def _mochi(directory, tables, metadata, source_records=None):
                 corroborating_pooled_exports=source['image_sets'], corroborating_giant_exports=source['image_sets'])
 
 
+def _moe_cap_source_records(directory, metadata):
+    """Read all released observations, including ungraded legacy judge inputs."""
+    import unicodedata
+    from urllib.parse import quote
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    records, configurations, counts = {}, {}, Counter()
+    raw = directory / 'raw'
+    exports = []
+    for path in sorted((raw / 'results').rglob('*.json')):
+        data = json.loads(path.read_text())
+        name = str(path.relative_to(raw))
+        config = data['config']
+        features = dict(record_origin='harness_export', run_configuration=quote(json.dumps(config, sort_keys=True), safe=''),
+            evaluator_revision=data['git_hash'], runner_revision=data.get('upper_git_hash', 'unrecorded'))
+        configurations[name] = dict(model=config['model_name'], harness=config['inference_framework'], features=features)
+        for task, values in data['samples'].items():
+            for position, record in enumerate(values):
+                exports.append((name, task, position, record, data['configs'][task], 'recorded_harness_request'))
+        counts['source_harness_exports'] += 1
+    for path in sorted((raw / 'legacy_harness/arena_hard_results').glob('*.pkl')):
+        name = str(path.relative_to(raw))
+        label = path.name.removesuffix('-judgment_kwargs.pkl')
+        model, precision = label.rsplit('-', 1)
+        configurations[name] = dict(model=model, harness=None, features=dict(record_origin='judgment_input_export',
+            recorded_precision=precision, published_configuration=label))
+        for position, record in enumerate(native_json_value(read_native_pickle(path))):
+            _check(set(record), {'question', 'answer', 'reference', 'baseline_answer', 'configs', 'endpoint_dict', 'regex_pattern'},
+                   'MoE-CAP original ungraded judgment-input fields')
+            _check(isinstance(record['answer'], str), True, 'MoE-CAP complete archived generation string')
+            exports.append((name, 'arena_hard', position, record, record['configs'], 'released_task_text'))
+        counts['source_judgment_exports'] += 1
+    for name, task, position, record, config, scope in exports:
+        family = task.split('_')[0]
+        _check(family in {'mmlu', 'gsm8k', 'arena'}, True, 'MoE-CAP recognized original task')
+        if scope == 'recorded_harness_request':
+            doc = record['doc']
+            arguments = record['arguments']
+            if family == 'mmlu':
+                _check(len(arguments) == 4 and all(len(arg) == 2 and all(isinstance(v, str) for v in arg)
+                       for arg in arguments) and len({arg[0] for arg in arguments}) == 1,
+                       True, 'MoE-CAP complete original likelihood requests')
+                stimulus = dict(prompt=arguments[0][0], continuations=[arg[1] for arg in arguments])
+                _check(type(record['target']) is int and 0 <= record['target'] < 4, True, 'MoE-CAP original option target')
+            else:
+                _check(len(arguments) == 1 and len(arguments[0]) == 2 and isinstance(arguments[0][0], str)
+                       and isinstance(arguments[0][1], dict), True, 'MoE-CAP complete original generation request')
+                stimulus = dict(prompt=arguments[0][0])
+            alias = task + '::' + str(record['doc_id'])
+            if family == 'arena':
+                _check(record['score'], -1, 'MoE-CAP original ungraded sentinel')
+                grade = None
+            else:
+                value = record['acc' if family == 'mmlu' else 'exact_match']
+                _check(type(value) in (int, float) and value in (0, 1), True, 'MoE-CAP released binary correctness')
+                grade = float(value)
+        else:
+            doc = record['question']; stimulus = dict(task=doc['content']); grade = None
+            alias = task + '::' + doc['question_id']
+        protocol = metadata['grading']['verifiers'][family]
+        criterion = dict(rule=protocol['rule'], response_scale=protocol['response_scale'])
+        if family == 'arena':
+            criterion['rule'] = json.dumps(dict(description=criterion['rule'], baseline_answer=doc['model_answer']),
+                ensure_ascii=False, allow_nan=False)
+        else:
+            criterion['reference_answer'] = str(record['target'])
+        content = json.dumps(stimulus, ensure_ascii=False, allow_nan=False)
+        feature_text = features_string(canonicalize_features(dict(task=task, input_scope=scope)))
+        spec = json.dumps(dict(protocol=protocol, recorded_task_configuration=native_json_value(config)),
+                          sort_keys=True, ensure_ascii=False, allow_nan=False)
+        criterion_text = canonical_grading_criterion(criterion)
+        signature = (unicodedata.normalize('NFC', content).strip(), feature_text, criterion_text, spec,
+                     'judge' if family == 'arena' else 'exact_matcher')
+        coordinate = name, task, position
+        _check(coordinate not in records, True, 'MoE-CAP unique original coordinates')
+        records[coordinate] = dict(native=native_json_value(record), grade=grade, content=content, raw_alias=alias,
+            features=feature_text, criterion=criterion, spec=spec, signature=signature, scope=scope)
+        counts['source_' + family + '_records'] += 1
+        counts['source_graded_records'] += grade is not None
+        counts['source_ungraded_records'] += grade is None
+        counts['source_successes'] += grade == 1
+    _check(bool(records), True, 'MoE-CAP original response records exist')
+    return dict(records=records, configurations=configurations, counts=dict(counts))
+
+
+def _moe_cap(directory, tables, metadata, source_records=None):
+    """Check every original source record and its stimulus/configuration association."""
+    from urllib.parse import quote
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+
+    source = _moe_cap_source_records(directory, metadata) if source_records is None else source_records
+    for name, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][key].is_unique, True, 'MoE-CAP unique ' + name + ' identifiers')
+    _check(len(tables['benchmarks']), 1, 'MoE-CAP one benchmark')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), {'kind': 'mixed'}, 'MoE-CAP explicit task-specific grading scales')
+    _check(len(tables.get('assets', [])), 0, 'MoE-CAP no invented attachments')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = {row.response_id: row for row in tables['responses'].itertuples()}
+    _check(len(responses), len(source['records']), 'MoE-CAP complete published-record count')
+    _check(set(tables['traces'].response_id), set(responses), 'MoE-CAP complete trace linkage')
+    first, expected_trials, trial_counts, expected_subjects = {}, {}, Counter(), {}
+    for key, record in source['records'].items():
+        configuration = source['configurations'][key[0]]
+        subject_signature = (configuration['model'], configuration['harness'],
+            features_string(canonicalize_features(configuration['features'])))
+        expected_subjects[key[0]] = subject_signature
+        first.setdefault(record['signature'], record)
+        trial_key = subject_signature, record['signature'], key[:2]
+        trial_counts[trial_key] += 1
+        expected_trials[key] = trial_counts[trial_key]
+    seen, used_items, used_subjects = Counter(), {}, {}
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        key = trace['source_file'], trace['source_task'], trace['source_row']
+        _check(type(key[2]) is int and key in source['records'], True, 'MoE-CAP correct source coordinates')
+        record = source['records'][key]
+        _check(trace, dict(source_file=key[0], source_task=key[1], source_row=key[2], native_record=record['native']),
+               'MoE-CAP unmodified complete prompt/output/likelihood/telemetry record')
+        seen[key] += 1
+        response = responses[trace_row.response_id]
+        _check(None if pd.isna(response.response) else response.response, record['grade'], 'MoE-CAP native grade or ungraded attempt')
+        _check(response.trial, expected_trials[key], 'MoE-CAP source occurrence numbering')
+        _check(response.test_condition, 'source_export=' + quote(key[0], safe=' /-._') + ';task=' + key[1],
+               'MoE-CAP export provenance without invented independent runs')
+        _check(pd.isna(response.interactors), True, 'MoE-CAP no invented interacting model')
+        model, harness, settings = expected_subjects[key[0]]
+        subject = subjects[response.subject_id]
+        _check(subject['display_name'], model, 'MoE-CAP literal recorded model label')
+        _check(None if pd.isna(subject['harness']) else subject['harness'], harness, 'MoE-CAP recorded serving framework or unknown')
+        _check(subject['subject_features_extra'], settings, 'MoE-CAP complete recorded configuration and revisions')
+        if response.subject_id in used_subjects:
+            _check(used_subjects[response.subject_id], expected_subjects[key[0]], 'MoE-CAP distinct source configurations')
+        used_subjects[response.subject_id] = expected_subjects[key[0]]
+        item = items[response.item_id]
+        signature = record['signature']; first_record = first[signature]
+        _check(item['content'], first_record['content'], 'MoE-CAP exact original input, without prompt truncation')
+        _check(item['raw_item_id'], first_record['raw_alias'], 'MoE-CAP original task alias')
+        _check(item['item_features'], record['features'], 'MoE-CAP task and available-input scope')
+        _check(item['grading_criterion'], canonical_grading_criterion(record['criterion']), 'MoE-CAP original target and task-specific scale')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], signature[-1], 'MoE-CAP native grader type')
+        _check(verifier['spec'], record['spec'], 'MoE-CAP original task configuration and planned/unexecuted judge')
+        _check(pd.isna(item['asset_manifest']), True, 'MoE-CAP no invented item attachments')
+        if response.item_id in used_items:
+            _check(used_items[response.item_id], signature, 'MoE-CAP correct input/grading association')
+        used_items[response.item_id] = signature
+    _check(seen, Counter({key: 1 for key in source['records']}), 'MoE-CAP complete source record coverage')
+    _check(set(used_items), set(items), 'MoE-CAP exact observed item set')
+    _check(Counter(used_items.values()), Counter({row['signature']: 1 for row in source['records'].values()}),
+           'MoE-CAP no accidental item collapse or duplication')
+    _check(set(used_subjects), set(subjects), 'MoE-CAP exact recorded subject set')
+    _check(Counter(used_subjects.values()), Counter({value: 1 for value in expected_subjects.values()}),
+           'MoE-CAP configuration coverage without accidental merging')
+    return dict(source_responses=len(responses), source_traces=len(tables['traces']), source_subjects=len(subjects),
+                source_items=len(items), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'moe_cap':
+        return _moe_cap(directory, tables, metadata)
     if directory.name == 'mochi':
         return _mochi(directory, tables, metadata)
     if directory.name == 'mmlupro':

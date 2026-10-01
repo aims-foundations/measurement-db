@@ -74,6 +74,19 @@ def test_unknown_global_is_never_called(tmp_path, global_name):
         read_native_pickle(path)
 
 
+def test_serialized_regex_is_preserved_without_compilation(tmp_path, monkeypatch):
+    import re
+    pattern = re.compile(r"\[\[([^\]]+)\]\]", re.IGNORECASE)
+    path = tmp_path / "judgment_inputs.pkl"
+    path.write_bytes(pickle.dumps({"pattern": pattern}, protocol=4))
+    def forbidden(*args, **kwargs):
+        raise AssertionError("A native pattern must not be compiled")
+    monkeypatch.setattr(re, "_compile", forbidden)
+    restored = native_json_value(read_native_pickle(path))
+    assert restored["pattern"] == {"stored_type": "re._compile", "args": [pattern.pattern, pattern.flags],
+                                   "kwargs": {}, "state": None}
+
+
 def test_tensor_view_preserves_offset_and_stride():
     values = np.arange(12, dtype=np.int64)
     result = _tensor_view(values, 1, (2, 3), (6, 2), False, None)

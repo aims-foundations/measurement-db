@@ -51,6 +51,9 @@ class _DataUnpickler(pickle.Unpickler):
         }
         if (module, name) in records:
             return StoredRecord
+        if (module, name) == ("re", "_compile"):
+            # Preserve the recorded pattern/flags without compiling or applying it.
+            return type("StoredRegex", (StoredRecord,), {"source_type": "re._compile"})
         # These scientific objects remain inert records. In particular, never
         # import a serialized calculator or instantiate an upstream model.
         scientific_records = {
