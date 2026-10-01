@@ -1,5 +1,9 @@
 """Native-source audits must distinguish wrong grades, missing grades and clipped traces."""
 
+import contextlib
+import csv
+import io
+import runpy
 import gzip
 import json
 import sys
@@ -14,6 +18,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 from measurement_db.scripts.curate_benchmarks.batch2_audits import verify_batch2
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _os_harm as _audit_os_harm
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _workarena as _audit_workarena
+from measurement_db.build_base import _tables
 
 
 class NativeTrajectoryAuditTests(unittest.TestCase):
@@ -4489,6 +4495,111 @@ class PxploreNativeAuditTests(unittest.TestCase):
             path.write_text(json.dumps(records))
             with self.assertRaises(ValueError): _pxplore_sources(self.directory, self.metadata)
             path.write_text(original)
+
+
+class WorkArenaAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'workarena'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/workarena') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        annotations = [dict(annotator_name='X', benchmark='other', task_id='irrelevant',
+            model_name='not selected', exp_name='not selected', trajectory_success='Unsuccessful')]
+        for model in range(2):
+            for task in range(2):
+                agent = 'GenericAgent-setting-' + str(model)
+                experiment = agent + '_on_workarena.servicenow'
+                task_id = 'workarena.servicenow.task_' + str(task)
+                folder = self.directory / 'raw/cleaned/workarena' / agent / experiment
+                folder.mkdir(parents=True, exist_ok=True)
+                record = dict(benchmark='workarena', agent=agent, model='Shared model name', valid=True,
+                    experiment=experiment, goal='Actual task ' + str(task) + '\n',
+                    seed=99 if model == task == 1 else task,
+                    model_args=dict(model_name='Shared model name', temperature=model),
+                    flags=dict(vision=True), package_version='agentlab==0.3.0\n',
+                    summary_info=dict(cum_reward=task, err_msg=None),
+                    steps=[dict(action='def invalid(\n' + 'complete model output; ' * 2000, axtree='Original page')]*2)
+                (folder / (task_id + '.json')).write_text(json.dumps(record))
+                annotation = dict(annotator_name='A', benchmark='workarena', task_id=task_id,
+                    model_name=agent, exp_name=experiment,
+                    trajectory_success='Successful' if (model + task) % 2 else 'Unsuccessful')
+                annotations.append(annotation)
+                if model == task == 0:
+                    annotations.append(dict(annotation, annotator_name='B', trajectory_success='Successful'))
+        path = self.directory / 'raw/data/annotations.csv'
+        path.parent.mkdir(parents=True)
+        with path.open('w', newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=list(annotations[0]))
+            writer.writeheader()
+            writer.writerows(annotations)
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/workarena') / 'build.py'))['WorkArena']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source', str(self.directory/'raw'),
+                '--output', str(self.directory.parent/'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_original_ratings_configs_instances_and_complete_traces(self):
+        expected = dict(source_executions=4, source_subjects=2, source_items=3, source_responses=5,
+            source_traces=5, human_successes=3, human_failures=2, human_native_disagreements=3,
+            native_successes=2, native_failures=2, source_steps=8)
+        self.assertEqual(_audit_workarena(self.directory, self.frames, self.metadata), expected)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_audit_workarena(self.directory, shuffled, self.metadata), expected)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_corrupt_grades_and_associations_are_detected(self):
+        changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'drop', 'duplicate',
+            'model', 'configuration', 'harness', 'instruction', 'seed', 'raw_item_id', 'criterion', 'verifier',
+            'source_file', 'annotation_row', 'annotation', 'native_configuration', 'trace_clipping', 'missing_trace', 'scale']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,subjects,traces = [frames[name] for name in ['responses','items','subjects','traces']]
+                if change == 'score': responses.loc[0,'response'] = 1 - responses.loc[0,'response']
+                elif change == 'equal_sum_swap':
+                    a,b = responses.index[responses.response.eq(0)][0],responses.index[responses.response.eq(1)][0]
+                    responses.loc[[a,b],'response'] = [1.,0.]
+                elif change == 'subject': responses.loc[0,'subject_id'] = next(v for v in subjects.subject_id if v != responses.loc[0,'subject_id'])
+                elif change == 'item': responses.loc[0,'item_id'] = next(v for v in items.item_id if v != responses.loc[0,'item_id'])
+                elif change == 'trial': responses.loc[0,'trial'] = 0
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses,responses.iloc[:1]],ignore_index=True)
+                elif change == 'model': subjects.loc[0,'display_name'] = 'Guessed name'
+                elif change == 'configuration': subjects.loc[0,'subject_features_extra'] = '{}'
+                elif change == 'harness': subjects.loc[0,'harness'] = 'Wrong harness'
+                elif change == 'instruction': items.loc[0,'content'] = 'Invented task'
+                elif change == 'seed': items.loc[0,'item_features'] = '{}'
+                elif change == 'raw_item_id': items.loc[0,'raw_item_id'] = 'Other task'
+                elif change == 'criterion': items.loc[0,'grading_criterion'] = json.dumps(dict(reference_answer=None,rule='Wrong rule'))
+                elif change == 'verifier': items.loc[0,'verifier'] = json.dumps({**json.loads(items.loc[0,'verifier']),'judge':'wrong'})
+                elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+                elif change == 'scale': frames['benchmarks'].loc[0,'response_scale'] = json.dumps(dict(kind='interval',min=0,max=1))
+                else:
+                    trace = json.loads(traces.loc[0,'trace'])
+                    if change == 'source_file': trace['source_file'] = 'wrong.json'
+                    elif change == 'annotation_row': trace['annotation_row'] = 0
+                    elif change == 'annotation': trace['annotation']['annotator_name'] = 'Guessed annotator'
+                    elif change == 'native_configuration': trace['record']['model_args']['temperature'] = 99
+                    elif change == 'trace_clipping': trace['record']['steps'][0]['action'] = 'Clipped'
+                    traces.loc[0,'trace'] = json.dumps(trace)
+                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration)):
+                    _audit_workarena(self.directory, frames, self.metadata)
+
+    def test_unrecognized_human_labels_are_rejected(self):
+        path = self.directory/'raw/data/annotations.csv'
+        original = path.read_text()
+        for label in ['', 'Partially successful', '0.5']:
+            with self.subTest(label=label):
+                path.write_text(original.replace('Successful',label))
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory/'build.py')).build_tables()
+        path.write_text(original)
+
 
 
 if __name__ == "__main__":

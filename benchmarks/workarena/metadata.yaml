@@ -1,0 +1,73 @@
+benchmark:
+  name: WorkArena
+  description: Human assessments of released GenericAgent trajectories on ServiceNow tasks from WorkArena and WorkArena++.
+  testing_condition: >-
+    Import all WorkArena rows from AgentRewardBench's original annotation CSV, joined to their exact agent,
+    experiment and task trajectory. Successful maps to 1; Unsuccessful maps to 0. Retain repeated human ratings
+    rather than selecting one annotator. Trial numbers distinguish recorded ratings, not independent agent executions.
+    Automatic environment rewards remain in the complete traces and are not substituted for human judgments.
+    No models, graders or ServiceNow environments are executed.
+  paper_url: https://arxiv.org/abs/2403.07718
+  data_source_url: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+  subject_type: agent
+  item_type: task
+  license: >-
+    AgentRewardBench custom dataset terms: use must be lawful and respect third-party rights and applicable
+    third-party conditions; the source describes research use under applicable fair-use provisions.
+    Derivatives must retain those terms, captured in raw/README.md. The WorkArena code's Apache-2.0 license
+    is not asserted to license these separately released trajectories.
+  citation: >-
+    Drouin et al. (2024), WorkArena: How Capable Are Web Agents at Solving Common Knowledge Work Tasks?,
+    arXiv:2403.07718. Lu et al. (2025), AgentRewardBench: Evaluating Automatic Evaluations of Web Agent
+    Trajectories, arXiv:2504.08942.
+  tags: [agent, web_agent, human_evaluation]
+  modality: [text, gui_screenshot]
+  domain: [agents_and_tool_use]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    direction: higher_is_better
+    meanings: {'0': unsuccessful, '1': successful}
+  categorical: true
+  multi_single_turn: multi_turn
+  granularity: item
+  release_date: 2024-03
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      trajectories: cleaned/workarena/*/*/*.json
+      annotations: data/annotations.csv
+      benchmark_filter: workarena
+    labels:
+      harness: AgentRewardBench / AgentLab GenericAgent
+grading:
+  verifiers:
+    human:
+      judge: AgentRewardBench expert annotators
+      rule: The released human annotation assesses whether the trajectory successfully fulfilled its original task.
+      values: {Successful: 1.0, Unsuccessful: 0.0}
+      spec:
+        kind: released_human_annotation
+        source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench/blob/b6d17e646009d6cb63d5dd7be78807b680693f61/data/annotations.csv
+        field: trajectory_success
+        interpretation: Keep each original human rating and its anonymous annotator label in the trace; do not majority-vote or regrade.
+        publication: https://arxiv.org/abs/2504.08942
+sources:
+  upstream:
+  - name: released_records
+    url: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    revision: b6d17e646009d6cb63d5dd7be78807b680693f61
+    files:
+    - match: cleaned/workarena/[^/]+/[^/]+/[^/]+\.json
+      path: '{path}'
+    - match: README\.md|data/(?:annotations\.csv|workarena\.csv|complete_task_ids\.csv|workarena_l2\.task_ids\.json|splits\.csv)
+      path: '{path}'
+  - name: protocol_reference
+    url: https://github.com/McGill-NLP/agent-reward-bench
+    revision: 05899fcfe52c925978944a23920373b7a9c63740
+    files:
+    - match: README\.md|agent_reward_bench/(?:eval/(?:utils|metrics)\.py|trajectories\.py|processing/filter_workarena\.py)|scripts/(?:clean_processed_trajectories|convert_trajectories_to_json)\.py|apps/demo\.py
+      path: protocol/{path}

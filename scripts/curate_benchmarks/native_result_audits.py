@@ -26625,11 +26625,108 @@ def _os_harm(directory, tables, metadata):
     return observed
 
 
+def _workarena(directory, tables, metadata):
+    import csv
+    from collections import defaultdict
+    from functools import lru_cache
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    raw = directory / 'raw'
+    validate_dataset(tables, context='WorkArena source audit')
+    grading = metadata['grading']['verifiers']['human']
+    _check(len(tables.get('assets', [])), 0, 'WorkArena assets are external references')
+    _check(tables['benchmarks'].iloc[0].response_scale,
+        canonical_response_scale(metadata['benchmark']['response_scale']), 'WorkArena grade scale')
+    with (raw / 'data/annotations.csv').open(newline='') as stream:
+        annotations = {index: row for index, row in enumerate(csv.DictReader(stream)) if row['benchmark'] == 'workarena'}
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    native_paths = {str(path.relative_to(raw)) for path in (raw / 'cleaned/workarena').glob('*/*/*.json')}
+    seen, used_paths, subject_sources, item_sources = set(), set(), {}, {}
+    trial_groups, totals = defaultdict(list), Counter()
+
+    @lru_cache(maxsize=1)
+    def load_native(name):
+        return json.loads((raw / name).read_text())
+
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        _check(set(trace), {'source_file', 'record', 'annotation_file', 'annotation_row', 'annotation'}, 'WorkArena complete trace fields')
+        index = trace['annotation_row']
+        _check(type(index) is int and index in annotations and index not in seen, True, 'WorkArena unique original annotation row')
+        seen.add(index)
+        annotation = annotations[index]
+        _check(trace['annotation_file'], 'data/annotations.csv', 'WorkArena annotation source')
+        _check(trace['annotation'], annotation, 'WorkArena complete original annotation')
+        name = '/'.join(['cleaned', 'workarena', annotation['model_name'], annotation['exp_name'], annotation['task_id'] + '.json'])
+        _check(trace['source_file'], name, 'WorkArena exact source trajectory')
+        _check(name in native_paths, True, 'WorkArena released trajectory exists')
+        native = load_native(name)
+        _check(trace['record'], native, 'WorkArena complete original trajectory')
+        _check((native['benchmark'], native['agent'], native['experiment']),
+            ('workarena', annotation['model_name'], annotation['exp_name']), 'WorkArena source join keys')
+        response = responses[trace_row.response_id]
+        item, subject = items[response['item_id']], subjects[response['subject_id']]
+        _check(annotation['trajectory_success'] in ['Successful', 'Unsuccessful'], True, 'WorkArena original human grade')
+        value = float(annotation['trajectory_success'] == 'Successful')
+        _check(response['response'], value, 'WorkArena human grade rather than environment reward')
+        _check(item['content'], native['goal'], 'WorkArena actual instruction')
+        _check(item['raw_item_id'], annotation['task_id'], 'WorkArena task family identity')
+        features = dict(task_id=annotation['task_id'], task_seed=native['seed'])
+        _check(item['item_features'], features_string(canonicalize_features(features)), 'WorkArena recorded task seed')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=grading['rule']), 'WorkArena human grading criterion')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier['judge'], verifier['judged_by']),
+            ('judge', grading['judge'], 'human'), 'WorkArena human verifier identity')
+        _check(json.loads(verifier['spec']), grading['spec'], 'WorkArena original grading protocol')
+        configuration = {key: native[key] for key in ['agent', 'model', 'model_args', 'flags', 'package_version']}
+        _check(subject['display_name'], native['model'], 'WorkArena literal model identifier')
+        _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'WorkArena source harness')
+        subject_features = _features(subject['subject_features_extra'])
+        _check(set(subject_features), {'source_configuration'}, 'WorkArena recorded configuration field')
+        _check(json.loads(subject_features['source_configuration']), configuration, 'WorkArena complete recorded model configuration')
+        _check(pd.isna(item['asset_manifest']) and pd.isna(response['test_condition']) and pd.isna(response['interactors']),
+            True, 'WorkArena no invented assets, conditions or interactors')
+        definition = json.dumps(dict(goal=native['goal'], features=features), sort_keys=True)
+        subject_definition = json.dumps(configuration, sort_keys=True)
+        if response['item_id'] in item_sources:
+            _check(item_sources[response['item_id']], definition, 'WorkArena item definition stays consistent')
+        if response['subject_id'] in subject_sources:
+            _check(subject_sources[response['subject_id']], subject_definition, 'WorkArena subject definition stays consistent')
+        item_sources[response['item_id']] = definition
+        subject_sources[response['subject_id']] = subject_definition
+        trial_groups[response['subject_id'], response['item_id']].append(response['trial'])
+        totals['human_successes'] += int(value)
+        totals['human_failures'] += int(1 - value)
+        totals['human_native_disagreements'] += int(value != native['summary_info']['cum_reward'])
+        if name not in used_paths:
+            totals['native_successes'] += int(native['summary_info']['cum_reward'])
+            totals['native_failures'] += int(1 - native['summary_info']['cum_reward'])
+            totals['source_steps'] += len(native['steps'])
+            used_paths.add(name)
+    _check(seen, set(annotations), 'WorkArena all original human ratings retained exactly once')
+    _check(used_paths, native_paths, 'WorkArena all selected trajectories represented')
+    _check(len(subject_sources), len(set(subject_sources.values())), 'WorkArena distinct source configurations')
+    _check(len(subject_sources), len(subjects), 'WorkArena exact subject coverage')
+    _check(len(item_sources), len(set(item_sources.values())), 'WorkArena distinct native task definitions')
+    _check(len(item_sources), len(items), 'WorkArena exact item coverage')
+    _check((len(responses), len(tables['traces'])), (len(annotations), len(annotations)), 'WorkArena response and trace coverage')
+    for trials in trial_groups.values():
+        _check(sorted(trials), list(range(1, len(trials) + 1)), 'WorkArena repeated ratings retained as distinct observations')
+    return dict(source_executions=len(native_paths), source_subjects=len(subjects), source_items=len(items),
+        source_responses=len(responses), source_traces=len(tables['traces']), **totals)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'workarena':
+        return _workarena(directory, tables, metadata)
     if directory.name == 'os_harm':
         return _os_harm(directory, tables, metadata)
     if directory.name == 'mmlu':

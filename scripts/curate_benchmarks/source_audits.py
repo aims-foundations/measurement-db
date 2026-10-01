@@ -1024,3 +1024,4 @@ SOURCE_AUDITS["goodai_ltm_benchmark"] = verify_native_results
 SOURCE_AUDITS["live_agent_risk"] = verify_native_results
 SOURCE_AUDITS["mmlu"] = verify_native_results
 SOURCE_AUDITS["os_harm"] = verify_native_results
+SOURCE_AUDITS["workarena"] = verify_native_results
