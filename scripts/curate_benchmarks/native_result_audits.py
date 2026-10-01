@@ -1,7 +1,7 @@
 """Check complete native results independently of the pandas builders."""
 
 import json
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -26825,11 +26825,101 @@ def _swe_smith(directory, tables, metadata):
         source_traces=len(tables['traces']), **totals)
 
 
+def _wikihow_agent(directory, tables, metadata):
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='WikiHowAgent source audit')
+    raw = directory / 'raw'
+    grading = metadata['grading']['verifiers']['completion']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    trace_index = {}
+    for row in tables['traces'].itertuples():
+        trace = json.loads(row.trace)
+        _check(set(trace), {'source_file', 'source_row', 'config_files', 'record'}, 'WikiHowAgent original trace structure')
+        key = trace['source_file'], trace['source_row']
+        _check(key not in trace_index, True, 'WikiHowAgent original row appears exactly once')
+        trace_index[key] = trace, responses[row.response_id]
+    _check(len(tables.get('assets', [])), 0, 'WikiHowAgent no invented assets')
+    _check(tables['benchmarks'].iloc[0].response_scale,
+        canonical_response_scale(metadata['benchmark']['response_scale']), 'WikiHowAgent completion response scale')
+    observed, native_keys, subject_configurations, item_definitions = Counter(), set(), {}, {}
+    item_protocols, trials = {}, defaultdict(list)
+    native_ids = set()
+    paths = sorted((raw / 'conversations').glob('T-*_corrected.json'))
+    _check(bool(paths), True, 'WikiHowAgent released conversation files are present')
+    for path in paths:
+        document = json.loads(path.read_text())
+        config_files = document['config_files']
+        _check(len(config_files), 3, 'WikiHowAgent three recorded agent configurations')
+        configuration = {role: yaml.safe_load((raw / 'protocol' / name).read_text())
+            for role, name in zip(['teacher', 'learner', 'evaluator'], config_files)}
+        encoded = json.dumps(configuration, sort_keys=True).replace(';', r'\u003b').replace('=', r'\u003d')
+        expected_features = features_string(canonicalize_features(dict(source_configuration=encoded)))
+        for number, original in enumerate(document['total_conversations']):
+            key = str(path.relative_to(raw)), number
+            native_keys.add(key)
+            trace, response = trace_index[key]
+            _check(trace['record'], original, 'WikiHowAgent complete unmodified original record and conversation')
+            _check(trace['config_files'], config_files, 'WikiHowAgent recorded configuration-file association')
+            subject, item = subjects[response['subject_id']], items[response['item_id']]
+            _check(subject['display_name'], configuration['learner']['llm']['model'], 'WikiHowAgent literal learner model alias')
+            _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'WikiHowAgent harness')
+            _check(subject['subject_features_extra'], expected_features, 'WikiHowAgent complete teacher/learner/evaluator configuration')
+            grade = original['evaluation']['Completion Achieved']
+            _check(type(grade) in (int, float) and grade in (0, 1), True, 'WikiHowAgent original binary grade')
+            _check(response['response'], float(grade), 'WikiHowAgent exact original completion outcome')
+            recomputed = int(any('FINISHED' in line or 'The tutorial is now complete' in line for line in original['conversation']))
+            _check(grade, recomputed, 'WikiHowAgent every grade agrees with the published completion-marker rule')
+            stimulus = {name: original[name] for name in ['title', 'summary', 'tutorial']}
+            _check(json.loads(item['content']), stimulus, 'WikiHowAgent full supplied title, summary and tutorial')
+            identifier = f"{original['doc_id']}:{original['method_id']}"
+            _check(item['raw_item_id'], identifier, 'WikiHowAgent original document and method identity')
+            _check(item['item_features'], features_string(canonicalize_features(dict(doc_id=original['doc_id'], method_id=original['method_id']))),
+                'WikiHowAgent retains distinct upstream tutorial identities')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=grading['rule']), 'WikiHowAgent completion rule is not a gold answer')
+            verifier = json.loads(item['verifier'])
+            _check(verifier['class'], 'exact_matcher', 'WikiHowAgent deterministic marker verifier')
+            _check(json.loads(verifier['spec']), grading['spec'], 'WikiHowAgent complete referenced grading protocol')
+            definition = identifier, json.dumps(stimulus, sort_keys=True)
+            subject_definition = json.dumps(configuration, sort_keys=True)
+            if response['item_id'] in item_definitions:
+                _check(item_definitions[response['item_id']], definition, 'WikiHowAgent consistent item identity')
+            if response['subject_id'] in subject_configurations:
+                _check(subject_configurations[response['subject_id']], subject_definition, 'WikiHowAgent consistent workflow identity')
+            if identifier in item_protocols:
+                _check(item_protocols[identifier], definition, 'WikiHowAgent stable tutorial content across configurations')
+            item_definitions[response['item_id']] = definition
+            subject_configurations[response['subject_id']] = subject_definition
+            item_protocols[identifier] = definition
+            native_ids.add(original['conversation_id'])
+            trials[response['subject_id'], response['item_id']].append(response['trial'])
+            observed['source_responses'] += 1
+            observed['source_successes'] += int(grade)
+            observed['source_failures'] += int(1 - grade)
+            observed['conversations_exceeding_former_trace_cap'] += len(json.dumps(original['conversation'])) > 100000
+    _check(set(trace_index), native_keys, 'WikiHowAgent every released source row retained exactly once')
+    _check((len(responses), len(tables['traces'])), (len(native_keys), len(native_keys)), 'WikiHowAgent one response and trace per record')
+    _check(len(subjects), len(subject_configurations), 'WikiHowAgent exact subject coverage')
+    _check(len(subjects), len(set(subject_configurations.values())), 'WikiHowAgent no duplicated configurations')
+    _check(len(items), len(item_definitions), 'WikiHowAgent exact item coverage')
+    _check(len(items), len(set(item_definitions.values())), 'WikiHowAgent no duplicated tutorial definitions')
+    for group in trials.values():
+        _check(sorted(group), list(range(1, len(group) + 1)), 'WikiHowAgent retain repeated records as separate trials')
+    return dict(source_files=len(paths), source_items=len(items), source_workflow_configurations=len(subjects),
+        distinct_conversation_ids=len(native_ids), source_traces=len(tables['traces']), **observed)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'wikihow_agent':
+        return _wikihow_agent(directory, tables, metadata)
     if directory.name == 'swe_smith':
         return _swe_smith(directory, tables, metadata)
     if directory.name == 'workarena':

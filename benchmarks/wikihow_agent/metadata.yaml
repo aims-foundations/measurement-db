@@ -1,0 +1,77 @@
+benchmark:
+  description: Released completion outcomes for multi-model teacher–learner conversations grounded in WikiHow tutorials.
+  testing_condition: Import the twelve released corrected conversation files, preserving all 171,412 conversations
+    and their completion flags. A subject is the recorded teacher, learner and evaluator configuration; the learner
+    model is its display label. The released configuration files document model aliases and reference settings,
+    but the exact historical checkpoint and command-line overrides are not recorded. Completion denotes an emitted
+    marker, not independently verified teaching quality. No new conversations or grades are generated.
+  paper_url: https://arxiv.org/abs/2507.05528
+  data_source_url: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: "@article{pei2025wikihowagent,\n  title={Conversational Education at Scale: A Multi-LLM Agent Workflow\
+    \ for Procedural Learning and Pedagogic Quality Assessment},\n  author={Pei, Jiahuan and Ye, Fanghua and Sun,\
+    \ Xin and Deng, Wentao and Hindriks, Koen and Wang, Junxiao},\n  journal={arXiv preprint arXiv:2507.05528},\n\
+    \  year={2025},\n  url={https://arxiv.org/abs/2507.05528},\n}"
+  tags:
+  - education
+  - tutoring
+  - multi_agent
+  - procedural_learning
+  - wikihow
+  modality:
+  - text
+  domain:
+  - education
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': completion marker absent
+      '1': completion marker present
+  categorical: true
+  release_date: 2025-07
+  release: public
+  name: WikiHowAgent
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      conversations: conversations/T-*_corrected.json
+      configurations: protocol/conf/*.yaml
+    labels:
+      harness: WikiHowAgent
+sources:
+  upstream:
+  - name: conversations
+    url: https://huggingface.co/datasets/Jiahuan/WikihowAgentDataset
+    revision: 2c672001151e566e31c6cd964ea9b8a03ad8d394
+    files:
+    - match: conversations/T-[^/]+_corrected\.json
+      path: '{path}'
+  - name: protocol_reference
+    url: https://github.com/Jiahuan-Pei/WikiHowAgent
+    revision: c61e4b0d7ba635956e59753fd59c9db65f289a5e
+    files:
+    - match: README\.md|LICENSE|main\.py|config\.py|Agents/evaluator_agent\.py|Agents/teacher_agent\.py|Agents/learner_agent\.py|manager/multiple_agent_manager_workflow\.py|manager/multiple_agent_manager_agentic\.py|utils/post_result_correction\.py|conf/ollama\-deepseek\.yaml|conf/ollama\-gemma\.yaml|conf/ollama\-llama3\.yaml|conf/ollama\-olmo2\.yaml|conf/ollama\-openchat\.yaml|conf/ollama\-phi4\.yaml|conf/ollama\-qwen2\.yaml
+      path: protocol/{path}
+grading:
+  verifiers:
+    completion:
+      field: Completion Achieved
+      rule: The released completion flag is one when any conversation line contains FINISHED or The tutorial is
+        now complete, and zero otherwise. This marker does not establish pedagogic quality.
+      spec:
+        kind: published_completion_flag
+        source: https://github.com/Jiahuan-Pei/WikiHowAgent/blob/c61e4b0d7ba635956e59753fd59c9db65f289a5e/Agents/evaluator_agent.py
+        function: ConversationEvaluator.check_completion
+        implementation: int(any("FINISHED" in line or "The tutorial is now complete" in line for line in conversation))
+        corrected_release: Import the released flags unchanged; independently compare every flag with its original
+          conversation. Other corrected rubric metrics are preserved in the native trace, not converted into additional
+          outcomes.

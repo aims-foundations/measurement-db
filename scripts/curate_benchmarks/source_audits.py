@@ -1026,3 +1026,5 @@ SOURCE_AUDITS["mmlu"] = verify_native_results
 SOURCE_AUDITS["os_harm"] = verify_native_results
 SOURCE_AUDITS["workarena"] = verify_native_results
 SOURCE_AUDITS["swe_smith"] = verify_native_results
+
+SOURCE_AUDITS["wikihow_agent"] = verify_native_results

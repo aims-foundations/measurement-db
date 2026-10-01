@@ -1,6 +1,7 @@
 """Native-source audits must distinguish wrong grades, missing grades and clipped traces."""
 
 import contextlib
+import copy
 import csv
 import io
 import runpy
@@ -20,6 +21,7 @@ from measurement_db.scripts.curate_benchmarks.batch2_audits import verify_batch2
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _os_harm as _audit_os_harm
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _workarena as _audit_workarena
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_smith as _audit_swe_smith
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _wikihow_agent as _audit_wikihow_agent
 from measurement_db.build_base import _tables
 
 
@@ -4840,3 +4842,87 @@ class SynthPAINativeAuditTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()), self.assertRaisesRegex(ValueError, 'Every released grade must match'):
             self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
                 '--output', str(self.directory.parent / 'invalid')])
+
+
+class WikiHowAgentAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory=Path(temporary.name)/'wikihow_agent'
+        self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/wikihow_agent')/'metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        folder=self.directory/'raw/protocol/conf';folder.mkdir(parents=True)
+        for name in ['teacher-a','teacher-b','learner-a','learner-b','evaluator']:
+            (folder/(name+'.yaml')).write_text(yaml.safe_dump(dict(llm=dict(model=name,temperature=0.),params=dict(note='literal; separator=retained'))))
+        folder=self.directory/'raw/conversations';folder.mkdir()
+        for group, observations in [('a',[(0,1),(0,0),(1,0)]),('b',[(0,0),(1,1)])]:
+            rows=[]
+            for number,(item,grade) in enumerate(observations):
+                conversation=['Teacher: original text '+('long output ' * 12000 if group=='a' and number==0 else 'short'),
+                    'Learner: def broken(']
+                if grade:conversation.append('FINISHED' if group=='a' else 'The tutorial is now complete')
+                rows.append(dict(conversation_id=f'{group}-{number}',doc_id=item,method_id=0,
+                    title='Shared title',summary='Original summary; not inferred.',tutorial=dict(title='Part one',steps=['Step A','Step B']),
+                    conversation=conversation,evaluation={'Completion Achieved':grade,'Other rubric':2.5},
+                    source_tutorial_path='/upstream/article.json',categories=['topic']))
+            doc=dict(config_files=[f'conf/teacher-{group}.yaml',f'conf/learner-{group}.yaml','conf/evaluator.yaml'],
+                total_conversations=rows,num_conversation=len(rows))
+            (folder/f'T-{group}_corrected.json').write_text(json.dumps(doc))
+        self.builder=runpy.run_path(str((ROOT/'benchmarks/wikihow_agent')/'build.py'))['WikiHowAgent']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args([
+                '--source',str(self.directory/'raw'),'--output',str(self.directory.parent/'tables')])
+        self.frames={path.stem:pd.read_parquet(path) for path in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_every_record_and_full_conversation_survives(self):
+        expected=dict(source_files=2,source_items=2,source_workflow_configurations=2,distinct_conversation_ids=5,
+            source_traces=5,source_responses=5,source_successes=2,source_failures=3,conversations_exceeding_former_trace_cap=1)
+        self.assertEqual(_audit_wikihow_agent(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(_audit_wikihow_agent(self.directory,{name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()},self.metadata),expected)
+        self.assertEqual(self.frames['items'].content.nunique(),1)
+        self.assertEqual(self.frames['responses'].trial.max(),2)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(100000).any())
+
+    def test_corrupt_transformations_fail_even_when_totals_match(self):
+        changes=['equal_sum_swap','wrong_subject','wrong_item','drop_record','clip_trace','source_row',
+            'replace_summary','drop_rubric','config_association','subject_configuration','verifier','trial']
+        for change in changes:
+            with self.subTest(change=change):
+                frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                responses,items,traces=[frames[name] for name in ['responses','items','traces']]
+                if change=='equal_sum_swap':
+                    a,b=responses.index[responses.response.eq(0)][0],responses.index[responses.response.eq(1)][0]
+                    responses.loc[[a,b],'response']=[1.,0.]
+                elif change=='wrong_subject': responses.loc[0,'subject_id']=next(v for v in frames['subjects'].subject_id if v!=responses.loc[0,'subject_id'])
+                elif change=='wrong_item':responses.loc[0,'item_id']=next(v for v in items.item_id if v!=responses.loc[0,'item_id'])
+                elif change=='drop_record':frames['responses']=responses.iloc[1:]
+                elif change=='replace_summary':
+                    item=json.loads(items.loc[0,'content']);item['summary']='Invented';items.loc[0,'content']=json.dumps(item)
+                elif change=='subject_configuration':frames['subjects'].loc[0,'subject_features_extra']='source_configuration={}'
+                elif change=='verifier':
+                    v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
+                elif change=='trial':responses.loc[0,'trial']=0
+                else:
+                    trace=json.loads(traces.loc[0,'trace'])
+                    if change=='clip_trace':trace['record']['conversation']=trace['record']['conversation'][:1]
+                    elif change=='source_row':trace['source_row']=9999
+                    elif change=='drop_rubric':del trace['record']['evaluation']['Other rubric']
+                    elif change=='config_association':trace['config_files']=trace['config_files'][::-1]
+                    traces.loc[0,'trace']=json.dumps(trace)
+                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration)):
+                    _audit_wikihow_agent(self.directory,frames,self.metadata)
+
+    def test_invalid_flags_and_conflicting_tutorials_fail(self):
+        path=self.directory/'raw/conversations/T-a_corrected.json';original=json.loads(path.read_text())
+        for value in [None,0.5,'yes']:
+            with self.subTest(value=value):
+                data=copy.deepcopy(original);data['total_conversations'][0]['evaluation']['Completion Achieved']=value
+                path.write_text(json.dumps(data))
+                with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        data=copy.deepcopy(original);data['total_conversations'][0]['summary']='Conflicting summary'
+        path.write_text(json.dumps(data))
+        with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        path.write_text(json.dumps(original))
