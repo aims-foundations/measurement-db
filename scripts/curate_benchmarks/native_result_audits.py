@@ -29937,11 +29937,97 @@ def _interchangeable_token_embeddings(directory, tables, metadata):
         source_correct_predictions=outcomes['exact match']+outcomes['semantically correct'],source_summary_files_reconciled=summaries)
 
 
+def _oasst(directory, tables, metadata):
+    """Check original ranks, complete inputs, literal configurations and comparison groups."""
+    import gzip
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='OASST original attributed messages')
+    parameters = metadata['build']['parameters']
+    source_file = parameters['layout']['messages']
+    with gzip.open(directory / 'raw' / source_file, 'rt') as stream:
+        records = [json.loads(line) for line in stream]
+    messages = {}
+    for row in records:
+        _check(row['message_id'] not in messages, True, 'OASST unique source message identity')
+        messages[row['message_id']] = row
+    native, definitions, trials = {}, {}, Counter()
+    for index, row in enumerate(records):
+        if row.get('role') != 'assistant' or row.get('synthetic') is not True or not row.get('model_name'):
+            continue
+        prompt = messages[row['parent_id']]
+        _check(prompt.get('parent_id') is None and prompt['role'] == 'prompter', True, 'OASST complete root-prompt context')
+        _check(isinstance(prompt['text'], str) and bool(prompt['text']), True, 'OASST nonempty original stimulus')
+        _check(row.get('rank') is None or (type(row['rank']) is int and row['rank'] in range(5)), True,
+            'OASST original ordinal rank or unavailable measurement')
+        content = prompt['text']
+        definitions.setdefault(content, prompt['message_id'])
+        trial_key = row['model_name'], content, row['parent_id']
+        trials[trial_key] += 1
+        native[row['message_id']] = dict(source_row=index, record=row, prompt=prompt, trial=trials[trial_key])
+    parents = {row['record']['parent_id'] for row in native.values()}
+    peers = defaultdict(list)
+    for row in sorted(records, key=lambda value: value['message_id']):
+        if row.get('parent_id') in parents:
+            peers[row['parent_id']].append(dict(message_id=row['message_id'], model_name=row.get('model_name')))
+    configurations = {row['record']['model_name'] for row in native.values()}
+    subject_keys = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        name = ','.join('='.join(part) for part in json.loads(features['source_model_configuration']))
+        _check(name in configurations, True, 'OASST only attributed generating configurations')
+        _check((row.display_name, row.harness, features), (name.split(',')[0], parameters['labels']['harness'],
+            dict(source_model_configuration=json.dumps([part.split('=', 1) for part in name.split(',')]),
+                configuration_scope=parameters['labels']['configuration_scope'])),
+            'OASST full literal model and generation settings')
+        subject_keys[row.subject_id] = name
+    _check(Counter(subject_keys.values()), Counter({name: 1 for name in configurations}), 'OASST exact subject coverage')
+    item_keys = {}
+    for row in tables['items'].itertuples():
+        _check(row.content in definitions, True, 'OASST complete original prompt')
+        _check(row.raw_item_id, definitions[row.content], 'OASST first original prompt alias')
+        _check(_features(row.item_features), dict(input_scope=parameters['labels']['input_scope']), 'OASST honest input scope')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=metadata['grading']['rule']),
+            'OASST relative human preference criterion')
+        _check(json.loads(row.verifier), dict(**{'class':'judge'}, judged_by='human',
+            spec=json.dumps(metadata['grading']['verifiers']['preference'], sort_keys=True)), 'OASST original human grading')
+        item_keys[row.item_id] = row.content
+    _check(Counter(item_keys.values()), Counter({content: 1 for content in definitions}), 'OASST complete distinct stimuli')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'OASST every attempt has original evidence')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        message_id = trace['native_record']['message_id']
+        source = native[message_id]
+        original, prompt = source['record'], source['prompt']
+        _check(trace, dict(source_file=source_file, source_row=source['source_row'], native_record=original, native_prompt=prompt),
+            'OASST every native input, output, language, timestamp, label and review flag')
+        _check(None if pd.isna(row.response) else row.response, original.get('rank'), 'OASST unchanged rank or unavailable grade')
+        _check((subject_keys[row.subject_id], item_keys[row.item_id], row.trial, row.test_condition),
+            (original['model_name'], prompt['text'], source['trial'], 'comparison_group=' + original['parent_id']),
+            'OASST exact generating configuration, stimulus, repeated attempt and comparison group')
+        _check(json.loads(row.interactors), dict(reply_candidates=peers[original['parent_id']]), 'OASST full released candidate identities')
+        seen[message_id] += 1
+    _check(seen, Counter({key: 1 for key in native}), 'OASST no missing, repeated or fabricated source attempts')
+    ranks = defaultdict(list)
+    for source in native.values():
+        rank = source['record'].get('rank')
+        if rank is not None:
+            ranks[source['record']['parent_id']].append(rank)
+    return dict(source_subjects=len(configurations), source_items=len(definitions), source_responses=len(native),
+        source_traces=len(traces), source_prompt_records=len(parents),
+        source_ranked_attempts=sum(map(len, ranks.values())),
+        source_ungraded_attempts=len(native)-sum(map(len, ranks.values())), source_ranked_groups=len(ranks),
+        source_rank_gap_groups=sum(sorted(values) != list(range(len(values))) for values in ranks.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'oasst':
+        return _oasst(directory, tables, metadata)
     if directory.name == 'interchangeable_token_embeddings':
         return _interchangeable_token_embeddings(directory, tables, metadata)
     if directory.name == 'imgedit':

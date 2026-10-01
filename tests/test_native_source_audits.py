@@ -61,6 +61,104 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _imged
 from collections import Counter
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _interchangeable_token_embeddings
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _oasst
+
+class OASSTSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'oasst';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/oasst')/'metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata,sort_keys=False))
+        raw=self.directory/'raw';raw.mkdir()
+        self.records=[
+            dict(message_id='p1',role='prompter',synthetic=False,text='Explain a lemma.',model_name=None),
+            dict(message_id='p2',role='prompter',synthetic=True,text='Explain a lemma.',model_name='seed-generator'),
+            dict(message_id='p3',role='prompter',synthetic=False,text='A different question.',model_name=None),
+            dict(message_id='a1',parent_id='p1',role='assistant',synthetic=True,model_name='model-a,temperature=0.8',rank=0,text='First output',labels={'quality':{'value':0.75,'count':1}},lang='en'),
+            dict(message_id='a2',parent_id='p1',role='assistant',synthetic=True,model_name='model-b,temperature=1.0',rank=2,text='Second output',lang='en'),
+            dict(message_id='a3',parent_id='p1',role='assistant',synthetic=True,model_name='model-a,temperature=0.8',rank=None,text='Unranked repeated attempt',lang='en'),
+            dict(message_id='a4',parent_id='p2',role='assistant',synthetic=True,model_name='model-a,temperature=0.8',rank=0,text='Same content, different group',lang='en'),
+            dict(message_id='a5',parent_id='p3',role='assistant',synthetic=True,model_name='model-b,temperature=1.0',rank=None,text='Another unavailable rank',lang='en'),
+            dict(message_id='h1',parent_id='p3',role='assistant',synthetic=False,model_name=None,rank=None,text='Human contribution'),
+        ]
+        self.path=raw/self.metadata['build']['parameters']['layout']['messages']
+        self.save_records()
+        self.builder=runpy.run_path(str((ROOT/'benchmarks/oasst')/'build.py'))['OASST']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(raw),'--output',str(self.directory.parent/'tables')])
+        self.frames={p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def save_records(self):
+        with gzip.open(self.path,'wt') as stream:
+            for record in self.records:stream.write(json.dumps(record)+'\n')
+
+    def test_original_attribution_ranks_contexts_and_repeats(self):
+        expected=dict(source_subjects=2,source_items=2,source_responses=5,source_traces=5,source_prompt_records=3,
+            source_ranked_attempts=3,source_ungraded_attempts=2,source_ranked_groups=2,source_rank_gap_groups=1)
+        self.assertEqual(_oasst(self.directory,self.frames,self.metadata),expected)
+        shuffled={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_oasst(self.directory,shuffled,self.metadata),expected)
+
+    def test_changed_tables_are_detected(self):
+        changes=['grade','null_to_zero','rank_to_null','trial','subject_link','item_link','subject_label','harness',
+            'configuration','content','raw_id','item_features','criterion','verifier','condition','interactors',
+            'missing_response','duplicate_response','missing_trace','trace_row','trace_output','trace_prompt','trace_label','trace_identity']
+        for change in changes:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,items,subjects,traces=[frames[name] for name in ['responses','items','subjects','traces']]
+            if change=='grade':responses.loc[responses.response.notna(),'response']=4.
+            elif change=='null_to_zero':responses.loc[responses.response.isna(),'response']=0.
+            elif change=='rank_to_null':responses.loc[responses.response.notna(),'response']=float('nan')
+            elif change=='trial':responses.loc[0,'trial']=99
+            elif change=='subject_link':responses.loc[0,'subject_id']=next(x for x in subjects.subject_id if x!=responses.loc[0,'subject_id'])
+            elif change=='item_link':responses.loc[0,'item_id']=next(x for x in items.item_id if x!=responses.loc[0,'item_id'])
+            elif change=='subject_label':subjects.loc[0,'display_name']='wrong'
+            elif change=='harness':subjects.loc[0,'harness']='wrong'
+            elif change=='configuration':subjects.loc[0,'subject_features_extra']='source_model_configuration=[["wrong"]]'
+            elif change=='content':items.loc[0,'content']='Wrong question'
+            elif change=='raw_id':items.loc[0,'raw_item_id']='wrong'
+            elif change=='item_features':items.loc[0,'item_features']='input_scope=wrong'
+            elif change=='criterion':items.loc[0,'grading_criterion']=json.dumps({'rule':'wrong'})
+            elif change=='verifier':items.loc[0,'verifier']='{}'
+            elif change=='condition':responses.loc[0,'test_condition']='wrong'
+            elif change=='interactors':responses.loc[0,'interactors']='{}'
+            elif change=='missing_response':frames['responses']=responses.iloc[1:]
+            elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
+            elif change=='missing_trace':frames['traces']=traces.iloc[1:]
+            else:
+                trace=json.loads(traces.loc[0,'trace'])
+                if change=='trace_row':trace['source_row']=999
+                elif change=='trace_prompt':trace['native_prompt']['text']='wrong'
+                else:trace['native_record'][{'trace_output':'text','trace_label':'labels','trace_identity':'message_id'}[change]]='wrong'
+                traces.loc[0,'trace']=json.dumps(trace)
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _oasst(self.directory,frames,self.metadata)
+
+    def test_changed_sources_are_detected(self):
+        original=copy.deepcopy(self.records)
+        for change in ['grade','null_to_zero','model','output','prompt','parent','source_flag','duplicate','missing']:
+            self.records=copy.deepcopy(original)
+            if change=='grade':self.records[3]['rank']=4
+            elif change=='null_to_zero':self.records[5]['rank']=0
+            elif change=='model':self.records[3]['model_name']='wrong'
+            elif change=='output':self.records[3]['text']='wrong'
+            elif change=='prompt':self.records[0]['text']='wrong'
+            elif change=='parent':self.records[3]['parent_id']='p3'
+            elif change=='source_flag':self.records[3]['synthetic']=False
+            elif change=='duplicate':self.records.append(copy.deepcopy(self.records[3]))
+            else:self.records.pop(3)
+            self.save_records()
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _oasst(self.directory,self.frames,self.metadata)
+        self.records=original;self.save_records()
+
+    def test_incomplete_context_is_not_silently_truncated(self):
+        self.records[0]['parent_id']='p3';self.save_records()
+        with self.assertRaisesRegex(ValueError,'complete root-prompt'):
+            self.builder(str(self.directory/'build.py')).build_tables()
+
+
 class LTLReleasedAuditTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')
