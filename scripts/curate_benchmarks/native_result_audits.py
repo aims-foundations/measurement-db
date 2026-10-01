@@ -28752,11 +28752,201 @@ def _worldcentralbanks(directory, tables, metadata):
     return dict(source_subjects=len(subjects), source_items=len(items), source_traces=len(traces), **dict(counts))
 
 
+def _wmt_mqm(directory, tables, metadata):
+    """Read native TSV rows independently of the builder's joins and expansion."""
+    import csv
+    import re
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='WMT MQM native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    categories = ['Accuracy', 'Fluency', 'Style', 'Terminology', 'Locale', 'Non-translation']
+    severities = ['major', 'minor', 'neutral']
+    _check(list(parameters['categories']), categories, 'MQM declared six-category readout')
+    _check(list(parameters['severities']), severities, 'MQM declared three-severity readout')
+    _check(metadata['benchmark']['response_scale']['direction'], 'lower_is_better', 'MQM errors are not successes')
+
+    def bucket(category, severity):
+        # Independent scalar interpretation of the legacy readout; no builder
+        # code or source module is imported. Unknown and QC fields remain raw.
+        low = category.strip().lower()
+        head = re.split(r'[/_\-\s]', low, maxsplit=1)[0]
+        group = None
+        if head in {'accuracy', 'addition', 'omission', 'mistranslation', 'untranslated', 'wrong'}:
+            group = 'Accuracy'
+        elif head in {'fluency', 'grammar', 'punctuation', 'spelling', 'register', 'inconsistency',
+                      'agreement', 'word', 'capitalization', 'whitespace', 'markup'}:
+            group = 'Fluency'
+        elif head in {'style', 'unnatural', 'lacks'}:
+            group = 'Style'
+        elif head in {'terminology', 'do'}:
+            group = 'Terminology'
+        elif head in {'locale', 'currency', 'date', 'measurement', 'number'}:
+            group = 'Locale'
+        elif head in {'non', 'mt'} and ('non' in low or 'hallucin' in low):
+            group = 'Non-translation'
+        level = severity.strip().lower()
+        level = 'major' if level == 'critical' else level if level in severities else None
+        _check(parameters['category_mapping'][category], group or '', 'MQM explicit category mapping')
+        _check(parameters['severity_mapping'][severity], level or '', 'MQM explicit severity mapping')
+        return group, level
+
+    def read(path):
+        with path.open(newline='') as stream:
+            reader = csv.reader(stream, delimiter='\t', quoting=csv.QUOTE_NONE)
+            header = next(reader)
+            rows = []
+            width = None
+            for values in reader:
+                if width is None:
+                    width = len(values)
+                    header += [f'unlabeled_column_{index + 1}' for index in range(width - len(header))]
+                _check(len(values), len(header), 'MQM every native field retained')
+                rows.append(dict(zip(header, values)))
+        return rows
+
+    ratings, sources, counts = {}, defaultdict(set), Counter()
+    for source_file, campaign in parameters['campaigns'].items():
+        language = parameters['language_pairs'][source_file]
+        folder = ('newstest' if campaign in {'2020', '2021'} else 'generalMT') + campaign
+        _check(source_file, f'{folder}/{language.replace("-", "")}/mqm_{folder}_{language.replace("-", "")}.tsv',
+               'MQM original campaign and language correspondence')
+        originals = read(raw / source_file)
+        corrected = None
+        if campaign == '2020':
+            corrected_file = source_file.replace('.tsv', '.no-postedits.tsv')
+            _check(parameters['corrected_files'][source_file], corrected_file, 'MQM author correction source')
+            corrected = read(raw / corrected_file)
+            _check(len(corrected), len(originals), 'MQM correction preserves every annotation')
+        for index, original in enumerate(originals):
+            row = {parameters['column_aliases'].get(key, key): value for key, value in original.items()}
+            _check(all(row.get(key) for key in ['system', 'doc', 'seg_id', 'rater', 'source', 'category', 'severity']),
+                   True, 'MQM source identity and grading fields available')
+            item = (source_file, row['doc'], row['seg_id'])
+            source = re.sub(r'</?v>', '', row['source']).strip()
+            sources[item].add(source)
+            key = (*item, row['system'], row['rater'])
+            unit = ratings.setdefault(key, dict(annotations=[], buckets=set(), reviewed=False))
+            restored = None
+            if corrected is not None:
+                restored = re.sub(r'</?v>', '', corrected[index]['target'])
+                _check({k:v for k,v in original.items() if k != 'target'},
+                       {k:v for k,v in corrected[index].items() if k != 'target'},
+                       'MQM corrections change translation text only')
+                counts['source_author_restored_annotations'] += 1
+                counts['source_changed_annotation_texts'] += original['target'] != corrected[index]['target']
+            unit['annotations'].append(dict(source_row=index, original_record=original,
+                                            author_restored_translation=restored))
+            group, level = bucket(row['category'], row['severity'])
+            if group and level:
+                unit['buckets'].add((group, level))
+                unit['reviewed'] = True
+            if row['category'].strip().lower() in {'no-error', 'no_error', 'no error'}:
+                unit['reviewed'] = True
+            counts['source_annotation_rows'] += 1
+        counts['source_annotation_files'] += 1
+    excluded = {key for key, values in sources.items() if len(values) != 1 or not next(iter(values))}
+    eligible = {key: unit for key, unit in ratings.items() if key[:3] not in excluded and unit['reviewed']}
+    counts['source_withheld_ambiguous_segments'] = len(excluded)
+    counts['source_withheld_ambiguous_rating_units'] = sum(key[:3] in excluded for key in ratings)
+    counts['source_ignored_only_rating_units'] = sum(key[:3] not in excluded and not unit['reviewed']
+                                                   for key, unit in ratings.items())
+    counts['source_original_rating_units'] = len(ratings)
+    counts['source_reviewed_rating_units'] = len(eligible)
+
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['responses']), 'MQM one complete trace per derived observation')
+    _check(set(traces), set(tables['responses'].response_id), 'MQM exact trace coverage')
+    subject_scopes = {}
+    for identity, subject in subjects.items():
+        fields = _features(subject['subject_features_extra'])
+        source_file, system = fields['source_file'], fields['source_system_label']
+        _check(fields['campaign'], parameters['campaigns'][source_file], 'MQM subject campaign')
+        _check(fields['language_pair'], parameters['language_pairs'][source_file], 'MQM subject language')
+        _check(subject['harness'], parameters['protocol']['harness'], 'MQM documented annotation harness')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+               'MQM unavailable inference settings remain unknown')
+        subject_scopes[identity] = (source_file, system)
+    _check(Counter(subject_scopes.values()), Counter({(key[0], key[3]): 1 for key in eligible}),
+           'MQM complete source-scoped system identities')
+    aliases = defaultdict(set)
+    for key in eligible:
+        source_file, doc, segment = key[:3]
+        source_text = next(iter(sources[key[:3]]))
+        aliases[source_text, parameters['language_pairs'][source_file]].add((source_file, doc, segment))
+    for item in items.values():
+        content, features = json.loads(item['content']), _features(item['item_features'])
+        source_file, doc, segment = features['source_file'], features['source_document'], features['source_segment']
+        language = parameters['language_pairs'][source_file]
+        _check((source_file, doc, segment) in aliases[content['source_text'], language], True,
+               'MQM retained canonical source alias')
+        _check(content, dict(source_text=next(iter(sources[source_file, doc, segment])),
+                             source_language=language.split('-')[0], target_language=language.split('-')[1]),
+               'MQM original source stimulus and translation direction')
+        category, severity = features['category'], features['severity']
+        _check(category in categories and severity in severities, True, 'MQM declared grading dimension')
+        _check(item['raw_item_id'], '::'.join([source_file, doc, segment, category, severity]), 'MQM original item coordinates')
+        rule = metadata['grading']['rule'] + ' Selected category: ' + category + '; severity bucket: ' + severity + '.'
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion.get('rule'), rule, 'MQM dimension-specific grading protocol')
+        _check(criterion.get('reference_answer'), None, 'MQM no invented reference solution')
+        verifier = json.loads(item['verifier'])
+        _check(verifier.get('judged_by'), 'human', 'MQM human verifier identity')
+        _check(verifier.get('judge'), None, 'MQM no invented human identity')
+        _check(json.loads(verifier['spec']), dict(metadata['grading']['verifiers']['human'],
+            category=category, severity_bucket=severity), 'MQM original human grading description')
+
+    seen, saved_traces, used_items, trials = defaultdict(set), {}, set(), defaultdict(list)
+    for response in tables['responses'].itertuples():
+        condition = json.loads(response.test_condition)
+        source_file, system = subject_scopes[response.subject_id]
+        key = (condition['source_file'], condition['source_document'], condition['source_segment'], system, condition['rater'])
+        _check(source_file, key[0], 'MQM subject-source association')
+        unit = eligible[key]
+        dimension = condition['category'], condition['severity_bucket']
+        _check(set(condition), {'source_file','source_document','source_segment','rater','category','severity_bucket'},
+               'MQM preserved rating and grading provenance')
+        _check(dimension not in seen[key], True, 'MQM no duplicated category/severity cell')
+        seen[key].add(dimension)
+        _check(response.response, float(dimension in unit['buckets']), 'MQM individual annotation-derived grade')
+        item = items[response.item_id]
+        features = _features(item['item_features'])
+        content = json.loads(item['content'])
+        _check((features['category'], features['severity']), dimension, 'MQM response-grading association')
+        _check(content['source_text'], next(iter(sources[key[:3]])), 'MQM response-stimulus association')
+        _check(content['source_language'] + '-' + content['target_language'], parameters['language_pairs'][source_file],
+               'MQM response-language association')
+        text = traces[response.response_id]
+        if key not in saved_traces:
+            expected = dict(source_file=source_file, source_document=key[1], source_segment=key[2],
+                source_system=system, rater=key[4], annotations=unit['annotations'],
+                readout=parameters['protocol']['readout'], trial_scope=parameters['protocol']['trial_scope'])
+            _check(json.loads(text), expected, 'MQM all native annotation fields and corrected translations')
+            saved_traces[key] = text
+        _check(text, saved_traces[key], 'MQM full trace association for every grading dimension')
+        used_items.add(response.item_id)
+        trials[response.subject_id, response.item_id, response.test_condition].append(response.trial)
+        counts['source_responses'] += 1
+        counts['source_error_indicators'] += int(response.response)
+    expected_dimensions = {(category, severity) for category in categories for severity in severities}
+    _check(set(seen), set(eligible), 'MQM every eligible native rating retained')
+    _check(all(values == expected_dimensions for values in seen.values()), True, 'MQM all 18 declared dimensions per rating')
+    _check(all(sorted(values) == list(range(1, len(values) + 1)) for values in trials.values()), True,
+           'MQM sequential trials without invented attempts')
+    _check(used_items, set(items), 'MQM no unsupported or unused items')
+    counts.update(source_subjects=len(subjects), source_items=len(items), source_traces=len(traces))
+    return dict(counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'wmt_mqm':
+        return _wmt_mqm(directory, tables, metadata)
     if directory.name == 'worldcentralbanks':
         return _worldcentralbanks(directory, tables, metadata)
     if directory.name == 'afrieval':

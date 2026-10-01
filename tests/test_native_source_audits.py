@@ -37,6 +37,142 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _afrie
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _worldcentralbanks
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _wmt_mqm
+
+
+class WmtMqmAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'wmt_mqm'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/wmt_mqm') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        parameters = self.metadata['build']['parameters']
+        self.sources = {}
+        for source_file, year in parameters['campaigns'].items():
+            rows = []
+            base = dict(system='Recorded-A', doc='document-1', seg_id='1', rater='expert7',
+                        source='The original <v>source</v>, with {braces} and aye\u0301.',
+                        target='An annotated target.', category='No-error', severity='No-error')
+            rows.append(base.copy())
+            rows.append(dict(base, system='Recorded-B', category='Accuracy/Mistranslation', severity='major'))
+            rows.append(dict(base, system='Recorded-B', category='Fluency/Punctuation', severity='minor'))
+            rows.append(rows[-1].copy())  # Two annotations do not create two binary cells.
+            rows.append(dict(base, system='Recorded-B', rater='expert-two', category='Accuracy/Mistranslation', severity='critical'))
+            rows.append(dict(base, seg_id='2', source='NA', category='Fluency/Punctuation', severity='neutral',
+                             target='Complete long translation. ' * 900))
+            rows.append(dict(base, seg_id='3', source='Unknown-only annotation', category='Source error', severity='minor'))
+            rows.append(dict(base, seg_id='4', source='Ambiguous version A'))
+            rows.append(dict(base, seg_id='4', source='Ambiguous version B', rater='expert-two'))
+            rows.append(dict(base, seg_id='5', source='Check-only task', category='Found', severity='HOTW-test'))
+            header = ['system','doc','seg_id','rater','source','target','category','severity']
+            if 'enru' in source_file:
+                for row in rows:
+                    row['unlabeled_column_1'] = '{"native_comment":"keep all fields"}'
+            if '2022/enzh' in source_file:
+                renames = {value:key for key,value in parameters['column_aliases'].items()}
+                rows = [{renames.get(key,key):value for key,value in row.items()} for row in rows]
+                header = [renames.get(key,key) for key in header]
+            path = self.directory / 'raw' / source_file
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open('w', newline='') as stream:
+                writer = csv.writer(stream, delimiter='\t', quoting=csv.QUOTE_NONE, quotechar=None, lineterminator='\n')
+                writer.writerow(header)
+                writer.writerows([list(row.values()) for row in rows])
+            self.sources[path] = rows
+            if year == '2020':
+                corrected = self.directory / 'raw' / parameters['corrected_files'][source_file]
+                corrected_rows = [dict(row, target='Author restored original translation.') for row in rows]
+                with corrected.open('w', newline='') as stream:
+                    writer = csv.DictWriter(stream, fieldnames=header, delimiter='\t', quoting=csv.QUOTE_NONE, quotechar=None, lineterminator='\n')
+                    writer.writeheader(); writer.writerows(corrected_rows)
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/wmt_mqm') / 'build.py'))['WmtMqm']
+        self.output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(self.directory / 'raw'), '--output', str(self.output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in self.output.glob('*.parquet')}
+
+    def test_native_annotations_complete_traces_and_declared_readout(self):
+        observed = _wmt_mqm(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed['source_annotation_rows'], 80)
+        self.assertEqual(observed['source_reviewed_rating_units'], 32)
+        self.assertEqual(observed['source_responses'], 576)
+        self.assertEqual(observed['source_error_indicators'], 32)
+        self.assertEqual(observed['source_withheld_ambiguous_segments'], 8)
+        self.assertEqual(observed['source_ignored_only_rating_units'], 16)
+        self.assertEqual(observed['source_changed_annotation_texts'], 20)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        shuffled = {key:table.iloc[::-1].reset_index(drop=True) for key,table in self.frames.items()}
+        self.assertEqual(_wmt_mqm(self.directory, shuffled, self.metadata), observed)
+
+    def test_changed_grades_links_grading_and_trace_fields_are_detected(self):
+        changes = ['grade','null_grade','trial','subject_link','item_link','source_system','harness','runtime',
+            'content','raw_id','item_features','rule','reference','verifier','condition','drop_response',
+            'duplicate_response','drop_trace','duplicate_trace','native_record','source_row','rater','source_file',
+            'restored_translation','clipped_trace','missing_annotation']
+        for change in changes:
+            frames = {key:table.copy(deep=True) for key,table in self.frames.items()}
+            responses, subjects, items, traces = (frames[key] for key in ['responses','subjects','items','traces'])
+            if change == 'grade': responses.loc[0,'response'] = 1-responses.loc[0,'response']
+            elif change == 'null_grade': responses.loc[0,'response'] = None
+            elif change == 'trial': responses.loc[0,'trial'] = 500
+            elif change == 'subject_link': responses.loc[0,'subject_id'] = subjects.subject_id.iloc[-1]
+            elif change == 'item_link': responses.loc[0,'item_id'] = items.item_id.iloc[-1]
+            elif change == 'source_system': subjects.loc[0,'subject_features_extra'] = 'source_system_label=wrong'
+            elif change == 'harness': subjects.loc[0,'harness'] = 'invented'
+            elif change == 'runtime': subjects.loc[0,'reasoning_effort'] = 'invented'
+            elif change == 'content': items.loc[0,'content'] = '{}'
+            elif change == 'raw_id': items.loc[0,'raw_item_id'] = 'wrong'
+            elif change == 'item_features': items.loc[0,'item_features'] = 'category=wrong'
+            elif change in ['rule','reference']:
+                value = json.loads(items.loc[0,'grading_criterion'])
+                value['rule' if change == 'rule' else 'reference_answer'] = 'wrong'
+                items.loc[0,'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': items.loc[0,'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0,'test_condition'] = '{}'
+            elif change == 'drop_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses,responses.iloc[:1]])
+            elif change == 'drop_trace': frames['traces'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': frames['traces'] = pd.concat([traces,traces.iloc[:1]])
+            else:
+                index = traces.trace.str.len().idxmax() if change == 'clipped_trace' else 0
+                value = json.loads(traces.loc[index,'trace'])
+                if change == 'native_record': value['annotations'][0]['original_record']['source'] = 'wrong'
+                elif change == 'source_row': value['annotations'][0]['source_row'] = -1
+                elif change == 'rater': value['rater'] = 'wrong'
+                elif change == 'source_file': value['source_file'] = 'wrong'
+                elif change == 'restored_translation': value['annotations'][0]['author_restored_translation'] = 'wrong'
+                elif change == 'missing_annotation': value['annotations'].pop()
+                elif change == 'clipped_trace': value['annotations'][0]['original_record']['target'] = 'clipped'
+                traces.loc[index,'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _wmt_mqm(self.directory, frames, self.metadata)
+
+    def test_changed_original_annotations_and_corrections_are_detected(self):
+        path = next(iter(self.sources))
+        original = path.read_bytes()
+        for change in ['source','target','severity','comment','missing_row','extra_row']:
+            rows = copy.deepcopy(self.sources[path])
+            if change in ['source','target']: rows[0][change] = 'changed'
+            elif change == 'severity': rows[0]['severity'] = 'minor'
+            elif change == 'comment': rows[0]['new_annotation_field'] = 'preserve me'
+            elif change == 'missing_row': rows.pop()
+            else: rows.append(rows[0].copy())
+            fields = list(dict.fromkeys(key for row in rows for key in row))
+            with path.open('w',newline='') as stream:
+                writer=csv.DictWriter(stream,fieldnames=fields,delimiter='\t',quoting=csv.QUOTE_NONE,quotechar=None,lineterminator='\n')
+                writer.writeheader();writer.writerows(rows)
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                    _wmt_mqm(self.directory,self.frames,self.metadata)
+            finally:
+                path.write_bytes(original)
+
+
 class WorldCentralBanksAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

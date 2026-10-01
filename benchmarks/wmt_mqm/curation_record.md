@@ -1,0 +1,3 @@
+- Preserve the original eight 2020–2022 campaign/language selections and explicitly identify the existing binary category/severity readout; it is not the upstream scalar MQM score. Original severities and ignored annotation types remain in full traces.
+- Retain every original annotation field and target-text variant without clipping. Join the author-corrected 2020 target text only after verifying unchanged row identities and grades; preserve both releases in raw.
+- Keep campaign/language system identities and grading dimensions distinct. Withhold ambiguous source-text units rather than silently choosing a version; record the exact exclusions in source reconciliation. No inference or new human/LLM grading runs.
