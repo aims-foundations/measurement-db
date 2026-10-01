@@ -30415,6 +30415,120 @@ def _aegis(directory, tables, metadata):
         source_human_grades=graders['human'], source_llm_jury_grades=graders['llm_jury'])
 
 
+def _tumlu(directory, tables, metadata):
+    import ast
+    import re
+    import pandas as pd
+    from pathlib import Path
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='TUMLU complete original-record audit')
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    _check(metadata['benchmark']['response_scale'], dict(kind='discrete', values=[0, 1], direction='higher_is_better',
+        meanings={'0': 'The upstream parser did not extract the recorded correct choice.',
+                  '1': 'The upstream parser extracted the recorded correct choice.'}), 'TUMLU original scale direction')
+    _check(parameters['layout'], dict(results='data/*/outputs/**/*.json', parser='scripts/utils.py'), 'TUMLU source layout')
+    _check(labels['parser_function'], 'find_matching_pattern', 'TUMLU original parser name')
+    _check(labels['answer_dictionary'], 'ANSWER_DICT', 'TUMLU original keyword mapping')
+    _check(set(parameters['prompting_variants']), {'no_cot_instruct', 'cot_instruct'}, 'TUMLU prompting variants')
+
+    # Use the released pure grading functions as the oracle, independently of
+    # the builder's DataFrame construction and response-to-item associations.
+    source_path = directory / 'raw/scripts/utils.py'
+    source = ast.parse(source_path.read_text())
+    dictionary = next(ast.literal_eval(node.value) for node in source.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == 'ANSWER_DICT' for target in node.targets))
+    functions = [node for node in source.body if isinstance(node, ast.FunctionDef)
+                 and node.name in {'find_matching_pattern', 'get_acc'}]
+    _check(len(functions), 2, 'TUMLU original grading oracle')
+    native = {'re': re, 'ANSWER_DICT': dictionary}
+    exec(compile(ast.Module(body=functions, type_ignores=[]), str(source_path), 'exec'), native)
+    expected, first_alias, contexts, source_subjects = {}, {}, {}, set()
+    language_counts, variant_counts, file_accuracies = Counter(), Counter(), {}
+    api_errors, empty_files = 0, 0
+    for path in sorted((directory / 'raw/data').glob('*/outputs/**/*.json')):
+        filename = str(path.relative_to(directory / 'raw'))
+        original_path = Path(re.sub(r'_x([0-9a-f]{2,6})_', lambda m: chr(int(m[1], 16)), filename))
+        language, variant = original_path.parts[1], original_path.parts[3]
+        model = '/'.join(original_path.parts[4:-1])
+        records = json.loads(path.read_text())
+        empty_files += not records
+        if records and language in dictionary:
+            file_accuracies[filename] = native['get_acc']([dict(row) for row in records], language)
+        for index, record in enumerate(records):
+            _check(set(record), {'description', 'question', 'choices', 'output', 'answer', 'system', 'input'}, 'TUMLU complete native fields')
+            _check(all(isinstance(record[k], str) for k in ['question', 'output', 'answer', 'system', 'input']), True, 'TUMLU native text types')
+            _check(record['answer'] in 'ABCD' and len(record['answer']) == 1, True, 'TUMLU original reference letter')
+            key = filename, index
+            identity = record['system'], record['input'], language, record['answer']
+            extracted = native['find_matching_pattern'](record['output'], language) if language in dictionary else None
+            grade = float(extracted == record['answer']) if language in dictionary else None
+            expected[key] = dict(record=record, language=language, model=model, variant=variant,
+                                 identity=identity, prediction=extracted, grade=grade)
+            first_alias.setdefault(identity, filename + ':' + str(index))
+            contexts.setdefault(identity, record)
+            source_subjects.add((model, variant))
+            language_counts[language] += 1
+            variant_counts[variant] += 1
+            api_errors += record['output'] == '[INVALID]'
+
+    subjects = {}
+    for subject in tables['subjects'].itertuples():
+        features = _features(subject.subject_features_extra)
+        model, variant = features['source_model'], features['prompting_variant']
+        _check((model, variant) in source_subjects, True, 'TUMLU observed model and prompting mode')
+        _check(subject.display_name, model + ' [' + variant + ']', 'TUMLU unnormalized model identifier')
+        _check(subject.harness, labels['harness'], 'TUMLU harness provenance')
+        _check(features, dict(source_model=model, prompting_variant=variant,
+            prompting=parameters['prompting_variants'][variant], historical_configuration=labels['historical_configuration']), 'TUMLU subject configuration')
+        subjects[subject.subject_id] = model, variant
+    _check(Counter(subjects.values()), Counter({key: 1 for key in source_subjects}), 'TUMLU complete subject attribution')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, item_contexts, file_grades = set(), {}, {}
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        _check(set(trace), {'source_file', 'source_row', 'grade_status', 'extracted_answer', 'record'}, 'TUMLU trace structure')
+        key = trace['source_file'], trace['source_row']
+        _check(key in expected and key not in seen, True, 'TUMLU unique original observation')
+        seen.add(key)
+        original = expected[key]
+        record, language = original['record'], original['language']
+        _check(trace['record'], record, 'TUMLU complete, untruncated original attempt')
+        _check(trace['extracted_answer'], original['prediction'], 'TUMLU native answer extraction')
+        status = 'native_parser_comparison' if language in dictionary else 'unavailable_native_language_keyword'
+        _check(trace['grade_status'], status, 'TUMLU actual grading availability')
+        if original['grade'] is None:
+            _check(pd.isna(response.response), True, 'TUMLU no invented grade without source keyword')
+        else:
+            _check(response.response, original['grade'], 'TUMLU original exact-match grade')
+            file_grades.setdefault(key[0], []).append(response.response)
+        _check(subjects[response.subject_id], (original['model'], original['variant']), 'TUMLU model-response association')
+        _check(response.test_condition, key[0] + ':' + str(key[1]), 'TUMLU original attempt locator')
+        _check(response.trial, 1, 'TUMLU one attempt per original record')
+        item = items[response.item_id]
+        _check(json.loads(item['content']), dict(system=record['system'], user=record['input']), 'TUMLU exact prompts and shuffled choices')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=record['answer'], rule=metadata['grading']['rule']), 'TUMLU matching shuffled reference')
+        verifier = dict(**metadata['grading']['verifiers']['native'], language=language, answer_keyword=dictionary.get(language))
+        _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'}, spec=json.dumps(verifier, sort_keys=True)), 'TUMLU original language-specific grading protocol')
+        _check(_features(item['item_features']), dict(lang=language, input_scope=labels['input_scope']), 'TUMLU input attributes exclude grades')
+        _check(item['raw_item_id'], first_alias[original['identity']], 'TUMLU first item alias; all aliases retained in traces')
+        _check(item_contexts.setdefault(response.item_id, original['identity']), original['identity'], 'TUMLU consistent stimulus identity')
+    _check(seen, set(expected), 'TUMLU every original attempt exactly once')
+    _check(set(items), set(item_contexts), 'TUMLU no extra or orphaned items')
+    _check(set(item_contexts.values()), set(contexts), 'TUMLU complete stimuli and grading protocols')
+    _check(len(items), len(contexts), 'TUMLU canonical full-context item count')
+    _check(set(traces), set(tables['responses'].response_id), 'TUMLU complete trace linkage')
+    for filename, accuracy in file_accuracies.items():
+        _check(sum(file_grades[filename]) / len(file_grades[filename]), accuracy, 'TUMLU exact original per-file average')
+    return dict(source_subjects=len(source_subjects), source_items=len(contexts), source_responses=len(expected),
+        source_traces=len(expected), source_languages=len(language_counts), source_api_error_attempts=api_errors,
+        source_unavailable_grades=sum(row['grade'] is None for row in expected.values()),
+        source_cot_attempts=variant_counts['cot_instruct'], source_direct_attempts=variant_counts['no_cot_instruct'],
+        source_graded_result_files=len(file_accuracies), source_empty_result_files=empty_files)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30422,6 +30536,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'tumlu':
+        return _tumlu(directory, tables, metadata)
     if directory.name == 'aegis':
         return _aegis(directory, tables, metadata)
     if directory.name == 'decompile_bench':

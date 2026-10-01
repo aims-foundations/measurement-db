@@ -75,6 +75,118 @@ import pyarrow.ipc as ipc
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _aegis
 from measurement_db import build_base
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _tumlu
+from measurement_db import build_base
+
+class TumluSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory = Path(temporary.name) / 'tumlu'
+        raw = self.directory / 'raw'
+        (raw / 'scripts').mkdir(parents=True)
+        # The original pure grader is part of the small code-only fixture,
+        # with its regex behavior independently asserted below.
+        (raw / 'scripts/utils.py').write_text('''import re
+ANSWER_DICT = {'azerbaijani': 'Cavab'}
+def find_matching_pattern(text, language):
+    text = re.sub(r'\\s+', ' ', text).replace('*', '')
+    for source, target in [('А', 'A'), ('В', 'B'), ('Б', 'B'), ('С', 'C'), ('Д', 'D')]:
+        text = text.replace(source, target)
+    word = ANSWER_DICT[language]
+    patterns = {letter: [rf'{word}: {letter}', rf'{word.lower()}: {letter}',
+        rf'{word} {letter}\\)', rf'{word.lower()} {letter}\\)',
+        rf'{word} {letter} ', rf'{word.lower()} {letter} ', rf'{letter}\\)'] for letter in 'ABCD'}
+    for index in range(7):
+        for letter in 'ABCD':
+            if re.search(patterns[letter][index], text):
+                return letter
+    return None
+def get_acc(data, language, normalize=False):
+    for row in data:
+        row['prediction'] = find_matching_pattern(row['output'], language)
+    return sum(int(row['prediction'] == row['answer']) for row in data) / len(data) if data else 0
+''')
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/tumlu') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        first = dict(description='Five demonstrations.', system='Five demonstrations.', question='Choose green.',
+            choices=['red', 'green'], answer='B', input='Choose green. A) red B) green Cavab:', output='Cavab: B')
+        shuffled = dict(first, choices=['green', 'red'], answer='A', input='Choose green. A) green B) red Cavab:', output='Cavab: A')
+        self.source = raw / 'data/azerbaijani/outputs/no_cot_instruct/model-A/Biology.json'
+        sources = {
+            self.source: [first, dict(first, output='[INVALID]'), shuffled,
+                          dict(first, output='Long explanation. ' * 1000 + 'Cavab: D ... Cavab: **В**')],
+            raw / 'data/azerbaijani/outputs/cot_instruct/model-A/Biology.json': [dict(first, output='Cavab: C')],
+            raw / 'data/uyghur-latin/outputs/no_cot_instruct/model-B/Biology.json': [dict(first, output='Jawab: B')],
+            raw / 'data/azerbaijani/outputs/no_cot_instruct/model-A/Empty.json': [],
+        }
+        for path, records in sources.items():
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(records, ensure_ascii=False))
+        cls = runpy.run_path(str((ROOT / 'benchmarks/tumlu') / 'build.py'))['TUMLU']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_all_attempts_with_shuffled_choices_and_original_parser(self):
+        result = _tumlu(self.directory, self.frames, self.metadata)
+        self.assertEqual(result['source_responses'], 6)
+        self.assertEqual(result['source_subjects'], 3)
+        self.assertEqual(result['source_items'], 3)
+        self.assertEqual(result['source_unavailable_grades'], 1)
+        self.assertEqual(result['source_api_error_attempts'], 1)
+        self.assertEqual(result['source_empty_result_files'], 1)
+        self.assertEqual(self.frames['responses'].response.dropna().sum(), 3)
+        self.assertGreater(max(self.frames['traces'].trace.str.len()), 16000)
+        reordered = {key: frame.iloc[::-1].reset_index(drop=True) for key, frame in self.frames.items()}
+        self.assertEqual(_tumlu(self.directory, reordered, self.metadata), result)
+
+    def test_corruption_of_associations_grades_or_original_content_is_rejected(self):
+        for case in ['grade', 'missing_grade', 'invented_grade', 'item_link', 'content', 'verifier', 'source_row',
+                     'trace_output', 'prediction', 'grade_status', 'missing_response', 'missing_trace',
+                     'trial', 'condition', 'subject_attribution', 'criterion']:
+            frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
+            responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
+            available = responses.index[responses.response.notna()][0]
+            if case == 'grade': responses.loc[available, 'response'] = 1 - responses.loc[available, 'response']
+            elif case == 'missing_grade': responses.loc[available, 'response'] = None
+            elif case == 'invented_grade': responses.loc[responses.response.isna(), 'response'] = 0.0
+            elif case == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif case == 'content': items.loc[0, 'content'] = '{"system":"", "user":"Different choice order"}'
+            elif case == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif case in ['source_row', 'trace_output', 'prediction', 'grade_status']:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if case == 'source_row': trace['source_row'] = 999
+                elif case == 'trace_output': trace['record']['output'] = 'Changed output.'
+                elif case == 'prediction': trace['extracted_answer'] = 'CHANGED'
+                else: trace['grade_status'] = 'CHANGED'
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif case == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif case == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif case == 'trial': responses.loc[0, 'trial'] = 9
+            elif case == 'condition': responses.loc[0, 'test_condition'] = 'Changed source position'
+            elif case == 'subject_attribution': frames['subjects'].loc[0, 'display_name'] = 'Different model'
+            elif case == 'criterion': items.loc[0, 'grading_criterion'] = '{"reference_answer":"A", "rule":"Changed rule"}'
+            with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _tumlu(self.directory, frames, self.metadata)
+
+    def test_changed_original_record_or_scale_is_rejected(self):
+        original = self.source.read_bytes()
+        for field, value in [('output', 'Cavab: A'), ('answer', 'A'), ('input', 'Changed choices'), ('system', 'Changed examples')]:
+            records = json.loads(original)
+            records[0][field] = value
+            self.source.write_text(json.dumps(records))
+            with self.subTest(field=field), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _tumlu(self.directory, self.frames, self.metadata)
+            self.source.write_bytes(original)
+        self.metadata['benchmark']['response_scale']['direction'] = 'lower_is_better'
+        with self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+            _tumlu(self.directory, self.frames, self.metadata)
+
+
 class AegisSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
