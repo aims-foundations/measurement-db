@@ -94,6 +94,13 @@ For GitHub files stored with Git LFS, set `git_lfs: true` on that source.
 The downloader verifies the pointer against the pinned commit, then downloads
 the large file and verifies its declared SHA-256 and size.
 
+For file-level DVC releases, `dvc_index: <registry source name>` reads pointers
+from a named GitHub source at the same commit. Set the data source URL to the
+HTTPS DVC cache root; `files` matches original paths without `.dvc`, and
+`tree_sha256` pins the selected paths, sizes and MD5 hashes. The downloader
+verifies both the original pointers and the downloaded files. Directory pointers
+are not supported.
+
 Encrypted JSON releases can use the shared `read_gpg_json` reader (requires
 GnuPG). The provider's public password belongs in metadata; decoding uses an
 isolated temporary directory and leaves captured inputs unchanged.

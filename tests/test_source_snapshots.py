@@ -98,6 +98,99 @@ class HTTPSourceRetryTests(unittest.TestCase):
                     self.assertEqual(download.call_count, 2)
 
 
+class DVCSourceTests(unittest.TestCase):
+    """Original pointers pin downloads without copying each artifact into YAML."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name) / 'fixture'
+        self.raw = self.folder / 'raw'
+        self.raw.mkdir(parents=True)
+        self.pointer_path = 'results/field.nc.dvc'
+        self.registry = dict(name='registry', url='https://github.com/example/results', revision='a' * 40,
+                             files=[dict(match=r'results/.*[.]dvc', path='registry/{path}')])
+        self.source = dict(name='fields', url='https://provider.example/dvc', revision='a' * 40,
+                           dvc_index='registry', files=[dict(match=r'results/.*[.]nc', path='fields/{path}')])
+        self.output = dict(path='field.nc', size=len(PAYLOAD), md5=hashlib.md5(PAYLOAD).hexdigest())
+        self.set_pointer()
+
+    def set_pointer(self):
+        self.pointer = yaml.safe_dump(dict(outs=[self.output])).encode()
+        self.entry = dict(path=self.pointer_path, size=len(self.pointer), type='blob',
+                          sha=hashlib.sha1(f'blob {len(self.pointer)}\0'.encode() + self.pointer).hexdigest())
+        identity = [dict(path='results/field.nc', size=self.output['size'], digest=self.output['md5'])]
+        self.source['tree_sha256'] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+    def resolve(self, *, payload=None):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        with patch('scripts.build_measurement_tables.load_source_files.github_tree_entries', return_value=[self.entry]), \
+                patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                      return_value=io.BytesIO(self.pointer if payload is None else payload)):
+            return upstream_artifacts([self.registry, self.source], ('fields',), raw_dir=self.raw)
+
+    def test_fetch_preserves_original_pointer_and_file_and_verifies_cache(self):
+        metadata = yaml.safe_load((ROOT / 'benchmarks/real_webagents/metadata.yaml').read_text())
+        metadata['sources'] = dict(upstream=[self.registry, self.source])
+        (self.folder / 'metadata.yaml').write_text(yaml.safe_dump(metadata))
+        pointer_url = 'https://raw.githubusercontent.com/example/results/' + 'a' * 40 + '/' + self.pointer_path
+        field_url = self.source['url'] + '/' + self.output['md5'][:2] + '/' + self.output['md5'][2:]
+        payloads = {pointer_url: self.pointer, field_url: PAYLOAD}
+
+        def fetch(request, **kwargs):
+            return io.BytesIO(payloads[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.github_tree_entries', return_value=[self.entry]), \
+                patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+                patch('build_base.urllib.request.urlopen', side_effect=fetch):
+            builder = DownloadFixture(str(self.folder / 'build.py'))
+            builder.fetch_sources('registry', 'fields')
+            self.assertEqual((self.raw / 'registry' / self.pointer_path).read_bytes(), self.pointer)
+            target = self.raw / 'fields/results/field.nc'
+            self.assertEqual(target.read_bytes(), PAYLOAD)
+            with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('cached')), \
+                    patch('build_base.urllib.request.urlopen', side_effect=AssertionError('cached')):
+                builder.fetch_sources('registry', 'fields')
+                target.write_bytes(b'x' * len(PAYLOAD))
+                with self.assertRaises(SourceDataError):
+                    builder.fetch_sources('registry', 'fields')
+            self.assertEqual(target.read_bytes(), b'x' * len(PAYLOAD))
+
+    def test_changed_pointer_and_tree_are_rejected(self):
+        with self.assertRaisesRegex(SourceDataError, 'pinned Git blob'):
+            self.resolve(payload=b' ' * len(self.pointer))
+        self.source['tree_sha256'] = '0' * 64
+        with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+            self.resolve()
+
+    def test_directory_pointers_invalid_sizes_and_mismatched_paths_are_rejected(self):
+        for change in [dict(md5='a' * 32 + '.dir'), dict(size=True), dict(size=-1),
+                       dict(path='../field.nc'), dict(path='different.nc')]:
+            with self.subTest(change=change):
+                original = self.output.copy()
+                self.output.update(change)
+                self.set_pointer()
+                with self.assertRaises(SourceDataError):
+                    self.resolve()
+                self.output = original
+        self.set_pointer()
+        self.pointer_path = '../results/field.nc.dvc'
+        self.set_pointer()
+        self.registry['files'][0]['match'] = r'.*[.]dvc'
+        self.source['files'][0]['match'] = r'.*[.]nc'
+        with self.assertRaises(SourceDataError):
+            self.resolve()
+
+    def test_source_revision_must_match_and_index_cannot_be_recursive(self):
+        self.source['revision'] = 'b' * 40
+        with self.assertRaisesRegex(SourceDataError, 'same pinned commit'):
+            self.resolve()
+        self.source['revision'] = 'a' * 40
+        self.registry['dvc_index'] = 'fields'
+        with self.assertRaisesRegex(SourceDataError, 'same pinned commit'):
+            self.resolve()
+
+
 class ZIPMemberTests(unittest.TestCase):
     """Original ZIP slices preserve bytes and require the full content-tree pin."""
 

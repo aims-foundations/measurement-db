@@ -241,7 +241,7 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [dvc_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
                       url:
@@ -262,6 +262,9 @@ $defs:
                     not: {anyOf: [{required: [file]}, {required: [prefix]}]}
                   - required: [files, json_index, tree_sha256]
                     not: {anyOf: [{required: [file]}, {required: [prefix]}]}
+                  - required: [files, dvc_index, tree_sha256]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
                   - required: [files, wandb_runs, tree_sha256]
                     not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
                     properties:
@@ -298,6 +301,11 @@ $defs:
               then:
                 required: [files, tree_sha256]
                 not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [html_index]}]}
+            - if:
+                required: [dvc_index]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
             - if:
                 required: [git_lfs]
                 properties: {git_lfs: {const: true}}
@@ -381,6 +389,10 @@ $defs:
               description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML, JSON and ZIP selections include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes; OSF includes paths, file IDs, versions, sizes and native SHA-256 hashes; W&B includes run-relative paths, sizes and provider MD5 hashes.
               type: string
               pattern: '^[0-9a-f]{64}$'
+            dvc_index:
+              description: Named GitHub source containing original file-level DVC pointers at the same revision. The source URL is the explicit HTTPS cache root; files patterns match paths without .dvc. The tree pin covers paths, sizes and original MD5 hashes. Directory pointers are unsupported.
+              type: string
+              pattern: '^[a-z][a-z0-9_]*$'
             html_index:
               description: Pinned HTML link source. An object extracts a declared HTML field from a pinned JSON source or JSON-indexed collection; files patterns select same-site links, including explicit query parameters.
               oneOf:

@@ -315,6 +315,58 @@ def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *
     return entries
 
 
+def dvc_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve file-level DVC pointers pinned by an original GitHub commit.
+
+    The named registry supplies the pointers; the source URL explicitly names
+    the HTTP cache. Never execute DVC configuration or commands from upstream.
+    """
+    import yaml
+
+    index = named.get(source['dvc_index'], {})
+    if (urlparse(index.get('url', '')).netloc != 'github.com' or 'files' not in index
+            or any(key in index for key in ('dvc_index', 'json_index', 'html_index', 'git_lfs'))
+            or index.get('revision') != source.get('revision')
+            or not re.fullmatch(r'[0-9a-f]{40}', str(index.get('revision', '')))):
+        raise SourceDataError('DVC index must name a GitHub file selection at the same pinned commit')
+    remote = urlparse(source['url'])
+    if remote.scheme != 'https' or not remote.netloc or remote.query or remote.fragment:
+        raise SourceDataError('DVC cache must be an explicit HTTPS URL without a query or fragment')
+    entries = []
+    for pointer in upstream_artifacts([index], (index['name'],), raw_dir=raw_dir):
+        relative = pointer['path'].removesuffix('.dvc')
+        if not pointer['path'].endswith('.dvc') or not any(
+                re.fullmatch(rule['match'], relative) for rule in source['files']):
+            continue
+        if not re.fullmatch(r'[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*', relative) or any(
+                part in {'.', '..'} for part in relative.split('/')):
+            raise SourceDataError('Unsafe DVC artifact path')
+        payload = _read_index_source(pointer['url'], pointer['file'], raw_dir)
+        digest = hashlib.sha1(f'blob {len(payload)}\0'.encode() + payload).hexdigest()
+        if len(payload) != pointer['size'] or digest != pointer['digest']:
+            raise SourceDataError('DVC pointer differs from its pinned Git blob')
+        try:
+            document = yaml.safe_load(payload)
+        except yaml.YAMLError as exc:
+            raise SourceDataError('Invalid DVC pointer YAML') from exc
+        outputs = document.get('outs') if isinstance(document, dict) else None
+        if not isinstance(outputs, list) or len(outputs) != 1 or not isinstance(outputs[0], dict):
+            raise SourceDataError('Expected exactly one file in each DVC pointer')
+        output = outputs[0]
+        md5, size = output.get('md5'), output.get('size')
+        if (not isinstance(md5, str) or not re.fullmatch(r'[0-9a-f]{32}', md5)
+                or type(size) is not int or size < 0 or output.get('path') != Path(relative).name):
+            raise SourceDataError('DVC pointer requires a file MD5, size and matching basename; directories are unsupported')
+        entries.append(dict(path=relative, size=size, digest=md5, hash_kind='md5',
+                            url=source['url'].rstrip('/') + '/' + md5[:2] + '/' + md5[2:]))
+    entries.sort(key=lambda entry: entry['path'])
+    identity = [{key: entry[key] for key in ('path', 'size', 'digest')} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not entries or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'DVC artifacts differ from the pinned tree ({fingerprint})')
+    return entries
+
+
 def osf_entries(source: dict) -> list[dict]:
     """Resolve a selected OSF folder using native file versions and SHA-256 hashes."""
     location = urlparse(source['url'])
@@ -744,6 +796,8 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 entries = wandb_entries(source)
             elif "json_index" in source:
                 entries = json_index_entries(source, named, raw_dir)
+            elif "dvc_index" in source:
+                entries = dvc_index_entries(source, named, raw_dir)
             elif "html_index" in source:
                 entries = html_index_entries(source, named, raw_dir)
             elif location.netloc == "api.osf.io":
@@ -815,7 +869,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                 revision = source["revision"]
                 if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
                     raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
-            if http_zip or "html_index" in source or "json_index" in source or "wandb_runs" in source or location.netloc in {"drive.google.com", "api.osf.io"}:
+            if http_zip or any(key in source for key in ("html_index", "json_index", "dvc_index", "wandb_runs")) or location.netloc in {"drive.google.com", "api.osf.io"}:
                 pass
             elif location.netloc == "github.com":
                 repository = location.path.strip("/")
