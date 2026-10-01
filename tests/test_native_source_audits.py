@@ -2393,6 +2393,192 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class GoodAILTMNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'goodai_ltm_benchmark'
+        self.directory.mkdir()
+        (self.directory / 'raw').mkdir()
+        folder = ROOT / 'benchmarks/goodai_ltm_benchmark'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        parameters = self.metadata['build']['parameters']
+        self.files = {name: ('# Original source reference: ' + name).encode() for name in
+            [*parameters['task_programs'].values(), *parameters['shared_resources'].values()]}
+        self.files['data/Restaurant/menu.json'] = b'{"menu": ["Original dish"]}'
+        sessions = ['GPTChatSession - gpt-4-1106-preview - 8192', 'MemGPTChatSession - 4096',
+            'GeminiProInterface', 'LTMAgentWrapper - claude-3-opus-20240229 - 16384 - QG_JSON_USER_INFO',
+            'MemGPTChatSession', 'HFChatSession - huggingface-gradientai-Llama-3-70B-Instruct-Gradient-262k - 32768']
+        self.results = {}
+        self.definitions = {}
+        self.colour_file = None
+        for index, task in enumerate(parameters['task_programs']):
+            group = 'Experiment ' + str(index % 2)
+            example, repetition = ('story_4', 2) if task == 'ChapterBreak' else ('0', 0)
+            name = f'data/tests/{group}/results/{sessions[index % len(sessions)]}/{task}/{example}_{repetition}.json'
+            reference = ['Original reference ' + task]
+            script = ['Complete instruction ' + task + '\n\u2028', 'Original next question']
+            definition = dict(script=script, expected_responses=reference, evaluation_fn='original grader',
+                is_question=[False, True], time_jumps=[0, 60], token_spacings=[0, 1000],
+                can_be_interleaved=True, uses_callback=task == 'Prospective Memory',
+                is_temporal=task == 'Trigger Response', extra_source_setting=dict(unchanged=True))
+            messages = ['Test (2000-01-01): ' + script[0], 'Agent (2000-01-01): Original answer',
+                'System: Original filler\ncontinued', 'Test (2000-01-02): ' + script[1]]
+            record = dict(score=0.0123456789012345, max_score=1, task_log=messages,
+                actual_responses=['Original answer'], full_log=['Unprefixed original full conversation'],
+                expected_responses=reference, tokens=5, characters=42, reasoning=['Published explanation'],
+                extra_original_field=dict(retain='exactly'))
+            if task in ['Instruction Recall', 'Spy Meeting']:
+                record['expected_responses'] = ['Older reference', 'Accepted synonym']
+            if task == 'Restaurant':
+                definition['script'], definition['expected_responses'] = [], []
+                record.update(score=3, max_score=5, auto_score=1, auto_actual_responses=['Earlier answer'],
+                    expected_responses=['Original dynamic rubric'])
+                record['task_log'] = ['Test: Original initial instructions', 'Agent: Original answer',
+                    'Test: Waiter: Good morning. ' + parameters['labels']['menu_marker'] + '\n1. Original dish',
+                    'Agent: Original order', 'Test: Later prompt quoting Original order']
+            if task == 'NameList':
+                record['auto_reasoning'] = ['Original automatically generated explanation']
+            if task == 'Delayed Recall':
+                record['score'], record['max_score'] = 4, 10
+            if task == 'Colours':
+                self.colour_file = name
+                record['full_log'] = ['Unprefixed original conversation\n\u2028' * 1000]
+            self.results[name] = record
+            self.definitions[f'data/tests/{group}/definitions/{task}/{example}.def.json'] = definition
+            self.files[f'data/tests/{group}/definitions/config.yml'] = yaml.safe_dump(dict(
+                config=dict(run_name='Original mismatched label', filler_tokens=1000 + index % 2),
+                datasets=['original scheduling configuration'])).encode()
+        # A second source alias for an identical definition must retain its observation.
+        alias = self.colour_file.replace('/0_0.json', '/1_0.json')
+        self.results[alias] = json.loads(json.dumps(self.results[self.colour_file]))
+        self.results[alias]['score'] = 0
+        self.results[alias]['full_log'] = ['Original second observation']
+        definition_file = 'data/tests/Experiment 0/definitions/Colours/0.def.json'
+        self.definitions[definition_file.replace('/0.def.json', '/1.def.json')] = self.definitions[definition_file]
+        self.files['data/tests/Experiment 0/results/GeminiProInterface/runstats.json'] = b'{"duration": 5}'
+        self._write_archive()
+        self.builder = runpy.run_path(str(folder / 'build.py'))['GoodAILTM']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def _write_archive(self):
+        import zipfile
+        layout = self.metadata['build']['parameters']['layout']
+        with zipfile.ZipFile(self.directory / 'raw' / layout['archive'], 'w') as archive:
+            for name, body in self.files.items():
+                archive.writestr(layout['prefix'] + name, body)
+            for name, value in {**self.definitions, **self.results}.items():
+                archive.writestr(layout['prefix'] + name, json.dumps(value))
+
+    def test_complete_native_grades_contexts_aliases_and_revised_references(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _goodai_ltm
+        observed = _goodai_ltm(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed, dict(source_subjects=6, source_items=13, source_responses=14,
+            source_traces=14, source_assets=16, source_result_files=14, source_run_statistics_excluded=1,
+            source_reference_differences=3, source_marked_revisions=2, source_revised_grades=1,
+            source_dynamic_records=1, source_long_full_logs=1, source_task_definitions=14))
+        self.assertTrue(self.frames['responses'].response.eq(4).any())
+        self.assertTrue(self.frames['responses'].trial.eq(3).any())
+        self.assertFalse(self.frames['items'].content.str.contains('Later prompt quoting').any())
+        self.assertTrue(self.frames['traces'].trace.str.contains('Later prompt quoting').any())
+
+    def test_corrupted_grades_definitions_resources_and_trace_links_are_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _goodai_ltm, _goodai_ltm_sources
+        source = _goodai_ltm_sources(self.directory, self.metadata)
+        changes = ['score', 'precision', 'normalize', 'subject', 'item', 'trial', 'condition', 'interactors',
+            'drop', 'duplicate', 'extra_subject', 'extra_item', 'extra_asset', 'model', 'configuration', 'scale',
+            'definition', 'schedule', 'release_group', 'menu', 'answer_leak', 'reference', 'rubric', 'verifier',
+            'effective_scale', 'raw_item_id', 'asset_bytes', 'asset_path', 'asset_role', 'trace_clip',
+            'missing_field', 'source_file', 'automatic_grade', 'trace_drop']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 0.5
+                elif change == 'precision': responses.loc[responses.response.eq(0.0123456789012345), 'response'] = 0.0123456789
+                elif change == 'normalize': responses.loc[responses.response.eq(4), 'response'] = 0.4
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'unknown'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 99
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong source'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'extra_item': frames['items'] = pd.concat([items, items.iloc[:1]], ignore_index=True)
+                elif change == 'extra_asset': frames['assets'] = pd.concat([assets, assets.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Wrong model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] += ';invented=yes'
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                elif change in ['definition', 'schedule', 'release_group', 'menu', 'answer_leak']:
+                    index = next(i for i, text in enumerate(items.content) if ('initial_menu_message' in text) == (change in ['menu', 'answer_leak']))
+                    value = json.loads(items.loc[index, 'content'])
+                    if change == 'definition': value['definition']['script'][0] = 'wrong question'
+                    elif change == 'schedule': value['configuration']['config']['filler_tokens'] = 999
+                    elif change == 'release_group': value['release_group'] = 'invented'
+                    elif change == 'menu': value['initial_menu_message'] = 'truncated menu'
+                    else: value['answer'] = 'evaluated answer'
+                    items.loc[index, 'content'] = json.dumps(value, sort_keys=True, ensure_ascii=False)
+                elif change in ['reference', 'rubric', 'effective_scale']:
+                    index = next(i for i, text in enumerate(items.content) if ('initial_menu_message' in text) == (change == 'rubric'))
+                    value = json.loads(items.loc[index, 'grading_criterion'])
+                    if change == 'reference': value['reference_answer'] = 'Wrong reference'
+                    elif change == 'rubric': value['rule'] = 'Wrong rubric'
+                    else: value['response_scale']['max'] = 99
+                    items.loc[index, 'grading_criterion'] = json.dumps(value)
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(**{'class': 'judge'}, spec='{}'))
+                elif change == 'raw_item_id': items.loc[0, 'raw_item_id'] = 'unknown definition'
+                elif change == 'asset_bytes': assets.loc[0, 'data'] = assets.loc[0, 'data'][:-1]
+                elif change in ['asset_path', 'asset_role']:
+                    value = json.loads(items.loc[0, 'asset_manifest']); value[0]['path' if change == 'asset_path' else 'role'] = 'wrong'
+                    items.loc[0, 'asset_manifest'] = json.dumps(value)
+                elif change == 'trace_drop': frames['traces'] = traces.iloc[1:]
+                else:
+                    index = next(i for i, text in enumerate(traces.trace) if ('auto_score' in text) == (change == 'automatic_grade') and (change != 'trace_clip' or len(text) > 16000))
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['record']['full_log'][0] = value['record']['full_log'][0][:16000]
+                    elif change == 'missing_field': value['record'].pop('extra_original_field')
+                    elif change == 'source_file': value['source_file'] = 'wrong.json'
+                    elif change == 'automatic_grade': value['record']['auto_score'] = 99
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _goodai_ltm(self.directory, frames, self.metadata, source)
+
+    def test_invalid_native_scores_and_wrong_task_definitions_are_rejected(self):
+        import contextlib
+        import io
+        from measurement_db.build_base import BuildContractError
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _goodai_ltm_sources
+        record = self.results[self.colour_file]
+        for value in [float('inf'), float('nan'), True, -0.1, 1.1]:
+            with self.subTest(value=value):
+                record['score'] = value
+                self._write_archive()
+                with self.assertRaises(ValueError):
+                    _goodai_ltm_sources(self.directory, self.metadata)
+                with contextlib.redirect_stdout(io.StringIO()), self.assertRaises((ValueError, BuildContractError)):
+                    self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                        '--output', str(self.directory.parent / 'invalid')])
+        record['score'] = 0
+        self.definitions['data/tests/Experiment 0/definitions/Colours/0.def.json']['script'][0] = 'Wrong opening instruction'
+        self._write_archive()
+        with self.assertRaises(ValueError):
+            _goodai_ltm_sources(self.directory, self.metadata)
+        with self.assertRaisesRegex(ValueError, 'does not match'):
+            self.builder(str(self.directory / 'build.py')).build_tables()
+
+
 class InterCodeNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

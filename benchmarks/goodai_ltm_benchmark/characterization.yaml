@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3507
+    logical_sha256: 16f92fe34a7667ca08fc042f7ea745a151587295d124e0f73c0c7b5c3bf66603
+  subjects:
+    rows: 37
+    logical_sha256: e56bccf4fae6626dfb6c676f8dcbce919348dc15e33f9bdc74011c9626059613
+  responses:
+    rows: 3507
+    logical_sha256: b837d8a46e718f2b9b3f5348f5ac396279ae721a765a212cd52d30c6af5409ea
+  assets:
+    rows: 16
+    logical_sha256: 3a5a40d5675bbbf91da1a65003eb9936e66e04f4abf3205f7b8ba249645f28d3
+  items:
+    rows: 452
+    logical_sha256: d1b5bfdea8a66139a806089b9cad72c32839e3388ec202515351f14dc808d9b3
+  benchmarks:
+    rows: 1
+    logical_sha256: 38a3acd6a809ab1b80d6291ed0f12e9665413941d2ea75068d8a3cf3ead1146b
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 37
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 452
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 3507
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 3507
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 16
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 3507
+  source_run_statistics_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 109
+  source_reference_differences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 377
+  source_marked_revisions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 48
+  source_revised_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 47
+  source_dynamic_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 258
+  source_long_full_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 2795
+  source_task_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GoodAI/goodai-ltm-benchmark
+    locator: data/tests and released task programs at v3.5-benchmark, b69d945191c426b887932eb832a52f3bb63a3a85.
+    scope: All published scored task records, excluding runtime statistics. Native score units and historical references
+      remain unchanged. Canonical items distinguish task context and grading protocol; identical definitions may
+      share one item. Programs are released references, not verified historical runtime snapshots.
+    expected: 325

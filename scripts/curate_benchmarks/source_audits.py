@@ -1018,3 +1018,5 @@ SOURCE_AUDITS["rakuda"] = verify_native_results
 
 SOURCE_AUDITS["qatch"] = verify_native_results
 SOURCE_AUDITS["intercode"] = verify_native_results
+
+SOURCE_AUDITS["goodai_ltm_benchmark"] = verify_native_results

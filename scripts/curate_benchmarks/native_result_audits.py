@@ -26080,11 +26080,185 @@ def _intercode(directory, tables, metadata, source=None):
         source_traces=len(traces), source_assets=len(assets), **source['counts'])
 
 
+def _goodai_ltm_sources(directory, metadata):
+    """Read the full native release independently of the builder's filename regex and joins."""
+    import math
+    import re
+    from zipfile import ZipFile
+
+    parameters = metadata['build']['parameters']
+    layout = parameters['layout']
+    records, expected, sessions, used_definitions = {}, {}, {}, set()
+    counts = Counter(source_result_files=0, source_run_statistics_excluded=0, source_reference_differences=0,
+        source_marked_revisions=0, source_revised_grades=0, source_dynamic_records=0, source_long_full_logs=0)
+    with ZipFile(directory / 'raw' / layout['archive']) as archive:
+        names = {name[len(layout['prefix']):]: name for name in archive.namelist()
+            if name.startswith(layout['prefix']) and not name.endswith('/')}
+        resources = {name: archive.read(names[name]) for name in
+            [*parameters['task_programs'].values(), *parameters['shared_resources'].values()]}
+        for name in sorted(names):
+            if not name.startswith('data/tests/') or '/results/' not in name or not name.endswith('.json'):
+                continue
+            record = json.loads(archive.read(names[name]))
+            if name.endswith('/runstats.json'):
+                _check('score' not in record and 'max_score' not in record, True, 'GoodAI statistics are not scored tasks')
+                counts['source_run_statistics_excluded'] += 1
+                continue
+            parts = name.split('/')
+            _check(len(parts), 7, 'GoodAI native result path')
+            _, _, group, _, session, task, filename = parts
+            example, repetition = filename.removesuffix('.json').rsplit('_', 1)
+            _check(repetition.isdigit(), True, 'GoodAI nonnegative native repetition index')
+            definition_file = f'data/tests/{group}/definitions/{task}/{example}.def.json'
+            original_definition = json.loads(archive.read(names[definition_file]))
+            configuration = yaml.safe_load(archive.read(names[f'data/tests/{group}/definitions/config.yml']))
+            used_definitions.add(definition_file)
+            for field in ['score', 'max_score']:
+                value = record[field]
+                _check(isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value),
+                    True, 'GoodAI finite native grades and maxima')
+            _check(record['max_score'] > 0 and 0 <= record['score'] <= record['max_score'], True, 'GoodAI native grade range')
+            tokens = session.split(' - ')
+            harness = tokens[0]
+            model = tokens[1] if len(tokens) > 1 and not tokens[1].isdigit() else harness
+            features = dict(source_session=session)
+            if len(tokens) > 2:
+                features['context_window'] = tokens[2]
+            elif len(tokens) > 1 and tokens[1].isdigit():
+                features['context_window'] = tokens[1]
+            if len(tokens) > 3:
+                features['agent_configuration'] = ' - '.join(tokens[3:])
+            sessions[session] = dict(model=model, harness=harness, features=features)
+            incoming = []
+            for message in record['task_log']:
+                match = re.fullmatch(r'(Test|Agent|System)(?: \([^)]*\))?: ?(.*)', message, re.DOTALL)
+                _check(match is not None, True, 'GoodAI task-log role and complete message')
+                if match[1] == 'Test':
+                    incoming.append(match[2])
+            definition = {key: value for key, value in original_definition.items()
+                if key not in ['expected_responses', 'evaluation_fn']}
+            program = parameters['task_programs'][task]
+            stimulus = dict(task_type=task, release_group=group, definition=definition, configuration=configuration,
+                program_reference=program, program_reference_revision=parameters['labels']['program_revision'])
+            paths = [program, 'dataset_interfaces/interface.py', 'runner/scheduler.py']
+            if task == 'Restaurant':
+                _check(len(incoming) >= 2 and parameters['labels']['menu_marker'] in incoming[1],
+                    True, 'GoodAI dynamic task has original initial instructions and menu')
+                stimulus.update(initial_instruction=incoming[0], initial_menu_message=incoming[1],
+                    task_random_key=task + ' - ' + example, dynamic_scope=parameters['labels']['dynamic_scope'])
+                paths.append('data/Restaurant/menu.json')
+                counts['source_dynamic_records'] += 1
+            else:
+                _check(bool(definition['script']) and definition['script'][0] == incoming[0],
+                    True, 'GoodAI task definition matches the original opening instruction')
+            marked = any(key.startswith('auto') for key in record)
+            protocol = dict(metadata['grading']['verifiers'][task],
+                revision_status=parameters['labels']['revised' if marked else 'unmarked'])
+            criterion = dict(reference_answer=None, rule=protocol['rule'], response_scale=dict(kind='interval',
+                min=0, max=record['max_score'], direction='higher_is_better'))
+            if task == 'Restaurant':
+                criterion['rule'] = json.dumps(dict(description=protocol['rule'], published_rubric=record['expected_responses']),
+                    sort_keys=True, ensure_ascii=False)
+            else:
+                criterion['reference_answer'] = json.dumps(record['expected_responses'], ensure_ascii=False)
+            expected[name] = dict(session=session, stimulus=stimulus, criterion=criterion, protocol=protocol,
+                verifier_class='exact_matcher' if protocol['kind'] == 'deterministic' and not marked else 'judge',
+                features=dict(task=task, subset=group), definition_file=definition_file,
+                trial=int(repetition) + 1, resources=[(path, resources[path]) for path in paths])
+            records[name] = record
+            counts['source_result_files'] += 1
+            counts['source_reference_differences'] += record['expected_responses'] != original_definition['expected_responses']
+            counts['source_marked_revisions'] += marked
+            counts['source_revised_grades'] += 'auto_score' in record and record['auto_score'] != record['score']
+            counts['source_long_full_logs'] += len(json.dumps(record['full_log'], ensure_ascii=False)) > 16000
+    return dict(records=records, expected=expected, sessions=sessions,
+        counts=dict(counts, source_task_definitions=len(used_definitions)))
+
+
+def _goodai_ltm(directory, tables, metadata, source=None):
+    """Reconcile every original score, reference, conversation and task/subject association."""
+    import hashlib
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _goodai_ltm_sources(directory, metadata) if source is None else source
+    aliases = {}
+    for expected in source['expected'].values():
+        signature = json.dumps({key: expected[key] for key in ['stimulus', 'criterion', 'protocol']}, sort_keys=True)
+        expected['alias_signature'] = hashlib.sha256(signature.encode()).hexdigest()
+        aliases.setdefault(expected['alias_signature'], set()).add(expected['definition_file'])
+    subjects, roster = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        session = features['source_session']
+        descriptor = source['sessions'][session]
+        _check((row.display_name, row.harness, features), (descriptor['model'], descriptor['harness'], descriptor['features']),
+            'GoodAI exact source session, model, memory configuration and context limit')
+        _check(all(pd.isna(getattr(row, field)) for field in ['harness_version', 'reasoning_effort', 'access_date']),
+            True, 'GoodAI unknown historical settings stay unknown')
+        subjects[row.subject_id] = session
+        roster[session] += 1
+    _check(roster, Counter({name: 1 for name in source['sessions']}), 'GoodAI complete session roster')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), dict(kind='mixed'), 'GoodAI native task-specific scales')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    for name, lookup in [('items', items), ('traces', traces), ('assets', assets)]:
+        _check(len(lookup), len(tables[name]), 'GoodAI unique ' + name + ' identities')
+    for identity, row in assets.items():
+        _check(hashlib.sha256(row['data']).hexdigest(), identity, 'GoodAI exact content-addressed source bytes')
+        _check(row['byte_size'], len(row['data']), 'GoodAI complete resource length')
+    seen, seen_items, seen_assets, checked = Counter(), set(), set(), set()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        name = trace['source_file']
+        original, expected = source['records'][name], source['expected'][name]
+        _check(trace == dict(source_file=name, record=original), True, 'GoodAI complete original trace including revised fields')
+        _check(subjects[row.subject_id], expected['session'], 'GoodAI correct session for every response')
+        _check(row.response, original['score'], 'GoodAI published grade without normalization, rounding or replacement')
+        _check(row.trial, expected['trial'], 'GoodAI exact native repetition converted to one-based trial')
+        _check(row.test_condition, name, 'GoodAI original observation path')
+        _check(pd.isna(row.interactors), True, 'GoodAI no invented external actors')
+        item = items[row.item_id]
+        signature = row.item_id, expected['definition_file'], json.dumps(expected['stimulus'], sort_keys=True), json.dumps(expected['criterion'], sort_keys=True), expected['verifier_class']
+        if signature not in checked:
+            content = json.dumps(expected['stimulus'], ensure_ascii=False, sort_keys=True)
+            _check(item['content'], unicodedata.normalize('NFC', content).strip(), 'GoodAI full initial context, definition and scheduling')
+            _check(item['raw_item_id'] in aliases[expected['alias_signature']], True,
+                'GoodAI retained upstream alias identifies the same complete task and grading protocol')
+            _check(_features(item['item_features']), expected['features'], 'GoodAI correct task family and released experiment')
+            criterion = dict(expected['criterion'])
+            criterion['response_scale'] = json.loads(canonical_response_scale(criterion['response_scale']))
+            _check(json.loads(item['grading_criterion']), criterion, 'GoodAI recorded reference/rubric and native scale')
+            _check(json.loads(item['verifier']), dict(**{'class': expected['verifier_class']},
+                spec=json.dumps(expected['protocol'], sort_keys=True, ensure_ascii=False)), 'GoodAI grading protocol and revision status')
+            manifest = []
+            for ordinal, (path, body) in enumerate(expected['resources'], 1):
+                identity = hashlib.sha256(body).hexdigest()
+                manifest.append(dict(asset_id=identity, path=path,
+                    media_type='application/json' if path.endswith('.json') else 'text/x-python',
+                    role='task_program_reference', ordinal=ordinal))
+                _check(assets[identity]['data'] == body, True, 'GoodAI unmodified released program or menu reference')
+                seen_assets.add(identity)
+            _check(json.loads(item['asset_manifest']), manifest, 'GoodAI exact reference resources, separate from supplied inputs')
+            checked.add(signature)
+        seen[name] += 1
+        seen_items.add(row.item_id)
+    _check(seen, Counter({name: 1 for name in source['records']}), 'GoodAI every native scored record exactly once')
+    _check(seen_items, set(items), 'GoodAI no extra or omitted items')
+    _check(seen_assets, set(assets), 'GoodAI no extra or omitted resources')
+    _check(set(traces), set(tables['responses'].response_id), 'GoodAI complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=sum(seen.values()),
+        source_traces=len(traces), source_assets=len(assets), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'goodai_ltm_benchmark':
+        return _goodai_ltm(directory, tables, metadata)
     if directory.name == 'intercode':
         return _intercode(directory, tables, metadata)
     if directory.name == 'qatch':
