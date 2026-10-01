@@ -31,6 +31,124 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _visua
 from measurement_db.build_base import _tables
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _afrieval
+
+
+class MasakhaNERAuditTests(unittest.TestCase):
+    def setUp(self):
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'afrieval'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/afrieval/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/afrieval/build.py'))['Afrieval']
+        first = [('NA', 'O'), ('"literal"', 'O'), ('2021', 'B-DATE'), ('Name', 'B-PER')]
+        gold_v1 = [first, [('Long' + 'x' * 18000, 'O')], first,
+            [('aye\u0301luja\u0301ra', 'O')], [('ayélujára', 'O')]]
+        gold_v2 = copy.deepcopy(gold_v1)
+        gold_v2[0][-1] = gold_v2[2][-1] = ('Name', 'B-LOC')
+        raw = self.directory / 'raw'
+        self.originals = {}
+        for version, prefix, records in [('v1', 'data', gold_v1), ('v2', 'MasakhaNER2.0/data', gold_v2)]:
+            path = raw / f'references/{version}/{prefix}/hau/test.txt'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('\n\n'.join('\n'.join(' '.join(row) for row in sentence) for sentence in records) + '\n\n')
+            self.originals[path] = path.read_bytes()
+        for filename, records, embedded, wrong in [
+            ('entity_analysis/mBERT/hau_bert_test_predictions.txt', gold_v1, False, 0),
+            ('entity_analysis/biLSTM_CRF/test.hau_model', gold_v1, True, -1),
+            ('MasakhaNER2.0/baseline_models_results/hau_afriberta/test_predictions1.txt', gold_v2, False, 1),
+            ('MasakhaNER2.0/baseline_models_results/hau_afriberta/test_predictions3.txt', gold_v2, False, 0),
+        ]:
+            path = raw / 'upstream' / filename
+            path.parent.mkdir(parents=True, exist_ok=True)
+            lines = []
+            for index, sentence in enumerate(records):
+                for token_index, (token, tag) in enumerate(sentence):
+                    prediction = 'B-ORG' if index == wrong and token_index == 0 else tag
+                    if embedded:
+                        token = ''.join('0' if character.isdigit() else character for character in token)
+                    lines.append(' '.join([token, tag, prediction] if embedded else [token, prediction]))
+                lines.append('')
+            path.write_text('\n'.join(lines) + '\n')
+            self.originals[path] = path.read_bytes()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_native_alignment_runs_duplicates_and_long_outputs(self):
+        expected = dict(source_subjects=4, source_items=6, source_traces=20, source_reference_files=2,
+            source_prediction_files=4, source_responses=20, source_tokens=44, source_successes=17,
+            source_digit_normalized_tokens=2)
+        self.assertEqual(_afrieval(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(_afrieval(self.directory, {k: v.iloc[::-1].reset_index(drop=True)
+            for k, v in self.frames.items()}, self.metadata), expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_corrupted_tables_fail(self):
+        changes = ['grade', 'null_grade', 'trial', 'subject_link', 'item_link', 'model_label', 'subject_features',
+            'runtime', 'content', 'reference', 'rule', 'verifier', 'item_features', 'raw_id', 'condition',
+            'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace', 'source_file',
+            'source_sentence', 'reference_file', 'tokens', 'predicted', 'reference_tokens', 'reference_tags',
+            'embedded_gold']
+        for change in changes:
+            tables = {key: value.copy(deep=True) for key, value in self.frames.items()}
+            response, item, subject, trace = (tables[key] for key in ['responses', 'items', 'subjects', 'traces'])
+            if change == 'grade': response.loc[0, 'response'] = 1 - response.loc[0, 'response']
+            elif change == 'null_grade': response.loc[0, 'response'] = None
+            elif change == 'trial': response.loc[0, 'trial'] = 99
+            elif change == 'subject_link': response.loc[0, 'subject_id'] = subject.subject_id.iloc[-1]
+            elif change == 'item_link': response.loc[0, 'item_id'] = item.item_id.iloc[-1]
+            elif change == 'model_label': subject.loc[0, 'display_name'] = 'wrong'
+            elif change == 'subject_features': subject.loc[0, 'subject_features_extra'] = 'source_export=wrong'
+            elif change == 'runtime': subject.loc[0, 'harness_version'] = 'invented'
+            elif change == 'content': item.loc[0, 'content'] = '{"tokens":[]}'
+            elif change in ['reference', 'rule']:
+                value = json.loads(item.loc[0, 'grading_criterion'])
+                value['reference_answer' if change == 'reference' else 'rule'] = 'wrong'
+                item.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': item.loc[0, 'verifier'] = '{"class":"exact_matcher","spec":"wrong"}'
+            elif change == 'item_features': item.loc[0, 'item_features'] = 'language=wrong'
+            elif change == 'raw_id': item.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'condition': response.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': tables['responses'] = response.iloc[1:]
+            elif change == 'duplicate_response': tables['responses'] = pd.concat([response, response.iloc[:1]])
+            elif change == 'drop_trace': tables['traces'] = trace.iloc[1:]
+            elif change == 'duplicate_trace': tables['traces'] = pd.concat([trace, trace.iloc[:1]])
+            else:
+                value = json.loads(trace.loc[0, 'trace'])
+                value[change] = 999 if change == 'source_sentence' else 'wrong'
+                trace.loc[0, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, TypeError, RuntimeError)):
+                _afrieval(self.directory, tables, self.metadata)
+
+    def test_invalid_native_alignment_fails(self):
+        raw = self.directory / 'raw'
+        prediction = raw / 'upstream/entity_analysis/mBERT/hau_bert_test_predictions.txt'
+        embedded = raw / 'upstream/entity_analysis/biLSTM_CRF/test.hau_model'
+        reference = raw / 'references/v1/data/hau/test.txt'
+        for change in ['token_order', 'missing_tag', 'short_sentence', 'missing_sentence',
+                       'extra_sentence', 'embedded_gold', 'wrong_reference', 'empty_reference']:
+            text = self.originals[prediction].decode()
+            if change == 'token_order': text = text.replace('NA B-ORG\n"literal" O', '"literal" O\nNA B-ORG', 1)
+            elif change == 'missing_tag': text = text.replace('NA B-ORG', 'NA', 1)
+            elif change == 'short_sentence': text = text.replace('NA B-ORG\n', '', 1)
+            elif change == 'missing_sentence': text = text.split('\n\n', 1)[1]
+            elif change == 'extra_sentence': text += '\nextra O\n'
+            elif change == 'embedded_gold': embedded.write_text(self.originals[embedded].decode().replace('NA O O', 'NA B-ORG O', 1))
+            elif change == 'wrong_reference': reference.write_text(self.originals[reference].decode().replace('Name B-PER', 'Name B-LOC', 1))
+            elif change == 'empty_reference': reference.write_text('')
+            prediction.write_text(text)
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, TypeError, pd.errors.EmptyDataError)):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+            finally:
+                for path, content in self.originals.items(): path.write_bytes(content)
+
+
 class VisualMemoryAuditTests(unittest.TestCase):
     def setUp(self):
         from io import BytesIO, StringIO

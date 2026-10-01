@@ -28413,11 +28413,149 @@ def _visual_memory(directory, tables, metadata):
         source_assets=len(assets), source_subjects=len(subjects), source_traces=len(traces), **dict(counts))
 
 
+def _afrieval(directory, tables, metadata):
+    """Read native sentence boundaries without using the builder's pandas reader or joins."""
+    import re
+    from collections import Counter, defaultdict
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='MasakhaNER source audit')
+    raw = directory / 'raw'
+    protocol = metadata['build']['parameters']['protocol']
+
+    def sentences(path):
+        result, current = [], []
+        for line in path.read_text().splitlines():
+            if line.strip():
+                current.append(line.split())
+            elif current:
+                result.append(current)
+                current = []
+        if current:
+            result.append(current)
+        return result
+
+    references = {}
+    for path in sorted((raw / 'references').rglob('test.txt')):
+        version = path.relative_to(raw / 'references').parts[0]
+        language = path.parent.name
+        _check((version, language) not in references, True, 'MasakhaNER unambiguous reference export')
+        rows = sentences(path)
+        _check(all(len(row) == 2 for sentence in rows for row in sentence), True,
+               'MasakhaNER native reference columns')
+        references[version, language] = str(path.relative_to(raw)), rows
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    configurations = {}
+    for identifier, subject in subjects.items():
+        features = _features(subject['subject_features_extra'])
+        source = features['source_export']
+        _check(source not in configurations, True, 'MasakhaNER distinct recorded configurations')
+        _check(subject['display_name'], features['source_model_label'], 'MasakhaNER original model label')
+        _check(subject['harness'], protocol['harness'], 'MasakhaNER original token-classification protocol')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+               'MasakhaNER unrecorded runtime configuration stays unknown')
+        configurations[source] = identifier, features
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    traces = {}
+    for row in tables['traces'].itertuples():
+        trace = json.loads(row.trace)
+        key = trace['source_file'], trace['source_sentence']
+        _check(key not in traces, True, 'MasakhaNER one observation per native sentence')
+        traces[key] = row.response_id, row.trace
+    _check(set(tables['traces'].response_id), set(responses), 'MasakhaNER full trace coverage')
+    seen, used_subjects, used_items = set(), set(), set()
+    aliases = defaultdict(set)
+    counts, occurrences = Counter(), Counter()
+    for path in sorted((raw / 'upstream').rglob('*')):
+        if not path.is_file():
+            continue
+        relative = path.relative_to(raw / 'upstream')
+        parts = relative.parts
+        if parts[:2] == ('MasakhaNER2.0', 'baseline_models_results') and re.fullmatch(r'test_predictions\d+\.txt', path.name):
+            version = 'v2'
+            language, model = path.parent.name.split('_', 1)
+            run = path.stem.removeprefix('test_predictions')
+            width = 2
+        elif parts[0] == 'entity_analysis' and path.name.endswith('_test_predictions.txt'):
+            version, model, run, width = 'v1', path.parent.name, 'released_single_export', 2
+            language = path.name.split('_', 1)[0]
+        elif parts[:2] == ('entity_analysis', 'biLSTM_CRF') and path.name.startswith('test.') and path.name.endswith('_model'):
+            version, model, run, width = 'v1', 'biLSTM_CRF', 'released_single_export', 3
+            language = path.name.removeprefix('test.').removesuffix('_model')
+        else:
+            continue
+        source = str(path.relative_to(raw))
+        native = sentences(path)
+        reference_file, gold = references[version, language]
+        _check(len(native), len(gold), 'MasakhaNER complete original test split')
+        subject_id, features = configurations[source]
+        _check(features, dict(source_model_label=model, dataset_version=version,
+            evaluation_language=language, released_run=run, source_export=source),
+            'MasakhaNER exact model, language and released run association')
+        used_subjects.add(subject_id)
+        counts['source_prediction_files'] += 1
+        for index, (observed, expected) in enumerate(zip(native, gold)):
+            _check(all(len(row) == width for row in observed), True, 'MasakhaNER native prediction columns')
+            source_tokens = [row[0] for row in observed]
+            reference_tokens = [row[0] for row in expected]
+            predicted = [row[-1] for row in observed]
+            reference_tags = [row[1] for row in expected]
+            embedded = [row[1] for row in observed] if width == 3 else None
+            aligned = [re.sub(r'\d', '0', token) for token in reference_tokens] if width == 3 else reference_tokens
+            _check(source_tokens, aligned, 'MasakhaNER all original token identities and order')
+            _check(len(predicted), len(reference_tags), 'MasakhaNER no missing output labels')
+            if embedded is not None:
+                _check(embedded, reference_tags, 'MasakhaNER independently released embedded gold labels')
+                counts['source_digit_normalized_tokens'] += sum(a != b for a, b in zip(source_tokens, reference_tokens))
+            key = source, index
+            response_id, trace_json = traces[key]
+            _check(json.loads(trace_json), dict(source_file=source, source_sentence=index,
+                reference_file=reference_file, tokens=source_tokens, predicted=predicted, embedded_gold=embedded,
+                reference_tokens=reference_tokens, reference_tags=reference_tags),
+                'MasakhaNER complete original output and reference without clipping')
+            response = responses[response_id]
+            _check(response['subject_id'], subject_id, 'MasakhaNER original response configuration')
+            item = items[response['item_id']]
+            _check(json.loads(item['content']), dict(task=protocol['instruction'], language=language, tokens=source_tokens),
+                   'MasakhaNER complete actual input tokens')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=json.dumps(reference_tags, ensure_ascii=False),
+                rule=metadata['grading']['rule']), 'MasakhaNER exact historical grading reference')
+            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)),
+                'MasakhaNER declared sentence-level grading interpretation')
+            _check(_features(item['item_features']), dict(lang=language, split='test'),
+                   'MasakhaNER original evaluation language and split')
+            grade = float(predicted == reference_tags)
+            _check(response['response'], grade, 'MasakhaNER complete-sequence exact-match grade')
+            _check(response['test_condition'], 'source_export=' + source, 'MasakhaNER original export provenance')
+            _check(pd.isna(response['interactors']), True, 'MasakhaNER no invented interactor')
+            occurrence = subject_id, response['item_id'], response['test_condition']
+            occurrences[occurrence] += 1
+            _check(response['trial'], occurrences[occurrence], 'MasakhaNER exact repeated-definition occurrence')
+            aliases[response['item_id']].add(f'{version}/{language}/sentence/{index}')
+            used_items.add(response['item_id'])
+            seen.add(key)
+            counts['source_responses'] += 1
+            counts['source_tokens'] += len(observed)
+            counts['source_successes'] += int(grade)
+    _check(set(traces), seen, 'MasakhaNER no omitted or invented native attempts')
+    _check(set(subjects), used_subjects, 'MasakhaNER no omitted or invented configurations')
+    _check(set(items), used_items, 'MasakhaNER no omitted or invented item definitions')
+    for item_id, allowed in aliases.items():
+        _check(items[item_id]['raw_item_id'] in allowed, True, 'MasakhaNER canonical source alias')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), metadata['benchmark']['response_scale'],
+           'MasakhaNER binary exact-match interpretation')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_reference_files=len(references), **dict(counts))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'afrieval':
+        return _afrieval(directory, tables, metadata)
     if directory.name == 'visual_memory':
         return _visual_memory(directory, tables, metadata)
     if directory.name == 'multi_moe':

@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: a0921981cb6367ae1ebac82eed58f54adf24e5804a50bc8971f1d78938effea3
+  items:
+    rows: 35205
+    logical_sha256: 34c40d5bd9f2ecbfeb4c2b85ba4dc6ad325a6f44d6a6e591b2f22c11f1b52d53
+  responses:
+    rows: 1403380
+    logical_sha256: 1a8ef83a02674021d59c7070f1e19d0d9dc2f7048ce24a7da65b36e852b3a891
+  subjects:
+    rows: 948
+    logical_sha256: b919efd0283cba6909d5b8d682e24e7bee8bc9b35d06b49ac2dd085189188de4
+  traces:
+    rows: 1403380
+    logical_sha256: d600aa7cd727f62f37dd590097c482c3bbce6d2e8d8d0a99afa5032e00e96233
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 948
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 35205
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 1403380
+  source_reference_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 29
+  source_prediction_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 948
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 1403380
+  source_tokens:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 33727683
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 1090668
+  source_digit_normalized_tokens:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/masakhane-io/masakhane-ner/tree/ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    locator: All 948 identified CoNLL prediction exports in entity_analysis/ and MasakhaNER2.0/baseline_models_results/,
+      joined to their separately pinned historical references.
+    scope: Every complete recorded token sequence, predicted tag, original reference, model/language/run association
+      and explicitly derived sentence exact-match outcome. The unqualified partly shortened XLM-R export stays raw-only;
+      no corpus F1 is substituted for a sentence outcome.
+    expected: 2072
