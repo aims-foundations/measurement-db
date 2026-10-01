@@ -56,6 +56,128 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _infib
 import pickle
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _imagenet_hard
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _imgedit
+
+class ImgEditAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'imgedit'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/imgedit') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        raw = self.directory / 'raw'; raw.mkdir()
+        paths = self.metadata['build']['parameters']['layout']
+        self.tasks = {'12': dict(id='scene/b.jpg', prompt='Replace the blue cup.', edit_type='replace'),
+            '3': dict(id='scene/a.jpg', prompt='Add a green ball.', edit_type='add'),
+            '21': dict(id='scene/a.jpg', prompt='Add a red ball.', edit_type='add')}
+        self.inputs = {paths['tasks']: json.dumps(self.tasks).encode(),
+            paths['rubrics']: json.dumps({'replace': 'Replacement rubric: <edit_prompt>', 'add': 'Addition rubric: <edit_prompt>'}).encode(),
+            paths['input_prefix'] + 'scene/a.jpg': b'original first image',
+            paths['input_prefix'] + 'scene/b.jpg': b'original second image'}
+        with tarfile.open(raw / paths['inputs'], 'w') as archive:
+            for name, data in self.inputs.items():
+                member = tarfile.TarInfo(name); member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        judgments = {'21': 'Complete long reasoning.\n**Compliance:** 1\n**Naturalness:** 1\n**Integrity:** 1',
+            '12': 'All edits match.\nCompliance: 5\nNaturalness: 5\nIntegrity: 5',
+            '3': 'Some defects remain.\nCompliance: 3\nNaturalness: 2\nIntegrity: 2'}
+        files = self.metadata['build']['parameters']['files']; prefix = paths['output_prefix']
+        self.output = {prefix + files['judgments']: json.dumps(judgments).encode(),
+            prefix + files['grades']: json.dumps({'3': 2.33, '12': 5.0}).encode(),
+            prefix + files['summary']: json.dumps({'add': 2.33, 'replace': 5.0, 'overall': 3.67}).encode(),
+            prefix + files['jsonl']: '\n'.join(json.dumps(dict(key=k, result=v)) for k, v in judgments.items()).encode()}
+        self.output.update({prefix + key + '.png': ('unchanged output ' + key).encode() for key in judgments})
+        with ZipFile(raw / paths['results'], 'w') as archive:
+            for name, data in self.output.items(): archive.writestr(name, data)
+        builder = runpy.run_path(str((ROOT / 'benchmarks/imgedit') / 'build.py'))['ImgEdit']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {p.stem: pd.read_parquet(p) for p in output.glob('*.parquet')}
+
+    def test_original_ratings_nulls_images_and_full_traces(self):
+        observed = _imgedit(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed, dict(source_subjects=1, source_items=3, source_responses=3, source_traces=3,
+            source_assets=2, source_input_files=2, source_generated_images=3, source_saved_grades=2,
+            source_ungraded_attempts=1, source_aggregate_scores_reconciled=3))
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_imgedit(self.directory, shuffled, self.metadata), observed)
+
+    def test_changed_tables_are_detected(self):
+        changes = ['grade', 'missing_to_failure', 'trial', 'subject_link', 'item_link', 'subject_label', 'harness',
+            'subject_features', 'content', 'raw_id', 'item_features', 'criterion', 'verifier', 'condition',
+            'missing_response', 'duplicate_response', 'missing_trace', 'trace_key', 'trace_text',
+            'trace_output', 'image_bytes', 'image_attachment']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, items, subjects, traces = [frames[n] for n in ['responses', 'items', 'subjects', 'traces']]
+            if change == 'grade': responses.loc[responses.response.notna(), 'response'] = 1.0
+            elif change == 'missing_to_failure': responses.loc[responses.response.isna(), 'response'] = 1.0
+            elif change == 'trial': responses.loc[0, 'trial'] = 2
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = 'unknown_subject'
+            elif change == 'item_link': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+            elif change == 'subject_label': subjects.loc[0, 'display_name'] = 'wrong'
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'subject_features': subjects.loc[0, 'subject_features_extra'] = 'source_run=wrong'
+            elif change == 'content': items.loc[0, 'content'] = 'wrong instruction'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'item_features': items.loc[0, 'item_features'] = 'edit_type=wrong'
+            elif change == 'criterion': items.loc[0, 'grading_criterion'] = json.dumps({'rule': 'wrong'})
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif change.startswith('trace_'):
+                trace = json.loads(traces.loc[0, 'trace'])
+                if change == 'trace_key': trace['source_key'] = 'wrong'
+                elif change == 'trace_text': trace['judge_text'] = trace['judge_text'][:8]
+                else: trace['output']['sha256'] = 'wrong'
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif change == 'image_bytes': frames['assets'].loc[0, 'data'] = b'different image'
+            elif change == 'image_attachment': items.loc[0, 'asset_manifest'] = next(x for x in items.asset_manifest if x != items.loc[0, 'asset_manifest'])
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _imgedit(self.directory, frames, self.metadata)
+
+    def test_changed_native_sources_are_detected(self):
+        raw = self.directory / 'raw'
+        layout = self.metadata['build']['parameters']['layout']; files = self.metadata['build']['parameters']['files']
+        path = raw / layout['results']; original = path.read_bytes(); prefix = layout['output_prefix']
+        for change in ['grade', 'aggregate', 'jsonl', 'output_image']:
+            data = copy.deepcopy(self.output)
+            if change == 'output_image': data[prefix + '3.png'] = b'wrong generated image'
+            elif change == 'jsonl': data[prefix + files['jsonl']] = data[prefix + files['jsonl']] + b'\n' + data[prefix + files['jsonl']].splitlines()[0]
+            else:
+                name = prefix + files['grades' if change == 'grade' else 'summary']
+                values = json.loads(data[name]); values['3' if change == 'grade' else 'overall'] = 1.0
+                data[name] = json.dumps(values).encode()
+            with ZipFile(path, 'w') as archive:
+                for name, value in data.items(): archive.writestr(name, value)
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _imgedit(self.directory, self.frames, self.metadata)
+            finally: path.write_bytes(original)
+        path = raw / layout['inputs']; original = path.read_bytes()
+        for change in ['task', 'rubric', 'input_image']:
+            data = copy.deepcopy(self.inputs)
+            if change == 'task':
+                tasks = copy.deepcopy(self.tasks); tasks['12']['prompt'] = 'Wrong instruction'
+                data[layout['tasks']] = json.dumps(tasks).encode()
+            elif change == 'rubric': data[layout['rubrics']] = json.dumps({'add': 'wrong', 'replace': 'wrong'}).encode()
+            else: data[layout['input_prefix'] + 'scene/a.jpg'] = b'wrong original image'
+            with tarfile.open(path, 'w') as archive:
+                for name, value in data.items():
+                    member = tarfile.TarInfo(name); member.size = len(value)
+                    archive.addfile(member, io.BytesIO(value))
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _imgedit(self.directory, self.frames, self.metadata)
+            finally: path.write_bytes(original)
+
+
 class ImageNetHardAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

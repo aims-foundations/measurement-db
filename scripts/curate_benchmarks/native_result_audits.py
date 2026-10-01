@@ -29735,11 +29735,125 @@ def _imagenet_hard(directory, tables, metadata):
         source_additional_baseline_records=(len(native) - len(matrices)) * len(originals))
 
 
+def _imgedit(directory, tables, metadata):
+    """Check original tasks, image bytes, judge text, parser omissions and source means."""
+    import hashlib
+    import tarfile
+    from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='ImgEdit native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, files, labels = parameters['layout'], parameters['files'], parameters['labels']
+    _check((labels['model'], labels['judge'], labels['subject_key']),
+        ('BAGEL', 'gpt-4o-2024-11-20', 'imgedit_t4_i1.5'), 'ImgEdit recorded model and documented judge scope')
+    _check(metadata['benchmark']['response_scale'],
+        dict(kind='interval', min=1, max=5, direction='higher_is_better'), 'ImgEdit fractional average scale')
+    images, assets, tasks = {}, {}, {}
+    with tarfile.open(raw / layout['inputs']) as archive:
+        task_records = json.load(archive.extractfile(layout['tasks']))
+        rubrics = json.load(archive.extractfile(layout['rubrics']))
+        for key, task in task_records.items():
+            name = layout['input_prefix'] + task['id']
+            if name not in images:
+                blob = archive.extractfile(name).read()
+                digest = hashlib.sha256(blob).hexdigest()
+                images[name] = digest
+                assets[digest] = blob
+            tasks[key] = dict(record=task, digest=images[name])
+    outputs = {}
+    with ZipFile(raw / layout['results']) as archive:
+        prefix = layout['output_prefix']
+        judgments = json.loads(archive.read(prefix + files['judgments']))
+        scores = json.loads(archive.read(prefix + files['grades']))
+        summary = json.loads(archive.read(prefix + files['summary']))
+        lines = [json.loads(line) for line in archive.read(prefix + files['jsonl']).decode().splitlines() if line.strip()]
+        _check(Counter(line['key'] for line in lines), Counter({key: 1 for key in judgments}),
+            'ImgEdit JSONL contains each native judgment exactly once')
+        _check({line['key']: line['result'] for line in lines}, judgments, 'ImgEdit JSON and JSONL exact agreement')
+        _check(set(judgments), set(tasks), 'ImgEdit complete original single-turn task coverage')
+        _check({Path(name).stem for name in archive.namelist() if name.startswith(prefix) and name.endswith('.png')},
+            set(tasks), 'ImgEdit one recorded output image per task')
+        for key in judgments:
+            name = prefix + key + '.png'
+            blob = archive.read(name)
+            outputs[key] = dict(member=name, sha256=hashlib.sha256(blob).hexdigest(), bytes=len(blob))
+    parsed, dimensions = {}, Counter()
+    for key, text in judgments.items():
+        ratings = []
+        for line in text.splitlines():
+            parts = line.strip().split(': ')
+            if len(parts) == 2 and parts[1].isdigit():
+                ratings.append(int(parts[1]))
+        dimensions[len(ratings)] += 1
+        _check(len(ratings) in (0, 3) and all(1 <= score <= 5 for score in ratings), True,
+            'ImgEdit native complete rating triplet or parser omission')
+        if ratings:
+            parsed[key] = round(sum(ratings) / len(ratings), 2)
+    _check(parsed, scores, 'ImgEdit every saved grade equals the original parser')
+    groups = defaultdict(list)
+    for key, value in scores.items():
+        groups[tasks[key]['record']['edit_type']].append(value)
+    calculated = {key: round(sum(values) / len(values), 2) for key, values in groups.items()}
+    if scores:
+        calculated['overall'] = round(sum(scores.values()) / len(scores), 2)
+    _check(calculated, summary, 'ImgEdit all original aggregate scores independently reconcile')
+    _check(len(tables['subjects']), 1, 'ImgEdit only the released BAGEL subject')
+    subject = tables['subjects'].iloc[0]
+    expected_features = dict(parameters['subject_features'])
+    harness = expected_features.pop('harness')
+    _check((subject.display_name, subject.harness, _features(subject.subject_features_extra)),
+        (labels['model'], harness, expected_features), 'ImgEdit original subject configuration without invented settings')
+    actual_assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(set(actual_assets), set(assets), 'ImgEdit only original input images are input assets')
+    for key, blob in assets.items():
+        _check((actual_assets[key]['data'], actual_assets[key]['byte_size']), (blob, len(blob)),
+            'ImgEdit original unmodified input image bytes')
+    item_keys = {}
+    for row in tables['items'].itertuples():
+        key = row.raw_item_id
+        _check(key in tasks, True, 'ImgEdit actual native task identifier')
+        task = tasks[key]['record']
+        digest = tasks[key]['digest']
+        logical = 'images/' + digest + '.jpg'
+        _check(json.loads(row.content), dict(text=task['prompt'], multimedia_elements=[
+            dict(content_type='image/jpeg', location=logical)]), 'ImgEdit full original instruction and input stimulus')
+        _check(json.loads(row.asset_manifest), [dict(asset_id=digest, path=logical, media_type='image/jpeg', role='input', ordinal=1)],
+            'ImgEdit correct input-image association')
+        _check(_features(row.item_features), dict(edit_type=task['edit_type']), 'ImgEdit original task category')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=None, rule=json.dumps(dict(instruction=metadata['grading']['rule'],
+            judge_prompt=rubrics[task['edit_type']].replace('<edit_prompt>', task['prompt'])))), 'ImgEdit full native task-specific rubric')
+        _check(json.loads(row.verifier), dict(**{'class': 'judge'}, judge=labels['judge'], judged_by='llm',
+            spec=json.dumps(metadata['grading']['verifiers']['native_judge'], sort_keys=True)), 'ImgEdit documented grading protocol')
+        item_keys[row.item_id] = key
+    _check(Counter(item_keys.values()), Counter({key: 1 for key in tasks}), 'ImgEdit full distinct task definitions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'ImgEdit exact trace associations')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        key = item_keys[row.item_id]
+        expected = scores.get(key)
+        _check(None if pd.isna(row.response) else row.response, expected, 'ImgEdit native score including missing-grade distinction')
+        _check((row.subject_id, row.trial, row.test_condition, pd.isna(row.interactors)),
+            (subject.subject_id, 1, labels['condition'], True), 'ImgEdit native single recorded attempt')
+        _check(json.loads(traces[row.response_id]), dict(source_file=layout['results'], source_key=key,
+            source_task=tasks[key]['record'], judge_text=judgments[key], native_score=expected,
+            grade_status=labels['omitted'] if expected is None else labels['saved'], output=outputs[key]),
+            'ImgEdit full original judge response and generated-image identity')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in tasks}), 'ImgEdit no dropped or fabricated observations')
+    return dict(source_subjects=1, source_items=len(tasks), source_responses=len(seen), source_traces=len(traces),
+        source_assets=len(assets), source_input_files=len(images), source_generated_images=len(outputs),
+        source_saved_grades=len(scores), source_ungraded_attempts=dimensions[0], source_aggregate_scores_reconciled=len(summary))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'imgedit':
+        return _imgedit(directory, tables, metadata)
     if directory.name == 'imagenet_hard':
         return _imagenet_hard(directory, tables, metadata)
     if directory.name == 'infibench':

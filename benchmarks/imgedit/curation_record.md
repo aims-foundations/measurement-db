@@ -1,0 +1,3 @@
+- Replace 130 leaderboard aggregates with the author-linked BAGEL release: 737 individual editing attempts, original instructions and 171 input images. Generated images remain intact in the result archive and are linked by path and SHA-256.
+- Preserve all 454 saved grades and all 737 judge responses. The native parser omits 283 responses, which remain null rather than failures; all ten published averages reconcile. No new judging.
+- Keep the documented BAGEL configuration and GPT-4o grading protocol distinct from the older GPT-4.1 leaderboard. Historical checkpoint revisions, seeds and API metadata are unavailable.
