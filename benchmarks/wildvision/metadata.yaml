@@ -1,0 +1,90 @@
+benchmark:
+  name: WildVision-Bench
+  description: Image-based user requests with model answers and GPT-4o preference judgments against a fixed Claude-3-Sonnet comparison answer.
+  version: vision_bench_0617
+  testing_condition: >-
+    Import the original GitHub answer and judge records for 22 models on 500 tasks.
+    Verify the overlapping 20-model Hugging Face release without counting its copies as
+    additional evaluations. Restore original PNG bytes and preserve full model outputs,
+    judge explanations and available judge prompts. Scores encode five ordered preference
+    categories, not probabilities or empirical win rates. Missing or malformed verdicts
+    remain null; empty model answers with released judgments remain scored. The comparison
+    answer belongs to the grading criterion, not the task input. Historical generation
+    settings and exact model checkpoints not recorded with a run remain unknown. No model
+    or judge is executed during curation.
+  paper_url: https://arxiv.org/abs/2406.11069
+  data_source_url: https://github.com/WildVision-AI/WildVision-Bench
+  subject_type: model
+  item_type: task
+  license: 'WildVision dataset: CC-BY-4.0; original code: MIT. The HF source requires authorized access.'
+  citation: 'Lu et al. (2024). WildVision: Evaluating Vision-Language Models in the Wild with Human Preferences. arXiv:2406.11069.'
+  tags: [multimodal, preference, llm_judge]
+  modality: [image, text]
+  domain: [preference]
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values: [0, 0.25, 0.5, 0.75, 1]
+    meanings: {'0': Worse++, '0.25': Worse, '0.5': Tie, '0.75': Better, '1': Better++}
+    direction: higher_is_better
+  categorical: true
+  release_date: '2024-06'
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      answers: github/data/vision_bench_0617/model_answers/*.jsonl
+      judgments: github/data/vision_bench_0617/model_judgements/judge_gpt-4o_reference_claude-3-sonnet-20240229/*.jsonl
+      hf_answers: hf/release_bench_0617_with_modelresponse/*.parquet
+      hf_judgments: hf/release_bench_0617_with_modeljudgement/*.parquet
+      judge_config: github/config/judge_config.yaml
+    labels:
+      judge: gpt-4o
+      opponent: claude-3-sonnet-20240229
+      harness: WildVision-Bench
+    scores:
+      A>>B: '0'
+      A>B: '0.25'
+      A=B: '0.5'
+      B>A: '0.75'
+      B>>A: '1'
+    verdicts:
+      A>>B: Worse++
+      A>B: Worse
+      A=B: Tie
+      B>A: Better
+      B>>A: Better++
+grading:
+  rule: >-
+    GPT-4o compares the candidate answer (assistant B) with the fixed Claude-3-Sonnet
+    answer (assistant A), considering correctness, helpfulness, relevance, conciseness
+    and other requested qualities. Import its released A>>B, A>B, A=B, B>A or B>>A
+    verdict and encode the ordered categories as 0, 0.25, 0.5, 0.75 or 1. These values
+    preserve the earlier MeasurementDB coding, not an asserted interval utility scale.
+    A missing or non-category score field has no valid released verdict and remains null;
+    do not turn failed extraction into a tie or infer a new judgment from the explanation.
+  verifiers:
+    preference:
+      source: https://github.com/WildVision-AI/WildVision-Bench/blob/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/config/judge_config.yaml
+      implementation: get_judgement.py
+      native_score: games[0].score
+      candidate_position: B
+      comparison_position: A
+      protocol: Single released comparison; the published config and complete available native judge prompts are captured.
+sources:
+  upstream:
+  - name: native_results_and_protocol
+    url: https://github.com/WildVision-AI/WildVision-Bench
+    revision: 79dacc031b38bb88558bb9a9357d98b3fa6d8bc3
+    files:
+    - match: data/vision_bench_0617/(?:model_answers/[^/]+|model_judgements/[^/]+/[^/]+)\.jsonl|(?:bench_utils|get_judgement|show_results|gen_answers|format_lmmseval_answers|run_vllm)\.py|config/judge_config\.yaml|model_configs/.*/generation_config\.ya?ml|LICENSE|README\.md
+      path: github/{path}
+  - name: original_images_and_overlapping_exports
+    url: https://huggingface.co/datasets/WildVision/wildvision-arena-data
+    revision: 5d8238e04e319f95b89addc9d697dd808df6f3cf
+    files:
+    - match: release_bench_0617_with_model(?:response|judgement)/[^/]+\.parquet|README\.md
+      path: hf/{path}

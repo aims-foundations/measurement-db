@@ -1034,3 +1034,4 @@ SOURCE_AUDITS["multimodal_stem_ai"] = verify_native_results
 SOURCE_AUDITS["tensortrust"] = verify_native_results
 SOURCE_AUDITS["ocrbench_v2"] = verify_native_results
 SOURCE_AUDITS["mmmu_dev_val"] = verify_native_results
+SOURCE_AUDITS["wildvision"] = verify_native_results

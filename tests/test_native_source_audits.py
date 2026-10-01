@@ -5016,6 +5016,122 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         path.write_text(text)
 
 
+class WildVisionAuditTests(unittest.TestCase):
+    def setUp(self):
+        import hashlib
+        from PIL import Image
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _wildvision
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')
+        self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'wildvision';self.directory.mkdir()
+        self.metadata=yaml.safe_load((ROOT/'benchmarks/wildvision/metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder=runpy.run_path(str(ROOT/'benchmarks/wildvision/build.py'))['WildVision'];self.audit=_wildvision
+        self.baseline='claude-3-sonnet-20240229';self.models=[self.baseline,'model-A','model-extra']
+        images=[]
+        for color in ['red','blue']:
+            stream=io.BytesIO();Image.new('RGB',(4,4),color).save(stream,format='PNG');images.append(stream.getvalue())
+        self.bank=[dict(question_id=f'q{i}',instruction=f'Describe image {i}.',language='English; literal, label',
+            image=dict(bytes=images[i%2],path=None)) for i in range(6)]
+        # The legacy text-only importer merged different images with identical instructions.
+        self.bank[1]['instruction'] = self.bank[0]['instruction']
+        self.answers={};self.judgments={};self.answer_paths={};self.judge_paths={}
+        self.template=("<|User Prompt|>\n{question_1}\n\n<|The Start of Assistant A's Answer|>\n{answer_1}"
+            "\n<|The End of Assistant A's Answer|>\n\n<|The Start of Assistant B's Answer|>\n{answer_2}"
+            "\n<|The End of Assistant B's Answer|>")
+        for model in self.models:
+            answers=[];judgments=[]
+            for i,task in enumerate(self.bank):
+                output=f'{model} answer {i}.'
+                baseline_output=f'{self.baseline} answer {0 if i==1 else i}.'
+                if model==self.baseline:output=baseline_output
+                if model=='model-A' and i==1:output=''
+                if model=='model-extra' and i==5:output='Full original answer. '*1000
+                answer=dict(question_id=task['question_id'],instruction=task['instruction'],output=output,
+                    model=model,language=task['language'],token_len=len(output))
+                score='A=B' if model==self.baseline else ['A>>B','A>B','A=B','B>A','B>>A','A=B'][i]
+                if model=='model-extra' and i==4:score=None
+                if model=='model-extra' and i==5:score='Unusable extraction containing complete explanation.'
+                prompt=None if model=='model-extra' else [dict(type='text',text=self.template.format(
+                    question_1=task['instruction'],answer_1=baseline_output,answer_2=output)),
+                    dict(type='image',image=hashlib.sha256(task['image']['bytes']).hexdigest())]
+                answers.append(answer);judgments.append(dict(question_id=task['question_id'],model=model,judge='gpt-4o',
+                    games=[dict(user_prompt=prompt,judgment='Complete judge explanation. '*1000,score=score)]))
+            self.answers[model]=answers;self.judgments[model]=judgments
+            path=self.directory/'raw/github/data/vision_bench_0617/model_answers'/f'{model}.jsonl'
+            path.parent.mkdir(parents=True,exist_ok=True);path.write_text(''.join(json.dumps(r)+'\n' for r in answers));self.answer_paths[model]=path
+            path=self.directory/'raw/github/data/vision_bench_0617/model_judgements/judge_gpt-4o_reference_claude-3-sonnet-20240229'/f'{model}.jsonl'
+            path.parent.mkdir(parents=True,exist_ok=True);path.write_text(''.join(json.dumps(r)+'\n' for r in judgments));self.judge_paths[model]=path
+        config=self.directory/'raw/github/config/judge_config.yaml';config.parent.mkdir(parents=True)
+        config.write_text(yaml.safe_dump(dict(prompt_template=[self.template])))
+        hf_answers=[];hf_judgments=[]
+        meanings={'A>>B':'Worse++','A>B':'Worse','A=B':'Tie','B>A':'Better','B>>A':'Better++'}
+        for i,task in enumerate(self.bank):
+            hf_answers.append(dict(task,**{m:self.answers[m][i]['output'] for m in self.models[:2]}))
+            hf_judgments.append(dict(task,**{m:meanings[self.judgments[m][i]['games'][0]['score']] for m in self.models[:2]}))
+        for name,records in [('modelresponse',hf_answers),('modeljudgement',hf_judgments)]:
+            path=self.directory/f'raw/hf/release_bench_0617_with_{name}/data.parquet';path.parent.mkdir(parents=True)
+            pd.DataFrame(records).to_parquet(path,index=False)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),
+                '--output',str(self.directory.parent/'tables')])
+        self.frames={p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_native_judgments_images_nulls_and_overlapping_exports(self):
+        expected=dict(source_responses=18,source_subjects=3,source_items=6,source_assets=2,source_traces=18,
+            unavailable_verdicts=2,empty_outputs=1,recorded_judge_prompts=12,overlapping_hf_observations=12)
+        self.assertEqual(self.audit(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(self.audit(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),40000)
+        self.assertEqual(int(self.frames['responses'].response.isna().sum()),2)
+
+    def test_corrupt_grades_model_links_comparisons_images_and_traces_are_detected(self):
+        for change in ['grade','missing_grade','swap_items','wrong_model','comparison','verifier','wrong_image',
+                       'clip_judge','clip_answer','hf_evidence','drop_response','trial','opponent']:
+            with self.subTest(change=change):
+                tables={n:f.copy(deep=True) for n,f in self.frames.items()}
+                if change=='grade':
+                    i=tables['responses'].index[tables['responses'].response.notna()][0];tables['responses'].loc[i,'response']=1.-tables['responses'].loc[i,'response']
+                    if tables['responses'].loc[i,'response']==.5:tables['responses'].loc[i,'response']=0.
+                elif change=='missing_grade':tables['responses'].loc[tables['responses'].response.isna(),'response']=.5
+                elif change=='swap_items':
+                    other=next(i for i in tables['responses'].index if tables['responses'].loc[i,'item_id']!=tables['responses'].loc[0,'item_id'])
+                    tables['responses'].loc[[0,other],'item_id']=tables['responses'].loc[[other,0],'item_id'].to_numpy()
+                elif change=='wrong_model':tables['responses'].loc[0,'subject_id']=next(x for x in tables['subjects'].subject_id if x!=tables['responses'].loc[0,'subject_id'])
+                elif change=='comparison':
+                    c=json.loads(tables['items'].loc[0,'grading_criterion']);r=json.loads(c['rule']);r['comparison_answer']='wrong reference';c['rule']=json.dumps(r);tables['items'].loc[0,'grading_criterion']=json.dumps(c)
+                elif change=='verifier':tables['items'].loc[0,'verifier']='{"class":"judge","judge":"wrong"}'
+                elif change=='wrong_image':
+                    links=json.loads(tables['items'].loc[0,'asset_manifest']);links[0]['asset_id']=next(x for x in tables['assets'].asset_id if x!=links[0]['asset_id']);tables['items'].loc[0,'asset_manifest']=json.dumps(links)
+                elif change in ['clip_judge','clip_answer','hf_evidence']:
+                    t=json.loads(tables['traces'].loc[0,'trace'])
+                    if change=='clip_judge':t['judgment']['games'][0]['judgment']='clipped'
+                    elif change=='clip_answer':t['answer']['output']='clipped'
+                    else:t['hf_evidence']={'wrong':'association'}
+                    tables['traces'].loc[0,'trace']=json.dumps(t)
+                elif change=='drop_response':tables['responses']=tables['responses'].iloc[1:].copy()
+                elif change=='trial':tables['responses'].loc[0,'trial']=99
+                elif change=='opponent':tables['responses'].loc[0,'interactors']='opponent=wrong'
+                with self.assertRaises((ValueError,KeyError,RuntimeError)):self.audit(self.directory,tables,self.metadata)
+
+    def test_conflicting_exports_judges_prompts_and_duplicate_records_are_rejected(self):
+        for change in ['duplicate','output','question','judge','image','orientation','extra_game']:
+            with self.subTest(change=change):
+                answers=copy.deepcopy(self.answers['model-A']);judges=copy.deepcopy(self.judgments['model-A'])
+                if change=='duplicate':answers.append(answers[0])
+                elif change=='output':answers[0]['output']='different output'
+                elif change=='question':answers[0]['instruction']='wrong input'
+                elif change=='judge':judges[0]['judge']='different judge'
+                elif change=='image':judges[0]['games'][0]['user_prompt'][1]['image']='0'*64
+                elif change=='orientation':judges[0]['games'][0]['user_prompt'][0]['text']='answers reversed'
+                elif change=='extra_game':judges[0]['games'].append(copy.deepcopy(judges[0]['games'][0]))
+                self.answer_paths['model-A'].write_text(''.join(json.dumps(r)+'\n' for r in answers))
+                self.judge_paths['model-A'].write_text(''.join(json.dumps(r)+'\n' for r in judges))
+                with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        self.answer_paths['model-A'].write_text(''.join(json.dumps(r)+'\n' for r in self.answers['model-A']))
+        self.judge_paths['model-A'].write_text(''.join(json.dumps(r)+'\n' for r in self.judgments['model-A']))
+
+
 class MMMUDevValAuditTests(unittest.TestCase):
     def setUp(self):
         import base64

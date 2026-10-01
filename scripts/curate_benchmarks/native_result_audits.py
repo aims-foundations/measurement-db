@@ -27427,11 +27427,138 @@ def _mmmu_dev_val(directory, tables, metadata, source_records=None):
         source_assets=len(assets), source_image_occurrences=occurrences, source_ungraded_observations=len(native), **counts)
 
 
+def _wildvision_source_records(directory, metadata):
+    """Read native JSONL and Arrow records independently of the builder's melts and joins."""
+    import hashlib
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    paths = metadata['build']['parameters']['paths']
+    original = {}
+    for kind in ['answers', 'judgments']:
+        rows = {}
+        for path in sorted(raw.glob(paths[kind])):
+            for index, line in enumerate(path.read_text().splitlines()):
+                record = json.loads(line)
+                key = record['question_id'], record['model']
+                _check(key not in rows, True, 'WildVision unique native task/model record')
+                rows[key] = record, dict(file=str(path.relative_to(raw)), row=index)
+        original[kind] = rows
+    _check(set(original['answers']), set(original['judgments']), 'WildVision exact native answer/judgment correspondence')
+    exports = {}
+    for kind in ['hf_answers', 'hf_judgments']:
+        rows = {}
+        for path in sorted(raw.glob(paths[kind])):
+            for index, record in enumerate(pq.read_table(path).to_pylist()):
+                _check(record['question_id'] not in rows, True, 'WildVision unique HF question')
+                rows[record['question_id']] = record, dict(file=str(path.relative_to(raw)), row=index)
+        exports[kind] = rows
+    _check(set(exports['hf_answers']), set(exports['hf_judgments']), 'WildVision same HF question sets')
+    bank, evidence = {}, {}
+    for qid, (answer, answer_source) in exports['hf_answers'].items():
+        judgment, judgment_source = exports['hf_judgments'][qid]
+        for column in ['question_id', 'instruction', 'language', 'image']:
+            _check(answer[column], judgment[column], 'WildVision exact HF task and image correspondence')
+        models = set(answer) - {'question_id', 'instruction', 'language', 'image'}
+        _check(models, set(judgment) - {'question_id', 'instruction', 'language', 'image'}, 'WildVision same HF model sets')
+        bank[qid] = answer
+        for model in models:
+            source, _ = original['answers'][qid, model]
+            verdict, _ = original['judgments'][qid, model]
+            _check(source['output'], answer[model], 'WildVision unchanged HF/native answer')
+            _check(len(verdict['games']), 1, 'WildVision one released judgment occasion')
+            meanings = {'A>>B':'Worse++', 'A>B':'Worse', 'A=B':'Tie', 'B>A':'Better', 'B>>A':'Better++'}
+            _check(meanings.get(verdict['games'][0]['score']), judgment[model], 'WildVision unchanged HF/native judgment')
+            evidence[qid, model] = dict(question_id=qid, instruction=answer['instruction'], language=answer['language'],
+                source_file_answer=answer_source['file'], source_row_answer=answer_source['row'], model=model,
+                hf_output=answer[model], source_file_judge=judgment_source['file'], source_row_judge=judgment_source['row'],
+                hf_verdict=judgment[model])
+    hashes = {qid:hashlib.sha256(row['image']['bytes']).hexdigest() for qid,row in bank.items()}
+    return original['answers'], original['judgments'], bank, evidence, hashes
+
+
+def _wildvision(directory, tables, metadata, source_records=None):
+    """Audit all grades, complete judge records, comparison answers and original PNG bytes."""
+    import io
+    from PIL import Image
+    from urllib.parse import unquote
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='WildVision source audit')
+    answers, judgments, bank, evidence, hashes = _wildvision_source_records(directory, metadata) if source_records is None else source_records
+    labels = metadata['build']['parameters']['labels']
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    models = {key:unquote(_features(row['subject_features_extra'])['model_identifier']) for key,row in subjects.items()}
+    _check(Counter(models.values()), Counter({model:1 for _,model in answers}), 'WildVision exact original model set')
+    for key,row in subjects.items():
+        _check((row['display_name'],row['harness']), (models[key],labels['harness']), 'WildVision original model and release harness')
+        _check(pd.isna(row['harness_version']) and pd.isna(row['reasoning_effort']), True, 'WildVision unspecified run settings remain unknown')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    used_assets, item_questions = set(), {}
+    for identifier,item in items.items():
+        qid = item['raw_item_id']; original = bank[qid]
+        _check(json.loads(item['content']), dict(multimedia_elements=[dict(content_type='image/png',location='image.png'),
+            dict(content_type='text/plain',text=original['instruction'])]), 'WildVision complete original question/image stimulus')
+        _check({k:unquote(v) for k,v in _features(item['item_features']).items()}, dict(lang=original['language']),
+            'WildVision original language without grading leakage')
+        comparison = answers[qid,labels['opponent']][0]['output']
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion.get('reference_answer'), None, 'WildVision comparison answer is not a gold solution')
+        _check(json.loads(criterion['rule']), dict(description=metadata['grading']['rule'],
+            comparison_model=labels['opponent'], comparison_answer=comparison), 'WildVision exact fixed comparison answer')
+        _check(json.loads(item['verifier']), {'class':'judge','judge':labels['judge'],'judged_by':'llm',
+            'spec':json.dumps(metadata['grading']['verifiers']['preference'],sort_keys=True)}, 'WildVision recorded judge identity and protocol')
+        links=json.loads(item['asset_manifest']);_check(len(links),1,'WildVision one original input image')
+        link=links[0]
+        _check({k:link[k] for k in ['path','role','media_type','ordinal']},
+            dict(path='image.png',role='input',media_type='image/png',ordinal=1),'WildVision exact image attachment')
+        payload=original['image']['bytes'];_check(Image.open(io.BytesIO(payload)).format,'PNG','WildVision original PNG encoding')
+        _check(assets[link['asset_id']]['data'],payload,'WildVision byte-identical image')
+        used_assets.add(link['asset_id']);item_questions[identifier]=qid
+    _check(set(assets),used_assets,'WildVision no missing/orphan images')
+    _check(Counter(item_questions.values()),Counter({qid:1 for qid,_ in answers}),'WildVision exact source question set')
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    counts,seen=Counter(),Counter()
+    for response in tables['responses'].itertuples():
+        key=item_questions[response.item_id],models[response.subject_id]
+        answer,answer_source=answers[key];judge,judge_source=judgments[key];original=bank[key[0]]
+        _check((answer['instruction'],answer['language']),(original['instruction'],original['language']),
+            'WildVision source task text/language correspondence')
+        _check(judge['judge'],labels['judge'],'WildVision original grading model')
+        _check(len(judge['games']),1,'WildVision one native grading occasion')
+        game=judge['games'][0]
+        grade={'A>>B':0.,'A>B':.25,'A=B':.5,'B>A':.75,'B>>A':1.}.get(game['score'])
+        if grade is None: _check(pd.isna(response.response),True,'WildVision unavailable verdict never becomes a tie')
+        else: _check(response.response,grade,'WildVision exact released preference and orientation')
+        prompt=game['user_prompt']
+        if prompt is not None:
+            text=("<|User Prompt|>\n"+original['instruction']+"\n\n<|The Start of Assistant A's Answer|>\n"
+                +answers[key[0],labels['opponent']][0]['output']+"\n<|The End of Assistant A's Answer|>\n\n"
+                +"<|The Start of Assistant B's Answer|>\n"+answer['output']+"\n<|The End of Assistant B's Answer|>")
+            _check(prompt,[dict(type='text',text=text),dict(type='image',image=hashes[key[0]])],
+                'WildVision original judge evaluated these outputs and original image in this orientation')
+        expected=dict(answer_source=answer_source,judgment_source=judge_source,answer=answer,judgment=judge,
+            hf_evidence=evidence.get(key),grade_status='unavailable_verdict' if grade is None else 'published_preference')
+        _check(json.loads(traces[response.response_id]),expected,'WildVision full source-linked answer and judge transcript')
+        _check(response.interactors,'opponent='+labels['opponent'],'WildVision original comparison model')
+        _check(response.trial,1,'WildVision overlapping exports are not additional trials')
+        _check(pd.isna(response.test_condition),True,'WildVision no invented generation setting')
+        seen[key]+=1;counts['unavailable_verdicts']+=grade is None;counts['empty_outputs']+=answer['output']==''
+        counts['recorded_judge_prompts']+=prompt is not None;counts['overlapping_hf_observations']+=key in evidence
+    _check(seen,Counter({key:1 for key in answers}),'WildVision complete original observations exactly once')
+    _check(set(traces),set(tables['responses'].response_id),'WildVision full trace coverage')
+    return dict(source_responses=len(answers),source_subjects=len(subjects),source_items=len(items),source_assets=len(assets),
+        source_traces=len(traces),**counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'wildvision':
+        return _wildvision(directory, tables, metadata)
     if directory.name == 'mmmu_dev_val':
         return _mmmu_dev_val(directory, tables, metadata)
     if directory.name == 'ocrbench_v2':
