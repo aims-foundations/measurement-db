@@ -27208,11 +27208,112 @@ def _tensortrust(directory, tables, metadata):
                 source_traces=len(traces), source_assets=0, **counts)
 
 
+def _ocrbench_v2(directory, tables, metadata):
+    """Compare every released output, native reference and image without running a grader."""
+    import hashlib
+    import io
+    from urllib.parse import unquote
+    import pyarrow.parquet as pq
+    from PIL import Image
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='OCRBench v2 source audit')
+    paths = metadata['build']['parameters']['paths']
+    native = json.loads((directory / 'raw' / paths['predictions']).read_text())
+    bank = {}
+    for path in sorted((directory / 'raw').glob(paths['questions'])):
+        for index, row in enumerate(pq.read_table(path).to_pylist()):
+            _check(row['id'] not in bank, True, 'OCRBench v2 unique question IDs')
+            bank[row['id']] = row, str(path.relative_to(directory / 'raw')), index
+    _check(len({row['id'] for row in native}), len(native), 'OCRBench v2 unique prediction IDs')
+    _check(set(bank), {row['id'] for row in native}, 'OCRBench v2 exact source question coverage')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    _check(len(subjects), 1, 'OCRBench v2 one released subject')
+    subject = next(iter(subjects.values()))
+    _check((subject['display_name'], subject['harness']), ('InternVL2.5-26B', 'VLMEvalKit'), 'OCRBench v2 original subject')
+    _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+           'OCRBench v2 unspecified historical settings remain unknown')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    observed, seen, used_assets, aliases, trials = {}, set(), set(), defaultdict(set), defaultdict(list)
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        index = trace['source_row']
+        _check(type(index) is int and 0 <= index < len(native), True, 'OCRBench v2 exact source row locator')
+        _check(index not in seen, True, 'OCRBench v2 one response per released record')
+        seen.add(index)
+        record = native[index]
+        question, filename, position = bank[record['id']]
+        _check('score' not in record, True, 'OCRBench v2 no discarded published grade')
+        _check(trace, dict(source_file=paths['predictions'], source_row=index, record=record,
+            question_file=filename, question_row=position, grade_status='upstream_grade_unavailable'),
+            'OCRBench v2 complete output and original record association')
+        for field in ['question', 'dataset_name', 'type']:
+            _check(record[field], question[field], 'OCRBench v2 source stimulus correspondence')
+        _check(len(record['answers']), len(question['answers']), 'OCRBench v2 complete references')
+        for expected, serialized in zip(record['answers'], question['answers'], strict=True):
+            decoded = serialized if isinstance(expected, str) else json.loads(serialized)
+            _check(decoded, expected, 'OCRBench v2 structured references are only serialized in HF')
+        boxes = question['bbox_list'] if record['type'] == 'text spotting en' else question['bbox']
+        _check(boxes, record.get('bbox'), 'OCRBench v2 unchanged grading geometry')
+        _check(question['content'], record.get('content'), 'OCRBench v2 unchanged spotting text')
+        _check(question['eval'], record.get('eval', 'None'), 'OCRBench v2 unchanged grading mode')
+        _check(pd.isna(response.response), True, 'OCRBench v2 unavailable grades never become surrogate scores')
+        _check(response.subject_id in subjects, True, 'OCRBench v2 correct model association')
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, 'OCRBench v2 no invented run configuration')
+        item = items[response.item_id]
+        _check(json.loads(item['content']), dict(multimedia_elements=[
+            dict(content_type='image/jpeg', location='image.jpg'),
+            dict(content_type='text/plain', text=record['question'])]), 'OCRBench v2 original image/question stimulus')
+        features = _features(item['item_features'])
+        features['dataset_name'] = unquote(features['dataset_name'])
+        _check(features, dict(dataset_name=record['dataset_name'], task_type=record['type']),
+               'OCRBench v2 original task annotations')
+        criterion = json.loads(item['grading_criterion'])
+        _check(json.loads(criterion['reference_answer']), record['answers'], 'OCRBench v2 original reference types and values')
+        auxiliary = {key: record[key] for key in ['type', 'eval', 'bbox', 'image_shape', 'content', 'raw_text'] if key in record}
+        _check(json.loads(criterion['rule']), dict(description=metadata['grading']['rule'], native_parameters=auxiliary),
+               'OCRBench v2 complete native grading parameters')
+        _check(json.loads(item['verifier']), {'class': 'exact_matcher',
+            'spec': json.dumps(metadata['grading']['verifiers']['task_metrics'], sort_keys=True)}, 'OCRBench v2 upstream metric protocol')
+        links = json.loads(item['asset_manifest'])
+        _check(len(links), 1, 'OCRBench v2 one original image per question')
+        link = links[0]
+        _check({key: link[key] for key in ['path', 'role', 'media_type', 'ordinal']},
+               dict(path='image.jpg', role='input', media_type='image/jpeg', ordinal=1), 'OCRBench v2 image attachment')
+        payload = question['image']['bytes']
+        _check(Image.open(io.BytesIO(payload)).format, 'JPEG', 'OCRBench v2 original encoding')
+        _check(assets[link['asset_id']]['data'], payload, 'OCRBench v2 exact image bytes')
+        used_assets.add(link['asset_id'])
+        signature = json.dumps(dict(question=record['question'], dataset=record['dataset_name'],
+            reference=record['answers'], grading=auxiliary, image=hashlib.sha256(payload).hexdigest()), sort_keys=True)
+        if response.item_id in observed:
+            _check(observed[response.item_id], signature, 'OCRBench v2 distinct image or grading protocol never merges')
+        observed[response.item_id] = signature
+        aliases[response.item_id].add(str(record['id']))
+        trials[response.subject_id, response.item_id].append(response.trial)
+    _check(seen, set(range(len(native))), 'OCRBench v2 complete original attempts including repeated records')
+    _check((len(items), len(set(observed.values()))), (len(observed), len(observed)), 'OCRBench v2 equal stimuli deduplicate only items')
+    for identifier, names in aliases.items():
+        _check(items[identifier]['raw_item_id'] in names, True, 'OCRBench v2 retained original item alias')
+    for group in trials.values():
+        _check(sorted(group), list(range(1, len(group) + 1)), 'OCRBench v2 repeated observations retain trials')
+    _check(set(assets), used_assets, 'OCRBench v2 exact image coverage')
+    _check(set(traces), set(tables['responses'].response_id), 'OCRBench v2 complete trace associations')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+        source_traces=len(traces), source_assets=len(assets), source_ungraded_observations=len(native),
+        source_task_types=len({row['type'] for row in native}),
+        repeated_records_excluding_id=len(native) - len({json.dumps({k:v for k,v in row.items() if k != 'id'}, sort_keys=True) for row in native}))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'ocrbench_v2':
+        return _ocrbench_v2(directory, tables, metadata)
     if directory.name == 'tensortrust':
         return _tensortrust(directory, tables, metadata)
     if directory.name == 'multimodal_stem_ai':

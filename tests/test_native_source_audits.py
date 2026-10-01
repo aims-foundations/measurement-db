@@ -5016,6 +5016,102 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         path.write_text(text)
 
 
+class OCRBenchV2AuditTests(unittest.TestCase):
+    def setUp(self):
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        from PIL import Image
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _ocrbench_v2
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'ocrbench_v2'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/ocrbench_v2/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.audit = _ocrbench_v2
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/ocrbench_v2/build.py'))['OCRBenchV2']
+        common = dict(dataset_name='fixture', type='text recognition en', image_path='original.jpg',
+            question='Read the image.', answers=['A'], predict='A')
+        self.records = [dict(common, id=0), dict(common, id=1), dict(common, id=2),
+            dict(common, id=3, answers=['B'], eval='case sensitive'),
+            dict(common, id=4, type='key information extraction en', answers=[{'word': 'A'}]),
+            dict(common, id=5, type='text spotting en', answers=['0,0,1,1,A'], bbox=[[0,0,1,1]], content=['A']),
+            dict(common, id=6, type='text grounding en', answers=[1,2,3,4]),
+            dict(common, id=7, predict='def unfinished(\n' * 9000)]
+        images = []
+        for color in ['red', 'blue']:
+            stream = io.BytesIO(); Image.new('RGB', (4,4), color).save(stream, format='JPEG'); images.append(stream.getvalue())
+        self.bank = [dict(id=row['id'], dataset_name=row['dataset_name'], question=row['question'], type=row['type'],
+            answers=[x if isinstance(x,str) else json.dumps(x,ensure_ascii=False) for x in row['answers']],
+            image=dict(bytes=images[row['id'] == 2], path=None), eval=row.get('eval', 'None'),
+            bbox=None if row['type']=='text spotting en' else row.get('bbox'),
+            bbox_list=row.get('bbox') if row['type']=='text spotting en' else None,
+            content=row.get('content')) for row in self.records]
+        self.predictions = self.directory / 'raw/github/OCRBench_v2/pred_folder/internvl2_5_26b.json'
+        self.predictions.parent.mkdir(parents=True); self.predictions.write_text(json.dumps(self.records))
+        self.questions = self.directory / 'raw/hf/data/test-00000-of-00001.parquet'
+        self.questions.parent.mkdir(parents=True); pq.write_table(pa.Table.from_pylist(self.bank), self.questions)
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem:pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_images_repeated_attempts_and_ungraded_outputs_are_preserved(self):
+        expected = dict(source_responses=8, source_subjects=1, source_items=6, source_traces=8,
+            source_assets=2, source_ungraded_observations=8, source_task_types=4, repeated_records_excluding_id=2)
+        self.assertEqual(self.audit(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(self.audit(self.directory, {n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()}, self.metadata), expected)
+        self.assertTrue(self.frames['responses'].response.isna().all())
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 100000)
+
+    def test_wrong_images_references_outputs_and_attempts_are_detected(self):
+        cases = ['invent_grade', 'wrong_subject', 'swap_items', 'drop_response', 'clip_trace', 'source_row',
+            'question_row', 'question', 'reference', 'verifier', 'wrong_image', 'trial', 'raw_alias']
+        for change in cases:
+            with self.subTest(change=change):
+                tables = {name:frame.copy(deep=True) for name,frame in self.frames.items()}
+                if change == 'invent_grade': tables['responses'].loc[0,'response'] = 0.
+                elif change == 'wrong_subject': tables['subjects'].loc[0,'display_name'] = 'different model'
+                elif change == 'swap_items':
+                    first = tables['responses'].loc[0,'item_id']
+                    other = tables['responses'].index[tables['responses'].item_id.ne(first)][0]
+                    tables['responses'].loc[[0,other],'item_id'] = tables['responses'].loc[[other,0],'item_id'].to_numpy()
+                elif change == 'drop_response': tables['responses'] = tables['responses'].iloc[1:].copy()
+                elif change in ['clip_trace','source_row','question_row']:
+                    trace = json.loads(tables['traces'].loc[0,'trace'])
+                    if change == 'clip_trace': trace['record']['predict'] = 'clipped'
+                    else: trace[change] += 1
+                    tables['traces'].loc[0,'trace'] = json.dumps(trace)
+                elif change == 'question': tables['items'].loc[0,'content'] = 'different question'
+                elif change == 'reference':
+                    criterion = json.loads(tables['items'].loc[0,'grading_criterion'])
+                    criterion['reference_answer'] = '["wrong reference"]'
+                    tables['items'].loc[0,'grading_criterion'] = json.dumps(criterion)
+                elif change == 'verifier': tables['items'].loc[0,'verifier'] = '{"class":"exact_matcher","spec":"custom matcher"}'
+                elif change == 'wrong_image':
+                    links = json.loads(tables['items'].loc[0,'asset_manifest'])
+                    links[0]['asset_id'] = next(value for value in tables['assets'].asset_id if value != links[0]['asset_id'])
+                    tables['items'].loc[0,'asset_manifest'] = json.dumps(links)
+                elif change == 'trial': tables['responses'].loc[0,'trial'] = 99
+                elif change == 'raw_alias': tables['items'].loc[0,'raw_item_id'] = 'absent-source-id'
+                with self.assertRaises((ValueError, KeyError, RuntimeError)):
+                    self.audit(self.directory, tables, self.metadata)
+
+    def test_conflicting_source_joins_and_published_grades_are_rejected(self):
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        for change in ['duplicate_id', 'wrong_question', 'wrong_reference', 'published_score']:
+            with self.subTest(change=change):
+                records, bank = copy.deepcopy(self.records), copy.deepcopy(self.bank)
+                if change == 'duplicate_id': records[1]['id'] = records[0]['id']
+                elif change == 'wrong_question': bank[0]['question'] = 'different question'
+                elif change == 'wrong_reference': bank[4]['answers'] = ['{"word":"different"}']
+                elif change == 'published_score': records[0]['score'] = 0.8
+                self.predictions.write_text(json.dumps(records)); pq.write_table(pa.Table.from_pylist(bank),self.questions)
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+        self.predictions.write_text(json.dumps(self.records)); pq.write_table(pa.Table.from_pylist(self.bank),self.questions)
+
+
 class TensorTrustAuditTests(unittest.TestCase):
     def setUp(self):
         import bz2
