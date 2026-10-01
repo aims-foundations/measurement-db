@@ -29443,11 +29443,180 @@ def _indeterminacy(directory, tables, metadata):
         source_responses=len(native), source_traces=len(traces), **counts)
 
 
+def _infibench(directory, tables, metadata):
+    """Compare every native attempt and its exact release-specific associations."""
+    import csv
+    import io
+    import math
+    import re
+    import tarfile
+    from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='InfiBench native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, labels = parameters['layout'], parameters['labels']
+    cases, sources, outputs = {}, {}, {}
+    with tarfile.open(raw / layout['legacy']) as archive:
+        root = archive.getmembers()[0].name.split('/')[0] + '/'
+        suite = yaml.safe_load(archive.extractfile(root + layout['legacy_suite']).read())
+        for case in suite['cases']:
+            config = yaml.safe_load(archive.extractfile(root + case).read())
+            prompt = archive.extractfile(root + str(Path(case).parent / config['prompt_path'])).read().decode('utf-8')
+            cases['legacy_dev', case] = dict(config=config, prompt=prompt, dependencies=None)
+        for member in archive:
+            name = member.name.removeprefix(root)
+            if not member.isfile() or not re.fullmatch(layout['legacy_results'], name):
+                continue
+            run = Path(name).stem.removeprefix(Path(layout['legacy_suite']).stem + '_')
+            base = 'responses/' + run + '/'
+            configuration = yaml.safe_load(archive.extractfile(root + base + 'params.yaml').read())
+            for case, paths in configuration['answer_paths'].items():
+                for index, path in enumerate(paths):
+                    outputs['legacy_dev', name, case, index] = dict(completion_file=base + path,
+                        completion_row=None, completion=archive.extractfile(root + base + path).read().decode('utf-8'))
+            sources['legacy_dev', name] = dict(label=configuration['model_name'], kind='model',
+                configuration={k: v for k, v in configuration.items() if k != 'answer_paths'},
+                records=yaml.load(archive.extractfile(member).read(), Loader=yaml.CSafeLoader))
+    with tarfile.open(raw / layout['harness']) as archive:
+        root = archive.getmembers()[0].name.split('/')[0] + '/'
+        for row in csv.DictReader(io.TextIOWrapper(archive.extractfile(root + layout['modern_cases']), encoding='utf-8', newline='')):
+            cases['v2_1', row['case_path']] = dict(config=yaml.safe_load(row['eval_spec']),
+                prompt=row['prompt'], dependencies=json.loads(row['dependencies']))
+    aliases = {}
+    with ZipFile(raw / layout['results']) as archive:
+        for name in sorted(archive.namelist()):
+            if not name.endswith('.yaml'):
+                continue
+            path = Path(name)
+            label_file = (path.with_name('evaltable_' + path.name[5:]).with_suffix('.txt')
+                if path.name.startswith('eval_') else path.with_name(path.stem + '_table.txt'))
+            labels_in_table = [fields[1].strip() for fields in csv.reader(
+                archive.read(str(label_file)).decode('utf-8').splitlines(), delimiter='|')
+                if len(fields) > 2 and not fields[0].strip() and fields[1].strip()]
+            _check(len(labels_in_table), 1, 'InfiBench original subject header')
+            records = yaml.load(archive.read(name), Loader=yaml.CSafeLoader)
+            sources['v2_1', name] = dict(label=labels_in_table[0],
+                kind='human_answer_collection' if path.name.startswith('human-') else 'model', configuration={}, records=records)
+            alias = re.sub(parameters['parsing']['result_prefix_pattern'], '', path.stem).removesuffix('_parallel')
+            alias = alias if alias.endswith('_output') else alias + '_output'
+            _check(alias not in aliases, True, 'InfiBench source output alias uniqueness')
+            aliases[alias] = name
+    with tarfile.open(raw / layout['responses']) as archive:
+        for member in archive:
+            if not member.isfile() or Path(member.name).stem not in aliases:
+                continue
+            name = aliases[Path(member.name).stem]
+            positions = Counter()
+            for index, row in enumerate(csv.DictReader(io.TextIOWrapper(archive.extractfile(member), encoding='utf-8', newline=''))):
+                case = row['filename']
+                trial = positions[case]
+                positions[case] += 1
+                outputs['v2_1', name, case, trial] = dict(completion_file=member.name,
+                    completion_row=index, completion=row['completion'])
+            for case, record in sources['v2_1', name]['records'].items():
+                _check(positions[case], len(record['detail']), 'InfiBench completion counts agree with native grading order')
+
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_version'], features['source_report']
+        source = sources[key]
+        _check((row.display_name, row.harness), (source['label'], labels['harness']), 'InfiBench original subject label')
+        _check(features, dict(source_version=key[0], source_report=key[1], subject_kind=source['kind'],
+            recorded_configuration=str(source['configuration']), historical_configuration=labels['historical_configuration']),
+            'InfiBench recorded configuration and explicit human comparator type')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+            True, 'InfiBench no invented historical API settings')
+        subjects[row.subject_id] = key
+    _check(Counter(subjects.values()), Counter({key: 1 for key in sources}), 'InfiBench full source configuration roster')
+    items, used_items = {}, set()
+    for row in tables['items'].itertuples():
+        version, case = row.raw_item_id.split(':', 1)
+        source = cases[version, case]
+        config = source['config']
+        _check(row.content, source['prompt'], 'InfiBench complete original task text')
+        _check(_features(row.item_features), dict(lang=config['lang'], question_type=config['type'],
+            source_version=version, input_scope=labels['input_scope']), 'InfiBench item language, type and release')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion['reference_answer'], None, 'InfiBench no fabricated reference answer')
+        rule = json.loads(criterion['rule'])
+        _check({k: v for k, v in rule.items() if k != 'full_score'},
+            dict(instruction=metadata['grading']['rule'], source_definition=config, dependencies=source['dependencies']),
+            'InfiBench unchanged native grading definition and dependencies')
+        _check(json.loads(row.verifier), dict(**{'class': 'exact_matcher'},
+            spec=json.dumps(metadata['grading']['verifiers'][version], sort_keys=True)), 'InfiBench native grader revision')
+        items[row.item_id] = (version, case), rule['full_score']
+    _check(len(items), len(set(key for key, _ in items.values())), 'InfiBench distinct item/grading definitions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'InfiBench exact grading-trace coverage')
+    seen, counts, grouped = Counter(), Counter(), {}
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        key = trace['source_version'], trace['source_file']
+        case, index = trace['case_file'], trace['trial_index']
+        record = sources[key]['records'][case]
+        config = cases[key[0], case]['config']
+        for field in ['id', 'lang', 'type', 'prompt_path']:
+            _check(record[field], config[field], 'InfiBench result and source question identifiers')
+        detail = record['detail'][index]
+        numerator, denominator = 0.0, 0.0
+        for component in ['keywords', 'blank_filling', 'unit_test', 'similarity', 'custom']:
+            numerator += detail.get(component + '_score', 0)
+            denominator += detail.get(component + '_totscore', 0)
+        if 'max_score' in detail:
+            denominator = detail['max_score']
+            numerator = min(numerator, denominator)
+        if 'min_score' in detail:
+            numerator = max(numerator, detail['min_score'])
+        _check(denominator > 0, True, 'InfiBench positive source grading denominator')
+        reconstructed = numerator / denominator * record['full_score']
+        grade = record['all_scores'][index] if key[0] == 'v2_1' else reconstructed
+        _check(math.isfinite(grade) and abs(grade - reconstructed) <= 1e-12, True,
+            'InfiBench native per-attempt component arithmetic')
+        _check(row.response, grade, 'InfiBench exact original per-attempt grade without clipping')
+        _check(subjects[row.subject_id], key, 'InfiBench native subject association')
+        _check(items[row.item_id], ((key[0], case), record['full_score']), 'InfiBench native item and grading association')
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)),
+            (index + 1, key[0] + ':' + key[1] + ':' + case, True), 'InfiBench trial order and source occasion')
+        output = outputs.get((*key, case, index), dict(completion=None, completion_file=None, completion_row=None))
+        _check(trace, dict(source_version=key[0], source_file=key[1], case_file=case, trial_index=index,
+            native_detail=detail, native_score=grade if key[0] == 'v2_1' else None, **output),
+            'InfiBench complete grading details and exact original output association')
+        seen[*key, case, index] += 1
+        grouped.setdefault((*key, case), {})[index] = grade
+        used_items.add((key[0], case))
+        counts['source_outside_zero_one'] += grade < 0 or grade > 1
+        counts['source_attached_outputs'] += output['completion'] is not None
+        counts['source_missing_output_associations'] += output['completion'] is None
+        counts['source_human_answer_observations'] += sources[key]['kind'] == 'human_answer_collection'
+    expected = Counter()
+    for key, source in sources.items():
+        for case, record in source['records'].items():
+            scores = []
+            for index in range(len(record['detail'])):
+                expected[*key, case, index] = 1
+                scores.append(grouped[*key, case][index])
+            if scores:
+                best_ten = [max(scores[index:index+10]) for index in range(0, len(scores), 10)]
+                _check(abs(sum(best_ten) / len(best_ten) - record['now_score']) <= 1e-12, True,
+                    'InfiBench original mean-of-best-ten summary')
+                counts['source_aggregate_cases_reconciled'] += 1
+            else:
+                counts['source_empty_result_cases'] += 1
+    _check(seen, expected, 'InfiBench no dropped, duplicated or invented sampled attempts')
+    _check(set(key for key, _ in items.values()), used_items, 'InfiBench complete observed task coverage')
+    return dict(source_result_files=len(sources), source_subjects=len(subjects), source_items=len(items),
+        source_responses=len(seen), source_traces=len(traces), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'infibench':
+        return _infibench(directory, tables, metadata)
     if directory.name == 'indeterminacy':
         return _indeterminacy(directory, tables, metadata)
     if directory.name == 'igakuqa':

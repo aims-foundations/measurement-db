@@ -50,6 +50,173 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _igaku
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _indeterminacy
 
+import tarfile
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _infibench
+
+class InfiBenchAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'infibench'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/infibench') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        raw = self.directory / 'raw'
+        raw.mkdir()
+        layout = self.metadata['build']['parameters']['layout']
+        self.legacy, self.harness, self.results, self.outputs = {}, {}, {}, {}
+
+        def archive_tar(path, files):
+            with tarfile.open(path, 'w:gz') as archive:
+                for name, data in files.items():
+                    if isinstance(data, str):
+                        data = data.encode()
+                    member = tarfile.TarInfo(name)
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+
+        self.archive_tar = archive_tar
+        cases, original = [], {}
+        for index in range(2):
+            case = 'cases/eval_' + str(index) + '.yaml'
+            prompt = 'Complete original task ' + str(index) + '\n{braces} e\u0301\u2028 retained'
+            config = dict(id=str(index), lang='python', type='code completion', prompt_path='prompt_' + str(index) + '.txt',
+                grading=dict(keywords=['yes']))
+            original[case] = config
+            cases.append(dict(case_path=case, prompt=prompt, eval_spec=yaml.safe_dump(config), dependencies=json.dumps({'helper.txt': 'unchanged'})))
+            legacy_case = case.replace('cases/', 'cases_dev/')
+            self.legacy['root/' + legacy_case] = yaml.safe_dump(config)
+            self.legacy['root/cases_dev/' + config['prompt_path']] = prompt
+        self.harness['root/' + layout['modern_cases']] = pd.DataFrame(cases).to_csv(index=False)
+        # Match the source archive's root convention even when the first member is a file.
+        suite = dict(cases=[case.replace('cases/', 'cases_dev/') for case in original], attempt_reduce_mode='avg_max_10')
+        self.legacy['root/' + layout['legacy_suite']] = yaml.safe_dump(suite)
+        run = 'fixture_model_0.2_0.9_30_suite_v2.0.0_dev'
+        legacy_result = {}
+        parameters = dict(model_name='Fixture legacy model', temp=0.2, answer_paths={})
+        for case, config in original.items():
+            old_case = case.replace('cases/', 'cases_dev/')
+            details = [dict(keywords_score=score, keywords_totscore=1.0) for score in [0.0, 1.0, 1.5]]
+            legacy_result[old_case] = dict(detail=details, full_score=1.0, now_score=1.5, now_std=0.0,
+                **{key: config[key] for key in ['id', 'lang', 'type', 'prompt_path']})
+            paths = [Path(case).stem + '_' + str(i) + '.txt' for i in range(3)]
+            parameters['answer_paths'][old_case] = paths
+            for i, path in enumerate(paths):
+                self.legacy['root/responses/' + run + '/' + path] = 'legacy ' + case + ' ' + str(i) + '\n```python\ninvalid(' + 'x' * 17000
+        self.legacy['root/results/suite_v2.0.0_dev_' + run + '.yaml'] = yaml.safe_dump(legacy_result)
+        self.legacy['root/responses/' + run + '/params.yaml'] = yaml.safe_dump(parameters)
+        for name, label in [('v210_fixture_model', 'Fixture native model'), ('human-official-answers-1', 'Human answer comparator')]:
+            result, output_rows = {}, []
+            for case, config in original.items():
+                details = [dict(keywords_score=score, keywords_totscore=1.0) for score in [0.0, 1.0, 1.5]]
+                result[case] = dict(detail=details, all_scores=[0.0, 1.0, 1.5], full_score=1.0, now_score=1.5, now_std=0.0,
+                    **{key: config[key] for key in ['id', 'lang', 'type', 'prompt_path']})
+                output_rows.extend(dict(filename=case, completion=label + ' ' + case + ' ' + str(i) + '\n完整 e\u0301') for i in range(3))
+            self.results[name + '.yaml'] = yaml.safe_dump(result)
+            self.results[name + '_table.txt'] = ' | ' + label + ' | Full Score\n Overall Score | 3.0 | 2.0\n'
+            # The human run deliberately has no corresponding raw completion file.
+            if name.startswith('v210_'):
+                self.outputs['fixture_model_output.csv'] = pd.DataFrame(output_rows).to_csv(index=False)
+        self.archive_tar(raw / layout['legacy'], self.legacy)
+        self.archive_tar(raw / layout['harness'], self.harness)
+        self.archive_tar(raw / layout['responses'], self.outputs)
+        with ZipFile(raw / layout['results'], 'w') as archive:
+            for name, data in self.results.items():
+                archive.writestr(name, data)
+        builder = runpy.run_path(str((ROOT / 'benchmarks/infibench') / 'build.py'))['InfiBench']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_original_attempts_grading_and_unclipped_outputs(self):
+        result = _infibench(self.directory, self.frames, self.metadata)
+        self.assertEqual(result['source_responses'], 18)
+        self.assertEqual(result['source_subjects'], 3)
+        self.assertEqual(result['source_items'], 4)
+        self.assertEqual(result['source_outside_zero_one'], 6)
+        self.assertEqual(result['source_attached_outputs'], 12)
+        self.assertEqual(result['source_missing_output_associations'], 6)
+        self.assertEqual(result['source_human_answer_observations'], 6)
+        self.assertEqual(result['source_aggregate_cases_reconciled'], 6)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_infibench(self.directory, shuffled, self.metadata), result)
+
+    def test_changed_tables_are_detected(self):
+        changes = ['grade', 'clipping', 'trial', 'subject_link', 'item_link', 'harness', 'subject_label',
+            'subject_features', 'content', 'raw_id', 'features', 'rule', 'verifier', 'condition',
+            'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace', 'source_file',
+            'source_version', 'source_case', 'source_trial', 'native_detail', 'native_score',
+            'completion', 'completion_file', 'completion_row']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'traces'])
+            if change == 'grade': responses.loc[0, 'response'] = 0.7
+            elif change == 'clipping': responses.loc[responses.response.gt(1).idxmax(), 'response'] = 1.0
+            elif change == 'trial': responses.loc[0, 'trial'] = 99
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = next(s for s in subjects.subject_id if s != responses.loc[0, 'subject_id'])
+            elif change == 'item_link': responses.loc[0, 'item_id'] = next(i for i in items.item_id if i != responses.loc[0, 'item_id'])
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'subject_label': subjects.loc[0, 'display_name'] = 'wrong'
+            elif change == 'subject_features': subjects.loc[0, 'subject_features_extra'] = 'source_report=wrong'
+            elif change == 'content': items.loc[0, 'content'] = 'wrong'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong:case'
+            elif change == 'features': items.loc[0, 'item_features'] = 'source_version=wrong'
+            elif change == 'rule': items.loc[0, 'grading_criterion'] = json.dumps(dict(rule='wrong'))
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'drop_trace': frames['traces'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': frames['traces'] = pd.concat([traces, traces.iloc[:1]])
+            else:
+                value = json.loads(traces.loc[0, 'trace'])
+                field, replacement = {'source_file': ('source_file', 'wrong'), 'source_version': ('source_version', 'wrong'),
+                    'source_case': ('case_file', 'wrong'), 'source_trial': ('trial_index', 999),
+                    'native_detail': ('native_detail', {}), 'native_score': ('native_score', 99),
+                    'completion': ('completion', 'wrong'), 'completion_file': ('completion_file', 'wrong'),
+                    'completion_row': ('completion_row', 999)}[change]
+                value[field] = replacement
+                traces.loc[0, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _infibench(self.directory, frames, self.metadata)
+
+    def test_changed_native_sources_are_detected(self):
+        layout = self.metadata['build']['parameters']['layout']
+        path = self.directory / 'raw' / layout['results']
+        original = path.read_bytes()
+        for change in ['score', 'detail', 'aggregate', 'label', 'trial_count']:
+            files = copy.deepcopy(self.results)
+            name = 'v210_fixture_model.yaml'
+            record = yaml.safe_load(files[name])
+            first = next(iter(record.values()))
+            if change == 'score': first['all_scores'][0] = 0.7
+            elif change == 'detail': first['detail'][0]['keywords_score'] = 0.7
+            elif change == 'aggregate': first['now_score'] = 0.7
+            elif change == 'label': files['v210_fixture_model_table.txt'] = ' | Changed source model | Full Score\n'
+            else: first['all_scores'].pop(); first['detail'].pop()
+            files[name] = yaml.safe_dump(record)
+            with ZipFile(path, 'w') as archive:
+                for name, data in files.items():
+                    archive.writestr(name, data)
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _infibench(self.directory, self.frames, self.metadata)
+            finally:
+                path.write_bytes(original)
+        path = self.directory / 'raw' / layout['responses']
+        original = path.read_bytes()
+        changed = {name: data.replace('Fixture native model', 'Incorrect output') for name, data in self.outputs.items()}
+        self.archive_tar(path, changed)
+        try:
+            with self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _infibench(self.directory, self.frames, self.metadata)
+        finally:
+            path.write_bytes(original)
+
+
 class IndeterminacyAuditTests(unittest.TestCase):
     def setUp(self):
         import numpy as np

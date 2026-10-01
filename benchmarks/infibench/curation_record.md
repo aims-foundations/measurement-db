@@ -1,0 +1,3 @@
+- Preserve the full author release and the two-model development release as separate evaluation configurations. Expand native per-attempt grades and retain their complete grading details; published best-of-ten summaries are not individual observations.
+- Keep original questions, grading definitions and unclipped scores. Attach completions only through exact source aliases, case IDs and recorded order; preserve unmatched files without inventing associations or historical API settings. Human-answer comparators are explicitly identified.
+- Capture the four original archives unchanged. Validate all source associations, native component arithmetic, published aggregates and an empty-directory rebuild without executing models, generated code or external judges.
