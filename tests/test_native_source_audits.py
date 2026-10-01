@@ -5016,6 +5016,103 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         path.write_text(text)
 
 
+class MMMUDevValAuditTests(unittest.TestCase):
+    def setUp(self):
+        import base64
+        from PIL import Image
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mmmu_dev_val
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'mmmu_dev_val'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/mmmu_dev_val/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/mmmu_dev_val/build.py'))['MMMUDevVal']
+        self.audit = _mmmu_dev_val
+        images = []
+        for color in ['red','blue']:
+            stream = io.BytesIO(); Image.new('RGB',(4,4),color).save(stream,format='JPEG')
+            images.append(base64.b64encode(stream.getvalue()).decode())
+        common = dict(question='Compare <image 1> and <image 2>.', split='validation',
+            topic_difficulty='Hard', subfield='Literal, labels; preserved', image_type='Diagrams',
+            question_type='multiple-choice', explanation='', category='Science', **{'l2-category':'Physics'})
+        self.bank = [dict(common, id=f'validation_Physics_{i}', index=i,
+            **{letter:f'Option {letter}' for letter in 'ABCDEFGHI'}, answer='I' if i!=2 else 'H',
+            image=repr(images), image_path=repr([f'{i}_1.jpg',f'{i}_2.jpg'])) for i in range(1,5)]
+        self.bank[2].update(question='Read <image 1>.', question_type='open', answer='3.5',
+            **{letter:'' for letter in 'ABCDEFGHI'}, image=repr(images[:1]),image_path="['3_1.jpg']")
+        self.bank[3]['question'] = 'Compare <image 1> and <image 2> for the final task.'
+        self.records = [{k:v for k,v in row.items() if k!='image'} for row in self.bank]
+        for row, prediction in zip(self.records, ['I','','Failed to obtain answer via API','Full output. ' * 1500]):
+            row['prediction'] = prediction
+        self.questions = self.directory / 'raw/tasks/MMMU_DEV_VAL.tsv'
+        self.questions.parent.mkdir(parents=True); pd.DataFrame(self.bank).to_csv(self.questions,sep='\t',index=False)
+        self.first = self.directory / 'raw/release/mmeval/model-A/model-A_MMMU_DEV_VAL.xlsx'
+        self.first.parent.mkdir(parents=True); pd.DataFrame(self.records).to_excel(self.first,index=False)
+        second = self.first.parent.parent / 'model-B/model-B_MMMU_DEV_VAL.xlsx'; second.parent.mkdir()
+        pd.DataFrame(self.records).drop(columns='id').to_excel(second,index=False)
+        historical = self.first.parent / 'T20240101/model-A_MMMU_DEV_VAL.xlsx'; historical.parent.mkdir()
+        historical.write_bytes(self.first.read_bytes())
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),
+                '--output',str(self.directory.parent/'tables')])
+        self.frames = {p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_full_outputs_optional_ids_images_and_missing_grades(self):
+        expected = dict(source_responses=8,source_subjects=2,source_items=4,source_traces=8,source_assets=2,
+            source_image_occurrences=7,source_ungraded_observations=8,empty_outputs=2,api_failure_outputs=2)
+        self.assertEqual(self.audit(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(self.audit(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        self.assertTrue(self.frames['responses'].response.isna().all())
+
+    def test_wrong_model_question_reference_image_and_output_are_detected(self):
+        for change in ['invent_grade','wrong_model','swap_items','drop_response','clip_trace','source_row',
+                       'question','reference','verifier','image_order','wrong_image','trial','raw_alias']:
+            with self.subTest(change=change):
+                tables = {n:f.copy(deep=True) for n,f in self.frames.items()}
+                if change=='invent_grade': tables['responses'].loc[0,'response']=0.
+                elif change=='wrong_model':
+                    tables['responses'].loc[0,'subject_id']=next(x for x in tables['subjects'].subject_id if x!=tables['responses'].loc[0,'subject_id'])
+                elif change=='swap_items':
+                    other=next(i for i in tables['responses'].index if tables['responses'].loc[i,'item_id']!=tables['responses'].loc[0,'item_id'])
+                    tables['responses'].loc[[0,other],'item_id']=tables['responses'].loc[[other,0],'item_id'].to_numpy()
+                elif change=='drop_response':tables['responses']=tables['responses'].iloc[1:].copy()
+                elif change in ['clip_trace','source_row']:
+                    trace=json.loads(tables['traces'].loc[0,'trace'])
+                    if change=='clip_trace':trace['native_record']['prediction']='clipped'
+                    else:trace['source_row']+=1
+                    tables['traces'].loc[0,'trace']=json.dumps(trace)
+                elif change=='question':tables['items'].loc[0,'content']='wrong question'
+                elif change=='reference':
+                    criterion=json.loads(tables['items'].loc[0,'grading_criterion']);criterion['reference_answer']='A'
+                    tables['items'].loc[0,'grading_criterion']=json.dumps(criterion)
+                elif change=='verifier':tables['items'].loc[0,'verifier']='{"class":"exact_matcher","spec":"wrong"}'
+                elif change in ['image_order','wrong_image']:
+                    ix=next(i for i in tables['items'].index if len(json.loads(tables['items'].loc[i,'asset_manifest']))==2)
+                    links=json.loads(tables['items'].loc[ix,'asset_manifest'])
+                    if change=='image_order':links.reverse()
+                    else:links[0]['asset_id']=links[1]['asset_id']
+                    tables['items'].loc[ix,'asset_manifest']=json.dumps(links)
+                elif change=='trial':tables['responses'].loc[0,'trial']=99
+                elif change=='raw_alias':tables['items'].loc[0,'raw_item_id']='absent-id'
+                with self.assertRaises((ValueError,KeyError,RuntimeError)):
+                    self.audit(self.directory,tables,self.metadata)
+
+    def test_conflicting_sources_and_unhandled_grades_are_rejected(self):
+        for change in ['duplicate','question','reference','id','image','grade']:
+            with self.subTest(change=change):
+                records=copy.deepcopy(self.records)
+                if change=='duplicate':records.append(records[0])
+                elif change=='question':records[0]['question']='different input'
+                elif change=='reference':records[0]['answer']='A'
+                elif change=='id':records[0]['id']='wrong_id'
+                elif change=='image':records[0]['image_path']="['swapped.jpg']"
+                elif change=='grade':records[0]['score']=1.
+                pd.DataFrame(records).to_excel(self.first,index=False)
+                with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+        pd.DataFrame(self.records).to_excel(self.first,index=False)
+
+
 class OCRBenchV2AuditTests(unittest.TestCase):
     def setUp(self):
         import pyarrow as pa

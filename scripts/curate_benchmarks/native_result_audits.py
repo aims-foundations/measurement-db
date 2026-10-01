@@ -27307,11 +27307,133 @@ def _ocrbench_v2(directory, tables, metadata):
         repeated_records_excluding_id=len(native) - len({json.dumps({k:v for k,v in row.items() if k != 'id'}, sort_keys=True) for row in native}))
 
 
+def _mmmu_source_records(directory, metadata):
+    """Read the original Excel cells and task TSV without the builder's table joins."""
+    import csv
+    from openpyxl import load_workbook
+
+    raw = directory / 'raw'
+    paths = metadata['build']['parameters']['paths']
+    previous_limit = csv.field_size_limit()
+    try:
+        csv.field_size_limit(10000000)
+        with (raw / paths['questions']).open(newline='') as stream:
+            rows = list(csv.DictReader(stream, delimiter='\t'))
+    finally:
+        csv.field_size_limit(previous_limit)
+    bank = {int(row['index']): row for row in rows}
+    _check(len(bank), len(rows), 'MMMU unique original question indices')
+    native = {}
+    for path in sorted((raw / paths['results']).glob(paths['predictions'])):
+        workbook = load_workbook(path, read_only=True, data_only=True)
+        try:
+            rows = workbook.active.iter_rows(values_only=True)
+            names = next(rows)
+            seen = set()
+            for position, cells in enumerate(rows):
+                record = dict(zip(names, ('' if value is None else value for value in cells), strict=True))
+                _check(record['index'] not in seen, True, 'MMMU unique source model/question')
+                seen.add(record['index'])
+                native[str(path.relative_to(raw)), position] = record
+        finally:
+            workbook.close()
+    return native, bank
+
+
+def _mmmu_dev_val(directory, tables, metadata, source_records=None):
+    """Check every native output, original reference, media byte and observation link."""
+    import ast
+    import base64
+    import io
+    from urllib.parse import unquote
+    from PIL import Image
+    from openpyxl.utils.escape import unescape
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='MMMU source audit')
+    native, bank = _mmmu_source_records(directory, metadata) if source_records is None else source_records
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    models = {key: unquote(_features(row['subject_features_extra'])['model_identifier']) for key, row in subjects.items()}
+    expected_models = {Path(key[0]).name.removesuffix('_MMMU_DEV_VAL.xlsx') for key in native}
+    _check(Counter(models.values()), Counter({name: 1 for name in expected_models}), 'MMMU exact released model set')
+    for key, row in subjects.items():
+        _check((row['display_name'], row['harness']), (models[key], 'VLMEvalKit'), 'MMMU original model/harness')
+        _check(pd.isna(row['harness_version']) and pd.isna(row['reasoning_effort']), True, 'MMMU unknown run configuration')
+    bank_ids = {row['id']: index for index, row in bank.items()}
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    item_indices, used_assets, occurrences = {}, set(), 0
+    for identifier, item in items.items():
+        index = bank_ids[item['raw_item_id']]
+        source = bank[index]
+        choices = {letter: source[letter] for letter in 'ABCDEFGHI' if source[letter] not in ('', 'None', 'NA')}
+        text = source['question'] + '\n' + ''.join(f'{letter}. {value}\n' for letter, value in choices.items())
+        encoded = ast.literal_eval(source['image']) if source['image'].startswith('[') else [source['image']]
+        names = ast.literal_eval(source['image_path']) if source['image_path'].startswith('[') else [source['image_path']]
+        _check(len(encoded), len(names), 'MMMU complete source image sequence')
+        content = dict(multimedia_elements=[dict(content_type='text/plain', text=text),
+            *[dict(content_type='image/jpeg', location=f'image_{n + 1}.jpg') for n in range(len(encoded))]])
+        _check(json.loads(item['content']), content, 'MMMU complete question/options and image order')
+        links = json.loads(item['asset_manifest'])
+        _check(len(links), len(encoded), 'MMMU all original image attachments')
+        for number, (link, value) in enumerate(zip(links, encoded, strict=True), start=1):
+            _check({key: link[key] for key in ['path', 'media_type', 'role', 'ordinal']},
+                dict(path=f'image_{number}.jpg', media_type='image/jpeg', role='input', ordinal=number), 'MMMU ordered image linkage')
+            payload = base64.b64decode(value, validate=True)
+            _check(Image.open(io.BytesIO(payload)).format, 'JPEG', 'MMMU source JPEG encoding')
+            _check(assets[link['asset_id']]['data'], payload, 'MMMU byte-identical original images')
+            used_assets.add(link['asset_id']); occurrences += 1
+        fields = {'split':'split', 'difficulty':'topic_difficulty', 'subfield':'subfield', 'image_type':'image_type',
+            'question_type':'question_type', 'category':'category', 'discipline':'l2-category'}
+        _check({key:unquote(value) for key,value in _features(item['item_features']).items()},
+            {key:source[column] for key,column in fields.items()}, 'MMMU original item annotations')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=source['answer'], rule=metadata['grading']['rule']),
+            'MMMU original grading reference and protocol')
+        _check(json.loads(item['verifier']), dict(**{'class':'judge'},
+            spec=json.dumps(metadata['grading']['verifiers']['answer_extraction'], sort_keys=True)), 'MMMU documented verifier without invented judge')
+        item_indices[identifier] = index
+    _check(set(assets), used_assets, 'MMMU exact source image coverage')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, counts = Counter(), Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace['source_file'], trace['source_row']
+        source = native[key]
+        original = bank[int(source['index'])]
+        _check(models[response.subject_id], Path(key[0]).name.removesuffix('_MMMU_DEV_VAL.xlsx'), 'MMMU original response model')
+        _check(item_indices[response.item_id], source['index'], 'MMMU original response question')
+        for column in ['question','split','answer','topic_difficulty','subfield','image_type','question_type',
+                       'explanation','category','l2-category', *'ABCDEFGHI']:
+            value = unescape(str(source[column]))
+            if column in 'ABCDEFGHI' and value in ('', 'None', 'NA'): value = ''
+            _check(value, original[column], 'MMMU unchanged source question field: ' + column)
+        if 'id' in source: _check(source['id'], original['id'], 'MMMU unchanged question identifier')
+        locators = source['image_path']
+        locators = ast.literal_eval(locators) if locators.startswith('[') else [locators]
+        _check(locators, ast.literal_eval(original['image_path']) if original['image_path'].startswith('[') else [original['image_path']],
+            'MMMU prediction and bank image correspondence')
+        _check(trace, dict(source_file=key[0], source_row=key[1], native_record=source, grade_status='upstream_grade_unavailable'),
+            'MMMU complete original record without dropped or clipped output')
+        _check(pd.isna(response.response), True, 'MMMU missing grades remain unavailable')
+        _check(response.trial, 1, 'MMMU one maintained export observation')
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, 'MMMU no invented inference settings')
+        seen[key] += 1
+        counts['empty_outputs'] += source['prediction'] == ''
+        counts['api_failure_outputs'] += 'Failed to obtain answer via API' in str(source['prediction'])
+    _check(seen, Counter({key:1 for key in native}), 'MMMU every selected source row occurs exactly once')
+    _check(set(traces), set(tables['responses'].response_id), 'MMMU one complete trace per observation')
+    _check(Counter(item_indices.values()), Counter({int(row['index']):1 for row in native.values()}), 'MMMU exact evaluated question set')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items), source_traces=len(traces),
+        source_assets=len(assets), source_image_occurrences=occurrences, source_ungraded_observations=len(native), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'mmmu_dev_val':
+        return _mmmu_dev_val(directory, tables, metadata)
     if directory.name == 'ocrbench_v2':
         return _ocrbench_v2(directory, tables, metadata)
     if directory.name == 'tensortrust':

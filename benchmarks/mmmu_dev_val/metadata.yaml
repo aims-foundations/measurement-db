@@ -1,0 +1,105 @@
+benchmark:
+  name: MMMU_DEV_VAL
+  description: College-level multimodal questions across 30 subjects, with per-question model predictions released by OpenVLMRecords.
+  testing_condition: >-
+    Import the 253 maintained primary model exports for the development and validation splits.
+    The 265,650 records include empty outputs and API-failure markers; all grades remain null
+    because this release provides predictions without per-item evaluation results. Historical
+    exports and API caches are captured but not counted as additional trials: overlapping
+    records do not establish independent executions. Question text, all available options,
+    original image bytes and historical references are retained. Exact model checkpoints,
+    inference settings, model-specific prompt wrappers and grading configurations are not
+    recorded with these exports. No models or graders are run during curation.
+  paper_url: https://arxiv.org/abs/2311.16502
+  data_source_url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+  subject_type: model
+  item_type: question
+  license: 'MMMU dataset card: Apache-2.0. OpenVLMRecords and VLMEvalKit: Apache-2.0, as declared upstream.'
+  citation: 'Yue et al. (2024). MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI. CVPR.'
+  tags: [multimodal, reasoning, college_level]
+  modality: [text, image]
+  domain: [reasoning, science, mathematics]
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings: {'0': incorrect_answer, '1': correct_answer}
+    direction: higher_is_better
+  categorical: true
+  release_date: '2023-11'
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: release
+      predictions: mmeval/*/*_MMMU_DEV_VAL.xlsx
+      questions: tasks/MMMU_DEV_VAL.tsv
+    parsing:
+      letters: ABCDEFGHI
+      padding_values: '["", "None", "NA"]'
+      filename_suffix: _MMMU_DEV_VAL.xlsx
+    question_fields:
+      question: question
+      split: split
+      reference: answer
+      difficulty: topic_difficulty
+      subfield: subfield
+      image_type: image_type
+      question_type: question_type
+      explanation: explanation
+      category: category
+      discipline: l2-category
+    item_features:
+      split: split
+      difficulty: topic_difficulty
+      subfield: subfield
+      image_type: image_type
+      question_type: question_type
+      category: category
+      discipline: l2-category
+    subject:
+      harness: VLMEvalKit
+grading:
+  rule: >-
+    Compare the extracted answer with the historical reference using the VLMEvalKit MMMU
+    protocol. Its deterministic prefetch may be followed by a configured LLM answer extractor;
+    open questions are reformulated for evaluation against the gold answer and Other Answers.
+    The original extractor configuration, extracted answers and grades are absent from the
+    captured release. The protocol is documented for interpretation, not claimed to have been
+    executed for these records. Do not substitute a custom letter matcher or treat a missing
+    grade as an incorrect answer.
+  verifiers:
+    answer_extraction:
+      source: https://github.com/open-compass/VLMEvalKit/blob/507975d0ef7fd7903e80b382ed3e8aa860c44352/vlmeval/evaluate/multiple_choice.py
+      implementation: multiple_choice_eval and MMMU_preproc
+      judge_configuration: Not recorded with the prediction export
+      grade_availability: No per-item grades or answer-extraction results in this release
+sources:
+  upstream:
+  - name: predictions
+    url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    revision: c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    files:
+    - match: .*/[^/]+_MMMU_DEV_VAL(?:_supp\.pkl|\.xlsx)|README\.md
+      path: release/{path}
+  - name: historical_questions
+    url: https://huggingface.co/ambivalent02/openencompass_tsv/resolve/f1a5d56d88b8a3dd50ace818d901add5a5510b6e/MMMU_DEV_VAL.tsv
+    revision: f1a5d56d88b8a3dd50ace818d901add5a5510b6e
+    file: tasks/MMMU_DEV_VAL.tsv
+    size: 80999559
+    sha256: ee959aee1488baec46240f4f67c371afc225106d0372fe96e74d0170fcfe5372
+  - name: historical_protocol
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 507975d0ef7fd7903e80b382ed3e8aa860c44352
+    files:
+    - match: vlmeval/utils/matching_util\.py|vlmeval/evaluate/multiple_choice\.py|vlmeval/dataset/(?:image_dataset|config)\.py|LICENSE|README\.md
+      path: harness/{path}
+  - name: dataset_license
+    url: https://huggingface.co/datasets/MMMU/MMMU
+    revision: 98e6ac0cb9b7b2cd2c991b85a50762edc4aedc68
+    files:
+    - match: README\.md
+      path: original/{path}

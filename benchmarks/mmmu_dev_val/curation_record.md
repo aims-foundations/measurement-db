@@ -1,0 +1,3 @@
+- Import the 253 maintained OpenVLMRecords exports: 265,650 predictions on 1,050 development/validation questions. Capture historical copies and API caches without counting them as independent trials.
+- Match every question, option and historical reference to the VLMEvalKit task bank; restore 1,140 image occurrences from 1,100 distinct original JPEGs. The mirrored TSV matches the checksum in the captured historical harness.
+- Retain complete outputs, including empty/API-failure records. Grades are unavailable and remain null; the legacy custom matcher, validation-only filter and 4,000-character truncation are removed. Historical model settings and exact prompt wrappers remain unknown.
