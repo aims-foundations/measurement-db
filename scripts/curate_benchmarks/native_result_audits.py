@@ -27552,11 +27552,154 @@ def _wildvision(directory, tables, metadata, source_records=None):
         source_traces=len(traces),**counts)
 
 
+def _mmlupro_source_records(directory):
+    """Read all native question files independently of the builder's concatenation."""
+    from zipfile import ZipFile
+
+    native, labels, summaries = {}, [], {}
+    categories = {'biology', 'business', 'chemistry', 'computer science', 'economics',
+                  'engineering', 'health', 'history', 'law', 'math', 'other',
+                  'philosophy', 'physics', 'psychology', 'total'}
+    for path in sorted((directory / 'raw/github/eval_results').glob('*.zip')):
+        source = str(path.relative_to(directory / 'raw'))
+        with ZipFile(path) as archive:
+            for member in sorted(archive.namelist()):
+                if not member.endswith('.json') or member.startswith('__MACOSX/'):
+                    continue
+                records = json.loads(archive.read(member))
+                if Path(member).name == 'summary.json' and isinstance(records, dict):
+                    summaries[source, member] = records
+                    continue
+                _check(isinstance(records, list), True, 'MMLU-Pro native question array')
+                for position, record in enumerate(records):
+                    key = source, member, position
+                    if isinstance(record, str) and record in categories:
+                        labels.append(key)
+                        continue
+                    _check(isinstance(record, dict), True, 'MMLU-Pro recognized native entry')
+                    required = {'question_id', 'question', 'options', 'answer', 'answer_index',
+                                'category', 'src', 'cot_content', 'pred'}
+                    _check(required <= set(record), True, 'MMLU-Pro complete original fields')
+                    output = set(record) - required
+                    _check(len(output) == 1 and output <= {'model_outputs', 'generated_text', 'response', 'rationale'},
+                           True, 'MMLU-Pro recognized complete generation field')
+                    _check(isinstance(record[next(iter(output))], str), True, 'MMLU-Pro original output text')
+                    _check(record['pred'] is None or record['pred'] in list('ABCDEFGHIJ'), True,
+                           'MMLU-Pro released extracted answer')
+                    _check(record['answer'] in list('ABCDEFGHIJ'), True, 'MMLU-Pro released reference letter')
+                    _check(type(record['question_id']) is int and type(record['answer_index']) is int, True,
+                           'MMLU-Pro original integer identifiers')
+                    _check(isinstance(record['options'], list) and 1 <= len(record['options']) <= 10
+                           and all(isinstance(value, str) for value in record['options']), True,
+                           'MMLU-Pro original option list')
+                    _check(all(isinstance(record[name], str) for name in ['question', 'category', 'src', 'cot_content']),
+                           True, 'MMLU-Pro original question metadata')
+                    native[key] = record
+    _check(bool(native), True, 'MMLU-Pro nonempty original observations')
+    return native, labels, summaries
+
+
+def _mmlupro(directory, tables, metadata, source_records=None):
+    """Check every original model/question/grade/output association, including repeats."""
+    import re
+    import unicodedata
+    from urllib.parse import quote
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    native, labels, summaries = _mmlupro_source_records(directory) if source_records is None else source_records
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'),
+                         ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'MMLU-Pro unique ' + name + ' identifiers')
+    _check(len(tables['benchmarks']), 1, 'MMLU-Pro one benchmark')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+           json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'MMLU-Pro explicit binary grading scale')
+    _check(len(tables.get('assets', [])), 0, 'MMLU-Pro no invented attachments')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = {row.response_id: row for row in tables['responses'].itertuples()}
+    _check(len(responses), len(native), 'MMLU-Pro complete question-level observation count')
+    _check(set(tables['traces'].response_id), set(responses), 'MMLU-Pro exact one-to-one trace linkage')
+    original_order, first, counts, signatures = {}, {}, Counter(), {}
+    for key, record in native.items():
+        content = json.dumps(dict(question=record['question'], options=record['options']), ensure_ascii=False)
+        features = features_string(canonicalize_features(dict(category=quote(record['category'], safe=' /-._'),
+                                                              source=quote(record['src'], safe=' /-._'))))
+        signature = unicodedata.normalize('NFC', content).strip(), record['answer'], features
+        signatures[key] = signature
+        first.setdefault(signature, record)
+        counts[key[0], signature] += 1
+        original_order[key] = counts[key[0], signature]
+    seen, used_items, used_subjects, observations = Counter(), {}, {}, Counter()
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        _check(set(trace), {'source_file', 'source_member', 'source_row', 'native_record'}, 'MMLU-Pro complete trace fields')
+        key = trace['source_file'], trace['source_member'], trace['source_row']
+        _check(type(key[2]) is int and key in native, True, 'MMLU-Pro original source coordinates')
+        record = native[key]
+        _check(trace['native_record'], record, 'MMLU-Pro unchanged complete native output and fields')
+        seen[key] += 1
+        response = responses[trace_row.response_id]
+        grade = None if record['pred'] is None else float(record['pred'] == record['answer'])
+        _check(None if pd.isna(response.response) else response.response, grade,
+               'MMLU-Pro original deterministic comparison or unavailable random fallback')
+        _check(response.trial, original_order[key], 'MMLU-Pro retained source occurrence numbering')
+        _check(pd.isna(response.test_condition) and pd.isna(response.interactors), True, 'MMLU-Pro no invented response settings')
+        signature = signatures[key]
+        item = items[response.item_id]
+        first_record = first[signature]
+        _check(item['content'], json.dumps(dict(question=first_record['question'], options=first_record['options']),
+               ensure_ascii=False), 'MMLU-Pro exact first target question and ordered options')
+        _check(item['item_features'], signature[2], 'MMLU-Pro source category and question family')
+        _check(item['raw_item_id'], str(first[signature]['question_id']), 'MMLU-Pro first source alias with all aliases in traces')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=record['answer'], rule=metadata['grading']['rule']),
+               'MMLU-Pro original reference and grading protocol')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')), ('exact_matcher', None, None),
+               'MMLU-Pro deterministic comparison without invented judge')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['native'], 'MMLU-Pro native verifier description')
+        _check(pd.isna(item['asset_manifest']), True, 'MMLU-Pro no invented media')
+        if response.item_id in used_items:
+            _check(used_items[response.item_id], signature, 'MMLU-Pro stable task and grading identity')
+        used_items[response.item_id] = signature
+        filename = re.sub(r'_x([0-9a-f]{2})_', lambda match: chr(int(match[1], 16)), Path(key[0]).name)
+        match = re.fullmatch(r'model_outputs_(.+)_([0-9]+)-?shots(?:_[0-9]+_[0-9]+_[0-9]+)?(?:\.json)?\.zip', filename)
+        _check(match is not None, True, 'MMLU-Pro original model/run filename')
+        model, shots = match.groups()
+        subject = subjects[response.subject_id]
+        _check(subject['display_name'], model, 'MMLU-Pro literal model label')
+        _check(subject['harness'], 'MMLU-Pro', 'MMLU-Pro source harness')
+        expected_features = dict(source_run=quote(filename, safe=' /-._'), nominal_shots=shots)
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(expected_features)),
+               'MMLU-Pro complete source run and nominal shot count')
+        if response.subject_id in used_subjects:
+            _check(used_subjects[response.subject_id], key[0], 'MMLU-Pro distinct recorded configurations')
+        used_subjects[response.subject_id] = key[0]
+        observations['unavailable_grades'] += grade is None
+        observations['correct_predictions'] += grade == 1
+        observations['reference_index_disagreements'] += record['answer'] != chr(65 + record['answer_index'])
+        observations['one_option_observations'] += len(record['options']) == 1
+        observations['repeated_source_occurrences'] += original_order[key] > 1
+        output_field = next(name for name in ['model_outputs', 'generated_text', 'response', 'rationale'] if name in record)
+        observations['outputs_in_alternate_fields'] += output_field != 'model_outputs'
+        observations['outputs_over_8000_characters'] += len(record[output_field]) > 8000
+    _check(seen, Counter({key: 1 for key in native}), 'MMLU-Pro exact complete native record coverage')
+    _check(set(used_items), set(items), 'MMLU-Pro exact evaluated item set')
+    _check(Counter(used_items.values()), Counter({signature: 1 for signature in signatures.values()}),
+           'MMLU-Pro canonical source definitions without accidental duplication')
+    _check(set(used_subjects), set(subjects), 'MMLU-Pro exact evaluated configuration set')
+    return dict(source_responses=len(native), source_subjects=len(subjects), source_items=len(items),
+                source_traces=len(tables['traces']), raw_only_category_labels=len(labels),
+                raw_only_summary_files=len(summaries), **observations)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'mmlupro':
+        return _mmlupro(directory, tables, metadata)
     if directory.name == 'wildvision':
         return _wildvision(directory, tables, metadata)
     if directory.name == 'mmmu_dev_val':

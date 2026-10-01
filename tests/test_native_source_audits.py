@@ -29,6 +29,121 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _multi
 from measurement_db.build_base import _tables
 
 
+class MMLUProAuditTests(unittest.TestCase):
+    def setUp(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mmlupro
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'mmlupro'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/mmlupro/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/mmlupro/build.py'))['MMLUPro']
+        self.audit = _mmlupro
+        base = dict(question_id=1, question='Choose cafe\u0301.', options=['First', 'Second'],
+                    answer='B', answer_index=1, category='science', src='Literal, source; preserved', cot_content='', pred='B')
+        self.records = [dict(base, generated_text='Complete output. ' * 1500),
+            dict(base, question_id=2, answer='A', answer_index=0, pred='A', model_outputs='A'),
+            dict(base, question_id=3, question='Unparsed output.', answer='A', answer_index=0, pred=None, response=''),
+            dict(base, question_id=4, question='Single source option.', options=['One'], answer_index=0, pred='A', rationale='A'),
+            dict(base, question_id=300, generated_text='Another recorded occurrence.'),
+            dict(base, question_id=1, question='A different task reusing the upstream ID.', model_outputs='B')]
+        self.source = self.directory / 'raw/github/eval_results/model_outputs_model-A_5shots.zip'
+        self.source.parent.mkdir(parents=True)
+        self.write_source(self.records)
+        with ZipFile(self.source.with_name('model_outputs_model-A_0shots_01_02_03.zip'), 'w') as archive:
+            archive.writestr('original.json', json.dumps(self.records))
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),
+                '--output',str(self.directory.parent/'tables')])
+        self.frames = {p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def write_source(self, records, summary=None):
+        with ZipFile(self.source, 'w') as archive:
+            archive.writestr('first.json', json.dumps(records[:3] + ['total']))
+            archive.writestr('second.json', json.dumps(records[3:]))
+            archive.writestr('summary.json', json.dumps({'total':{'corr':4,'wrong':2}} if summary is None else summary))
+            archive.writestr('__MACOSX/ignored.json', '{}')
+
+    def test_complete_outputs_null_grades_repeated_records_and_multiple_members(self):
+        expected = dict(source_responses=12,source_subjects=2,source_items=5,source_traces=12,
+            raw_only_category_labels=1,raw_only_summary_files=1,unavailable_grades=2,correct_predictions=8,
+            reference_index_disagreements=2,one_option_observations=2,repeated_source_occurrences=2,
+            outputs_in_alternate_fields=8,outputs_over_8000_characters=2)
+        self.assertEqual(self.audit(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(self.audit(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+
+    def test_corrupted_associations_grades_and_traces_are_rejected(self):
+        for change in ['invent_grade','flip_grade','model','swap_items','drop_response','clip_trace',
+                       'source_row','source_member','source_file','question','options','reference',
+                       'verifier','trial','raw_alias','subject_features','item_features']:
+            with self.subTest(change=change):
+                tables = {n:f.copy(deep=True) for n,f in self.frames.items()}
+                if change=='invent_grade': tables['responses'].loc[tables['responses'].response.isna(),'response']=0.
+                elif change=='flip_grade':
+                    index=tables['responses'].index[tables['responses'].response.notna()][0]
+                    tables['responses'].loc[index,'response']=1-tables['responses'].loc[index,'response']
+                elif change=='model':
+                    tables['responses'].loc[0,'subject_id']=next(x for x in tables['subjects'].subject_id if x!=tables['responses'].loc[0,'subject_id'])
+                elif change=='swap_items':
+                    other=next(i for i in tables['responses'].index if tables['responses'].loc[i,'item_id']!=tables['responses'].loc[0,'item_id'])
+                    tables['responses'].loc[[0,other],'item_id']=tables['responses'].loc[[other,0],'item_id'].to_numpy()
+                elif change=='drop_response': tables['responses']=tables['responses'].iloc[1:].copy()
+                elif change in ['clip_trace','source_row','source_member','source_file']:
+                    trace=json.loads(tables['traces'].loc[0,'trace'])
+                    if change=='clip_trace': trace['native_record']['generated_text']='clipped'
+                    elif change=='source_row':trace['source_row']+=1
+                    else:trace[change]='absent'
+                    tables['traces'].loc[0,'trace']=json.dumps(trace)
+                elif change in ['question','options']:
+                    content=json.loads(tables['items'].loc[0,'content'])
+                    if change=='question':content['question']='wrong question'
+                    else:content['options'].reverse()
+                    tables['items'].loc[0,'content']=json.dumps(content)
+                elif change=='reference':
+                    criterion=json.loads(tables['items'].loc[0,'grading_criterion']);criterion['reference_answer']='J'
+                    tables['items'].loc[0,'grading_criterion']=json.dumps(criterion)
+                elif change=='verifier':tables['items'].loc[0,'verifier']='{"class":"judge","spec":"wrong"}'
+                elif change=='trial':tables['responses'].loc[0,'trial']=99
+                elif change=='raw_alias':tables['items'].loc[0,'raw_item_id']='absent-id'
+                elif change=='subject_features':tables['subjects'].loc[0,'subject_features_extra']='nominal_shots=20'
+                elif change=='item_features':tables['items'].loc[0,'item_features']='category=wrong'
+                with self.assertRaises((ValueError,KeyError,RuntimeError)):
+                    self.audit(self.directory,tables,self.metadata)
+
+    def test_unrecognized_source_formats_require_review(self):
+        for change in ['invalid_prediction','missing_field','missing_output','two_outputs',
+                       'new_grade','unknown_nonrecord','invalid_options','unknown_filename']:
+            with self.subTest(change=change):
+                records=copy.deepcopy(self.records)
+                if change=='invalid_prediction':records[0]['pred']='The answer is B.'
+                elif change=='missing_field':del records[0]['question']
+                elif change=='missing_output':del records[0]['generated_text']
+                elif change=='two_outputs':records[0]['model_outputs']='conflicting output'
+                elif change=='new_grade':records[0]['score']=1.
+                elif change=='unknown_nonrecord':records.append('unrecognized entry')
+                elif change=='invalid_options':records[0]['options']=[]
+                self.write_source(records)
+                renamed=self.source.with_name('unknown.zip')
+                if change=='unknown_filename':self.source.rename(renamed)
+                try:
+                    with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
+                finally:
+                    if renamed.exists():renamed.rename(self.source)
+        self.write_source(self.records)
+
+    def test_downloader_filename_encoding_preserves_original_model_label(self):
+        self.source.rename(self.source.with_name('model_outputs_gpt4o_x28_2024-05-13_x29__5shots.zip'))
+        _tables.reload()
+        output = self.directory.parent / 'encoded-tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),
+                '--output',str(output)])
+        tables = {p.stem:pd.read_parquet(p) for p in output.glob('*.parquet')}
+        self.assertEqual(self.audit(self.directory,tables,self.metadata)['source_responses'],12)
+        self.assertIn('gpt4o(2024-05-13)',tables['subjects'].display_name.tolist())
+
+
 class NativeTrajectoryAuditTests(unittest.TestCase):
     def setUp(self):
         scratch = ROOT / "artifacts"

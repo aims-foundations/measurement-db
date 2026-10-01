@@ -1,0 +1,148 @@
+format_version: 1
+tables:
+  traces:
+    rows: 575807
+    logical_sha256: b504a61434491dd0193697784bc2682aa661262829526ad6b9ac8955b7794f61
+  subjects:
+    rows: 48
+    logical_sha256: f5311660cf17cb422010dadfc38ca7bb8ff941d571e0a934d2cdc483acb06bdb
+  responses:
+    rows: 575807
+    logical_sha256: 76909701e38237c3c00c23a7ff76eaae9181c848b3fe8556d54e63a4739e1163
+  items:
+    rows: 14226
+    logical_sha256: 73f66f7e9655a6460097db22986fe0e773af6f98b57baac7069bfdcddbc8231c
+  benchmarks:
+    rows: 1
+    logical_sha256: 38deacf8fc4650e82b8bb4cca0319b177257aba3ded80fd25b9de0fc0cfc556c
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 575807
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 48
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 14226
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 575807
+  raw_only_category_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 43
+  raw_only_summary_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 1
+  unavailable_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 39517
+  correct_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 291899
+  reference_index_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 18
+  one_option_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 135
+  repeated_source_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 7888
+  outputs_in_alternate_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 409207
+  outputs_over_8000_characters:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: All original JSON question arrays inside every published ZIP, including category members; read independently
+      of the builder.
+    scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
+      random fallback outcomes remain null. Category aggregates and stray category labels are excluded from response
+      tables.
+    expected: 1128
