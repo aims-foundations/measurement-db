@@ -278,6 +278,11 @@ $defs:
                       revision: {type: string, pattern: '^"[^"\r\n]+"$'}
                       url: {type: string, pattern: '^https://[^\s?#]+\.zip(?:\?[^\s]*)?$'}
                       zip_members: {maxItems: 1}
+                  - required: [files, zip_members, tree_sha256, size]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9]+$'}
+                      url: {type: string, pattern: '^https://zenodo\.org/records/[0-9]+/files/[^/?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
             - if:
                 anyOf:
                   - required: [files]
@@ -344,6 +349,11 @@ $defs:
                       revision: {type: string, pattern: '^"[^"\r\n]+"$'}
                       url: {type: string, pattern: '^https://[^\s?#]+\.zip(?:\?[^\s]*)?$'}
                       zip_members: {maxItems: 1}
+                  - required: [size]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9]+$'}
+                      url: {type: string, pattern: '^https://zenodo\.org/records/[0-9]+/files/[^/?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -375,7 +385,7 @@ $defs:
               uniqueItems: true
               items: {$ref: '#/$defs/nonempty_string'}
             zip_members:
-              description: Select ZIP paths in a pinned HF repository, or one HTTPS ZIP filename with its exact size and strong ETag in revision. File patterns match archive.zip/member/path; selected original bytes require a SHA-256 content-tree pin. HTTPS requests also enforce the ETag with If-Match.
+              description: Select ZIP paths in a pinned HF repository, or one HTTPS ZIP filename with its exact size and strong ETag in revision. Versioned Zenodo ZIP URLs instead use their numeric record ID as revision, verified against the original record. File patterns match archive.zip/member/path; all selected original bytes require a SHA-256 content-tree pin. ETag-based requests also enforce If-Match.
               type: array
               minItems: 1
               uniqueItems: true

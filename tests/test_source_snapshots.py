@@ -54,7 +54,7 @@ class HTTPSourceRetryTests(unittest.TestCase):
              patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
             self.assertEqual(_read_index_source(url, 'original.json', None), PAYLOAD)
             self.assertEqual(download.call_count, 2)
-            sleep.assert_called_once_with(2.)
+            sleep.assert_called_once_with(5.)
 
     def test_retries_are_bounded_and_do_not_retry_access_denials(self):
         from urllib.error import HTTPError
@@ -277,6 +277,52 @@ class ZIPMemberTests(unittest.TestCase):
         self.assertEqual(self.inspect(integration=True), urls)
         self.assertEqual((self.raw / "members/task/transcript.txt").read_bytes(), self.members["task/transcript.txt"])
 
+    def test_zip_range_retries_throttling_without_skipping_byte_checks(self):
+        from scripts.build_measurement_tables.load_source_files import read_zip_member
+
+        with zipfile.ZipFile(io.BytesIO(self.archive)) as archive:
+            member = archive.infolist()[0]
+        for final_status, retry_after, expected_pause, succeeds in [
+                (206, '61', 61., True), (206, '0', 5., True), (200, '61', 61., False), (403, '61', 61., False)]:
+            statuses = iter([429, final_status])
+            replies = []
+
+            def request(url, headers, **kwargs):
+                start, end = map(int, headers['Range'].removeprefix('bytes=').split('-'))
+                reply = io.BytesIO(self.archive[start:end + 1])
+                reply.status_code, reply.raw = next(statuses), reply
+                reply.headers = {'Retry-After': retry_after, 'Content-Range': f'bytes {start}-{end}/{len(self.archive)}'}
+                replies.append(reply)
+                return reply
+
+            with self.subTest(final_status=final_status, retry_after=retry_after), \
+                    patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                session = SimpleNamespace(get=request)
+                if succeeds:
+                    self.assertEqual(read_zip_member('https://example.org/original.zip', len(self.archive), member, session),
+                                     self.members[member.filename])
+                else:
+                    with self.assertRaisesRegex(SourceDataError, 'requested byte range'):
+                        read_zip_member('https://example.org/original.zip', len(self.archive), member, session)
+                sleep.assert_called_once_with(expected_pause)
+                self.assertTrue(all(reply.closed for reply in replies))
+
+        calls = []
+
+        def always_limited(*args, **kwargs):
+            reply = io.BytesIO()
+            reply.status_code, reply.headers = 429, {'Retry-After': '0'}
+            calls.append(reply)
+            return reply
+
+        with patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            with self.assertRaisesRegex(SourceDataError, 'remains unavailable'):
+                read_zip_member('https://example.org/original.zip', len(self.archive), member,
+                                SimpleNamespace(get=always_limited))
+            self.assertEqual(len(calls), 5)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40])
+            self.assertTrue(all(reply.closed for reply in calls))
+
     def test_https_archive_requires_version_and_complete_content_pin(self):
         self.source.update(url="https://example.org/original.zip", revision='"original-version"', size=len(self.archive))
         urls = self.inspect(integration=True)
@@ -310,6 +356,40 @@ class ZIPMemberTests(unittest.TestCase):
         self.source["zip_members"] = ["different-name.zip"]
         with self.assertRaisesRegex(SourceDataError, "exact filename"):
             self.inspect(integration=True)
+
+    def test_zenodo_versioned_members_preserve_bytes_without_http_etags(self):
+        self.source.update(url='https://zenodo.org/records/123/files/original.zip?download=1',
+                           revision='123', size=len(self.archive))
+        record = dict(id=123, files=[dict(key='original.zip', size=len(self.archive), checksum='md5:' + 'a' * 32)])
+        def record_response(request, **kwargs):
+            self.assertEqual(request.full_url, 'https://zenodo.org/api/records/123')
+            return io.BytesIO(json.dumps(record).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=record_response):
+            self.inspect(integration=True)
+            for name, body in self.members.items():
+                self.assertEqual((self.raw / 'members' / name).read_bytes(), body)
+            self.inspect(integration=True)  # The same source remains verifiable with cached bytes.
+            record['id'] = 124
+            with self.assertRaisesRegex(SourceDataError, 'pinned record/size'):
+                self.inspect(integration=True)
+            record['id'] = 123
+            record['files'][0]['size'] += 1
+            with self.assertRaisesRegex(SourceDataError, 'pinned record/size'):
+                self.inspect(integration=True)
+
+    def test_zenodo_requires_matching_record_and_full_member_digest(self):
+        self.source.update(url='https://zenodo.org/records/123/files/original.zip',
+                           revision='124', size=len(self.archive))
+        with self.assertRaisesRegex(SourceDataError, 'versioned record ID'):
+            self.inspect(integration=True)
+        self.source['revision'] = '123'
+        self.source['tree_sha256'] = '0' * 64
+        record = dict(id=123, files=[dict(key='original.zip', size=len(self.archive), checksum='md5:' + 'a' * 32)])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(record).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                self.inspect(integration=True)
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob('*')))
 
     def test_pinned_tree_rejects_changed_selection_before_installing_files(self):
         self.source["tree_sha256"] = "0" * 64

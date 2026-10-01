@@ -262,6 +262,142 @@ class AegisSourceAuditTests(unittest.TestCase):
             path.write_bytes(original)
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _wonderbread
+from measurement_db import build_base
+import random
+
+class WonderbreadSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory = Path(temporary.name) / 'wonderbread'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/wonderbread') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        raw = self.directory / 'raw'
+        p = self.metadata['build']['parameters']
+        path = raw / p['layout']['helpers']
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('def convert_trace_action_to_dsl(event: Dict[str, Any]):\n    return {"action": event["data"]["fixture_text"]}\n')
+        task_path = raw / p['layout']['webarena_tasks'] / '1.json'
+        task_path.parent.mkdir(parents=True, exist_ok=True)
+        task_path.write_text(json.dumps(dict(task_id=1, intent='Complete workflow 1', sites=['shopping'])))
+        names = ['1 @ fixture-a', '1 @ fixture-b', '2 @ fixture-c', '3 @ fixture-d']
+        sop = 'Workflow title\n1. Open the page.\n2. Finish the task.\n'
+        path = raw / p['layout']['gold_archive']
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with ZipFile(path, 'w') as archive:
+            for index, name in enumerate(names):
+                folder = p['labels']['gold_prefix'] + name
+                events = [dict(type='state', data=dict(path_to_screenshot='0.png')),
+                          dict(type='action', data=dict(fixture_text='Press Enter')),
+                          dict(type='state', data=dict(path_to_screenshot='1.png'))]
+                obj = dict(trace=events, webarena=dict(task_id=int(name.split(' ')[0]), intent='Complete workflow ' + name[0]))
+                archive.writestr(folder + '/' + name + '.json', json.dumps(obj))
+                archive.writestr(folder + '/SOP.txt', sop.replace('\n', '\r\n'))
+                for frame in range(2):
+                    archive.writestr(folder + '/screenshots/' + str(frame) + '.png', b'original screenshot ' + bytes([index, frame]))
+        qa = dict(**{'Task ID(s)': names[0], 'Question Instantiation': 'Which step comes first?', 'Evidence': 'SOP',
+            'Human Label': 'Open the page.', 'Question Template': 'Which step?', 'Response': 'Open the page.',
+            'ablation--model': 'GPT4', 'completeness_score': 1, 'soundness_score': 2,
+            'clarity_score': 3, 'compactness_score': 1, 'ablation': 'GPT4'})
+        validation = dict(gt_is_met=True, paths_to_screenshots="['0.png', '1.png']", pred_rationale='Completed',
+            pred_is_met=True, pred_raw_response=json.dumps(dict(thinking='Completed', was_completed=True)),
+            is_correct=True, task_type='true', model='GPT4', demo_name=names[0], task_id=1,
+            **{'ablation--is_td': True, 'ablation--is_kf': True, 'ablation--is_act': False,
+               'ablation--is_include_sop': True, 'ablation--version': 'task_completion',
+               'ablation--n_negative_samples': 1, 'ablation--model': 'GPT4', 'ablation': 'td_kf_sop_samples=1_GPT4'})
+        ranking = [dict(folder_name=names[index], sop=sop, gt_ranking=index + 1, pred_ranking=2 - index,
+            spearman_corr=-1.0, spearman_p_value=0.0, kendall_corr=-1.0, kendall_p_value=1.0,
+            demo_name=names[1], task_id=1, ablation='GPT4', **{'ablation--model': 'GPT4'}) for index in range(2)]
+        generation = dict(pred_sop='Open then finish.', demo_name=names[0], task_id=1,
+            gold_sop='1. Open the page.\n2. Finish the task.', precision=0.5, recall=1.0, ordering=0.5,
+            **{'ablation--model': 'Claude3', 'ablation--is_pairwise': False, 'ablation--is_td': True,
+               'ablation--is_kf': True, 'ablation--is_act': True, 'ablation': 'td_kf_act_Claude3'})
+        # Two demonstrations share workflow 1. The original harness groups
+        # them before shuffling; treating them as three distinct IDs is wrong.
+        segment_names = [names[0], names[1], names[2]]
+        order = [1, 2]
+        random.Random(0).shuffle(order)
+        segmentation = [dict(trial=0, uuid=index, pred_task_id=task if index else 99,
+            gt_task_id=task, item_type='state', demo_name=names[0], task_id=1, demos=str(segment_names),
+            is_correct=index != 0, **{'ablation--model': 'GPT4', 'ablation--n_tasks': 3, 'ablation--is_same_site': True,
+            'ablation--is_interleave': False, 'ablation--is_concatenate': True, 'ablation--is_td': True,
+            'ablation--is_kf': True, 'ablation--is_act': False, 'ablation--is_include_sop': True,
+            'ablation--is_prompt_uuid': False, 'ablation--n_trials': 1, 'ablation': 'td_kf_sop_GPT4'})
+            for index, task in enumerate([task for task in order for _ in range(4 if task == 1 else 2)])]
+        ungraded = dict(segmentation[0], is_correct='', **{'ablation--is_td': False, 'ablation': 'unnamed_GPT4'})
+        self.source_rows = dict(question_answering=[qa, dict(qa, **{'ablation--model': 'Human'})],
+            demo_validation=[validation, dict(validation, gt_is_met=False, task_type='truncate', is_correct=False,
+                                               paths_to_screenshots="['0.png']")],
+            sop_ranking=ranking, sop_generation=[generation], demo_segmentation=segmentation + [ungraded])
+        self.paths = {}
+        for family, rows in self.source_rows.items():
+            path = raw / p['results'][family]
+            path.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(rows).to_csv(path, index=False)
+            self.paths[family] = path
+        cls = runpy.run_path(str((ROOT / 'benchmarks/wonderbread') / 'build.py'))['Wonderbread']
+        self.output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(self.output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in self.output.glob('*.parquet')}
+
+    def test_all_native_units_scales_and_original_images(self):
+        counts = _wonderbread(self.directory, self.frames, self.metadata)
+        self.assertEqual(counts['source_responses'], 17)
+        self.assertEqual(counts['source_question_answering_grades'], 4)
+        self.assertEqual(counts['source_sop_ranking_grades'], 2)
+        self.assertEqual(counts['source_sop_generation_grades'], 3)
+        self.assertEqual(counts['source_demo_segmentation_grades'], 6)
+        self.assertIn(-1.0, self.frames['responses'].response.tolist())
+        reordered = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_wonderbread(self.directory, reordered, self.metadata), counts)
+
+    def test_corrupt_associations_outputs_and_grades_are_rejected(self):
+        cases = ['grade', 'null_grade', 'subject_link', 'item_link', 'content', 'reference', 'scale', 'verifier',
+                 'source_row', 'trace_output', 'missing_response', 'missing_trace', 'trial', 'asset', 'condition']
+        for case in cases:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, items, traces = (frames[name] for name in ['responses', 'items', 'traces'])
+            if case == 'grade': responses.loc[0, 'response'] = 2.0
+            elif case == 'null_grade': responses.loc[0, 'response'] = float('nan')
+            elif case == 'subject_link': responses.loc[0, 'subject_id'] = next(v for v in frames['subjects'].subject_id if v != responses.loc[0, 'subject_id'])
+            elif case == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif case == 'content': items.loc[0, 'content'] = '{}'
+            elif case in ['reference', 'scale']:
+                criterion = json.loads(items.loc[0, 'grading_criterion'])
+                if case == 'reference': criterion['reference_answer'] = 'different reference'
+                else: criterion['response_scale']['direction'] = 'higher_is_better'
+                items.loc[0, 'grading_criterion'] = json.dumps(criterion)
+            elif case == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif case in ['source_row', 'trace_output']:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if case == 'source_row': trace['source_rows'] = [999]
+                else: trace['source_records']['Response'] = 'changed output'
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif case == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif case == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif case == 'trial': responses.loc[0, 'trial'] = 9
+            elif case == 'asset': frames['assets'].at[0, 'data'] = b'changed screenshot'
+            elif case == 'condition': responses.loc[0, 'test_condition'] = 'different run'
+            with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _wonderbread(self.directory, frames, self.metadata)
+
+    def test_changed_native_reference_and_ranking_are_rejected(self):
+        for family, field in [('question_answering', 'Human Label'), ('sop_ranking', 'gt_ranking'), ('demo_segmentation', 'gt_task_id')]:
+            path = self.paths[family]
+            original = path.read_bytes()
+            frame = pd.read_csv(path, keep_default_na=False)
+            frame.loc[0, field] = 'wrong' if family == 'question_answering' else 99
+            frame.to_csv(path, index=False)
+            with self.subTest(family=family), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _wonderbread(self.directory, self.frames, self.metadata)
+            path.write_bytes(original)
+
+
 class DecompileBenchSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()

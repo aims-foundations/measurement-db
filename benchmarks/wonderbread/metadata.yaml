@@ -1,0 +1,384 @@
+benchmark:
+  description: Published workflow question answers, demonstration judgments, SOP rankings, SOP generation and per-screenshot
+    segmentation outcomes. Original SOPs, action traces and screenshots supply the actual task context.
+  testing_condition: Import original graded AI outputs only. QA rubric scores retain their 1-best to 3-worst direction.
+    Ranking correlations describe an entire ranked SOP set and appear once per set and metric. Preserve native screenshot-level
+    segmentation grades only where the released task explicitly defines workflow labels. Ungraded segmentation conditions
+    and SOP-improvement outputs remain in raw, as do human QA reference baselines. Model labels and ablations are
+    recorded literally; backend routes and image limits are documented by the pinned harness, not claimed as separately
+    logged per-call telemetry. No model or judge is executed.
+  paper_url: https://arxiv.org/abs/2406.13264
+  data_source_url: https://github.com/HazyResearch/wonderbread
+  subject_type: model
+  item_type: task
+  license: CC-BY-4.0 for the versioned Zenodo dataset. The captured upstream code has no separate license file at
+    the pinned commit.
+  citation: "@article{hazyresearch2024wonderbread,\n  title={WONDERBREAD: A Benchmark for Evaluating Multimodal\
+    \ Foundation Models on Business Process Management Tasks}, \n  author={Michael Wornow and Avanika Narayan and\
+    \ Ben Viggiano and Ishan S. Khare and Tathagat Verma and Tibor Thompson and Miguel Angel Fuentes Hernandez and\
+    \ Sudharsan Sundar and Chloe Trujillo and Krrish Chawla and Rongfei Lu and Justin Shen and Divya Nagaraj and\
+    \ Joshua Martinez and Vardhan Agrawal and Althea Hudson and Nigam H. Shah and Christopher Re},\n  journal={Advances\
+    \ in Neural Information Processing Systems},\n  volume={37},\n  pages={115963--116021},\n  url={https://hazyresearch.stanford.edu/wonderbread-website},\n\
+    \  year={2024}\n}"
+  tags:
+  - bpm
+  - agents
+  - workflow
+  - multimodal
+  modality:
+  - image
+  - text
+  domain:
+  - agents
+  - general
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-06
+  release: public
+  name: WONDERBREAD
+  granularity: item
+  multi_single_turn: multi_turn, single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      gold_archive: zenodo/gold_demos_sop_and_trace_and_screenshots_only.zip
+      additional_demos: additional/demos
+      helpers: source/wonderbread/helpers.py
+      webarena_tasks: source/wonderbread/benchmark/webarena
+    interfaces:
+      gitlab: Gitlab
+      shopping: Generic e-commerce site
+      shopping_admin: Generic e-commerce admin based on Adobe Magneto
+      reddit: Generic open source Reddit clone
+    instructions:
+      question_answering: Answer the question using the supplied workflow evidence.
+      task_completion: Determine whether the demonstrated workflow completed the described task.
+      task_trajectory: Determine whether the demonstration accurately follows the supplied workflow guide.
+      sop_ranking: Rank these complete workflow guides by quality for the stated task. Return their rankings in
+        the supplied SOP order.
+      sop_generation: Write a step-by-step standard operating procedure for the stated task using the supplied workflow
+        evidence.
+      demo_segmentation: Identify the workflow shown at the target screenshot UUID within this concatenated screenshot
+        sequence. Workflow labels follow the supplied definition order.
+    models:
+      GPT4/text: gpt-4-0125-preview
+      GPT4/image: gpt-4-vision-preview
+      GeminiPro/text: gemini-1.0-pro
+      GeminiPro/image: gemini-pro-vision
+      Claude3/text: claude-3-sonnet-20240229
+      Claude3/image: claude-3-sonnet-20240229
+    runtime_notes:
+      GPT4: The pinned router uses temperature 0 and at most 4096 output tokens.
+      GeminiPro: The pinned vision wrapper retains at most the first 16 screenshots per call.
+      Claude3: The pinned wrapper retains at most the first 20 screenshots per call and at most 4096 output tokens.
+        SOP generation splits long screenshot sequences into chunks of at most 10 images, then makes a follow-up
+        model call to merge the generated text.
+      segmentation: The original harness groups input demonstrations by embedded workflow task ID before shuffling.
+        Preserve this grouping, including the released cases where multiple demonstrations share an ID.
+      representations: Item contents preserve task text, SOPs and ordered workflow evidence. Exact prompt templates
+        and provider-specific formatting remain in the pinned original source. Grading references are separate from
+        task content.
+    results:
+      question_answering: source/data/experimental_results/question_answering_all_results.csv
+      demo_validation: source/data/experimental_results/demo_validation_all_results.csv
+      sop_ranking: source/data/experimental_results/sop_ranking_all_results.csv
+      demo_segmentation: source/data/experimental_results/demo_segmentation_all_results.csv
+      sop_generation: source/data/experimental_results/sop_generation/sop_generation_eval.csv
+    labels:
+      harness_revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+      action_formatter: convert_trace_action_to_dsl
+      gold_prefix: gold_demos_sop_and_trace_and_screenshots_only/
+      transition: 'Action: PRESS(Cmd+Tab)'
+      condition: Original published WONDERBREAD output and grade
+grading:
+  rule: Keep the source metric and observation unit.
+  verifiers:
+    question_answering/completeness_score:
+      kind: judge
+      rule: Use the released completeness judgment under the original question-answering rubric. 1 is best and 3
+        is worst; do not reverse or normalize the grade.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: lower_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/eval.py:get_completeness_score
+        rubric: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/prompts.py:prompt__completeness_score
+        declared_judge: gpt-4-0125-preview
+        execution: Import the released grade. Do not call the judge.
+    question_answering/soundness_score:
+      kind: judge
+      rule: Use the released soundness judgment under the original question-answering rubric. 1 is best and 3 is
+        worst; do not reverse or normalize the grade.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: lower_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/eval.py:get_soundness_score
+        rubric: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/prompts.py:prompt__soundness_score
+        declared_judge: gpt-4-0125-preview
+        execution: Import the released grade. Do not call the judge.
+    question_answering/clarity_score:
+      kind: judge
+      rule: Use the released clarity judgment under the original question-answering rubric. 1 is best and 3 is worst;
+        do not reverse or normalize the grade.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: lower_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/eval.py:get_clarity_score
+        rubric: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/prompts.py:prompt__clarity_score
+        declared_judge: gpt-4-0125-preview
+        execution: Import the released grade. Do not call the judge.
+    question_answering/compactness_score:
+      kind: judge
+      rule: Use the released compactness judgment under the original question-answering rubric. 1 is best and 3
+        is worst; do not reverse or normalize the grade.
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: lower_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/eval.py:get_compactness_score
+        rubric: wonderbread/benchmark/tasks/knowledge_transfer/question_answering/prompts.py:prompt__compactness_score
+        declared_judge: gpt-4-0125-preview
+        execution: Import the released grade. Do not call the judge.
+    demo_validation/is_correct:
+      kind: exact_matcher
+      rule: Match the parsed completion/trajectory judgment to the recorded true/false target. Preserve source parse
+        failures as failures.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        meanings:
+          '0': incorrect or missing parsed prediction
+          '1': correct
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/knowledge_transfer/demo_validation/main.py
+        execution: Import the native is_correct value.
+    demo_segmentation/is_correct:
+      kind: exact_matcher
+      rule: Match the source parsed task ID at this UUID to the original workflow task ID. Score only native conditions
+        with explicitly named workflow classes.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        meanings:
+          '0': incorrect or missing parsed prediction
+          '1': correct
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/documentation/demo_segmentation/main.py
+        execution: Import the native is_correct value.
+    sop_ranking/spearman_corr:
+      kind: exact_matcher
+      rule: Compute spearman_corr between the complete predicted and human reference rank vectors in the supplied
+        SOP order. The published correlation repeats across member rows; import it once per ranking task.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/improvement/sop_ranking/main.py:evaluate_ranking
+        execution: Import the original whole-ranking correlation; p-values are not grades.
+    sop_ranking/kendall_corr:
+      kind: exact_matcher
+      rule: Compute kendall_corr between the complete predicted and human reference rank vectors in the supplied
+        SOP order. The published correlation repeats across member rows; import it once per ranking task.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/improvement/sop_ranking/main.py:evaluate_ranking
+        execution: Import the original whole-ranking correlation; p-values are not grades.
+    sop_generation/precision:
+      kind: judge
+      rule: Fraction of generated SOP steps that the original LLM grader aligns to any reference step.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/documentation/sop_generation/metrics.py:PairwiseComparison.precision
+        preprocessing: wonderbread/benchmark/tasks/documentation/sop_generation/eval.py:preprocess_sop
+        declared_judge: gpt-4-1106-preview
+        execution: Import the published SOP-generation evaluator table. Do not call the alignment judge.
+    sop_generation/recall:
+      kind: judge
+      rule: Fraction of reference SOP steps that the original LLM grader aligns to any generated step.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/documentation/sop_generation/metrics.py:PairwiseComparison.recall
+        preprocessing: wonderbread/benchmark/tasks/documentation/sop_generation/eval.py:preprocess_sop
+        declared_judge: gpt-4-1106-preview
+        execution: Import the published SOP-generation evaluator table. Do not call the alignment judge.
+    sop_generation/ordering:
+      kind: judge
+      rule: Fraction of generated steps with a matching reference index at least as large as the previous retained
+        index, using the original PairwiseComparison.ordering implementation.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        source: https://github.com/HazyResearch/wonderbread
+        revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+        entry_point: wonderbread/benchmark/tasks/documentation/sop_generation/metrics.py:PairwiseComparison.ordering
+        preprocessing: wonderbread/benchmark/tasks/documentation/sop_generation/eval.py:preprocess_sop
+        declared_judge: gpt-4-1106-preview
+        execution: Import the published SOP-generation evaluator table. Do not call the alignment judge.
+sources:
+  upstream:
+  - name: source
+    url: https://github.com/HazyResearch/wonderbread
+    revision: ed052c67aeada04167cdfe92ff8de454aa94627a
+    files:
+    - match: .*[.](py|json|jsonl|csv|md|yaml|yml|sh|txt)
+      path: source/{path}
+  - name: zenodo_df_rankings
+    url: https://zenodo.org/records/14094162/files/df_rankings.csv?download=1
+    revision: '14094162'
+    file: zenodo/df_rankings.csv
+    size: 109644
+    sha256: 0d057a93e2acfa007cfc183548f022c57bf8e320dc1a70bb2a4b8ddd7aac149c
+  - name: zenodo_df_valid
+    url: https://zenodo.org/records/14094162/files/df_valid.csv?download=1
+    revision: '14094162'
+    file: zenodo/df_valid.csv
+    size: 324605
+    sha256: ff871c53d4067902029550129aea53723d2304e8e62fe137a59b618c34e750bd
+  - name: zenodo_metadata
+    url: https://zenodo.org/records/14094162/files/metadata.json?download=1
+    revision: '14094162'
+    file: zenodo/metadata.json
+    size: 793943
+    sha256: aa60385a1bfac99aefc5fcdac78ad6f9b21585b4c8f3a1b2bc54cd8b3afcb8e1
+  - name: zenodo_qa_dataset
+    url: https://zenodo.org/records/14094162/files/qa_dataset.csv?download=1
+    revision: '14094162'
+    file: zenodo/qa_dataset.csv
+    size: 42421
+    sha256: ab7b2924015591b6f90c7e09fca5f444e34c9edd55860270aace756bc6e496cf
+  - name: zenodo_gold_demos_sop_and_trace_and_screenshots_only
+    url: https://zenodo.org/records/14094162/files/gold_demos_sop_and_trace_and_screenshots_only.zip?download=1
+    revision: '14094162'
+    file: zenodo/gold_demos_sop_and_trace_and_screenshots_only.zip
+    size: 5710396007
+    sha256: 8a0e59cdbbad5b58402882393a064486e4098b7895698ad91da9a02693e5093e
+  - name: additional_demonstrations
+    url: https://zenodo.org/records/14094162/files/demos.zip?download=1
+    revision: '14094162'
+    size: 132654580976
+    zip_members:
+    - demos.zip
+    tree_sha256: f05f572f88f4738cab5546b1c549fa5afb75943b836059dbe0d72400197f83b5
+    files:
+    - match: demos[.]zip/(?P<member>demos/(?:102\ @\ 2023\-12\-27\-00\-57\-01|103\ @\ 2024\-01\-14\-05\-56\-24|104\
+        @\ 2023\-12\-28\-09\-37\-55|104\ @\ 2024\-01\-14\-05\-57\-58|110\ @\ 2023\-12\-28\-00\-59\-44|112\ @\ 2024\-01\-08\-19\-07\-04|115\
+        @\ 2023\-12\-31\-10\-24\-48|12\ @\ 2024\-01\-13\-05\-00\-49|120\ @\ 2023\-12\-28\-01\-20\-43|120\ @\ 2024\-01\-08\-19\-46\-04|121\
+        @\ 2024\-01\-30\-15\-37\-51|124\ @\ 2023\-12\-27\-12\-39\-02|128\ @\ 2024\-01\-08\-20\-03\-37|129\ @\ 2023\-12\-28\-21\-41\-38|130\
+        @\ 2023\-12\-28\-21\-45\-33|135\ @\ 2024\-01\-08\-12\-59\-49|141\ @\ 2024\-01\-08\-01\-51\-42|144\ @\ 2023\-12\-31\-23\-46\-12|146\
+        @\ 2023\-12\-28\-23\-05\-07|15\ @\ 2023\-12\-25\-16\-13\-48|150\ @\ 2024\-01\-13\-10\-55\-39|159\ @\ 2024\-01\-13\-11\-13\-30|161\
+        @\ 2024\-01\-13\-17\-53\-56|164\ @\ 2024\-01\-16\-06\-25\-25|167\ @\ 2024\-01\-13\-18\-04\-58|169\ @\ 2023\-12\-31\-01\-35\-46|170\
+        @\ 2023\-12\-26\-11\-30\-46|174\ @\ 2023\-12\-31\-01\-53\-08|174\ @\ 2024\-01\-08\-12\-04\-28|175\ @\ 2024\-01\-08\-12\-10\-16|182\
+        @\ 2023\-12\-26\-21\-48\-56|182\ @\ 2023\-12\-28\-11\-17\-34|189\ @\ 2023\-12\-29\-09\-48\-19|195\ @\ 2024\-01\-30\-17\-37\-27|2\
+        @\ 2023\-12\-25\-15\-27\-33|202\ @\ 2023\-12\-29\-15\-21\-47|202\ @\ 2024\-01\-14\-00\-45\-14|204\ @\ 2023\-12\-31\-16\-30\-47|204\
+        @\ 2024\-01\-14\-00\-54\-20|207\ @\ 2024\-01\-14\-06\-27\-55|208\ @\ 2023\-12\-31\-15\-19\-52|209\ @\ 2024\-01\-11\-06\-49\-21|215\
+        @\ 2024\-01\-11\-07\-13\-15|215\ @\ 2024\-01\-13\-06\-52\-53|215\ @\ 2024\-02\-04\-17\-30\-11|217\ @\ 2024\-01\-11\-07\-23\-30|233\
+        @\ 2024\-01\-08\-03\-29\-03|239\ @\ 2024\-01\-08\-03\-33\-42|241\ @\ 2024\-01\-08\-03\-36\-07|244\ @\ 2023\-12\-29\-16\-24\-12|244\
+        @\ 2024\-01\-06\-23\-50\-16|261\ @\ 2024\-01\-08\-03\-38\-00|264\ @\ 2024\-02\-16\-22\-48\-20|264\ @\ 2024\-02\-22\-07\-37\-35|27\
+        @\ 2023\-12\-25\-17\-40\-36|27\ @\ 2024\-01\-05\-02\-22\-11|274\ @\ 2023\-12\-27\-09\-09\-52|274\ @\ 2024\-02\-07\-15\-51\-13|276\
+        @\ 2024\-02\-07\-15\-52\-28|277\ @\ 2024\-01\-06\-13\-07\-30|28\ @\ 2023\-12\-25\-21\-04\-23|283\ @\ 2024\-02\-02\-13\-15\-48|289\
+        @\ 2023\-12\-29\-17\-06\-13|292\ @\ 2024\-02\-18\-07\-00\-54|294\ @\ 2023\-12\-30\-15\-07\-58|294\ @\ 2024\-01\-06\-17\-45\-29|30\
+        @\ 2023\-12\-25\-21\-44\-29|303\ @\ 2023\-12\-30\-15\-27\-26|303\ @\ 2024\-02\-06\-23\-11\-24|304\ @\ 2024\-01\-30\-18\-14\-09|305\
+        @\ 2023\-12\-30\-15\-31\-37|310\ @\ 2023\-12\-31\-12\-32\-17|311\ @\ 2023\-12\-31\-23\-06\-53|316\ @\ 2024\-02\-17\-14\-28\-33|322\
+        @\ 2024\-02\-08\-11\-46\-16|324\ @\ 2024\-02\-22\-12\-20\-23|325\ @\ 2024\-01\-01\-17\-07\-42|326\ @\ 2024\-02\-08\-11\-54\-47|328\
+        @\ 2023\-12\-26\-22\-39\-55|329\ @\ 2024\-01\-02\-15\-37\-56|333\ @\ 2024\-02\-09\-18\-38\-11|334\ @\ 2024\-01\-02\-14\-57\-29|338\
+        @\ 2024\-01\-01\-14\-22\-32|338\ @\ 2024\-01\-02\-15\-29\-33|338\ @\ 2024\-01\-04\-15\-35\-31|339\ @\ 2023\-12\-31\-20\-58\-06|344\
+        @\ 2023\-12\-29\-18\-33\-02|344\ @\ 2024\-01\-07\-17\-41\-10|347\ @\ 2023\-12\-29\-18\-49\-29|349\ @\ 2024\-01\-06\-18\-57\-30|350\
+        @\ 2024\-02\-08\-22\-39\-41|353\ @\ 2024\-01\-01\-22\-40\-26|355\ @\ 2024\-01\-01\-14\-54\-14|361\ @\ 2024\-01\-05\-15\-01\-56|362\
+        @\ 2023\-12\-31\-18\-56\-59|389\ @\ 2023\-12\-31\-21\-16\-55|390\ @\ 2024\-01\-06\-14\-41\-16|392\ @\ 2023\-12\-31\-21\-20\-54|395\
+        @\ 2023\-12\-30\-18\-11\-43|396\ @\ 2023\-12\-30\-18\-22\-05|396\ @\ 2024\-01\-07\-20\-29\-04|400\ @\ 2023\-12\-31\-20\-24\-32|401\
+        @\ 2024\-02\-08\-23\-28\-18|406\ @\ 2024\-02\-17\-14\-39\-43|409\ @\ 2023\-12\-30\-21\-06\-19|411\ @\ 2023\-12\-25\-10\-30\-07|414\
+        @\ 2024\-01\-08\-00\-08\-23|415\ @\ 2024\-02\-20\-21\-29\-42|419\ @\ 2024\-01\-07\-20\-34\-53|420\ @\ 2024\-01\-06\-21\-39\-29|423\
+        @\ 2024\-02\-26\-19\-11\-17|436\ @\ 2024\-02\-21\-09\-25\-00|437\ @\ 2024\-02\-21\-09\-33\-06|438\ @\ 2024\-02\-21\-09\-39\-29|442\
+        @\ 2023\-12\-25\-12\-41\-40|442\ @\ 2023\-12\-27\-10\-59\-11|443\ @\ 2023\-12\-25\-12\-42\-53|445\ @\ 2023\-12\-25\-12\-46\-03|445\
+        @\ 2024\-01\-06\-21\-46\-59|451\ @\ 2024\-02\-16\-20\-02\-14|452\ @\ 2024\-02\-07\-20\-03\-30|454\ @\ 2023\-12\-31\-19\-55\-06|454\
+        @\ 2024\-02\-05\-16\-34\-32|456\ @\ 2023\-12\-31\-20\-07\-58|456\ @\ 2024\-01\-28\-08\-49\-23|459\ @\ 2024\-01\-07\-18\-38\-30|462\
+        @\ 2024\-02\-05\-17\-10\-26|466\ @\ 2023\-12\-26\-09\-52\-38|466\ @\ 2024\-02\-09\-14\-31\-19|467\ @\ 2023\-12\-26\-09\-53\-15|475\
+        @\ 2024\-02\-05\-21\-25\-34|48\ @\ 2023\-12\-26\-23\-44\-04|482\ @\ 2024\-02\-09\-10\-43\-08|483\ @\ 2024\-02\-09\-10\-45\-06|486\
+        @\ 2023\-12\-28\-10\-33\-57|487\ @\ 2023\-12\-28\-10\-35\-29|49\ @\ 2024\-01\-05\-04\-06\-16|494\ @\ 2023\-12\-30\-23\-48\-17|494\
+        @\ 2024\-01\-07\-17\-31\-39|496\ @\ 2024\-02\-17\-14\-48\-36|497\ @\ 2024\-01\-07\-01\-50\-19|50\ @\ 2024\-01\-11\-08\-38\-54|501\
+        @\ 2024\-01\-07\-18\-57\-10|505\ @\ 2024\-01\-07\-19\-01\-31|51\ @\ 2023\-12\-26\-23\-53\-42|51\ @\ 2023\-12\-31\-18\-35\-38|514\
+        @\ 2023\-12\-28\-19\-22\-03|515\ @\ 2023\-12\-28\-19\-23\-18|516\ @\ 2023\-12\-28\-19\-24\-43|520\ @\ 2024\-01\-07\-20\-49\-03|525\
+        @\ 2024\-01\-07\-21\-26\-19|528\ @\ 2024\-02\-22\-20\-27\-46|533\ @\ 2024\-01\-06\-22\-11\-08|540\ @\ 2024\-02\-05\-20\-55\-46|543\
+        @\ 2024\-01\-07\-02\-15\-29|544\ @\ 2024\-02\-04\-14\-41\-19|546\ @\ 2024\-01\-07\-19\-22\-35|567\ @\ 2024\-01\-07\-16\-35\-13|572\
+        @\ 2023\-12\-27\-09\-22\-10|573\ @\ 2023\-12\-28\-23\-27\-25|581\ @\ 2024\-01\-03\-13\-44\-30|586\ @\ 2023\-12\-27\-11\-21\-14|590\
+        @\ 2024\-01\-08\-02\-35\-26|592\ @\ 2023\-12\-25\-09\-30\-51|592\ @\ 2024\-01\-08\-02\-38\-47|594\ @\ 2023\-12\-25\-09\-33\-33|594\
+        @\ 2023\-12\-28\-03\-50\-23|600\ @\ 2024\-01\-01\-18\-15\-53|605\ @\ 2024\-02\-05\-14\-05\-58|609\ @\ 2024\-01\-03\-20\-32\-48|614\
+        @\ 2023\-12\-31\-13\-37\-15|624\ @\ 2024\-01\-06\-19\-37\-28|625\ @\ 2024\-01\-01\-19\-33\-24|625\ @\ 2024\-01\-03\-21\-28\-54|629\
+        @\ 2024\-01\-01\-19\-50\-08|631\ @\ 2023\-12\-31\-16\-20\-17|633\ @\ 2024\-02\-05\-14\-07\-41|636\ @\ 2023\-12\-31\-16\-31\-59|636\
+        @\ 2024\-02\-05\-14\-11\-46|638\ @\ 2024\-02\-05\-14\-13\-47|642\ @\ 2024\-01\-01\-20\-06\-37|642\ @\ 2024\-01\-08\-01\-51\-36|656\
+        @\ 2024\-01\-03\-00\-27\-44|657\ @\ 2023\-12\-29\-12\-34\-37|658\ @\ 2023\-12\-31\-18\-41\-07|659\ @\ 2023\-12\-25\-09\-41\-21|660\
+        @\ 2024\-01\-05\-21\-36\-05|663\ @\ 2023\-12\-29\-03\-13\-37|665\ @\ 2024\-01\-03\-01\-07\-18|67\ @\ 2024\-01\-13\-23\-36\-04|670\
+        @\ 2023\-12\-25\-10\-00\-06|679\ @\ 2024\-01\-07\-18\-09\-46|680\ @\ 2023\-12\-28\-20\-27\-04|689\ @\ 2023\-12\-29\-03\-36\-01|690\
+        @\ 2024\-01\-06\-13\-45\-40|699\ @\ 2024\-01\-02\-10\-28\-50|700\ @\ 2024\-01\-02\-10\-36\-20|701\ @\ 2023\-12\-28\-18\-56\-33|701\
+        @\ 2023\-12\-31\-02\-48\-17|702\ @\ 2023\-12\-28\-18\-57\-43|703\ @\ 2024\-01\-05\-19\-56\-50|704\ @\ 2024\-01\-07\-20\-32\-15|713\
+        @\ 2024\-01\-13\-02\-38\-35|714\ @\ 2024\-01\-04\-13\-30\-33|715\ @\ 2024\-01\-04\-23\-17\-58|719\ @\ 2024\-01\-04\-23\-27\-19|727\
+        @\ 2024\-01\-16\-04\-10\-03|729\ @\ 2024\-01\-08\-03\-11\-29|730\ @\ 2024\-01\-04\-20\-06\-32|731\ @\ 2024\-01\-08\-03\-17\-56|731\
+        @\ 2024\-01\-16\-08\-17\-15|734\ @\ 2024\-01\-04\-20\-21\-44|750\ @\ 2024\-01\-06\-21\-43\-28|751\ @\ 2024\-01\-06\-15\-52\-16|752\
+        @\ 2024\-01\-06\-22\-02\-01|773\ @\ 2024\-01\-16\-05\-39\-20|775\ @\ 2024\-01\-07\-15\-27\-19|78\ @\ 2023\-12\-27\-22\-47\-56|782\
+        @\ 2024\-01\-13\-04\-10\-24|784\ @\ 2023\-12\-31\-04\-33\-28|784\ @\ 2024\-02\-01\-23\-05\-15|785\ @\ 2024\-01\-06\-21\-06\-28|801\
+        @\ 2024\-01\-14\-04\-48\-36|808\ @\ 2024\-01\-04\-07\-34\-04)/(?!\[)([^/]+[.]json|SOP[^/]*[.]txt|screenshots/[^/]+[.]png))
+      path: additional/{member}

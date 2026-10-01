@@ -30,26 +30,26 @@ class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
 
 
-def open_http_source(request, *, timeout, opener=None):
+def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=4):
     """Bound retries for throttling and temporary server errors; preserve other failures."""
     opener = urlopen if opener is None else opener
-    for attempt in range(4):
+    for attempt in range(attempts):
         try:
             return opener(request, timeout=timeout)
         except HTTPError as error:
-            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == attempts - 1:
                 raise
             delay = 5 * 2 ** attempt
             retry_after = (error.headers or {}).get('Retry-After')
             if retry_after is not None:
                 try:
-                    delay = float(retry_after)
+                    delay = max(delay, float(retry_after))
                 except ValueError:
                     try:
-                        delay = max(0, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+                        delay = max(delay, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
                     except (TypeError, ValueError, OverflowError):
                         pass
-            if not 0 <= delay <= 60:
+            if not 0 <= delay <= max_retry_delay:
                 raise  # Leave a long server-requested pause to the caller; do not retry early.
             error.close()
             time.sleep(delay)
@@ -605,8 +605,19 @@ def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session,
         headers = {"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"}
         if etag is not None:
             headers["If-Match"] = etag
-        with session.get(url, headers=headers,
-                         stream=True, timeout=120) as response:
+
+        def open_range(address, *, timeout):
+            response = session.get(address, headers=headers, stream=True, timeout=timeout)
+            if response.status_code in (429, 500, 502, 503, 504):
+                raise HTTPError(address, response.status_code, "ZIP request temporarily unavailable", response.headers, response)
+            return response
+
+        try:
+            response = open_http_source(url, timeout=120, opener=open_range, max_retry_delay=120, attempts=5)
+        except HTTPError as error:
+            error.close()
+            raise SourceDataError(f"Original ZIP request remains unavailable (HTTP {error.code}; Retry-After: {(error.headers or {}).get('Retry-After', 'absent')})") from None
+        with response:
             if response.status_code != 206 or response.headers.get("Content-Range") != f"bytes {start}-{end}/{archive_size}":
                 raise SourceDataError(f"ZIP server did not return the requested byte range (HTTP {response.status_code})")
             if etag is not None and response.headers.get("ETag") != etag:
@@ -658,8 +669,9 @@ def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None)
     files, destinations = [], set()
     thread = threading.local()
     sessions = []
+    workers = 4 if urlparse(source["url"]).netloc == "zenodo.org" else 12
     try:
-        with tempfile.TemporaryDirectory(prefix=".zip-download-", dir=raw_dir.parent) as temporary, ThreadPoolExecutor(max_workers=12) as executor:
+        with tempfile.TemporaryDirectory(prefix=".zip-download-", dir=raw_dir.parent) as temporary, ThreadPoolExecutor(max_workers=workers) as executor:
             staging = Path(temporary)
             for archive_name, archive_entry in sorted(selected.items()):
                 etag = archive_entry.get("etag")
@@ -787,11 +799,30 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
             http_zip = "zip_members" in source and location.netloc != "huggingface.co"
             if http_zip:
                 archive_name = Path(location.path).name
+                zenodo = re.fullmatch(r'/records/([0-9]+)/files/[^/]+[.]zip', location.path) if location.netloc == 'zenodo.org' else None
                 if (location.scheme != "https" or not archive_name.endswith(".zip") or source["zip_members"] != [archive_name]
-                        or not isinstance(source.get("size"), int) or isinstance(source["size"], bool) or source["size"] <= 0
-                        or not re.fullmatch(r'"[^"\r\n]+"', str(source.get("revision", "")))):
+                        or not isinstance(source.get("size"), int) or isinstance(source["size"], bool) or source["size"] <= 0):
+                    raise SourceDataError(f"{name}: HTTPS ZIP selection requires its exact filename and positive size")
+                if zenodo:
+                    # Versioned Zenodo records do not expose HTTP ETags. Pin the
+                    # record ID and size here, then every selected original byte
+                    # with the existing SHA-256 content-tree check below.
+                    record_id = zenodo.group(1)
+                    if source.get('revision') != record_id:
+                        raise SourceDataError(f'{name}: Zenodo revision must equal the versioned record ID')
+                    request = Request(f'https://zenodo.org/api/records/{record_id}', headers={'User-Agent': 'measurement-db'})
+                    with open_http_source(request, timeout=120) as response:
+                        record = json.load(response)
+                    matches = [entry for entry in record.get('files', []) if entry.get('key') == archive_name]
+                    if (str(record.get('id')) != record_id or len(matches) != 1
+                            or matches[0].get('size') != source['size']
+                            or not re.fullmatch(r'md5:[0-9a-f]{32}', str(matches[0].get('checksum', '')))):
+                        raise SourceDataError(f'{name}: Zenodo archive differs from its pinned record/size')
+                    entries = [dict(path=archive_name, url=url, size=source['size'])]
+                elif not re.fullmatch(r'"[^"\r\n]+"', str(source.get("revision", ""))):
                     raise SourceDataError(f"{name}: HTTPS ZIP selection requires its exact filename, positive size and strong ETag revision")
-                entries = [dict(path=archive_name, url=url, size=source["size"], etag=source["revision"])]
+                else:
+                    entries = [dict(path=archive_name, url=url, size=source["size"], etag=source["revision"])]
             elif "wandb_runs" in source:
                 entries = wandb_entries(source)
             elif "json_index" in source:

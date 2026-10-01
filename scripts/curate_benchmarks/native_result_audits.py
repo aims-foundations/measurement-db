@@ -30529,6 +30529,244 @@ def _tumlu(directory, tables, metadata):
         source_graded_result_files=len(file_accuracies), source_empty_result_files=empty_files)
 
 
+def _wonderbread(directory, tables, metadata):
+    import ast
+    import hashlib
+    import random
+    import re
+    from typing import Any, Dict
+    from urllib.parse import quote
+    from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='WONDERBREAD native record audit')
+    p, raw = metadata['build']['parameters'], directory / 'raw'
+    protocols = metadata['grading']['verifiers']
+    _check(metadata['benchmark']['response_scale'], {'kind': 'mixed'}, 'WONDERBREAD native metric domains')
+    for key, protocol in protocols.items():
+        domain = protocol['response_scale']
+        family = key.split('/')[0]
+        _check(domain['direction'], 'lower_is_better' if family == 'question_answering' else 'higher_is_better',
+               'WONDERBREAD native score direction')
+        if family == 'question_answering':
+            _check(domain['values'], [1, 2, 3], 'WONDERBREAD original ordinal rubric')
+        elif family in ['demo_validation', 'demo_segmentation']:
+            _check(domain['values'], [0, 1], 'WONDERBREAD original correctness domain')
+        else:
+            _check((domain['min'], domain['max']), (-1 if family == 'sop_ranking' else 0, 1), 'WONDERBREAD continuous domain')
+
+    # Read stimuli directly from the two original releases, independently of
+    # the builder's merges, local item keys and materialized response tables.
+    native = {'Dict': Dict, 'Any': Any}
+    tree = ast.parse((raw / p['layout']['helpers']).read_text())
+    function = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'convert_trace_action_to_dsl']
+    _check(len(function), 1, 'WONDERBREAD original pure action renderer')
+    exec(compile(ast.Module(body=function, type_ignores=[]), 'original-action-renderer', 'exec'), native)
+    demos, screenshot_paths, original_assets = {}, {}, {}
+
+    def inspect_demo(name, record, sop, read_image):
+        steps, screenshots = [], []
+        for event in record['trace']:
+            if event['type'] == 'state':
+                filename = Path(event['data']['path_to_screenshot']).name
+                payload = read_image(filename)
+                digest = hashlib.sha256(payload).hexdigest()
+                location = 'screenshots/' + digest + '.png'
+                original_assets[location] = (digest, len(payload))
+                screenshot_paths[name, filename] = location
+                step = dict(type='image', location=location)
+                screenshots.append(step)
+            else:
+                _check(event['type'], 'action', 'WONDERBREAD native action type')
+                step = dict(type='text', text='Action: ' + native['convert_trace_action_to_dsl'](event)['action'])
+            steps.append(step)
+        _check(name not in demos, True, 'WONDERBREAD unique original demonstration')
+        demos[name] = dict(intent=record['webarena']['intent'], task_id=int(record['webarena']['task_id']),
+                           sop=sop, steps=steps, screenshots=screenshots)
+
+    with ZipFile(raw / p['layout']['gold_archive']) as archive:
+        grouped = defaultdict(list)
+        for member in archive.namelist():
+            if member.startswith(p['labels']['gold_prefix']) and not member.endswith('/'):
+                grouped[str(Path(member).parent)].append(member)
+        for folder, members in sorted(grouped.items()):
+            records = [member for member in members if member.endswith('.json')]
+            if not records:
+                continue
+            sops = [member for member in members if Path(member).name.startswith('SOP') and member.endswith('.txt')]
+            _check((len(records), len(sops)), (1, 1), 'WONDERBREAD unique raw JSON/SOP')
+            text = archive.read(sops[0]).decode().replace('\r\n', '\n').replace('\r', '\n')
+            inspect_demo(Path(folder).name, json.loads(archive.read(records[0])), text,
+                         lambda filename: archive.read(folder + '/screenshots/' + filename))
+    for filename in sorted((raw / p['layout']['additional_demos']).glob('*/*.json')):
+        name = re.sub(r'_x([0-9a-f]{2,6})_', lambda match: chr(int(match[1], 16)), filename.parent.name)
+        sops = list(filename.parent.glob('SOP*.txt'))
+        _check(len(sops), 1, 'WONDERBREAD additional original SOP')
+        inspect_demo(name, json.loads(filename.read_bytes()), sops[0].read_text(),
+                     lambda image: (filename.parent / 'screenshots' / re.sub(r'[^A-Za-z0-9._/-]',
+                         lambda match: f'_x{ord(match[0]):02x}_', image)).read_bytes())
+
+    # Materialize expected observations from original source positions. A rank
+    # vector is one observation, regardless of how many member rows carry it.
+    native_rows, expected = {}, {}
+    source_counts = {}
+    for family, path in p['results'].items():
+        frame = pd.read_csv(raw / path, keep_default_na=False, float_precision='round_trip')
+        native_rows[path] = frame.to_dict('records')
+        source_counts[family] = len(frame)
+        if family == 'sop_ranking':
+            groups = [tuple(g.index) for _, g in frame.groupby(['task_id', 'ablation--model', 'ablation', 'demo_name'], sort=False)]
+        else:
+            groups = [(index,) for index, row in frame.iterrows()
+                      if not (family == 'question_answering' and row['ablation--model'] == 'Human')
+                      and not (family == 'demo_segmentation' and row['is_correct'] == '')]
+        for positions in groups:
+            rows = [native_rows[path][index] for index in positions]
+            first = rows[0]
+            model = first['ablation--model']
+            configuration = first['Evidence'] if family == 'question_answering' else first['ablation']
+            if family == 'question_answering':
+                names = list(map(str.strip, first['Task ID(s)'].split(',')))
+                if first['Evidence'].startswith('SOP'):
+                    evidence = [demos[name]['sop'][demos[name]['sop'].index('\n'):] for name in names]
+                elif len(names) < 3:
+                    evidence = [demos[name]['steps'] for name in names]
+                else:
+                    by_task = defaultdict(list)
+                    for name in names:
+                        by_task[demos[name]['task_id']].extend(demos[name]['steps'])
+                        if name != names[-1]:
+                            by_task[demos[name]['task_id']].append(dict(type='text', text=p['labels']['transition']))
+                    task_order = sorted(by_task)
+                    random.Random(1).shuffle(task_order)
+                    evidence = sum([by_task[task] for task in task_order], [])
+                context = dict(text=p['instructions'][family], question=first['Question Instantiation'], evidence=evidence)
+                reference = first['Human Label']
+            elif family == 'demo_validation':
+                name = first['demo_name']
+                context = dict(text=p['instructions'][first['ablation--version']],
+                    intent=demos[name]['intent'] if first['ablation--is_td'] else None,
+                    sop=demos[name]['sop'] if first['ablation--is_include_sop'] else None,
+                    screenshots=[dict(type='image', location=screenshot_paths[name, Path(image).name])
+                                 for image in ast.literal_eval(first['paths_to_screenshots'])])
+                reference = json.dumps(bool(first['gt_is_met']))
+            elif family == 'sop_ranking':
+                ids = {demos[row['folder_name']]['task_id'] for row in rows}
+                _check(ids, {int(first['task_id'])}, 'WONDERBREAD one workflow per ranking task')
+                context = dict(text=p['instructions'][family], intent=demos[first['folder_name']]['intent'], sops=[row['sop'] for row in rows])
+                reference = json.dumps([int(row['gt_ranking']) for row in rows])
+            elif family == 'sop_generation':
+                name = first['demo_name']
+                task = json.loads((raw / p['layout']['webarena_tasks'] / (str(int(first['task_id'])) + '.json')).read_text())
+                _check(task['intent'], demos[name]['intent'], 'WONDERBREAD original task description correspondence')
+                context = dict(text=p['instructions'][family], intent=task['intent'], interface=p['interfaces'][task['sites'][0]], workflow=[step for step in demos[name]['steps']
+                    if (step['type'] == 'image' and first['ablation--is_kf']) or (step['type'] == 'text' and first['ablation--is_act'])])
+                gold = demos[name]['sop'].strip()
+                if not gold.split('\n')[0][0].isdigit():
+                    gold = '\n'.join(gold.split('\n')[1:])
+                _check(first['gold_sop'], gold, 'WONDERBREAD original SOP-generation reference')
+                reference = first['gold_sop']
+            else:
+                names = ast.literal_eval(first['demos'])
+                _check(first['ablation--is_td'], True, 'WONDERBREAD explicitly named segmentation labels')
+                by_task = defaultdict(list)
+                for name in names:
+                    by_task[demos[name]['task_id']].extend(demos[name]['screenshots'])
+                task_order = sorted(by_task)
+                random.Random(int(first['trial'])).shuffle(task_order)
+                sequence = sum([by_task[task] for task in task_order], [])
+                targets = [task for task in task_order for _ in by_task[task]]
+                _check(int(first['gt_task_id']), targets[int(first['uuid'])], 'WONDERBREAD original segmentation UUID target')
+                definitions = [dict(label=chr(index + 65), intent=demos[name]['intent'],
+                                    sop=demos[name]['sop'] if first['ablation--is_include_sop'] else None) for index, name in enumerate(names)]
+                context = dict(text=p['instructions'][family], workflows=definitions, screenshots=sequence, target_uuid=int(first['uuid']))
+                reference = str(int(first['gt_task_id']))
+            text = json.dumps(context, sort_keys=True, allow_nan=False)
+            modality = 'image' if '"type": "image"' in text else 'text'
+            subject = dict(native_model=model, task_family=family, configuration=quote(configuration, safe=' _-,+'),
+                           declared_backend=p['models'][model + '/' + modality])
+            for protocol in protocols:
+                if not protocol.startswith(family + '/'):
+                    continue
+                column = protocol.split('/')[1]
+                grade = first[column]
+                if column == 'is_correct':
+                    grade = {'True': 1.0, 'False': 0.0, True: 1.0, False: 0.0}[grade]
+                if family == 'sop_ranking':
+                    _check({row[column] for row in rows}, {first[column]}, 'WONDERBREAD broadcast ranking metric consistency')
+                expected[path, positions, protocol] = dict(grade=float(grade), content=text, reference=reference,
+                    features=subject, native=rows if family == 'sop_ranking' else first,
+                    alias=family + '/' + str(positions[0]) + '/' + column)
+
+    subjects = {row.subject_id: (row.display_name, _features(row.subject_features_extra)) for row in tables['subjects'].itertuples()}
+    for row in tables['subjects'].itertuples():
+        _check((row.harness, row.harness_version), ('WONDERBREAD', p['labels']['harness_revision']), 'WONDERBREAD original harness revision')
+    expected_subjects = {json.dumps(row['features'], sort_keys=True) for row in expected.values()}
+    _check(Counter(json.dumps(features, sort_keys=True) for _, features in subjects.values()), Counter(expected_subjects),
+           'WONDERBREAD exact model/configuration population')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    _check(len(items), len({(row['content'], row['reference'], key[2]) for key, row in expected.items()}),
+           'WONDERBREAD distinct stimuli and grading protocols')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'WONDERBREAD every captured output retained')
+    rule_to_protocol = {spec['rule']: key for key, spec in protocols.items()}
+    aliases = defaultdict(set)
+    for (_, _, protocol), row in expected.items():
+        aliases[row['content'], row['reference'], protocol].add(row['alias'])
+    assets = {row.asset_id: row for row in tables.get('assets', pd.DataFrame()).itertuples()}
+    asset_digests = {key: (hashlib.sha256(row.data).hexdigest(), len(row.data)) for key, row in assets.items()}
+    seen, used_items, used_subjects, used_assets, checked_items = Counter(), set(), set(), set(), set()
+    trials = defaultdict(list)
+    for response in tables['responses'].itertuples():
+        item = items[response.item_id]
+        criterion = json.loads(item['grading_criterion'])
+        protocol = rule_to_protocol[criterion['rule']]
+        trace = json.loads(traces[response.response_id])
+        key = trace['source_file'], tuple(trace['source_rows']), protocol
+        original = expected[key]
+        _check(trace['source_records'], original['native'], 'WONDERBREAD complete native output and source grade')
+        _check(set(trace), {'source_file', 'source_rows', 'source_records'}, 'WONDERBREAD explicit source provenance')
+        _check(response.response, original['grade'], 'WONDERBREAD native per-observation grade')
+        _check(subjects[response.subject_id], ('WONDERBREAD ' + original['features']['native_model'], original['features']),
+               'WONDERBREAD original model and ablation association')
+        _check(item['content'], original['content'], 'WONDERBREAD complete original task context')
+        _check(item['raw_item_id'] in aliases[original['content'], original['reference'], protocol], True, 'WONDERBREAD source item alias')
+        _check(_features(item['item_features']), {'task_family': protocol.split('/')[0]}, 'WONDERBREAD task-family features')
+        spec = protocols[protocol]
+        _check(criterion, dict(rule=spec['rule'], reference_answer=original['reference'], response_scale=spec['response_scale']),
+               'WONDERBREAD grading reference and scale')
+        verifier = dict(class_='judge' if spec['kind'] == 'judge' else 'exact_matcher', spec=json.dumps(spec['implementation'], sort_keys=True))
+        verifier['class'] = verifier.pop('class_')
+        if spec['kind'] == 'judge':
+            verifier.update(judged_by='llm')
+        _check(json.loads(item['verifier']), verifier, 'WONDERBREAD original grading implementation')
+        _check(response.test_condition, p['labels']['condition'], 'WONDERBREAD published-result condition')
+        _check(pd.isna(response.interactors), True, 'WONDERBREAD no invented interactors')
+        if response.item_id not in checked_items:
+            paths = list(dict.fromkeys(re.findall(r'"location": "(screenshots/[0-9a-f]{64}[.]png)"', item['content'])))
+            manifest = json.loads(item['asset_manifest']) if pd.notna(item['asset_manifest']) else []
+            _check([entry['path'] for entry in manifest], paths, 'WONDERBREAD complete ordered image attachments')
+            for entry in manifest:
+                asset = assets[entry['asset_id']]
+                _check(asset_digests[entry['asset_id']], original_assets[entry['path']], 'WONDERBREAD unchanged native screenshot')
+                _check((entry['role'], entry['media_type']), ('input', 'image/png'), 'WONDERBREAD original image role/type')
+                used_assets.add(entry['asset_id'])
+            checked_items.add(response.item_id)
+        used_items.add(response.item_id)
+        used_subjects.add(response.subject_id)
+        trials[response.subject_id, response.item_id].append(response.trial)
+        seen[key] += 1
+    _check(seen, Counter(expected.keys()), 'WONDERBREAD no missing, repeated or invented observations')
+    _check(used_items, set(items), 'WONDERBREAD no unused items')
+    _check(used_subjects, set(subjects), 'WONDERBREAD no unused subjects')
+    _check(used_assets, set(assets), 'WONDERBREAD no unused screenshot assets')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'WONDERBREAD consecutive native record ordinals')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=len(expected),
+        source_traces=len(traces), source_assets=len(assets), source_demonstrations=len(demos),
+        **{'source_' + family + '_rows': value for family, value in source_counts.items()},
+        **{'source_' + family + '_grades': sum(key[2].startswith(family + '/') for key in expected) for family in p['results']})
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30540,6 +30778,8 @@ def verify_native_results(directory, tables_directory=None):
         return _tumlu(directory, tables, metadata)
     if directory.name == 'aegis':
         return _aegis(directory, tables, metadata)
+    if directory.name == 'wonderbread':
+        return _wonderbread(directory, tables, metadata)
     if directory.name == 'decompile_bench':
         return _decompile_bench(directory, tables, metadata)
     if directory.name == 'rclicks':
