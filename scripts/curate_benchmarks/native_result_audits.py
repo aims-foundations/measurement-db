@@ -30334,6 +30334,87 @@ def _decompile_bench(directory, tables, metadata):
         source_missing_input_rows=missing_input_rows, source_recomputed_scores=len(expected))
 
 
+def _aegis(directory, tables, metadata):
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='AEGIS original response audit')
+    parameters, protocols = metadata['build']['parameters'], metadata['grading']['verifiers']
+    model = parameters['model']
+    _check(metadata['benchmark']['subject_type'], 'model', 'AEGIS generator is the subject')
+    _check(parameters['labels'], {'safe': '1', 'unsafe': '0'}, 'AEGIS literal response safety mapping')
+    _check(metadata['benchmark']['response_scale'], dict(kind='discrete', values=[0, 1], direction='higher_is_better',
+        meanings={'0': 'native response_label is unsafe', '1': 'native response_label is safe'}), 'AEGIS safety scale')
+    _check(set(protocols), {'human', 'llm_jury'}, 'AEGIS released response graders')
+    expected, source_counts, ids, prompt_only, empty_outputs = {}, {}, set(), 0, 0
+    contexts = {}
+    for split, filename in parameters['files'].items():
+        records = json.loads((directory / 'raw' / filename).read_text())
+        source_counts[split] = len(records)
+        for index, record in enumerate(records):
+            if record['response'] is None:
+                _check(record['response_label'], None, 'AEGIS prompt-only row has no response grade')
+                prompt_only += 1
+                continue
+            _check(record['id'] not in ids, True, 'AEGIS unique released attempt ID')
+            ids.add(record['id'])
+            _check(isinstance(record['prompt'], str) and isinstance(record['response'], str), True, 'AEGIS original prompt/output types')
+            _check(record['response_label'] in ('safe', 'unsafe'), True, 'AEGIS original grade present')
+            _check(record['response_label_source'] in protocols, True, 'AEGIS original label provenance')
+            expected[filename, index] = dict(record=record, split=split)
+            contexts.setdefault((record['prompt'], record['response_label_source']), record['id'])
+            empty_outputs += record['response'] == ''
+    augmentation = 0
+    for name in ['refusals_train.json', 'refusals_validation.json']:
+        records = json.loads((directory / 'raw' / name).read_text())
+        _check(all(row['response_label_source'] == 'refusal_data_augmentation' for row in records), True,
+               'AEGIS synthetic augmentation scope')
+        augmentation += len(records)
+
+    _check(len(tables['subjects']), 1, 'AEGIS one documented response generator')
+    subject = tables['subjects'].iloc[0]
+    _check(subject.display_name, model['label'], 'AEGIS original model label')
+    _check(subject.harness, model['harness'], 'AEGIS collection harness')
+    _check(_features(subject.subject_features_extra),
+           dict(source_model_identifier=model['identifier'], source_attribution=model['attribution']), 'AEGIS generator attribution')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    seen, used, item_contexts, trials, graders = set(), set(), {}, defaultdict(list), Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        _check(set(trace), {'source_file', 'source_row', 'source_record'}, 'AEGIS complete source locator')
+        key = trace['source_file'], trace['source_row']
+        _check(key in expected and key not in seen, True, 'AEGIS exact attempt coverage')
+        seen.add(key)
+        original = expected[key]['record']
+        _check(trace['source_record'], original, 'AEGIS unchanged complete original record')
+        _check(response.response, 1.0 if original['response_label'] == 'safe' else 0.0, 'AEGIS native response grade')
+        _check(response.subject_id, subject.subject_id, 'AEGIS response generator relationship')
+        _check(response.test_condition, 'upstream_split=' + expected[key]['split'], 'AEGIS original split')
+        item = items[response.item_id]
+        grader = original['response_label_source']
+        identity = original['prompt'], grader
+        _check(json.loads(item['content']), {'prompt': original['prompt']}, 'AEGIS complete original first user turn')
+        _check(json.loads(item['grading_criterion']), {'reference_answer': None, 'rule': metadata['grading']['rule']}, 'AEGIS grading criterion')
+        _check(json.loads(item['verifier']), dict(**{'class': 'judge'}, judged_by=protocols[grader]['kind'],
+            spec=json.dumps(protocols[grader], sort_keys=True)), 'AEGIS original grading provenance')
+        _check(item['raw_item_id'], contexts[identity], 'AEGIS first source alias; all aliases remain in traces')
+        _check(item_contexts.setdefault(response.item_id, identity), identity, 'AEGIS consistent item association')
+        used.add(response.item_id)
+        trials[response.subject_id, response.item_id, response.test_condition].append(response.trial)
+        graders[grader] += 1
+    _check(seen, set(expected), 'AEGIS every original model response exactly once')
+    _check(set(items), used, 'AEGIS no unobserved or invented items')
+    _check(set(item_contexts.values()), set(contexts), 'AEGIS complete original stimuli and graders')
+    _check(len(items), len(contexts), 'AEGIS canonical prompt/protocol count')
+    _check(set(traces), set(tables['responses'].response_id), 'AEGIS complete trace linkage')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'AEGIS consecutive recorded attempts')
+    return dict(source_subjects=1, source_items=len(contexts), source_responses=len(expected), source_traces=len(expected),
+        source_main_rows=sum(source_counts.values()), source_prompt_only_rows=prompt_only,
+        source_augmentation_rows=augmentation, source_empty_outputs=empty_outputs,
+        source_empty_prompt_responses=sum(row['record']['prompt'] == '' for row in expected.values()),
+        source_human_grades=graders['human'], source_llm_jury_grades=graders['llm_jury'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30341,6 +30422,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'aegis':
+        return _aegis(directory, tables, metadata)
     if directory.name == 'decompile_bench':
         return _decompile_bench(directory, tables, metadata)
     if directory.name == 'rclicks':

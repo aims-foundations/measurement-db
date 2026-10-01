@@ -1062,3 +1062,5 @@ SOURCE_AUDITS["reasoning_gym"] = verify_native_results
 SOURCE_AUDITS["rclicks"] = verify_native_results
 
 SOURCE_AUDITS["decompile_bench"] = verify_native_results
+
+SOURCE_AUDITS["aegis"] = verify_native_results

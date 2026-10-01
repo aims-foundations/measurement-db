@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 3b3b0c2caff5b8d8253633901d59dc88e73074971875bbd0c83ca8e8f34459f8
+  items:
+    rows: 11500
+    logical_sha256: 33fe4c93edaf4a7235d4a76d79e42a5ea21f4d7537581b625a15b28501d2edd2
+  responses:
+    rows: 11608
+    logical_sha256: 3abdd225dd3000cc7ca87e0fda77dbfaa8fad105c00f163cf817a994462636f5
+  subjects:
+    rows: 1
+    logical_sha256: e7808c94b8e5177101777d9f39d73d6152e0222050d0dcaaff241b6f1d02f44c
+  traces:
+    rows: 11608
+    logical_sha256: 5267b224cc30d088671525537c5bafa39f2c7f890269dce1b4dddf5ad831156e
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 11500
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 11608
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 11608
+  source_main_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 28216
+  source_prompt_only_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 16608
+  source_augmentation_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 5200
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 877
+  source_empty_prompt_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 1
+  source_human_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 5236
+  source_llm_jury_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/nvidia/Aegis-AI-Content-Safety-Dataset-2.0/tree/d86bb8bedff51d25ac834ab7838f1cc61acb7a2c
+    locator: Pinned train.json, validation.json and test.json records; response, response_label and response_label_source
+      fields. The two refusals files remain captured but excluded from response tables.
+    scope: Native Mistral response safety labels only. Counts reflect the pinned release rather than different paper-version
+      totals. Empty recorded responses remain observed attempts.
+    expected: 6372

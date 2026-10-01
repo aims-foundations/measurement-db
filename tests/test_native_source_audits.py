@@ -72,6 +72,84 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _decom
 import pyarrow as pa
 import pyarrow.ipc as ipc
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _aegis
+from measurement_db import build_base
+
+class AegisSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory = Path(temporary.name) / 'aegis'
+        raw = self.directory / 'raw'
+        raw.mkdir(parents=True)
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/aegis') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        a = dict(id='a', reconstruction_id_if_redacted=None, prompt='Explain a fictional event.', response='An answer.',
+                 prompt_label='safe', response_label='safe', violated_categories='', prompt_label_source='human', response_label_source='human')
+        rows = dict(train=[a, dict(a, id='b', response=''), dict(a, id='c', prompt='', response_label_source='llm_jury'),
+            dict(a, id='d', prompt='Another task.', response='A different answer.', response_label='unsafe', response_label_source='llm_jury'),
+            dict(a, id='e', prompt='REDACTED', response=None, response_label=None, response_label_source=None)],
+            validation=[dict(a, id='f', prompt='Another task.', response_label='unsafe', response_label_source='llm_jury')],
+            test=[dict(a, id='g')])
+        for split, records in rows.items():
+            (raw / self.metadata['build']['parameters']['files'][split]).write_text(json.dumps(records))
+        (raw / 'refusals_train.json').write_text(json.dumps([dict(a, id='h', response_label_source='refusal_data_augmentation')]))
+        (raw / 'refusals_validation.json').write_text('[]')
+        cls = runpy.run_path(str((ROOT / 'benchmarks/aegis') / 'build.py'))['Aegis']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_complete_original_attempts_and_explicit_empty_input_output(self):
+        result = _aegis(self.directory, self.frames, self.metadata)
+        self.assertEqual(result['source_responses'], 6)
+        self.assertEqual(result['source_items'], 3)
+        self.assertEqual(result['source_empty_outputs'], 1)
+        self.assertEqual(result['source_empty_prompt_responses'], 1)
+        self.assertEqual(result['source_prompt_only_rows'], 1)
+        self.assertEqual(result['source_augmentation_rows'], 1)
+        self.assertEqual(sorted(self.frames['responses'].trial), [1, 1, 1, 1, 1, 2])
+        reordered = {key: frame.iloc[::-1].reset_index(drop=True) for key, frame in self.frames.items()}
+        self.assertEqual(_aegis(self.directory, reordered, self.metadata), result)
+
+    def test_corrupt_grade_source_trace_and_item_relationships_are_rejected(self):
+        for case in ['grade', 'item_link', 'content', 'verifier', 'source_row', 'trace_output', 'missing_response',
+                     'missing_trace', 'trial', 'condition', 'subject_attribution', 'criterion']:
+            frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
+            responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
+            if case == 'grade': responses.loc[0, 'response'] = 0.0
+            elif case == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif case == 'content': items.loc[0, 'content'] = '{"prompt":"Changed input"}'
+            elif case == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif case in ['source_row', 'trace_output']:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if case == 'source_row': trace['source_row'] = 999
+                else: trace['source_record']['response'] = 'Changed answer.'
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif case == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif case == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif case == 'trial': responses.loc[0, 'trial'] = 9
+            elif case == 'condition': responses.loc[0, 'test_condition'] = 'upstream_split=other'
+            elif case == 'subject_attribution': frames['subjects'].loc[0, 'display_name'] = 'Human prompt'
+            elif case == 'criterion': items.loc[0, 'grading_criterion'] = '{"rule":"Different task"}'
+            with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _aegis(self.directory, frames, self.metadata)
+
+    def test_changed_source_output_label_or_provenance_is_rejected(self):
+        path = self.directory / 'raw/train.json'
+        original = path.read_bytes()
+        for field, value in [('response', 'Changed output'), ('response_label', 'unsafe'), ('response_label_source', 'llm_jury')]:
+            records = json.loads(original)
+            records[0][field] = value
+            path.write_text(json.dumps(records))
+            with self.subTest(field=field), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _aegis(self.directory, self.frames, self.metadata)
+            path.write_bytes(original)
+
+
 class DecompileBenchSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
