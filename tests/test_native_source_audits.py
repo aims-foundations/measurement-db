@@ -66,6 +66,156 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _oasst
 import math
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _reasoning_gym
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _rclicks
+
+class RClicksSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        from PIL import Image
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'rclicks'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/rclicks') / 'metadata.yaml').read_text())
+        parameters = self.metadata['build']['parameters']
+        for key in ['archives', 'image_prefixes', 'mask_prefixes', 'previous_mask_prefixes']:
+            parameters[key] = {k: v for k, v in parameters[key].items() if k in ['Berkeley', 'TETRIS']}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        self.raw = self.directory / 'raw'
+        self.raw.mkdir()
+        clicks = []
+        self.native_paths = {}
+        masks = {}
+        for dataset in parameters['archives']:
+            archive_path = self.raw / parameters['archives'][dataset]
+            archive_path.parent.mkdir(parents=True, exist_ok=True)
+            with ZipFile(archive_path, 'w') as archive:
+                for role, color in [('image', (20, 30, 40)), ('mask', (7, 7, 7))]:
+                    buffer = io.BytesIO()
+                    Image.new('RGB', (3, 3), color).save(buffer, format='PNG')
+                    archive.writestr(parameters[role + '_prefixes'][dataset] + 'example.png', buffer.getvalue())
+            records = []
+            for state in ['first', 'fn']:
+                stem = 'example' if state == 'first' else 'example_model_fn'
+                for x, y, device in [(0, 1, 'pc'), (2, 2, 'mobile')]:
+                    clicks.append(dict(dataset=dataset, image_stem='example', object_stem='7' if dataset == 'TETRIS' else '',
+                        model_type='' if state == 'first' else 'model', click_type=state, full_stem=stem,
+                        device=device, x=x, y=y, w=3, h=3))
+                if state != 'first':
+                    buffer = io.BytesIO()
+                    Image.new('RGB', (3, 3), (0, 0, 0)).save(buffer, format='PNG')
+                    masks[parameters['previous_mask_prefixes'][dataset] + stem + '.png'] = buffer.getvalue()
+                for model in ['ud', 'cm']:
+                    records.append(dict(full_stem=stem, model_name=model, click_type=state,
+                        l1=2.5 if model == 'ud' else 0.1, ks2d=0.7, wasserstien=1.4,
+                        nss=-0.2 if state == 'fn' else 3.5, pde=0.02))
+            path = self.raw / parameters['layout']['results'] / (dataset + '_per_image.csv')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            pd.DataFrame(records).to_csv(path, index=False)
+            self.native_paths[dataset] = path
+        with ZipFile(self.raw / parameters['layout']['previous_masks'], 'w') as archive:
+            for name, content in masks.items():
+                archive.writestr(name, content)
+        click_path = self.raw / parameters['layout']['clicks']
+        click_path.parent.mkdir(parents=True, exist_ok=True)
+        # A released human-click record that has no matching model score is not an observation.
+        clicks.append({**clicks[-1], 'full_stem': 'unscored', 'image_stem': 'unscored'})
+        pd.DataFrame(clicks).to_csv(click_path, index=False)
+        (self.raw / parameters['layout']['validation']).write_text('example\n')
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/rclicks') / 'build.py'))['RClicks']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_complete_metrics_and_visual_inputs(self):
+        observed = _rclicks(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed, dict(source_subjects=2, source_items=20, source_responses=40, source_traces=40,
+            source_assets=3, source_visual_states=4, source_metric_rows=8, source_human_clicks=8, source_subsequent_masks=2))
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_rclicks(self.directory, shuffled, self.metadata), observed)
+        self.assertLess(self.frames['responses'].response.min(), 0)
+        self.assertGreater(self.frames['responses'].response.max(), 1)
+
+    def test_corrupted_tables_are_rejected(self):
+        changes = ['grade', 'null_grade', 'trial', 'subject_link', 'item_link', 'condition', 'interactors',
+            'subject_name', 'subject_features', 'content', 'raw_id', 'item_features', 'reference', 'scale', 'verifier',
+            'asset_link', 'asset_bytes', 'asset_size', 'missing_asset', 'missing_response', 'duplicate_response',
+            'missing_trace', 'trace_grade', 'trace_row', 'trace_model']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces, assets = [frames[name] for name in ['responses', 'subjects', 'items', 'traces', 'assets']]
+            if change == 'grade': responses.loc[0, 'response'] = 0.123
+            elif change == 'null_grade': responses.loc[0, 'response'] = float('nan')
+            elif change == 'trial': responses.loc[0, 'trial'] = 9
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = next(v for v in subjects.subject_id if v != responses.loc[0, 'subject_id'])
+            elif change == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'interactors': responses.loc[0, 'interactors'] = '{}'
+            elif change == 'subject_name': subjects.loc[0, 'display_name'] = 'wrong'
+            elif change == 'subject_features': subjects.loc[0, 'subject_features_extra'] = 'native_identifier=wrong'
+            elif change == 'content': items.loc[0, 'content'] = '{}'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'item_features': items.loc[0, 'item_features'] = 'dataset=wrong'
+            elif change in ['reference', 'scale']:
+                criterion = json.loads(items.loc[0, 'grading_criterion'])
+                if change == 'reference': criterion['reference_answer'] = '{"human_clicks":[]}'
+                else: criterion['response_scale']['direction'] = 'unordered'
+                items.loc[0, 'grading_criterion'] = json.dumps(criterion)
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'asset_link': items.loc[0, 'asset_manifest'] = '[]'
+            elif change == 'asset_bytes': assets.loc[0, 'data'] = b'wrong'
+            elif change == 'asset_size': assets.loc[0, 'byte_size'] = 1
+            elif change == 'missing_asset': frames['assets'] = assets.iloc[1:]
+            elif change == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            else:
+                trace = json.loads(traces.loc[0, 'trace'])
+                trace[{'trace_grade': 'l1', 'trace_row': 'source_row', 'trace_model': 'model_name'}[change]] = 'wrong'
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, RuntimeError, IndexError)):
+                _rclicks(self.directory, frames, self.metadata)
+
+    def test_changed_native_records_and_metric_directions_are_rejected(self):
+        path = self.native_paths['Berkeley']
+        original = path.read_text()
+        for field in ['full_stem', 'model_name', 'click_type', 'l1']:
+            frame = pd.read_csv(path)
+            frame.loc[0, field] = 0.111 if field == 'l1' else 'changed'
+            frame.to_csv(path, index=False)
+            with self.subTest(field=field), self.assertRaises((ValueError, KeyError, RuntimeError)):
+                _rclicks(self.directory, self.frames, self.metadata)
+            path.write_text(original)
+        path = self.raw / self.metadata['build']['parameters']['layout']['clicks']
+        original = path.read_text()
+        frame = pd.read_csv(path, keep_default_na=False)
+        frame.loc[0, 'x'] = 2
+        frame.to_csv(path, index=False)
+        with self.assertRaises(ValueError):
+            _rclicks(self.directory, self.frames, self.metadata)
+        path.write_text(original)
+        metadata = copy.deepcopy(self.metadata)
+        metadata['grading']['verifiers']['ks2d']['response_scale']['direction'] = 'lower_is_better'
+        with self.assertRaises(ValueError):
+            _rclicks(self.directory, self.frames, metadata)
+
+    def test_new_invalid_native_rows_stop_build(self):
+        path = self.native_paths['Berkeley']
+        original = path.read_text()
+        for change in ['duplicate', 'unknown_model', 'nonfinite', 'missing_reference']:
+            frame = pd.read_csv(io.StringIO(original))
+            if change == 'duplicate': frame = pd.concat([frame, frame.iloc[:1]])
+            elif change == 'unknown_model': frame.loc[0, 'model_name'] = 'new-model'
+            elif change == 'nonfinite': frame.loc[0, 'l1'] = float('inf')
+            elif change == 'missing_reference': frame.loc[0, 'full_stem'] = 'missing'
+            frame.to_csv(path, index=False)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.builder(str(self.directory / 'build.py')).build_tables()
+        path.write_text(original)
+
+
 class ReasoningGymSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory();self.addCleanup(temporary.cleanup)

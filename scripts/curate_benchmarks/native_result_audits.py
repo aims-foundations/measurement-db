@@ -30105,6 +30105,143 @@ def _reasoning_gym(directory,tables,metadata):
         source_boundary_roundoff=roundoff,source_partial_rewards=partial,source_unattributed_completions=excluded)
 
 
+def _rclicks(directory, tables, metadata):
+    """Check every published metric and original stimulus without using builder joins."""
+    import csv, hashlib, math
+    from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='RClicks original metric audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    layout, protocols = parameters['layout'], metadata['grading']['verifiers']
+    scales = {'l1': (0, None, 'lower_is_better'), 'ks2d': (0, 1, 'higher_is_better'),
+        'wasserstien': (0, None, 'lower_is_better'), 'nss': (None, None, 'higher_is_better'),
+        'pde': (0, 1, 'higher_is_better')}
+    _check(set(protocols), set(scales), 'RClicks exactly five original metric fields')
+    for name, (lo, hi, direction) in scales.items():
+        _check(protocols[name]['response_scale'], dict(kind='interval', min=lo, max=hi, direction=direction),
+            'RClicks native metric range and direction')
+    _check(parameters['models']['ud'], 'Uniform probability over the error mask', 'RClicks UD is a uniform baseline')
+    _check(parameters['models']['sm'], 'TranSalNet saliency using the object mask', 'RClicks SM is a saliency model')
+    native, states, references = {}, {}, defaultdict(list)
+    for dataset in parameters['archives']:
+        path = raw / layout['results'] / (dataset + '_per_image.csv')
+        with path.open(newline='') as stream:
+            for position, row in enumerate(csv.DictReader(stream)):
+                source = str(path.relative_to(raw)), position
+                key = dataset, row['full_stem'], row['model_name']
+                _check(key not in native, True, 'RClicks unique original model/stimulus row')
+                scores = {name: float(row[name]) for name in protocols}
+                _check(all(math.isfinite(value) for value in scores.values()), True, 'RClicks finite native metrics')
+                _check(row['model_name'] in parameters['models'], True, 'RClicks declared original model')
+                native[key] = dict(source_file=source[0], source_row=position, dataset=dataset,
+                    full_stem=row['full_stem'], model_name=row['model_name'], click_type=row['click_type'], **scores)
+    selected = {(dataset, stem) for dataset, stem, model in native}
+    with (raw / layout['clicks']).open(newline='') as stream:
+        for row in csv.DictReader(stream):
+            key = row['dataset'], row['full_stem']
+            if key not in selected:
+                continue
+            state = {name: int(row[name]) if name in {'w', 'h'} else row[name]
+                for name in parameters['stimulus_fields']}
+            if key in states:
+                _check(state, states[key], 'RClicks consistent image/object/click-state description')
+            states[key] = state
+            references[key].append({name: row[name] if name == 'device' else json.loads(row[name])
+                for name in ['x', 'y', 'w', 'h', 'device']})
+    _check(set(states), selected, 'RClicks complete human reference associations')
+    validation = set((raw / layout['validation']).read_text().splitlines())
+    for (dataset, stem), state in states.items():
+        if dataset == 'TETRIS':
+            _check(state['image_stem'] in validation, True, 'RClicks original TETRIS validation membership')
+    assets, inputs = {}, defaultdict(list)
+    for dataset, archive_path in parameters['archives'].items():
+        with ZipFile(raw / archive_path) as archive:
+            for role in ['image', 'mask']:
+                prefix = parameters[role + '_prefixes'][dataset]
+                names = {}
+                for name in archive.namelist():
+                    if name.startswith(prefix) and not name.endswith('/'):
+                        stem = Path(name).stem
+                        _check(stem not in names, True, 'RClicks unique original image/mask filename')
+                        names[stem] = name
+                for key, state in states.items():
+                    if key[0] != dataset:
+                        continue
+                    name = names[state['image_stem']]
+                    blob = archive.read(name)
+                    digest = hashlib.sha256(blob).hexdigest()
+                    suffix = Path(name).suffix.lower()
+                    assets[digest] = blob
+                    inputs[key].append(dict(asset_id=digest, path='images/' + digest + suffix,
+                        media_type=parameters['mime_types'][suffix], role=role))
+        with ZipFile(raw / layout['previous_masks']) as archive:
+            for key, state in states.items():
+                if key[0] != dataset or state['click_type'] == 'first':
+                    continue
+                name = parameters['previous_mask_prefixes'][dataset] + key[1] + '.png'
+                blob = archive.read(name)
+                digest = hashlib.sha256(blob).hexdigest()
+                assets[digest] = blob
+                inputs[key].append(dict(asset_id=digest, path='images/' + digest + '.png',
+                    media_type='image/png', role='previous_mask'))
+    actual_assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(set(actual_assets), set(assets), 'RClicks exact original input-asset population')
+    for digest, blob in assets.items():
+        _check((actual_assets[digest]['data'], actual_assets[digest]['byte_size']), (blob, len(blob)),
+            'RClicks unmodified original input bytes')
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        name = features['native_identifier']
+        _check((row.display_name, features), ('RClicks ' + name,
+            dict(native_identifier=name, algorithm=parameters['models'][name])), 'RClicks original algorithm identity')
+        subjects[row.subject_id] = name
+    _check(Counter(subjects.values()), Counter({key[2]: 1 for key in native}), 'RClicks complete recorded algorithms')
+    item_keys = {}
+    for row in tables['items'].itertuples():
+        dataset, original = row.raw_item_id.split('/', 1)
+        stem, metric = original.rsplit(':', 1)
+        key = dataset, stem
+        state = states[key]
+        elements = [dict(location=entry['path'], content_type=entry['media_type'], role=entry['role']) for entry in inputs[key]]
+        _check(json.loads(row.content), dict(text=parameters['labels']['instruction'], dataset=dataset,
+            full_stem=stem, **state, multimedia_elements=elements), 'RClicks original stimulus and segmentation state')
+        _check(json.loads(row.asset_manifest), [dict(asset_id=entry['asset_id'], path=entry['path'],
+            media_type=entry['media_type'], role='input', ordinal=index + 1) for index, entry in enumerate(inputs[key])],
+            'RClicks exact image/object-mask/previous-mask links')
+        _check(_features(row.item_features), dict(dataset=dataset, full_stem=stem, click_type=state['click_type']),
+            'RClicks original item attributes and metric identity')
+        criterion = json.loads(row.grading_criterion)
+        _check(criterion['rule'], metadata['grading']['rule'] + ' ' + protocols[metric]['rule'], 'RClicks original metric rule')
+        _check(json.loads(criterion['reference_answer']), dict(human_clicks=references[key]), 'RClicks complete ordered human click reference')
+        _check(criterion['response_scale'], protocols[metric]['response_scale'], 'RClicks per-item metric scale')
+        _check(json.loads(row.verifier), {'class': 'exact_matcher', 'spec': json.dumps(protocols[metric]['implementation'], sort_keys=True)},
+            'RClicks pinned grading implementation')
+        item_keys[row.item_id] = dataset, stem, metric
+    expected_items = {(dataset, stem, metric) for dataset, stem in selected for metric in protocols}
+    _check(Counter(item_keys.values()), Counter({key: 1 for key in expected_items}), 'RClicks complete graded stimuli')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'RClicks complete metric-row evidence')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        dataset, stem, metric = item_keys[row.item_id]
+        model = subjects[row.subject_id]
+        original = native[dataset, stem, model]
+        _check(row.response, original[metric], 'RClicks unchanged native metric cell')
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)), (1, parameters['labels']['condition'], True),
+            'RClicks one original metric observation and known condition')
+        _check(json.loads(traces[row.response_id]), original, 'RClicks entire original numeric row and source position')
+        _check(original['click_type'], states[dataset, stem]['click_type'], 'RClicks score/reference click-type correspondence')
+        seen[dataset, stem, model, metric] += 1
+    expected = {(*key, metric): 1 for key in native for metric in protocols}
+    _check(seen, Counter(expected), 'RClicks no lost, duplicated or invented metric observations')
+    return dict(source_subjects=len(subjects), source_items=len(expected_items), source_responses=len(expected),
+        source_traces=len(traces), source_assets=len(assets), source_visual_states=len(states),
+        source_metric_rows=len(native), source_human_clicks=sum(len(rows) for rows in references.values()),
+        source_subsequent_masks=sum(state['click_type'] != 'first' for state in states.values()))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30112,6 +30249,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'rclicks':
+        return _rclicks(directory, tables, metadata)
     if directory.name == 'reasoning_gym':
         return _reasoning_gym(directory, tables, metadata)
     if directory.name == 'interchangeable_token_embeddings':

@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  assets:
+    rows: 7256
+    logical_sha256: 019c9250d508f52c4282779e67bcea071ba581fd139e4acf54741310a1c6a6c2
+  benchmarks:
+    rows: 1
+    logical_sha256: 96492faa8d73fa93bf443bb36a218dc6ca5a3c6d4a8100a58c2c88a48a6a9d1d
+  items:
+    rows: 29035
+    logical_sha256: 23d20a396ae916dad23c487600dcd252ebff24286dfdb5737cfe9cb782ba259b
+  responses:
+    rows: 251820
+    logical_sha256: 7f2047bd01a032bc001dfcb0383746b99e809a135dad921b2ebec1636e264b1f
+  subjects:
+    rows: 16
+    logical_sha256: c05fc4a911da26d26c7d2c8b01bab72980a43c89d4bfd363430ea67f9283d5ea
+  traces:
+    rows: 251820
+    logical_sha256: 15c14e744e6a50a25e8025ac3f9af71bd3a2a581b861b9a3255a8035cc6c884e
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 16
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 29035
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 251820
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 251820
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 7256
+  source_visual_states:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 5807
+  source_metric_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 50364
+  source_human_clicks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 233782
+  source_subsequent_masks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/emb-ai/rclicks/tree/e20bf7636198545331a9d383b77e42107e97ea09
+    locator: Original experiments/eval_cm per-image CSVs, datasets/clicks.csv, TETRIS_val.txt, captured metric code
+      and all author-linked image/mask archives.
+    scope: All released per-stimulus metric cells for 16 clickability algorithms/variants. Preserve five distinct
+      metric scales, full original visual inputs and human click references. Traces are source metric evidence,
+      not generated click maps. No model or stochastic metric is rerun.
+    expected: 3860
