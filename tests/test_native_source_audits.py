@@ -26,7 +26,429 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_s
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _wikihow_agent as _audit_wikihow_agent
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _visualwebarena as _audit_visualwebarena
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _multimodal_stem_ai as _audit_multimodal_stem_ai
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _multi_moe
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _visual_memory
 from measurement_db.build_base import _tables
+
+
+class VisualMemoryAuditTests(unittest.TestCase):
+    def setUp(self):
+        from io import BytesIO, StringIO
+        import tarfile
+        from PIL import Image
+        (ROOT / 'artifacts').mkdir(exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'visual_memory'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/visual_memory/metadata.yaml').read_text())
+        parameters = self.metadata['build']['parameters']
+        parameters['models'] = {key: value for key, value in parameters['models'].items()
+                                if key in ['clip-vit_b16', 'dinov2_vits14']}
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw = self.directory / 'raw'; (raw / 'results').mkdir(parents=True)
+        (raw / 'protocol/code').mkdir(parents=True)
+        (raw / 'protocol/code/main_analysis_plots.ipynb').write_text(json.dumps(dict(cells=[dict(
+            cell_type='code', source=['synset_to_index = {"n00000000": 0, "n00000001": 1}\n'])])))
+        self.sources = {}
+        for task_index, (task, filename) in enumerate(parameters['archives'].items()):
+            path = raw / filename; path.parent.mkdir(exist_ok=True)
+            queries = []
+            with tarfile.open(path, 'w:gz' if filename.endswith('.gz') else 'w') as archive:
+                for index in range(2):
+                    class_name = str(index) if task == 'imagenet-v2' else f'n{index:08d}'
+                    name = f'{task}/{class_name}/query {index}.png'
+                    payload = BytesIO()
+                    Image.new('RGB', (3, 2), color=(index * 99, task_index * 77, 100)).save(payload, format='PNG')
+                    entry = tarfile.TarInfo(name); entry.size = len(payload.getvalue())
+                    archive.addfile(entry, BytesIO(payload.getvalue()))
+                    key = name.split('/')[-1] if task == 'imagenet-a' else '/'.join(name.split('/')[-2:])
+                    queries.append((key, index))
+            for model in parameters['models']:
+                records = {}
+                for key, index in queries:
+                    records[key] = dict(featurizer=model, image_id=key, image_class=index,
+                        neighbor_image_ids=[f'{position:04d}-' + 'original-neighbor-identity-' * 12 for position in range(100)],
+                        neighbor_classes=[0] * 100,
+                        neighbor_distances=[0.123456789123457 + position / 1000 for position in range(100)])
+                path = raw / f'results/memory-imagenet2012_msplit-train_query-{task}_qsplit-test_{model}_full_neighbor_info.json'
+                path.write_text(json.dumps(records)); self.sources[path] = records
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/visual_memory/build.py'))['VisualMemory']
+        with contextlib.redirect_stdout(StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_all_images_and_full_neighbor_lists_survive(self):
+        expected = dict(source_configurations=6, source_images=6, source_items=6, source_assets=6,
+            source_subjects=2, source_traces=12, source_responses=12, source_successes=6, source_neighbor_entries=1200)
+        self.assertEqual(_visual_memory(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(_visual_memory(self.directory, {key: frame.iloc[::-1].reset_index(drop=True)
+            for key, frame in self.frames.items()}, self.metadata), expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().min(), 16000)
+
+    def test_corruptions_are_detected(self):
+        changes = ['grade', 'trial', 'subject_link', 'item_link', 'model_label', 'runtime', 'source_model',
+            'content', 'reference', 'verifier', 'item_features', 'raw_id', 'conditions',
+            'image_link', 'image_bytes', 'missing_image', 'drop_response', 'duplicate_response',
+            'drop_trace', 'duplicate_trace', 'source_file', 'source_image', 'neighbor_id',
+            'neighbor_class', 'neighbor_distance', 'neighbor_clipping', 'query_class', 'native_model']
+        for change in changes:
+            tables = {key: value.copy(deep=True) for key, value in self.frames.items()}
+            response, item, subject, trace, asset = (tables[key] for key in ['responses', 'items', 'subjects', 'traces', 'assets'])
+            if change == 'grade': response.loc[0, 'response'] = 1 - response.loc[0, 'response']
+            elif change == 'trial': response.loc[0, 'trial'] = 2
+            elif change == 'subject_link': response.loc[0, 'subject_id'] = subject.subject_id.iloc[-1]
+            elif change == 'item_link': response.loc[0, 'item_id'] = item.item_id.iloc[-1]
+            elif change == 'model_label': subject.loc[0, 'display_name'] = 'wrong'
+            elif change == 'runtime': subject.loc[0, 'harness_version'] = 'invented'
+            elif change == 'source_model': subject.loc[0, 'subject_features_extra'] = 'source_featurizer=wrong'
+            elif change == 'content': item.loc[0, 'content'] = 'wrong'
+            elif change == 'reference':
+                value = json.loads(item.loc[0, 'grading_criterion']); value['reference_answer'] = '999'
+                item.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': item.loc[0, 'verifier'] = '{"class":"exact_matcher","spec":"wrong"}'
+            elif change == 'item_features': item.loc[0, 'item_features'] = 'query_dataset=wrong'
+            elif change == 'raw_id': item.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'conditions': response.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'image_link':
+                value = json.loads(item.loc[0, 'asset_manifest']); value[0]['asset_id'] = asset.asset_id.iloc[-1]
+                item.loc[0, 'asset_manifest'] = json.dumps(value)
+            elif change == 'image_bytes': asset.loc[0, 'data'] = b'changed-original-bytes'
+            elif change == 'missing_image': tables['assets'] = asset.iloc[1:]
+            elif change == 'drop_response': tables['responses'] = response.iloc[1:]
+            elif change == 'duplicate_response': tables['responses'] = pd.concat([response, response.iloc[:1]])
+            elif change == 'drop_trace': tables['traces'] = trace.iloc[1:]
+            elif change == 'duplicate_trace': tables['traces'] = pd.concat([trace, trace.iloc[:1]])
+            else:
+                value = json.loads(trace.loc[0, 'trace'])
+                if change == 'source_file': value['source_file'] = 'wrong'
+                elif change == 'source_image': value['source_image'] = 'wrong'
+                elif change == 'neighbor_id': value['native_record']['neighbor_image_ids'][0] = 'wrong'
+                elif change == 'neighbor_class': value['native_record']['neighbor_classes'][-1] = 999
+                elif change == 'neighbor_distance': value['native_record']['neighbor_distances'][-1] = 0
+                elif change == 'neighbor_clipping': value['native_record']['neighbor_image_ids'].pop()
+                elif change == 'query_class': value['native_record']['image_class'] = 999
+                elif change == 'native_model': value['native_record']['featurizer'] = 'wrong'
+                trace.loc[0, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _visual_memory(self.directory, tables, self.metadata)
+
+    def test_invalid_source_records_are_not_accepted(self):
+        path = next(iter(self.sources)); original = path.read_bytes()
+        for change in ['query_label', 'query_key', 'model', 'neighbors_missing', 'invalid_class', 'invalid_distance', 'missing_image', 'extra_image']:
+            records = copy.deepcopy(self.sources[path]); key = next(iter(records)); row = records[key]
+            if change == 'query_label': row['image_class'] = 999
+            elif change == 'query_key': row['image_id'] = 'wrong'
+            elif change == 'model': row['featurizer'] = 'wrong'
+            elif change == 'neighbors_missing': row['neighbor_classes'].pop()
+            elif change == 'invalid_class': row['neighbor_classes'][-1] = -1
+            elif change == 'invalid_distance': row['neighbor_distances'][-1] = float('inf')
+            elif change == 'missing_image': records.pop(key)
+            elif change == 'extra_image': records['extra'] = copy.deepcopy(row)
+            path.write_text(json.dumps(records))
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _visual_memory(self.directory, self.frames, self.metadata)
+            finally:
+                path.write_bytes(original)
+
+
+class MultiMoEAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup); self.addCleanup(_tables.reload); _tables.reload()
+        self.directory = Path(temporary.name) / 'multi_moe'; self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/multi_moe/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/multi_moe/build.py'))['MultiMoE']
+        raw = self.directory / 'raw'
+        self.csv_sources = {}
+        for task in ['mmlu', 'truthfulqa']:
+            for config_index, configuration in enumerate(self.metadata['build']['parameters']['configurations']):
+                rows = []
+                for index in range(2):
+                    row = {'': str(index), 'split': 'test', 'sample': f'Complete few-shot {task} prompt {index}.',
+                        'label': 'A', 'index': str(index), 'n_shots': '5', 'only_generated': 'A' if index else 'B',
+                        'string_matching_correctness': 'True' if index else 'False'}
+                    if task == 'mmlu':
+                        row.update(subject='example', actual_n_shots='5')
+                    else:
+                        row['sample'] += f' Configuration {config_index}: option order differs.'
+                        row['label'] = 'ABCD'[config_index % 4]
+                        row['only_generated'] = row['label'] if index else 'Z'
+                    rows.append(row)
+                component = 'mmlu' if task == 'mmlu' else 'multiple_choice'
+                path = raw / f'results/{task}/{configuration}/{component}/test/result_5_1.csv'
+                path.parent.mkdir(parents=True, exist_ok=True)
+                with path.open('w', newline='') as stream:
+                    writer = csv.DictWriter(stream, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+                self.csv_sources[path] = rows
+        bank = [dict(question_id=81 + index, category='writing', turns=[f'Question {index}', 'Continue'],
+                     **({'reference': ['Reference one', 'Reference two']} if index else {})) for index in range(2)]
+        path = raw / 'mt-bench/question.jsonl'; path.parent.mkdir()
+        path.write_text('\n'.join(map(json.dumps, bank)) + '\n')
+        template = b'cfastchat.conversation\nConversation\n(tR(Vname\nVmistral\ndb.'
+        (raw / 'conversation_template.pkl').write_bytes(template)
+        for filename, model, answer_prefix in [
+            ('responses_Multi_MoE.jsonl', 'model-v0.1', 'answer'),
+            ('responses_mt_bench/responses_Multi_MoE.jsonl', 'model-v0.2', 'answer'),
+            ('responses_mt_bench/responses_Multi_MoE_x28_wrong_x29_.jsonl', 'model-v0.1', 'wrong'),
+        ]:
+            rows = [dict(question_id=81 + index, answer_id=f'{answer_prefix}-{index}', model_id=model,
+                choices=[dict(index=0, turns=['Full output\n' * 2000 if index == 0 else 'Answer', ''])],
+                tstamp=1234.56789012345 + index) for index in range(2)]
+            path = raw / filename; path.parent.mkdir(exist_ok=True)
+            path.write_text('\n'.join(map(json.dumps, rows)) + '\n')
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_all_native_records_and_shuffled_options_survive(self):
+        expected = dict(source_responses=26, source_traces=26, source_items=14, source_subjects=7,
+            source_unique_conversation_answer_ids=4, source_graded_records=20, source_successes=10,
+            source_option_exports=10, source_ungraded_records=6, source_author_marked_records=2,
+            source_conversation_exports=3)
+        self.assertEqual(_multi_moe(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(_multi_moe(self.directory, {k: v.iloc[::-1].reset_index(drop=True)
+            for k, v in self.frames.items()}, self.metadata), expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+
+    def test_corruptions_are_rejected(self):
+        changes = ['grade', 'ungraded_zero', 'trial', 'subject_link', 'item_link', 'model_label',
+            'runtime', 'subject_features', 'prompt', 'reference', 'scale', 'verifier', 'item_features',
+            'raw_id', 'conditions', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace',
+            'source_file', 'source_row', 'parsed_output', 'clipped_output', 'timestamp', 'answer_id']
+        for change in changes:
+            tables = {key: value.copy(deep=True) for key, value in self.frames.items()}
+            response = tables['responses']; item = tables['items']; subject = tables['subjects']; trace = tables['traces']
+            if change == 'grade': response.loc[0, 'response'] = 1 - response.loc[0, 'response']
+            elif change == 'ungraded_zero': response.loc[response.response.isna(), 'response'] = 0.
+            elif change == 'trial': response.loc[0, 'trial'] = 2
+            elif change == 'subject_link': response.loc[0, 'subject_id'] = subject.subject_id.iloc[-1]
+            elif change == 'item_link': response.loc[0, 'item_id'] = item.item_id.iloc[-1]
+            elif change == 'model_label': subject.loc[0, 'display_name'] = 'wrong'
+            elif change == 'runtime': subject.loc[0, 'harness_version'] = 'invented'
+            elif change == 'subject_features': subject.loc[0, 'subject_features_extra'] = 'record_origin=wrong'
+            elif change == 'prompt': item.loc[0, 'content'] = 'clipped'
+            elif change in ['reference', 'scale']:
+                value = json.loads(item.loc[0, 'grading_criterion'])
+                value['reference_answer' if change == 'reference' else 'response_scale'] = 'wrong'
+                item.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': item.loc[0, 'verifier'] = '{"class":"judge","spec":"wrong"}'
+            elif change == 'item_features': item.loc[0, 'item_features'] = 'input_scope=wrong'
+            elif change == 'raw_id': item.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'conditions': response.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': tables['responses'] = response.iloc[1:]
+            elif change == 'duplicate_response': tables['responses'] = pd.concat([response, response.iloc[:1]])
+            elif change == 'drop_trace': tables['traces'] = trace.iloc[1:]
+            elif change == 'duplicate_trace': tables['traces'] = pd.concat([trace, trace.iloc[:1]])
+            else:
+                index = trace.index[-2] if change in ['clipped_output', 'timestamp', 'answer_id'] else 0
+                value = json.loads(trace.loc[index, 'trace'])
+                if change == 'source_file': value['source_file'] = 'wrong'
+                elif change == 'source_row': value['source_row'] = 999
+                elif change == 'parsed_output': value['native_record']['only_generated'] = 'wrong'
+                elif change == 'clipped_output': value['native_record']['choices'][0]['turns'][0] = 'clipped'
+                elif change == 'timestamp': value['native_record']['tstamp'] = 0
+                elif change == 'answer_id': value['native_record']['answer_id'] = 'wrong'
+                trace.loc[index, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError)):
+                _multi_moe(self.directory, tables, self.metadata)
+
+    def test_invalid_source_records_fail_before_registration(self):
+        raw = self.directory / 'raw'
+        csv_path = next(iter(self.csv_sources))
+        question_path = raw / 'mt-bench/question.jsonl'
+        answer_path = raw / 'responses_Multi_MoE.jsonl'
+        originals = {path: path.read_bytes() for path in [csv_path, question_path, answer_path]}
+        for change in ['nonboolean', 'empty_prompt', 'empty_label', 'duplicate_csv',
+                       'duplicate_question', 'unknown_question', 'incomplete_turns', 'duplicate_answer']:
+            rows = copy.deepcopy(self.csv_sources[csv_path])
+            questions = list(map(json.loads, originals[question_path].decode().splitlines()))
+            answers = list(map(json.loads, originals[answer_path].decode().splitlines()))
+            if change == 'nonboolean': rows[0]['string_matching_correctness'] = '1'
+            elif change == 'empty_prompt': rows[0]['sample'] = ''
+            elif change == 'empty_label': rows[0]['label'] = ''
+            elif change == 'duplicate_csv': rows.append(copy.deepcopy(rows[0]))
+            elif change == 'duplicate_question': questions.append(copy.deepcopy(questions[0]))
+            elif change == 'unknown_question': answers[0]['question_id'] = 999
+            elif change == 'incomplete_turns': answers[0]['choices'][0]['turns'].pop()
+            elif change == 'duplicate_answer': answers.append(copy.deepcopy(answers[0]))
+            with csv_path.open('w', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)
+            question_path.write_text('\n'.join(map(json.dumps, questions)) + '\n')
+            answer_path.write_text('\n'.join(map(json.dumps, answers)) + '\n')
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, TypeError)):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+            finally:
+                for path, value in originals.items(): path.write_bytes(value)
+
+class MonkeyBusinessAuditTests(unittest.TestCase):
+
+    def setUp(self):
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _monkey_power_laws
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'monkey_power_laws'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load((ROOT / 'benchmarks/monkey_power_laws/metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.builder = runpy.run_path(str(ROOT / 'benchmarks/monkey_power_laws/build.py'))['MonkeyPowerLaws']
+        self.audit = _monkey_power_laws
+        self.definition = self.builder(str(self.directory / 'build.py'))
+        raw = self.directory / 'raw'
+        metadata = self.definition
+        (raw / 'results').mkdir(exist_ok=True)
+        exports = {}
+        for task in ['GSM8K', 'MATH', 'CodeContests', 'MiniF2F-MATH']:
+            exports[task] = []
+            for i, n in enumerate([3, 2]):
+                question = f'Original {task} problem {i}'
+                if task == 'MiniF2F-MATH':
+                    question = f'theorem mathd_{i} : {i} = {i} := sorry'
+                row = dict(question=question, prompt='A complete few-shot prompt\n' + question, samples=['a' * 18000, '', f'A generated solution {i}'][:n], is_corrects=[True, False, True][:n], orig_dset_split='test', orig_dset_idx=i)
+                if task in ['GSM8K', 'MATH']:
+                    row['gt_answer'] = f'Full reference solution {i}'
+                exports[task].append(row)
+        for task, rows in exports.items():
+            (raw / 'results' / f'{task}_Llama-3-8B.json').write_text(json.dumps(rows))
+        bank = []
+        for i in range(2):
+            bank.append(dict(name=f'Contest task {i}', description=exports['CodeContests'][i]['question'], public_tests={'input': [str(i)], 'output': [str(i + 1)]}, private_tests={'input': ['p'], 'output': ['q']}, generated_tests={'input': ['g'], 'output': ['h']}, time_limit={'seconds': 1, 'nanos': 0}))
+        p = raw / metadata.build_parameters['paths']['code_contests']
+        p.parent.mkdir(parents=True, exist_ok=True)
+        pq.write_table(pa.Table.from_pylist(bank), p)
+        p = raw / 'minif2f/test.jsonl'
+        p.parent.mkdir(exist_ok=True)
+        p.write_text('\n'.join((json.dumps(dict(id=f'mathd_{i}', formal_statement=row['question'])) for i, row in enumerate(exports['MiniF2F-MATH']))))
+        p = raw / 'lean/MiniF2F/Test.lean'
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('\n'.join((row['question'] for row in exports['MiniF2F-MATH'])))
+        self.sources = exports
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_complete_samples_original_order_and_component_grading(self):
+        expected = dict(source_responses=20, source_traces=20, source_subjects=1, source_items=8, source_configurations=4, source_problem_rows=8, source_tasks=4, source_successes=12)
+        self.assertEqual(self.audit(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(self.audit(self.directory, {k: v.iloc[::-1].reset_index(drop=True) for k, v in self.frames.items()}, self.metadata), expected)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 18000)
+        self.assertTrue(any((json.loads(trace)['sample'] == '' for trace in self.frames['traces'].trace)))
+
+    def test_base_and_instruct_models_remain_distinct_despite_registry_aliases(self):
+        raw = self.directory / 'raw'
+        path = raw / 'results/GSM8K_Llama-3-8B-Instruct.json'
+        path.write_text(json.dumps(self.sources['GSM8K']))
+        _tables.reload()
+        destination = self.directory.parent / 'distinct-model-tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(
+                ['--source', str(raw), '--output', str(destination)])
+        tables = {path.stem: pd.read_parquet(path) for path in destination.glob('*.parquet')}
+        self.assertEqual(set(tables['subjects'].display_name), {'Llama-3-8B', 'Llama-3-8B-Instruct'})
+        self.assertEqual(tables['subjects'].subject_id.nunique(), 2)
+        observed = self.audit(self.directory, tables, self.metadata)
+        self.assertEqual(observed['source_responses'], 25)
+        self.assertEqual(observed['source_subjects'], 2)
+
+    def test_misalignments_missing_records_and_clipped_outputs_are_rejected(self):
+        changes = ['grade', 'trial', 'model', 'harness', 'runtime', 'prompt', 'raw_id', 'question', 'grading_rule', 'reference', 'verifier', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace', 'clip_trace', 'source_file', 'source_row', 'sample_index', 'trace_grade', 'conditions', 'interactor']
+        for change in changes:
+            tables = {k: v.copy(deep=True) for k, v in self.frames.items()}
+            if change == 'grade':
+                tables['responses'].loc[0, 'response'] = 1 - tables['responses'].loc[0, 'response']
+            elif change == 'trial':
+                tables['responses'].loc[0, 'trial'] = 8
+            elif change == 'model':
+                tables['subjects'].loc[0, 'display_name'] = 'wrong-model'
+            elif change == 'harness':
+                tables['subjects'].loc[0, 'harness'] = 'wrong-harness'
+            elif change == 'runtime':
+                tables['subjects'].loc[0, 'harness_version'] = 'invented-revision'
+            elif change == 'prompt':
+                tables['items'].loc[0, 'content'] = 'clipped prompt'
+            elif change == 'raw_id':
+                tables['items'].loc[0, 'raw_item_id'] = 'unknown-task'
+            elif change == 'question':
+                tables['items'].loc[0, 'item_features'] = 'task=CodeContests;split=test;original_question=wrong'
+            elif change in ['grading_rule', 'reference']:
+                value = json.loads(tables['items'].loc[0, 'grading_criterion'])
+                value['rule' if change == 'grading_rule' else 'reference_answer'] = 'wrong'
+                tables['items'].loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier':
+                tables['items'].loc[0, 'verifier'] = '{"class":"judge","spec":"wrong"}'
+            elif change == 'drop_response':
+                tables['responses'] = tables['responses'].iloc[1:]
+            elif change == 'duplicate_response':
+                tables['responses'] = pd.concat([tables['responses'], tables['responses'].iloc[:1]])
+            elif change == 'drop_trace':
+                tables['traces'] = tables['traces'].iloc[1:]
+            elif change == 'duplicate_trace':
+                tables['traces'] = pd.concat([tables['traces'], tables['traces'].iloc[:1]])
+            elif change == 'conditions':
+                tables['responses'].loc[0, 'test_condition'] = 'temperature=999'
+            elif change == 'interactor':
+                tables['responses'].loc[0, 'interactors'] = 'invented-user'
+            else:
+                value = json.loads(tables['traces'].loc[0, 'trace'])
+                if change == 'clip_trace':
+                    value['sample'] = value['sample'][:16000]
+                elif change == 'source_file':
+                    value['source_file'] = 'not-a-source.json'
+                elif change == 'source_row':
+                    value['source_row'] = 99
+                elif change == 'sample_index':
+                    value['sample_index'] = 1
+                else:
+                    value['is_correct'] = not value['is_correct']
+                tables['traces'].loc[0, 'trace'] = json.dumps(value)
+            try:
+                self.audit(self.directory, tables, self.metadata)
+            except (ValueError, KeyError, IndexError):
+                pass
+            else:
+                raise AssertionError('Missed corruption: ' + change)
+
+    def test_invalid_native_samples_and_task_mappings_are_rejected(self):
+        path = self.directory / 'raw/results/GSM8K_Llama-3-8B.json'
+        original = path.read_bytes()
+        invalid = ['unaligned', 'numeric_flag', 'missing_reference', 'missing_prompt', 'invalid_index', 'empty_samples', 'null_sample', 'duplicate_problem']
+        for change in invalid:
+            data = json.loads(original)
+            if change == 'unaligned':
+                data[0]['is_corrects'].pop()
+            elif change == 'numeric_flag':
+                data[0]['is_corrects'][0] = 1
+            elif change == 'missing_reference':
+                del data[0]['gt_answer']
+            elif change == 'missing_prompt':
+                data[0]['prompt'] = ''
+            elif change == 'invalid_index':
+                data[0]['orig_dset_idx'] = -1
+            elif change == 'empty_samples':
+                data[0]['samples'] = []
+                data[0]['is_corrects'] = []
+            elif change == 'null_sample':
+                data[0]['samples'][0] = None
+            elif change == 'duplicate_problem':
+                data.append(copy.deepcopy(data[0]))
+            path.write_text(json.dumps(data))
+            try:
+                try:
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+                except (ValueError, KeyError, TypeError):
+                    pass
+                else:
+                    raise AssertionError('Accepted invalid source: ' + change)
+            finally:
+                path.write_bytes(original)
 
 
 class MoECAPAuditTests(unittest.TestCase):

@@ -1,0 +1,3 @@
+- Attribute the repeated-sampling observations to the original Monkey Business release; retain the historical folder slug without presenting the later power-law analysis as a new benchmark.
+- Preserve every original prompt, sample and Boolean verdict with its exact source position. CodeContests grading includes all three test sets; MiniF2F records the named theorem and pinned grading repository.
+- Keep source model labels distinct when registry aliases overlap, and absent execution details unknown. Report sampling settings as author-reported, preserve full failed outputs, and perform no inference or regrading.

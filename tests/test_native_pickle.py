@@ -87,6 +87,25 @@ def test_serialized_regex_is_preserved_without_compilation(tmp_path, monkeypatch
                                    "kwargs": {}, "state": None}
 
 
+def test_fastchat_template_is_inert_data_without_source_imports(tmp_path):
+    import sys
+    path = tmp_path / "conversation.pkl"
+    path.write_bytes(b"cfastchat.conversation\nConversation\n(tR"
+                     b"(Vname\nVmistral\nVsep_style\n"
+                     b"cfastchat.conversation\nSeparatorStyle\n(I7\ntRdb.")
+    before = set(sys.modules)
+    assert native_json_value(read_native_pickle(path)) == {
+        "stored_type": "fastchat.conversation.Conversation", "args": [], "kwargs": {},
+        "state": {"name": "mistral", "sep_style": {
+            "stored_type": "fastchat.conversation.SeparatorStyle", "args": [7],
+            "kwargs": {}, "state": None}},
+    }
+    assert not any(name.startswith("fastchat") for name in set(sys.modules) - before)
+    path.write_bytes(b"cfastchat.conversation\nget_conv_template\n.")
+    with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+        read_native_pickle(path)
+
+
 def test_tensor_view_preserves_offset_and_stride():
     values = np.arange(12, dtype=np.int64)
     result = _tensor_view(values, 1, (2, 3), (6, 2), False, None)

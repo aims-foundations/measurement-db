@@ -1038,3 +1038,8 @@ SOURCE_AUDITS["wildvision"] = verify_native_results
 SOURCE_AUDITS["mmlupro"] = verify_native_results
 SOURCE_AUDITS["mochi"] = verify_native_results
 SOURCE_AUDITS["moe_cap"] = verify_native_results
+SOURCE_AUDITS["monkey_power_laws"] = verify_native_results
+
+SOURCE_AUDITS["multi_moe"] = verify_native_results
+
+SOURCE_AUDITS["visual_memory"] = verify_native_results

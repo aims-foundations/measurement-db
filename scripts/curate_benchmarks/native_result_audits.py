@@ -28021,11 +28021,409 @@ def _moe_cap(directory, tables, metadata, source_records=None):
                 source_items=len(items), **source['counts'])
 
 
+def _monkey_power_laws(directory, tables, metadata):
+    """Compare every original sample, verdict and position without using builder joins."""
+    import hashlib
+    import re
+    from urllib.parse import unquote
+    import pyarrow.parquet as pq
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    protocols = metadata['grading']['verifiers']
+    contests = pq.read_table(raw / parameters['paths']['code_contests'], columns=[
+        'name', 'description', 'public_tests', 'private_tests', 'generated_tests', 'time_limit']).to_pylist()
+    theorems = [json.loads(line) for line in (raw / parameters['paths']['minif2f']).read_text().splitlines() if line.strip()]
+    lean = (raw / parameters['paths']['lean_test']).read_text()
+    native, seen, source_models, definitions = {}, {}, set(), set()
+    files = sorted(raw.glob(parameters['paths']['results']))
+    for path in files:
+        task, model = path.stem.split('_', 1)
+        source_models.add(model)
+        with path.open() as stream:
+            records = json.load(stream)
+        for position, original in enumerate(records):
+            key = str(path.relative_to(raw)), position
+            _check(type(original['orig_dset_idx']), int, 'Monkey Business original source index type')
+            _check(original['orig_dset_split'], 'test', 'Monkey Business original split')
+            _check(len(original['samples']), len(original['is_corrects']), 'Monkey Business original paired arrays')
+            _check(bool(original['samples']), True, 'Monkey Business nonempty sample list')
+            _check(all(type(value) is bool for value in original['is_corrects']), True, 'Monkey Business boolean native verdicts')
+            _check(all(isinstance(value, str) for value in original['samples']), True, 'Monkey Business string native outputs')
+            rule = protocols[task]['rule']
+            if task == 'CodeContests':
+                bank = contests[original['orig_dset_idx']]
+                _check(bank['description'], original['question'], 'Monkey Business CodeContests exact source-row correspondence')
+                cases = {name: bank[name] for name in ['public_tests', 'private_tests', 'generated_tests', 'time_limit']}
+                checksum = hashlib.sha256(json.dumps(cases, sort_keys=True, ensure_ascii=False,
+                    separators=(',', ':')).encode()).hexdigest()
+                rule = json.dumps(dict(description=rule, source=protocols[task]['test_source'],
+                    source_row=original['orig_dset_idx'], problem_name=bank['name'],
+                    test_sets=['public_tests', 'private_tests', 'generated_tests'], tests_and_time_limit_sha256=checksum),
+                    ensure_ascii=False, sort_keys=True)
+            elif task == 'MiniF2F-MATH':
+                bank = theorems[original['orig_dset_idx']]
+                _check(bank['formal_statement'], original['question'], 'Monkey Business exact original Lean statement')
+                _check(bool(re.search(r'\btheorem\s+' + re.escape(bank['id']) + r'\b', lean)), True,
+                    'Monkey Business theorem exists in original grading repository')
+                rule = json.dumps(dict(description=rule, theorem=bank['id'],
+                    source=protocols[task]['theorem_source']), sort_keys=True)
+            reference = original.get('gt_answer')
+            if task in ['GSM8K', 'MATH']:
+                _check(isinstance(reference, str) and bool(reference.strip()), True, 'Monkey Business complete mathematical reference')
+            signature = (original['prompt'], original['question'], task, reference, rule)
+            definitions.add(signature)
+            native[key] = dict(original=original, task=task, model=model, rule=rule, signature=signature)
+            # One byte per sample checks full coverage without allocating millions of tuples.
+            seen[key] = bytearray(len(original['samples']))
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses']
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    count = sum(len(row['original']['samples']) for row in native.values())
+    _check((len(responses), responses.response_id.nunique(), len(tables['traces']), len(traces)),
+        (count, count, count, count), 'Monkey Business one unique response and trace per original sample')
+    _check(Counter(row['display_name'] for row in subjects.values()), Counter({model: 1 for model in source_models}),
+        'Monkey Business exact released model labels')
+    for subject in subjects.values():
+        _check(subject['harness'], parameters['subject']['harness'], 'Monkey Business documented harness')
+        _check(_features(subject['subject_features_extra']),
+            dict(source_model_label=subject['display_name'], **{key: value for key, value in parameters['subject'].items() if key != 'harness'}),
+            'Monkey Business literal model distinction and no invented runtime settings')
+        _check(pd.isna(subject['harness_version']), True, 'Monkey Business executed harness revision remains unknown')
+    checked, used_items, used_subjects = set(), {}, set()
+    successes = 0
+    for response in responses.itertuples():
+        trace = json.loads(traces[response.response_id])
+        _check(set(trace), {'source_file', 'source_row', 'sample_index', 'sample', 'is_correct'}, 'Monkey Business exact trace fields')
+        key = trace['source_file'], trace['source_row']
+        _check(type(trace['source_row']), int, 'Monkey Business integer native row position')
+        _check(type(trace['sample_index']), int, 'Monkey Business integer native sample position')
+        entry = native[key]
+        original, task, model = entry['original'], entry['task'], entry['model']
+        index = trace['sample_index']
+        _check(0 <= index < len(original['samples']), True, 'Monkey Business in-range sample position')
+        _check(seen[key][index], 0, 'Monkey Business no duplicated source sample')
+        seen[key][index] = 1
+        _check(trace['sample'], original['samples'][index], 'Monkey Business complete unmodified model output')
+        _check(type(trace['is_correct']), bool, 'Monkey Business literal native correctness flag')
+        _check(trace['is_correct'], original['is_corrects'][index], 'Monkey Business original sample-verdict alignment')
+        _check(response.response, float(original['is_corrects'][index]), 'Monkey Business unmodified released grade')
+        _check(response.trial, index + 1, 'Monkey Business source sample index maps to a one-based trial')
+        _check(response.test_condition, 'source_export=' + key[0] + ';' + parameters['sampling'][task],
+            'Monkey Business exact export and author-reported sampling settings')
+        _check(pd.isna(response.interactors), True, 'Monkey Business no invented interactor')
+        _check(subjects[response.subject_id]['display_name'], model, 'Monkey Business original model association')
+        used_subjects.add(response.subject_id)
+        successes += original['is_corrects'][index]
+        binding = key, response.item_id
+        if binding not in checked:
+            checked.add(binding)
+            item = items[response.item_id]
+            _check(item['content'], original['prompt'], 'Monkey Business complete few-shot prompt')
+            _check(item['raw_item_id'], f"{task}:test:{original['orig_dset_idx']}", 'Monkey Business original task alias')
+            features = _features(item['item_features'])
+            _check(features['task'], task, 'Monkey Business component task')
+            _check(features['split'], 'test', 'Monkey Business original item split')
+            _check(unquote(features['original_question']), original['question'], 'Monkey Business literal target question')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=original.get('gt_answer'), rule=entry['rule']),
+                'Monkey Business reference and all source test-set identities')
+            verifier = json.loads(item['verifier'])
+            _check(verifier['class'], 'exact_matcher', 'Monkey Business programmatic grading')
+            _check(json.loads(verifier['spec']), protocols[task], 'Monkey Business exact component grading protocol')
+            _check(pd.isna(item['asset_manifest']), True, 'Monkey Business no fabricated input attachments')
+            if response.item_id in used_items:
+                _check(used_items[response.item_id], entry['signature'], 'Monkey Business consistent canonical input/grading identity')
+            used_items[response.item_id] = entry['signature']
+    _check(all(all(flags) for flags in seen.values()), True, 'Monkey Business complete original sample coverage')
+    _check(set(used_items), set(items), 'Monkey Business no unused or absent items')
+    _check(Counter(used_items.values()), Counter({signature: 1 for signature in definitions}), 'Monkey Business exact input/grading definitions')
+    _check(used_subjects, set(subjects), 'Monkey Business no unused or absent subjects')
+    return dict(source_responses=count, source_traces=count, source_subjects=len(source_models),
+        source_items=len(definitions), source_configurations=len(files), source_problem_rows=len(native),
+        source_tasks=len({row['task'] for row in native.values()}), source_successes=successes)
+
+
+def _multi_moe(directory, tables, metadata):
+    import csv
+    import unicodedata
+    from urllib.parse import quote
+    from measurement_db.scripts.build_measurement_tables.hash_measurement_ids import canonical_grading_criterion
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
+
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    protocols = metadata['grading']['verifiers']
+    native, configurations, definitions, counts = {}, {}, {}, Counter()
+    bank = {}
+    for line in (raw / parameters['paths']['questions']).read_text().splitlines():
+        record = json.loads(line)
+        _check(record['question_id'] not in bank, True, 'Multi-MoE unique native question ID')
+        bank[record['question_id']] = record
+    template = native_json_value(read_native_pickle(raw / parameters['paths']['template']))
+    records = []
+    for path in sorted(raw.glob(parameters['paths']['option_results'])):
+        source = str(path.relative_to(raw))
+        task, configuration = source.split('/')[1:3]
+        configurations[source] = (parameters['configurations'][configuration],
+            dict(record_origin='option_csv', published_configuration=configuration))
+        seen = set()
+        with path.open(newline='') as stream:
+            for position, record in enumerate(csv.DictReader(stream)):
+                coordinate = record.get('subject'), record['index']
+                _check(coordinate not in seen, True, 'Multi-MoE distinct source questions per configuration')
+                seen.add(coordinate)
+                _check(record['string_matching_correctness'] in ['True', 'False'], True, 'Multi-MoE literal original Boolean verdict')
+                content = record['sample']
+                criterion = dict(reference_answer=record['label'])
+                features = dict(task=task, split=record['split'], input_scope='recorded_few_shot_prompt')
+                alias = task + ':' + (record['subject'] + ':' if 'subject' in record else '') + record['index']
+                records.append((source, position, record, task, float(record['string_matching_correctness'] == 'True'),
+                                content, criterion, features, alias))
+                counts['source_graded_records'] += 1
+                counts['source_successes'] += record['string_matching_correctness'] == 'True'
+        counts['source_option_exports'] += 1
+    answer_ids = set()
+    for path in sorted(raw.glob(parameters['paths']['conversations'])):
+        source = str(path.relative_to(raw))
+        seen = set()
+        for position, line in enumerate(path.read_text().splitlines()):
+            record = json.loads(line)
+            _check(record['answer_id'] not in seen, True, 'Multi-MoE unique answer IDs within each export')
+            seen.add(record['answer_id']); answer_ids.add(record['answer_id'])
+            question = bank[record['question_id']]
+            features = dict(record_origin='conversation_jsonl', native_model_id=record['model_id'],
+                published_generation_template=quote(json.dumps(template, sort_keys=True), safe=''))
+            expected_subject = record['model_id'], features
+            if source in configurations:
+                _check(configurations[source], expected_subject, 'Multi-MoE one recorded model label per conversation export')
+            configurations[source] = expected_subject
+            _check(len(question['turns']), 2, 'Multi-MoE original two-turn task')
+            _check(len(record['choices']), 1, 'Multi-MoE one original answer choice')
+            _check(record['choices'][0]['index'], 0, 'Multi-MoE original choice index')
+            _check(len(record['choices'][0]['turns']), len(question['turns']), 'Multi-MoE complete conversation outputs')
+            _check(all(isinstance(value, str) for value in record['choices'][0]['turns']), True,
+                'Multi-MoE complete string outputs, including failed empty generations')
+            content = json.dumps(dict(user_turns=question['turns']), ensure_ascii=False)
+            criterion = {}
+            if 'reference' in question:
+                criterion['reference_answer'] = json.dumps(question['reference'], ensure_ascii=False)
+            records.append((source, position, record, 'mt_bench', None, content, criterion,
+                dict(task='mt_bench', category=question['category'], input_scope='released_user_turns'),
+                'mt_bench:' + str(question['question_id'])))
+            counts['source_ungraded_records'] += 1
+            counts['source_author_marked_records'] += parameters['export_status'].get(source) == 'author_marked_wrong'
+        counts['source_conversation_exports'] += 1
+    for source, position, record, task, grade, content, criterion, features, alias in records:
+        protocol = protocols[task]
+        criterion.update(rule=protocol['rule'], response_scale=protocol['response_scale'])
+        criterion = canonical_grading_criterion(criterion)
+        spec = json.dumps(protocol, sort_keys=True, ensure_ascii=False)
+        feature_text = features_string(canonicalize_features(features))
+        signature = unicodedata.normalize('NFC', content).strip(), feature_text, criterion, spec
+        definitions.setdefault(signature, alias)
+        native[source, position] = dict(record=record, task=task, grade=grade, content=content,
+            criterion=criterion, spec=spec, features=feature_text, signature=signature)
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    for name, key in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][key].is_unique, True, 'Multi-MoE unique ' + name + ' identifiers')
+    _check(len(responses), len(native), 'Multi-MoE full source occurrence count')
+    _check(set(tables['traces'].response_id), set(responses), 'Multi-MoE complete trace association')
+    _check(len(tables['benchmarks']), 1, 'Multi-MoE one benchmark folder')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), {'kind': 'mixed'}, 'Multi-MoE explicit task-specific scales')
+    _check(len(tables.get('assets', [])), 0, 'Multi-MoE no invented attachments')
+    seen, used_items, used_subjects = Counter(), {}, {}
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        source, position = trace['source_file'], trace['source_row']
+        _check(type(position) is int and (source, position) in native, True, 'Multi-MoE valid native record coordinates')
+        expected = native[source, position]
+        _check(trace, dict(source_file=source, source_row=position, native_record=expected['record']),
+            'Multi-MoE complete unmodified original record, including parsed answers, outputs and timestamps')
+        seen[source, position] += 1
+        response = responses[trace_row.response_id]
+        _check(None if pd.isna(response['response']) else response['response'], expected['grade'],
+            'Multi-MoE published verdict or missing judgment')
+        _check(response['trial'], 1, 'Multi-MoE one occurrence per file-specific task record')
+        status = parameters['export_status'].get(source, 'published_export')
+        _check(response['test_condition'], 'source_export=' + quote(source, safe='/-._')
+            + ';task=' + expected['task'] + ';release_status=' + status, 'Multi-MoE original export and release status')
+        _check(pd.isna(response['interactors']), True, 'Multi-MoE no invented interactor')
+        model, settings = configurations[source]
+        subject = subjects[response['subject_id']]
+        _check(subject['display_name'], model, 'Multi-MoE native model/configuration label')
+        _check(subject['harness'], parameters['subject']['harness'], 'Multi-MoE published harness')
+        _check(pd.isna(subject['harness_version']), True, 'Multi-MoE executed harness version remains unknown')
+        _check(_features(subject['subject_features_extra']), settings, 'Multi-MoE no invented or merged configuration')
+        used_subjects[response['subject_id']] = (model, tuple(sorted(settings.items())))
+        item = items[response['item_id']]
+        _check(item['content'], expected['content'], 'Multi-MoE actual original stimulus and option order')
+        _check(item['raw_item_id'], definitions[expected['signature']], 'Multi-MoE original question alias')
+        _check(item['grading_criterion'], expected['criterion'], 'Multi-MoE matching reference, rule and effective scale')
+        _check(item['item_features'], expected['features'], 'Multi-MoE original task and input scope')
+        _check(json.loads(item['verifier']), dict(
+            **{'class': 'judge' if expected['task'] == 'mt_bench' else 'exact_matcher'}, spec=expected['spec']),
+            'Multi-MoE original grading implementation and ungraded conversation status')
+        _check(pd.isna(item['asset_manifest']), True, 'Multi-MoE no invented media inputs')
+        used_items[response['item_id']] = expected['signature']
+    _check(seen, Counter({key: 1 for key in native}), 'Multi-MoE no duplicated or omitted source records')
+    _check(set(used_items), set(items), 'Multi-MoE exact observed item set')
+    _check(Counter(used_items.values()), Counter({key: 1 for key in definitions}), 'Multi-MoE no accidental item collapse')
+    _check(set(used_subjects), set(subjects), 'Multi-MoE exact observed subject set')
+    _check(Counter(used_subjects.values()), Counter({(model, tuple(sorted(settings.items()))): 1
+        for model, settings in configurations.values()}), 'Multi-MoE no accidental subject collapse')
+    return dict(source_responses=len(native), source_traces=len(native), source_items=len(items),
+        source_subjects=len(subjects), source_unique_conversation_answer_ids=len(answer_ids), **dict(counts))
+
+
+def _visual_memory(directory, tables, metadata):
+    """Compare every output, image byte, reference and association with native sources."""
+    import ast
+    import hashlib
+    from io import BytesIO
+    import math
+    import tarfile
+    from urllib.parse import quote
+    from PIL import Image
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='Visual Memory source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    notebook = json.loads((raw / 'protocol/code/main_analysis_plots.ipynb').read_text())
+    cell = next(''.join(cell.get('source', [])) for cell in notebook['cells']
+                if ''.join(cell.get('source', [])).startswith('synset_to_index ='))
+    labels = ast.literal_eval(ast.parse(cell).body[0].value)
+    _check(len(set(labels.values())), len(labels), 'Visual Memory unique source class indices')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    models = {}
+    for identifier, subject in subjects.items():
+        model = _features(subject['subject_features_extra'])['source_featurizer']
+        _check(subject['display_name'], parameters['models'][model], 'Visual Memory exact source featurizer')
+        _check(subject['harness'], parameters['subject']['harness'], 'Visual Memory original retrieval harness')
+        _check(_features(subject['subject_features_extra']), {'source_featurizer': model},
+               'Visual Memory literal source configuration without extra inferred settings')
+        _check(pd.isna(subject['harness_version']) and pd.isna(subject['reasoning_effort']), True,
+               'Visual Memory unavailable runtime configuration stays unknown')
+        models[identifier] = model
+    _check(Counter(models.values()), Counter({name: 1 for name in parameters['models']}),
+           'Visual Memory each original featurizer remains distinct')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    aliases = {row['raw_item_id']: identifier for identifier, row in items.items()}
+    _check(len(aliases), len(items), 'Visual Memory unique original query identities')
+    references, used_assets, image_counts = {}, set(), Counter()
+    for task, filename in parameters['archives'].items():
+        with tarfile.open(raw / filename) as archive:
+            for member in archive:
+                if not member.isfile() or member.name.startswith('__MACOSX/'):
+                    continue
+                parts = Path(member.name).parts
+                if Path(member.name).suffix.lower() not in parameters['image_suffixes']:
+                    continue
+                key = parts[-1] if task == 'imagenet-a' else '/'.join(parts[-2:])
+                coordinate = task, key
+                _check(coordinate not in references, True, 'Visual Memory unambiguous native image identity')
+                label = int(parts[-2]) if task == 'imagenet-v2' else labels[parts[-2]]
+                references[coordinate] = label
+                item = items[aliases[task + '||' + key]]
+                payload = archive.extractfile(member).read()
+                digest = hashlib.sha256(payload).hexdigest()
+                with Image.open(BytesIO(payload)) as image:
+                    media = Image.MIME[image.format]
+                    image.verify()
+                _check(item['content'], parameters['protocol']['instruction'],
+                       'Visual Memory neutral instruction with reference class outside content')
+                _check(json.loads(item['asset_manifest']), [dict(asset_id=digest,
+                    path='images/' + task + '/' + quote(key, safe='/'), media_type=media,
+                    role='query_image', ordinal=1)], 'Visual Memory exact input-image association')
+                _check(assets[digest]['data'], payload, 'Visual Memory byte-identical original query image')
+                used_assets.add(digest)
+                _check(_features(item['item_features']), dict(query_dataset=task, source_archive=filename,
+                    source_member=quote(member.name, safe='/')), 'Visual Memory original image provenance')
+                _check(json.loads(item['grading_criterion']), dict(reference_answer=str(label), rule=metadata['grading']['rule']),
+                       'Visual Memory reference class independently read from original image archive')
+                _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                    spec=json.dumps(metadata['grading']['verifiers']['native'], sort_keys=True)),
+                    'Visual Memory original k=1 grading protocol')
+                image_counts[task] += 1
+    _check(set(aliases), {task + '||' + key for task, key in references}, 'Visual Memory exact source query coverage')
+    _check(set(assets), used_assets, 'Visual Memory no missing or invented image payloads')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    traces = {}
+    for row in tables['traces'].itertuples():
+        trace = json.loads(row.trace)
+        coordinate = trace['source_file'], trace['source_image']
+        _check(coordinate not in traces, True, 'Visual Memory one observation per source record')
+        traces[coordinate] = row.response_id, trace
+    _check(set(tables['traces'].response_id), set(responses), 'Visual Memory every outcome has its full native trace')
+    seen, counts, configurations = set(), Counter(), set()
+    required_fields = {'featurizer', 'image_id', 'image_class', 'neighbor_image_ids', 'neighbor_classes', 'neighbor_distances'}
+    for path in sorted(raw.glob(parameters['paths']['results'])):
+        source = str(path.relative_to(raw))
+        task = path.name.split('_query-', 1)[1].split('_qsplit-', 1)[0]
+        model = path.name.split('_qsplit-test_', 1)[1].removesuffix('_full_neighbor_info.json')
+        _check((task, model) not in configurations, True, 'Visual Memory one export per task and featurizer')
+        configurations.add((task, model))
+        native = json.loads(path.read_text())
+        _check(set(native), {key for query, key in references if query == task},
+               'Visual Memory each original configuration covers its query images')
+        for key, record in native.items():
+            _check(set(record), required_fields, 'Visual Memory complete native retrieval schema')
+            _check(record['image_id'], key, 'Visual Memory source query key matches recorded image ID')
+            _check(record['featurizer'], model, 'Visual Memory source filename matches recorded featurizer')
+            _check(type(record['image_class']) is int and record['image_class'] == references[task, key],
+                   True, 'Visual Memory original query label agrees with its image')
+            for name in ['neighbor_image_ids', 'neighbor_classes', 'neighbor_distances']:
+                _check(len(record[name]), int(parameters['protocol']['neighbors_saved']),
+                       'Visual Memory complete aligned neighbor arrays')
+            _check(all(type(value) is int and 0 <= value < 1000 for value in record['neighbor_classes']), True,
+                   'Visual Memory valid recorded neighbor class indices')
+            _check(all(isinstance(value, str) and value for value in record['neighbor_image_ids']), True,
+                   'Visual Memory original neighbor identities')
+            _check(all(type(value) in (int, float) and math.isfinite(value) for value in record['neighbor_distances']),
+                   True, 'Visual Memory finite original retrieval distances')
+            coordinate = source, key
+            identifier, trace = traces[coordinate]
+            _check(trace, dict(source_file=source, source_image=key, native_record=record),
+                   'Visual Memory exact complete original record without clipping or numeric changes')
+            response = responses[identifier]
+            _check(models[response['subject_id']], model, 'Visual Memory original response model')
+            _check(items[response['item_id']]['raw_item_id'], task + '||' + key,
+                   'Visual Memory original response query image')
+            grade = float(record['neighbor_classes'][0] == record['image_class'])
+            _check(response['response'], grade, 'Visual Memory explicit author k=1 correctness rule')
+            _check(response['trial'], 1, 'Visual Memory one released retrieval per configuration and image')
+            _check(response['test_condition'], 'k=1;memory=imagenet2012:train;query=' + task + ';source_export=' + source,
+                   'Visual Memory original memory, query, k and source export')
+            _check(pd.isna(response['interactors']), True, 'Visual Memory no invented interactor')
+            seen.add(coordinate)
+            counts['source_responses'] += 1
+            counts['source_successes'] += int(grade)
+            counts['source_neighbor_entries'] += len(record['neighbor_classes'])
+    _check(set(traces), seen, 'Visual Memory exact native observation coverage')
+    _check(configurations, {(task, model) for task in parameters['archives'] for model in parameters['models']},
+           'Visual Memory every selected task/featurizer configuration')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale), metadata['benchmark']['response_scale'],
+           'Visual Memory explicit binary grade interpretation')
+    return dict(source_configurations=len(configurations), source_images=len(references), source_items=len(items),
+        source_assets=len(assets), source_subjects=len(subjects), source_traces=len(traces), **dict(counts))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'visual_memory':
+        return _visual_memory(directory, tables, metadata)
+    if directory.name == 'multi_moe':
+        return _multi_moe(directory, tables, metadata)
+    if directory.name == 'monkey_power_laws':
+        return _monkey_power_laws(directory, tables, metadata)
     if directory.name == 'moe_cap':
         return _moe_cap(directory, tables, metadata)
     if directory.name == 'mochi':

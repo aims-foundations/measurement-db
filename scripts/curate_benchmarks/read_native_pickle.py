@@ -54,6 +54,9 @@ class _DataUnpickler(pickle.Unpickler):
         if (module, name) == ("re", "_compile"):
             # Preserve the recorded pattern/flags without compiling or applying it.
             return type("StoredRegex", (StoredRecord,), {"source_type": "re._compile"})
+        if module == "fastchat.conversation" and name in {"Conversation", "SeparatorStyle"}:
+            # A captured prompt template is data; never import FastChat or render it.
+            return type(name, (StoredRecord,), {"source_type": module + "." + name})
         # These scientific objects remain inert records. In particular, never
         # import a serialized calculator or instantiate an upstream model.
         scientific_records = {

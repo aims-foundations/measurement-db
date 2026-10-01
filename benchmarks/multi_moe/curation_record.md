@@ -1,0 +1,3 @@
+- Preserve all original multiple-choice verdicts with each configuration's complete prompt and gold label, correcting the previous reuse of another configuration's shuffled TruthfulQA options.
+- Restore complete released MT-Bench conversations as ungraded records. Keep native answer IDs, relabeled duplicate exports and the author-marked wrong file explicit; these records do not establish independent runs.
+- Archive the pinned author sources without executing them. CSV traces contain the released parsed character, while MT-Bench traces contain full outputs; absent individual judgments and execution details remain unknown.

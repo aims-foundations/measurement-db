@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 02f2c7f7b5e80cb34f211cdfb09050860f96807f0517b12b0329341f552c99a8
+  items:
+    rows: 525
+    logical_sha256: f5aed16f3d668360731f2f8522969d1157badb6ffc7a7fe33c1f90ee72f5c841
+  responses:
+    rows: 28780000
+    logical_sha256: eace298374a6f694cd4b014a2aee9702594dcfab4263821d9809f0dc35ed18d0
+  subjects:
+    rows: 13
+    logical_sha256: 4efec73aa5ffafdd99ca1b515e0d0ec6f1d44e2f85c4c7ef555a7da91b299ba5
+  traces:
+    rows: 28780000
+    logical_sha256: ad8657180fb8b9761f5216db6cb91be60e37ff5ccb9acb5cdef91d4d16c1c908
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 28780000
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 28780000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 13
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 525
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 22
+  source_problem_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 2878
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 4
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/tree/a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    locator: All original rows and paired samples/is_corrects entries in the 22 released JSON configuration files.
+    scope: Every original sample with its complete prompt, exact model and task association, sample index, published
+      Boolean verdict and untruncated output. Grading sources include all three CodeContests test sets and the author-pinned
+      Lean theorem repository. No rerunning or regrading.
+    expected: 4499875
