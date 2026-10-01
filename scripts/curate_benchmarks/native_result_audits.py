@@ -26720,11 +26720,118 @@ def _workarena(directory, tables, metadata):
         source_responses=len(responses), source_traces=len(tables['traces']), **totals)
 
 
+def _swe_smith(directory, tables, metadata):
+    import re
+    from collections import defaultdict
+    import pyarrow.parquet as pq
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='SWE-smith source audit')
+    raw = directory / 'raw'
+    grading = metadata['grading']['verifiers']['published']
+    bank, native, runs = {}, {}, defaultdict(list)
+    for path in sorted((raw / 'tasks/data').glob('*.parquet')):
+        for row in pq.read_table(path).to_pylist():
+            _check(row['instance_id'] not in bank, True, 'SWE-smith unique task-bank ID')
+            bank[row['instance_id']] = row
+    for path in sorted((raw / 'trajectories/data').glob('*.parquet')):
+        source_file = str(path.relative_to(raw))
+        row_number = 0
+        for batch in pq.ParquetFile(path).iter_batches(
+                columns=['messages', 'instance_id', 'resolved', 'model', 'traj_id'], batch_size=32):
+            for row in batch.to_pylist():
+                _check(type(row['resolved']) is bool and isinstance(row['traj_id'], str) and bool(row['traj_id']),
+                    True, 'SWE-smith native Boolean verdict and run identity')
+                user = next(message['content'] for message in json.loads(row['messages']) if message.get('role') == 'user')
+                if isinstance(user, list):
+                    user = '\n'.join(part['text'] for part in user if isinstance(part.get('text'), str))
+                match = re.search(r'<pr_description>\s*(.*?)\s*</pr_description>', user, re.DOTALL)
+                instruction = (match.group(1) if match else user).strip()
+                _check(bool(instruction), True, 'SWE-smith original nonempty instruction')
+                key = source_file, row_number
+                native[key] = dict(row, content=instruction, rendering=path.name.split('-')[0])
+                runs[row['traj_id']].append(key)
+                row_number += 1
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    seen_runs, seen_sources, item_definitions, subject_models = set(), set(), {}, {}
+    trials, totals = defaultdict(list), Counter()
+    _check(len(tables.get('assets', [])), 0, 'SWE-smith no inferred assets')
+    _check(tables['benchmarks'].iloc[0].response_scale,
+        canonical_response_scale(metadata['benchmark']['response_scale']), 'SWE-smith binary grade scale')
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        _check(set(trace), {'traj_id', 'renderings'}, 'SWE-smith trace contract excludes the unreliable patch column')
+        run_id = trace['traj_id']
+        _check(run_id in runs and run_id not in seen_runs, True, 'SWE-smith one response per original trajectory ID')
+        seen_runs.add(run_id)
+        keys = []
+        for rendering in trace['renderings']:
+            key = rendering['source_file'], rendering['source_row']
+            _check(key in native and key not in seen_sources, True, 'SWE-smith original rendering row exactly once')
+            seen_sources.add(key)
+            keys.append(key)
+            record = native[key]
+            _check(record['traj_id'], run_id, 'SWE-smith rendering belongs to this run')
+            expected = dict(source_file=key[0], source_row=key[1], rendering=record['rendering'],
+                **{name: record[name] for name in ['instance_id', 'model', 'resolved', 'messages']})
+            _check(rendering, expected, 'SWE-smith complete original conversation and row fields')
+        _check(set(keys), set(runs[run_id]), 'SWE-smith all alternate renderings retained')
+        record = native[runs[run_id][0]]
+        for key in keys:
+            _check(tuple(native[key][name] for name in ['instance_id', 'model', 'resolved', 'content']),
+                tuple(record[name] for name in ['instance_id', 'model', 'resolved', 'content']),
+                'SWE-smith run copies agree before consolidation')
+        response = responses[trace_row.response_id]
+        item, subject = items[response['item_id']], subjects[response['subject_id']]
+        _check(response['response'], float(record['resolved']), 'SWE-smith exact released verdict')
+        _check(subject['display_name'], record['model'], 'SWE-smith literal released model name')
+        _check(subject['harness'], metadata['build']['parameters']['labels']['harness'], 'SWE-smith recorded harness')
+        _check(item['raw_item_id'], record['instance_id'], 'SWE-smith native task identifier')
+        _check(item['content'], record['content'], 'SWE-smith recorded instruction rather than current-bank replacement')
+        _check(item['item_features'], features_string(canonicalize_features(dict(upstream_instance_id=record['instance_id']))),
+            'SWE-smith original task environment identifier')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=grading['rule']),
+            'SWE-smith setup mutation is not a reference repair')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'], 'exact_matcher', 'SWE-smith released-result verifier type')
+        _check(json.loads(verifier['spec']), dict(**grading['spec'], published_task=bank.get(record['instance_id'])),
+            'SWE-smith complete available published task context and explicit missing entries')
+        definition = record['instance_id'], record['content']
+        if response['item_id'] in item_definitions:
+            _check(item_definitions[response['item_id']], definition, 'SWE-smith consistent item definition')
+        if response['subject_id'] in subject_models:
+            _check(subject_models[response['subject_id']], record['model'], 'SWE-smith consistent subject identity')
+        item_definitions[response['item_id']] = definition
+        subject_models[response['subject_id']] = record['model']
+        trials[response['subject_id'], response['item_id']].append(response['trial'])
+        totals['successes'] += int(record['resolved'])
+        totals['failures'] += int(not record['resolved'])
+        totals['runs_without_task_bank_entry'] += int(record['instance_id'] not in bank)
+    _check(seen_runs, set(runs), 'SWE-smith complete trajectory coverage')
+    _check(seen_sources, set(native), 'SWE-smith complete original rendering coverage')
+    _check(len(subject_models), len(subjects), 'SWE-smith exact subject coverage')
+    _check(len(subject_models), len(set(subject_models.values())), 'SWE-smith models are not duplicated')
+    _check(len(item_definitions), len(items), 'SWE-smith exact item coverage')
+    _check(len(item_definitions), len(set(item_definitions.values())), 'SWE-smith task definitions are not duplicated')
+    _check((len(responses), len(tables['traces'])), (len(runs), len(runs)), 'SWE-smith response and trace coverage')
+    for group in trials.values():
+        _check(sorted(group), list(range(1, len(group) + 1)), 'SWE-smith repeated runs remain separate observations')
+    return dict(source_renderings=len(native), source_trajectories=len(runs), source_task_bank_items=len(bank),
+        source_subjects=len(subjects), source_items=len(items), source_responses=len(responses),
+        source_traces=len(tables['traces']), **totals)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'swe_smith':
+        return _swe_smith(directory, tables, metadata)
     if directory.name == 'workarena':
         return _workarena(directory, tables, metadata)
     if directory.name == 'os_harm':

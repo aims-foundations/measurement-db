@@ -1025,3 +1025,4 @@ SOURCE_AUDITS["live_agent_risk"] = verify_native_results
 SOURCE_AUDITS["mmlu"] = verify_native_results
 SOURCE_AUDITS["os_harm"] = verify_native_results
 SOURCE_AUDITS["workarena"] = verify_native_results
+SOURCE_AUDITS["swe_smith"] = verify_native_results

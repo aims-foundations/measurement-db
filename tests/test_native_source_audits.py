@@ -19,6 +19,7 @@ sys.path.insert(0, str(ROOT.parent))
 from measurement_db.scripts.curate_benchmarks.batch2_audits import verify_batch2
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _os_harm as _audit_os_harm
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _workarena as _audit_workarena
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_smith as _audit_swe_smith
 from measurement_db.build_base import _tables
 
 
@@ -4599,6 +4600,103 @@ class WorkArenaAuditTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.builder(str(self.directory/'build.py')).build_tables()
         path.write_text(original)
+
+
+
+class SWESmithAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'swe_smith'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/swe_smith') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        folder = self.directory / 'raw/trajectories/data'
+        folder.mkdir(parents=True)
+        groups = dict(tool=[], ticks=[], xml=[])
+        observations = [
+            ('run-a', 'model-a', 'issue-a', 'Fix first defect.', True, ['tool', 'ticks']),
+            ('run-b', 'model-a', 'issue-a', 'Fix first defect.', False, ['tool']),
+            ('run-c', 'model-b', 'issue-a', 'Fix revised defect.', True, ['xml']),
+            ('run-d', 'model-a', 'issue-missing', 'Fix absent-bank task.', False, ['xml'])]
+        for run, model, item, content, resolved, styles in observations:
+            for style in styles:
+                text = '<pr_description>\n' + content + '\n</pr_description>'
+                user = [dict(type='text', text=text)] if style == 'tool' else text
+                messages = [dict(role='system', content='Released transformed system message'),
+                    dict(role='user', content=user),
+                    dict(role='assistant', content='def broken(\n' + 'Original failed output. ' * 2000)]
+                groups[style].append(dict(messages=json.dumps(messages), instance_id=item,
+                    resolved=resolved, model=model, traj_id=run, patch='Misaligned unrelated source patch'))
+        for style, rows in groups.items():
+            pd.DataFrame(rows).to_parquet(folder / (style + '-00000.parquet'), index=False)
+        folder = self.directory / 'raw/tasks/data'
+        folder.mkdir(parents=True)
+        pd.DataFrame([dict(instance_id='issue-a', repo='owner/repository', patch='Original setup mutation',
+            FAIL_TO_PASS=['test_fix'], PASS_TO_PASS=['test_still_works'], image_name='image-at-commit',
+            problem_statement='Different current task-bank wording')]).to_parquet(folder / 'train-00000.parquet', index=False)
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/swe_smith') / 'build.py'))['SweSmith']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_complete_conversations_and_distinct_runs_survive(self):
+        expected = dict(source_renderings=5, source_trajectories=4, source_task_bank_items=1,
+            source_subjects=2, source_items=3, source_responses=4, source_traces=4,
+            successes=2, failures=2, runs_without_task_bank_entry=1)
+        self.assertEqual(_audit_swe_smith(self.directory, self.frames, self.metadata), expected)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_audit_swe_smith(self.directory, shuffled, self.metadata), expected)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+        self.assertFalse(self.frames['traces'].trace.str.contains('Misaligned unrelated source patch').any())
+
+    def test_corrupted_transformations_are_detected(self):
+        changes = ['equal_sum_swap', 'subject', 'item', 'drop_run', 'duplicate_rendering',
+            'clipped_messages', 'source_row', 'invented_patch', 'reference_bank', 'instruction', 'run_id', 'trial']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, traces = [frames[name] for name in ['responses', 'items', 'traces']]
+                if change == 'equal_sum_swap':
+                    a, b = responses.index[responses.response.eq(0)][0], responses.index[responses.response.eq(1)][0]
+                    responses.loc[[a, b], 'response'] = [1., 0.]
+                elif change == 'subject': responses.loc[0, 'subject_id'] = next(value for value in frames['subjects'].subject_id if value != responses.loc[0, 'subject_id'])
+                elif change == 'item': responses.loc[0, 'item_id'] = next(value for value in items.item_id if value != responses.loc[0, 'item_id'])
+                elif change == 'drop_run': frames['responses'] = responses.iloc[1:]
+                elif change == 'instruction': items.loc[0, 'content'] = 'Replaced with current bank wording'
+                elif change == 'trial': responses.loc[0, 'trial'] = 0
+                elif change == 'reference_bank':
+                    verifier = json.loads(items.loc[0, 'verifier'])
+                    spec = json.loads(verifier['spec']); spec['published_task'] = {'patch': 'Invented repair'}
+                    verifier['spec'] = json.dumps(spec); items.loc[0, 'verifier'] = json.dumps(verifier)
+                else:
+                    trace = json.loads(traces.loc[0, 'trace'])
+                    if change == 'duplicate_rendering': trace['renderings'].append(trace['renderings'][0])
+                    elif change == 'clipped_messages': trace['renderings'][0]['messages'] = trace['renderings'][0]['messages'][:16000]
+                    elif change == 'source_row': trace['renderings'][0]['source_row'] = 999
+                    elif change == 'invented_patch': trace['patch'] = 'Unsupported attributed patch'
+                    elif change == 'run_id': trace['traj_id'] = 'Guessed run'
+                    traces.loc[0, 'trace'] = json.dumps(trace)
+                with self.assertRaises((ValueError, RuntimeError, KeyError, StopIteration)):
+                    _audit_swe_smith(self.directory, frames, self.metadata)
+
+    def test_invalid_verdicts_and_conflicting_copies_are_rejected(self):
+        path = self.directory / 'raw/trajectories/data/tool-00000.parquet'
+        original = pd.read_parquet(path)
+        for value in ['yes', 0.5, None]:
+            with self.subTest(value=value):
+                original.assign(resolved=value).to_parquet(path, index=False)
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+        changed = original.copy(); changed.loc[0, 'resolved'] = False
+        changed.to_parquet(path, index=False)
+        with self.assertRaises(ValueError):
+            self.builder(str(self.directory / 'build.py')).build_tables()
+        original.to_parquet(path, index=False)
 
 
 

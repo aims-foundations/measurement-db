@@ -1,0 +1,89 @@
+benchmark:
+  description: Released SWE-agent run labels and formatted training conversations on synthetic SWE-smith software
+    tasks.
+  testing_condition: Import all tool, ticks and XML rows from the pinned trajectory release. Consolidate alternate
+    renderings only when their provider traj_id, task, model, instruction and Boolean resolved verdict agree. Every
+    distinct traj_id contributes one response. Instructions come from the recorded user message; the pinned task
+    bank supplies available grading context but does not replace recorded instructions. The source conversations
+    are formatted exports and may omit intermediate requeries or alter system prompts. The original per-run harness
+    revision and inference settings are unavailable. No model, grader or evaluation environment is executed.
+  paper_url: https://openreview.net/forum?id=63iVrXc8cC
+  data_source_url: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{yang2025swesmith,\n  title={SWE-smith: Scaling Data for Software Engineering Agents},\n\
+    \  author={Yang, John and Lieret, Kilian and Jimenez, Carlos E. and Wettig, Alexander and Khandpur, Kabir and\
+    \ Zhang, Yanzhe and Hui, Binyuan and Press, Ofir and Schmidt, Ludwig and Yang, Diyi},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - software_engineering
+  - agents
+  - code
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': not resolved
+      '1': resolved
+  categorical: true
+  release_date: 2025-04
+  release: public
+  name: SWE-smith
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      trajectories: trajectories/data/*.parquet
+      tasks: tasks/data/*.parquet
+      rendering_pattern: /data/(tool|ticks|xml)-
+      instruction_pattern: (?s)<pr_description>\s*(.*?)\s*</pr_description>
+    labels:
+      harness: SWE-agent
+sources:
+  upstream:
+  - name: trajectories
+    url: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    revision: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+    files:
+    - match: data/(?:tool|ticks|xml)-[^/]+\.parquet|README\.md
+      path: trajectories/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/SWE-bench/SWE-smith
+    revision: ea6d7173829c7ec8fa16c22055699ff2e9188091
+    files:
+    - match: data/train-[^/]+\.parquet|README\.md
+      path: tasks/{path}
+  - name: protocol_reference
+    url: https://github.com/SWE-bench/SWE-smith
+    revision: 9b74ac08118a85c39c356802f7961893af73e07f
+    files:
+    - match: README\.md|LICENSE|swesmith/(?:harness/eval\.py|train/traj_mgr/(?:collect_trajs|combine_trajs|utils)\.py)|agent/_traj_mgr\.sh
+      path: protocol/{path}
+grading:
+  verifiers:
+    published:
+      rule: The released resolved Boolean records whether the provider considered this trajectory to have resolved
+        its task. No new grading is performed.
+      spec:
+        kind: provider_result_mapping
+        field: resolved
+        source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+        revision: 08e109b4a59eaeebf80e4675cd125d42e7ac99a4
+        protocol_reference: https://github.com/SWE-bench/SWE-smith/blob/9b74ac08118a85c39c356802f7961893af73e07f/swesmith/train/traj_mgr/collect_trajs.py
+        task_bank_revision: ea6d7173829c7ec8fa16c22055699ff2e9188091
+        task_bank_interpretation: Published task context when available; its mutation patch is a setup artifact,
+          not a reference repair. A missing entry remains null.
+        patch_column_status: The release has a documented patch-to-row alignment issue. That column is retained
+          unchanged in raw and is not represented as this run's generated patch.
+        patch_issue: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories/discussions/3
