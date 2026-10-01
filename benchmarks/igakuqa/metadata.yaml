@@ -1,0 +1,171 @@
+benchmark:
+  description: Published 2018–2022 Japanese medical-exam answers from four LLM configurations and a separately identified
+    human-majority-derived comparator.
+  testing_condition: Retain all 7,355 native predictions on the 1,471 questions marked text_only. Japanese and translated
+    English targets are distinct stimuli. The upstream grader compares sorted comma-separated choices, credits every
+    answer on 116A71, and additionally accepts a or d alone on 112B30. These exceptions correct four legacy grades.
+    Empty recorded predictions remain upstream-graded failures. Items contain the full original target question
+    and ordered choices; documented templates and three-shot examples are subject context, not a claim that original
+    requests were logged. The student-majority row is a derived comparator, not an individual human or AI model.
+    The 2,645 image-dependent records stay raw-only.
+  paper_url: https://arxiv.org/abs/2303.18027
+  data_source_url: https://github.com/jungokasai/IgakuQA
+  subject_type: model_or_derived_baseline
+  item_type: language_specific_question
+  license: No explicit license file or grant is present in the pinned source repository. The legacy MIT label was
+    unsupported; exam content originates from Japan’s Ministry of Health, Labour and Welfare.
+  citation: "@misc{kasai2023evaluatinggpt4chatgptjapanese,\n      title={Evaluating GPT-4 and ChatGPT on Japanese\
+    \ Medical Licensing Examinations},\n      author={Jungo Kasai and Yuhei Kasai and Keisuke Sakaguchi and Yutaro\
+    \ Yamada and Dragomir Radev},\n      year={2023},\n      eprint={2303.18027},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2303.18027},\n}"
+  tags:
+  - domain-specific
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: '2023-03-31'
+  release: public
+  name: IgakuQA
+  version: 2bc4c3d159cf5505f6253d24a909fbd53237e239
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      questions: data/*/[0-9]*-[A-F].jsonl
+      translations: data/*/*_translate.jsonl
+      predictions: baseline_results/*/*.jsonl
+    labels:
+      input_scope: original_language_specific_question_and_ordered_choices
+      harness: IgakuQA released baseline scripts
+      historical_configuration: Endpoint aliases and input conventions are documented in the released code. Exact
+        executed request logs, endpoint revisions, access dates and inference defaults are not recorded.
+    subject_chatgpt:
+      raw_label: chatgpt
+      language: ja
+      kind: llm_configuration
+      question_prefix: '問題: '
+      choice_instruction: '
+
+        必ずa,b,c,d,eの中からちょうど{n}個選んでください。'
+      answer_suffix: '
+
+        答え:'
+      choice_template: '
+
+        {letter}: {choice}'
+      system: 医師国家試験を解きます。
+      API: ChatCompletion
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/generation/chatgpt.py
+      documented_endpoint: gpt-3.5-turbo
+      demonstrations: scripts/prompts/prompt.jsonl
+    subject_gpt3:
+      raw_label: gpt3
+      language: ja
+      kind: llm_configuration
+      question_prefix: '問題: '
+      choice_instruction: '
+
+        必ずa,b,c,d,eの中からちょうど{n}個選んでください。'
+      answer_suffix: '
+
+        答え:'
+      choice_template: '
+
+        {letter}: {choice}'
+      system: ''
+      API: Completion
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/generation/gpt3.py
+      documented_endpoint: text-davinci-003
+      serialization: Newline-joined examples and target, as in create_input().
+      demonstrations: scripts/prompts/prompt.jsonl
+    subject_gpt4:
+      raw_label: gpt4
+      language: ja
+      kind: llm_configuration
+      question_prefix: '問題: '
+      choice_instruction: '
+
+        必ずa,b,c,d,eの中からちょうど{n}個選んでください。'
+      answer_suffix: '
+
+        答え:'
+      choice_template: '
+
+        {letter}: {choice}'
+      system: 医師国家試験を解きます。
+      API: ChatCompletion
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/generation/chatgpt.py
+      documented_endpoint: gpt-4
+      demonstrations: scripts/prompts/prompt.jsonl
+    subject_student-majority:
+      raw_label: student-majority
+      language: ja
+      kind: derived_human_majority_comparator
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/generation/student.py
+      rule: Select the top k human choice-frequency entries, where k is the number of reference choices. This combines
+        marginal choice frequencies and is not a single student response.
+      demonstrations: ''
+    subject_translate_chatgpt-en:
+      raw_label: translate_chatgpt-en
+      language: en
+      kind: llm_configuration
+      question_prefix: 'Problem: '
+      choice_instruction: '
+
+        Choose exactly {n} correct choice(s) from a, b, c, d, e.'
+      answer_suffix: '
+
+        Answer:'
+      choice_template: '
+
+        {letter}: {choice}'
+      system: Let's try Japan's medical license exam.
+      API: ChatCompletion
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/generation/chatgpt_en.py
+      documented_endpoint: gpt-3.5-turbo
+      demonstrations: scripts/prompts/prompt_translate.jsonl
+grading:
+  rule: Compare the sorted comma-separated prediction list with the sorted original answer list, without trimming,
+    case changes, deduplication or partial credit.
+  verifiers:
+    native:
+      kind: original_deterministic_grader
+      source: https://github.com/jungokasai/IgakuQA/blob/2bc4c3d159cf5505f6253d24a909fbd53237e239/scripts/evaluate_main.py
+      function: accuracy
+      output: Per-question binary correctness; native exam point weights are not a separate response.
+      comparison: Compare the sorted comma-separated prediction list with the sorted original answer list, without
+        trimming, case changes, deduplication or partial credit.
+      credit_all:
+      - 116A71
+      alternative_answers:
+        112B30:
+        - - a
+        - - d
+      item_rules:
+        116A71: The upstream grader gives full credit for any recorded prediction on this question.
+        112B30: Compare the sorted comma-separated prediction list with the sorted original answer list, without
+          trimming, case changes, deduplication or partial credit. The upstream grader also accepts a alone or d
+          alone.
+      execution: Apply the original deterministic grading rule to released prediction strings; no model calls.
+sources:
+  upstream:
+  - name: original_release
+    url: https://github.com/jungokasai/IgakuQA
+    revision: 2bc4c3d159cf5505f6253d24a909fbd53237e239
+    files:
+    - match: .*
+      path: '{path}'

@@ -46,6 +46,132 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _image
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _tengu
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _igakuqa
+
+class IgakuQaAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'igakuqa'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/igakuqa') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        self.questions = [dict(problem_id=key, problem_text='原文\n' + key + '\u2028{braces}',
+            choices=['選択肢 ' + str(index) for index in range(5)], text_only=key != '111A3',
+            answer=answer, points='1') for key, answer in [
+                ('111A1', ['b', 'a']), ('112B30', ['a', 'd']), ('116A71', ['d']), ('111A2', ['e']), ('111A3', ['a'])]]
+        self.translations = [dict(problem_id=row['problem_id'], problem_text_en='Translated ' + row['problem_id'],
+            choices_en=['Choice ' + str(index) for index in range(5)], answer=row['answer']) for row in self.questions]
+        self.question_path = self.directory / 'raw/data/2018/111-A.jsonl'
+        self.translation_path = self.directory / 'raw/data/2018/111-A_translate.jsonl'
+        for path, rows in [(self.question_path, self.questions), (self.translation_path, self.translations)]:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('\n'.join(json.dumps(row, ensure_ascii=False) for row in rows) + '\n')
+        self.sources = {}
+        for name, profile in self.metadata['build']['parameters'].items():
+            if not name.startswith('subject_'):
+                continue
+            alias = name.removeprefix('subject_')
+            rows = [dict(problem_id=row['problem_id'], prediction=('a,b' if index == 0 else 'd' if index == 1 else ''),
+                explanation='Original explanation\n' * 1000 if index == 0 else 'Native output')
+                for index, row in enumerate(self.questions)]
+            path = self.directory / 'raw/baseline_results/2018' / ('111-A_' + alias + '.jsonl')
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text('\n'.join(json.dumps(row, ensure_ascii=False) for row in rows) + '\n')
+            self.sources[path] = rows
+            if profile['demonstrations']:
+                path = self.directory / 'raw' / profile['demonstrations']
+                path.parent.mkdir(parents=True, exist_ok=True)
+                demo = self.translations[0] if profile['language'] == 'en' else self.questions[0]
+                path.write_text(json.dumps(demo, ensure_ascii=False) + '\n')
+        output = self.directory.parent / 'tables'
+        builder = runpy.run_path(str((ROOT / 'benchmarks/igakuqa') / 'build.py'))['IgakuQA']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args([
+                '--source', str(self.directory / 'raw'), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_language_specific_inputs_and_native_exceptions(self):
+        observed = _igakuqa(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed['source_responses'], 20)
+        self.assertEqual(observed['source_items'], 8)
+        self.assertEqual(observed['source_correct'], 15)
+        self.assertEqual(observed['source_exception_corrections'], 10)
+        self.assertEqual(observed['source_withheld_non_text'], 5)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(), 16000)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_igakuqa(self.directory, shuffled, self.metadata), observed)
+
+    def test_changed_tables_are_detected(self):
+        from measurement_db.scripts.curate_benchmarks.batch3_audits import _features
+        changes = ['grade', 'exception', 'empty_to_null', 'trial', 'subject_link', 'item_link', 'harness',
+            'source_model', 'comparator_kind', 'content', 'raw_id', 'features', 'reference', 'rule', 'verifier',
+            'condition', 'drop_response', 'duplicate_response', 'drop_trace', 'duplicate_trace', 'output',
+            'source_row', 'source_file', 'native_prediction', 'native_problem', 'demonstrations']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces = (frames[name] for name in ['responses', 'subjects', 'items', 'traces'])
+            if change == 'grade': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+            elif change in ['exception', 'empty_to_null']:
+                key = '112B30' if change == 'exception' else '111A2'
+                rid = next(row.response_id for row in traces.itertuples() if json.loads(row.trace)['record']['problem_id'] == key)
+                responses.loc[responses.response_id.eq(rid), 'response'] = 0 if change == 'exception' else None
+            elif change == 'trial': responses.loc[0, 'trial'] = 99
+            elif change == 'subject_link':
+                responses.loc[0, 'subject_id'] = next(s for s in subjects.subject_id if s != responses.loc[0, 'subject_id'])
+            elif change == 'item_link':
+                responses.loc[0, 'item_id'] = next(i for i in items.item_id if i != responses.loc[0, 'item_id'])
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'source_model': subjects.loc[0, 'subject_features_extra'] = 'source_model=wrong'
+            elif change in ['comparator_kind', 'demonstrations']:
+                index = next(i for i, row in subjects.iterrows()
+                    if _features(row.subject_features_extra)['source_model'] == ('student-majority' if change == 'comparator_kind' else 'chatgpt'))
+                value = _features(subjects.loc[index, 'subject_features_extra'])
+                value['subject_kind' if change == 'comparator_kind' else 'demonstrations'] = 'llm_configuration' if change == 'comparator_kind' else '[]'
+                subjects.loc[index, 'subject_features_extra'] = ';'.join(key + '=' + str(member) for key, member in sorted(value.items()))
+            elif change == 'content': items.loc[0, 'content'] = 'wrong'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong:en'
+            elif change == 'features': items.loc[0, 'item_features'] = 'language=wrong'
+            elif change in ['reference', 'rule']:
+                value = json.loads(items.loc[0, 'grading_criterion'])
+                value['reference_answer' if change == 'reference' else 'rule'] = 'wrong'
+                items.loc[0, 'grading_criterion'] = json.dumps(value)
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'drop_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'drop_trace': frames['traces'] = traces.iloc[1:]
+            elif change == 'duplicate_trace': frames['traces'] = pd.concat([traces, traces.iloc[:1]])
+            else:
+                index = traces.trace.str.len().idxmax() if change == 'output' else 0
+                value = json.loads(traces.loc[index, 'trace'])
+                if change == 'output': value['record']['explanation'] = value['record']['explanation'][:4000]
+                elif change == 'source_row': value['source_row'] = 9999
+                elif change == 'source_file': value['source_file'] = 'wrong'
+                elif change == 'native_prediction': value['record']['prediction'] = 'wrong'
+                elif change == 'native_problem': value['record']['problem_id'] = 'wrong'
+                traces.loc[index, 'trace'] = json.dumps(value)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _igakuqa(self.directory, frames, self.metadata)
+
+    def test_changed_original_inputs_and_predictions_are_detected(self):
+        response_path = next(iter(self.sources))
+        for change in ['prediction', 'explanation', 'problem_id', 'question', 'translation', 'answer']:
+            path = self.translation_path if change == 'translation' else self.question_path if change in ['question', 'answer'] else response_path
+            original = path.read_bytes()
+            rows = [json.loads(line) for line in path.open() if line.strip()]
+            field = {'question': 'problem_text', 'translation': 'problem_text_en'}.get(change, change)
+            rows[0][field] = ['e'] if change == 'answer' else 'Changed original value'
+            path.write_text('\n'.join(json.dumps(row, ensure_ascii=False) for row in rows) + '\n')
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _igakuqa(self.directory, self.frames, self.metadata)
+            finally:
+                path.write_bytes(original)
+
+
 class TenguAuditTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')

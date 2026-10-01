@@ -1,0 +1,3 @@
+- Preserve the pinned author release: 7,355 predictions on 1,471 text-only questions, with Japanese and English inputs kept distinct. Image-dependent records remain in raw.
+- Use the original grader, including two special cases that correct four legacy grades; retain empty predictions and complete native records. The human-majority comparator is explicitly distinguished from the four LLM configurations.
+- Shared table checks, complete source reconciliation and a fresh upstream rebuild verify the migration. Historical request settings and a source license grant are unavailable; the old MIT label is not retained.

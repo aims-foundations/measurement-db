@@ -1048,3 +1048,4 @@ SOURCE_AUDITS["worldcentralbanks"] = verify_native_results
 SOURCE_AUDITS["wmt_mqm"] = verify_native_results
 SOURCE_AUDITS["image2struct"] = verify_native_results
 SOURCE_AUDITS["tengu"] = verify_native_results
+SOURCE_AUDITS["igakuqa"] = verify_native_results

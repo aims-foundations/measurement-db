@@ -29211,11 +29211,127 @@ def _tengu(directory, tables, metadata):
         source_responses=len(native),source_traces=len(traces),**counts)
 
 
+def _igakuqa(directory, tables, metadata):
+    """Check source identifiers, language, subject type, native grade and complete trace."""
+    import ast
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='IgakuQA native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    verifier = metadata['grading']['verifiers']['native']
+    questions, translations, years = {}, {}, {}
+    for path in sorted(raw.glob(parameters['layout']['questions'])):
+        for line in path.open():
+            if not line.strip():
+                continue
+            question = json.loads(line)
+            key = question['problem_id']
+            _check(key not in questions, True, 'IgakuQA unique original question IDs')
+            questions[key], years[key] = question, path.parent.name
+    for path in sorted(raw.glob(parameters['layout']['translations'])):
+        for line in path.open():
+            if line.strip():
+                question = json.loads(line)
+                key = question['problem_id']
+                _check(key not in translations, True, 'IgakuQA unique translation IDs')
+                translations[key] = question
+    for key, question in questions.items():
+        if question['text_only']:
+            _check(translations[key]['answer'], question['answer'], 'IgakuQA translation reference alignment')
+    profiles = {name.removeprefix('subject_'): profile for name, profile in parameters.items()
+                if name.startswith('subject_')}
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        for field in ['source_protocol', 'demonstrations']:
+            features[field] = ast.literal_eval(features[field])
+        alias = features['source_model']
+        profile = profiles[alias]
+        demonstrations = []
+        if profile['demonstrations']:
+            demonstrations = [json.loads(line) for line in (raw / profile['demonstrations']).open() if line.strip()]
+        _check(features, dict(source_model=alias, subject_kind=profile['kind'],
+            source_protocol={key: value for key, value in profile.items()
+                if key not in ['raw_label', 'language', 'kind', 'demonstrations']},
+            demonstrations=demonstrations, historical_configuration=labels['historical_configuration']),
+            'IgakuQA original source alias, documented input context and comparator distinction')
+        _check((row.display_name, row.harness), (profile['raw_label'], labels['harness']), 'IgakuQA source configuration')
+        _check(all(pd.isna(getattr(row, field)) for field in ['reasoning_effort', 'harness_version', 'access_date']),
+               True, 'IgakuQA unrecorded settings remain unknown')
+        subjects[row.subject_id] = alias
+    _check(Counter(subjects.values()), Counter({alias: 1 for alias in profiles}), 'IgakuQA exact subject roster')
+    item_definitions = {}
+    for row in tables['items'].itertuples():
+        key, language = row.raw_item_id.split(':')
+        question = questions[key]
+        _check(question['text_only'], True, 'IgakuQA excludes image-dependent stimuli from tables')
+        text = translations[key]['problem_text_en'] if language == 'en' else question['problem_text']
+        choices = translations[key]['choices_en'] if language == 'en' else question['choices']
+        expected = text + '\n' + '\n'.join(letter + ': ' + value for letter, value in zip('abcdefghijklmnopqrstuvwxyz', choices))
+        _check(row.content, expected, 'IgakuQA full language-specific question and ordered options')
+        _check(_features(row.item_features), dict(lang=language, exam_year=years[key],
+            requested_choices=str(len(question['answer'])), input_scope=labels['input_scope']), 'IgakuQA input attributes')
+        _check(json.loads(row.grading_criterion), dict(reference_answer=','.join(sorted(question['answer'])),
+            rule=verifier['item_rules'].get(key, metadata['grading']['rule'])), 'IgakuQA reference and question-specific rule')
+        _check(json.loads(row.verifier), {'class': 'exact_matcher', 'spec': json.dumps(verifier, sort_keys=True)},
+            'IgakuQA native grader provenance and exceptions')
+        item_definitions[row.item_id] = key, language
+    native, expected_items, counts = {}, set(), Counter(source_released_predictions=0,
+        source_withheld_non_text=0, source_empty_predictions=0, source_exception_corrections=0, source_correct=0)
+    for path in sorted(raw.glob(parameters['layout']['predictions'])):
+        alias = path.stem.split('_', 1)[1]
+        _check(alias in profiles, True, 'IgakuQA declared source configuration')
+        seen = set()
+        for index, line in enumerate(line for line in path.open() if line.strip()):
+            record = json.loads(line)
+            key = record['problem_id']
+            _check(key not in seen, True, 'IgakuQA no duplicate question prediction within a release file')
+            seen.add(key)
+            question = questions[key]
+            counts['source_released_predictions'] += 1
+            if not question['text_only']:
+                counts['source_withheld_non_text'] += 1
+                continue
+            prediction = sorted(record['prediction'].split(','))
+            ordinary = prediction == sorted(question['answer'])
+            grade = ordinary or key == '116A71' or (key == '112B30' and prediction in [['a'], ['d']])
+            name = str(path.relative_to(raw))
+            language = profiles[alias]['language']
+            native[name, index] = dict(record=record, alias=alias, item=(key, language), grade=float(grade))
+            expected_items.add((key, language))
+            counts['source_empty_predictions'] += record['prediction'] == ''
+            counts['source_exception_corrections'] += grade != ordinary
+            counts['source_correct'] += grade
+    _check(bool(native), True, 'IgakuQA original observations are present')
+    _check(Counter(item_definitions.values()), Counter({key: 1 for key in expected_items}), 'IgakuQA exact language-specific definitions')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'IgakuQA full trace coverage')
+    seen = Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        key = trace['source_file'], trace['source_row']
+        original = native[key]
+        _check(subjects[response.subject_id], original['alias'], 'IgakuQA original subject association')
+        _check(item_definitions[response.item_id], original['item'], 'IgakuQA correct question and language association')
+        _check(response.response, original['grade'], 'IgakuQA native correctness including exam exceptions')
+        _check((response.trial, response.test_condition, pd.isna(response.interactors)),
+            (1, key[0] + ':' + str(key[1]), True), 'IgakuQA original observation occasion')
+        _check(trace, dict(source_file=key[0], source_row=key[1], record=original['record']),
+            'IgakuQA complete original prediction and explanation without truncation')
+        seen[key] += 1
+    _check(seen, Counter({key: 1 for key in native}), 'IgakuQA each original text-only prediction once')
+    return dict(source_questions=len(questions), source_text_questions=sum(q['text_only'] for q in questions.values()),
+        source_subjects=len(subjects), source_items=len(item_definitions), source_responses=len(native), source_traces=len(traces), **counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'igakuqa':
+        return _igakuqa(directory, tables, metadata)
     if directory.name == 'tengu':
         return _tengu(directory, tables, metadata)
     if directory.name == 'image2struct':
