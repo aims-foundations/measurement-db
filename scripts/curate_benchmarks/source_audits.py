@@ -1056,3 +1056,5 @@ SOURCE_AUDITS["imgedit"] = verify_native_results
 SOURCE_AUDITS["interchangeable_token_embeddings"] = verify_native_results
 
 SOURCE_AUDITS["oasst"] = verify_native_results
+
+SOURCE_AUDITS["reasoning_gym"] = verify_native_results

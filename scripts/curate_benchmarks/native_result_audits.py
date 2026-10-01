@@ -30021,6 +30021,90 @@ def _oasst(directory, tables, metadata):
         source_rank_gap_groups=sum(sorted(values) != list(range(len(values))) for values in ranks.values()))
 
 
+def _reasoning_gym(directory,tables,metadata):
+    """Independently check source attribution, stimuli, partial rewards and repeats."""
+    import math, re
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables,context='Reasoning Gym original completions')
+    parameters=metadata['build']['parameters'];root=directory/'raw'/parameters['layout']['results']
+    excluded_run=parameters['exclusions']['ambiguous_identity_run']
+    native,definitions,configurations={}, {},set();trials=Counter();excluded=0;source_files=0;exception_count=0;roundoff=0;partial=0;run_count=0
+    for summary_path in sorted(root.glob('*/*/summary.json')):
+        run=str(summary_path.parent.relative_to(root));summary=json.loads(summary_path.read_text())
+        label=re.sub(r'_\d{8}_\d{6}$','',summary_path.parent.name)
+        if run==excluded_run:
+            _check(label != summary['model'].replace('/','_'),True,'Reasoning Gym unresolved source model conflict')
+            excluded+=sum(len(row['completions']) for path in summary_path.parent.glob('*/*.json')
+                          for row in json.loads(path.read_text())['results'])
+            continue
+        _check(label,summary['model'].replace('/','_'),'Reasoning Gym explicit subject attribution')
+        run_count+=1
+        configuration=(summary['model'],str(summary['provider']),str(summary['max_tokens']))
+        configurations.add(configuration)
+        condition=dict(subject_key=run,**{k:summary[k] for k in parameters['condition_fields']})
+        for path in sorted(summary_path.parent.glob('*/*.json')):
+            data=json.loads(path.read_text());source_files+=1
+            _check((data['name'],data['category']), (path.stem,path.parent.name),'Reasoning Gym dataset identity')
+            _check(data['system_prompt'],summary['system_prompt'],'Reasoning Gym full system instruction')
+            _check(data['completions_per_prompt'],summary['completions_per_prompt'],'Reasoning Gym sampled-completion setting')
+            _check(len(data['results']),data['total_examples'],'Reasoning Gym released question count')
+            for position,row in enumerate(data['results']):
+                stimulus=json.dumps(dict(system_prompt=data['system_prompt'],question=row['question']),ensure_ascii=False,sort_keys=True)
+                criterion=dict(reference_answer=str(row['expected_answer']),rule=metadata['grading']['rule'])
+                spec={**metadata['grading']['verifiers']['algorithmic'],'dataset':data['name'],'configuration':data['config'],'revision':summary['git_hash']}
+                verifier=dict(**{'class':'exact_matcher'},spec=json.dumps(spec,sort_keys=True))
+                features=dict(dataset=data['name'],category=data['category'],difficulty=run.split('/')[0])
+                item=(stimulus,json.dumps(criterion,sort_keys=True),json.dumps(verifier,sort_keys=True),json.dumps(features,sort_keys=True))
+                source_file=str(path.relative_to(directory/'raw'))
+                definitions.setdefault(item,dict(raw_id=source_file+':'+str(position),features=features))
+                _check(bool(row['completions']),True,'Reasoning Gym complete recorded attempts')
+                for index,completion in enumerate(row['completions']):
+                    score=completion['score']
+                    _check(type(score) in (int,float) and math.isfinite(score) and 0<=score<=math.nextafter(1.,math.inf),True,
+                           'Reasoning Gym finite original reward')
+                    grade=None if completion.get('error') is not None else min(1.,float(score))
+                    exception_count+=grade is None;roundoff+=score>1;partial+=grade is not None and 0<grade<1
+                    key=source_file,position,index
+                    trial_key=(configuration,item,json.dumps(condition,sort_keys=True));trials[trial_key]+=1
+                    native[key]=dict(configuration=configuration,item=item,condition=condition,grade=grade,trial=trials[trial_key],
+                        trace=dict(source_file=source_file,source_row=position,completion_index=index,original_completion=completion,
+                                   mean_score=row['mean_score'],best_score=row['best_score']))
+    subject_keys={}
+    for row in tables['subjects'].itertuples():
+        features=_features(row.subject_features_extra)
+        configuration=(features['source_model'],features['provider'],features['max_tokens'])
+        _check(configuration in configurations,True,'Reasoning Gym recorded subject configuration')
+        _check((row.display_name,row.harness,features),(configuration[0],parameters['labels']['harness'],
+            dict(source_model=configuration[0],provider=configuration[1],max_tokens=configuration[2])),
+            'Reasoning Gym model/provider/token settings')
+        subject_keys[row.subject_id]=configuration
+    _check(Counter(subject_keys.values()),Counter({key:1 for key in configurations}),'Reasoning Gym complete configurations')
+    item_keys={}
+    for row in tables['items'].itertuples():
+        key=(row.content,json.dumps(json.loads(row.grading_criterion),sort_keys=True),json.dumps(json.loads(row.verifier),sort_keys=True),json.dumps(_features(row.item_features),sort_keys=True))
+        _check(key in definitions,True,'Reasoning Gym full prompt, reference, configuration and grader revision')
+        _check((row.raw_item_id,_features(row.item_features)),(definitions[key]['raw_id'],definitions[key]['features']),
+               'Reasoning Gym original item alias and task attributes')
+        item_keys[row.item_id]=key
+    _check(Counter(item_keys.values()),Counter({key:1 for key in definitions}),'Reasoning Gym exact graded stimulus coverage')
+    traces=tables['traces'].set_index('response_id').trace.to_dict();seen=Counter()
+    _check(set(traces),set(tables['responses'].response_id),'Reasoning Gym complete output evidence')
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id]);key=trace['source_file'],trace['source_row'],trace['completion_index']
+        source=native[key]
+        _check(trace,source['trace'],'Reasoning Gym original completion, error and source summary')
+        _check(None if pd.isna(row.response) else row.response,source['grade'],'Reasoning Gym unchanged reward or explicit grading exception')
+        _check((subject_keys[row.subject_id],item_keys[row.item_id],json.loads(row.test_condition),row.trial),
+               (source['configuration'],source['item'],source['condition'],source['trial']),
+               'Reasoning Gym exact subject, item, settings and repeated attempt')
+        _check(pd.isna(row.interactors),True,'Reasoning Gym no invented interaction party')
+        seen[key]+=1
+    _check(seen,Counter({key:1 for key in native}),'Reasoning Gym no lost, duplicated or invented observations')
+    return dict(source_subjects=len(configurations),source_items=len(definitions),source_responses=len(native),source_traces=len(traces),
+        source_runs=run_count,source_task_files=source_files,source_ungraded_exceptions=exception_count,
+        source_boundary_roundoff=roundoff,source_partial_rewards=partial,source_unattributed_completions=excluded)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30028,6 +30112,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'reasoning_gym':
+        return _reasoning_gym(directory, tables, metadata)
     if directory.name == 'interchangeable_token_embeddings':
         return _interchangeable_token_embeddings(directory, tables, metadata)
     if directory.name == 'imgedit':

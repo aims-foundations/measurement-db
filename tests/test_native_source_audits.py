@@ -63,6 +63,121 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _inter
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _oasst
 
+import math
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _reasoning_gym
+
+class ReasoningGymSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory();self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'reasoning_gym';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/reasoning_gym')/'metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        self.raw=self.directory/'raw'/self.metadata['build']['parameters']['layout']['results']
+        self.run='easy/test_model-a_20250101_000000'
+        self.other='hard/test_model-b_20250101_000000'
+        self.excluded=self.metadata['build']['parameters']['exclusions']['ambiguous_identity_run']
+        self.summary=dict(model='test/model-a',provider='Fixture',max_tokens=64,temperature=.5,top_p=.9,
+            completions_per_prompt=3,git_hash='a'*40,system_prompt='Give an answer with its reasoning.')
+        def response(answer,score,**extra):return dict(model_answer=answer,full_model_response='Recorded output: '+str(answer),score=score,**extra)
+        def row(question,answer,completions):return dict(question=question,expected_answer=answer,
+            best_model_answer=answer,best_full_model_response='Recorded best',best_score=max(c['score'] for c in completions),
+            mean_score=sum(c['score'] for c in completions)/len(completions),completions=completions)
+        self.rows=[row('What is 2 + 2?','4',[response('4',1),response('partial',.25),response('ERROR',0,error='grading exception')]),
+            row('What is 2 + 2?','4',[response('3',0)]),
+            row('Boundary arithmetic?','1',[response('1',math.nextafter(1.,math.inf))])]
+        self.documents={}
+        for run,model in [(self.run,'test/model-a'),(self.other,'test/model-b'),(self.excluded,'openai/o3-mini')]:
+            folder=self.raw/run;folder.mkdir(parents=True)
+            summary={**self.summary,'model':model}
+            (folder/'summary.json').write_text(json.dumps(summary))
+            data=dict(name='calculation',category='arithmetic',config=dict(seed=3,size=3),system_prompt=summary['system_prompt'],
+                completions_per_prompt=3,total_examples=len(self.rows),results=copy.deepcopy(self.rows))
+            target=folder/'arithmetic/calculation.json';target.parent.mkdir();target.write_text(json.dumps(data));self.documents[run]=target
+        self.builder=runpy.run_path(str((ROOT/'benchmarks/reasoning_gym')/'build.py'))['ReasoningGym']
+        output=self.directory.parent/'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),'--output',str(output)])
+        self.frames={p.stem:pd.read_parquet(p) for p in output.glob('*.parquet')}
+
+    def test_complete_records_and_repeats(self):
+        result=_reasoning_gym(self.directory,self.frames,self.metadata)
+        self.assertEqual(result,dict(source_subjects=2,source_items=4,source_responses=10,source_traces=10,
+            source_runs=2,source_task_files=2,source_ungraded_exceptions=2,source_boundary_roundoff=2,
+            source_partial_rewards=2,source_unattributed_completions=5))
+        shuffled={k:v.iloc[::-1].reset_index(drop=True) for k,v in self.frames.items()}
+        self.assertEqual(_reasoning_gym(self.directory,shuffled,self.metadata),result)
+        self.assertEqual(self.frames['responses'].trial.max(),4)
+
+    def test_changed_tables_are_rejected(self):
+        changes=['grade','null_to_zero','grade_to_null','trial','subject_link','item_link','condition','interactors',
+            'subject_name','subject_settings','harness','content','raw_id','criterion','verifier','item_features',
+            'missing_response','duplicate_response','missing_trace','trace_output','trace_score','trace_error','trace_row','trace_index']
+        for change in changes:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,subjects,items,traces=[frames[k] for k in ['responses','subjects','items','traces']]
+            if change=='grade':responses.loc[0,'response']=.123
+            elif change=='null_to_zero':responses.loc[responses.response.isna(),'response']=0.
+            elif change=='grade_to_null':responses.loc[0,'response']=float('nan')
+            elif change=='trial':responses.loc[0,'trial']=90
+            elif change=='subject_link':responses.loc[0,'subject_id']=next(x for x in subjects.subject_id if x!=responses.loc[0,'subject_id'])
+            elif change=='item_link':responses.loc[0,'item_id']=next(x for x in items.item_id if x!=responses.loc[0,'item_id'])
+            elif change=='condition':responses.loc[0,'test_condition']='{}'
+            elif change=='interactors':responses.loc[0,'interactors']='{}'
+            elif change=='subject_name':subjects.loc[0,'display_name']='wrong'
+            elif change=='subject_settings':subjects.loc[0,'subject_features_extra']='provider=wrong'
+            elif change=='harness':subjects.loc[0,'harness']='wrong'
+            elif change=='content':items.loc[0,'content']='wrong'
+            elif change=='raw_id':items.loc[0,'raw_item_id']='wrong'
+            elif change=='criterion':items.loc[0,'grading_criterion']='{}'
+            elif change=='verifier':items.loc[0,'verifier']='{}'
+            elif change=='item_features':items.loc[0,'item_features']='dataset=wrong'
+            elif change=='missing_response':frames['responses']=responses.iloc[1:]
+            elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
+            elif change=='missing_trace':frames['traces']=traces.iloc[1:]
+            else:
+                trace=json.loads(traces.loc[0,'trace'])
+                if change=='trace_row':trace['source_row']=99
+                elif change=='trace_index':trace['completion_index']=99
+                elif change=='trace_output':trace['original_completion']['full_model_response']='wrong'
+                elif change=='trace_score':trace['original_completion']['score']=.99
+                elif change=='trace_error':trace['original_completion']['error']='invented error'
+                traces.loc[0,'trace']=json.dumps(trace)
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,RuntimeError,IndexError)):
+                _reasoning_gym(self.directory,frames,self.metadata)
+
+    def test_changed_native_records_are_rejected(self):
+        path=self.documents[self.run];original=path.read_text()
+        for change in ['score','output','question','answer','configuration','system_prompt','error','duplicate','missing']:
+            data=json.loads(original);row=data['results'][0]
+            if change=='score':row['completions'][0]['score']=.5
+            elif change=='output':row['completions'][0]['full_model_response']='wrong'
+            elif change=='question':row['question']='wrong'
+            elif change=='answer':row['expected_answer']='wrong'
+            elif change=='configuration':data['config']['seed']=99
+            elif change=='system_prompt':data['system_prompt']='wrong'
+            elif change=='error':row['completions'][2].pop('error')
+            elif change=='duplicate':row['completions'].append(copy.deepcopy(row['completions'][0]))
+            else:row['completions'].pop()
+            path.write_text(json.dumps(data))
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,RuntimeError,IndexError)):
+                _reasoning_gym(self.directory,self.frames,self.metadata)
+        path.write_text(original)
+
+    def test_new_identity_conflict_and_nonfinite_rewards_stop_build(self):
+        summary_path=self.raw/self.run/'summary.json';original=summary_path.read_text()
+        summary=json.loads(original);summary['model']='wrong';summary_path.write_text(json.dumps(summary))
+        with self.assertRaisesRegex(ValueError,'identity disagree'):
+            self.builder(str(self.directory/'build.py')).build_tables()
+        summary_path.write_text(original)
+        path=self.documents[self.run];original=path.read_text()
+        for score in [float('inf'),float('-inf'),float('nan'),1.01,-.01]:
+            data=json.loads(original);data['results'][0]['completions'][0]['score']=score;path.write_text(json.dumps(data))
+            with self.subTest(score=score),self.assertRaises(ValueError):
+                self.builder(str(self.directory/'build.py')).build_tables()
+        path.write_text(original)
+
+
 class OASSTSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory()

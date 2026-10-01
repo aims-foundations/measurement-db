@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: ec8286fbcd614d18af87b8283798732f5493c98c28151e9ea9f351359339c46f
+  items:
+    rows: 56181
+    logical_sha256: 6c509717a20c5b6511c788a9045668d310aa490637ac13b2267660de1347ef0e
+  responses:
+    rows: 186250
+    logical_sha256: 9a95c13514409f8f933c0ed89c1887412c47d9953fcac60d2d642414144e8b0c
+  subjects:
+    rows: 14
+    logical_sha256: 2ef7afc69577e75c765fc1a710bdbf8245000d9416469d4e0455649fe9f223e7
+  traces:
+    rows: 186250
+    logical_sha256: be1c0f36d8ec8696c59ac8a335f92939711a93be4725cb19816c2b21ef15562e
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 14
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 56181
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 186250
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 186250
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 19
+  source_task_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 1909
+  source_ungraded_exceptions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 145
+  source_boundary_roundoff:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 1
+  source_partial_rewards:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 28072
+  source_unattributed_completions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/open-thought/reasoning-gym-eval/tree/5f09fecc342a25d693895b7304a9dec43b47f436
+    locator: Original zero-shot result JSONs, run summary configurations and evaluator source at each recorded commit.
+    scope: All individually recorded completions from the 19 unambiguously attributed zero-shot runs. Keep native
+      partial rewards and full outputs; grade exceptions become null, with original error/score retained. One one-ULP
+      boundary excess is normalized. The conflicted Grok-named run remains raw-only.
+    expected: 5000
