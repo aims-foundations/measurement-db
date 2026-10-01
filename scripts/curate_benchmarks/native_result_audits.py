@@ -27016,11 +27016,112 @@ def _visualwebarena(directory, tables, metadata):
         source_subjects=len(subjects),source_items=len(items),source_responses=len(responses),source_traces=len(tables['traces']),source_assets=len(assets),**counts)
 
 
+def _multimodal_stem_ai(directory, tables, metadata):
+    import hashlib, math, mimetypes, re
+    import pandas as pd
+    from collections import defaultdict
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    validate_dataset(tables, context='Multimodal STEM source audit')
+    source_file = 'runs/all_models_all_mooc_courseware_samples.json'
+    records = json.loads((directory / 'raw' / source_file).read_text())
+    parameters = metadata['build']['parameters']
+    models, strategies = parameters['models'], parameters['prompt_strategies']
+    _check(set(models), set(strategies), 'STEM complete declared channel definitions')
+    grading = metadata['grading']['verifiers']['hybrid']
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    indexed = {}
+    for row in tables['traces'].itertuples():
+        trace = json.loads(row.trace)
+        _check(set(trace), {'source_file', 'source_row', 'channel', 'record'}, 'STEM explicit source locators')
+        _check(trace['source_file'], source_file, 'STEM original release file')
+        key = trace['source_row'], trace['channel']
+        _check(key not in indexed, True, 'STEM each original judgment exactly once')
+        indexed[key] = trace, responses[row.response_id]
+    expected, seen_assets, seen_subjects, seen_items = set(), set(), {}, {}
+    aliases, trials = defaultdict(set), defaultdict(list)
+    partial, success, failure, ungraded, repeated_images = 0, 0, 0, 0, 0
+    for index, sample in enumerate(records):
+        paths = [str(Path(sample['Course_name']) / filename) for filename in sample['Question_images']]
+        repeated_images += len(paths) - len(set(paths))
+        input_elements = [dict(content_type='text/plain', text=sample['Question'])]
+        manifest = []
+        for ordinal, name in enumerate(paths, 1):
+            captured = re.sub(r'[^A-Za-z0-9._/-]', lambda match: f'_x{ord(match[0]):02x}_', name)
+            body = (directory / 'raw/data/curated_dataset/question_images' / captured).read_bytes()
+            digest = hashlib.sha256(body).hexdigest()
+            location, media = f'question_images/{ordinal}/{name}', mimetypes.guess_type(name)[0]
+            input_elements.append(dict(content_type=media, location=location))
+            manifest.append(dict(asset_id=digest, path=location, media_type=media, role='input', ordinal=ordinal))
+            _check(assets[digest]['data'], body, 'STEM complete original image bytes')
+            _check(assets[digest]['byte_size'], len(body), 'STEM original image length')
+            seen_assets.add(digest)
+        for channel, model in models.items():
+            key = index, channel
+            expected.add(key)
+            trace, response = indexed[key]
+            native = sample['llm_responses'][channel]
+            _check(trace['record'], native, 'STEM complete released response, reasoning and grade')
+            grade = native['grade']['grade_score']
+            if grade is None:
+                _check(pd.isna(response['response']), True, 'STEM explicitly ungraded attempt remains missing')
+                ungraded += 1
+            else:
+                _check(type(grade) in (int, float) and math.isfinite(grade) and 0 <= grade <= 1, True, 'STEM original finite fractional score')
+                _check(response['response'], grade, 'STEM preserve partial credit without rounding or binarization')
+                partial += 0 < grade < 1
+                success += grade == 1
+                failure += grade == 0
+            trials[response['subject_id'], response['item_id']].append(response['trial'])
+            subject, item = subjects[response['subject_id']], items[response['item_id']]
+            _check(subject['display_name'], model, 'STEM source model alias')
+            _check(subject['harness'], parameters['labels']['harness'], 'STEM reference harness')
+            _check(_features(subject['subject_features_extra']), dict(source_channel=channel,
+                prompt_strategy=strategies[channel], historical_request_settings='not released'), 'STEM strategy attribution and explicit configuration gap')
+            aliases[response['item_id']].add(sample['Course_name'] + ':' + sample['Exercise_name'])
+            _check(json.loads(item['content']), dict(multimedia_elements=input_elements), 'STEM complete question and ordered images')
+            actual_manifest = json.loads(item['asset_manifest']) if isinstance(item['asset_manifest'], str) else []
+            _check(actual_manifest, manifest, 'STEM preserve repeated image occurrences and order')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=sample['Gold_answer'], rule=grading['rule']), 'STEM original reference answer and score interpretation')
+            verifier = json.loads(item['verifier'])
+            _check((verifier['class'], verifier['judge']), ('judge', grading['judge']), 'STEM released hybrid grading procedure')
+            _check(json.loads(verifier['spec']), dict(**grading['spec'], question_type=sample['Question_type'],
+                extracted_info=sample['Extracted_Info']), 'STEM complete task-specific grading information')
+            if response['subject_id'] in seen_subjects:
+                _check(seen_subjects[response['subject_id']], channel, 'STEM distinct source configurations')
+            definition = json.dumps(dict(content=input_elements, assets=manifest, reference_answer=sample['Gold_answer'],
+                question_type=sample['Question_type'], extracted_info=sample['Extracted_Info']), sort_keys=True)
+            if response['item_id'] in seen_items:
+                _check(seen_items[response['item_id']], definition, 'STEM content-and-grading identity for repeated questions')
+            seen_subjects[response['subject_id']], seen_items[response['item_id']] = channel, definition
+    _check(set(indexed), expected, 'STEM every individual model/channel observation retained')
+    _check(set(seen_subjects), set(subjects), 'STEM exact subject coverage')
+    _check(set(seen_items), set(items), 'STEM exact question coverage')
+    _check(seen_assets, set(assets), 'STEM only referenced image assets')
+    _check(len(responses), len(expected), 'STEM one response per source record and channel')
+    for identity, item in items.items():
+        _check(item['raw_item_id'] in aliases[identity], True, 'STEM canonical item retains an original upstream alias')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values)+1)), 'STEM repeated source questions retain all recorded responses')
+    _check(tables['benchmarks'].iloc[0].response_scale, canonical_response_scale(dict(kind='interval', min=0, max=1,
+        direction='higher_is_better')), 'STEM declared original score domain')
+    return dict(source_question_records=len(records), source_channels=len(models), source_responses=len(expected),
+        source_subjects=len(subjects), source_items=len(items), source_traces=len(indexed), source_assets=len(assets),
+        partial_credit_judgments=partial, full_credit_judgments=success, zero_credit_judgments=failure,
+        ungraded_judgments=ungraded, repeated_input_image_occurrences=repeated_images)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'multimodal_stem_ai':
+        return _multimodal_stem_ai(directory, tables, metadata)
     if directory.name == 'visualwebarena':
         return _visualwebarena(directory, tables, metadata)
     if directory.name == 'wikihow_agent':

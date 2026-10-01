@@ -25,6 +25,7 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _worka
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _swe_smith as _audit_swe_smith
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _wikihow_agent as _audit_wikihow_agent
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _visualwebarena as _audit_visualwebarena
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _multimodal_stem_ai as _audit_multimodal_stem_ai
 from measurement_db.build_base import _tables
 
 
@@ -5013,3 +5014,81 @@ class VisualWebArenaAuditTests(unittest.TestCase):
         path=raw/'data/annotations.csv';text=path.read_text();path.write_text(text.replace('Unsuccessful','Unknown'))
         with self.assertRaises(ValueError):self.builder(str(self.directory/'build.py')).build_tables()
         path.write_text(text)
+
+
+class MultimodalStemAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts');self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'multimodal_stem_ai';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT/'benchmarks/multimodal_stem_ai')/'metadata.yaml').read_text())
+        self.metadata['build']['parameters']['models']={'a':'fixture-model','b':'fixture-model'}
+        self.metadata['build']['parameters']['prompt_strategies']={'a':'basic','b':'reasoning'}
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        raw=self.directory/'raw';image=raw/'data/curated_dataset/question_images/course/image_x28_1_x29_.png';image.parent.mkdir(parents=True)
+        image.write_bytes(base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg=='))
+        records=[]
+        for index,grades in enumerate([(0.67,0.),(1.,0.5),(0.,None)]):
+            responses={channel:dict(message=dict(content='def incomplete(',reasoning='complete reasoning '*6000),
+                grade=dict(grade_score=grade,model_answer='source answer')) for channel,grade in zip(['a','b'],grades)}
+            records.append(dict(Course_name='course',Exercise_name=str(index),Question='Repeated original question' if index<2 else 'A different question',
+                Question_images=['image(1).png','image(1).png'] if index<2 else [],Gold_answer='reference solution',
+                Question_type='Compound',Extracted_Info=[['Numeric','2']],Course_Category='physics',Language='English',
+                Data_source='fixture',llm_responses=responses))
+        self.source=raw/'runs/all_models_all_mooc_courseware_samples.json';self.source.parent.mkdir();self.source.write_text(json.dumps(records))
+        self.builder=runpy.run_path(str((ROOT/'benchmarks/multimodal_stem_ai')/'build.py'))['MultimodalStemAI']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(raw),'--output',str(self.directory.parent/'tables')])
+        self.frames={p.stem:pd.read_parquet(p) for p in (self.directory.parent/'tables').glob('*.parquet')}
+
+    def test_fractional_and_missing_grades_preserve_complete_attempts(self):
+        expected=dict(source_question_records=3,source_channels=2,source_responses=6,source_subjects=2,source_items=2,
+            source_traces=6,source_assets=1,partial_credit_judgments=2,full_credit_judgments=1,zero_credit_judgments=2,
+            ungraded_judgments=1,repeated_input_image_occurrences=2)
+        self.assertEqual(_audit_multimodal_stem_ai(self.directory,self.frames,self.metadata),expected)
+        self.assertEqual(_audit_multimodal_stem_ai(self.directory,{n:f.iloc[::-1].reset_index(drop=True) for n,f in self.frames.items()},self.metadata),expected)
+        self.assertEqual(self.frames['responses'].trial.max(),2)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(100000).all())
+
+    def test_corrupt_scores_associations_and_assets_are_detected(self):
+        changes=['equal_sum_swap','binarize','ungraded_to_failure','wrong_subject','wrong_item','drop_response','clip_trace',
+            'source_row','source_file','channel','image_bytes','image_order','question','reference_answer','verifier','subject_configuration','trial']
+        for change in changes:
+            with self.subTest(change=change):
+                frames={n:f.copy(deep=True) for n,f in self.frames.items()};responses,items,traces=[frames[n] for n in ['responses','items','traces']]
+                if change=='equal_sum_swap':
+                    a,b=responses.index[responses.response.eq(0)][0],responses.index[responses.response.eq(1)][0];responses.loc[[a,b],'response']=[1.,0.]
+                elif change=='binarize':responses.loc[responses.response.eq(0.67),'response']=0.
+                elif change=='ungraded_to_failure':responses.loc[responses.response.isna(),'response']=0.
+                elif change=='wrong_subject':responses.loc[0,'subject_id']=next(v for v in frames['subjects'].subject_id if v!=responses.loc[0,'subject_id'])
+                elif change=='wrong_item':responses.loc[0,'item_id']=next(v for v in items.item_id if v!=responses.loc[0,'item_id'])
+                elif change=='drop_response':frames['responses']=responses.iloc[1:]
+                elif change=='image_bytes':frames['assets'].loc[0,'data']=b'clipped image'
+                elif change=='image_order':
+                    i=items.index[items.asset_manifest.notna()][0];v=json.loads(items.loc[i,'asset_manifest']);items.loc[i,'asset_manifest']=json.dumps(v[::-1])
+                elif change=='question':
+                    v=json.loads(items.loc[0,'content']);v['multimedia_elements'][0]['text']='wrong question';items.loc[0,'content']=json.dumps(v)
+                elif change=='reference_answer':
+                    v=json.loads(items.loc[0,'grading_criterion']);v['reference_answer']='wrong';items.loc[0,'grading_criterion']=json.dumps(v)
+                elif change=='verifier':
+                    v=json.loads(items.loc[0,'verifier']);v['spec']='{}';items.loc[0,'verifier']=json.dumps(v)
+                elif change=='subject_configuration':frames['subjects'].loc[0,'subject_features_extra']='source_channel=wrong'
+                elif change=='trial':responses.loc[0,'trial']=0
+                else:
+                    v=json.loads(traces.loc[0,'trace'])
+                    if change=='clip_trace':v['record']['message']['reasoning']='clipped'
+                    elif change=='source_row':v['source_row']=999
+                    elif change=='source_file':v['source_file']='invented.json'
+                    elif change=='channel':v['channel']='invented'
+                    traces.loc[0,'trace']=json.dumps(v)
+                with self.assertRaises((ValueError,RuntimeError,KeyError,StopIteration)):
+                    _audit_multimodal_stem_ai(self.directory,frames,self.metadata)
+
+    def test_invalid_numeric_scores_are_rejected(self):
+        original=json.loads(self.source.read_text())
+        for value in [float('inf'),float('nan'),-0.1,1.1]:
+            with self.subTest(value=value):
+                records=copy.deepcopy(original);records[0]['llm_responses']['a']['grade']['grade_score']=value;self.source.write_text(json.dumps(records));_tables.reload()
+                with contextlib.redirect_stdout(io.StringIO()),self.assertRaises((ValueError,RuntimeError)):
+                    self.builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),
+                        '--output',str(self.directory.parent/'invalid-tables')])
+        self.source.write_text(json.dumps(original))
