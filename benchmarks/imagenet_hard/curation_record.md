@@ -1,0 +1,3 @@
+- Scope the records explicitly to the ImageNet-A cohort of the zoom study. Preserve the fixed center-crop baseline and separate the main and additional classifier releases; oracle best-of-crop summaries are not extra attempts. All crop-level source data remain captured.
+- Replace positional placeholders with original images, sorted ImageFolder associations and reference classes. Correct the protocol to 200 masked classes and reconcile additional predictions against all published crop accuracies.
+- Keep the three original source files unchanged and retain native grade/prediction evidence. Historical weights and missing main-release predicted labels remain unknown. No model or external judge is rerun.

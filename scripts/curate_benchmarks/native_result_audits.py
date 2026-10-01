@@ -29610,11 +29610,138 @@ def _infibench(directory, tables, metadata):
         source_responses=len(seen), source_traces=len(traces), **counts)
 
 
+def _imagenet_hard(directory, tables, metadata):
+    """Check image identities, masked labels, release associations and every baseline attempt."""
+    import hashlib
+    import io
+    import re
+    import tarfile
+    from zipfile import ZipFile
+    import numpy as np
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='ImageNet-A zoom-study native source audit')
+    raw = directory / 'raw'
+    parameters = metadata['build']['parameters']
+    paths, selection = parameters['layout'], parameters['selection']
+    _check((selection['dataset'], selection['transform'], selection['scale']),
+        ('imagenet_a', 'LOC:1_1_Size:256', '256'), 'ImageNet zoom-study established baseline scope')
+    originals, images, source_items = [], {}, {}
+    with tarfile.open(raw / paths['images']) as archive:
+        names = sorted(member.name for member in archive if member.isfile()
+            and Path(member.name).suffix.lower() in selection['image_suffixes'].split(','))
+        classes = sorted({Path(name).parent.name for name in names})
+        for index, name in enumerate(names):
+            blob = archive.extractfile(name).read()
+            digest = hashlib.sha256(blob).hexdigest()
+            label = Path(name).parent.name
+            key = digest, label
+            images[digest] = blob
+            source_items.setdefault(key, name)
+            originals.append(dict(name=name, key=key, label=classes.index(label)))
+    native = {}
+    matrices = read_native_pickle(raw / paths['correctness'])[selection['dataset']]
+    for model, frame in matrices.items():
+        _check(frame.columns.tolist(), [str(i) for i in range(len(originals))], 'ImageNet native positional image order')
+        _check(bool(frame.index.is_unique and frame.columns.is_unique), True, 'ImageNet distinct crop and image axes')
+        _check(all(dtype == np.dtype(bool) for dtype in frame.dtypes), True, 'ImageNet original boolean grades')
+        values = frame.loc[selection['transform']].tolist()
+        native['main', model] = dict(file=paths['correctness'], grades=values, predictions=None)
+    aggregates = original_predictions = 0
+    labels = np.array([row['label'] for row in originals])
+    with ZipFile(raw / paths['additional']) as archive:
+        for name in sorted(archive.namelist()):
+            if '/predictions_pytorch_overallping/' not in name or not name.endswith('.pickle'):
+                continue
+            predictions = read_native_pickle(io.BytesIO(archive.read(name)))
+            accuracies = read_native_pickle(io.BytesIO(archive.read(name.replace('predictions_', 'accuracies_'))))
+            _check(list(predictions), list(accuracies), 'ImageNet additional scale associations')
+            for size, source in predictions.items():
+                values = np.asarray(source)
+                _check((values.ndim, len(values)), (1, len(originals)), 'ImageNet complete additional image order')
+                _check(bool(np.issubdtype(values.dtype, np.integer) and np.all((values >= 0) & (values < len(classes)))),
+                    True, 'ImageNet additional masked class indices')
+                _check(abs(100 * np.mean(values == labels) - accuracies[size]) < 1e-12,
+                    True, 'ImageNet every original crop accuracy independently reconciles')
+                aggregates += 1
+                original_predictions += len(values)
+            match = re.fullmatch(selection['prediction_pattern'], name)
+            if match:
+                key = 'additional', match[1]
+                _check(key not in native, True, 'ImageNet one baseline file per additional configuration')
+                values = np.asarray(predictions[int(selection['scale'])])
+                native[key] = dict(file=name, grades=(values == labels).tolist(), predictions=values.tolist())
+    subject_keys = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        key = features['source_release'], features['model_identifier']
+        _check(key in native, True, 'ImageNet observed classifier configuration')
+        _check((row.display_name, row.harness),
+            (parameters['model_names'][key[1]], parameters['labels']['harness']), 'ImageNet original model label')
+        _check(features, dict(source_release=key[0], model_identifier=key[1], crop=parameters['labels']['transform'],
+            historical_configuration=parameters['labels']['unavailable']), 'ImageNet no invented historical weights')
+        subject_keys[row.subject_id] = key
+    _check(Counter(subject_keys.values()), Counter({key: 1 for key in native}), 'ImageNet complete distinct release configurations')
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    _check(set(assets), set(images), 'ImageNet all original image byte identities')
+    for digest, blob in images.items():
+        _check((assets[digest]['data'], assets[digest]['byte_size']),
+            (blob, len(blob)), 'ImageNet unchanged image bytes')
+    item_keys = {}
+    for row in tables['items'].itertuples():
+        manifest = json.loads(row.asset_manifest)
+        criterion = json.loads(row.grading_criterion)
+        key = manifest[0]['asset_id'], criterion['reference_answer']
+        logical = 'images/' + key[0] + '.jpg'
+        _check(key in source_items, True, 'ImageNet original stimulus and reference class')
+        _check(row.raw_item_id, source_items[key], 'ImageNet first native item alias')
+        _check(manifest, [dict(asset_id=key[0], path=logical, media_type='image/jpeg', role='input', ordinal=1)],
+            'ImageNet exact image attachment without grading-label filename')
+        _check(json.loads(row.content), dict(multimedia_elements=[dict(content_type='image/jpeg', location=logical)]),
+            'ImageNet actual stimulus without class labels or invented prompts')
+        _check(_features(row.item_features), dict(source_cohort=selection['dataset']), 'ImageNet no grading-derived input features')
+        _check(criterion, dict(reference_answer=key[1], rule=json.dumps(dict(instruction=metadata['grading']['rule'], class_order=classes))),
+            'ImageNet native reference and complete masked class order')
+        _check(json.loads(row.verifier), dict(**{'class': 'exact_matcher'},
+            spec=json.dumps(metadata['grading']['verifiers']['classification'], sort_keys=True)), 'ImageNet declared masked grader')
+        item_keys[row.item_id] = key
+    _check(Counter(item_keys.values()), Counter({key: 1 for key in source_items}), 'ImageNet exact distinct stimulus/grading coverage')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'ImageNet exact evidence-to-response linkage')
+    seen = Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        index = trace['source_image_index']
+        _check(type(index) is int and 0 <= index < len(originals), True, 'ImageNet valid original image position')
+        key = subject_keys[row.subject_id]
+        source, image = native[key], originals[index]
+        _check(row.response, float(source['grades'][index]), 'ImageNet exact native baseline grade')
+        _check(item_keys[row.item_id], image['key'], 'ImageNet full source image association')
+        _check((row.trial, row.test_condition, pd.isna(row.interactors)),
+            (1, selection['transform'] + ':' + str(index), True), 'ImageNet original presentation preserved across duplicate images')
+        _check(trace, dict(source_release=key[0], source_file=source['file'], source_model=key[1],
+            source_image_index=index, source_image=image['name'], transform=selection['transform'],
+            native_correctness=source['grades'][index] if key[0] == 'main' else None,
+            predicted_class_index=source['predictions'][index] if key[0] == 'additional' else None),
+            'ImageNet complete original grade/prediction evidence and source aliases')
+        seen[*key, index] += 1
+    _check(seen, Counter({(*key, index): 1 for key in native for index in range(len(originals))}),
+        'ImageNet no dropped, duplicated or invented baseline observations')
+    return dict(source_subjects=len(native), source_items=len(source_items), source_assets=len(images),
+        source_image_records=len(originals), source_classes=len(classes), source_responses=len(seen), source_traces=len(traces),
+        source_duplicate_stimulus_aliases=len(originals) - len(source_items),
+        source_additional_predictions_checked=original_predictions, source_crop_accuracies_reconciled=aggregates,
+        source_main_baseline_records=len(matrices) * len(originals),
+        source_additional_baseline_records=(len(native) - len(matrices)) * len(originals))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'imagenet_hard':
+        return _imagenet_hard(directory, tables, metadata)
     if directory.name == 'infibench':
         return _infibench(directory, tables, metadata)
     if directory.name == 'indeterminacy':

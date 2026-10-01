@@ -53,6 +53,116 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _indet
 import tarfile
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _infibench
 
+import pickle
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _imagenet_hard
+
+class ImageNetHardAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'imagenet_hard'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/imagenet_hard') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        raw = self.directory / 'raw'; raw.mkdir()
+        layout = self.metadata['build']['parameters']['layout']
+        self.images = {'imagenet-a/n00000001/a.jpg': b'first complete image',
+            'imagenet-a/n00000001/b.jpg': b'first complete image',
+            'imagenet-a/n00000002/c.jpg': b'second complete image'}
+        with tarfile.open(raw / layout['images'], 'w') as archive:
+            for name, data in self.images.items():
+                member = tarfile.TarInfo(name); member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        self.correctness = {'imagenet_a': {'resnet50': pd.DataFrame(
+            [[True, True, True], [True, True, False]], index=pd.Index(['LOC:1_1_Size:10', 'LOC:1_1_Size:256'], dtype=object),
+            columns=pd.Index(['0', '1', '2'], dtype=object))}}
+        (raw / layout['correctness']).write_bytes(pickle.dumps(self.correctness, protocol=4))
+        self.additional = {}
+        for model in ['resnet50', 'vit_b_32']:
+            filename = 'imagenet-a/predictions_pytorch_overallping/imagenet-a-' + model + '-1-1_1_1.pickle'
+            predictions = {10: [0, 0, 1], 256: [1, 0, 1]}
+            self.additional[filename] = predictions
+            self.additional[filename.replace('predictions_', 'accuracies_')] = {10: 100.0, 256: 200 / 3}
+        with ZipFile(raw / layout['additional'], 'w') as archive:
+            for name, value in self.additional.items(): archive.writestr(name, pickle.dumps(value, protocol=4))
+        builder = runpy.run_path(str((ROOT / 'benchmarks/imagenet_hard') / 'build.py'))['ImageNetHard']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory / 'build.py')).main_from_args(['--source', str(raw), '--output', str(output)])
+        self.frames = {p.stem: pd.read_parquet(p) for p in output.glob('*.parquet')}
+
+    def test_original_images_repeated_presentations_and_release_associations(self):
+        result = _imagenet_hard(self.directory, self.frames, self.metadata)
+        self.assertEqual(result['source_responses'], 9)
+        self.assertEqual(result['source_subjects'], 3)
+        self.assertEqual(result['source_items'], 2)
+        self.assertEqual(result['source_assets'], 2)
+        self.assertEqual(result['source_duplicate_stimulus_aliases'], 1)
+        self.assertEqual(result['source_crop_accuracies_reconciled'], 4)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_imagenet_hard(self.directory, shuffled, self.metadata), result)
+
+    def test_changed_tables_are_detected(self):
+        changes = ['grade', 'trial', 'subject_link', 'item_link', 'subject_label', 'harness', 'subject_features',
+            'content', 'raw_id', 'item_features', 'criterion', 'verifier', 'condition', 'missing_response',
+            'duplicate_response', 'missing_trace', 'trace_index', 'trace_prediction', 'image_bytes', 'image_attachment']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, items, subjects, traces = [frames[n] for n in ['responses', 'items', 'subjects', 'traces']]
+            if change == 'grade': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+            elif change == 'trial': responses.loc[0, 'trial'] = 2
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = next(x for x in subjects.subject_id if x != responses.loc[0, 'subject_id'])
+            elif change == 'item_link': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+            elif change == 'subject_label': subjects.loc[0, 'display_name'] = 'wrong'
+            elif change == 'harness': subjects.loc[0, 'harness'] = 'wrong'
+            elif change == 'subject_features': subjects.loc[0, 'subject_features_extra'] = 'source_release=wrong'
+            elif change == 'content': items.loc[0, 'content'] = 'missing original image'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'item_features': items.loc[0, 'item_features'] = 'source_cohort=wrong'
+            elif change == 'criterion': items.loc[0, 'grading_criterion'] = json.dumps({'reference_answer': 'wrong'})
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif change in ['trace_index', 'trace_prediction']:
+                trace = json.loads(traces.loc[0, 'trace'])
+                trace['source_image_index' if change == 'trace_index' else 'predicted_class_index'] = 999
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif change == 'image_bytes': frames['assets'].loc[0, 'data'] = b'different image'
+            elif change == 'image_attachment': items.loc[0, 'asset_manifest'] = items.loc[1, 'asset_manifest']
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _imagenet_hard(self.directory, frames, self.metadata)
+
+    def test_changed_native_sources_are_detected(self):
+        raw = self.directory / 'raw'; layout = self.metadata['build']['parameters']['layout']
+        path = raw / layout['correctness']; original = path.read_bytes()
+        for change in ['grade', 'order']:
+            data = copy.deepcopy(self.correctness)
+            frame = data['imagenet_a']['resnet50']
+            if change == 'grade': frame.loc['LOC:1_1_Size:256', '0'] = False
+            else: frame.columns = pd.Index(['1', '0', '2'], dtype=object)
+            path.write_bytes(pickle.dumps(data, protocol=4))
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _imagenet_hard(self.directory, self.frames, self.metadata)
+            finally: path.write_bytes(original)
+        path = raw / layout['additional']; original = path.read_bytes()
+        for change in ['prediction', 'aggregate', 'outside_baseline']:
+            data = copy.deepcopy(self.additional)
+            name = next(k for k in data if '/predictions_' in k)
+            if change == 'aggregate': data[name.replace('predictions_', 'accuracies_')][256] = 1.0
+            else: data[name][10 if change == 'outside_baseline' else 256][0] = 1 - data[name][10 if change == 'outside_baseline' else 256][0]
+            with ZipFile(path, 'w') as archive:
+                for name, value in data.items(): archive.writestr(name, pickle.dumps(value, protocol=4))
+            try:
+                with self.subTest(change=change), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                    _imagenet_hard(self.directory, self.frames, self.metadata)
+            finally: path.write_bytes(original)
+
+
 class InfiBenchAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')

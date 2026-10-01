@@ -72,8 +72,8 @@ class _DataUnpickler(pickle.Unpickler):
         }
         if (module, name) in scientific_records:
             return type(name, (StoredRecord,), {"source_type": module + "." + name})
-        if module == "builtins" and name in {"int", "float", "set", "frozenset", "slice"}:
-            return {"int": int, "float": float, "set": set, "frozenset": frozenset, "slice": slice}[name]
+        if module == "builtins" and name in {"int", "float", "set", "frozenset", "slice", "dict"}:
+            return {"int": int, "float": float, "set": set, "frozenset": frozenset, "slice": slice, "dict": dict}[name]
         if (module, name) == ("collections", "OrderedDict"):
             return OrderedDict
         if (module, name) == ("collections", "defaultdict"):

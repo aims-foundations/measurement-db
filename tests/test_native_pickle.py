@@ -254,3 +254,17 @@ def test_scientific_json_preserves_full_values_and_explicit_nonfinite_outputs():
     assert result["literal"] == "nan" and result["bytes"] == {"base64": "AP8="}
     with pytest.raises(TypeError, match="Unsupported native JSON"):
         native_json_value(object())
+
+
+def test_captured_defaultdict_of_boolean_frames(tmp_path):
+    from collections import defaultdict
+    import pandas as pd
+    original = defaultdict(dict)
+    original['dataset']['model'] = pd.DataFrame([[True, False], [False, True]],
+        index=pd.Index(['crop_b', 'crop_a'], dtype=object),
+        columns=pd.Index(['1', '0'], dtype=object))
+    path = tmp_path / 'original_correctness.pkl'
+    path.write_bytes(pickle.dumps(original, protocol=4))
+    restored = read_native_pickle(path)
+    assert isinstance(restored, defaultdict) and restored.default_factory is dict
+    pd.testing.assert_frame_equal(restored['dataset']['model'], original['dataset']['model'])
