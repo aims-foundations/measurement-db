@@ -19,7 +19,7 @@ source_claims:
   source_responses:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -29,7 +29,7 @@ source_claims:
   source_subjects:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -39,7 +39,7 @@ source_claims:
   source_items:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -49,7 +49,7 @@ source_claims:
   source_traces:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -59,7 +59,7 @@ source_claims:
   raw_only_category_labels:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -69,7 +69,7 @@ source_claims:
   raw_only_summary_files:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -79,7 +79,7 @@ source_claims:
   unavailable_grades:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -89,7 +89,7 @@ source_claims:
   correct_predictions:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -99,7 +99,7 @@ source_claims:
   reference_index_disagreements:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -109,7 +109,7 @@ source_claims:
   one_option_observations:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -119,7 +119,7 @@ source_claims:
   repeated_source_occurrences:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -129,7 +129,7 @@ source_claims:
   outputs_in_alternate_fields:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
@@ -139,7 +139,7 @@ source_claims:
   outputs_over_8000_characters:
     kind: count
     origin: derived_from_data
-    source: https://github.com/MMLU-Pro-AI/MMLU-Pro-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    source: https://github.com/TIGER-AI-Lab/MMLU-Pro/tree/f418b116db00b065c2aea046518d8fcf74d39872/eval_results
     locator: All original JSON question arrays inside every published ZIP, including category members; read independently
       of the builder.
     scope: All original question records and full native outputs. Compare released answer letters directly; unrecorded
