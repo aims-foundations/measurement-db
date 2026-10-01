@@ -1308,6 +1308,40 @@ class SnapshotTests(unittest.TestCase):
         with self.assertRaises(BenchmarkMetadataError):
             validate_benchmark_metadata(self.metadata, path=self.metadata_path)
 
+    def test_public_drive_retries_transient_errors_without_relaxing_content_pins(self):
+        from scripts.build_measurement_tables.load_source_files import google_drive_entries
+        from urllib.error import HTTPError
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        download = 'https://drive.usercontent.google.com/download?id=file789&export=download'
+        page = b'<a href="https://drive.google.com/file/d/file789/view">result.json</a>'
+        identity = [dict(path='result.json', drive_id='file789', size=len(PAYLOAD),
+            digest=hashlib.sha256(PAYLOAD).hexdigest())]
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'.*\.json', path='drive/{path}')])
+        calls = []
+
+        def fetch(request, **kwargs):
+            url = request.full_url
+            calls.append(url)
+            if calls.count(url) == 1:
+                raise HTTPError(url, 500 if url == root else 502, 'Temporary source failure', None, None)
+            return io.BytesIO(page if url == root else PAYLOAD)
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+                patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            entries = google_drive_entries(source)
+        self.assertEqual([{key: row[key] for key in identity[0]} for row in entries], identity)
+        self.assertEqual(calls, [root, root, download, download])
+        self.assertEqual(sleep.call_count, 2)
+        with (patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                side_effect=HTTPError(root, 504, 'Gateway timeout', None, None)) as fetch,
+                patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep):
+            with self.assertRaises(HTTPError):
+                google_drive_entries(source)
+        self.assertEqual(fetch.call_count, 4)
+        self.assertEqual(sleep.call_count, 3)
+
     def test_public_drive_rejects_incomplete_unsafe_and_cyclic_trees(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts
         from urllib.error import HTTPError

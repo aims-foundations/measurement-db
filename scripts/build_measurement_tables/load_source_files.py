@@ -31,13 +31,13 @@ class SourceDataError(RuntimeError):
 
 
 def open_http_source(request, *, timeout, opener=None):
-    """Bound retries for temporary throttling; preserve ordinary HTTP failures."""
+    """Bound retries for throttling and temporary server errors; preserve other failures."""
     opener = urlopen if opener is None else opener
     for attempt in range(4):
         try:
             return opener(request, timeout=timeout)
         except HTTPError as error:
-            if error.code not in (429, 503) or attempt == 3:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == 3:
                 raise
             delay = 5 * 2 ** attempt
             retry_after = (error.headers or {}).get('Retry-After')
@@ -377,7 +377,7 @@ def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict
         raise SourceDataError(f'{name}: expected a public Google Drive folder URL')
 
     def read(url):
-        with urlopen(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}), timeout=120) as response:
+        with open_http_source(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}), timeout=120) as response:
             return response.read()
 
     class Links(HTMLParser):

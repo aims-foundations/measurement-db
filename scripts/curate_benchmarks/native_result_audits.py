@@ -26436,11 +26436,204 @@ def _live_agent_risk(directory, tables, metadata, source=None):
         source_traces=len(traces), source_assets=len(assets), **source['counts'])
 
 
+def _mmlu(directory, tables, metadata):
+    """Compare every stored observation with its original row, loading one source at a time."""
+    from functools import lru_cache
+    import math
+    import pyarrow.parquet as pq
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    raw = directory / 'raw'
+    source_paths = sorted((raw / 'runs').glob('*/hendrycksTest-*.parquet'))
+    expected = {str(path.relative_to(raw)): pq.read_metadata(path).num_rows for path in source_paths}
+    _check(bool(expected), True, 'MMLU nonempty original panel')
+    for name, column in [('subjects', 'subject_id'), ('items', 'item_id'), ('responses', 'response_id'), ('traces', 'response_id')]:
+        _check(tables[name][column].is_unique, True, 'MMLU unique ' + name + ' identifiers')
+    _check(len(tables['responses']), sum(expected.values()), 'MMLU complete native observation count')
+    _check(len(tables['benchmarks']), 1, 'MMLU one benchmark')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'MMLU original binary scale and direction')
+    _check(len(tables.get('assets', [])), 0, 'MMLU no invented assets')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = {row.response_id: row for row in tables['responses'].itertuples()}
+    _check(set(tables['traces'].response_id), set(responses), 'MMLU complete one-to-one trace linkage')
+    parameters = metadata['build']['parameters']
+
+    @lru_cache(maxsize=1)
+    def original_file(name):
+        records = pq.read_table(raw / name).to_pylist()
+        counts, original_trials = Counter(), []
+        for record in records:
+            key = record['full_prompt'], tuple(record['choices']), record['gold']
+            counts[key] += 1
+            original_trials.append(counts[key])
+        return records, original_trials
+
+    @lru_cache(maxsize=None)
+    def original_configuration(run):
+        summary = json.loads((raw / 'runs' / run / 'run.json').read_text())
+        return summary.get('config_general', summary.get('config'))
+
+    seen, definitions, first_source, used_subjects = {}, {}, {}, {}
+    successes = truncated = sentinels = repeated = 0
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        _check(set(trace), {'source_file', 'source_row', 'run_configuration', 'source_record'}, 'MMLU complete trace fields')
+        name, position = trace['source_file'], trace['source_row']
+        _check(name in expected and type(position) is int and 0 <= position < expected[name], True, 'MMLU original source locator')
+        positions = seen.setdefault(name, set())
+        _check(position not in positions, True, 'MMLU no reused native observation')
+        positions.add(position)
+        records, original_trials = original_file(name)
+        native = records[position]
+        run, task = Path(name).parent.name, Path(name).stem
+        config = original_configuration(run)
+        _check(trace['source_record'], native, 'MMLU complete unchanged native record')
+        _check(trace['run_configuration'], config, 'MMLU original run configuration')
+        _check(native['acc'] in [0, 1] and math.isfinite(native['acc']), True, 'MMLU finite native binary grade')
+        _check(native['choices'], ['A', 'B', 'C', 'D'], 'MMLU original answer continuations')
+        _check(type(native['gold']) is int and 0 <= native['gold'] < 4, True, 'MMLU original reference index')
+        scores = native['predictions']
+        _check(len(scores) == 4 and all(math.isfinite(value) for value in scores), True, 'MMLU four finite native likelihoods')
+        _check(float(scores.index(max(scores)) == native['gold']), native['acc'], 'MMLU native grade agrees with recorded likelihoods')
+        row = responses[trace_row.response_id]
+        _check(row.response, float(native['acc']), 'MMLU unchanged native grade')
+        _check(pd.isna(row.test_condition) and pd.isna(row.interactors), True, 'MMLU no invented response conditions')
+        item = items[row.item_id]
+        _check(json.loads(item['content']), dict(prompt=native['full_prompt'],
+            candidate_continuations=[' ' + letter for letter in native['choices']],
+            request_protocol=parameters['labels']['request_protocol']), 'MMLU full prompt and continuation protocol')
+        _check(json.loads(item['grading_criterion']), dict(reference_answer=native['choices'][native['gold']],
+            rule=metadata['grading']['rule']), 'MMLU original reference and grading rule')
+        verifier = json.loads(item['verifier'])
+        _check((verifier['class'], verifier.get('judge'), verifier.get('judged_by')),
+            ('exact_matcher', None, None), 'MMLU deterministic recorded verifier')
+        _check(json.loads(verifier['spec']), metadata['grading']['verifiers']['native'], 'MMLU original verifier description')
+        _check(item['item_features'], features_string(canonicalize_features(dict(task=task))), 'MMLU correct task family')
+        _check(pd.isna(item['asset_manifest']), True, 'MMLU no invented item attachment')
+        definition = task, native['full_prompt'], tuple(native['choices']), native['gold']
+        if row.item_id in definitions:
+            _check(definitions[row.item_id], definition, 'MMLU stable item identity')
+        definitions[row.item_id] = definition
+        first_source[row.item_id] = min(first_source.get(row.item_id, (name, position)), (name, position))
+        subject = subjects[row.subject_id]
+        _check(subject['display_name'], config['model_name'], 'MMLU literal evaluated model name')
+        features = dict(source_configuration={key: value for key, value in config.items() if key != 'job_id'},
+            configuration_scope=parameters['labels']['configuration_scope'])
+        _check(subject['subject_features_extra'], features_string(canonicalize_features(features)), 'MMLU exact recorded model settings')
+        if row.subject_id in used_subjects:
+            _check(used_subjects[row.subject_id], run, 'MMLU separate evaluated model configurations')
+        used_subjects[row.subject_id] = run
+        _check(row.trial, original_trials[position], 'MMLU retained repeated source occurrences')
+        repeated += int(original_trials[position] > 1)
+        successes += int(native['acc'])
+        truncated += int(any(value > 0 for value in native['truncated']))
+        sentinels += int(native['num_effective_few_shots'] == -1)
+    _check({name: len(positions) for name, positions in seen.items()}, expected, 'MMLU every original row represented exactly once')
+    _check(set(definitions), set(items), 'MMLU no orphan items')
+    _check(len(set(definitions.values())), len(items), 'MMLU exact item deduplication')
+    _check(set(used_subjects), set(subjects), 'MMLU no orphan subjects')
+    _check(Counter(used_subjects.values()), Counter({path.parent.name for path in source_paths}), 'MMLU one subject per recorded run')
+    for item_id, (name, position) in first_source.items():
+        _check(items[item_id]['raw_item_id'], Path(name).stem + ':' + str(position), 'MMLU first original item locator')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=len(responses),
+        source_traces=len(tables['traces']), source_runs=len(used_subjects), source_files=len(expected),
+        source_task_families=len({path.stem for path in source_paths}), source_successes=successes,
+        source_failures=len(responses) - successes, source_repeated_occurrences=repeated,
+        source_truncated_contexts=truncated, source_effective_fewshot_sentinels=sentinels)
+
+
+def _os_harm(directory, tables, metadata):
+    """Reconcile every safety/completion grade with its directly paired original execution."""
+    from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    raw = directory / 'raw'
+    grading = metadata['grading']['verifiers']['native']
+    validate_dataset(tables, context='OS-Harm full candidate')
+    _check(len(tables.get('assets', [])) == 0, True, 'OS-Harm no invented assets')
+    _check(tables['benchmarks'].iloc[0].response_scale == canonical_response_scale(metadata['benchmark']['response_scale']), True, 'OS-Harm original response scale')
+    subjects = tables['subjects'].set_index('subject_id').to_dict('index')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    responses = tables['responses'].set_index('response_id').to_dict('index')
+    native = {str(path.relative_to(raw)): json.loads(path.read_text())
+        for path in sorted((raw / 'drive').glob('*/pyautogui/screenshot_a11y_tree/*/*/*/better_log.json'))}
+    expected = {(name, metric) for name, record in native.items() if record['task']['instruction'].strip()
+        for metric in ['safety', 'success']}
+    seen, subject_sources, item_sources, totals, trials = set(), {}, {}, Counter(), Counter()
+    for trace_row in tables['traces'].itertuples():
+        trace = json.loads(trace_row.trace)
+        _check(set(trace) == {'source_file', 'record', 'judgment_file', 'judgment', 'caption_file', 'caption', 'trajectory_file', 'trajectory'}, True, 'OS-Harm complete trace fields')
+        name = trace['source_file']
+        _check(name in native, True, 'OS-Harm original execution locator')
+        log = native[name]
+        _check(trace['record'] == log, True, 'OS-Harm complete unchanged execution log')
+        parent = Path(name).parent
+        judgment_path = parent / 'judgment/gpt-4.1/aer/v3/judgment.json'
+        caption_path = parent / 'gpt-4o-2024-11-20.last_screenshot_caption.json'
+        trajectory_path = parent / 'traj.jsonl'
+        for field, source in [('judgment', judgment_path), ('caption', caption_path), ('trajectory', trajectory_path)]:
+            _check(trace[field + '_file'] == str(source), True, 'OS-Harm original auxiliary-file association')
+            if field == 'trajectory':
+                value = [json.loads(line) for line in (raw / source).read_text().splitlines() if line.strip()]
+            else:
+                value = json.loads((raw / source).read_text())
+            _check(trace[field] == value, True, 'OS-Harm complete unchanged auxiliary record')
+        response = responses[trace_row.response_id]
+        item, subject = items[response['item_id']], subjects[response['subject_id']]
+        criterion = json.loads(item['grading_criterion'])
+        metric = next(key for key, value in grading['metrics'].items()
+            if criterion == dict(reference_answer=None, rule=value['rule']))
+        _check((name, metric) not in seen and (name, metric) in expected, True, 'OS-Harm unique source execution and assessment')
+        seen.add((name, metric))
+        _check(type(trace['judgment'][metric]) is bool, True, 'OS-Harm native boolean assessment')
+        _check(response['response'] == float(trace['judgment'][metric]), True, 'OS-Harm unchanged assessment grade')
+        _check(json.loads(item['content']) == log['task'], True, 'OS-Harm complete recorded task content')
+        category = metadata['build']['parameters']['categories'][parent.parts[1]]
+        features = dict(category=category, application=parent.parts[-2], source_task=parent.parts[-1], assessment=metric)
+        _check(item['item_features'] == features_string(canonicalize_features(features)), True, 'OS-Harm original task and assessment features')
+        _check(item['raw_item_id'] == '/'.join([category, parent.parts[-2], parent.parts[-1]]) + '#' + metric, True, 'OS-Harm original task locator')
+        verifier = json.loads(item['verifier'])
+        _check(verifier['class'] == 'judge' and verifier['judge'] == 'gpt-4.1' and verifier['judged_by'] == 'llm', True, 'OS-Harm recorded judge identity')
+        _check(json.loads(verifier['spec']) == dict(**grading['verifier'], assessment=metric), True, 'OS-Harm original grading protocol')
+        _check(subject['display_name'] == log['params']['model'], True, 'OS-Harm literal evaluated model name')
+        _check(subject['harness'] == metadata['build']['parameters']['labels']['harness'], True, 'OS-Harm recorded agent harness')
+        configuration = dict(source_configuration=log['params'])
+        _check(subject['subject_features_extra'] == features_string(canonicalize_features(configuration)), True, 'OS-Harm complete recorded inference configuration')
+        _check(pd.isna(item['asset_manifest']) and pd.isna(response['test_condition']) and pd.isna(response['interactors']), True, 'OS-Harm no invented response conditions or assets')
+        definition = json.dumps(dict(task=log['task'], features=features), sort_keys=True)
+        if response['item_id'] in item_sources:
+            _check(item_sources[response['item_id']] == definition, True, 'OS-Harm consistent item identity')
+        item_sources[response['item_id']] = definition
+        configuration_key = json.dumps(log['params'], sort_keys=True)
+        if response['subject_id'] in subject_sources:
+            _check(subject_sources[response['subject_id']] == configuration_key, True, 'OS-Harm consistent subject configuration')
+        subject_sources[response['subject_id']] = configuration_key
+        trials[response['subject_id'], response['item_id']] += 1
+        _check(response['trial'] == trials[response['subject_id'], response['item_id']], True, 'OS-Harm original observation trial')
+        totals[metric + '_ones'] += int(trace['judgment'][metric])
+    _check(seen == expected, True, 'OS-Harm complete native record coverage')
+    _check(len(subject_sources) == len(set(subject_sources.values())) == len(subjects), True, 'OS-Harm complete distinct model configurations')
+    _check(len(item_sources) == len(set(item_sources.values())) == len(items), True, 'OS-Harm complete distinct item definitions')
+    _check(len(tables['responses']) == len(tables['traces']) == len(expected), True, 'OS-Harm complete response and trace counts')
+    observed = dict(source_executions=len(native), included_executions=len(expected) // 2,
+        source_empty_instructions=len(native) - len(expected) // 2, source_subjects=len(subjects), source_items=len(items),
+        source_responses=len(responses), source_traces=len(tables['traces']), **totals)
+    return observed
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'os_harm':
+        return _os_harm(directory, tables, metadata)
+    if directory.name == 'mmlu':
+        return _mmlu(directory, tables, metadata)
     if directory.name == 'live_agent_risk':
         return _live_agent_risk(directory, tables, metadata)
     if directory.name == 'goodai_ltm_benchmark':

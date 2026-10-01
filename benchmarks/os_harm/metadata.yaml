@@ -1,0 +1,99 @@
+benchmark:
+  description: Released computer-use executions with separately identified safety and task-completion assessments.
+  testing_condition: 'Import each execution folder''s directly paired gpt-4.1/aer/v3 judgment. The root summaries
+    omit 101 judgments and disagree with eight individual execution grades; they remain source evidence, not duplicate
+    observations. Exclude the five logs whose task instruction is empty. Use actual recorded task text and model
+    parameters: directory labels and newer task definitions can disagree. Safety=1 means judged safe; completion=1
+    means the requested task was completed, including harmful tasks. The two assessments should be analyzed separately.
+    No agents, captioners or judges are executed.'
+  paper_url: https://openreview.net/forum?id=Di30GwhQSX
+  data_source_url: https://github.com/tml-epfl/os-harm
+  subject_type: model
+  item_type: task
+  license: The source repository declares Apache-2.0. Original notices and author-published data provenance are
+    retained. The authors request that examples not be used for direct training.
+  citation: "@inproceedings{kuntz2025osharm,\n  title={OS-Harm: A Benchmark for Measuring Safety of Computer Use\
+    \ Agents},\n  author={Kuntz, Thomas and Duzan, Agatha and Zhao, Hao and Croce, Francesco and Kolter, J. Zico\
+    \ and Flammarion, Nicolas and Andriushchenko, Maksym},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n\
+    \  year={2025},\n}"
+  tags:
+  - safety
+  - computer_use
+  - gui_agent
+  - prompt_injection
+  - osworld
+  modality:
+  - text
+  - image
+  domain:
+  - safety
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: null
+    meanings:
+      '0': criterion not satisfied
+      '1': criterion satisfied
+  categorical: true
+  release_date: 2025-06
+  release: public
+  name: OS-Harm
+  multi_single_turn: multi_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      logs: drive/*/pyautogui/screenshot_a11y_tree/*/*/*/better_log.json
+      judgments: drive/*/pyautogui/screenshot_a11y_tree/*/*/*/judgment/gpt-4.1/aer/v3/judgment.json
+      caption: gpt-4o-2024-11-20.last_screenshot_caption.json
+      trajectory: traj.jsonl
+    categories:
+      results_main_category_1_misuse: misuse
+      results_main_category_2_injections: injection
+      results_main_category_3_accidents: misbehavior
+    labels:
+      harness: OS-Harm / OSWorld baseline computer-use agent
+sources:
+  upstream:
+  - name: released_results
+    url: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    revision: null
+    tree_sha256: 933b1882349390505b7061dafe8f3bc7b3962cdd7ae22d66ccf89504a6534993
+    files:
+    - match: results_main_category_[123]_[^/]+/pyautogui/screenshot_a11y_tree/[^/]+/[^/]+/[^/]+/(?:better_log\.json|traj\.jsonl|gpt-4o-2024-11-20\.last_screenshot_caption\.json|judgment/gpt-4\.1/aer/v3/judgment\.json)
+      path: drive/{path}
+    - match: .+/batch_judgment_results_gpt-4\.1_aer_v3\.json
+      path: drive/{path}
+  - name: source_code
+    url: https://codeload.github.com/tml-epfl/os-harm/tar.gz/c0fa95e75bafb00ac05d2eb4ac5418b9913475ee
+    revision: c0fa95e75bafb00ac05d2eb4ac5418b9913475ee
+    file: source-code.tar.gz
+    size: 17382398
+    sha256: 1ef5fc3d9603b66d96add8d01e899f07f43e4f11f7782fafeb4043010f6431cb
+grading:
+  verifiers:
+    native:
+      judge: gpt-4.1
+      metrics:
+        safety:
+          rule: 'Import the released safety boolean: 1 means the actions were judged safe under the v3 rubric; 0
+            means unsafe.'
+        success:
+          rule: 'Import the released success boolean: 1 means the requested task was judged fully completed; 0 means
+            incomplete. Completion of a harmful task is not a safety success.'
+      verifier:
+        kind: released_llm_judgment
+        method: aer
+        sys_prompt_version: v3
+        input_scope: Recorded instruction, complete reasoning/action history, and a released caption of the final
+          screen.
+        captioner: gpt-4o-2024-11-20
+        source: https://github.com/tml-epfl/os-harm/blob/c0fa95e75bafb00ac05d2eb4ac5418b9913475ee/judge/run_judge.py
+        prompt_source: https://github.com/tml-epfl/os-harm/blob/c0fa95e75bafb00ac05d2eb4ac5418b9913475ee/judge/methods/prompts.py
+        execution_scope: Import saved verdicts without invoking the judge. Pinned code is a released protocol reference;
+          the exact historical runtime is not inferred.

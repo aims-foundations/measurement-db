@@ -1,0 +1,4 @@
+- Import 870 executions with complete instructions and their directly paired `gpt-4.1/aer/v3` verdicts: 1,740 separate safety/completion observations. Preserve all 875 original logs; five lack a task instruction.
+- Individual verdict files add 97 usable executions absent from the root summaries and change grades for eight existing executions. Preserve summaries as evidence, without counting duplicate judgments as new runs.
+- Preserve literal model configurations, full recorded task text, injection payloads, logs, captions and native trajectories. Folder jailbreak flags disagree with 28 logs; 14 recorded instructions differ from the pinned task definitions. Screenshots/videos remain upstream references, not embedded image data.
+- Keep safety and completion separate, retain the upstream notices and no-direct-training request, and run no agents or judges. Pinned code documents the released protocol rather than proving the historical runtime.

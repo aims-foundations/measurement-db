@@ -13,6 +13,7 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT.parent))
 from measurement_db.scripts.curate_benchmarks.batch2_audits import verify_batch2
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _os_harm as _audit_os_harm
 
 
 class NativeTrajectoryAuditTests(unittest.TestCase):
@@ -2391,6 +2392,210 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
             path.write_text(original)
         with ZipFile(self.raw / 'coco/val2017.zip', 'w'): pass
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
+
+
+class OSHarmNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'os_harm'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/os_harm') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        for model in range(2):
+            for task in range(2 + int(model == 0)):
+                folder = self.directory / 'raw/drive/results_main_category_1_misuse/pyautogui/screenshot_a11y_tree' / (
+                    'misleading-folder-' + str(model) + '_jailbreak') / 'editor' / ('task_' + str(task))
+                folder.mkdir(parents=True)
+                record = dict(params=dict(model='Same named model', temperature=model, action_space='pyautogui',
+                    observation_type='screenshot_a11y_tree', max_tokens=1500),
+                    task=dict(instruction='Actual task ' + str(task) if task < 2 else '', jailbreak=False, injection=None),
+                    steps=[dict(response='def invalid(\n' + 'complete output; ' * 2000,
+                        actions=['recorded action'], a11y_tree='Original accessibility tree', screenshot_file='step_0.png')])
+                (folder / 'better_log.json').write_text(json.dumps(record))
+                verdict = dict(reasoning='The original judge explanation.', safety=bool(task), success=not bool(task), violation_step=None)
+                target = folder / 'judgment/gpt-4.1/aer/v3/judgment.json'
+                target.parent.mkdir(parents=True)
+                target.write_text(json.dumps(verdict))
+                (folder / 'gpt-4o-2024-11-20.last_screenshot_caption.json').write_text(json.dumps(dict(caption='Original screen', response=dict(model='captioner'))))
+                (folder / 'traj.jsonl').write_text(json.dumps(dict(action='recorded action', screenshot_file='step_0.png')) + '\n')
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/os_harm') / 'build.py'))['OSHarm']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {path.stem: pd.read_parquet(path) for path in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_exact_sources_configs_and_full_traces(self):
+        expected = dict(source_executions=5, included_executions=4, source_empty_instructions=1,
+            source_subjects=2, source_items=4, source_responses=8, source_traces=8, safety_ones=2, success_ones=2)
+        self.assertEqual(_audit_os_harm(self.directory, self.frames, self.metadata), expected)
+        shuffled = {key: frame.iloc[::-1].reset_index(drop=True) for key, frame in self.frames.items()}
+        self.assertEqual(_audit_os_harm(self.directory, shuffled, self.metadata), expected)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
+
+    def test_corrupt_grades_and_associations_are_detected(self):
+        changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'drop', 'duplicate',
+            'model', 'configuration', 'instruction', 'criterion', 'verifier', 'source_file',
+            'judgment', 'caption', 'trajectory', 'trace_clipping', 'missing_trace', 'scale']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+                elif change == 'equal_sum_swap':
+                    first, second = responses.index[responses.response.eq(0)][0], responses.index[responses.response.eq(1)][0]
+                    responses.loc[[first, second], 'response'] = [1., 0.]
+                elif change == 'subject': responses.loc[0, 'subject_id'] = next(value for value in subjects.subject_id if value != responses.loc[0, 'subject_id'])
+                elif change == 'item': responses.loc[0, 'item_id'] = next(value for value in items.item_id if value != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 0
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Guessed model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = '{}'
+                elif change == 'instruction': items.loc[0, 'content'] = '{}'
+                elif change == 'criterion': items.loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer=None, rule='Wrong rule'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps({**json.loads(items.loc[0, 'verifier']), 'judge': 'wrong'})
+                elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                else:
+                    trace = json.loads(traces.loc[0, 'trace'])
+                    if change == 'source_file': trace['source_file'] = 'wrong.json'
+                    elif change == 'judgment': trace['judgment']['safety'] = not trace['judgment']['safety']
+                    elif change == 'caption': trace['caption']['caption'] = 'Invented screen'
+                    elif change == 'trajectory': trace['trajectory'] = []
+                    elif change == 'trace_clipping': trace['record']['steps'][0]['response'] = 'Truncated'
+                    traces.loc[0, 'trace'] = json.dumps(trace)
+                with self.assertRaises((AssertionError, ValueError, RuntimeError, KeyError, StopIteration)):
+                    _audit_os_harm(self.directory, frames, self.metadata)
+
+    def test_invalid_native_grades_are_rejected(self):
+        path = next((self.directory / 'raw').glob('drive/*/*/*/*/*/*/judgment/gpt-4.1/aer/v3/judgment.json'))
+        original = path.read_bytes()
+        for value in [None, 0.5, float('inf')]:
+            with self.subTest(value=value):
+                record = json.loads(original)
+                record['safety'] = value
+                path.write_text(json.dumps(record))
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+                path.write_bytes(original)
+
+
+class MMLUNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'mmlu'
+        self.directory.mkdir()
+        folder = ROOT / 'benchmarks/mmlu'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        for run_index in range(2):
+            run = self.directory / 'raw/runs' / ('model_' + str(run_index))
+            run.mkdir(parents=True)
+            config = dict(model_name='Same named model', model_sha='snapshot_' + str(run_index),
+                model_dtype='torch.float16', lighteval_sha='reported-not-verified',
+                num_fewshot_seeds=1, override_batch_size=1, max_samples=None, job_id=run_index)
+            (run / 'run.json').write_text(json.dumps({('config' if run_index else 'config_general'): config}))
+            for task in ['hendrycksTest-history', 'hendrycksTest-mathematics']:
+                records = []
+                for index in [0, 1, 0]:
+                    correct = index != run_index
+                    records.append(dict(acc=int(correct), acc_norm=int(correct), gold=1,
+                        choices=['A', 'B', 'C', 'D'], predictions=[-2., -1. if correct else -4., -3., -5.],
+                        full_prompt='Full original prompt ' + str(index) + '\n' + 'Complete context.\u2028' * 1500,
+                        query='Question ' + str(index), example='Original example', instruction='',
+                        input_tokens=[[1, 2, 3]], cont_tokens=[[10], [20], [30], [40]],
+                        padded=[0, 0, 0, 0], truncated=[index] * 4,
+                        num_asked_few_shots=5, num_effective_few_shots=-1 if run_index else 5,
+                        original_unknown_field=dict(text='def invalid(', state=None)))
+                pd.DataFrame(records).to_parquet(run / (task + '.parquet'), index=False)
+        self.builder = runpy.run_path(str(folder / 'build.py'))['MMLU']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def test_repeated_occurrences_snapshots_and_complete_native_records(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mmlu
+        expected = dict(source_subjects=2, source_items=4, source_responses=12, source_traces=12,
+            source_runs=2, source_files=4, source_task_families=2, source_successes=6, source_failures=6,
+            source_repeated_occurrences=4, source_truncated_contexts=4, source_effective_fewshot_sentinels=6)
+        self.assertEqual(_mmlu(self.directory, self.frames, self.metadata), expected)
+        self.assertEqual(_mmlu(self.directory, {k: v.iloc[::-1].reset_index(drop=True) for k, v in self.frames.items()}, self.metadata), expected)
+        self.assertTrue(self.frames['traces'].trace.str.len().gt(16000).all())
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_swaps_clipping_and_wrong_associations_are_detected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _mmlu
+        changes = ['score', 'equal_sum_swap', 'subject', 'item', 'trial', 'condition', 'interactors',
+            'drop', 'duplicate', 'extra_item', 'extra_subject', 'model', 'configuration', 'task',
+            'raw_item_id', 'prompt', 'choices', 'reference', 'verifier', 'trace_clip',
+            'trace_tokens', 'trace_field', 'trace_configuration', 'source_file', 'source_row', 'missing_trace', 'scale']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+                elif change == 'equal_sum_swap':
+                    first, second = responses.index[responses.response.eq(0)][0], responses.index[responses.response.eq(1)][0]
+                    responses.loc[[first, second], 'response'] = [1., 0.]
+                elif change == 'subject': responses.loc[0, 'subject_id'] = next(x for x in subjects.subject_id if x != responses.loc[0, 'subject_id'])
+                elif change == 'item': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 9
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'invented'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'extra_item': frames['items'] = pd.concat([items, items.iloc[:1]], ignore_index=True)
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Wrong model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] = '{}'
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                elif change == 'task': items.loc[0, 'item_features'] = 'task=wrong'
+                elif change == 'raw_item_id': items.loc[0, 'raw_item_id'] = 'wrong:0'
+                elif change in ['prompt', 'choices']:
+                    value = json.loads(items.loc[0, 'content']); value['prompt' if change == 'prompt' else 'candidate_continuations'] = 'Wrong'
+                    items.loc[0, 'content'] = json.dumps(value)
+                elif change == 'reference': items.loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer='D', rule='wrong'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps({'class': 'judge', 'spec': '{}'})
+                elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+                else:
+                    value = json.loads(traces.loc[0, 'trace'])
+                    if change == 'trace_clip': value['source_record']['full_prompt'] = value['source_record']['full_prompt'][:16000]
+                    elif change == 'trace_tokens': value['source_record']['input_tokens'] = []
+                    elif change == 'trace_field': value['source_record'].pop('original_unknown_field')
+                    elif change == 'trace_configuration': value['run_configuration']['model_sha'] = 'wrong'
+                    elif change == 'source_file': value['source_file'] = 'wrong.parquet'
+                    elif change == 'source_row': value['source_row'] = 2
+                    traces.loc[0, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _mmlu(self.directory, frames, self.metadata)
+
+    def test_invalid_native_scores_and_reference_indices_are_rejected(self):
+        path = next((self.directory / 'raw/runs').glob('*/*.parquet'))
+        original = pd.read_parquet(path)
+        for column, value in [('acc', float('inf')), ('acc', 0.5), ('gold', 0.5), ('gold', 4)]:
+            with self.subTest(column=column, value=value):
+                frame = original.astype({column: float})
+                frame.loc[0, column] = value
+                frame.to_parquet(path, index=False)
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+                original.to_parquet(path, index=False)
 
 
 class LiveAgentRiskNativeAuditTests(unittest.TestCase):
