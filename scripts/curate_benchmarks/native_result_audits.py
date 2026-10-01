@@ -30767,6 +30767,142 @@ def _wonderbread(directory, tables, metadata):
         **{'source_' + family + '_grades': sum(key[2].startswith(family + '/') for key in expected) for family in p['results']})
 
 
+def _threeeed(directory, tables, metadata):
+    import hashlib
+    from zipfile import ZipFile
+    import numpy as np
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+
+    validate_dataset(tables, context='3EED original predictions and multimodal inputs')
+    parameters = metadata['build']['parameters']
+    labels = parameters['labels']
+    _check(metadata['benchmark']['response_scale'],
+        dict(kind='interval', min=0, max=1, direction='higher_is_better'), '3EED native IoU scale')
+    _check(parameters['point_cloud_files'], dict(quad='lidar.bin', drone='lidar.bin', waymo='lidar.npy'),
+        '3EED original point-cloud formats')
+    _check(parameters['input_preprocessing'], dict(
+        point_sampling='Sample 16384 points. Retain XYZ. Recorded sample indices are unavailable.',
+        drone='Add 1.8 to the point-cloud and reference-box vertical coordinates.',
+        waymo='Frame suffixes 0/1/2/3/4 select F/FL/FR/SL/SR. Rotate XY and reference-box yaw by 0/-45/45/-90/90 degrees, respectively. No translation is applied.',
+        source='Recorded code_backup/src/joint_det_dataset.py: _get_3eed_pcd and _get_3eed_target_boxes.'),
+        '3EED recorded coordinate and sampling protocol')
+    native_verifier = metadata['grading']['verifiers']['native']
+    _check(native_verifier['function'], 'GroundingEvaluator.evaluate_bbox_by_contrast', '3EED native grading function')
+    _check(native_verifier['response_field'], 'ious[0]', '3EED retained top-1 score')
+    originals, configurations, targets = {}, {}, {}
+    with ZipFile(directory / 'raw/dataset/baseline_ckpt_pred.zip') as archive:
+        _check(hashlib.sha256(archive.read(native_verifier['member'])).hexdigest(), native_verifier['sha256'],
+            '3EED captured grading implementation checksum')
+        for member in sorted(archive.namelist()):
+            if member.startswith('__MACOSX/') or not member.endswith('/prediction.json'):
+                continue
+            record = json.loads(archive.read(member))
+            _check(set(record), {'id', 'utterance', 'gt_box', 'pred_box', 'ious'}, '3EED complete source fields')
+            run, frame = member.split('/predictions/')
+            _check(frame, record['id'] + '/prediction.json', '3EED exact original frame association')
+            _check((len(record['gt_box']), len(record['gt_box'][0]), len(record['pred_box']), len(record['ious'])),
+                (1, 7, 6, 1), '3EED one reference and top-1 prediction')
+            _check(isinstance(record['utterance'], str) and bool(record['utterance']), True, '3EED recorded referring expression')
+            if run not in configurations:
+                configurations[run] = json.loads(archive.read(run + '/config.json'))
+            originals[member] = dict(record=record, run=run)
+            target = dict(utterance=record['utterance'], gt_box=record['gt_box'])
+            _check(targets.setdefault(record['id'], target), target, '3EED matching stimuli across distinct runs')
+    _check(bool(originals), True, '3EED nonempty original predictions')
+
+    # Independently match each recorded target to the source annotation after
+    # the original deterministic coordinate transform. Never use a grade or
+    # reference annotation as a predictor input.
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    input_manifests, used_assets = {}, set()
+    with ZipFile(directory / 'raw/dataset/3eed_dataset.zip') as archive:
+        for frame, target in targets.items():
+            platform = frame.split('/')[0]
+            folder = '3eed_dataset/' + frame
+            annotation = json.loads(archive.read(folder + '/meta_info.json'))
+            matches = 0
+            for obj in annotation['ground_info']:
+                utterance = ' '.join(obj['caption'].replace(',', ' ,').split()) + ' . not mentioned'
+                box = np.array(obj['bbox_3d'][:7], dtype=np.float64)
+                if platform == 'drone':
+                    box[2] += 1.8
+                elif platform == 'waymo':
+                    angle = np.radians([0, -45, 45, -90, 90][int(frame.rsplit('_', 1)[1])])
+                    rotation = np.array([[np.cos(angle), -np.sin(angle), 0],
+                                         [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+                    box[:3] = np.dot(box[:3], rotation.T)
+                    box[6] += angle
+                matches += utterance == target['utterance'] and box.astype(np.float32).tolist() == target['gt_box'][0]
+            _check(matches, 1, '3EED exact original target in the recorded coordinate frame')
+            manifest = []
+            for ordinal, (filename, media_type, role) in enumerate([
+                ('lidar.npy' if platform == 'waymo' else 'lidar.bin', 'application/octet-stream', 'point_cloud'),
+                ('image.jpg', 'image/jpeg', 'context_image')], 1):
+                payload = archive.read(folder + '/' + filename)
+                digest = hashlib.sha256(payload).hexdigest()
+                _check(digest in assets, True, '3EED complete original input bytes')
+                _check(assets[digest]['data'] == payload and assets[digest]['byte_size'] == len(payload),
+                    True, '3EED unchanged LiDAR and RGB bytes')
+                used_assets.add(digest)
+                manifest.append(dict(asset_id=digest, path=frame + '/' + filename,
+                    media_type=media_type, role=role, ordinal=ordinal))
+            input_manifests[frame] = manifest
+    _check(set(assets), used_assets, '3EED no additional or unlinked input assets')
+
+    subjects = {}
+    for subject in tables['subjects'].itertuples():
+        features = _features(subject.subject_features_extra)
+        features['configuration'] = json.loads(features['configuration'])
+        run = features['source_run']
+        _check(run in configurations, True, '3EED original run identity')
+        _check(subject.display_name, labels['subject'] + ' [' + run + ']', '3EED distinct recorded configuration label')
+        _check(subject.harness, labels['harness'], '3EED harness attribution')
+        _check(features, dict(source_run=run, configuration_member=run + '/config.json',
+            configuration=configurations[run], checkpoint_scope=labels['checkpoint_scope']), '3EED full native run configuration')
+        subjects[subject.subject_id] = run
+    _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), '3EED complete separate run configurations')
+    items = {}
+    for item in tables['items'].itertuples():
+        frame = item.raw_item_id
+        _check(frame in targets, True, '3EED observed frame identifier')
+        target = targets[frame]
+        _check(item.content, target['utterance'], '3EED exact recorded referring expression')
+        _check(json.loads(item.asset_manifest), input_manifests[frame], '3EED ordered inputs without target annotations')
+        features = _features(item.item_features)
+        features['input_preprocessing'] = json.loads(features['input_preprocessing'])
+        _check(features, dict(source_platform=frame.split('/')[0], source_frame_id=frame,
+            input_scope=labels['input_scope'], input_preprocessing=parameters['input_preprocessing']), '3EED source input attributes')
+        _check(json.loads(item.grading_criterion), dict(reference_answer=json.dumps(target['gt_box'], allow_nan=False),
+            rule=metadata['grading']['rule']), '3EED complete recorded reference box and coordinate convention')
+        _check(json.loads(item.verifier), dict(**{'class': 'exact_matcher'},
+            spec=json.dumps(native_verifier, sort_keys=True)), '3EED original verifier provenance')
+        items[item.item_id] = frame
+    _check(Counter(items.values()), Counter({key: 1 for key in targets}), '3EED exactly one item per retained stimulus')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), '3EED exact response-trace linkage')
+    seen, run_counts = Counter(), Counter()
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        member = trace['source_member']
+        _check(member in originals, True, '3EED original observation location')
+        original = originals[member]
+        record, run = original['record'], original['run']
+        _check(trace, dict(source_file='dataset/baseline_ckpt_pred.zip', source_member=member,
+            configuration_member=run + '/config.json', input_archive='dataset/3eed_dataset.zip',
+            input_metadata_member='3eed_dataset/' + record['id'] + '/meta_info.json',
+            grade_status='recorded_native_iou', record=record), '3EED complete unmodified prediction and provenance')
+        _check((subjects[response.subject_id], items[response.item_id]), (run, record['id']), '3EED correct model-input association')
+        _check(response.response, record['ious'][0], '3EED exact original continuous grade')
+        _check((response.trial, response.test_condition), (1, run + ':validation'), '3EED original run condition')
+        seen[member] += 1
+        run_counts[run] += 1
+    _check(seen, Counter({key: 1 for key in originals}), '3EED every distinct saved output exactly once')
+    return dict(source_subjects=len(configurations), source_items=len(targets), source_assets=len(assets),
+        source_responses=len(originals), source_traces=len(traces),
+        source_training_validation_responses=run_counts['final_6384'],
+        source_standalone_evaluation_responses=sum(count for run, count in run_counts.items() if run != 'final_6384'))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30774,6 +30910,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'threeeed':
+        return _threeeed(directory, tables, metadata)
     if directory.name == 'tumlu':
         return _tumlu(directory, tables, metadata)
     if directory.name == 'aegis':

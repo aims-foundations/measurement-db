@@ -1,0 +1,3 @@
+- Preserve both distinct prediction collections: 8,616 retained training-validation outputs and 8,616 standalone evaluation outputs. The old builder incorrectly treated the latter as duplicate copies.
+- Retain exact utterances, full predicted/reference boxes, native IoU grades and four original run configurations; attach unchanged image and LiDAR bytes. Saved per-frame outputs do not cover every target/layer scored in the original aggregate logs.
+- Pin the original HF archives and Git source. Preserve the dataset card's conflicting license declarations and limits on historical checkpoint/sampling attribution. No inference or new grading runs.

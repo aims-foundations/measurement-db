@@ -1,0 +1,103 @@
+benchmark:
+  description: Released 3EED baseline predictions for outdoor language-conditioned 3D grounding, with original image
+    and LiDAR inputs and native box-overlap grades.
+  testing_condition: Preserve the retained training-validation predictions and all three standalone platform evaluation
+    runs as separate recorded configurations. Their predictions differ; none are discarded as duplicate copies.
+    Inputs retain the released utterance and unchanged scene assets. Grades are the recorded top-1 rotated-ground-truth
+    versus axis-aligned-prediction 3D IoU, without new inference. Only observations actually saved upstream are
+    included.
+  paper_url: https://arxiv.org/abs/2511.01755
+  data_source_url: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+  subject_type: model
+  item_type: 3d_grounding_instance
+  license: The pinned HF card header declares Artistic-2.0, while its prose declares Apache-2.0; this inconsistency
+    is retained rather than resolved by assumption. The original code LICENSE is Apache-2.0. The card also names
+    Waymo and M3ED upstream source terms.
+  citation: "@inproceedings{li2025_3eed,\n  title={3EED: Ground Everything Everywhere in 3D},\n  author={Li, Rong\
+    \ and Dong, Yuhao and Hu, Tianshuai and Liang, Ao and Liu, Youquan and Lu, Dongyue and Pan, Liang and Kong,\
+    \ Lingdong and Liang, Junwei and Liu, Ziwei},\n  booktitle={Advances in Neural Information Processing Systems\
+    \ (NeurIPS) Datasets and Benchmarks Track},\n  year={2025}\n}"
+  tags:
+  - 3d_grounding
+  - point_cloud
+  - lidar
+  - outdoor
+  - multimodal
+  - embodied
+  modality:
+  - text
+  - image
+  - point_cloud
+  domain:
+  - reasoning
+  - general
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2025-10
+  release: public
+  name: 3EED
+  version: 129fe3cc45722423c917943a4480ba454eb352bd
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      predictions_archive: dataset/baseline_ckpt_pred.zip
+      inputs_archive: dataset/3eed_dataset.zip
+      inputs_prefix: 3eed_dataset/
+      prediction_pattern: ^(?P<run>final_6384(?:/eval/[^/]+/[^/]+)?)/predictions/(?P<frame_id>[^/]+/[^/]+/[^/]+)/prediction.json$
+    labels:
+      subject: 3EED released baseline
+      harness: 3EED original recorded evaluation
+      input_scope: Original LiDAR and associated RGB scene, with the exact released utterance. The baseline loader
+        samples 16384 LiDAR points and returns XYZ. Exact sampled indices were not released. RGB is retained as
+        associated scene context, not claimed as a baseline model input.
+      checkpoint_scope: Run configuration is preserved verbatim. The retained training-validation output does not
+        identify its generating epoch per response. Standalone runs declare their checkpoint path. No stronger checkpoint
+        attribution is inferred.
+    point_cloud_files:
+      quad: lidar.bin
+      drone: lidar.bin
+      waymo: lidar.npy
+    input_preprocessing:
+      point_sampling: Sample 16384 points. Retain XYZ. Recorded sample indices are unavailable.
+      drone: Add 1.8 to the point-cloud and reference-box vertical coordinates.
+      waymo: Frame suffixes 0/1/2/3/4 select F/FL/FR/SL/SR. Rotate XY and reference-box yaw by 0/-45/45/-90/90 degrees,
+        respectively. No translation is applied.
+      source: 'Recorded code_backup/src/joint_det_dataset.py: _get_3eed_pcd and _get_3eed_target_boxes.'
+grading:
+  rule: Retain the single released ious[0] for the top-1 prediction. The native evaluator computes 3D IoU between
+    the rotated ground-truth box and axis-aligned predicted box; larger is better. Reference coordinates are the
+    recorded seven-component box, including the loader's +1.8 vertical shift for drone examples and camera-view
+    rotation for Waymo. Saved files retain one output per frame, whereas original logs aggregate additional target/layer
+    evaluations; their means need not match. Do not replace recorded grades or treat missing predictions as failures.
+  verifiers:
+    native:
+      kind: recorded_native_3d_iou
+      source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+      archive: dataset/baseline_ckpt_pred.zip
+      member: final_6384/eval/Val_quad/10-22-10-38/code_backup/src/grounding_evaluator.py
+      sha256: edd0e4d839dda7d8579a56b3f65214768f590e0485639f363ac5f7b66925856f
+      function: GroundingEvaluator.evaluate_bbox_by_contrast
+      response_field: ious[0]
+      definition: Volume of intersection divided by volume of union; native rotated-versus-aligned box implementation.
+sources:
+  upstream:
+  - name: dataset
+    url: https://huggingface.co/datasets/RRRong/3EED
+    revision: 129fe3cc45722423c917943a4480ba454eb352bd
+    files:
+    - match: .*
+      path: dataset/{path}
+  - name: code
+    url: https://github.com/iris0329/3eed
+    revision: 843a901f5367a6be5cc484b97c6ecad462961dfa
+    files:
+    - match: .*
+      path: code/{path}

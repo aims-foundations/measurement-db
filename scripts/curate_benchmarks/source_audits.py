@@ -1068,3 +1068,5 @@ SOURCE_AUDITS["aegis"] = verify_native_results
 SOURCE_AUDITS["tumlu"] = verify_native_results
 
 SOURCE_AUDITS["wonderbread"] = verify_native_results
+
+SOURCE_AUDITS["threeeed"] = verify_native_results

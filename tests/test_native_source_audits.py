@@ -78,6 +78,137 @@ from measurement_db import build_base
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _tumlu
 from measurement_db import build_base
 
+import hashlib
+import numpy as np
+from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _threeeed, _features
+
+class ThreeEEDSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory = Path(temporary.name) / 'threeeed'
+        raw = self.directory / 'raw/dataset'
+        raw.mkdir(parents=True)
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/threeeed') / 'metadata.yaml').read_text())
+        verifier = self.metadata['grading']['verifiers']['native']
+        implementation = b'# Synthetic immutable grader reference for the source-audit fixture.\n'
+        verifier['sha256'] = hashlib.sha256(implementation).hexdigest()
+        self.predictions = {verifier['member']: implementation}
+        self.inputs = {}
+        for platform, frame in [('quad', 'scene/000001'), ('drone', 'scene/000002'), ('waymo', 'scene/000003_1')]:
+            frame_id = platform + '/' + frame
+            caption = 'A blue car, next to a tree. ' + 'Full source context. ' * 900
+            box = [2., 1., 3., 4., 2., 1., 0.]
+            self.inputs['3eed_dataset/' + frame_id + '/meta_info.json'] = json.dumps(dict(
+                ground_info=[dict(caption=caption, bbox_3d=box)])).encode()
+            for name in ['image.jpg', 'lidar.npy' if platform == 'waymo' else 'lidar.bin']:
+                self.inputs['3eed_dataset/' + frame_id + '/' + name] = (platform + ':' + name + ':original input').encode()
+            native_box = np.array(box, dtype=np.float64)
+            if platform == 'drone':
+                native_box[2] += 1.8
+            if platform == 'waymo':
+                angle = -np.pi / 4
+                rotation = np.array([[np.cos(angle), -np.sin(angle), 0],
+                                     [np.sin(angle), np.cos(angle), 0], [0, 0, 1]])
+                native_box[:3] = np.dot(native_box[:3], rotation.T)
+                native_box[6] += angle
+            for run, grade in [('final_6384', 0.2), ('final_6384/eval/Val_' + platform + '/10-22-10-38', 0.6)]:
+                config = dict(eval=run != 'final_6384', rng_seed=0,
+                    test_dataset=['quad', 'drone', 'waymo'] if run == 'final_6384' else [platform])
+                self.predictions[run + '/config.json'] = json.dumps(config).encode()
+                record = dict(id=frame_id, utterance=' '.join(caption.replace(',', ' ,').split()) + ' . not mentioned',
+                    gt_box=[native_box.astype(np.float32).tolist()], pred_box=[grade, 0., 0., 4., 2., 1.], ious=[grade])
+                self.predictions[run + '/predictions/' + frame_id + '/prediction.json'] = json.dumps(record).encode()
+        self.predictions['__MACOSX/final_6384/predictions/quad/scene/000001/prediction.json'] = b'Not a native prediction.'
+        self.prediction_path = raw / 'baseline_ckpt_pred.zip'
+        self.input_path = raw / '3eed_dataset.zip'
+        self.write_archive(self.prediction_path, self.predictions)
+        self.write_archive(self.input_path, self.inputs)
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        cls = runpy.run_path(str((ROOT / 'benchmarks/threeeed') / 'build.py'))['ThreeEED']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory / 'build.py')).main_from_args(['--source', str(raw.parent), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    @staticmethod
+    def write_archive(path, members):
+        with ZipFile(path, 'w') as archive:
+            for name, data in members.items():
+                archive.writestr(name, data)
+
+    def test_preserves_distinct_runs_and_coordinate_matched_original_inputs(self):
+        result = _threeeed(self.directory, self.frames, self.metadata)
+        self.assertEqual(result, dict(source_subjects=4, source_items=3, source_assets=6,
+            source_responses=6, source_traces=6, source_training_validation_responses=3,
+            source_standalone_evaluation_responses=3))
+        self.assertGreater(self.frames['traces'].trace.str.len().min(), 16000)
+        reordered = {key: frame.iloc[::-1].reset_index(drop=True) for key, frame in self.frames.items()}
+        self.assertEqual(_threeeed(self.directory, reordered, self.metadata), result)
+
+    def test_corruption_of_original_associations_or_content_is_rejected(self):
+        cases = ['grade', 'missing_grade', 'item_link', 'subject_link', 'content', 'criterion', 'verifier',
+                 'asset_bytes', 'asset_link', 'trace_member', 'trace_record', 'missing_trace',
+                 'missing_response', 'trial', 'condition', 'configuration', 'preprocessing', 'item_alias']
+        for case in cases:
+            frames = {key: frame.copy(deep=True) for key, frame in self.frames.items()}
+            responses, items, traces = (frames[key] for key in ['responses', 'items', 'traces'])
+            if case == 'grade': responses.loc[0, 'response'] = 0.9
+            elif case == 'missing_grade': responses.loc[0, 'response'] = None
+            elif case == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif case == 'subject_link': responses.loc[0, 'subject_id'] = next(v for v in frames['subjects'].subject_id if v != responses.loc[0, 'subject_id'])
+            elif case == 'content': items.loc[0, 'content'] = 'A different object.'
+            elif case == 'criterion': items.loc[0, 'grading_criterion'] = '{"reference_answer":"[]", "rule":"Changed"}'
+            elif case == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif case == 'asset_bytes': frames['assets'].at[0, 'data'] = b'changed original input'
+            elif case == 'asset_link': items.loc[0, 'asset_manifest'] = items.loc[1, 'asset_manifest']
+            elif case in ['trace_member', 'trace_record']:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if case == 'trace_member': trace['source_member'] = 'unknown/prediction.json'
+                else: trace['record']['pred_box'][0] += 1
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            elif case == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif case == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif case == 'trial': responses.loc[0, 'trial'] = 2
+            elif case == 'condition': responses.loc[0, 'test_condition'] = 'wrong run'
+            elif case == 'configuration':
+                features = _features(frames['subjects'].loc[0, 'subject_features_extra'])
+                configuration = json.loads(features['configuration'])
+                configuration['rng_seed'] = 999
+                features['configuration'] = json.dumps(configuration, sort_keys=True)
+                frames['subjects'].loc[0, 'subject_features_extra'] = features_string(canonicalize_features(features))
+            elif case == 'preprocessing': items.loc[0, 'item_features'] = '{}'
+            elif case == 'item_alias': items.loc[0, 'raw_item_id'] = 'wrong/frame'
+            with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _threeeed(self.directory, frames, self.metadata)
+
+    def test_changed_original_assets_targets_protocol_or_scale_is_rejected(self):
+        prediction = next(key for key in self.predictions if key.endswith('prediction.json') and not key.startswith('__MACOSX/'))
+        config = 'final_6384/config.json'
+        original = json.loads(self.predictions[prediction])
+        for label, key, data in [
+            ('prediction', prediction, json.dumps(dict(original, pred_box=[99.] * 6)).encode()),
+            ('configuration', config, b'{"eval": false, "rng_seed": 999}'),
+            ('grader', self.metadata['grading']['verifiers']['native']['member'], b'Changed source grader')]:
+            self.write_archive(self.prediction_path, dict(self.predictions, **{key: data}))
+            with self.subTest(case=label), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _threeeed(self.directory, self.frames, self.metadata)
+            self.write_archive(self.prediction_path, self.predictions)
+        for label, suffix, data in [('input', '/image.jpg', b'changed image'),
+                                    ('annotation', '/meta_info.json', b'{"ground_info": []}')]:
+            key = next(key for key in self.inputs if key.endswith(suffix))
+            self.write_archive(self.input_path, dict(self.inputs, **{key: data}))
+            with self.subTest(case=label), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _threeeed(self.directory, self.frames, self.metadata)
+            self.write_archive(self.input_path, self.inputs)
+        self.metadata['benchmark']['response_scale']['direction'] = 'lower_is_better'
+        with self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+            _threeeed(self.directory, self.frames, self.metadata)
+
+
 class TumluSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
