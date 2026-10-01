@@ -2393,6 +2393,172 @@ class SugarCrepeNativeAuditTests(unittest.TestCase):
         with self.assertRaises(KeyError): _sugarcrepe_sources(self.directory)
 
 
+class LiveAgentRiskNativeAuditTests(unittest.TestCase):
+    def setUp(self):
+        import contextlib
+        import io
+        import runpy
+        import tarfile
+        from measurement_db.build_base import _tables
+
+        temporary = tempfile.TemporaryDirectory(dir=ROOT / 'artifacts')
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'live_agent_risk'
+        self.directory.mkdir()
+        (self.directory / 'raw').mkdir()
+        folder = ROOT / 'benchmarks/live_agent_risk'
+        self.metadata = yaml.safe_load((folder / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata))
+        parameters = self.metadata['build']['parameters']
+        self.files, self.records = {}, {}
+        self.game = 'experiments/nested/game__fixture'
+        self.result_file = self.game + '/end_game_results.json'
+        players = [dict(name=name, model='gpt-4o', provider='OpenAI', reasoning_effort='medium',
+            turn_time_limit_seconds=90, placement_reasoning_effort='low', planning_reasoning_effort='high') for name in ['Seat A', 'Seat B']]
+        self.records[self.result_file] = dict(winner='Seat A', victory_condition='Recorded rule', total_rounds=3,
+            players=[dict(name='Seat A', territories_controlled=1), dict(name='Seat B', territories_controlled=41)], original_field='unchanged')
+        self.records[self.game + '/game_manifest.json'] = dict(players=players,
+            rules=dict(max_rounds=3, territory_control_percentage=0.65), git_revision='reported_revision',
+            include_initial_troop_placement=True, generated_at_utc='original timestamp')
+        self.turn_file = self.game + '/turn_summary_turn_1.json'
+        self.records[self.turn_file] = dict(player=dict(players[0]), turn_number=1,
+            events=[dict(action='original invalid action', error='retained')], plan=dict(original='unmodified'))
+        self.call_file = 'experiments/nested/llm_interactions/game__fixture/Seat_A/round_01/turn_0001/0001_attack.json'
+        self.records[self.call_file] = dict(player='Seat A', model='gpt-4o', provider='OpenAI', phase='attack',
+            interaction_index=1, request=dict(prompt='Original full prompt\n\u2028' * 1200, timeout_seconds=25),
+            response=dict(raw_response='def incomplete(', error='Original API error', used_fallback_response=True),
+            original_unknown_field='retain exactly')
+        for i, (name, field) in enumerate(parameters['supplements'].items()):
+            game = 'summary_game_' + str(i)
+            self.records[name] = dict(game_folder='game_results/' + game,
+                config=dict(max_rounds=5 + i), **{field: [dict(name='Seat C', model='gpt-4.1', provider='OpenAI', reasoning_effort='none'),
+                    dict(name='Seat D', model='gpt-5', provider='OpenAI', reasoning_effort='high')]}, winner='Seat D')
+            self.records[game + '/end_game_results.json'] = dict(winner='Seat D', victory_condition='Native rule', total_rounds=5,
+                players=[dict(name='Seat C'), dict(name='Seat D')], original_field='unchanged')
+            self.records[game + '/turn_summary_turn_1.json'] = dict(player=dict(name='Seat C', model='gpt-4.1',
+                provider='OpenAI', reasoning_effort=None), original_setting=None)
+        self.records['unknown_game/end_game_results.json'] = dict(winner='nano-medium-b', victory_condition='Original rule',
+            players=[dict(name=name) for name in ['nano-medium-a', 'nano-medium-b', 'nano-medium-c']], original_field='unchanged')
+        self.records['calibration/end_game_results.json'] = dict(winner='Alpha', players=[dict(name='Alpha'), dict(name='Bravo')])
+        self.records['llm_interactions/uncompleted_game/Seat_A/0001.json'] = dict(player='Seat A', model='gpt-4o', provider='OpenAI',
+            response=dict(raw_response='An ungraded probe'), request=dict(prompt='Probe only'))
+        for name in list(self.records):
+            if name.endswith('/end_game_results.json'):
+                self.files[str(Path(name).parent) + '/game_state_turn_0.csv'] = b'Territory,Post-placement troops\nOriginal territory,17\n'
+        layout = parameters['layout']
+        with tarfile.open(self.directory / 'raw' / layout['source'], 'w:gz') as archive:
+            for name in parameters['resources'].values():
+                data=('# Original reference ' + name).encode(); member=tarfile.TarInfo(layout['source_prefix'] + name)
+                member.size=len(data); archive.addfile(member, io.BytesIO(data))
+        self._write_archive()
+        self.builder = runpy.run_path(str(folder / 'build.py'))['LiveAgentRisk']
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.directory / 'raw'),
+                '--output', str(self.directory.parent / 'tables')])
+        self.frames = {p.stem: pd.read_parquet(p) for p in (self.directory.parent / 'tables').glob('*.parquet')}
+
+    def _write_archive(self):
+        import io
+        import tarfile
+        with tarfile.open(self.directory / 'raw' / self.metadata['build']['parameters']['layout']['results'], 'w:gz') as archive:
+            data = dict(self.files, **{name: json.dumps(value, ensure_ascii=False).encode() for name, value in self.records.items()})
+            for name, body in data.items():
+                member = tarfile.TarInfo('./' + name); member.size = len(body)
+                archive.addfile(member, io.BytesIO(body))
+
+    def test_complete_seats_configurations_unknown_labels_and_full_failed_calls(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _live_agent_risk
+        result = _live_agent_risk(self.directory, self.frames, self.metadata)
+        self.assertEqual(result['source_responses'], 9)
+        self.assertEqual(result['source_items'], 4)
+        self.assertEqual(result['source_placeholder_games'], 1)
+        self.assertEqual(result['source_manifest_games'], 1)
+        self.assertEqual(result['source_supplement_games'], 2)
+        self.assertEqual(result['source_full_calls'], 1)
+        self.assertEqual(result['source_fallback_calls'], 1)
+        self.assertEqual(result['source_unknown_model_seats'], 3)
+        self.assertEqual(result['source_long_traces'], 1)
+        self.assertTrue(self.frames['responses'].trial.eq(2).any())
+        self.assertFalse(self.frames['items'].content.str.contains('Post-placement troops').any())
+        self.assertFalse(self.frames['items'].content.str.contains('territories_controlled').any())
+        self.assertTrue(self.frames['traces'].trace.str.contains('Post-placement troops').all())
+        self.assertEqual(self.frames['responses'].response.sum(), 4)
+
+    def test_corruption_of_scores_settings_game_context_and_logs_is_rejected(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _live_agent_risk, _live_agent_risk_sources
+        source = _live_agent_risk_sources(self.directory, self.metadata)
+        changes = ['score', 'subject', 'item', 'trial', 'condition', 'interactors', 'drop', 'duplicate',
+            'extra_subject', 'extra_item', 'extra_asset', 'model', 'configuration', 'effort', 'verified_revision',
+            'scale', 'task', 'rules', 'roster', 'post_state_leak', 'winner_leak', 'reference', 'verifier',
+            'raw_item_id', 'asset_bytes', 'asset_path', 'asset_role', 'trace_clip', 'missing_call', 'missing_turn',
+            'missing_history', 'missing_field', 'source_file', 'seat', 'fallback', 'missing_trace']
+        for change in changes:
+            with self.subTest(change=change):
+                frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+                responses, items, subjects, assets, traces = [frames[name] for name in ['responses', 'items', 'subjects', 'assets', 'traces']]
+                if change == 'score': responses.loc[0, 'response'] = 1 - responses.loc[0, 'response']
+                elif change == 'subject': responses.loc[0, 'subject_id'] = 'unknown'
+                elif change == 'item': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+                elif change == 'trial': responses.loc[0, 'trial'] = 99
+                elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong seat'
+                elif change == 'interactors': responses.loc[0, 'interactors'] = 'invented'
+                elif change == 'drop': frames['responses'] = responses.iloc[1:]
+                elif change == 'duplicate': frames['responses'] = pd.concat([responses, responses.iloc[:1]], ignore_index=True)
+                elif change == 'extra_subject': frames['subjects'] = pd.concat([subjects, subjects.iloc[:1]], ignore_index=True)
+                elif change == 'extra_item': frames['items'] = pd.concat([items, items.iloc[:1]], ignore_index=True)
+                elif change == 'extra_asset': frames['assets'] = pd.concat([assets, assets.iloc[:1]], ignore_index=True)
+                elif change == 'model': subjects.loc[0, 'display_name'] = 'Other model'
+                elif change == 'configuration': subjects.loc[0, 'subject_features_extra'] += ';invented=yes'
+                elif change == 'effort': subjects.loc[0, 'reasoning_effort'] = 'xhigh'
+                elif change == 'verified_revision': subjects.loc[0, 'harness_version'] = 'claimed-executed-code'
+                elif change == 'scale': frames['benchmarks'].loc[0, 'response_scale'] = json.dumps(dict(kind='interval', min=0, max=1))
+                elif change in ['task', 'rules', 'roster', 'post_state_leak', 'winner_leak']:
+                    value = json.loads(items.loc[0, 'content'])
+                    key = dict(task='task', rules='known_rules', roster='released_roster', post_state_leak='initial_board', winner_leak='winner')[change]
+                    value[key] = 'wrong or leaked context'; items.loc[0, 'content'] = json.dumps(value, sort_keys=True)
+                elif change == 'reference': items.loc[0, 'grading_criterion'] = json.dumps(dict(reference_answer='Seat A', rule='guess winner'))
+                elif change == 'verifier': items.loc[0, 'verifier'] = json.dumps(dict(**{'class': 'judge'}, spec='{}'))
+                elif change == 'raw_item_id': items.loc[0, 'raw_item_id'] = 'unknown game'
+                elif change == 'asset_bytes': assets.loc[0, 'data'] = assets.loc[0, 'data'][:-1]
+                elif change in ['asset_path', 'asset_role']:
+                    value = json.loads(items.loc[0, 'asset_manifest']);value[0]['path' if change == 'asset_path' else 'role']='wrong'
+                    items.loc[0, 'asset_manifest'] = json.dumps(value)
+                elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+                else:
+                    index = next(i for i, text in enumerate(traces.trace) if len(text) > 16000)
+                    value = json.loads(traces.loc[index, 'trace'])
+                    if change == 'trace_clip': value['interactions'][0]['record']['request']['prompt'] = value['interactions'][0]['record']['request']['prompt'][:16000]
+                    elif change == 'missing_call': value['interactions'] = []
+                    elif change == 'missing_turn': value['turns'] = []
+                    elif change == 'missing_history': value['game_history'] = {}
+                    elif change == 'missing_field': value['record'].pop('original_field')
+                    elif change == 'source_file': value['source_file'] = 'wrong/end_game_results.json'
+                    elif change == 'seat': value['seat'] = 'Seat B'
+                    elif change == 'fallback': value['interactions'][0]['record']['response']['used_fallback_response'] = False
+                    traces.loc[index, 'trace'] = json.dumps(value)
+                with self.assertRaises((ValueError, KeyError)):
+                    _live_agent_risk(self.directory, frames, self.metadata, source)
+
+    def test_ambiguous_rosters_and_conflicting_model_identity_are_rejected(self):
+        import copy
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _live_agent_risk_sources
+        baseline = copy.deepcopy(self.records)
+        for change in ['winner', 'empty_roster', 'duplicate_seat', 'conflicting_model']:
+            with self.subTest(change=change):
+                self.records = copy.deepcopy(baseline)
+                if change == 'winner': self.records[self.result_file]['winner'] = 'Unknown player'
+                elif change == 'empty_roster': self.records[self.result_file]['players'] = []
+                elif change == 'duplicate_seat': self.records[self.result_file]['players'][1]['name'] = 'Seat A'
+                else: self.records[self.turn_file]['player']['model'] = 'Wrong model'
+                self._write_archive()
+                with self.assertRaises(ValueError):
+                    _live_agent_risk_sources(self.directory, self.metadata)
+                with self.assertRaises(ValueError):
+                    self.builder(str(self.directory / 'build.py')).build_tables()
+
+
 class GoodAILTMNativeAuditTests(unittest.TestCase):
     def setUp(self):
         import contextlib

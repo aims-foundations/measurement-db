@@ -26252,11 +26252,197 @@ def _goodai_ltm(directory, tables, metadata, source=None):
         source_traces=len(traces), source_assets=len(assets), **source['counts'])
 
 
+def _live_agent_risk_sources(directory, metadata):
+    """Read native game paths and records independently of the builder's table joins."""
+    import tarfile
+    from collections import defaultdict
+    from pathlib import PurePosixPath
+
+    parameters = metadata['build']['parameters']
+    layout = parameters['layout']
+    with tarfile.open(directory / 'raw' / layout['results'], 'r:gz') as archive:
+        files = {member.name.removeprefix('./'): archive.extractfile(member).read()
+            for member in archive.getmembers() if member.isfile()}
+    documents = {name: json.loads(body) for name, body in files.items() if name.endswith('.json')}
+    games, records, subjects = {}, {}, {}
+    turns, calls = defaultdict(list), defaultdict(list)
+    counts = Counter(source_games=0, source_placeholder_games=0, source_manifest_games=0, source_supplement_games=0,
+        source_turn_summaries=0, source_full_calls=0, source_fallback_calls=0, source_error_calls=0,
+        source_unknown_model_seats=0, source_long_traces=0)
+    for name in sorted(documents):
+        if not name.endswith('/end_game_results.json'):
+            continue
+        game = str(PurePosixPath(name).parent)
+        result = documents[name]
+        names = [player['name'] for player in result['players']]
+        _check(bool(names) and len(set(names)) == len(names), True, 'Risk nonempty, unique native seat roster')
+        _check(result['winner'] in names, True, 'Risk completed-game winner occurs in the native roster')
+        if set(n.lower() for n in names) <= set(parameters['placeholder_seats']):
+            counts['source_placeholder_games'] += 1
+            continue
+        manifest = documents.get(game + '/game_manifest.json')
+        games[game] = dict(source_file=name, result=result, manifest=manifest, supplement=None, supplement_file=None)
+        counts['source_games'] += 1
+        counts['source_manifest_games'] += manifest is not None
+    for name, field in parameters['supplements'].items():
+        summary = documents[name]
+        game = summary['game_folder'].removeprefix('game_results/')
+        _check(game in games and games[game]['manifest'] is None, True, 'Risk linked summary supplements a known unmanifested game')
+        games[game].update(supplement=summary, supplement_file=name, setup_players=summary[field])
+        counts['source_supplement_games'] += 1
+    for name in sorted(documents):
+        parts = PurePosixPath(name).parts
+        if parts[-1].startswith('turn_summary_turn_'):
+            game = str(PurePosixPath(name).parent)
+            if game in games:
+                record = documents[name]
+                turns[game, record['player']['name']].append(dict(source_file=name, record=record))
+        if 'llm_interactions' in parts:
+            index = parts.index('llm_interactions')
+            game = str(PurePosixPath(*parts[:index], parts[index + 1]))
+            if game in games:
+                record = documents[name]
+                calls[game, record['player']].append(dict(source_file=name, record=record))
+    with tarfile.open(directory / 'raw' / layout['source'], 'r:gz') as archive:
+        resources = [(name, archive.extractfile(layout['source_prefix'] + name).read()) for name in sorted(parameters['resources'].values())]
+    allowed = {(game, player['name']) for game, row in games.items() for player in row['result']['players']}
+    _check(set(turns) <= allowed and set(calls) <= allowed, True, 'Risk every selected log belongs to a recorded seat')
+    configurations = {}
+    for game, seat in sorted(allowed):
+        row = games[game]
+        declared = row['manifest']['players'] if row['manifest'] else row.get('setup_players', [])
+        evidence = [player for player in declared if player['name'] == seat]
+        evidence += [entry['record']['player'] for entry in turns[game, seat]]
+        evidence += [{key: entry['record'][key] for key in ['provider', 'model']} for entry in calls[game, seat]]
+        values = defaultdict(list)
+        for description in evidence:
+            for key, value in description.items():
+                if key != 'name':
+                    values[key].append(value)
+        configuration = {}
+        for key, candidates in values.items():
+            nonnull = {json.dumps(value, sort_keys=True) for value in candidates if value is not None}
+            _check(len(nonnull) <= 1, True, 'Risk compatible non-null source settings')
+            configuration[key] = json.loads(next(iter(nonnull))) if nonnull else None
+        configurations[game, seat] = configuration
+    for game, row in games.items():
+        result, manifest, supplement = row['result'], row['manifest'], row['supplement']
+        reported_revision = manifest.get('git_revision') if manifest else None
+        known_rules = manifest['rules'] if manifest else (supplement['config'] if supplement else None)
+        roster = [dict(name=player['name'], configuration=configurations[game, player['name']]) for player in result['players']]
+        row['stimulus'] = dict(task=parameters['labels']['task'], game_instance=game, released_roster=roster,
+            known_rules=known_rules, include_initial_troop_placement=manifest.get('include_initial_troop_placement') if manifest else None,
+            reported_harness_revision=reported_revision, reference_code_revision=parameters['labels']['reference_revision'],
+            context_scope=parameters['labels']['context_scope'])
+        history = {name: body.decode('utf-8') for name, body in files.items() if str(PurePosixPath(name).parent) == game
+            and name.endswith(('.json', '.csv')) and PurePosixPath(name).name not in ['end_game_results.json', 'game_manifest.json']
+            and not PurePosixPath(name).name.startswith('turn_summary_')}
+        trials = Counter()
+        for position, player in enumerate(result['players']):
+            seat = player['name']
+            configuration = configurations[game, seat]
+            label = configuration.get('model') or seat
+            extra = dict(source_configuration=json.dumps(configuration, sort_keys=True),
+                identity_evidence='declared_model' if configuration.get('model') else 'source_seat_label')
+            if not configuration.get('model'):
+                extra['source_seat_label'] = seat
+            if reported_revision is not None:
+                extra['reported_harness_revision'] = reported_revision
+            descriptor = label, configuration.get('reasoning_effort'), json.dumps(extra, sort_keys=True)
+            subjects[descriptor] = True
+            trials[descriptor] += 1
+            trace = dict(source_file=row['source_file'], seat=seat, seat_position=position, record=result, manifest=manifest,
+                supplement_file=row['supplement_file'], supplement=supplement, game_history=history,
+                turns=turns[game, seat], interactions=calls[game, seat])
+            records[game, seat] = dict(subject=descriptor, game=game, grade=float(result['winner'] == seat),
+                trial=trials[descriptor], condition=row['source_file'] + '#seat=' + seat, trace=trace)
+            counts['source_unknown_model_seats'] += not bool(configuration.get('model'))
+            counts['source_long_traces'] += len(json.dumps(trace, ensure_ascii=False)) > 16000
+    counts['source_turn_summaries'] = sum(map(len, turns.values()))
+    counts['source_full_calls'] = sum(map(len, calls.values()))
+    counts['source_games_with_turns'] = len({game for (game, seat), entries in turns.items() if entries})
+    counts['source_games_with_calls'] = len({game for (game, seat), entries in calls.items() if entries})
+    for entries in calls.values():
+        counts['source_fallback_calls'] += sum(bool(entry['record']['response'].get('used_fallback_response')) for entry in entries)
+        counts['source_error_calls'] += sum(bool(entry['record']['response'].get('error')) for entry in entries)
+    return dict(games=games, records=records, subjects=subjects, resources=resources, counts=dict(counts))
+
+
+def _live_agent_risk(directory, tables, metadata, source=None):
+    """Check every seat, grade, configuration, historical state and full recorded call."""
+    import hashlib
+    import unicodedata
+    from measurement_db.scripts.build_measurement_tables.response_scales import canonical_response_scale
+
+    source = _live_agent_risk_sources(directory, metadata) if source is None else source
+    subjects, roster = {}, Counter()
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        effort = None if pd.isna(row.reasoning_effort) else row.reasoning_effort
+        descriptor = row.display_name, effort, json.dumps(features, sort_keys=True)
+        _check(row.harness, metadata['build']['parameters']['labels']['harness'], 'Risk released agent harness')
+        _check(pd.isna(row.harness_version) and pd.isna(row.access_date), True, 'Risk no invented verified runtime or access date')
+        subjects[row.subject_id] = descriptor
+        roster[descriptor] += 1
+    _check(roster, Counter({key: 1 for key in source['subjects']}), 'Risk complete model/configuration and unknown-label roster')
+    _check(json.loads(tables['benchmarks'].iloc[0].response_scale),
+        json.loads(canonical_response_scale(metadata['benchmark']['response_scale'])), 'Risk win/loss scale and direction')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    for name, lookup in [('items', items), ('traces', traces), ('assets', assets)]:
+        _check(len(lookup), len(tables[name]), 'Risk unique ' + name + ' associations')
+    for identity, row in assets.items():
+        _check(hashlib.sha256(row['data']).hexdigest(), identity, 'Risk exact reference-code bytes')
+        _check(row['byte_size'], len(row['data']), 'Risk complete reference-code length')
+    manifest = []
+    for ordinal, (path, body) in enumerate(source['resources'], 1):
+        identity = hashlib.sha256(body).hexdigest()
+        manifest.append(dict(asset_id=identity, path=path, media_type='text/x-python', role='task_program_reference', ordinal=ordinal))
+        _check(assets[identity]['data'] == body, True, 'Risk unmodified released reference program')
+    _check(set(assets), {row['asset_id'] for row in manifest}, 'Risk exact resource coverage')
+    seen, seen_items, checked_items, wins = Counter(), set(), set(), Counter()
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        game = str(Path(trace['source_file']).parent)
+        key = game, trace['seat']
+        expected = source['records'][key]
+        _check(trace == expected['trace'], True, 'Risk complete original calls, failures, moves, states and source records')
+        _check(subjects[row.subject_id], expected['subject'], 'Risk correct player configuration for every outcome')
+        _check(row.response, expected['grade'], 'Risk original winner without regrading by territory counts')
+        _check(row.trial, expected['trial'], 'Risk separate repeated seats in original roster order')
+        _check(row.test_condition, expected['condition'], 'Risk exact evaluated seat and source occasion')
+        _check(pd.isna(row.interactors), True, 'Risk no invented external actors')
+        item = items[row.item_id]
+        if (row.item_id, game) not in checked_items:
+            content = json.dumps(source['games'][game]['stimulus'], ensure_ascii=False, sort_keys=True)
+            _check(item['content'], unicodedata.normalize('NFC', content).strip(), 'Risk setup without realized winner or post-placement state')
+            _check(item['raw_item_id'], game, 'Risk correct source game')
+            _check(_features(item['item_features']), {}, 'Risk no fabricated item covariates')
+            _check(json.loads(item['grading_criterion']), dict(reference_answer=None, rule=metadata['grading']['rule']),
+                'Risk outcome-independent grading criterion')
+            _check(json.loads(item['verifier']), dict(**{'class': 'exact_matcher'},
+                spec=json.dumps(metadata['grading']['verifiers']['win'], sort_keys=True)), 'Risk released winner protocol')
+            _check(json.loads(item['asset_manifest']), manifest, 'Risk explicit program-reference attachments')
+            checked_items.add((row.item_id, game))
+        seen[key] += 1
+        seen_items.add(row.item_id)
+        wins[game] += row.response
+    _check(seen, Counter({key: 1 for key in source['records']}), 'Risk every published AI seat exactly once')
+    _check(wins, Counter({game: 1 for game in source['games']}), 'Risk one original winner in each completed game')
+    _check(seen_items, set(items), 'Risk no extra or omitted games')
+    _check(set(traces), set(tables['responses'].response_id), 'Risk complete trace coverage')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=sum(seen.values()),
+        source_traces=len(traces), source_assets=len(assets), **source['counts'])
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'live_agent_risk':
+        return _live_agent_risk(directory, tables, metadata)
     if directory.name == 'goodai_ltm_benchmark':
         return _goodai_ltm(directory, tables, metadata)
     if directory.name == 'intercode':

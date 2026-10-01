@@ -1020,3 +1020,5 @@ SOURCE_AUDITS["qatch"] = verify_native_results
 SOURCE_AUDITS["intercode"] = verify_native_results
 
 SOURCE_AUDITS["goodai_ltm_benchmark"] = verify_native_results
+
+SOURCE_AUDITS["live_agent_risk"] = verify_native_results
