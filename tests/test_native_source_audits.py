@@ -43,6 +43,114 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _wmt_m
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _image2struct
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _tengu
+
+
+class TenguAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT/'artifacts')
+        self.addCleanup(temporary.cleanup);self.addCleanup(_tables.reload);_tables.reload()
+        self.directory=Path(temporary.name)/'tengu';self.directory.mkdir()
+        self.metadata=yaml.safe_load(((ROOT / 'benchmarks/tengu')/'metadata.yaml').read_text())
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata,sort_keys=False))
+        bank=[dict(Question='Original question '+str(index)+'\n{braces} aye\u0301',Category='reasoning',
+                   Answer='Reference '+str(index) if index!=2 else None,Criteria='Full task rubric '+str(index)) for index in range(1,4)]
+        path=self.directory/'raw'/self.metadata['build']['parameters']['layout']['questions']
+        path.parent.mkdir(parents=True);pd.DataFrame(bank).to_parquet(path,index=False)
+        self.sources={}
+        groups=list(self.metadata['grading']['verifiers'])[:2]
+        for model in ['Recorded-A','qwen__qwen3.6-plus_x3a_free']:
+            for group_index,group in enumerate(groups):
+                order=[0,1,2] if group_index==0 else [2,0]  # The second release omitted and reordered tasks.
+                rows=[]
+                for index in order:
+                    score=None if index==1 else 12 if (index==2 and model=='Recorded-A') else 8
+                    output='' if index==1 else ('long original answer\n'*900 if index==2 else 'original answer\u2028kept')
+                    if group_index==1:output+=' distinct judged generation'
+                    rows.append(dict(bank[index],id=index+1,ModelAnswer=output,score=score,
+                                     judge_output='Native judge explanation\n'+str(score)))
+                path=self.directory/'raw/data/judgements'/group/'lightblue__tengu_bench'/(model+'.json')
+                path.parent.mkdir(parents=True,exist_ok=True)
+                path.write_text('\n'.join(json.dumps(row,ensure_ascii=False) for row in rows)+'\n')
+                self.sources[path]=rows
+        output=self.directory.parent/'tables'
+        builder=runpy.run_path(str((ROOT / 'benchmarks/tengu')/'build.py'))['Tengu']
+        with contextlib.redirect_stdout(io.StringIO()):
+            builder(str(self.directory/'build.py')).main_from_args(['--source',str(self.directory/'raw'),'--output',str(output)])
+        self.frames={path.stem:pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_full_records_and_question_identity_after_exclusion(self):
+        observed=_tengu(self.directory,self.frames,self.metadata)
+        self.assertEqual(observed['source_responses'],10)
+        self.assertEqual(observed['source_subjects'],2)
+        self.assertEqual(observed['source_items'],5)
+        self.assertEqual(observed['source_null_scores'],2)
+        self.assertEqual(observed['source_invalid_scores'],2)
+        self.assertEqual(observed['source_positional_misalignments'],4)
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        shuffled={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_tengu(self.directory,shuffled,self.metadata),observed)
+
+    def test_changed_grades_rubrics_associations_and_traces_are_detected(self):
+        changes=['grade','null_to_zero','invalid_to_ten','trial','subject_link','item_link','harness','source_model',
+            'content','raw_id','features','reference','rule','verifier','condition','drop_response','duplicate_response',
+            'drop_trace','duplicate_trace','output','judge_explanation','grade_status','source_row','source_file','native_score','native_rubric']
+        for change in changes:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,subjects,items,traces=(frames[name] for name in ['responses','subjects','items','traces'])
+            if change=='grade':responses.loc[responses.response.notna().idxmax(),'response']=3
+            elif change=='null_to_zero':responses.loc[responses.response.isna().idxmax(),'response']=0
+            elif change=='invalid_to_ten':
+                ident=next(row.response_id for row in traces.itertuples() if json.loads(row.trace)['grade_status']=='invalid_upstream_score')
+                responses.loc[responses.response_id.eq(ident),'response']=10
+            elif change=='trial':responses.loc[0,'trial']=99
+            elif change=='subject_link':responses.loc[0,'subject_id']=subjects.subject_id.iloc[-1]
+            elif change=='item_link':responses.loc[0,'item_id']=items.item_id.iloc[-1]
+            elif change=='harness':subjects.loc[0,'harness']='wrong'
+            elif change=='source_model':subjects.loc[0,'subject_features_extra']='source_model_filename=wrong'
+            elif change=='content':items.loc[0,'content']='wrong'
+            elif change=='raw_id':items.loc[0,'raw_item_id']='1000:wrong'
+            elif change=='features':items.loc[0,'item_features']='category=wrong'
+            elif change in ['reference','rule']:
+                value=json.loads(items.loc[0,'grading_criterion']);value['reference_answer' if change=='reference' else 'rule']='wrong'
+                items.loc[0,'grading_criterion']=json.dumps(value)
+            elif change=='verifier':items.loc[0,'verifier']='{}'
+            elif change=='condition':responses.loc[0,'test_condition']='wrong'
+            elif change=='drop_response':frames['responses']=responses.iloc[1:]
+            elif change=='duplicate_response':frames['responses']=pd.concat([responses,responses.iloc[:1]])
+            elif change=='drop_trace':frames['traces']=traces.iloc[1:]
+            elif change=='duplicate_trace':frames['traces']=pd.concat([traces,traces.iloc[:1]])
+            else:
+                index=traces.trace.str.len().idxmax() if change=='output' else 0
+                value=json.loads(traces.loc[index,'trace'])
+                if change=='output':value['record']['ModelAnswer']=value['record']['ModelAnswer'][:8000]
+                elif change=='judge_explanation':value['record']['judge_output']='wrong'
+                elif change=='grade_status':value['grade_status']='wrong'
+                elif change=='source_row':value['source_row']=9999
+                elif change=='source_file':value['source_file']='wrong'
+                elif change=='native_score':value['record']['score']=9
+                elif change=='native_rubric':value['record']['Criteria']='wrong'
+                traces.loc[index,'trace']=json.dumps(value)
+            with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _tengu(self.directory,frames,self.metadata)
+
+    def test_changed_native_record_and_invalid_numbers_are_detected(self):
+        path=next(iter(self.sources));original=path.read_bytes()
+        for change in ['score','rubric','question','output','infinity','not_a_number']:
+            rows=copy.deepcopy(self.sources[path])
+            if change=='score':rows[0]['score']=7
+            elif change=='rubric':rows[0]['Criteria']='wrong'
+            elif change=='question':rows[0]['Question']='wrong'
+            elif change=='output':rows[0]['ModelAnswer']='wrong'
+            elif change=='infinity':rows[0]['score']=float('inf')
+            else:rows[0]['score']=float('nan')
+            path.write_text('\n'.join(json.dumps(row,ensure_ascii=False) for row in rows)+'\n')
+            try:
+                with self.subTest(change=change),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                    _tengu(self.directory,self.frames,self.metadata)
+            finally:path.write_bytes(original)
+
+
 class Image2StructAuditTests(unittest.TestCase):
     def setUp(self):
         import gzip

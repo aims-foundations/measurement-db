@@ -29120,11 +29120,104 @@ def _image2struct(directory, tables, metadata):
         source_traces=len(traces))
 
 
+def _tengu(directory, tables, metadata):
+    """Read original JSONL records without importing the transformation or judge."""
+    import hashlib
+    import math
+    import pyarrow.parquet as pq
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='Tengu native source audit')
+    parameters=metadata['build']['parameters'];labels=parameters['labels']
+    raw=directory/'raw'
+    bank=pq.read_table(raw/parameters['layout']['questions']).to_pylist()
+    questions={row['Question']:(index,row) for index,row in enumerate(bank,1)}
+    _check(len(questions),len(bank),'Tengu unique original question bank')
+    _check(metadata['benchmark']['response_scale'],dict(kind='discrete',values=list(range(11)),
+        direction='higher_is_better'),'Tengu native integer scale')
+    native,models,combinations,outputs={},set(),set(),defaultdict(set)
+    counts=Counter(source_null_scores=0,source_invalid_scores=0,source_empty_outputs=0,
+        source_long_outputs=0,source_error_outputs=0,source_judge_explanations=0,source_positional_misalignments=0)
+    for path in sorted(raw.glob(parameters['layout']['judgments'])):
+        name,model,group=str(path.relative_to(raw)),path.stem,path.parts[-3]
+        if model=='qwen__qwen3.6-plus_x3a_free':model='qwen__qwen3.6-plus:free'
+        _check(group in metadata['grading']['verifiers'],True,'Tengu declared original judge group')
+        with path.open() as stream:
+            for index,line in enumerate(line for line in stream if line.strip()):
+                record=json.loads(line)
+                qid,question=questions[record['Question']]
+                _check({key:record[key] for key in ['Question','Answer','Criteria','Category']},question,
+                       'Tengu unchanged original question, reference, rubric and category')
+                if 'id' in record:_check(record['id'],qid,'Tengu recorded question ID')
+                score=record['score']
+                _check(score is None or (type(score) in [int,float] and math.isfinite(score)),
+                       True,'Tengu finite numeric rating or explicit null')
+                status='recorded' if score is not None and score in range(11) else (
+                    'unavailable_upstream_score' if score is None else 'invalid_upstream_score')
+                native[name,index]=dict(record=record,model=model,group=group,qid=qid,
+                    grade=float(score) if status=='recorded' else None,status=status)
+                models.add(model);combinations.add((qid,group))
+                output=record['ModelAnswer'];_check(isinstance(output,str),True,'Tengu complete native output string')
+                counts['source_null_scores']+=score is None
+                counts['source_invalid_scores']+=status=='invalid_upstream_score'
+                counts['source_empty_outputs']+=not output.strip()
+                counts['source_long_outputs']+=len(output)>8000
+                counts['source_error_outputs']+=output.startswith(('ERROR','PERMANENT_ERROR','UNEXPECTED_ERROR'))
+                counts['source_judge_explanations']+=isinstance(record.get('judge_output'),str) and bool(record['judge_output'])
+                counts['source_positional_misalignments']+=qid!=index+1
+                outputs[model,qid].add(hashlib.sha256(output.encode()).hexdigest())
+    _check(bool(native),True,'Tengu actual original judgments are present')
+    counts['source_model_question_variants']=sum(len(values)>1 for values in outputs.values())
+    subjects={}
+    for subject in tables['subjects'].itertuples():
+        features=_features(subject.subject_features_extra);model=features['source_model_filename']
+        _check(features,dict(source_model_filename=model,historical_configuration=labels['historical_configuration']),
+               'Tengu no invented generation settings')
+        _check((subject.display_name,subject.harness),(model,labels['harness']),'Tengu generating model rather than judge')
+        _check(all(pd.isna(getattr(subject,name)) for name in ['reasoning_effort','harness_version','access_date']),
+               True,'Tengu unknown historical settings stay unknown')
+        subjects[subject.subject_id]=model
+    _check(Counter(subjects.values()),Counter({model:1 for model in models}),'Tengu exact source model roster')
+    question_ids={qid:row for qid,row in questions.values()}
+    items={}
+    for item in tables['items'].itertuples():
+        qid,group=item.raw_item_id.split(':',1);qid=int(qid)
+        question=question_ids[qid];protocol=metadata['grading']['verifiers'][group]
+        _check(item.content,question['Question'],'Tengu full original stimulus')
+        _check(_features(item.item_features),dict(category=question['Category'],judge_group=group,input_scope=labels['input_scope']),
+               'Tengu category and judge context without score leakage')
+        _check(json.loads(item.grading_criterion),dict(reference_answer=question['Answer'],
+            rule=metadata['grading']['rule']+'\nOriginal criteria:\n'+question['Criteria']),'Tengu reference and full task rubric')
+        _check(json.loads(item.verifier),dict(**{'class':'judge'},judge=protocol['judge'],judged_by='llm',
+            spec=json.dumps(protocol,sort_keys=True)),'Tengu original judge and historical prompt limitations')
+        items[item.item_id]=qid,group
+    _check(Counter(items.values()),Counter({key:1 for key in combinations}),'Tengu exact question/judge definitions')
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces),set(tables['responses'].response_id),'Tengu complete trace coverage')
+    seen=Counter()
+    for response in tables['responses'].itertuples():
+        text=json.loads(traces[response.response_id]);key=text['source_file'],text['source_row']
+        original=native[key]
+        _check(subjects[response.subject_id],original['model'],'Tengu original answerer association')
+        _check(items[response.item_id],(original['qid'],original['group']),'Tengu correct question and judge association')
+        _check(None if pd.isna(response.response) else response.response,original['grade'],
+               'Tengu original valid rating or explicitly flagged unavailable grade')
+        _check((response.trial,response.test_condition,pd.isna(response.interactors)),
+            (1,key[0]+':'+str(key[1]),True),'Tengu original judgment occasion')
+        _check(text,dict(source_file=key[0],source_row=key[1],grade_status=original['status'],record=original['record']),
+               'Tengu full original output, explanation, grading flag and invalid source value')
+        seen[key]+=1
+    _check(seen,Counter({key:1 for key in native}),'Tengu every native judgment, including missing and invalid grades')
+    return dict(source_questions=len(bank),source_subjects=len(subjects),source_items=len(items),
+        source_responses=len(native),source_traces=len(traces),**counts)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
     tables = {p.stem: pd.read_parquet(p) for p in root.glob("*.parquet")}
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
+    if directory.name == 'tengu':
+        return _tengu(directory, tables, metadata)
     if directory.name == 'image2struct':
         return _image2struct(directory, tables, metadata)
     if directory.name == 'wmt_mqm':
