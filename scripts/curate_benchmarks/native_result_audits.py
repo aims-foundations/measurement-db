@@ -30242,6 +30242,98 @@ def _rclicks(directory, tables, metadata):
         source_subsequent_masks=sum(state['click_type'] != 'first' for state in states.values()))
 
 
+def _decompile_bench(directory, tables, metadata):
+    """Check source records, duplicate aliases, grading inputs and complete outputs."""
+    import editdistance
+    import pyarrow.ipc as ipc
+    from measurement_db.scripts.build_measurement_tables.validate_measurement_tables import validate_dataset
+    validate_dataset(tables, context='Decompile-Bench original output audit')
+    p = metadata['build']['parameters']
+    _check(metadata['benchmark']['response_scale'], dict(kind='interval', min=0, max=1, direction='higher_is_better'),
+        'Decompile-Bench text-similarity scale, not a binary success proxy')
+    _check(p['systems'], {'ida_pseudo': 'IDA Pro', 'ghidra_pseudo': 'Ghidra'}, 'Decompile-Bench original decompiler identities')
+    protocol = metadata['grading']['verifiers']['edit_similarity']
+    _check(protocol['kind'], 'deterministic_recomputation_from_released_output', 'Decompile-Bench score provenance')
+    _check(protocol['entry_point'], 'decompile-bench/metrics/cal_edit_sim.py:compute_ES', 'Decompile-Bench native metric')
+    raw = directory / 'raw'
+    native, origins = {}, defaultdict(list)
+    source_rows = blank_slots = missing_input_rows = 0
+    id_keys = set()
+    for path in sorted((raw / p['layout']['release']).glob('*/*.arrow')):
+        with path.open('rb') as stream:
+            original = ipc.open_stream(stream).read_all()
+        _check(original.column_names, list(p['columns']), 'Decompile-Bench released fields')
+        split = p['splits'][path.parent.name]
+        for position, record in enumerate(original.to_pylist()):
+            source_rows += 1
+            _check((split, record['index']) not in id_keys, True, 'Decompile-Bench unique released source ID')
+            id_keys.add((split, record['index']))
+            key = (split, *[record[name] for name in p['columns'] if name != 'index'])
+            native.setdefault(key, dict(split=split, **record))
+            origins[key].append(dict(source_file=str(path.relative_to(raw)), source_row=position, index=record['index']))
+            blank_slots += sum(not record[name].strip() for name in p['systems'])
+            missing_input_rows += not any(record[name].strip() for name in ['asm', 'ida_asm', 'ghidra_asm'])
+    eligible = {key: row for key, row in native.items() if any(row[name].strip() for name in ['asm', 'ida_asm', 'ghidra_asm'])}
+    expected = {(json.dumps(origins[key], sort_keys=True), name): (key, record)
+        for key, record in eligible.items() for name in p['systems'] if record[name].strip()}
+    stimulus_fields = ['split', 'func_name', 'func_dep', 'func', 'test', 'opt', 'language', 'asm', 'ida_asm', 'ghidra_asm']
+    raw_ids = defaultdict(set)
+    for key, record in eligible.items():
+        raw_ids[tuple(record[field] for field in stimulus_fields)].update(
+            record['split'] + '/' + str(origin['index']) for origin in origins[key])
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        features = _features(row.subject_features_extra)
+        name = features['native_output_column']
+        _check((row.display_name, features), (p['systems'][name], dict(native_output_column=name,
+            configuration=p['labels']['configuration'])), 'Decompile-Bench recorded tool and configuration limits')
+        subjects[row.subject_id] = name
+    _check(Counter(subjects.values()), Counter(p['systems'].keys()), 'Decompile-Bench exact tool population')
+    items = tables['items'].set_index('item_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(set(traces), set(tables['responses'].response_id), 'Decompile-Bench every recorded output retained')
+    seen, checked_items, trials = Counter(), set(), defaultdict(list)
+    for response in tables['responses'].itertuples():
+        trace = json.loads(traces[response.response_id])
+        name = subjects[response.subject_id]
+        lookup = json.dumps(trace['source_records'], sort_keys=True), name
+        key, record = expected[lookup]
+        _check(trace, dict(subject_key=name, prediction=record[name], source_records=origins[key]),
+            'Decompile-Bench complete original output and all source aliases')
+        item = items[response.item_id]
+        _check(item['raw_item_id'] in raw_ids[tuple(record[field] for field in stimulus_fields)], True,
+            'Decompile-Bench original stimulus alias')
+        _check(json.loads(item['content']), dict(text=p['labels']['instruction'], **{field: record[field]
+            for field in ['func_name', 'asm', 'ida_asm', 'ghidra_asm', 'opt', 'language']}),
+            'Decompile-Bench exact assembly stimulus, not reference-source leakage')
+        _check(_features(item['item_features']), dict(split=record['split'], opt=record['opt'], lang=record['language']),
+            'Decompile-Bench original split and compilation settings')
+        criterion = json.loads(item['grading_criterion'])
+        _check(criterion, dict(rule=metadata['grading']['rule'], reference_answer=json.dumps({field: record[field]
+            for field in ['func', 'func_dep', 'test']}, sort_keys=True)), 'Decompile-Bench full reference and unit tests')
+        _check(json.loads(item['verifier']), {'class': 'exact_matcher', 'spec': json.dumps(protocol, sort_keys=True)},
+            'Decompile-Bench source-pinned metric implementation')
+        # Use native Arrow strings directly, independently of the builder's tables.
+        target = '\n'.join(filter(None, map(str.strip, record['func'].splitlines())))
+        predicted = '\n'.join(filter(None, map(str.strip, record[name].splitlines())))
+        score = 1.0 - editdistance.eval(target, predicted) / max(len(target), len(predicted))
+        _check(response.response, score, 'Decompile-Bench exact native edit-similarity formula')
+        _check(response.test_condition, p['labels']['condition'], 'Decompile-Bench recomputed-score condition')
+        _check(pd.isna(response.interactors), True, 'Decompile-Bench no invented interactors')
+        _check(pd.isna(item['asset_manifest']), True, 'Decompile-Bench no invented binary assets')
+        seen[lookup] += 1
+        checked_items.add(response.item_id)
+        trials[response.subject_id, response.item_id].append(response.trial)
+    _check(seen, Counter(expected.keys()), 'Decompile-Bench no lost, duplicated or fabricated outputs')
+    _check(checked_items, set(items), 'Decompile-Bench every exported item has original output evidence')
+    for values in trials.values():
+        _check(sorted(values), list(range(1, len(values) + 1)), 'Decompile-Bench consecutive record ordinals')
+    return dict(source_subjects=len(subjects), source_items=len(items), source_responses=len(expected),
+        source_traces=len(traces), source_rows=source_rows, source_unique_records=len(native),
+        source_duplicate_records=source_rows-len(native), source_blank_output_slots=blank_slots,
+        source_missing_input_rows=missing_input_rows, source_recomputed_scores=len(expected))
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30249,6 +30341,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'decompile_bench':
+        return _decompile_bench(directory, tables, metadata)
     if directory.name == 'rclicks':
         return _rclicks(directory, tables, metadata)
     if directory.name == 'reasoning_gym':

@@ -68,6 +68,130 @@ from measurement_db.scripts.curate_benchmarks.native_result_audits import _reaso
 
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _rclicks
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _decompile_bench
+import pyarrow as pa
+import pyarrow.ipc as ipc
+
+class DecompileBenchSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(_tables.reload)
+        _tables.reload()
+        self.directory = Path(temporary.name) / 'decompile_bench'
+        self.directory.mkdir()
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/decompile_bench') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        self.raw = self.directory / 'raw'
+        p = self.metadata['build']['parameters']
+        base = dict(index=0, func_name='f', func_dep='#include <stdio.h>', func=' int f() { return 1; }\n',
+            test='int main() { return f() != 1; }', opt='O0', language='c', asm='f: mov 1,eax; ret',
+            ida_asm='f: MOV EAX,1; RET', ida_pseudo='\nint f() { return 1; }\n',
+            ghidra_asm='f: MOV EAX,1; RET', ghidra_pseudo='int f() { return 2; }')
+        self.records = {'humaneval': [base, dict(base, index=1),
+            dict(base, index=2, ida_pseudo='int f() { return 3; }'),
+            dict(base, index=3, asm='', ida_asm='', ghidra_asm='', ida_pseudo='unmatched', ghidra_pseudo=''),
+            dict(base, index=4, func_name='g', asm='g: ret', ida_pseudo='')],
+            'mbpp': [dict(base, ida_pseudo=' \n', ghidra_pseudo='')],
+            'github': [dict(base, func_name='h', opt='O3', asm='h: ret', language='cpp', func_dep='src/example.cpp', test='')]}
+        self.paths = {}
+        for split, rows in self.records.items():
+            path = self.raw / p['layout']['release'] / split / 'data-00000-of-00001.arrow'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            table = pa.Table.from_pylist(rows)
+            with path.open('wb') as stream, ipc.new_stream(stream, table.schema) as writer:
+                writer.write_table(table)
+            self.paths[split] = path
+        self.builder = runpy.run_path(str((ROOT / 'benchmarks/decompile_bench') / 'build.py'))['DecompileBench']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.builder(str(self.directory / 'build.py')).main_from_args(['--source', str(self.raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    def test_original_outputs_and_duplicate_aliases(self):
+        observed = _decompile_bench(self.directory, self.frames, self.metadata)
+        self.assertEqual(observed, dict(source_subjects=2, source_items=3, source_responses=7, source_traces=7,
+            source_rows=7, source_unique_records=6, source_duplicate_records=1, source_blank_output_slots=4,
+            source_missing_input_rows=1, source_recomputed_scores=7))
+        self.assertEqual(_decompile_bench(self.directory,
+            {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}, self.metadata), observed)
+        scores = self.frames['responses'].response
+        self.assertIn(1.0, scores.tolist())
+        self.assertIn(1 - 1 / len('int f() { return 1; }'), scores.tolist())
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+
+    def test_corrupted_tables_are_rejected(self):
+        changes = ['grade', 'null_grade', 'trial', 'subject_link', 'item_link', 'condition', 'interactors',
+            'subject_name', 'subject_features', 'content', 'raw_id', 'item_features', 'reference', 'rule', 'verifier',
+            'missing_response', 'duplicate_response', 'missing_trace', 'trace_output', 'trace_row', 'trace_model', 'trace_alias']
+        for change in changes:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, subjects, items, traces = [frames[name] for name in ['responses', 'subjects', 'items', 'traces']]
+            if change == 'grade': responses.loc[0, 'response'] = 0.123
+            elif change == 'null_grade': responses.loc[0, 'response'] = float('nan')
+            elif change == 'trial': responses.loc[0, 'trial'] = 9
+            elif change == 'subject_link': responses.loc[0, 'subject_id'] = next(v for v in subjects.subject_id if v != responses.loc[0, 'subject_id'])
+            elif change == 'item_link': responses.loc[0, 'item_id'] = next(v for v in items.item_id if v != responses.loc[0, 'item_id'])
+            elif change == 'condition': responses.loc[0, 'test_condition'] = 'wrong'
+            elif change == 'interactors': responses.loc[0, 'interactors'] = '{}'
+            elif change == 'subject_name': subjects.loc[0, 'display_name'] = 'wrong'
+            elif change == 'subject_features': subjects.loc[0, 'subject_features_extra'] = 'native_output_column=wrong'
+            elif change == 'content': items.loc[0, 'content'] = '{}'
+            elif change == 'raw_id': items.loc[0, 'raw_item_id'] = 'wrong'
+            elif change == 'item_features': items.loc[0, 'item_features'] = 'split=wrong'
+            elif change in ['reference', 'rule']:
+                criterion = json.loads(items.loc[0, 'grading_criterion'])
+                criterion['reference_answer' if change == 'reference' else 'rule'] = 'wrong'
+                items.loc[0, 'grading_criterion'] = json.dumps(criterion)
+            elif change == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif change == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif change == 'duplicate_response': frames['responses'] = pd.concat([responses, responses.iloc[:1]])
+            elif change == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            else:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if change == 'trace_output': trace['prediction'] = 'wrong'
+                elif change == 'trace_row': trace['source_records'][0]['source_row'] = 99
+                elif change == 'trace_model': trace['subject_key'] = 'wrong'
+                elif change == 'trace_alias': trace['source_records'] = []
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            with self.subTest(change=change), self.assertRaises((ValueError, KeyError, RuntimeError, IndexError)):
+                _decompile_bench(self.directory, frames, self.metadata)
+
+    def test_changed_native_records_and_score_direction_are_rejected(self):
+        path = self.paths['humaneval']
+        original = path.read_bytes()
+        for field in ['func', 'asm', 'test', 'ida_pseudo']:
+            rows = copy.deepcopy(self.records['humaneval'])
+            rows[0][field] += 'changed'
+            table = pa.Table.from_pylist(rows)
+            with path.open('wb') as stream, ipc.new_stream(stream, table.schema) as writer:
+                writer.write_table(table)
+            with self.subTest(field=field), self.assertRaises((ValueError, KeyError, RuntimeError)):
+                _decompile_bench(self.directory, self.frames, self.metadata)
+            path.write_bytes(original)
+        metadata = copy.deepcopy(self.metadata)
+        metadata['benchmark']['response_scale']['direction'] = 'lower_is_better'
+        with self.assertRaises(ValueError):
+            _decompile_bench(self.directory, self.frames, metadata)
+
+    def test_invalid_native_inputs_stop_build(self):
+        path = self.paths['humaneval']
+        original = path.read_bytes()
+        for change in ['duplicate_id', 'null_output', 'missing_reference', 'unknown_language', 'unknown_optimization']:
+            rows = copy.deepcopy(self.records['humaneval'])
+            if change == 'duplicate_id': rows.append(rows[0].copy())
+            elif change == 'null_output': rows[0]['ida_pseudo'] = None
+            elif change == 'missing_reference': rows[0]['func'] = ' \n'
+            elif change == 'unknown_language': rows[0]['language'] = 'unknown'
+            else: rows[0]['opt'] = 'unknown'
+            table = pa.Table.from_pylist(rows)
+            with path.open('wb') as stream, ipc.new_stream(stream, table.schema) as writer:
+                writer.write_table(table)
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.builder(str(self.directory / 'build.py')).build_tables()
+        path.write_bytes(original)
+
+
 class RClicksSourceAuditTests(unittest.TestCase):
     def setUp(self):
         from PIL import Image

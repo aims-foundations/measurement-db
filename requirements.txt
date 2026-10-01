@@ -22,3 +22,4 @@ rouge==1.0.1
 cn2an==0.5.23
 proces==0.1.7
 nltk==3.9.1
+editdistance==0.8.1
