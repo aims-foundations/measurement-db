@@ -1,0 +1,96 @@
+name: Benchmark table reproduction
+
+on:
+  # Inspect the full Git diff in the changes job. GitHub's paths filters inspect
+  # only the first 300 changed files and can miss benchmarks in large PRs.
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: ['**']
+  workflow_dispatch:
+    inputs:
+      benchmark:
+        description: 'Benchmark folder to rebuild (empty means all benchmarks)'
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: benchmark-reproduction-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      has_benchmarks: ${{ steps.select.outputs.has_benchmarks }}
+      hf_revision: ${{ steps.reference.outputs.revision }}
+    defaults:
+      run:
+        working-directory: measurement_db
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: measurement_db
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test change detection and strict byte comparison
+        run: python -m unittest discover -s tests -p test_benchmark_reproduction.py -v
+      - name: Select every changed benchmark
+        id: select
+        run: python scripts/ci/benchmark_reproduction.py select
+      - name: Install Hub client
+        if: steps.select.outputs.has_benchmarks == 'true'
+        run: python -m pip install 'huggingface_hub>=1.0,<2'
+      - name: Resolve the HF branch to one immutable commit
+        id: reference
+        if: steps.select.outputs.has_benchmarks == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo '::error::Set the HF_TOKEN Actions secret to a read token with access to aims-foundations/measurement-db. Fork PRs do not receive this secret; run their reviewed commits on a branch in this repository.'
+            exit 1
+          fi
+          python scripts/ci/benchmark_reproduction.py resolve
+
+  reproduce:
+    needs: changes
+    if: needs.changes.outputs.has_benchmarks == 'true'
+    name: Reproduce ${{ join(matrix.benchmarks, ', ') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
+    defaults:
+      run:
+        working-directory: measurement_db
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: measurement_db
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            measurement_db/requirements.txt
+            measurement_db/scripts/ci/reproduction-constraints.txt
+      - name: Install the build dependencies and matching Parquet writer
+        run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
+      - name: Rebuild from archived raw inputs and compare every table byte for byte
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
+          BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}
+          PYTHONUNBUFFERED: '1'
+        run: python scripts/ci/benchmark_reproduction.py verify --revision "$HF_REVISION"

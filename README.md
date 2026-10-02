@@ -268,6 +268,48 @@ Running new model evaluations and maintaining their execution environments are
 outside this repository's scope. Source provenance, released traces, and the
 checks needed to rebuild and audit the curated tables remain part of the project.
 
+### Checking published table bytes in CI
+
+The `Benchmark table reproduction` workflow checks PR creation, PR updates,
+and branch pushes, and rebuilds the benchmark folders changed under `benchmarks/`.
+It reads the full Git diff instead of GitHub's 300-file path-filter window,
+including metadata, documentation, nested files, renames, and deletions.
+Template changes and new branches check all builders. A manual run can select a
+single benchmark or all benchmarks. Events with no benchmark changes run only
+the offline CI tests and change detection, without accessing HF or rebuilding.
+
+Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
+has access to `aims-foundations/measurement-db`. The dataset is gated; missing
+credentials or access fail the check. Fork PRs do not receive repository secrets;
+their reviewed commits need a branch in this repository to run this check.
+
+Each run resolves the HF `migration/tabular-builders-20260924` branch to one
+immutable commit shared by all jobs. It executes `benchmarks/<slug>/build.py`
+in a temporary source checkout, with `MEASUREMENT_DB_SOURCE_REVISION` selecting
+that commit's archived raw inputs. Existing local raw inputs and tables are
+never reused or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
+on HF, or the older flat `<slug>/*.parquet` layout when the modern directory is
+absent. Only the legacy filename `response.parquet` maps to `responses.parquet`;
+no table bytes are normalized or rewritten.
+
+Success requires the exact same set of tables and byte-identical files, including
+optional traces and assets, row order, and Parquet metadata. Missing references,
+missing builders, build errors, extra tables, and any byte difference fail.
+SHA-256 values for both files appear in the job log. Jobs continue independently
+after another benchmark fails. The workflow uses at most four concurrent jobs;
+changes exceeding GitHub's 256-job matrix limit are split into small batches.
+Very large builds may need a runner with more memory or disk than `ubuntu-latest`.
+
+The CI constraints pin pandas and PyArrow to versions recorded in the published
+migration tables. To run the same comparison locally after authenticating to HF:
+
+```bash
+python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
+python scripts/ci/benchmark_reproduction.py verify xstest
+```
+
+Pass `--revision <HF-commit-SHA>` to repeat a comparison against an exact snapshot.
+
 ## License
 
 To the extent that AIMS holds copyright or database rights, the original curation contributions in the AI Measurement Data Bank—including their selection, organization, standardized schema, metadata, and normalization work—are licensed under the [Creative Commons Attribution-ShareAlike 4.0 International License (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/). 
