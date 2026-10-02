@@ -175,12 +175,14 @@ def verify_benchmark(root: Path, slug: str, revision: str) -> None:
             for name, remote in sorted(files.items())
         }
         env = os.environ.copy()
-        env.pop("MEASUREMENT_DB_SOURCE_MANIFEST", None)
-        env.update(MEASUREMENT_DB_SOURCE_REPO=HF_REPOSITORY,
-                   MEASUREMENT_DB_SOURCE_REVISION=revision,
-                   PYTHONPATH=str(scratch), PYTHONHASHSEED="0")
+        # HF supplies expected tables only. Archive overrides would bypass the
+        # author's upstream sources declared in each benchmark's metadata.yaml.
+        for key in ("MEASUREMENT_DB_SOURCE_REPO", "MEASUREMENT_DB_SOURCE_REVISION",
+                    "MEASUREMENT_DB_SOURCE_MANIFEST"):
+            env.pop(key, None)
+        env.update(PYTHONPATH=str(scratch), PYTHONHASHSEED="0")
         command = [sys.executable, f"benchmarks/{slug}/build.py"]
-        print(f"Rebuilding {slug} from archived inputs at {revision}: {' '.join(command)}", flush=True)
+        print(f"Rebuilding {slug} from metadata.yaml upstream sources: {' '.join(command)}", flush=True)
         subprocess.run(command, cwd=workspace, env=env, check=True)
         compare_tables(workspace / "benchmarks" / slug / "formatted_tables", expected)
 

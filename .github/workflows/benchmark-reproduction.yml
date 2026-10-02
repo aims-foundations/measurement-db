@@ -87,7 +87,7 @@ jobs:
             measurement_db/scripts/ci/reproduction-constraints.txt
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
-      - name: Rebuild from archived raw inputs and compare every table byte for byte
+      - name: Rebuild from declared upstream sources and compare every table byte for byte
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           HF_REVISION: ${{ needs.changes.outputs.hf_revision }}

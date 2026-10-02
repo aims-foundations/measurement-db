@@ -210,8 +210,9 @@ class BuildExecutionTests(RepositoryTest):
 import os
 from pathlib import Path
 assert Path.cwd().name == 'measurement_db'
-assert os.environ['MEASUREMENT_DB_SOURCE_REVISION'] == 'a' * 40
-assert 'MEASUREMENT_DB_SOURCE_MANIFEST' not in os.environ
+for key in ('MEASUREMENT_DB_SOURCE_REPO', 'MEASUREMENT_DB_SOURCE_REVISION',
+            'MEASUREMENT_DB_SOURCE_MANIFEST'):
+    assert key not in os.environ, key
 directory = Path(__file__).parent
 assert not (directory / 'raw').exists()
 assert not (directory / 'formatted_tables').exists()
@@ -222,7 +223,11 @@ output.mkdir()
         old_raw = self.write("benchmarks/alpha/raw/input.json", "local input")
         old_output = self.write("benchmarks/alpha/formatted_tables/responses.parquet", "local output")
         with patch.dict(sys.modules, {"huggingface_hub": self.hub()}), \
-                patch.dict(os.environ, {"MEASUREMENT_DB_SOURCE_MANIFEST": "stale-local-manifest"}), \
+                patch.dict(os.environ, {
+                    "MEASUREMENT_DB_SOURCE_REPO": "other/archive",
+                    "MEASUREMENT_DB_SOURCE_REVISION": "stale-archive-revision",
+                    "MEASUREMENT_DB_SOURCE_MANIFEST": "stale-local-manifest",
+                }), \
                 contextlib.redirect_stdout(io.StringIO()):
             reproduction.verify_benchmark(self.root, "alpha", REVISION)
         self.assertEqual(old_raw.read_text(), "local input")

@@ -285,9 +285,13 @@ their reviewed commits need a branch in this repository to run this check.
 
 Each run resolves the HF `migration/tabular-builders-20260924` branch to one
 immutable commit shared by all jobs. It executes `benchmarks/<slug>/build.py`
-in a temporary source checkout, with `MEASUREMENT_DB_SOURCE_REVISION` selecting
-that commit's archived raw inputs. Existing local raw inputs and tables are
-never reused or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
+in a temporary source checkout, downloading the authors' inputs declared in
+`sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
+only the expected output tables; it does not select the build's raw inputs.
+The check clears `MEASUREMENT_DB_SOURCE_REPO`, `MEASUREMENT_DB_SOURCE_REVISION`,
+and `MEASUREMENT_DB_SOURCE_MANIFEST` so inherited archive overrides cannot
+redirect those downloads. Existing local raw inputs and tables are never reused
+or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
 on HF, or the older flat `<slug>/*.parquet` layout when the modern directory is
 absent. Only the legacy filename `response.parquet` maps to `responses.parquet`;
 no table bytes are normalized or rewritten.
