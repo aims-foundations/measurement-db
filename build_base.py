@@ -313,6 +313,20 @@ class BenchmarkBuild(ABC):
                                 if response.status == 206:
                                     expected_range = f"bytes {offset}-{end}/{expected_size}"
                                     if response.headers.get("Content-Range") != expected_range:
+                                        if (response.headers.get("Content-Encoding") == "gzip"
+                                                and headers.get("Accept-Encoding") != "gzip"):
+                                            # GCS ranges address stored gzip bytes even when a
+                                            # normal GET serves the uncompressed, pinned file.
+                                            # Restart without ranges; retain the exact hash check.
+                                            response.close()
+                                            request = urllib.request.Request(url, headers={**headers, "Accept-Encoding": "identity"})
+                                            with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as whole:
+                                                if whole.status != 200 or whole.headers.get("Content-Encoding") not in (None, "identity"):
+                                                    raise _source_files.SourceDataError("Upstream did not return the complete uncompressed source")
+                                                temporary.seek(0)
+                                                temporary.truncate()
+                                                shutil.copyfileobj(whole, temporary)
+                                            break
                                         raise _source_files.SourceDataError("Upstream returned an unexpected byte range")
                                 elif response.status == 200 and offset == 0:
                                     # Servers without Range support may send the complete file.
