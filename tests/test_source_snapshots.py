@@ -534,6 +534,33 @@ class SnapshotTests(unittest.TestCase):
         self.assertFalse(destination.exists())
         self.assertFalse(list(self.raw.glob('*.tmp')))
 
+    def test_compressed_ranges_retry_whole_file_and_preserve_exact_hash_checks(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for valid in (True, False):
+            with self.subTest(valid=valid):
+                destination = self.raw / 'release.json'
+                destination.write_bytes(b'previous bytes')
+                compressed = io.BytesIO(b'compressed HTTP representation')
+                compressed.status = 206
+                compressed.headers = {'Content-Encoding': 'gzip', 'Content-Range': 'bytes 0-2/3'}
+                whole = io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD))
+                whole.status, whole.headers = 200, {}
+                with patch('urllib.request.urlopen', side_effect=[compressed, whole]) as download:
+                    arguments = dict(expected_size=len(PAYLOAD),
+                                     expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=5)
+                    if valid:
+                        builder._download('https://provider.example/release.json', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://provider.example/release.json', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), b'previous bytes')
+                requests = [call.args[0] for call in download.call_args_list]
+                self.assertEqual(len(requests), 2)
+                self.assertIsNone(requests[1].get_header('Range'))
+                self.assertEqual(requests[1].get_header('Accept-encoding'), 'identity')
+                self.assertFalse(list(self.raw.glob('*.tmp')))
+
     def test_compact_metadata_and_unknown_upstream_revision(self):
         load_benchmark_metadata(self.metadata_path)
 

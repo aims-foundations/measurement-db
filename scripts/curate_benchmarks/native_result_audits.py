@@ -3206,10 +3206,10 @@ def _alpha_sql_source_records(directory, metadata):
     import concurrent.futures
     import hashlib
     import io
-    import sqlite3
+    import apsw
     import tempfile
-    import time
     from zipfile import ZipFile
+    from measurement_db.scripts.build_measurement_tables.frozen_sqlite import FrozenSQLite
 
     raw = directory / "raw"
     layout = metadata["build"]["parameters"]["layout"]
@@ -3231,36 +3231,36 @@ def _alpha_sql_source_records(directory, metadata):
     _check((len(questions), len(schemas)), (1534, 11), "Alpha-SQL complete original task/database census")
     _check(all(isinstance(value, str) and value for value in predictions.values()), True,
            "Alpha-SQL original predictions are complete SQL strings")
-    timeout = float(metadata["grading"]["verifiers"]["execution"]["timeout_per_query_seconds"])
+    grading = metadata["grading"]["verifiers"]["execution"]
+    runtime = FrozenSQLite(**{key: grading[key] for key in
+        ("sqlite_version", "evaluation_time_utc", "vm_steps_per_query", "localtime_timezone")})
 
-    with tempfile.TemporaryDirectory(prefix=".alpha-sql-audit-", dir=directory.parent) as temporary:
+    with runtime, tempfile.TemporaryDirectory(prefix=".alpha-sql-audit-", dir=directory.parent) as temporary:
         temporary = Path(temporary)
         for db in file_lists:
             (temporary / (db + ".sqlite")).write_bytes(payloads[f"dev_databases/{db}/{db}.sqlite"])
 
         def execute(task):
             key, question = task
-            connection = sqlite3.connect((temporary / (question["db_id"] + ".sqlite")).as_uri() + "?mode=ro", uri=True)
-            connection.execute("PRAGMA query_only = ON")
             outcomes, rows = {}, {}
-            try:
-                # This scalar checker uses SQLite's progress callback, independently
-                # of the builder's timer and query-table joins.
-                for kind, query in (("prediction", predictions[key]), ("gold", question["SQL"])):
-                    deadline = time.monotonic() + timeout
-                    connection.set_progress_handler(lambda: time.monotonic() >= deadline, 1000)
-                    try:
+            # Execute each native response independently of the builder's query
+            # deduplication and joins, using the same declared SQLite protocol.
+            for kind, query in (("prediction", predictions[key]), ("gold", question["SQL"])):
+                try:
+                    with runtime.connection(temporary / (question["db_id"] + ".sqlite")) as connection:
                         rows[kind] = set(connection.execute(query).fetchall())
-                        outcomes[kind + "_status"], outcomes[kind + "_error"] = "ok", None
-                    except sqlite3.Error as error:
-                        rows[kind] = None
-                        outcomes[kind + "_status"] = "timeout" if error.sqlite_errorcode == sqlite3.SQLITE_INTERRUPT else "error"
-                        outcomes[kind + "_error"] = str(error)
-                    outcomes[kind + "_distinct_rows"] = None if rows[kind] is None else len(rows[kind])
-            finally:
-                connection.close()
+                    outcomes[kind + "_status"], outcomes[kind + "_error"] = "ok", None
+                except apsw.Error as error:
+                    if error.result not in (apsw.SQLITE_ERROR, apsw.SQLITE_AUTH,
+                                            apsw.SQLITE_READONLY, apsw.SQLITE_INTERRUPT):
+                        raise
+                    rows[kind] = None
+                    outcomes[kind + "_status"] = "work_limit" if isinstance(error, apsw.InterruptError) else "error"
+                    outcomes[kind + "_error"] = str(error)
+                outcomes[kind + "_distinct_rows"] = None if rows[kind] is None else len(rows[kind])
             grade = None if rows["gold"] is None else float(rows["prediction"] is not None and rows["prediction"] == rows["gold"])
-            outcomes["sqlite_version"] = sqlite3.sqlite_version
+            outcomes.update({key: grading[key] for key in
+                ("sqlite_version", "evaluation_time_utc", "vm_steps_per_query")})
             return key, {"grade": grade, "execution": outcomes}
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:

@@ -3,18 +3,18 @@
 
 import io
 import json
-import sqlite3
 import sys
 import tempfile
-import threading
 from pathlib import Path
 from zipfile import ZipFile
 
+import apsw
 import pandas as pd
 import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[3]))
 from measurement_db.build_base import BenchmarkBuild, ExactMatcher
+from measurement_db.scripts.build_measurement_tables.frozen_sqlite import FrozenSQLite
 
 
 class AlphaSQL(BenchmarkBuild):
@@ -67,26 +67,23 @@ class AlphaSQL(BenchmarkBuild):
         queries = responses[["db_id", "SQL", "prediction"]].melt(
             id_vars="db_id", value_name="query").drop_duplicates(["db_id", "query"])
         results = []
-        with tempfile.TemporaryDirectory(prefix=".alpha-sql-", dir=self.dir) as temporary:
+        runtime = FrozenSQLite(**{key: grading[key] for key in
+            ("sqlite_version", "evaluation_time_utc", "vm_steps_per_query", "localtime_timezone")})
+        with runtime, tempfile.TemporaryDirectory(prefix=".alpha-sql-", dir=self.dir) as temporary:
             for row in databases.itertuples():
                 (Path(temporary) / (row.Index + ".sqlite")).write_bytes(row.data)
             for row in queries.itertuples():
                 database = Path(temporary) / (row.db_id + ".sqlite")
-                connection = sqlite3.connect(database.as_uri() + "?mode=ro", uri=True)
-                allowed = {sqlite3.SQLITE_SELECT, sqlite3.SQLITE_READ,
-                           sqlite3.SQLITE_FUNCTION, sqlite3.SQLITE_RECURSIVE}
-                connection.set_authorizer(lambda action, *_: sqlite3.SQLITE_OK if action in allowed else sqlite3.SQLITE_DENY)
-                timer = threading.Timer(float(grading["timeout_per_query_seconds"]), connection.interrupt)
-                timer.start()
                 try:
-                    rows = set(connection.execute(row.query).fetchall())
+                    with runtime.connection(database) as connection:
+                        rows = set(connection.execute(row.query).fetchall())
                     status, error = "ok", None
-                except sqlite3.Error as exception:
+                except apsw.Error as exception:
+                    if exception.result not in (apsw.SQLITE_ERROR, apsw.SQLITE_AUTH,
+                                                apsw.SQLITE_READONLY, apsw.SQLITE_INTERRUPT):
+                        raise  # Storage or memory failures are not model grades.
                     rows, error = None, str(exception)
-                    status = "timeout" if exception.sqlite_errorcode == sqlite3.SQLITE_INTERRUPT else "error"
-                finally:
-                    timer.cancel()
-                    connection.close()
+                    status = "work_limit" if isinstance(exception, apsw.InterruptError) else "error"
                 results.append({"db_id": row.db_id, "query": row.query, "rows": rows,
                                 "status": status, "error": error})
         results = pd.DataFrame(results)
@@ -119,7 +116,9 @@ class AlphaSQL(BenchmarkBuild):
         traces = responses[["response_key"]].copy()
         traces["trace"] = [json.dumps({"source_file": layout["predictions"], "source_key": row.raw_item_id,
             "prediction": row.prediction, "native_question": row.native_record, "configuration": configuration,
-            "derived_execution": {"sqlite_version": sqlite3.sqlite_version,
+            "derived_execution": {"sqlite_version": grading["sqlite_version"],
+                "evaluation_time_utc": grading["evaluation_time_utc"],
+                "vm_steps_per_query": grading["vm_steps_per_query"],
                 "gold_status": row.gold_status, "gold_error": row.gold_error if pd.notna(row.gold_error) else None,
                 "prediction_status": row.prediction_status,
                 "prediction_error": row.prediction_error if pd.notna(row.prediction_error) else None,
