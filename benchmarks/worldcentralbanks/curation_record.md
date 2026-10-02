@@ -1,0 +1,3 @@
+- Preserve all 405,600 released predictions from 2,704 CSV exports, including complete native response fields, split seeds and source coordinates. No model or external judge is run during curation.
+- Restore exact original prompt strings and message roles, including bank-specific guides and few-shot examples. Inference configurations are incomplete or ambiguous for some exports; filenames are not treated as evidence of missing runtime settings.
+- Follow the authors’ released cleanup parser: this corrects 1,589 grades relative to the legacy importer. Retain 42 empty/error requests as ungraded attempts, and preserve the original parser’s fallback behavior and all source files for review.

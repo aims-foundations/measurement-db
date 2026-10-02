@@ -1,0 +1,4 @@
+- Scope: 2,500 original answers from 25 literal model labels on 100 BEHAVIOR goal-interpretation tasks. Other EAI modules remain in the original ZIP.
+- Grading: the archive has no per-task judgments. Every grade is null; the retired builder's locally recomputed F1 is not a published historical score.
+- Provenance: pinned upstream prompts, goal conditions and grader; SHA-256-pinned answer archive. Full answers and native model labels are preserved, including malformed outputs and source spelling.
+- Validation: reconcile every answer, prompt, reference and association against original records. No inference, simulation or grading is executed.

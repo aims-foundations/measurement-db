@@ -1,0 +1,84 @@
+benchmark:
+  description: 'VL-RewardBench: judge VLM accuracy on (image, query, chosen, rejected) preference pairs.'
+  testing_condition: Released per-trial preference judgments matched to the public question, candidate
+    answers, and reference ranking. Unparsed judgments retain null grades; this is not the paper's majority-vote
+    accuracy.
+  paper_url: https://arxiv.org/abs/2411.17451
+  data_source_url: https://huggingface.co/datasets/MMInstruction/VL-RewardBench
+  subject_type: reward_model
+  item_type: response_pair
+  license: MIT
+  citation: "@misc{li2025vlrewardbenchchallengingbenchmarkvisionlanguage,\n      title={VL-RewardBench:\
+    \ A Challenging Benchmark for Vision-Language Generative Reward Models},\n      author={Lei Li and\
+    \ Yuancheng Wei and Zhihui Xie and Xuqing Yang and Yifan Song and Peiyi Wang and Chenxin An and Tianyu\
+    \ Liu and Sujian Li and Bill Yuchen Lin and Lingpeng Kong and Qi Liu},\n      year={2025},\n     \
+    \ eprint={2411.17451},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2411.17451},\n\
+    }"
+  tags:
+  - reasoning
+  - preference
+  modality:
+  - text
+  - image
+  domain:
+  - reward_modeling
+  - preference
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': disagrees with reference preference
+      '1': agrees with reference preference
+  categorical: true
+  release_date: 2024-11
+  release: private
+  granularity: item
+  name: VL-RewardBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      InternVL2-8B-1023.jsonl: InternVL2-8B
+      Phi-3.5-vision-instruct-1024.jsonl: Phi-3.5-vision-instruct
+      Qwen-Qwen2-VL-2B-Instruct-1024.jsonl: Qwen/Qwen2-VL-2B-Instruct
+      Qwen-Qwen2-VL-72B-Instruct-1024.jsonl: Qwen/Qwen2-VL-72B-Instruct
+      Qwen-Qwen2-VL-7B-Instruct-1024.jsonl: Qwen/Qwen2-VL-7B-Instruct
+      allenai-Molmo-72B-0924-1024.jsonl: allenai/Molmo-72B-0924
+      allenai-Molmo-7B-D-0924-1025.jsonl: allenai/Molmo-7B-D-0924
+      claude-3-5-sonnet-20240620-1023_full.jsonl: claude-3-5-sonnet-20240620
+      gpt-4o-1023.jsonl: gpt-4o
+      gpt-4o-mini-1023.jsonl: gpt-4o-mini
+      llava-1.6-ov-7b-hf-1020.jsonl: llava-1.6-ov-7b-hf
+      meta-Llama-3.2-90B-Vision-Instruct-1025.jsonl: meta/Llama-3.2-90B-Vision-Instruct
+      meta-llama-Llama-3.2-11B-Vision-Instruct-1024.jsonl: meta-llama/Llama-3.2-11B-Vision-Instruct
+      mistralai-Pixtral-12B-2409-1025.jsonl: mistralai/Pixtral-12B-2409
+      nvidia-NVLM-D-72B-1025.jsonl: nvidia/NVLM-D-72B
+      qwen-vl-max-0809-1025.jsonl: qwen-vl-max-0809
+grading:
+  rule: The recorded choice agrees with the reference preference (1) or rejects it (0). An unparsed choice
+    has no binary grade.
+  verifiers:
+    released_preference:
+      kind: provider_verdict
+      source: https://github.com/vl-rewardbench/VL_RewardBench/blob/9b10abdc91678bc5fb2bd7eea4d73d3af484db9f/cal.py
+      logic: 'Preserve meta.flag_status: agree=1, reject=0, doesntMatch=null. Do not rerun the optional
+        LLM parser or convert trial judgments into majority votes.'
+sources:
+  upstream:
+  - name: items
+    url: https://huggingface.co/datasets/MMInstruction/VL-RewardBench/resolve/0e6e62701eba92818a69ce95af0ed7aa0648b176/data/test-00000-of-00001.parquet
+    revision: 0e6e62701eba92818a69ce95af0ed7aa0648b176
+    file: items.parquet
+    size: 96842210
+    sha256: 500a33ecbeb6ddd4cbbb6de24b325815330c75c1f7b14e3043c1418fd285fb59
+  - name: predictions
+    url: https://huggingface.co/datasets/MMInstruction/VL-RewardBench/resolve/0e6e62701eba92818a69ce95af0ed7aa0648b176/inference_results.zip
+    revision: 0e6e62701eba92818a69ce95af0ed7aa0648b176
+    file: inference_results.zip
+    size: 85056502
+    sha256: ebdc96f7de11eedf932f1e70f9a5ddfd823f30af7e6a4f21a9f04e150840f087

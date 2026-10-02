@@ -1,0 +1,158 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1871
+    logical_sha256: cb6e6acffaf3819d0bab88bcd17ee4d3d01f6bd378c17f855a774264cf4dee93
+  subjects:
+    rows: 7
+    logical_sha256: 719110beefec50fb23cf7d2c426aca6f9e5c0fbbdd27f08fa8203f6387bf8855
+  responses:
+    rows: 1871
+    logical_sha256: b0103925f87e771375d0f23e0b713672047ca3b4e6ef95846e2808a394b96f31
+  items:
+    rows: 547
+    logical_sha256: b9418733e21c8a662cc01df756e54fe767e3f612103d70ffb76d3c96f1aec86d
+  benchmarks:
+    rows: 1
+    logical_sha256: 2ecc74ba8a95a07040921b5d362cc09aaba0c19ed20f02af2367aee9e1ef36f4
+source_claims:
+  source_prediction_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1864
+  source_empty_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 69
+  source_result_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 6129
+  source_trajectory_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1840
+  source_trajectory_bytes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1103059208
+  source_default_only_raw_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 4259
+  source_trace_only_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 7
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1098
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 772
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1871
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 7
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 547
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/amazon-science/SWE-PolyBench/tree/e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1/evaluation
+    locator: Native submission predictions, result files and complete trajectories; paired with the pinned full
+      or Verified task bank.
+    scope: One recorded attempt per source configuration and task. Default-only result exports without prediction,
+      trajectory or execution evidence remain raw-only. Full and Verified Dockerfiles define different grading environments.
+      Missing results remain null.
+    expected: 1871

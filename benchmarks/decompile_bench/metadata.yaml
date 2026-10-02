@@ -1,0 +1,101 @@
+benchmark:
+  description: Released decompiler outputs for individual C/C++ functions from HumanEval, MBPP and GitHub2025. Derive
+    the authors' edit-similarity metric deterministically from the original outputs and reference source. This metric
+    measures textual similarity, not executable correctness.
+  testing_condition: Import only nonempty recorded IDA/Ghidra outputs with an available assembly representation.
+    Collapse exactly repeated native records while retaining every source position in trace evidence. Preserve other
+    repeated stimuli as recorded; trial numbers distinguish source records and do not imply independently sampled
+    runs. Empty output slots and missing-stimulus rows remain in raw without invented success or failure grades.
+    Recomputed edit similarities are not presented as published per-function scores. Re-executability, R2I, trained
+    LLM outputs and tool version numbers are not inferred.
+  paper_url: https://openreview.net/forum?id=vZ7fJntf0a
+  data_source_url: https://huggingface.co/datasets/LLM4Binary/decompile-eval
+  subject_type: decompiler
+  item_type: compiled_function
+  license: CC0-1.0 for the released evaluation dataset; MIT for the metric implementation. Original C/C++ projects
+    retain their source licenses.
+  citation: "@inproceedings{tan2025decompilebench,\n  title={Decompile-Bench: Million-Scale Binary-Source Function\
+    \ Pairs for Real-World Binary Decompilation},\n  author={Tan, Hanzhuo and Tian, Xiaolong and Qi, Hanrui and\
+    \ Liu, Jiaming and Wang, Siyi and Gao, Zuchen and Luo, Qi and Li, Jing and Zhang, Yuqun},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - decompilation
+  - binary
+  - code
+  - software_engineering
+  modality:
+  - text
+  domain:
+  - software_engineering
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: null
+  release: public
+  name: 'Decompile-Bench: released IDA and Ghidra outputs'
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      metric: source/decompile-bench/metrics/cal_edit_sim.py
+    splits:
+      github: github2025
+      humaneval: humaneval
+      mbpp: mbpp
+    systems:
+      ida_pseudo: IDA Pro
+      ghidra_pseudo: Ghidra
+    columns:
+      index: index
+      func_name: func_name
+      func_dep: func_dep
+      func: func
+      test: test
+      opt: opt
+      language: language
+      asm: asm
+      ida_asm: ida_asm
+      ida_pseudo: ida_pseudo
+      ghidra_asm: ghidra_asm
+      ghidra_pseudo: ghidra_pseudo
+    labels:
+      instruction: Recover the source function represented by these released assembly listings. The listings describe
+        one compiled function at the recorded optimization level. The original binary is not included in this evaluation
+        export.
+      condition: Original released decompiler output; deterministic edit similarity
+      configuration: Released output from the named decompiler. Version and invocation settings are not recorded
+        per function
+grading:
+  rule: 'Use the original edit-similarity rule: strip each line, remove blank lines, join with newline, then compute
+    1 minus character-level Levenshtein distance divided by the larger normalized string length. This measures text
+    similarity only; do not execute the decompiled code or claim re-executability.'
+  verifiers:
+    edit_similarity:
+      kind: deterministic_recomputation_from_released_output
+      source: https://github.com/albertan017/LLM4Decompile
+      revision: 85b364bf093eb2ee4f3687cfe38a203fca89f23e
+      entry_point: decompile-bench/metrics/cal_edit_sim.py:compute_ES
+      dependency: editdistance==0.8.1
+      execution: Apply the published string metric to captured output and reference only. No model inference, compilation
+        or program execution.
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/LLM4Binary/decompile-eval
+    revision: b9271fae3c556e46948559f4176ffa6f8b4f9491
+    files:
+    - match: README[.]md|LICENSE|dataset_dict[.]json|(github|humaneval|mbpp)/.*[.](arrow|json)
+      path: release/{path}
+  - name: source
+    url: https://github.com/albertan017/LLM4Decompile
+    revision: 85b364bf093eb2ee4f3687cfe38a203fca89f23e
+    files:
+    - match: README[.]md|LICENSE|decompile-bench/.*[.](py|json|md)
+      path: source/{path}

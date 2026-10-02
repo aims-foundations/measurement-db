@@ -1,0 +1,103 @@
+benchmark:
+  name: AI2D_TEST
+  description: Multiple-choice science-diagram questions, with primary per-question model
+    predictions released by OpenVLMRecords and deterministically derived exact-match grades.
+  testing_condition: Preserve the 254 maintained primary model exports, including missing outputs.
+    Capture historical exports and API caches as source evidence; their overlapping records lack
+    independent attempt identifiers and are not counted as additional trials. Use the frozen
+    historical VLMEvalKit exact-matching rule, which reproduces all released GPT-4o grades.
+    Other grades are derived during curation, not claimed to be published leaderboard scores.
+    Restore standard task text and actual diagram bytes. Model-specific prompt wrappers,
+    exact checkpoints, inference settings and run revisions not recorded with an export remain unknown.
+    AI2D_TEST_NO_MASK is a separate condition and is not included. No models or API judges are run.
+  paper_url: https://arxiv.org/abs/1603.07396
+  data_source_url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+  subject_type: model
+  item_type: question
+  license: 'AI2D diagrams: CC-BY-SA-4.0, linked by the AllenAI AWS Open Data registry.
+    OpenVLMRecords and VLMEvalKit code: Apache-2.0, as declared upstream.'
+  citation: 'Kembhavi, A. et al. (2016). A Diagram Is Worth A Dozen Images. ECCV.
+    Duan, H. et al. (2024). VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models.'
+  tags: [diagram_understanding, multiple_choice, vision_language]
+  modality: [text, image]
+  domain: [science]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings: {'0': incorrect_or_unparseable_model_output, '1': correct_answer}
+    direction: higher_is_better
+  categorical: true
+  release_date: '2016-03'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+      predictions: mmeval/*/*_AI2D_TEST.xlsx
+      tasks: tasks/0f593e0d1c7df9a3d69bf1f947e71975/AI2D_TEST.tsv
+      published_grades: mmeval/GPT4o/GPT4o_AI2D_TEST_exact_matching_result.xlsx
+    parsing:
+      letters: ABCD
+      padding_values: '["", "None", "NA"]'
+      punctuation: '.()[],:;!*#{}'
+      api_failure: Failed to obtain answer via API
+      filename_suffix: _AI2D_TEST.xlsx
+      item_prefix: ai2d_test_
+    refusals:
+      people: Sorry, I can't help with images of people yet.
+      file: I can't process this file.
+      missing_image: I'm sorry, but without the image provided
+      indeterminate: Cannot determine the answer
+    prompt:
+      question_prefix: 'Question: '
+      options_prefix: "Options:\n"
+      suffix: "Please select the correct answer from the options above. \n"
+    target:
+      published_model: GPT4o
+      harness: VLMEvalKit
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    revision: c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    files:
+    - match: .*/[^/]+_AI2D_TEST(?:_supp\.pkl|_exact_matching_result\.(?:xlsx|pkl)|\.xlsx)|README\.md
+      path: release/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a/{path}
+  - name: diagrams
+    url: https://huggingface.co/datasets/lhndzn/AI2D
+    revision: 464823d34d16bdc1c870cbd0c8f246481d672516
+    files:
+    - match: AI2D_TEST\.tsv
+      path: tasks/0f593e0d1c7df9a3d69bf1f947e71975/{path}
+  - name: historical_harness
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 507975d0ef7fd7903e80b382ed3e8aa860c44352
+    files:
+    - match: vlmeval/utils/matching_util\.py|vlmeval/evaluate/multiple_choice\.py|vlmeval/dataset/(?:image_dataset|config)\.py|vlmeval/smp/file\.py|vlmeval/config\.py|LICENSE|README\.md
+      path: harness/507975d0ef7fd7903e80b382ed3e8aa860c44352/{path}
+  - name: task_checksum
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 6f0370704932cec0d9aa1e73f01954cd786c57ea
+    files:
+    - match: vlmeval/dataset/image_mcq\.py|vlmeval/utils/matching_util\.py
+      path: harness/6f0370704932cec0d9aa1e73f01954cd786c57ea/{path}
+grading:
+  rule: Apply the frozen VLMEvalKit deterministic answer matcher to the recorded output.
+    Tokenize after replacing the declared punctuation with spaces; accept exactly one distinct
+    available uppercase choice letter. Recognized refusals and a lone Z mean no valid choice.
+    If no letter is identifiable, accept exactly one option text contained in the lowercased output.
+    A match to the gold letter scores 1; a different or unparseable model answer scores 0.
+    Empty cells and the recorded API-failure marker remain null because no usable model output
+    was released. Padding tokens are omitted as in the upstream table loader. The GPT-4o
+    published grades are retained and checked against this rule.
+  verifiers:
+    exact_matching:
+      kind: deterministic_answer_extraction
+      source: https://github.com/open-compass/VLMEvalKit/blob/507975d0ef7fd7903e80b382ed3e8aa860c44352/vlmeval/utils/matching_util.py
+      function: can_infer
+      evaluation: exact_matching
+      verbose: false
+      missing_output: null_grade
+      judge_api: disabled

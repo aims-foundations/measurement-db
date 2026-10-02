@@ -1,0 +1,78 @@
+format_version: 1
+tables:
+  traces:
+    rows: 300
+    logical_sha256: 8de3527619f8d9d6854a9557fd912e54ab84365a539b1c2177c11d303678af6b
+  subjects:
+    rows: 1
+    logical_sha256: 8a0166c9092d2e160608ed1ab618300a544671c95e531135046cc464d53177a8
+  responses:
+    rows: 300
+    logical_sha256: ef9202a685d8f29994dc4c4acb840b311567b9a5bb1a149caa438ead7f509abe
+  items:
+    rows: 300
+    logical_sha256: b4bb2cffcbe9ebe322075221f1ee65db53bdd9179c5d99514a27fb14baf3aa75
+  benchmarks:
+    rows: 1
+    logical_sha256: 3182474bf63e3c58b9ba42b0203f1e14dcf75b62fa0b5eefddbc5b53614d27cc
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 300
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 300
+  source_languages:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 6
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 300
+  source_target_in_demonstrations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAGIC-AI4Med/MedS-Ins
+    locator: examples/eval_results_Rationale_1_context_1_oriINS_MMedS-Llama 3.csv at 185cfc04a27023983e48b357a6f2fd525049b9af,
+      matched to original MMedBench and MedS rationale banks.
+    scope: Read all native CSV records independently of the builder, match original questions/options/references,
+      reconstruct every recorded demonstration, and compare full linked requests and outputs. No grades are published
+      or reconstructed.
+    expected: 5

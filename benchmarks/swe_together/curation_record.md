@@ -1,0 +1,4 @@
+- Scope: 4,341 published replicate assessments, 20 literal model labels and 109 full task definitions. Missing replicate slots remain absent observations.
+- Snapshot: original website captured 2026-09-30; 209 historical score slots changed upstream. The older bytes remain in raw/historical/metrics.js for comparison, outside the default build; changed slots are not additional independent trials.
+- Grading: preserve the original fractional score in each assessment trace and apply the author's >=0.85 success threshold. Agent conversations and exact historical configurations cannot be linked from this export.
+- Validation: reconcile every task, score, model and replicate against the original exports; verify three shortened task aliases against the full task bank. No model or grader is run.

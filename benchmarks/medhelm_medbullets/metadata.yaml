@@ -1,0 +1,72 @@
+benchmark:
+  description: 'MedHELM medbullets: per-(model, item) exact_match in {0,1} (1=correct) on 308 USMLE Step
+    2/3-style clinical vignette multiple-choice questions. 13 models from the MedHELM v4.0.0 release.'
+  testing_condition: Published zero-shot MedHELM run; model deployment and generation settings are subject
+    features. Grades are imported unchanged.
+  paper_url: https://arxiv.org/abs/2505.23802
+  data_source_url: https://crfm.stanford.edu/helm/medhelm/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: "@article{bedi2025medhelm,\n  title={MedHELM: Holistic Evaluation of Large Language Models\
+    \ for Medical Tasks},\n  author={Bedi, Suhana and Cui, Hejie and Fuentes, Miguel and Unell, Alyssa\
+    \ and others and Shah, Nigam H.},\n  journal={arXiv preprint arXiv:2505.23802},\n  year={2025},\n}"
+  tags:
+  - medical
+  - clinical
+  - medhelm
+  - helm
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2024-02
+  release: public
+  name: MedHELM Medbullets
+  version: MedHELM v4.0.0
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: medbullets
+      release: v4.0.0
+      metric: exact_match
+grading:
+  rule: Use the published exact_match value after HELM response adaptation, compared with the correct-tagged
+    reference.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      metric: exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/basic_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+sources:
+  upstream:
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v4.0.0
+    prefix: 'medhelm/benchmark_output/runs/v4.0.0/medbullets:'
+    tree_sha256: ab1da39a879e42526d9cf2228b74cc3dd7897f96b62d3950f7f4a57eee79c490
+    files:
+    - match: (?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py)
+      path: harness/{path}

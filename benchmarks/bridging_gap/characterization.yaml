@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4706881
+    logical_sha256: e35be00a8096b84a3f709b5c1b46976b44e5abf1d694540a66bc7cba55ebc4bc
+  subjects:
+    rows: 417
+    logical_sha256: e95b7456654b76020834318413dec6cad6cdf7b0ec183dc748301f45c7b24338
+  responses:
+    rows: 4706881
+    logical_sha256: 5b3a8f2dbfddabcd22217e8c2d143959c217754a329b8646ef872a1f2316a3af
+  items:
+    rows: 132418
+    logical_sha256: a88168227ab2f0cab04942d6ed65775220d28378a99fd5088486d8b69760ce02
+  benchmarks:
+    rows: 1
+    logical_sha256: 655d36c5e9f19506ec016bb6041d66ed9cfabd660d70ce9a05305cd8b83a5e5a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 4706881
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 4706881
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 2436961
+  source_consolidated_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 4392870
+  source_native_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 431767
+  source_restored_first_run_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 117756
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 417
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 132418
+  source_unique_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 111214
+  source_repaired_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 4
+  source_remapped_template_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/InstituteforDiseaseModeling/Bridging-the-Gap-Low-Resource-African-Languages
+    locator: Pinned consolidated CSV, native GPT/auxiliary outputs, original Winogrande verdict matrices and complete
+      request templates; independent CSV/JSON traversal of every record.
+    scope: All paper observations and genuine additional native runs. Synthetic always-A fine-tuning examples excluded.
+      Retain old grader semantics and complete available output.
+    expected: 3358

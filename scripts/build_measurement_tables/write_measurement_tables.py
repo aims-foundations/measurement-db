@@ -19,6 +19,7 @@ from .validate_measurement_tables import (
 
 
 PARQUET_SCHEMA_VERSION = "3"
+_ARROW_BATCH_ROWS = 10_000
 _ARROW_TYPES = {
     "string": pa.string(),
     "int": pa.int64(),
@@ -75,13 +76,23 @@ def write_parquet(
         if response_scale is None:
             raise ValueError("writing responses requires an explicit response_scale")
         validate_response_grades(table, response_scale, items=items)
-    arrow = pa.Table.from_pandas(
-        table, schema=canonical_arrow_schema(name), preserve_index=False, safe=True,
-    )
+    # Arrow's canonical string/binary types have 32-bit offsets per array.
+    # Convert bounded row batches so a large trace corpus does not require one
+    # array exceeding 2 GB. Keep complete values and finish conversion before
+    # opening the output, including for an empty table. Materialize each batch:
+    # slicing pandas' Arrow strings otherwise retains the oversized parent buffer.
+    arrow = pa.concat_tables([
+        pa.Table.from_pandas(
+            table.iloc[start:start + _ARROW_BATCH_ROWS].astype(object),
+            schema=canonical_arrow_schema(name), preserve_index=False, safe=True,
+        )
+        for start in range(0, max(len(table), 1), _ARROW_BATCH_ROWS)
+    ])
     metadata = dict(arrow.schema.metadata or {})
     metadata[b"measurement_db.schema_version"] = PARQUET_SCHEMA_VERSION.encode()
     metadata[b"measurement_db.response_id_version"] = b"1"
     metadata[b"measurement_db.item_id_version"] = item_id_version.encode()
+    kwargs.setdefault("row_group_size", _ARROW_BATCH_ROWS)
     pq.write_table(arrow.replace_schema_metadata(metadata), path, **kwargs)
 
 

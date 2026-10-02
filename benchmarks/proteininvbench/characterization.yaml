@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: aff87e120dba0fa76bd4bea8a075b2af4a8546d73bc03ee39d0645e55b6a13a0
+  items:
+    rows: 7410
+    logical_sha256: 11c102e326afcdd62fb256c8d332cb45bf9e340771c3b7b24904071af4ed2228
+  responses:
+    rows: 23872
+    logical_sha256: 1ed04a49a15008c8ccb8073c15044c1d5bf532aea8eff09499b9a0d579abe6f2
+  subjects:
+    rows: 16
+    logical_sha256: 593b06bae8a4966d6bb79bfcd44e2440a4e2879d9883a2493749cfcf8770b436
+  traces:
+    rows: 23872
+    logical_sha256: ae66404037dc47d8db168eab8a6618081ec300c54420b222458faea7fdf439d2
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 23872
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 23872
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 16
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 7410
+  source_original_proteins:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 2984
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 0
+  source_raw_only_collections:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 39
+  source_raw_only_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8031783
+    locator: All CATH4.2/CATH4.3 results.pt and model_param.json members of Zenodo model_zoom.tar.gz; original backbone
+      JSONL in data.tar.gz; pinned Calculate_metrics.ipynb.
+    scope: Every saved unperturbed CATH prediction, exact original coordinate/target association, native per-model
+      layout and complete probability tensor. Recovery follows the original float32 mean over all saved positions.
+      Noisy inputs and sampled multi-chain assemblies remain raw-only until exact input association is available.
+    expected: 69042

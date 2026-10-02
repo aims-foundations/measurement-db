@@ -1,0 +1,3 @@
+- Curates the four pinned solution-optimization releases, including the five recorded stages. All 3,100 observation contents and complete traces match the previous tables.
+- TextGrad and REVOLVE are explicit, distinct harnesses for Llama-3.1-8B-Instruct. Source aliases use deterministic SHA-256 instead of Python’s process-randomized hash.
+- Uses the released answer-letter extraction rule. The separate prompt/code optimization results lack an item mapping and remain outside this curation.

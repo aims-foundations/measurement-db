@@ -1,0 +1,4 @@
+- **Sources:** Pinned original submission logs, complete trajectories, full and Verified task banks, and grading code; original bytes remain in `raw/`.
+- **Attempts:** Join predictions, trajectories and non-default execution evidence. Exclude 4,259 default-only result exports from observations while preserving them in raw. Retain empty outputs and seven trace-only attempts.
+- **Grading:** Preserve 1,870 explicit verdicts and one unavailable result. Full and Verified tasks retain their different Dockerfiles; the exact historical evaluator revisions are not fully recorded.
+- **Scope:** Seven source configurations are distinct runs, including the two iSWE variants with overlapping tasks. Capture complete source artifacts and retain the original submission and task licenses.

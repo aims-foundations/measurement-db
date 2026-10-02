@@ -1,0 +1,96 @@
+benchmark:
+  description: Human ratings and selected-response flags for 21 generating models in PRISM conversations.
+  testing_condition: 'The release contains 68,371 utterances in 8,011 conversations. Subjects are the generating
+    AI models; the 1,396 conversational users are anonymous human raters/interactors. Preserve two measures per
+    utterance: the native 1-100 subjective rating and the original chosen flag. Both describe the same generation,
+    not independent model runs. Items include the user prompt and all prior selected conversation turns, excluding
+    current outputs, ratings and alternate branches. Per-model headers and decoding settings are published configuration,
+    not verified per-request logs; exact API serialization and historical endpoint snapshots are unknown. The upstream
+    code marks identical selected texts as chosen, so 265 turns contain two chosen records but one distinct selected
+    text. Keep the published flags rather than recomputing choices. The literal EMPTY STRING marker denotes 147
+    empty outputs; preserve that source convention. Original moderation/PII flags and complete outputs remain available;
+    survey demographics are not imported. No inference, regrading or re-identification.'
+  paper_url: https://arxiv.org/abs/2404.16019
+  data_source_url: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+  subject_type: model configuration
+  item_type: task
+  license: 'Human-written text: CC-BY-4.0. Model outputs: CC-BY-NC-4.0 plus provider terms. Retain source attribution,
+    data clause and no-re-identification requirements in raw/README.md.'
+  citation: "@misc{kirk2024prismalignmentdatasetparticipatory,\n      title={The PRISM Alignment Dataset: What Participatory,\
+    \ Representative and Individualised Human Feedback Reveals About the Subjective and Multicultural Alignment\
+    \ of Large Language Models},\n      author={Hannah Rose Kirk and Alexander Whitefield and Paul R\xF6ttger and\
+    \ Andrew Bean and Katerina Margatina and Juan Ciro and Rafael Mosquera and Max Bartolo and Adina Williams and\
+    \ He He and Bertie Vidgen and Scott A. Hale},\n      year={2024},\n      eprint={2404.16019},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2404.16019},\n}"
+  tags:
+  - reasoning
+  modality:
+  - text
+  domain:
+  - preference
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-04
+  release: public
+  name: PRISM Alignment
+  version: 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6
+  multi_single_turn: multi_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      utterances: utterances.jsonl
+      conversations: conversations.jsonl
+      metadata: metadata.jsonl
+      models: protocol/data/models.jsonl
+    labels:
+      harness: PRISM Dynabench conversation collection
+      judge: PRISM human participant
+      test_condition_prefix: utterance_id=
+      input_scope: prior_selected_turns_and_current_user_prompt
+grading:
+  verifiers:
+    score:
+      field: score
+      response_scale:
+        kind: interval
+        min: 1
+        max: 100
+        direction: higher_is_better
+      rule: Preserve the participant subjective rating on the original integer visual analogue slider from Terrible
+        (1) to Perfect (100). The participant did not see numeric values. Do not normalize or infer objective correctness.
+      source: https://github.com/HannahKirk/prism-alignment/blob/a9ec82149036374768f70e132a2369a750e06bbe/prism_codebook.pdf
+      scope: Utterances codebook, score; one human rating for this exact generated utterance.
+    if_chosen:
+      field: if_chosen
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': The released response was not marked chosen.
+          '1': The released response was marked chosen.
+      rule: Preserve the original chosen flag. The participant selects a highest-rated response with random tie-breaking;
+        the source processing also marks identical selected texts. This is a within-turn preference, not correctness.
+        Do not recompute it from scores.
+      source: https://github.com/HannahKirk/prism-alignment/blob/a9ec82149036374768f70e132a2369a750e06bbe/prism_codebook.pdf
+      scope: Utterances codebook, if_chosen; original flag and competing utterance provenance retained.
+sources:
+  upstream:
+  - name: data
+    url: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    revision: 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6
+    files:
+    - match: README\.md|(?:conversations|utterances|metadata)\.jsonl
+      path: '{path}'
+  - name: protocol
+    url: https://github.com/HannahKirk/prism-alignment
+    revision: a9ec82149036374768f70e132a2369a750e06bbe
+    files:
+    - match: prism_codebook\.pdf|data/models\.jsonl|README\.md
+      path: protocol/{path}

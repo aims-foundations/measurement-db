@@ -1,0 +1,102 @@
+benchmark:
+  name: Aider C++ prompting study
+  description: 'Native Aider polyglot results from Parasoft''s MISRA prompting study: 5,356 attempts on 26 C++ tasks
+    using seven model labels and sixteen named experimental arms. One GPT-5 arm changes its instruction text between
+    runs, yielding seventeen recorded agent configurations.'
+  testing_condition: Each observation is one complete Aider run on an exercise, including up to two test-feedback
+    cycles. Preserve initial task files, full instructions, reference implementations, unit tests, complete chat
+    histories and final generated files. Model labels, weak models, edit formats, harness version and prompting
+    variants distinguish subjects. The official multi-language leaderboard contains aggregates and is not converted
+    into synthetic item outcomes. No evaluations are rerun; exact API checkpoint revisions and unspecified sampling
+    settings remain unknown.
+  paper_url: null
+  data_source_url: https://github.com/paraemsi/Reducing-violations-paper-data
+  subject_type: agent
+  item_type: task
+  license: 'Study data and transcripts: CC-BY-NC-4.0, copyright 2025 Parasoft Corporation; Aider harness: Apache-2.0;
+    Exercism task files retain their upstream licenses.'
+  citation: 'Parasoft Corporation (2025). Reducing MISRA violations in LLM-generated code by 83%: an empirical study
+    with static analysis verification. Supplementary data. https://doi.org/10.5281/zenodo.17617799'
+  tags:
+  - coding
+  - cpp
+  - code_editing
+  - prompting
+  - agent
+  modality:
+  - text
+  domain:
+  - software_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Recorded build or unit tests failed within the run budget
+      '1': Recorded build and unit tests passed within the run budget
+  categorical: true
+  release_date: null
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: release/c1c4381d91106cf6bcc811c323a00104712a6ad0/paper-data.zip
+      tasks: tasks/fb036cf8dfa83f361b757dd3ee820143f4a296d9
+    archive:
+      root: Reducing-violations-paper-data-c1c4381d91106cf6bcc811c323a00104712a6ad0
+    parsing:
+      instruction_boundary: Only use standard libraries, don't suggest installing any packages.
+sources:
+  upstream:
+  - name: study
+    url: https://codeload.github.com/paraemsi/Reducing-violations-paper-data/zip/c1c4381d91106cf6bcc811c323a00104712a6ad0
+    revision: c1c4381d91106cf6bcc811c323a00104712a6ad0
+    file: release/c1c4381d91106cf6bcc811c323a00104712a6ad0/paper-data.zip
+    size: 150159498
+    sha256: ae93de9b7bdf61176cd4f0faebfa225417786e8eb99cf2134e202e3b95522c2d
+  - name: tasks
+    url: https://github.com/paraemsi/polyglot-benchmark
+    revision: fb036cf8dfa83f361b757dd3ee820143f4a296d9
+    files:
+    - match: README\.md|cpp/.*
+      path: tasks/fb036cf8dfa83f361b757dd3ee820143f4a296d9/{path}
+  - name: harness
+    url: https://github.com/Aider-AI/aider
+    revision: 32faf82b31c54d6f19c5c3d63bc294f748bd3e72
+    files:
+    - match: benchmark/(?:benchmark\.py|prompts\.py|cpp-test\.sh)|LICENSE\.txt
+      path: harness/32faf82b31c54d6f19c5c3d63bc294f748bd3e72/{path}
+  - name: patch_readme
+    url: https://gist.githubusercontent.com/paraemsi/6ac59bf2d3583f3a16efaa0798e146fc/raw/afb455e2017903a5fabc10cef844f198b969832a/README.md
+    revision: fb1846346a754f102b832ca688f8deec79aebf5f
+    file: harness_patch/fb1846346a754f102b832ca688f8deec79aebf5f/README.md
+    size: 1646
+    sha256: 0073d23308b3fc282327e175f8d16924199287e4ff0070ba3ae482a88c8d3862
+  - name: patch
+    url: https://gist.githubusercontent.com/paraemsi/6ac59bf2d3583f3a16efaa0798e146fc/raw/2bb1a0cae46e8a209a42cb1faa686edbdb10e86a/aider.diff
+    revision: fb1846346a754f102b832ca688f8deec79aebf5f
+    file: harness_patch/fb1846346a754f102b832ca688f8deec79aebf5f/aider.diff
+    size: 4904
+    sha256: 2c0518af1d4db2d7fd202492a89b06fb01986192b311550bac9f7506eb645725
+grading:
+  rule: 'The recorded C++ build and unit tests must succeed within the Aider run''s maximum of two test-feedback
+    cycles. Preserve the provider''s pass2 verdict: the final tests_outcomes boolean is the response. Compilation
+    errors, failed tests and timeouts remain the recorded failures; MISRA violation counts are not the response.'
+  verifiers:
+    functional_tests:
+      kind: code_execution
+      source: https://github.com/paraemsi/Reducing-violations-paper-data/tree/c1c4381d91106cf6bcc811c323a00104712a6ad0
+      harness_source: https://github.com/Aider-AI/aider/blob/32faf82b31c54d6f19c5c3d63bc294f748bd3e72/benchmark/benchmark.py
+      published_patch: https://gist.github.com/paraemsi/6ac59bf2d3583f3a16efaa0798e146fc/fb1846346a754f102b832ca688f8deec79aebf5f
+      method: 'benchmark.run_unit_tests with benchmark/cpp-test.sh: configure CMake with EXERCISM_RUN_ALL_TESTS=1
+        and run make; a zero exit status passes.'
+      max_test_cycles: 2
+      result_field: tests_outcomes[-1] (agrees with the published pass2 column)
+      recorded_harness_commit: 32faf82-dirty
+      rule: 'The recorded C++ build and unit tests must succeed within the Aider run''s maximum of two test-feedback
+        cycles. Preserve the provider''s pass2 verdict: the final tests_outcomes boolean is the response. Compilation
+        errors, failed tests and timeouts remain the recorded failures; MISRA violation counts are not the response.'

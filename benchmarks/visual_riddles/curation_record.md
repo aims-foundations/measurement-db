@@ -1,0 +1,3 @@
+- Preserve all 3,186 human-rated AI answers and their original grades. Distinguish eight model/pipeline configurations; retain the 1,200 human answers in the raw source only. No model or judge is executed.
+- Restore all 400 image inputs and 393 separate human-caption inputs. Different images no longer merge when question text matches. Keep full answers, references, captions, source positions and exact image bytes; image links on caption-only items are source context.
+- The author dataset card declares Apache-2.0 with a commercial-training restriction and retained image rights; preserve those terms. Generated intermediate captions, individual human votes and exact historical request settings are unavailable. The paper documents the human majority grading protocol.

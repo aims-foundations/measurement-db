@@ -281,7 +281,8 @@ def declared_source_artifacts(sources: Mapping, *, benchmark_dir: str | Path | N
         if names and not any(key in os.environ for key in (
                 "MEASUREMENT_DB_SOURCE_REPO", "MEASUREMENT_DB_SOURCE_REVISION", "MEASUREMENT_DB_SOURCE_MANIFEST")):
             from .load_source_files import upstream_artifacts
-            return upstream_artifacts(sources["upstream"], names)
+            return upstream_artifacts(sources["upstream"], names,
+                raw_dir=Path(benchmark_dir) / "raw" if benchmark_dir is not None else None)
         from .source_snapshots import snapshot_artifacts, snapshot_location
         if benchmark_dir is None:
             raise ValueError("benchmark_dir is required to resolve the source snapshot")

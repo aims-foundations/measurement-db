@@ -1,0 +1,129 @@
+format_version: 1
+tables:
+  traces:
+    rows: 9524
+    logical_sha256: ab62090c64f8db22306e9a0899e2f17c340b1c0c54de976d7cf2faa89b79503f
+  subjects:
+    rows: 21
+    logical_sha256: 4ed0f9e224edee01c83aca3252069856d3769d8299d5c0269e7124f0b3ae9d97
+  responses:
+    rows: 9524
+    logical_sha256: 0f216d82ca5d3e31dbdd1c9ca2d4921763f9e5fddd7ebf0cfca5327786292467
+  assets:
+    rows: 779
+    logical_sha256: 26355d05ed702a15f328aecc93e7106d591ba81de6e0e2ecd88cafc081f90fe8
+  items:
+    rows: 1362
+    logical_sha256: 20ac160e8877018b0f580ea4a3cea687ab4fa9684a2ae92a6977a341703f631c
+  benchmarks:
+    rows: 1
+    logical_sha256: f34209e30df978fd635f967fcf3457f7a19d6e30874f420bda1596a872fcb2eb
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 9524
+  source_native_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 8390
+  source_pose_constrained_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 8390
+  source_topology_only_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 1134
+  source_scenes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 400
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 1362
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 21
+  source_recorded_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 2800
+  source_unrecorded_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 5590
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 9524
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 779
+  source_image_links:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PhyBlock/PhyBlock/tree/da81ed9cad8184509aadb6f01af83d53e5c9d6fa
+    locator: outputs/*/*.json; data/SCENEs_400_*; evaluate_block_construction.py at the pinned revision.
+    scope: Released assembly outputs only. Replay the native deterministic checker; retain both dependent
+      scoring conditions and three documented prompt representations. Paper task definitions for API records
+      are distinguished from recorded requests. Full source records and exact task-image bytes are checked.
+    expected: 2724

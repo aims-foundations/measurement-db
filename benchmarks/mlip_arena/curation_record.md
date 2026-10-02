@@ -1,0 +1,3 @@
+- Import the pinned author results for eight simulation families, with original structures and complete curves/trajectory records. The shared downloader restores the unchanged inputs from GitHub and Hugging Face.
+- Group stability frames by simulation; collapse 89 identical diatomic export copies with all source coordinates. Keep undefined grades null, exclude 33 missing-output placeholders, and retain physical predictions as outputs rather than accuracy scores.
+- Check every recorded input, reference, output and metric against the source. Preserve initial momenta and magnetic moments; vacancy starting geometries and historical model/hardware settings remain explicitly unavailable. No new evaluations were run.

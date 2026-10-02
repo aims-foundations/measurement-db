@@ -1,0 +1,105 @@
+benchmark:
+  name: KernelBench
+  description: Released kernel-generation correctness assessments for the original 250 PyTorch workloads, including
+    baseline, repeated sampling and iterative refinement.
+  testing_condition: Use the original task definitions verified against the released refinement prompts; all 250
+    current task definitions have changed. Subjects distinguish the method, feedback setting, model family and recorded
+    API identifier; unknown API identifiers remain unknown. A trial identifies the source's sample number plus one.
+    Refinement turns and final assessments are dependent reports of that sample, not additional independent generations.
+    A final record identical to a numeric record is represented once, with a result alias on the latest identical
+    numeric record and every possible exact match recorded in the trace. That choice is a storage convention, not
+    evidence that the final assessment originated at that unique turn. Distinct final assessments are retained without
+    replacing earlier verdicts. Empty numeric dictionaries are unpopulated log slots, not attempted generations
+    or failures. Recorded compilation failures, empty generated kernels with explicit failure verdicts, and ungraded
+    final assessments are preserved. Evaluation hardware is retained as reported, including cpu and unknown values;
+    do not treat all assessments as new L40S evaluations. Full source records contain generated code, feedback and
+    available evaluator diagnostics without truncation. Aggregate analysis must select a method and report role
+    rather than pool refinement steps and final reports as independent trials.
+  paper_url: https://arxiv.org/abs/2502.10517
+  data_source_url: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+  subject_type: model
+  item_type: task
+  license: Apache-2.0 for the released kernelbench-samples dataset; task definitions and harness retain their respective
+    upstream licenses.
+  citation: 'Ouyang, Guo, Arora, Zhang, Hu, Re and Mirhoseini. KernelBench: Can LLMs Write Efficient GPU Kernels?
+    ICML 2025.'
+  tags:
+  - gpu
+  - kernel
+  - code_generation
+  modality:
+  - text
+  domain:
+  - ml_engineering
+  - software_engineering
+  response_type: binary
+  categorical: true
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Reported functional-correctness failure
+      '1': Reported functional-correctness success
+  release_date: 2025-02
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      samples: samples
+      tasks: tasks/data
+      harness: upstream-v0.tar.gz
+    model_labels:
+      claude-3.5-sonnet: Claude 3.5 Sonnet
+      deepseek-r1: DeepSeek-R1
+      deepseek-v3: DeepSeek-V3
+      gpt-4o: GPT-4o
+      llama-3.1-405b: Llama 3.1 405B Instruct
+      llama-3.1-70b: Llama 3.1 70B Instruct
+      llama-3.1-70b-inst: Llama 3.1 70B Instruct
+      openai-o1: OpenAI o1
+    feedback_labels:
+      reflection_last_only: G
+      eval_result_last_only: G+E
+      eval_result_profiler_last_only: G+E+P
+    item_features:
+      task_version: 16b08a8f76bde445e99ee423678fe85285bc8450
+    subject_features:
+      harness: KernelBench
+sources:
+  upstream:
+  - name: samples
+    url: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    revision: b32b70bf2d84c7395a94a214e83183152233f298
+    files:
+    - match: (?:baseline_eval|repeated_sampling)/.+/kernel\.json|iterative_refinement/.+/log\.json|README\.md
+      path: samples/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/ScalingIntelligence/KernelBench
+    revision: 16b08a8f76bde445e99ee423678fe85285bc8450
+    files:
+    - match: data/level_[123]-.*\.parquet|README\.md
+      path: tasks/{path}
+  - name: harness
+    url: https://codeload.github.com/ScalingIntelligence/KernelBench/tar.gz/6500bbc8cf102520d7a8f09be34ee6d5db1c29b0
+    revision: 6500bbc8cf102520d7a8f09be34ee6d5db1c29b0
+    file: upstream-v0.tar.gz
+    size: 1103048
+    sha256: 2f0197e23708924106f03a27f3e646d0ad1b6d0d96838bad0289bf089157036f
+grading:
+  rule: 'Read the source''s recorded functional-correctness verdict: true is 1, false is 0, and an absent grading
+    verdict is null. Do not infer correctness from runtime or rerun kernels. The released evaluator checks output
+    shape and numerical agreement with the original PyTorch task on randomized inputs, using torch.allclose with
+    atol=rtol=0.01. This grade is not a speedup score.'
+  verifiers:
+    functional_correctness:
+      kind: recorded_code_execution
+      source: https://github.com/ScalingIntelligence/KernelBench/blob/6500bbc8cf102520d7a8f09be34ee6d5db1c29b0/src/eval.py
+      function: eval_kernel_against_ref
+      criterion: Recorded functional correctness against the original reference implementation, not a performance
+        threshold.
+      execution: Read the released verdict and preserve its complete evaluation record. No generated code is executed
+        during curation.

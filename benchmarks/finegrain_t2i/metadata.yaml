@@ -1,0 +1,90 @@
+benchmark:
+  name: FineGRAIN (T2I)
+  description: Released text-to-image generations on 760 prompts covering 27 failure modes, with human annotations
+    for the five original generators.
+  testing_condition: 'One observation per released model/image. Restore the original five models'' image paths from
+    the first human-label release, checking prompt and grade agreement. Later CSV appends repeat image references
+    under new prompt IDs; collapse those copies while retaining every native row in the trace. Only the original
+    human-label release supplies grades: response is 1 minus its failure flag. Fifty original images have no human
+    grade; later models'' zero placeholders remain ungraded. Preserve those attempts with null responses. The released
+    source prompts are retained; full historical inference settings and annotator identities are unknown. Auxiliary
+    GitHub caption/judge exports describe separate generations and are retained in raw without asserting that they
+    grade these HF images. No new generation or judging is performed.'
+  paper_url: https://arxiv.org/abs/2512.02161
+  data_source_url: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain
+  subject_type: model
+  item_type: prompt
+  license: MIT as declared in the upstream dataset README and dataset card. The separate Croissant metadata declares
+    CC-BY-4.0; preserve this source inconsistency.
+  citation: 'Hayes, K. D. et al. (2025). FineGRAIN: Evaluating Failure Modes of Text-to-Image Models with Vision
+    Language Model Judges. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - text_to_image
+  - failure_modes
+  - human_evaluation
+  modality:
+  - text
+  - image
+  domain:
+  - general
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The specified failure mode is present.
+      '1': The specified failure mode is absent.
+  categorical: true
+  release_date: '2025-05-15'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      current: dataset/metadata.csv
+      original: original/metadata.csv
+      descriptions: code/data/prompts_by_failure_modes.json
+    subject_features:
+      harness: FineGRAIN
+      configuration_scope: Author-reported generator label. Historical weight revision and full inference settings
+        are not available in the observation export.
+sources:
+  upstream:
+  - name: dataset
+    url: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain
+    revision: 2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e
+    files:
+    - match: (?:README\.md|metadata\.(?:csv|json)|dataset_(?:card|info)\.json|images/.*\.png)
+      path: dataset/{path}
+  - name: original
+    url: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain
+    revision: 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0
+    files:
+    - match: metadata\.csv
+      path: original/{path}
+  - name: code
+    url: https://github.com/khayes95/finegrain_eval
+    revision: 1cd7599177d490a4c8ec611d9af72fa1cc594eaa
+    files:
+    - match: .*
+      path: code/{path}
+  - name: paper
+    url: https://arxiv.org/pdf/2512.02161v1.pdf
+    revision: 2512.02161v1
+    file: paper.pdf
+    size: 37501796
+    sha256: b0f8aa64aeae85dd4df6ff93a03127d788222421278a05a2f702fcef64c53f4b
+grading:
+  rule: 'The generated image succeeds if the specified failure mode is absent. Preserve the original human verdict:
+    response = 1 - human_labels. An unavailable human grade is null, not success.'
+  verifiers:
+    human:
+      kind: released_human_annotation
+      source: https://huggingface.co/datasets/KevinDavidHayes/t2i-finegrain/blob/2ecbcb71e1357e0c5f4a94689bf89c2bba8fd92e/README.md
+      label_source_revision: 8119e506b1a2a6f04b0341c8b6fa90cc30fa28e0
+      field: human_labels
+      positive_native_meaning: Failure mode present
+      annotator_identity: null

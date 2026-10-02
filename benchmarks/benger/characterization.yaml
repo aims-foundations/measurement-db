@@ -1,0 +1,162 @@
+format_version: 1
+tables:
+  traces:
+    rows: 9328
+    logical_sha256: bc3c127e6d2efdfbb1d203a72ecf5a51717afdfd30d9959bf68013c56d4444fd
+  subjects:
+    rows: 41
+    logical_sha256: f10d09dc63cfec47c2bfece4ebe0c0fdbe941782ac5dfc8f359dea3bf192d9fb
+  responses:
+    rows: 9328
+    logical_sha256: 605e62ec020c6d6ff40e42c49944efa25964d05af4b807ce74c32bc55c88258b
+  items:
+    rows: 760
+    logical_sha256: a7eb837993bdf0aa97c887521b1be827f98f4c84f6720fe5259dd5836209b96b
+  benchmarks:
+    rows: 1
+    logical_sha256: a899b2be27605a4f8d97a29766a8e53f91e225246295fd5de2c8f2efebe51cfd
+source_claims:
+  source_grundprinzipien_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 531
+  source_grundprinzipien_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 6366
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 9302
+  source_correct_or_passed:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 7431
+  source_benchathon_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 15
+  source_benchathon_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 259
+  source_missing_historical_prompt:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 78
+  source_excluded_zjs_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 383
+  source_zjs_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 198
+  source_zjs_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 2703
+  source_grading_errors:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 25
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 26
+  source_missing_evaluation:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 9328
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 9328
+  source_native_models:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/20489788
+    locator: Original task/generation exports, with permission-cleared ZJS inputs and the documented native grading
+      fields.
+    scope: All released GP and Benchathon attempts; ZJS only with ip_cleared=true. Missing or failed grading remains
+      null.
+    expected: 16

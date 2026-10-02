@@ -1,0 +1,29 @@
+format_version: 1
+tables:
+  subjects:
+    rows: 1
+    logical_sha256: c865b3462298e1b088045775c0b5bc5208357fcc76ad0bfe618f087ba355da7d
+  responses:
+    rows: 244
+    logical_sha256: 3f05d6fb74defabc0c9256161539aaae3ec223be4f210a98c287d19277141f1e
+  items:
+    rows: 244
+    logical_sha256: 97983e934457e6f741f3ee10b51ed01c7ba398b07de0ab32c8846ea004d741b2
+  benchmarks:
+    rows: 1
+    logical_sha256: 39e38c455c3a1b75f50bc022e80ad2f70492079d5e0f967dd93c780af2fa17da
+source_claims:
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/haoxiongliu/ProofAug
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 244
+  source_solved:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/haoxiongliu/ProofAug
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 161

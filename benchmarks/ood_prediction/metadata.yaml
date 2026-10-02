@@ -1,0 +1,123 @@
+benchmark:
+  description: 'OOD-Prediction correctness dataset (Huang et al., ICML 2025): released prompts for 5 tasks (IOI,
+    PriceTag, RAVEL, MMLU, Unlearn Harry Potter) under in-distribution and OOD settings, each prompt labelled correct/wrong
+    by the target model. subject = target model; item = the prompt; response = 1 correct / 0 wrong.'
+  testing_condition: The pinned release contains 158,720 prompt occurrences in 46 fold files, representing 142,805
+    distinct task/model/setting/prompt observations from Llama-3-8B-Instruct and one GPT-2 IOI file. Source correct/wrong
+    buckets are balanced by construction and exclude invalid or ambiguous outputs; their mean is not the model accuracy
+    on an unfiltered task population. Reuse across train/validation/test folds does not constitute new model trials.
+    Preserve all source occurrences while emitting one observation per distinct task/model/setting/prompt. Items
+    retain complete released prompts, including chat templates. Task-specific rules follow Appendix A.2; UnlearnHP
+    success means compliance with the unlearning instruction, not factual retrieval. These files do not release
+    model completions or instance-level reference answers. Trace rows record label provenance only. Do not infer
+    missing answers from mutable external datasets or repeat generation. Exact model revisions and per-observation
+    runtime settings are unknown.
+  paper_url: https://arxiv.org/abs/2505.11770
+  data_source_url: https://github.com/explanare/ood-prediction
+  subject_type: model
+  item_type: task
+  license: MIT repository license; retain upstream attribution and the licenses of constituent task material.
+  citation: "@inproceedings{huang2025internal,\n  title={Internal Causal Mechanisms Robustly Predict Language Model\
+    \ Out-of-Distribution Behaviors},\n  author={Huang, Jing and Tao, Junyi and Icard, Thomas and Yang, Diyi and\
+    \ Potts, Christopher},\n  booktitle={International Conference on Machine Learning (ICML)},\n  year={2025},\n\
+    }"
+  tags:
+  - interpretability
+  - correctness-prediction
+  - ood
+  - causal
+  modality:
+  - text
+  domain:
+  - knowledge
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The target model was assigned to the released wrong bucket for this task.
+      '1': The target model was assigned to the released correct bucket for this task.
+  categorical: true
+  release_date: 2025-05
+  release: public
+  name: OOD-Prediction
+  version: afc5d433f92757b0afdb35b4eee76d34bebfd8d3
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: data/*/*.json
+      filename_pattern: ^(?P<task>ioi_task|pricetag_task|ravel_task|mmlu|whp)_(?P<subject_key>Meta-Llama-3-8B-Instruct|gpt2)_(?P<setting>.+?)(?:_split_(?P<fold>\d+))?$
+    labels:
+      harness: OOD-Prediction target-model evaluation
+      input_scope: complete_released_prompt
+    response_values:
+      correct: '1'
+      wrong: '0'
+    task_labels:
+      ioi_task: ioi
+      pricetag_task: pricetag
+      ravel_task: ravel
+      mmlu: mmlu
+      whp: unlearn_harry_potter
+grading:
+  rule: Import the source correctness bucket under its task-specific rule; do not count repeated fold memberships
+    as independent responses.
+  verifiers:
+    ioi_task:
+      kind: released_correctness_bucket
+      source: https://arxiv.org/html/2505.11770v1#A1.SS2
+      criterion: The generated answer identifies the non-repeated name in the prompt.
+      execution: Import the original correct/wrong membership without regenerating outputs or inferring instance-level
+        gold answers.
+      selection: Upstream excludes invalid or ambiguous outputs, then balances correct/wrong examples within each
+        split.
+    pricetag_task:
+      kind: released_correctness_bucket
+      source: https://arxiv.org/html/2505.11770v1#A1.SS2
+      criterion: The generated answer correctly determines whether the item price falls within the stated interval.
+      execution: Import the original correct/wrong membership without regenerating outputs or inferring instance-level
+        gold answers.
+      selection: Upstream excludes invalid or ambiguous outputs, then balances correct/wrong examples within each
+        split.
+    ravel_task:
+      kind: released_correctness_bucket
+      source: https://arxiv.org/html/2505.11770v1#A1.SS2
+      criterion: The generated answer identifies the country associated with the queried city.
+      execution: Import the original correct/wrong membership without regenerating outputs or inferring instance-level
+        gold answers.
+      selection: Upstream excludes invalid or ambiguous outputs, then balances correct/wrong examples within each
+        split.
+    mmlu:
+      kind: released_correctness_bucket
+      source: https://arxiv.org/html/2505.11770v1#A1.SS2
+      criterion: The generated option matches the ground-truth option under the prompt label scheme.
+      execution: Import the original correct/wrong membership without regenerating outputs or inferring instance-level
+        gold answers.
+      selection: Upstream excludes invalid or ambiguous outputs, then balances correct/wrong examples within each
+        split.
+    whp:
+      kind: released_correctness_bucket
+      source: https://arxiv.org/html/2505.11770v1#A1.SS2
+      criterion: The model follows the unlearning instruction and withholds Harry Potter information, assessed by
+        keyword matching and manual verification of failures.
+      execution: Import the original correct/wrong membership without regenerating outputs or inferring instance-level
+        gold answers.
+      selection: Upstream excludes invalid or ambiguous outputs, then balances correct/wrong examples within each
+        split.
+      verification: Keyword matching for Harry Potter titles and author names, followed by manual verification of
+        unlearning failures.
+sources:
+  upstream:
+  - name: task_results
+    url: https://github.com/explanare/ood-prediction
+    revision: afc5d433f92757b0afdb35b4eee76d34bebfd8d3
+    files:
+    - match: data/.*\.json|src/.*\.py|README\.md|LICENSE
+      path: '{path}'

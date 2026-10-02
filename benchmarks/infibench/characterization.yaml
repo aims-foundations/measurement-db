@@ -1,0 +1,128 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: d02cf431523bbeca1041e71b4b5048bc8413836ad6107e2def721bfe341679fa
+  items:
+    rows: 369
+    logical_sha256: f43650431aaf2c12803ee664890a840811096391713c65abd1d293f731de43df
+  responses:
+    rows: 699042
+    logical_sha256: c5b5f6574a1aac8498450fe507892711bc16472f67d47ba291c39354396f057c
+  subjects:
+    rows: 121
+    logical_sha256: 272868a4dc2448de50d1838817bb3d31ffa0d908b21d3f2d23c83a5716f3f8ed
+  traces:
+    rows: 699042
+    logical_sha256: b8a319893eb6b96dc85b09a59fe15ab8645e6441b0fb09a3fef8c31c24265e9b
+source_claims:
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 121
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 121
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 369
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 699042
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 699042
+  source_outside_zero_one:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 57
+  source_attached_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 446322
+  source_missing_output_associations:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 252720
+  source_human_answer_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 2808
+  source_aggregate_cases_reconciled:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 28114
+  source_empty_result_cases:
+    kind: count
+    origin: derived_from_data
+    source: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+    locator: All 119 original full-release YAML reports, 91 captured raw-response CSVs, and the two historical development
+      reports at infi-coder/infibench-evaluator 96cb098c143e42464acdab4ba22da00193039da6. Question and grader definitions
+      are pinned independently in metadata.
+    scope: Each row is one sampled completion and original grading detail. Full-release all_scores and old component
+      arithmetic preserve native values; published mean-of-best-ten summaries are reconciled separately.
+    expected: 2

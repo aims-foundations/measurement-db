@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: de87ea084043a0c4e31be9a279a3b360fda295d12ba36d9506ebef64ad9f2f23
+  items:
+    rows: 1742
+    logical_sha256: 7482fb99c19a020f5274f94caf4d4267d3dc98d67f9dc65c6c507f97d5770804
+  responses:
+    rows: 7575
+    logical_sha256: 7f80da6f2773acb07443f7ffa5b4ebed4da8d622a5de19984a5dbf78a5656e91
+  subjects:
+    rows: 31
+    logical_sha256: 3f8cb350b5e999f670dde0fc67aaaff67d908d39e5ef427b8b6b54b9c10ff00d
+  traces:
+    rows: 7575
+    logical_sha256: 0383de6154062bd9b8daa7ed91c3986d5ea4e0daa29f59e2ddafc34cab052d3b
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 31
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 1742
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 7575
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 7575
+  source_prompt_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 1751
+  source_ranked_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 2920
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 4655
+  source_ranked_groups:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 601
+  source_rank_gap_groups:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/OpenAssistant/oasst1/tree/fdf72ae0827c1cda404aff25b6603abec9e3399b
+    locator: '2023-04-12_oasst_all.messages.jsonl.gz: synthetic assistant messages with nonempty model_name, original
+      parent prompts, rank values and released sibling identities.'
+    scope: All model-attributed assistant replies in the original OASST1 all-messages export, including moderator-halted
+      and unranked attempts. Ranks remain relative to their comparison groups. Human responses and generated initial
+      prompts are excluded.
+    expected: 2

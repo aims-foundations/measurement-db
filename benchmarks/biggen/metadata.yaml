@@ -1,0 +1,107 @@
+benchmark:
+  description: Released rubric-based judgments of 76,555 model generations on the 765-instance BiGGen-Bench,
+    preserving each published judge rating and its complete output.
+  testing_condition: "Import the five Parquets in the release card's four default splits. Five LLM judges\
+    \ and the released human ratings use item-specific 1\u20135 rubrics. Two Prometheus variants publish\
+    \ five score positions for most generations; retain those as repeated measurements of the same saved\
+    \ output, not as independent generations. Keep null score positions and ungraded observations for\
+    \ applicable LLM judges; exclude Prometheus on the two llm_judge tasks that the upstream evaluator\
+    \ explicitly skips. The human -1 sentinel means no released human rating and contributes no human\
+    \ measurement. Preserve all source instructions, system prompts, reference solutions and rubric variants.\
+    \ Exact historical generation settings are not recorded per response; one exported feedback string\
+    \ per Prometheus score list is not aligned to individual ratings. Preserve the exact released model\
+    \ identifier as a subject feature so base/chat models and dated API revisions remain distinct even\
+    \ when the shared registry groups them under one family."
+  paper_url: https://arxiv.org/abs/2406.05761
+  data_source_url: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+  subject_type: model
+  item_type: task
+  license: The benchmark task release declares CC-BY-SA-4.0; the captured results card does not separately
+    state a license.
+  citation: "@misc{kim2025biggenbenchprincipledbenchmark,\n      title={The BiGGen Bench: A Principled\
+    \ Benchmark for Fine-grained Evaluation of Language Models with Language Models},\n      author={Seungone\
+    \ Kim and Juyoung Suk and Ji Yong Cho and Shayne Longpre and Chaeeun Kim and Dongkeun Yoon and Guijin\
+    \ Son and Yejin Cho and Sheikh Shafayat and Jinheon Baek and Sue Hyun Park and Hyeonbin Hwang and\
+    \ Jinkyung Jo and Hyowon Cho and Haebin Shin and Seongyun Lee and Hanseok Oh and Noah Lee and Namgyu\
+    \ Ho and Se June Joo and Miyoung Ko and Yoonjoo Lee and Hyungjoo Chae and Jamin Shin and Joel Jang\
+    \ and Seonghyeon Ye and Bill Yuchen Lin and Sean Welleck and Graham Neubig and Moontae Lee and Kyungjae\
+    \ Lee and Minjoon Seo},\n      year={2025},\n      eprint={2406.05761},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.05761},\n}"
+  tags:
+  - rubric
+  modality:
+  - text
+  domain:
+  - general
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+    meanings:
+      '1': Category 1 of the item-specific published score rubric.
+      '2': Category 2 of the item-specific published score rubric.
+      '3': Category 3 of the item-specific published score rubric.
+      '4': Category 4 of the item-specific published score rubric.
+      '5': Category 5 of the item-specific published score rubric.
+  categorical: true
+  release_date: 2024-06
+  name: BiGGen-Bench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      data: source_review/f34b56e0b3e5ce86687796c319c4fbc06f5e7b7e/data
+    splits:
+      human_eval: human_eval-*.parquet
+      llm_as_a_judge: llm_as_a_judge-*.parquet
+      multilingual_human_eval: multilingual_human_eval-*.parquet
+      multilingual_llm_as_a_judge: multilingual_llm_as_a_judge-*.parquet
+    judges:
+      human_score: human
+      gpt4_score: gpt-4-1106-preview
+      gpt4_04_turbo_score: gpt-4-turbo-2024-04-09
+      claude_score: claude-3-opus-20240229
+      prometheus_8x7b_score: prometheus-eval/prometheus-8x7b-v2.0
+      prometheus_8x7b_bgb_score: prometheus-eval/prometheus-bgb-8x7b-v2.0
+    subject:
+      harness: BiGGen-Bench
+    missing:
+      human_sentinel: '-1'
+      excluded_prometheus_tasks: llm_judge_absolute,llm_judge_relative
+grading:
+  rule: Use the released judge score on the item-specific five-category rubric. Preserve missing grades
+    as null and retain repeated rating positions without averaging; no new judge is executed.
+  verifiers:
+    rubric:
+      kind: published_rubric_judgment
+      source: https://github.com/prometheus-eval/prometheus-eval/blob/dcfb44272d5d0414832f5dbb8c2a05ebc2614234/BiGGen-Bench/run_response_eval.py
+      interpretation: Use the released judge score on the item-specific five-category rubric. Preserve
+        missing grades as null and retain repeated rating positions without averaging; no new judge is
+        executed.
+      feedback_alignment: One released feedback string accompanies each Prometheus five-score list; no
+        per-position feedback association is inferred.
+      configuration_status: The release identifies the judge family; its exact historical weights, prompt
+        version and individual run settings are not recorded.
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    revision: f34b56e0b3e5ce86687796c319c4fbc06f5e7b7e
+    files:
+    - match: (?:README\.md|data/(?:human_eval|llm_as_a_judge|multilingual_human_eval|multilingual_llm_as_a_judge)-.*\.parquet)
+      path: source_review/f34b56e0b3e5ce86687796c319c4fbc06f5e7b7e/{path}
+  - name: protocol
+    url: https://github.com/prometheus-eval/prometheus-eval
+    revision: dcfb44272d5d0414832f5dbb8c2a05ebc2614234
+    files:
+    - match: (?:LICENSE|BiGGen-Bench/(?:README\.md|run_response_eval\.py|run_api_inference\.py|run_base_inference\.py|run_chat_inference\.py|make_report\.py))
+      path: source_review/dcfb44272d5d0414832f5dbb8c2a05ebc2614234/{path}
+  - url: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench
+    revision: 3a9589efbad801052bb2e153b44ce027498c27e4

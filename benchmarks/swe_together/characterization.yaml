@@ -1,0 +1,67 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4341
+    logical_sha256: d62b90f0ea01fa3e184b61d4af8be2a06ec39f61227dc05fb2c4d5251d3348b5
+  subjects:
+    rows: 20
+    logical_sha256: 3274fd348aa500e2397638e9969d037f3ba8fce07584254e6c882b6a06a9a4d6
+  responses:
+    rows: 4341
+    logical_sha256: 731401e211de9d3bb0d93a4375333963ea7ae7755ef0facb797c50bba8b68ac0
+  items:
+    rows: 109
+    logical_sha256: 7413c4d2db4903dead44d83c166291c55ffde18f8046eaf899be564ae634c524
+  benchmarks:
+    rows: 1
+    logical_sha256: a3f8960769426c2469add61f0e411eee9b5387cc1a50a12e36df720b9f09e755
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 4341
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 109
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 20
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 4341
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 2612
+  missing_replicates:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 17
+  missing_model_task_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://togetherbench.com/metrics.js
+    locator: window.METRICS models.*.trials; pinned author task JSONL; complete independent native-source audit
+    scope: 2026-09-30 captured current export only; missing slots excluded; historical versions preserved separately.
+    expected: 1

@@ -1,0 +1,118 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 4ca6a318781e8d61aa44fdd2afa8ed01de225cb22fb90a26f71f9ada318fb79f
+  items:
+    rows: 15616
+    logical_sha256: f8c2aa041a1f7e84cca33cbadb83c9d6b6d8fb4405b2779b6712415a0084c2c2
+  responses:
+    rows: 49897
+    logical_sha256: 79e02290d9083608967047232dadd336e07a35cfbfdf5d5f25e7f2692a5f5eaa
+  subjects:
+    rows: 3
+    logical_sha256: 605bb17037afbd85f5de4aee6ea3f6e363dc3103b78b2258e0f790daeaed5beb
+  traces:
+    rows: 49897
+    logical_sha256: ee309f186a57d4d3afb3dc9aa845eeaff8ff913a9a3ab855b77ee670ea38850a
+source_claims:
+  source_renderings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 76002
+  source_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 49897
+  source_task_bank_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 59136
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 3
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 15616
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 49897
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 49897
+  successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 21513
+  failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 28384
+  runs_without_task_bank_entry:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/SWE-smith-trajectories
+    locator: All rows of the three declared tool/ticks/XML splits at the pinned release, matched by provider traj_id
+      and original Parquet row; task-bank claims use the separately pinned SWE-smith release.
+    scope: Retain one original verdict per trajectory ID and every released conversation rendering. The known misaligned
+      patch export is preserved only in raw. These formatted conversations are not claimed to be untouched execution
+      logs.
+    expected: 2858

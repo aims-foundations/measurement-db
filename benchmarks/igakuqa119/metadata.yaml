@@ -1,0 +1,152 @@
+benchmark:
+  name: IgakuQA119
+  description: Released Qwen2.5-72B-Instruct answers on all 400 questions of the 119th Japanese Medical Licensing
+    Examination, with original explanations and source image resources.
+  testing_condition: One released OpenRouter Qwen2.5-72B-Instruct experiment, split across six exam blocks. Reconstruct
+    the published initial system/user text template from the question fields saved in each answer export. Preserve
+    the blank question text for 119C18 rather than silently substituting its later populated task-bank text. The
+    solver defaults to text-only for OpenRouter; the export does not record its optional vision override or per-call
+    settings. Retain the 150 original exam images as benchmark_resource assets, not as evidence of image delivery
+    to this model. Parsed answer, confidence, explanation, cot and timestamp fields are complete; original HTTP
+    responses and any internal formatting retries were not saved. Recompute binary correctness using the pinned
+    upstream grader, preserving numeric characters and its accepted alternatives for 119E28. These are correctness
+    indicators, not the exam's weighted point scores; point weights remain item attributes. No new model calls or
+    LLM judgments.
+  paper_url: https://github.com/naoto-iwase/IgakuQA119
+  data_source_url: https://github.com/naoto-iwase/IgakuQA119
+  subject_type: model
+  item_type: task
+  license: The captured IgakuQA119 repository declares the MIT license. Its question and image resources originate
+    from the Japanese Medical Licensing Examination.
+  citation: 'naoto-iwase. IgakuQA119: LLM Evaluation on the 119th Japanese Medical Licensing Examination (2025).'
+  tags:
+  - medicine
+  - multilingual
+  - multiple_choice
+  - numeric_answers
+  modality:
+  - text
+  - image
+  domain:
+  - medicine
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect under the released grading rule
+      '1': Correct under the released grading rule
+  categorical: true
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.tar.gz
+      root: IgakuQA119-09a892bd18bf3803597563e965e2627a2ac866a8
+      answers: answers/demo/
+      questions: questions/
+      references: questions/correct_answers.csv
+      images: images/
+    models:
+      openrouter-qwen/qwen-2.5-72b-instruct:free: qwen-2.5-72b-instruct
+    subject_features:
+      harness: IgakuQA119 via OpenRouter
+      provider: OpenRouter
+      configuration_scope: Released model alias. Immutable weights, per-call sampling settings, vision override
+        and internal retries are not recorded.
+    prompts:
+      system: 'あなたは医師国家試験問題を解く優秀で論理的なアシスタントです。
+
+        以下のルールを守って、問題文と選択肢（または数値入力の指示）を確認し、回答してください。
+
+
+        【ルール】
+
+        1. 明示的な指示がない場合は、単一選択肢のみ選ぶ（例: "a", "d"）。
+
+        2. 「2つ選べ」「3つ選べ」などとあれば、その数だけ選択肢をアルファベット順で列挙する（例: "ac", "bd"）。
+
+        3. 選択肢が存在せず数値入力が求められる場合は、指定がない限りそのままの数値を答える（例: answer: 42）。
+
+        4. 画像（has_image=True）は参考情報とし、特別な形式は不要。
+
+        5. 不要な装飾やMarkdown記法は含めず、以下の形式に従って厳密に出力してください：
+
+
+        answer: [選んだ回答(単数/複数/数値)]
+
+        confidence: [0.0～1.0の確信度]
+
+        explanation: [選択理由や重要な根拠を簡潔に]
+
+
+        【answerについて注意】
+
+        - 問題は単数選択、複数選択、数値入力のいずれかであり、問題文からその形式を判断する。
+
+        - 「どれか。」で終わる選択問題で数が明記されていない場合は、五者択一を意味するので選択肢を必ず1つだけ選び小文字のアルファベットで回答する。（単数選択）
+
+        - 「2つ選べ」「3つ選べ」などと書いてある場合に限り、指定された数だけの複数選択肢を選び、小文字のアルファベット順（abcde順）に並び替えて列挙する。（複数選択）
+
+        - 選択肢が存在しない場合は、小数や四捨五入など、問題文で特に指示があればそれに従い、選択肢記号ではなく数値を回答する。（数値入力）
+
+        - 問題に関連しない余計な文は書かず、指定のキー(answer, confidence, explanation)を上記の出力に従って厳密に出力する。
+
+        '
+      user: '問題：{question}
+
+
+        選択肢：
+
+        {choices}
+
+
+        回答を指定された形式で出力してください。'
+    presentation:
+      input_scope: Published initial text template using the saved question fields. Source image resources are preserved
+        separately. Image delivery was not recorded.
+      resource_role: benchmark_resource
+      historical_vision: not_recorded
+      source_question_prefix: '119'
+    image_types:
+      .jpg: image/jpeg
+      .png: image/png
+    point_weights:
+      required_blocks: BE
+      three_point_start: '26'
+      three_point_end: '50'
+      ordinary: '1'
+      required: '3'
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/naoto-iwase/IgakuQA119/tar.gz/09a892bd18bf3803597563e965e2627a2ac866a8
+    revision: 09a892bd18bf3803597563e965e2627a2ac866a8
+    file: upstream.tar.gz
+    size: 132000099
+    sha256: 51403e3e79171f021cb89923692543bfb4a0bd451f42a51ba5493a3af54cdf91
+grading:
+  rule: 'Match the released grade.py exactly: strip outer whitespace, lowercase, remove only brackets, commas and
+    ASCII spaces, then sort all remaining characters. Empty answers are incorrect. Compare the resulting strings,
+    including numeric characters. For 119E28, either a or c is accepted individually; ac is not accepted. Preserve
+    this source rule rather than introducing a new numeric parser.'
+  verifiers:
+    answer_match:
+      kind: released_programmatic_grader
+      source: https://github.com/naoto-iwase/IgakuQA119/blob/09a892bd18bf3803597563e965e2627a2ac866a8/grade.py
+      functions:
+      - normalize_answer
+      - is_correct_answer
+      removed_characters: '[], '
+      accepted_alternatives:
+        119E28:
+        - a
+        - c
+      reference_file: questions/correct_answers.csv
+      original_prompt_source: https://github.com/naoto-iwase/IgakuQA119/blob/09a892bd18bf3803597563e965e2627a2ac866a8/solve.py
+      historical_request_payload: not_released

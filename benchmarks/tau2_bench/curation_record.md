@@ -1,0 +1,3 @@
+- Preserve all 23,342 published simulations: 23,210 binary rewards and 132 ungraded API-error attempts, with complete source records and traces. Restore 17,663 previously truncated conversations.
+- Keep full embedded task, policy, tool and grading definitions. Preserve literal model settings and conflicting submission descriptions without guessed corrections.
+- The captured historical cohort covers airline, retail, telecom and workflow ablations. Later domains are outside this migration; private evaluator versions and missing historical database snapshots remain unknown.

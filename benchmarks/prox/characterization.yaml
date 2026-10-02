@@ -1,0 +1,54 @@
+format_version: 1
+tables:
+  traces:
+    rows: 24298
+    logical_sha256: e07db60a0a994ad590b0a28f840557a10df6e3277fb3ea3707ea4e9d24eff888
+  subjects:
+    rows: 2
+    logical_sha256: 8624ab72fa5849e351411ff9d4f9fb2c5bb2b5629628cb6f499637bca708b104
+  responses:
+    rows: 24298
+    logical_sha256: 99b1a8ee0b8f98366a0d4d7465713193a5ea61ff6581f5cf720a117f7dd070d4
+  items:
+    rows: 12052
+    logical_sha256: 4d6ff5c1924577cddba2b0b54855b8392798f15298e6222ad8baa5d53f9f92f0
+  benchmarks:
+    rows: 1
+    logical_sha256: 87400a954c1088839f7b80fe1d80e920d3616b6b616ad1929e0afd3f397a59d4
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GAIR-NLP/math-evaluation-harness
+    locator: All eighteen pinned output JSONL files for the two released TinyLlama/OpenWebMath checkpoints
+      and nine math tasks. One minerva_math item has an empty parsed gt in both checkpoints; preserve
+      its published false verdicts without regrading.
+    scope: The captured item-level release, independently read from native files.
+    expected: 24298
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GAIR-NLP/math-evaluation-harness
+    locator: All eighteen pinned output JSONL files for the two released TinyLlama/OpenWebMath checkpoints
+      and nine math tasks. One minerva_math item has an empty parsed gt in both checkpoints; preserve
+      its published false verdicts without regrading.
+    scope: The captured item-level release, independently read from native files.
+    expected: 4546
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GAIR-NLP/math-evaluation-harness
+    locator: All eighteen pinned output JSONL files for the two released TinyLlama/OpenWebMath checkpoints
+      and nine math tasks. One minerva_math item has an empty parsed gt in both checkpoints; preserve
+      its published false verdicts without regrading.
+    scope: The captured item-level release, independently read from native files.
+    expected: 18
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/GAIR-NLP/math-evaluation-harness
+    locator: All eighteen pinned output JSONL files for the two released TinyLlama/OpenWebMath checkpoints
+      and nine math tasks. One minerva_math item has an empty parsed gt in both checkpoints; preserve
+      its published false verdicts without regrading.
+    scope: The captured item-level release, independently read from native files.
+    expected: 24298

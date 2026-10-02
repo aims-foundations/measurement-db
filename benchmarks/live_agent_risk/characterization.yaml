@@ -1,0 +1,174 @@
+format_version: 1
+tables:
+  traces:
+    rows: 256
+    logical_sha256: 43bf0ce6e5284565c033596ba880ebaa9e72979a0a28877d4869d59a52f23340
+  subjects:
+    rows: 31
+    logical_sha256: 9ac3b766573c8f580c5df519107c7b4c0ae7d6c6f21603d81c659d6a19462e04
+  responses:
+    rows: 256
+    logical_sha256: 67bc57dc4d8b20c499ccb10bdf3a7bdac4083516e750d4c2438b1677fd301dd7
+  assets:
+    rows: 7
+    logical_sha256: ed095a85e75186725db2b332b8ebf354de1cca16d8c6e7db9ec71d358fe297f6
+  items:
+    rows: 73
+    logical_sha256: 6fce1ab1231d6ba80dec6b3fcb391b1204d70870b4555b180ba738b4924a81a5
+  benchmarks:
+    rows: 1
+    logical_sha256: 8ce8c9d7b01ebd609bb729450137ba5cc86b98d2625166412540864fcd46d87e
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 31
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 73
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 256
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 256
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 7
+  source_games:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 73
+  source_placeholder_games:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 1
+  source_manifest_games:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 33
+  source_supplement_games:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 2
+  source_turn_summaries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 2058
+  source_full_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 12605
+  source_fallback_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 802
+  source_error_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 802
+  source_unknown_model_seats:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 86
+  source_long_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 244
+  source_games_with_turns:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 45
+  source_games_with_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hcekne/risk-game
+    locator: Author-linked Dropbox bundle risk-game_game-results_20260501T072302Z.tar.gz, SHA256 d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda.
+    scope: Completed AI games with original winners, player configurations, available game histories, turn summaries
+      and model-call records. Exclude the placeholder calibration game and ungraded probe logs. Opposing and repeated
+      seats are dependent observations; missing settings remain unknown.
+    expected: 35

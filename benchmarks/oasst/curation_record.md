@@ -1,0 +1,3 @@
+- Restore the model-attributed cohort from the OASST1 all-messages export: 7,575 assistant replies, 31 literal model configurations and 1,742 distinct prompts. Preserve complete source records and original comparison groups.
+- Keep 2,920 original human preference ranks and 4,655 unranked attempts. Lower rank is preferred; ranks are relative to candidates, not correctness scores. Two source groups have rank gaps, which are preserved.
+- The earlier exclusion overlooked model_name in this export. OASST2 contains no model-attributed messages. Human messages and generated initial prompts are excluded from response observations. Missing chat templates, checkpoints and ballots remain unknown; no inference or grading is rerun.

@@ -1,0 +1,141 @@
+format_version: 1
+tables:
+  assets:
+    rows: 37
+    logical_sha256: a9833f4e7d9a007e82d340e85dc4bcc66c319725fe7a2a9ebbad913f59d94fe7
+  benchmarks:
+    rows: 1
+    logical_sha256: b1b1afdf95f6cd5ec6a9a055c8e7b2b2e5a0df22031be96578d1d2ceafccabc4
+  items:
+    rows: 200
+    logical_sha256: 4b4a96367500dc3364d21bb2308df3701507a4f4ed7e92812638d36fa662d7a3
+  responses:
+    rows: 600
+    logical_sha256: 469b762fda3164089c67428b6a40b8b8a0a04a3f5bf5f2cdb418c4e7285dc9b4
+  subjects:
+    rows: 5
+    logical_sha256: 65819a8562d21c25255a331514897094b1ba21dfd6217de46e925c83d1c2c618
+  traces:
+    rows: 600
+    logical_sha256: 0ea6e3eb17355d7b2645c7030de14f72becb622c22f863e8c002d7b25382f94f
+source_claims:
+  source_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 300
+  source_human_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 300
+  source_task_bank:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 910
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 100
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 5
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 200
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 600
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 600
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 37
+  automatic_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 66
+  human_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 91
+  grading_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All 300 cleaned/visualwebarena trajectory JSONs and their individual rows of data/annotations.csv;
+      the task bank comes from the recorded libvisualwebarena 0.0.15 wheel and input images from the pinned official
+      repository.
+    scope: Automatic and human judgments are separate protocols on the same executions. Every native record and
+      recorded instruction/image path is reconciled; source omissions of inline screenshots are retained.
+    expected: 43

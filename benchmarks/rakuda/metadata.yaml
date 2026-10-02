@@ -1,0 +1,167 @@
+benchmark:
+  description: Rakuda Japanese open-ended questions, with Shaberi model answers and separately recorded LLM-judge
+    ratings.
+  testing_condition: Import all 64,360 released judgment records from seven judge groups and 647 original generating-model
+    aliases. The 40 Japanese questions are checked against the pinned original question bank. Item identity includes
+    the judge protocol, so the same question appears under separate judge groups. Preserve source scores on their
+    original numeric scale; the rubric requests integer ratings from 1 to 10, but one released 0 and one 5.8 remain
+    unchanged and documented. All 6,832 unavailable scores remain null. Keep 141 empty outputs and complete long
+    answers, including upstream error strings. There are 757 model/question combinations with different recorded
+    answers across judges, so do not assume every rating refers to the same generation. Traces preserve each complete
+    original judgment record and any released judge explanation. Original generation files remain in raw; their
+    contents must not be substituted for historically judged text. Upstream changed grading prompts in November
+    2025. Preserve judge-group identifiers, including the explicit oldjudgeprompt variant. The current and earlier
+    rubric implementations are captured, but exact per-record prompt versions, model revisions and runtime settings
+    are not generally released. Judge scores from different protocols should not be treated as directly comparable.
+    No model inference, new judging or score re-parsing is performed.
+  paper_url: https://www.passaglia.jp/llm-ranking/
+  data_source_url: https://github.com/shisa-ai/shaberi
+  subject_type: model
+  item_type: task
+  license: Apache-2.0 for Shaberi code/results; the original Rakuda question bank declares MIT. Retain both source
+    license notices.
+  citation: "@misc{rakuda,\n  title={Rakuda},\n  howpublished={\\url{https://github.com/shisa-ai/shaberi}},\n}"
+  tags:
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 10
+    direction: higher_is_better
+  categorical: false
+  release_date: 2023-07
+  release: public
+  name: Rakuda
+  version: 59d832e37b0486f9f127b9ee24bdb5e8b083387f
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      judgments: data/judgements/*/yuzuai__rakuda-questions/*.json
+      questions: questions/rakuda.jsonl
+    labels:
+      harness: Shaberi Rakuda evaluation
+      input_scope: original_japanese_question
+    filename_aliases:
+      qwen__qwen3.6-plus_x3a_free: qwen__qwen3.6-plus:free
+grading:
+  rule: Import the original named-judge rating without normalization, rounding or clipping. A null score remains
+    unavailable; it is not a zero.
+  verifiers:
+    judge_gpt-4-turbo-preview:
+      kind: released_llm_rating
+      judge: gpt-4-turbo-preview
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-4-turbo-preview
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-4.1-2025-04-14:
+      kind: released_llm_rating
+      judge: gpt-4.1-2025-04-14
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-4.1-2025-04-14
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-5.1-2025-11-13-oldjudgeprompt:
+      kind: released_llm_rating
+      judge: gpt-5.1-2025-11-13
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-5.1-2025-11-13-oldjudgeprompt
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: The group explicitly names the older prompt.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-5.1-2025-11-13:
+      kind: released_llm_rating
+      judge: gpt-5.1-2025-11-13
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-5.1-2025-11-13
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-athenev2:
+      kind: released_llm_rating
+      judge: llmjudge-athenev2
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-athenev2
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-llama33:
+      kind: released_llm_rating
+      judge: llmjudge-llama33
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-llama33
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-tulu405:
+      kind: released_llm_rating
+      judge: llmjudge-tulu405
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-tulu405
+      criterion: Rate helpfulness, relevance, accuracy, detail and Japanese language ability of the answer to the
+        given question.
+      requested_scale: An integer from 1 to 10; preserve the published rating, including the original 0 and 5.8
+        exceptions.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+sources:
+  upstream:
+  - name: shaberi_results
+    url: https://github.com/shisa-ai/shaberi
+    revision: 59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    files:
+    - match: .*/yuzuai__rakuda-questions/.*|README\.md|LICENSE|evaluation_datasets_config\.py|generate_answers\.py|judge_answers\.py|llm_functions\.py|multijudge-batch-judge\.py|01-answer\.sh|02-judge\.sh|reprocess-forgotten-scores\.py
+      path: '{path}'
+  - name: question_bank
+    url: https://huggingface.co/datasets/yuzuai/rakuda-questions
+    revision: c319e9cebf932dd29edff194d77294b99fd7d611
+    files:
+    - match: README\.md|rakuda\.jsonl
+      path: questions/{path}
+  - name: earlier_rubric
+    url: https://github.com/shisa-ai/shaberi
+    revision: 451c0aaea6c6a423e328fb4b59615a6f16f07151
+    files:
+    - match: evaluation_datasets_config\.py
+      path: protocol_history/451c0aaea6c6a423e328fb4b59615a6f16f07151/{path}

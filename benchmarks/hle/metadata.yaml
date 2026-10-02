@@ -1,0 +1,185 @@
+benchmark:
+  name: Humanity's Last Exam
+  description: Released Sup AI pro and DeepWriter agentic evaluations of HLE, retaining distinct execution systems,
+    original grading and complete recorded streams.
+  testing_condition: Sup AI component outputs were produced within pro orchestration with custom instructions, web
+    search and confidence-based retries. They are not unaided model evaluations. DeepWriter uses its Abraxas 1.5
+    system with Gemini 3.0 Pro and remains a separate subject, including overlapping question IDs. Preserve the
+    Sup AI official question bank and DeepWriter's actual saved question/answer version separately. Recorded actor
+    events define one pipeline observation per actor and question; retries are internal events, not independent
+    trials. Keep missing grades null, including completed outputs without judgments and actor records without terminal
+    answers. Completion/confidence-only records are marked as limited execution evidence. Retain six published Sup
+    AI zero judgments without inventing missing full answers. DeepWriter's score column is authoritative, including
+    one disagreement with result and four documented pipeline failures scored zero. Per-actor trace records retain
+    every native event, original event positions, shared orchestration events, full output and original grading.
+    The raw archive preserves the complete cross-actor stream. Exact internal prompts and per-call inference settings
+    are not reconstructed. No model calls or regrading.
+  paper_url: https://arxiv.org/abs/2501.14249
+  data_source_url: https://github.com/kenmueller/supai-hle
+  subject_type: model
+  item_type: task
+  license: HLE and DeepWriter declare MIT licenses. The Sup AI README provides its evaluation release for research
+    and reproducibility purposes without a separate SPDX license declaration.
+  citation: 'Phan et al. Humanity''s Last Exam. arXiv:2501.14249. Evaluation records: Sup AI, Sup AI Achieves 52.15%
+    on Humanity''s Last Exam; DeepWriter, hle-gemini-3-0.'
+  tags:
+  - reasoning
+  - agentic
+  - ensemble
+  - multimodal
+  modality:
+  - text
+  - image
+  domain:
+  - knowledge
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Published incorrect or pipeline-failure judgment
+      '1': Published correct judgment
+  categorical: true
+  release_date: 2025-01
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      supai_archive: supai.tar.gz
+      supai_root: supai-hle-f9ecbbd9947b080ca00dee17a2b04da7c573d939
+      judged: judged_hle_pro.json
+      streams: traces/
+      questions: official-questions.parquet
+      deepwriter_archive: deepwriter.tar.gz
+      deepwriter_root: hle-gemini-3-0-e3b0b08d87bc7baa15fa65bf3e5cb6b997726045
+      deepwriter_csv: questions_and_answer_hle_gem3pro.csv
+    model_labels:
+      main: Sup-AI-Ensemble
+      alibaba/qwen3-max: Qwen3-Max
+      alibaba/qwen3-next-80b-a3b-thinking: Qwen3-Next-80B-A3B-Thinking
+      alibaba/qwen3-vl-thinking: Qwen3-VL-Thinking
+      anthropic/claude-opus-4.5: Claude-Opus-4.5
+      anthropic/claude-sonnet-4.5: Claude-Sonnet-4.5
+      deepseek/deepseek-v3.2-exp-thinking: DeepSeek-V3.2-Exp-Thinking
+      deepseek/deepseek-v3.2-thinking: DeepSeek-V3.2-Thinking
+      google/gemini-2.5-flash: Gemini-2.5-Flash
+      google/gemini-2.5-pro: Gemini-2.5-Pro
+      google/gemini-3-pro-preview: Gemini-3-Pro-Preview
+      minimax/minimax-m2: MiniMax-M2
+      mistral/magistral-medium: Mistral-Magistral-Medium
+      mistral/mistral-large: Mistral-Large
+      moonshotai/kimi-k2-thinking-turbo: Kimi-K2-Thinking-Turbo
+      openai/gpt-5-pro: GPT-5-Pro
+      openai/gpt-5.1: GPT-5.1
+      xai/grok-4: Grok-4
+      zai/glm-4.6: GLM-4.6
+    supai:
+      harness: Sup AI pro
+      execution_scope: Outputs from Sup AI pro orchestration with web search and confidence-based retries. Model
+        identifiers are released aliases, not guaranteed immutable checkpoints.
+      system_prompt: 'Your response should be in the following format:
+
+        Explanation: {your explanation for your answer choice}
+
+        Answer: {your chosen answer}
+
+        Confidence: {your confidence score between 0% and 100% for your answer}'
+    deepwriter:
+      harness: DeepWriter Abraxas 1.5
+      model_identifier: google/gemini-3-pro-preview
+      label: Gemini-3-Pro-Preview
+      execution_scope: Gemini 3.0 Pro through DeepWriter Abraxas 1.5. The internal runner, exact prompts and judge
+        model identifier are not present in the pinned release.
+    execution_events:
+      thinking: recorded_activity
+      text: recorded_activity
+      web-search-call: recorded_activity
+      web-search-result: recorded_activity
+      fetch-url-call: recorded_activity
+      fetch-url-result: recorded_activity
+      error: recorded_activity
+    presentation:
+      supai_scope: Official HLE question text and original input image. Internal Sup AI actor-specific prompts are
+        not reconstructed.
+      deepwriter_scope: Question text recorded in the DeepWriter export. This text-only run uses its saved reference
+        version, including questions later removed or corrected in HLE.
+sources:
+  upstream:
+  - name: supai
+    url: https://codeload.github.com/kenmueller/supai-hle/tar.gz/f9ecbbd9947b080ca00dee17a2b04da7c573d939
+    revision: f9ecbbd9947b080ca00dee17a2b04da7c573d939
+    file: supai.tar.gz
+    size: 480514367
+    sha256: c307fc681fbbd53d478028e95e4c71e11db7d2d2f5d0bf5d68f0774d77a223c1
+  - name: deepwriter
+    url: https://codeload.github.com/deepwriter-ai/hle-gemini-3-0/tar.gz/e3b0b08d87bc7baa15fa65bf3e5cb6b997726045
+    revision: e3b0b08d87bc7baa15fa65bf3e5cb6b997726045
+    file: deepwriter.tar.gz
+    size: 773332
+    sha256: 403f215732864e436d434cac98e1424fc7fb4c829c8a7679973fad8eaa546d9f
+  - name: official
+    url: https://codeload.github.com/centerforaisafety/hle/tar.gz/22ed3074b1e7b134bcbc09028d0ba320839b0655
+    revision: 22ed3074b1e7b134bcbc09028d0ba320839b0655
+    file: official.tar.gz
+    size: 99019
+    sha256: a5bae4aa2770219d5241925f82edef74064812dbd3ef92bf899571f867f3b7ce
+  - name: questions
+    url: https://huggingface.co/datasets/cais/hle
+    revision: 5a81a4c7271a2a2a312b9a690f0c2fde837e4c29
+    files:
+    - match: data/test-00000-of-00001\.parquet
+      path: official-questions.parquet
+grading:
+  rule: Preserve the original released binary judgment. A missing judge result is null, not a failure. Internal
+    retries do not create additional trials.
+  verifiers:
+    supai:
+      judge: gpt-5.1
+      source: https://github.com/kenmueller/supai-hle/blob/f9ecbbd9947b080ca00dee17a2b04da7c573d939/src/run_judge.py
+      rubric: 'Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous
+        [correct_answer] below.
+
+
+        [question]: {question}
+
+
+        [response]: {response}
+
+
+        Your judgement must be in the format and criteria specified below:
+
+
+        extracted_final_answer: The final exact answer extracted from the [response]. Put the extracted answer as
+        ''None'' if there is no exact, final answer to extract from the response.
+
+
+        [correct_answer]: {correct_answer}
+
+
+        reasoning: Explain why the extracted_final_answer is correct or incorrect based on [correct_answer], focusing
+        only on if there are meaningful differences between [correct_answer] and the extracted_final_answer. Do
+        not comment on any background to the problem, do not attempt to solve the problem, do not argue for any
+        answer different than [correct_answer], focus only on whether the answers match.
+
+
+        correct: Answer ''yes'' if extracted_final_answer matches the [correct_answer] given above, or is within
+        a small margin of error for numerical problems. Answer ''no'' otherwise, i.e. if there if there is any inconsistency,
+        ambiguity, non-equivalency, or if the extracted answer is incorrect.
+
+
+        confidence: The extracted confidence score between 0% and 100% from [response]. Put 100 if there is no confidence
+        score available.'
+      protocol: 'Read the saved correct field exactly: yes -> 1, no -> 0. Keep the published judgment even when
+        the released summary lacks a full answer, with that limitation recorded in the trace.'
+    deepwriter:
+      source: https://github.com/deepwriter-ai/hle-gemini-3-0/blob/e3b0b08d87bc7baa15fa65bf3e5cb6b997726045/README.md
+      protocol: Use the numeric score column (0 or 1), which defines the published aggregate. Preserve any disagreement
+        with result as a source discrepancy. The documented LLM grader checks mathematical/logical equivalence,
+        ignores superficial notation differences, awards no partial credit, and assigns zero to ambiguous/error
+        cases. Four published pipeline failures remain zero. The judge model identifier and internal runner code
+        were not released.

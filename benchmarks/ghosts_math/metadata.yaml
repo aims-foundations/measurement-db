@@ -1,0 +1,81 @@
+benchmark:
+  name: GHOSTS
+  description: Human ratings of ChatGPT and GPT-4 answers to natural-language mathematics questions with released
+    prompt text.
+  testing_condition: Retain the original 1–5 human ratings and complete outputs, comments, error codes, warning
+    codes, confidence annotations and timestamps. The formatted subset contains 1,066 observations with released
+    prompts; 570 observations whose prompts are withheld for copyright reasons remain in the unchanged raw files
+    only. These subsets are not interchangeable with the full-paper results. Two ChatGPT web-interface versions
+    and the GPT-4 miniGHOSTS run are separate subjects. Each prompt begins a new chat. Historical decoding settings
+    and individual annotator identities are not released. Reviewer comments and MSC codes describe the response,
+    not model-visible input or a universally applicable reference answer. No new model calls or grading are performed.
+  paper_url: https://arxiv.org/abs/2301.13867
+  data_source_url: https://github.com/friederrr/GHOSTS
+  subject_type: model
+  item_type: math_problem
+  license: CC-BY-NC-4.0 for author-created material; MIT for MATH; CC-BY-NC for Symbolic Integration; version-specific
+    CC-BY-SA for cited Math StackExchange contributions. Original book rights apply to withheld prompts. See paper
+    Appendix B.3 and the preserved source references.
+  citation: Frieder, S., Pinchetti, L., Chevalier, A., Griffiths, R.-R., Salvatori, T., Lukasiewicz, T., Petersen,
+    P. C., and Berner, J. (2023). Mathematical Capabilities of ChatGPT. NeurIPS Datasets and Benchmarks.
+  tags:
+  - mathematics
+  - human_graded
+  - reasoning
+  modality:
+  - text
+  domain:
+  - mathematics
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+    meanings:
+      '1': Question misunderstood
+      '2': Entirely incorrect answer
+      '3': Partially correct answer
+      '4': Mostly correct answer
+      '5': Completely correct answer
+  categorical: true
+  release_date: '2023-01-31'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      dataset_9jan: ChatGPT (2023-01-09)
+      dataset_30jan: ChatGPT (2023-01-30)
+      miniGHOSTS_gpt4: GPT-4
+    subject_features:
+      harness: ChatGPT web interface
+      configuration_scope: Source-reported version or model. Each question starts a fresh chat. Decoding settings
+        are unavailable.
+    paths:
+      archive: GHOSTS.zip
+      root: GHOSTS-680da88564708d57dac1041f7add6be45f0a4bc5
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    revision: 680da88564708d57dac1041f7add6be45f0a4bc5
+    file: GHOSTS.zip
+    size: 477273
+    sha256: 253a6f6ae1ef8e908a88429c74bb0642dcf64aeffca07f43102855705bff22cf
+grading:
+  rule: 'Use the source human rating unchanged: 1 means the query was misunderstood, 2 an entirely wrong answer,
+    3 a partly correct answer, 4 a mostly correct answer, and 5 a fully correct answer. This ordinal scale is not
+    binary accuracy. The assessment applies to the released prompt and original response; comments are annotation
+    evidence, not an automatically extracted reference solution.'
+  verifiers:
+    rating:
+      kind: human_mathematics_rating
+      source: https://arxiv.org/html/2301.13867v2#A2.SS4
+      field: rating
+      protocol: Paper Appendix B.4
+      annotator: Author mathematicians; individual assignment not released

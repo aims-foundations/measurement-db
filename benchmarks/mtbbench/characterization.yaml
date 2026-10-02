@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  traces:
+    rows: 8412
+    logical_sha256: 34662f391ac28c34be2e7239094e5ed28c5b3932e5ae959227b454e4ad66d9e5
+  subjects:
+    rows: 25
+    logical_sha256: 521fddf1d08f02cf7c1f99968d0d56ec7a92448a6e3f51189b84455c14dd3040
+  responses:
+    rows: 8412
+    logical_sha256: 8f3fd53f3fb59a767976dcf0f8dc244edf9b5e640df287832fd3fdc519b2d865
+  assets:
+    rows: 1280
+    logical_sha256: 3e12e205d9c42a58b5417f6f3a22a923919c67f96592f556daa7baa81756504c
+  items:
+    rows: 573
+    logical_sha256: 421c2cd1bb22ceb73cd1555ddf910342f8cb52071a6bafa9bf52770db451b37d
+  benchmarks:
+    rows: 1
+    logical_sha256: f456e79373929f592f3265e71701222faf4b7b0b4aa7877092922f8dea144a14
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 8412
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 25
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 573
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 8412
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 1280
+  source_asset_paths:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 1319
+  source_case_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 950
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 5161
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 3236
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bunnelab/mtbbench/tree/ac8151bc7c659a291610f14204e5f67f0bd7b908
+    locator: agent_logs_hancock and agent_logs_msk, joined to the frozen EeshaanJain/MTBBench case banks and patient
+      files.
+    scope: All 950 released case logs; distinct case-specific questions, literal model/system protocols, and unchanged
+      published grades.
+    expected: 15

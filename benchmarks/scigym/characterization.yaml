@@ -1,0 +1,139 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5754
+    logical_sha256: d088f258025502f4c400be95362ac6ea8e93f34e2dcef3887ac83edaa41c89fd
+  subjects:
+    rows: 6
+    logical_sha256: 1371794c1e6a35e996d708db02139d5b7d79fa3c59a12dd5c53d8c7ecf2954a8
+  responses:
+    rows: 5754
+    logical_sha256: 412a5dcc0f80fa0958d01bc007ce49ce011692ff448dc15aea29e557edd32af1
+  items:
+    rows: 959
+    logical_sha256: abb66ddc8fd35a09a1718b20ab4249b3acd84c7f05ce8f6854037321cf9c6b9e
+  benchmarks:
+    rows: 1
+    logical_sha256: 9c807ab843ad6d5f88d3507412a8db254d766b67a1beb3c765a172d1a779c839
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 5754
+  source_native_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 822
+  source_export_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 2466
+  source_duplicate_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 1644
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 137
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 959
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 6
+  source_derived_reaction_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 4932
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 822
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 5754
+  source_longest_native_history:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/h4duan/scigym-eval/tree/7d472c12855d46702c4915892578290355894c1a
+    locator: All rows in data/small-00000-of-00001.parquet, matched to h4duan/scigym-sbml at dbb10c12a33427e8e05ebbac66de690c65b6acae
+      and the pinned author reaction checker.
+    scope: Each distinct trajectory occurs three times identically in the export. Preserve one trajectory
+      per model/task and seven dependent metric observations. Derive six structural recovery grades; trajectory
+      error remains null. Verify complete inputs, references, histories, final models, source-row aliases
+      and score directions.
+    expected: 847024

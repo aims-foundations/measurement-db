@@ -2,24 +2,776 @@
 
 from __future__ import annotations
 
+import base64
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from fnmatch import fnmatchcase
 import hashlib
+from html.parser import HTMLParser
 import json
+import os
 from pathlib import Path
 import re
-from urllib.parse import quote, urlparse
+import subprocess
+import struct
+import tempfile
+import threading
+import time
+from urllib.error import HTTPError
+from urllib.parse import parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from urllib.request import Request, urlopen
 from typing import Any
+import zipfile
+import zlib
 
 
 class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
 
 
-def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict]:
-    """Resolve named upstream selections to pinned files, without downloading them.
+def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=4):
+    """Bound retries for throttling and temporary server errors; preserve other failures."""
+    opener = urlopen if opener is None else opener
+    for attempt in range(attempts):
+        try:
+            return opener(request, timeout=timeout)
+        except HTTPError as error:
+            if error.code not in (429, 500, 502, 503, 504) or attempt == attempts - 1:
+                raise
+            delay = 5 * 2 ** attempt
+            retry_after = (error.headers or {}).get('Retry-After')
+            if retry_after is not None:
+                try:
+                    delay = max(delay, float(retry_after))
+                except ValueError:
+                    try:
+                        delay = max(delay, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+                    except (TypeError, ValueError, OverflowError):
+                        pass
+            if not 0 <= delay <= max_retry_delay:
+                raise  # Leave a long server-requested pause to the caller; do not retry early.
+            error.close()
+            time.sleep(delay)
+
+
+def github_tree_entries(repository: str, revision: str, paths: list[str] | None = None) -> list[dict]:
+    """Read pinned GitHub files, optionally limiting traversal to named subtrees.
+
+    Large result repositories can exceed GitHub's recursive-tree response limit.
+    Path globs select complete subtrees without traversing unrelated screenshots;
+    every selected file still carries the commit's native Git blob hash.
+    """
+    cache = {}
+    headers = {"User-Agent": "measurement-db"}
+    token = os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN")
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    def read_tree(sha, recursive=False):
+        key = sha, recursive
+        if key not in cache:
+            url = f"https://api.github.com/repos/{repository}/git/trees/{sha}"
+            request = Request(url + ("?recursive=1" if recursive else ""), headers=headers)
+            with urlopen(request, timeout=120) as response:
+                tree = json.load(response)
+            if tree.get("truncated"):
+                raise SourceDataError("Upstream GitHub tree is truncated; select smaller tree_paths")
+            cache[key] = tree["tree"]
+        return cache[key]
+
+    if paths is None:
+        return read_tree(revision, recursive=True)
+    if not paths or any(not isinstance(path, str) or "\\" in path or
+                        any(part in ("", ".", "..", "**") for part in path.split("/")) for path in paths):
+        raise SourceDataError("tree_paths must contain relative paths with component-wise globs")
+    files = {}
+    for pattern in paths:
+        selected = [{"path": "", "sha": revision, "type": "tree"}]
+        for component in pattern.split("/"):
+            selected = [
+                {**child, "path": f"{parent['path']}/{child['path']}".lstrip("/")}
+                for parent in selected if parent["type"] == "tree"
+                for child in read_tree(parent["sha"]) if fnmatchcase(child["path"], component)
+            ]
+        if not selected:
+            raise SourceDataError(f"tree_paths matches no upstream path: {pattern}")
+        for entry in selected:
+            if entry["type"] == "blob":
+                descendants = [entry]
+            elif entry["type"] == "tree":
+                descendants = [{**child, "path": entry["path"] + "/" + child["path"]}
+                               for child in read_tree(entry["sha"], recursive=True) if child["type"] == "blob"]
+            else:
+                continue
+            files.update({child["path"]: child for child in descendants})
+    return sorted(files.values(), key=lambda entry: entry["path"])
+
+
+def read_gpg_json(path: Path, *, password: str, scratch_dir: Path) -> Any:
+    """Read a provider's password-encrypted JSON without extracting into raw/.
+
+    GnuPG uses an isolated temporary home, never the user's keyring. Passwords
+    for public benchmark releases belong in metadata alongside the source.
+    """
+    with tempfile.TemporaryDirectory(prefix=".gpg-", dir=scratch_dir) as home:
+        try:
+            result = subprocess.run(
+                ["gpg", "--no-options", "--homedir", home, "--batch", "--no-tty",
+                 "--pinentry-mode", "loopback", "--no-symkey-cache", "--passphrase-fd", "0",
+                 "--decrypt", str(path)],
+                input=(password + "\n").encode(), capture_output=True, check=True, timeout=120,
+            )
+        except FileNotFoundError as exc:
+            raise SourceDataError("Install GnuPG (gpg) to read this encrypted upstream JSON") from exc
+        except subprocess.CalledProcessError as exc:
+            raise SourceDataError(f"Cannot decrypt {path}: {exc.stderr.decode(errors='replace')}") from exc
+    return json.loads(result.stdout)
+
+
+def _read_index_source(url, destination, raw_dir, request_json=None):
+    """Read unchanged cached bytes, or call the declared public retrieval endpoint."""
+    if raw_dir is not None:
+        path = raw_dir / destination
+        if not path.resolve().is_relative_to(raw_dir.resolve()):
+            raise SourceDataError(f"Unsafe raw destination {destination}")
+        if path.exists():
+            return path.read_bytes()
+    headers = {"User-Agent": "measurement-db", "Accept-Encoding": "identity"}
+    body = None
+    if request_json is not None:
+        body = json.dumps(request_json, allow_nan=False).encode('utf-8')
+        headers['Content-Type'] = 'application/json'
+    with open_http_source(Request(url, data=body, headers=headers), timeout=120) as response:
+        return response.read()
+
+
+def _json_index_documents(index, named, raw_dir, trail):
+    """Verify every manifest before using its fields to discover more inputs."""
+    if "json_index" in index:
+        manifests = json_index_entries(index, named, raw_dir, _trail=trail)
+        records = []
+        for entry in manifests:
+            destinations = [rule['path'].format(path=entry['path'], **match.groupdict())
+                for rule in index['files'] if (match := re.fullmatch(rule['match'], entry['path']))]
+            if len(destinations) != 1:
+                raise SourceDataError('Ambiguous indexed manifest destination')
+            payload = _read_index_source(entry['url'], destinations[0], raw_dir)
+            if len(payload) != entry['size'] or hashlib.sha256(payload).hexdigest() != entry['digest']:
+                raise SourceDataError('Indexed manifest changed after verification')
+            records.append(json.loads(payload))
+        return records
+    if {"url", "file", "size", "sha256"} <= index.keys():
+        payload = _read_index_source(index['url'], index['file'], raw_dir, index.get('request_json'))
+        if len(payload) != index['size'] or hashlib.sha256(payload).hexdigest() != index['sha256']:
+            raise SourceDataError('JSON index differs from its declared bytes')
+        return [json.loads(payload)]
+    raise SourceDataError('JSON index must name a pinned HTTP source or JSON-indexed collection')
+
+
+def html_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve a static site's linked files and verify their complete content tree.
+
+    The index and the selected page contents are both pinned. Existing raw files
+    may supply the bytes, but are checked against the same tree fingerprint.
+    This supports sites that publish transcripts without a repository archive.
+    """
+    name = source["name"]
+    selector = source['html_index']
+    structured = isinstance(selector, dict)
+    index = named.get(selector['source'] if structured else selector, {})
+    if structured:
+        records = _json_index_documents(index, named, raw_dir, (name,))
+        pages = []
+        for record in records:
+            if not isinstance(record, dict) or not isinstance(record.get(selector['field']), str):
+                raise SourceDataError(f'{name}: missing declared HTML field')
+            pages.append(record[selector['field']])
+    else:
+        if not {'url', 'file', 'size', 'sha256'} <= index.keys():
+            raise SourceDataError(f'{name}: HTML index must name a pinned HTTP source')
+        payload = _read_index_source(index['url'], index['file'], raw_dir, index.get('request_json'))
+        if len(payload) != index['size'] or hashlib.sha256(payload).hexdigest() != index['sha256']:
+            raise SourceDataError(f'{name}: HTML index differs from its declared bytes')
+        pages = [payload.decode('utf-8')]
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.hrefs = set()
+
+        def handle_starttag(self, tag, attrs):
+            wanted_tag = selector['tag'] if structured else 'a'
+            attribute = selector['attribute'] if structured else 'href'
+            if tag == wanted_tag and (href := dict(attrs).get(attribute)):
+                self.hrefs.add(href)
+
+    parser = Links()
+    for page in pages:
+        parser.feed(page)
+    base = urlparse(source["url"].rstrip("/") + "/")
+    paths = {}
+    for href in parser.hrefs:
+        location = urlparse(urljoin(index["url"], href))
+        if ((location.scheme, location.netloc) != (base.scheme, base.netloc)
+                or not location.path.startswith(base.path) or (location.query and not structured) or location.fragment):
+            continue
+        relative = location.path.removeprefix(base.path)
+        if location.query:
+            relative += '?' + location.query
+        for rule in source["files"]:
+            if match := re.fullmatch(rule["match"], relative):
+                destination = rule["path"].format(path=relative, **match.groupdict())
+                destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                if Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                    raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+                paths[relative] = (location.geturl(), destination)
+
+    def inspect(relative):
+        url, destination = paths[relative]
+        content = _read_index_source(url, destination, raw_dir)
+        return dict(path=relative, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                    hash_kind="sha256", url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(paths)))
+    identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"{name}: linked page contents differ from the pinned tree ({fingerprint})")
+    return entries
+
+
+def json_index_entries(source: dict, named: dict, raw_dir: Path | None = None, *, _trail: tuple = ()) -> list[dict]:
+    """Resolve one JSON manifest or a pinned collection of JSON manifests."""
+    name, selector = source["name"], source["json_index"]
+    if name in _trail:
+        raise SourceDataError(f"{name}: cyclic JSON index sources")
+    index = named.get(selector["source"], {})
+
+    documents = _json_index_documents(index, named, raw_dir, (*_trail, name))
+    records = [record for document in documents
+               for record in (document if isinstance(document, list) else [document])]
+    for field in selector["records"]:
+        nested = []
+        for record in records:
+            if not isinstance(record, dict) or field not in record:
+                raise SourceDataError(f"{name}: JSON index lacks records field {field}")
+            value = record[field]
+            nested.extend(value if isinstance(value, list) else [value])
+        records = nested
+    base = source["url"].rstrip("/") + "/"
+    paths = {}
+    for record in records:
+        # Some original manifests list IDs directly rather than wrapping each ID.
+        if type(record) in (str, int):
+            record = {"value": record}
+        if not isinstance(record, dict):
+            raise SourceDataError(f"{name}: JSON index records must be objects or string/integer IDs")
+        try:
+            relative = selector["path"].format_map(record)
+        except KeyError as exc:
+            if selector.get("skip_missing_path", False):
+                continue
+            raise SourceDataError(f"{name}: invalid JSON index path template") from exc
+        except (ValueError, TypeError, AttributeError, IndexError) as exc:
+            raise SourceDataError(f"{name}: invalid JSON index path template") from exc
+        if not re.fullmatch(r"[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", relative) or any(
+                part in {".", ".."} for part in relative.split("/")):
+            raise SourceDataError(f"{name}: unsafe indexed source path {relative!r}")
+        for rule in source["files"]:
+            if match := re.fullmatch(rule["match"], relative):
+                destination = rule["path"].format(path=relative, **match.groupdict())
+                if Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                    raise SourceDataError(f"{name}: unsafe raw destination {destination}")
+                if relative in paths:
+                    raise SourceDataError(f"{name}: duplicate indexed source path {relative}")
+                query = selector.get('query')
+                if query:
+                    try:
+                        parameters = {key: value.format_map(record) for key, value in query.items()}
+                    except (KeyError, ValueError, TypeError, AttributeError, IndexError) as exc:
+                        raise SourceDataError(f'{name}: invalid JSON index query template') from exc
+                    location = urlparse(source['url'])
+                    if location.query or location.fragment:
+                        raise SourceDataError(f'{name}: indexed API URL must not already contain a query or fragment')
+                    url = source['url'] + '?' + urlencode(parameters)
+                else:
+                    url = urljoin(base, relative)
+                paths[relative] = (destination, url)
+
+    def inspect(relative):
+        destination, url = paths[relative]
+        data = _read_index_source(url, destination, raw_dir)
+        return dict(path=relative, size=len(data), digest=hashlib.sha256(data).hexdigest(),
+                    hash_kind="sha256", url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(paths)))
+    identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"{name}: JSON-indexed contents differ from the pinned tree ({fingerprint})")
+    return entries
+
+
+def dvc_index_entries(source: dict, named: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve file-level DVC pointers pinned by an original GitHub commit.
+
+    The named registry supplies the pointers; the source URL explicitly names
+    the HTTP cache. Never execute DVC configuration or commands from upstream.
+    """
+    import yaml
+
+    index = named.get(source['dvc_index'], {})
+    if (urlparse(index.get('url', '')).netloc != 'github.com' or 'files' not in index
+            or any(key in index for key in ('dvc_index', 'json_index', 'html_index', 'git_lfs'))
+            or index.get('revision') != source.get('revision')
+            or not re.fullmatch(r'[0-9a-f]{40}', str(index.get('revision', '')))):
+        raise SourceDataError('DVC index must name a GitHub file selection at the same pinned commit')
+    remote = urlparse(source['url'])
+    if remote.scheme != 'https' or not remote.netloc or remote.query or remote.fragment:
+        raise SourceDataError('DVC cache must be an explicit HTTPS URL without a query or fragment')
+    entries = []
+    for pointer in upstream_artifacts([index], (index['name'],), raw_dir=raw_dir):
+        relative = pointer['path'].removesuffix('.dvc')
+        if not pointer['path'].endswith('.dvc') or not any(
+                re.fullmatch(rule['match'], relative) for rule in source['files']):
+            continue
+        if not re.fullmatch(r'[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*', relative) or any(
+                part in {'.', '..'} for part in relative.split('/')):
+            raise SourceDataError('Unsafe DVC artifact path')
+        payload = _read_index_source(pointer['url'], pointer['file'], raw_dir)
+        digest = hashlib.sha1(f'blob {len(payload)}\0'.encode() + payload).hexdigest()
+        if len(payload) != pointer['size'] or digest != pointer['digest']:
+            raise SourceDataError('DVC pointer differs from its pinned Git blob')
+        try:
+            document = yaml.safe_load(payload)
+        except yaml.YAMLError as exc:
+            raise SourceDataError('Invalid DVC pointer YAML') from exc
+        outputs = document.get('outs') if isinstance(document, dict) else None
+        if not isinstance(outputs, list) or len(outputs) != 1 or not isinstance(outputs[0], dict):
+            raise SourceDataError('Expected exactly one file in each DVC pointer')
+        output = outputs[0]
+        md5, size = output.get('md5'), output.get('size')
+        if (not isinstance(md5, str) or not re.fullmatch(r'[0-9a-f]{32}', md5)
+                or type(size) is not int or size < 0 or output.get('path') != Path(relative).name):
+            raise SourceDataError('DVC pointer requires a file MD5, size and matching basename; directories are unsupported')
+        entries.append(dict(path=relative, size=size, digest=md5, hash_kind='md5',
+                            url=source['url'].rstrip('/') + '/' + md5[:2] + '/' + md5[2:]))
+    entries.sort(key=lambda entry: entry['path'])
+    identity = [{key: entry[key] for key in ('path', 'size', 'digest')} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not entries or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'DVC artifacts differ from the pinned tree ({fingerprint})')
+    return entries
+
+
+def osf_entries(source: dict) -> list[dict]:
+    """Resolve a selected OSF folder using native file versions and SHA-256 hashes."""
+    location = urlparse(source['url'])
+    match = re.fullmatch(r'/v2/nodes/([A-Za-z0-9]+)/files/osfstorage/(?:[A-Za-z0-9]+/)?', location.path)
+    if location.scheme != 'https' or location.netloc != 'api.osf.io' or match is None:
+        raise SourceDataError('Expected an OSF node or folder API URL')
+    node_prefix = f'/v2/nodes/{match[1]}/files/osfstorage/'
+    pending, visited, entries = [(source['url'], '')], set(), {}
+    while pending:
+        url, prefix = pending.pop()
+        parsed = urlparse(url)
+        if parsed.scheme != 'https' or parsed.netloc != 'api.osf.io' or not parsed.path.startswith(node_prefix):
+            raise SourceDataError('OSF folder or pagination link leaves its source node')
+        if url in visited:
+            raise SourceDataError('Repeated OSF folder or pagination link')
+        visited.add(url)
+        with urlopen(Request(url, headers={'User-Agent': 'measurement-db'}), timeout=120) as response:
+            page = json.load(response)
+        if page.get('links', {}).get('next'):
+            pending.append((page['links']['next'], prefix))
+        for record in page['data']:
+            attributes = record['attributes']
+            filename = attributes['name']
+            if not filename or filename in {'.', '..'} or '/' in filename or '\\' in filename:
+                raise SourceDataError('Unsafe OSF filename')
+            path = prefix + filename
+            if attributes['kind'] == 'folder':
+                child = record['relationships']['files']['links']['related']['href']
+                pending.append((child, path + '/'))
+                continue
+            if not any(re.fullmatch(rule['match'], path) for rule in source['files']):
+                continue
+            version, size = attributes['current_version'], attributes['size']
+            digest = attributes.get('extra', {}).get('hashes', {}).get('sha256')
+            if (type(version) is not int or version < 1 or type(size) is not int or size < 0
+                    or not isinstance(digest, str) or not re.fullmatch(r'[0-9a-f]{64}', digest)):
+                raise SourceDataError('Selected OSF file lacks a valid version, size or SHA-256 hash')
+            download = urlparse(record['links']['download'])
+            if download.scheme != 'https' or download.netloc != 'osf.io' or not re.fullmatch(r'/download/[A-Za-z0-9]+/?', download.path):
+                raise SourceDataError('Unexpected OSF download location')
+            query = dict(parse_qsl(download.query))
+            query['version'] = str(version)
+            if path in entries:
+                raise SourceDataError('Duplicate selected OSF path')
+            entries[path] = dict(path=path, osf_id=record['id'], version=version, size=size,
+                digest=digest, hash_kind='sha256', url=urlunparse(download._replace(query=urlencode(query))))
+    selected = [entries[path] for path in sorted(entries)]
+    identity = [{key: row[key] for key in ('path', 'osf_id', 'version', 'size', 'digest')} for row in selected]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not selected or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'{source["name"]}: OSF files differ from the pinned tree ({fingerprint})')
+    return selected
+
+
+def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict]:
+    """Pin public Drive folder membership and bytes without a per-file YAML inventory."""
+    name = source['name']
+    match = re.fullmatch(r'https://drive\.google\.com/drive/folders/([A-Za-z0-9_-]+)', source['url'])
+    if match is None:
+        raise SourceDataError(f'{name}: expected a public Google Drive folder URL')
+
+    def read(url):
+        with open_http_source(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}), timeout=120) as response:
+            return response.read()
+
+    class Links(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.links, self.href, self.text = [], None, []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'a':
+                self.href, self.text = dict(attrs).get('href'), []
+
+        def handle_data(self, data):
+            if self.href is not None:
+                self.text.append(data)
+
+        def handle_endtag(self, tag):
+            if tag == 'a' and self.href is not None:
+                self.links.append((self.href, ''.join(self.text).strip()))
+                self.href, self.text = None, []
+
+    def children(entry):
+        folder, prefix = entry
+        parser = Links()
+        parser.feed(read('https://drive.google.com/embeddedfolderview?id=' + folder).decode('utf-8'))
+        rows = []
+        for href, label in parser.links:
+            folder_match = re.fullmatch(r'https://drive\.google\.com/drive/folders/([A-Za-z0-9_-]+)(?:\?.*)?', href)
+            file_match = re.fullmatch(r'https://drive\.google\.com/file/d/([A-Za-z0-9_-]+)/view(?:\?.*)?', href)
+            if folder_match is None and file_match is None:
+                continue
+            if not label or label in {'.', '..'} or '/' in label or '\\' in label:
+                raise SourceDataError(f'{name}: unsafe Drive filename')
+            rows.append(dict(id=(folder_match or file_match)[1], path=prefix + label,
+                             kind='folder' if folder_match else 'file'))
+        return rows
+
+    pending, folders, files = [(match[1], '')], set(), {}
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        while pending:
+            for folder, prefix in pending:
+                if folder in folders:
+                    raise SourceDataError(f'{name}: repeated folder or cycle in Drive tree')
+                folders.add(folder)
+            pages = list(executor.map(children, pending))
+            pending = []
+            for page in pages:
+                for row in page:
+                    if row['kind'] == 'folder':
+                        pending.append((row['id'], row['path'] + '/'))
+                    elif row['path'] in files:
+                        raise SourceDataError(f'{name}: ambiguous duplicate Drive path')
+                    else:
+                        files[row['path']] = row['id']
+
+    selected = {}
+    for relative, file_id in files.items():
+        for rule in source['files']:
+            if match := re.fullmatch(rule['match'], relative):
+                destination = rule['path'].format(path=relative, **match.groupdict())
+                destination = re.sub(r'[^A-Za-z0-9._/-]', lambda m: f'_x{ord(m[0]):02x}_', destination)
+                if Path(destination).is_absolute() or '..' in Path(destination).parts or destination in {'', '.'}:
+                    raise SourceDataError(f'{name}: unsafe raw destination {destination}')
+                selected[relative] = (file_id, destination)
+
+    def inspect(relative):
+        file_id, destination = selected[relative]
+        path = raw_dir / destination if raw_dir is not None else None
+        if path is not None and not path.resolve().is_relative_to(raw_dir.resolve()):
+            raise SourceDataError(f'{name}: unsafe raw destination {destination}')
+        url = 'https://drive.usercontent.google.com/download?' + urlencode(dict(id=file_id, export='download'))
+        content = path.read_bytes() if path is not None and path.exists() else read(url)
+        return dict(path=relative, drive_id=file_id, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                    hash_kind='sha256', url=url)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = list(executor.map(inspect, sorted(selected)))
+    identity = [{key: entry[key] for key in ('path', 'drive_id', 'size', 'digest')} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    if not entries or fingerprint != source.get('tree_sha256'):
+        raise SourceDataError(f'{name}: Drive files differ from the pinned tree ({fingerprint})')
+    return entries
+
+
+def wandb_entries(source: dict) -> list[dict]:
+    """Pin selected public W&B run files using stable URLs and provider checksums."""
+    match = re.fullmatch(r"https://wandb\.ai/([A-Za-z0-9_-]+)/([A-Za-z0-9_-]+)", source["url"])
+    if match is None:
+        raise SourceDataError("wandb_runs requires a public W&B project URL")
+    entity, project = match.groups()
+    selector = source["wandb_runs"]
+    reference = re.compile(selector["latest_step"]) if "latest_step" in selector else None
+    step_files = re.compile(selector["step_files"]) if reference else None
+    if reference and ("step" not in reference.groupindex or "step" not in step_files.groupindex):
+        raise SourceDataError("W&B checkpoint patterns must capture a named step group")
+
+    def query(text, variables):
+        request = Request("https://api.wandb.ai/graphql", data=json.dumps(dict(query=text,
+            variables=dict(p=project, e=entity, **variables))).encode(),
+            headers={"Content-Type":"application/json", "User-Agent":"measurement-db"})
+        with urlopen(request, timeout=120) as response:
+            result = json.load(response)
+        if result.get("errors") or not result.get("data", {}).get("project"):
+            raise SourceDataError("W&B project query failed or is not publicly accessible")
+        return result["data"]["project"]
+
+    runs_query = """query R($p:String!,$e:String!,$c:String){project(name:$p,entityName:$e){
+        runs(first:500,after:$c){pageInfo{hasNextPage endCursor}edges{node{name state}}}}}"""
+    files_query = """query F($p:String!,$e:String!,$r:String!,$c:String){project(name:$p,entityName:$e){
+        run(name:$r){files(first:500,after:$c){pageInfo{hasNextPage endCursor}edges{node{name sizeBytes md5}}}}}}"""
+    runs, cursor, cursors = {}, None, set()
+    while True:
+        page = query(runs_query, dict(c=cursor))["runs"]
+        for edge in page["edges"]:
+            run = edge["node"]
+            if run["name"] in runs:
+                raise SourceDataError("W&B run inventory contains duplicate IDs")
+            runs[run["name"]] = run
+        if not page["pageInfo"]["hasNextPage"]: break
+        cursor = page["pageInfo"]["endCursor"]
+        if not cursor or cursor in cursors: raise SourceDataError("W&B run pagination did not advance")
+        cursors.add(cursor)
+
+    def files(run):
+        nodes, cursor, cursors = {}, None, set()
+        while True:
+            page = query(files_query, dict(r=run["name"], c=cursor))["run"]["files"]
+            for edge in page["edges"]:
+                entry = edge["node"]
+                if entry["name"] in nodes: raise SourceDataError("W&B file inventory contains duplicate paths")
+                nodes[entry["name"]] = entry
+            if not page["pageInfo"]["hasNextPage"]: break
+            cursor = page["pageInfo"]["endCursor"]
+            if not cursor or cursor in cursors: raise SourceDataError("W&B file pagination did not advance")
+            cursors.add(cursor)
+        steps = [int(match["step"]) for path in nodes if reference and (match := reference.fullmatch(path))]
+        latest = max(steps) if steps else None
+        selected = []
+        for path, entry in nodes.items():
+            if step_files and (step := step_files.fullmatch(path)) and int(step["step"]) != latest:
+                continue
+            relative = run["name"] + "/" + path
+            if not any(re.fullmatch(rule["match"], relative) for rule in source["files"]): continue
+            if any(part in ("", ".", "..") for part in relative.split("/")) or "\\" in relative:
+                raise SourceDataError("W&B file path is not a safe relative path")
+            try: digest = base64.b64decode(entry["md5"], validate=True)
+            except (TypeError, ValueError) as exc: raise SourceDataError("W&B selected file lacks a valid checksum") from exc
+            if len(digest) != 16 or not isinstance(entry["sizeBytes"], int) or entry["sizeBytes"] < 0:
+                raise SourceDataError("W&B selected file has an invalid checksum or size")
+            selected.append(dict(path=relative, size=entry["sizeBytes"], hash_kind="md5", digest=digest.hex(),
+                url=f"https://api.wandb.ai/files/{entity}/{project}/" + quote(relative, safe="/")))
+        return selected
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        entries = [entry for group in executor.map(files, [run for run in runs.values()
+            if run["state"] == selector["state"]]) for entry in group]
+    entries.sort(key=lambda entry: entry["path"])
+    identity = [{key:entry[key] for key in ("path", "size", "digest")} for entry in entries]
+    fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    if not entries or fingerprint != source.get("tree_sha256"):
+        raise SourceDataError(f"W&B selected files differ from the pinned tree ({fingerprint})")
+    return entries
+
+
+def read_zip_member(url: str, archive_size: int, info: zipfile.ZipInfo, session, *, etag: str | None = None) -> bytes:
+    """Read one original ZIP member by byte range and verify its native headers/CRC.
+
+    The caller pins the decompressed content with SHA-256 as well. A server that
+    ignores Range is rejected before its potentially huge response is consumed.
+    """
+    start = info.header_offset
+    end = min(archive_size - 1, start + 30 + len(info.filename.encode("utf-8")) + info.compress_size + 1024 - 1)
+    for _ in range(2):
+        headers = {"Range": f"bytes={start}-{end}", "Accept-Encoding": "identity"}
+        if etag is not None:
+            headers["If-Match"] = etag
+
+        def open_range(address, *, timeout):
+            response = session.get(address, headers=headers, stream=True, timeout=timeout)
+            if response.status_code in (429, 500, 502, 503, 504):
+                raise HTTPError(address, response.status_code, "ZIP request temporarily unavailable", response.headers, response)
+            return response
+
+        try:
+            response = open_http_source(url, timeout=120, opener=open_range, max_retry_delay=120, attempts=5)
+        except HTTPError as error:
+            error.close()
+            raise SourceDataError(f"Original ZIP request remains unavailable (HTTP {error.code}; Retry-After: {(error.headers or {}).get('Retry-After', 'absent')})") from None
+        with response:
+            if response.status_code != 206 or response.headers.get("Content-Range") != f"bytes {start}-{end}/{archive_size}":
+                raise SourceDataError(f"ZIP server did not return the requested byte range (HTTP {response.status_code})")
+            if etag is not None and response.headers.get("ETag") != etag:
+                raise SourceDataError("ZIP byte range differs from the pinned ETag")
+            blob = response.raw.read(end - start + 1)
+        if len(blob) != end - start + 1 or blob[:4] != b"PK\x03\x04":
+            raise SourceDataError("Incomplete or invalid ZIP local header")
+        flags, method = struct.unpack_from("<HH", blob, 6)
+        name_length, extra_length = struct.unpack_from("<HH", blob, 26)
+        filename = blob[30:30 + name_length].decode("utf-8" if flags & 2048 else "cp437")
+        if filename != info.filename or flags & 1 or method != info.compress_type:
+            raise SourceDataError("ZIP member header differs from the central directory")
+        offset = 30 + name_length + extra_length
+        needed = offset + info.compress_size
+        if needed > len(blob):
+            end = start + needed - 1
+            if end >= archive_size:
+                raise SourceDataError("ZIP member extends beyond the pinned archive")
+            continue
+        payload = blob[offset:needed]
+        if method == zipfile.ZIP_DEFLATED:
+            payload = zlib.decompress(payload, -15)
+        elif method != zipfile.ZIP_STORED:
+            raise SourceDataError("Selected ZIP member uses unsupported compression")
+        if len(payload) != info.file_size or zlib.crc32(payload) != info.CRC:
+            raise SourceDataError("ZIP member failed native size/CRC verification")
+        return payload
+    raise SourceDataError("Unable to read the complete ZIP member header")
+
+
+def zip_member_entries(source: dict, archives: list[dict], raw_dir: Path | None) -> list[dict]:
+    """Capture selected original files from pinned ZIPs without downloading media.
+
+    Metadata selects archive names and member paths and pins a SHA-256 tree of
+    decompressed contents. Files remain unchanged. New files are installed only
+    after the complete selection passes; existing raw files are never replaced.
+    """
+    import fsspec
+    import requests
+
+    if raw_dir is None:
+        raise SourceDataError("ZIP member selections require a benchmark raw directory")
+    expected = set(source["zip_members"])
+    selected = {entry["path"]: entry for entry in archives if entry["path"] in expected}
+    if set(selected) != expected or len(expected) != len(source["zip_members"]):
+        raise SourceDataError("ZIP selection has absent or duplicate archive names")
+    root = raw_dir.resolve()
+    raw_dir.parent.mkdir(parents=True, exist_ok=True)
+    files, destinations = [], set()
+    thread = threading.local()
+    sessions = []
+    workers = 4 if urlparse(source["url"]).netloc == "zenodo.org" else 12
+    try:
+        with tempfile.TemporaryDirectory(prefix=".zip-download-", dir=raw_dir.parent) as temporary, ThreadPoolExecutor(max_workers=workers) as executor:
+            staging = Path(temporary)
+            for archive_name, archive_entry in sorted(selected.items()):
+                etag = archive_entry.get("etag")
+                version_headers = {"If-Match": etag} if etag is not None else {}
+                if etag is not None:
+                    try:
+                        with requests.head(archive_entry["url"], headers=version_headers, allow_redirects=True, timeout=120) as response:
+                            if response.status_code != 200 or response.headers.get("ETag") != etag or response.headers.get("Content-Length") != str(archive_entry["size"]):
+                                raise SourceDataError("ZIP archive differs from its pinned size/ETag")
+                            download_url = response.url
+                    except requests.RequestException as error:
+                        raise SourceDataError(f"Pinned ZIP archive request failed ({type(error).__name__})") from None
+                filesystem = fsspec.filesystem("http", client_kwargs={"trust_env": True}, **({"headers": version_headers} if version_headers else {}))
+                with filesystem.open(archive_entry["url"], "rb", size=archive_entry["size"], block_size=1 << 16) as stream:
+                    with zipfile.ZipFile(stream) as archive:
+                        members = archive.infolist()
+                selection = []
+                for member in members:
+                    if member.is_dir():
+                        continue
+                    relative = archive_name + "/" + member.filename
+                    rules = [(rule, match) for rule in source["files"] if (match := re.fullmatch(rule["match"], relative))]
+                    if not rules:
+                        continue
+                    if len(rules) != 1 or Path(member.filename).is_absolute() or ".." in Path(member.filename).parts or "\\" in member.filename:
+                        raise SourceDataError("ZIP selection has an ambiguous or unsafe member path")
+                    if ((member.external_attr >> 16) & 0o170000) == 0o120000 or member.flag_bits & 1:
+                        raise SourceDataError("Selected ZIP members must be regular, unencrypted files")
+                    rule, match = rules[0]
+                    destination = rule["path"].format(path=relative, **match.groupdict())
+                    destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                    target = raw_dir / destination
+                    if not target.resolve().is_relative_to(root) or Path(destination).is_absolute() or ".." in Path(destination).parts or destination in {"", "."}:
+                        raise SourceDataError("ZIP destination escapes raw/")
+                    if destination in destinations:
+                        raise SourceDataError("Duplicate ZIP member or raw destination")
+                    destinations.add(destination)
+                    selection.append((relative, destination, member))
+                if not selection:
+                    raise SourceDataError(f"No selected original files in ZIP {archive_name}")
+                # Resolve the public archive once; never expose signed redirect URLs.
+                needs_download = any(not (raw_dir / destination).is_file() for _, destination, _ in selection)
+                if needs_download and etag is None:
+                    try:
+                        with requests.head(archive_entry["url"], allow_redirects=True, timeout=120) as response:
+                            if response.status_code != 200:
+                                raise SourceDataError(f"Pinned ZIP archive is unavailable (HTTP {response.status_code})")
+                            download_url = response.url
+                    except requests.RequestException as error:
+                        raise SourceDataError(f"Pinned ZIP archive request failed ({type(error).__name__})") from None
+
+                def inspect(record):
+                    relative, destination, member = record
+                    cached = raw_dir / destination
+                    if cached.exists():
+                        content = cached.read_bytes()
+                    else:
+                        if not hasattr(thread, "session"):
+                            thread.session = requests.Session()
+                            sessions.append(thread.session)
+                        try:
+                            content = read_zip_member(download_url, archive_entry["size"], member, thread.session, etag=etag)
+                        except requests.RequestException as error:
+                            raise SourceDataError(f"Original ZIP member request failed ({type(error).__name__})") from None
+                        cached = staging / destination
+                        cached.parent.mkdir(parents=True, exist_ok=True)
+                        cached.write_bytes(content)
+                    if len(content) != member.file_size or zlib.crc32(content) != member.CRC:
+                        raise SourceDataError("Captured ZIP member differs from its original size/CRC")
+                    return dict(path=relative, size=len(content), digest=hashlib.sha256(content).hexdigest(),
+                        hash_kind="sha256", url=archive_entry["url"] + "#member=" + quote(member.filename, safe="/"),
+                        destination=destination)
+
+                files.extend(executor.map(inspect, selection))
+            files.sort(key=lambda entry: entry["path"])
+            identity = [{key: entry[key] for key in ("path", "size", "digest")} for entry in files]
+            fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+            if not files or fingerprint != source["tree_sha256"]:
+                raise SourceDataError(f"Selected ZIP contents differ from the pinned tree ({fingerprint})")
+            for entry in files:
+                destination = entry.pop("destination")
+                staged, target = staging / destination, raw_dir / destination
+                if staged.is_file():
+                    if target.exists():
+                        raise SourceDataError("A ZIP destination appeared during the download; refusing to replace it")
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    staged.replace(target)
+            return files
+    finally:
+        for session in sessions:
+            session.close()
+
+
+def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: Path | None = None) -> list[dict]:
+    """Resolve named upstream selections to pinned files and verify their inventory.
 
     Repository trees supply the file hashes. HTTP endpoints instead declare their
-    expected bytes in metadata. No MeasurementDB archive is consulted.
+    expected bytes in metadata. Static HTML collections verify all selected page
+    contents, reading existing raw files when available. No MeasurementDB archive
+    is consulted.
     """
     named = {source["name"]: source for source in sources if "name" in source}
     if names == ("*",):
@@ -32,46 +784,158 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
     for name in names:
         source = named[name]
         url = source["url"]
+        if source.get("git_lfs") and (urlparse(url).netloc != "github.com" or "files" not in source):
+            raise SourceDataError(f"{name}: git_lfs requires a pinned GitHub file selection")
+        if "tree_paths" in source and (urlparse(url).netloc != "github.com" or "files" not in source):
+            raise SourceDataError(f"{name}: tree_paths requires a pinned GitHub file selection")
         if "file" in source:
             selected = [dict(file=source["file"], url=url, size=source["size"],
                              hash_kind="sha256", digest=source["sha256"])]
+            if 'request_json' in source:
+                selected[0]['request_json'] = source['request_json']
         else:
-            revision = source["revision"]
-            if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
-                raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
             location = urlparse(url)
             entries = []
-            if location.netloc == "github.com":
+            http_zip = "zip_members" in source and location.netloc != "huggingface.co"
+            if http_zip:
+                archive_name = Path(location.path).name
+                zenodo = re.fullmatch(r'/records/([0-9]+)/files/[^/]+[.]zip', location.path) if location.netloc == 'zenodo.org' else None
+                if (location.scheme != "https" or not archive_name.endswith(".zip") or source["zip_members"] != [archive_name]
+                        or not isinstance(source.get("size"), int) or isinstance(source["size"], bool) or source["size"] <= 0):
+                    raise SourceDataError(f"{name}: HTTPS ZIP selection requires its exact filename and positive size")
+                if zenodo:
+                    # Versioned Zenodo records do not expose HTTP ETags. Pin the
+                    # record ID and size here, then every selected original byte
+                    # with the existing SHA-256 content-tree check below.
+                    record_id = zenodo.group(1)
+                    if source.get('revision') != record_id:
+                        raise SourceDataError(f'{name}: Zenodo revision must equal the versioned record ID')
+                    request = Request(f'https://zenodo.org/api/records/{record_id}', headers={'User-Agent': 'measurement-db'})
+                    with open_http_source(request, timeout=120) as response:
+                        record = json.load(response)
+                    matches = [entry for entry in record.get('files', []) if entry.get('key') == archive_name]
+                    if (str(record.get('id')) != record_id or len(matches) != 1
+                            or matches[0].get('size') != source['size']
+                            or not re.fullmatch(r'md5:[0-9a-f]{32}', str(matches[0].get('checksum', '')))):
+                        raise SourceDataError(f'{name}: Zenodo archive differs from its pinned record/size')
+                    entries = [dict(path=archive_name, url=url, size=source['size'])]
+                elif not re.fullmatch(r'"[^"\r\n]+"', str(source.get("revision", ""))):
+                    raise SourceDataError(f"{name}: HTTPS ZIP selection requires its exact filename, positive size and strong ETag revision")
+                else:
+                    entries = [dict(path=archive_name, url=url, size=source["size"], etag=source["revision"])]
+            elif "wandb_runs" in source:
+                entries = wandb_entries(source)
+            elif "json_index" in source:
+                entries = json_index_entries(source, named, raw_dir)
+            elif "dvc_index" in source:
+                entries = dvc_index_entries(source, named, raw_dir)
+            elif "html_index" in source:
+                entries = html_index_entries(source, named, raw_dir)
+            elif location.netloc == "api.osf.io":
+                entries = osf_entries(source)
+            elif location.netloc == "drive.google.com":
+                entries = google_drive_entries(source, raw_dir)
+            elif location.netloc == "storage.googleapis.com" and "prefix" in source:
+                bucket, prefix = location.path.strip("/"), source["prefix"]
+                if not re.fullmatch(r"[a-z0-9._-]+", bucket):
+                    raise SourceDataError(f"{name}: expected a public GCS bucket URL")
+                prefixes = [prefix]
+                if "helm_index" in source:
+                    selector = source["helm_index"]
+                    index = named.get(selector["source"], {})
+                    if not {"url", "file", "size", "sha256"} <= index.keys():
+                        raise SourceDataError(f"{name}: HELM index must name a pinned HTTP source")
+                    request = Request(index["url"], headers={"User-Agent": "Mozilla/5.0"})
+                    with urlopen(request, timeout=120) as response:
+                        payload = response.read()
+                    if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
+                        raise SourceDataError(f"{name}: HELM release index differs from its declared bytes")
+                    prefixes = []
+                    for run in json.loads(payload):
+                        if selector.get("group") and selector["group"] not in run.get("run_spec", {}).get("groups", []):
+                            continue
+                        path = run["run_path"]
+                        marker = "benchmark_output/runs/"
+                        if marker not in path:
+                            raise SourceDataError(f"{name}: invalid HELM run path {path!r}")
+                        relative = path[path.index(marker):].rstrip("/")
+                        if ".." in Path(relative).parts:
+                            raise SourceDataError(f"{name}: unsafe HELM run path {path!r}")
+                        prefixes.append(prefix + relative + "/")
+                    if not prefixes or len(set(prefixes)) != len(prefixes):
+                        raise SourceDataError(f"{name}: HELM selection has no runs or duplicate run paths")
+                for selected_prefix in prefixes:
+                    parameters = {"prefix": selected_prefix, "maxResults": 1000,
+                                  "fields": "items(name,size,generation,md5Hash,contentEncoding),nextPageToken"}
+                    while True:
+                        request = Request(f"https://storage.googleapis.com/storage/v1/b/{bucket}/o?{urlencode(parameters)}",
+                                          headers={"User-Agent": "measurement-db"})
+                        with urlopen(request, timeout=120) as response:
+                            page = json.load(response)
+                        for entry in page.get("items", []):
+                            relative = entry["name"].removeprefix(prefix)
+                            if not any(re.fullmatch(rule["match"], relative) for rule in source["files"]):
+                                continue
+                            try:
+                                checksum = base64.b64decode(entry["md5Hash"], validate=True)
+                                if len(checksum) != 16 or not str(entry["generation"]).isdigit():
+                                    raise ValueError("missing MD5 or generation")
+                            except (KeyError, TypeError, ValueError) as exc:
+                                raise SourceDataError(f"{name}: GCS object lacks a usable version/checksum: {entry['name']}") from exc
+                            encoding = entry.get("contentEncoding", "")
+                            if encoding not in ("", "gzip"):
+                                raise SourceDataError(f"{name}: unsupported GCS content encoding {encoding!r}")
+                            entries.append(dict(path=relative, size=int(entry["size"]), hash_kind="md5", digest=checksum.hex(),
+                                generation=str(entry["generation"]), content_encoding=encoding,
+                                url=f"https://storage.googleapis.com/{bucket}/{quote(entry['name'], safe='/')}?generation={entry['generation']}"))
+                        if not page.get("nextPageToken"):
+                            break
+                        parameters["pageToken"] = page["nextPageToken"]
+                identity = [{key: entry[key] for key in ("path", "generation", "size", "digest", "content_encoding")}
+                            for entry in sorted(entries, key=lambda entry: entry["path"])]
+                fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+                if fingerprint != source.get("tree_sha256"):
+                    raise SourceDataError(f"{name}: selected GCS objects differ from the pinned tree ({fingerprint})")
+            else:
+                revision = source["revision"]
+                if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+                    raise SourceDataError(f"{name}: pin the upstream repository to a full commit SHA")
+            if http_zip or any(key in source for key in ("html_index", "json_index", "dvc_index", "wandb_runs")) or location.netloc in {"drive.google.com", "api.osf.io"}:
+                pass
+            elif location.netloc == "github.com":
                 repository = location.path.strip("/")
                 if len(repository.split("/")) != 2:
                     raise SourceDataError(f"{name}: expected a GitHub repository URL")
-                request = Request(f"https://api.github.com/repos/{repository}/git/trees/{revision}?recursive=1",
-                                  headers={"User-Agent": "measurement-db"})
-                with urlopen(request, timeout=120) as response:
-                    tree = json.load(response)
-                if tree.get("truncated"):
-                    raise SourceDataError(f"{name}: upstream GitHub tree is truncated")
-                for entry in tree["tree"]:
+                for entry in github_tree_entries(repository, revision, source.get("tree_paths")):
                     if entry["type"] == "blob":
                         entries.append(dict(path=entry["path"], size=entry["size"],
                             hash_kind="git_sha1", digest=entry["sha"],
                             url=f"https://raw.githubusercontent.com/{repository}/{revision}/{quote(entry['path'], safe='/')}"))
-            elif location.netloc == "huggingface.co" and location.path.startswith("/datasets/"):
+            elif location.netloc == "huggingface.co":
                 from huggingface_hub import HfApi, hf_hub_url
-                repository = location.path.removeprefix("/datasets/").rstrip("/")
+                repository = location.path.strip("/")
+                if repository.startswith(("datasets/", "spaces/")):
+                    collection, repository = repository.split("/", 1)
+                    repo_type = {"datasets": "dataset", "spaces": "space"}[collection]
+                else:
+                    repo_type = "model"
                 if len(repository.split("/")) != 2:
-                    raise SourceDataError(f"{name}: expected a Hugging Face dataset URL")
-                for entry in HfApi().list_repo_tree(repository, repo_type="dataset", revision=revision, recursive=True):
+                    raise SourceDataError(f"{name}: expected a Hugging Face {repo_type} URL")
+                for entry in HfApi().list_repo_tree(repository, repo_type=repo_type, revision=revision, recursive=True):
                     if not hasattr(entry, "blob_id"):
                         continue
                     lfs = entry.lfs
                     digest = (lfs["sha256"] if isinstance(lfs, dict) else lfs.sha256) if lfs else entry.blob_id
                     entries.append(dict(path=entry.path, size=entry.size,
                         hash_kind="sha256" if lfs else "git_sha1", digest=digest,
-                        url=hf_hub_url(repository, entry.path, repo_type="dataset", revision=revision),
-                        hf_repo=repository, hf_revision=revision, hf_path=entry.path))
-            else:
+                        url=hf_hub_url(repository, entry.path, repo_type=repo_type, revision=revision),
+                        hf_repo=repository, hf_revision=revision, hf_path=entry.path, hf_repo_type=repo_type))
+            elif location.netloc != "storage.googleapis.com" or "prefix" not in source:
                 raise SourceDataError(f"{name}: unsupported repository URL {url}")
+            if "zip_members" in source:
+                if not http_zip and location.netloc != "huggingface.co":
+                    raise SourceDataError("ZIP member selections require a pinned Hugging Face repository or size/ETag-pinned HTTPS archive")
+                entries = zip_member_entries(source, entries, raw_dir)
             selected = []
             for rule in source["files"]:
                 matches = 0
@@ -83,6 +947,22 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...]) -> list[dict
                     destination = rule["path"].format(path=entry["path"], **match.groupdict())
                     # Keep established cache filenames for punctuation in run names.
                     destination = re.sub(r"[^A-Za-z0-9._/-]", lambda m: f"_x{ord(m[0]):02x}_", destination)
+                    if entry.get("content_encoding") == "gzip":
+                        destination += ".gz"
+                    if source.get("git_lfs"):
+                        # The commit pins the pointer; its object ID pins the
+                        # large file. Verify both, rather than saving the pointer.
+                        request = Request(entry["url"], headers={"User-Agent": "measurement-db"})
+                        with urlopen(request, timeout=120) as response:
+                            pointer = response.read(1024)
+                        digest = hashlib.sha1(f"blob {len(pointer)}\0".encode() + pointer).hexdigest()
+                        if len(pointer) != entry["size"] or digest != entry["digest"]:
+                            raise SourceDataError(f"{name}: Git LFS pointer differs from the pinned commit")
+                        fields = re.fullmatch(rb"version https://git-lfs.github.com/spec/v1\noid sha256:([0-9a-f]{64})\nsize ([0-9]+)\n", pointer)
+                        if fields is None:
+                            raise SourceDataError(f"{name}: expected an unextended Git LFS v1 pointer: {entry['path']}")
+                        entry = {**entry, "size": int(fields[2]), "hash_kind": "sha256", "digest": fields[1].decode(),
+                                 "url": f"https://media.githubusercontent.com/media/{repository}/{revision}/{quote(entry['path'], safe='/')}"}
                     selected.append({**entry, "file": destination})
                 if not matches:
                     raise SourceDataError(f"{name}: no upstream files match {rule['match']!r}")

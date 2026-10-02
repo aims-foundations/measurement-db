@@ -1,0 +1,184 @@
+benchmark:
+  description: Released LLM evaluator ratings of medical candidate answers in English and Chinese, with original
+    questions, reference answers and expert annotations.
+  testing_condition: Subjects are four LLM evaluators; response is their released scalar assessment of candidate
+    quality, not their correctness or agreement with a human. Keep every released rating, including 45 values outside
+    the requested {0,0.5,1} rubric and four ratings on empty candidates. The interval storage domain preserves those
+    outputs without rounding; higher ratings do not mean a more accurate evaluator. Items reconstruct the question,
+    candidate and reference-answer inputs from author-linked releases, with the language-specific rubric described
+    in the paper. Human annotations remain separate, complete reference records without averaging or rescaling;
+    source LiveQA ratings include -2 unassessed markers. The release includes reference-answer candidates as well
+    as generated candidates; it is broader than the paper system-only analyses. Full released baseline records are
+    retained, but per-call judge completions, request envelopes and exact historical inference settings are not
+    supplied. The multireference text condition is curated; reference-free/image ablations and separate MEDIQA challenges
+    are outside scope. No evaluator or model is executed.
+  paper_url: https://arxiv.org/abs/2509.12405
+  data_source_url: https://github.com/wyim/morqa-eval
+  subject_type: model
+  item_type: task
+  license: CDLA-Permissive-2.0 (OSF annotations); CC-BY-4.0 (underlying questions); GitHub baseline-result license
+    unspecified
+  citation: 'Yim et al., MORQA: Benchmarking Evaluation Metrics for Medical Open-Ended Question Answering, LREC
+    2026.'
+  tags:
+  - medical
+  - nlg-evaluation
+  - llm-as-judge
+  - multilingual
+  modality:
+  - text
+  domain:
+  - medicine
+  - nlp_task
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+  categorical: false
+  release_date: 2025-09
+  release: public
+  name: MORQA evaluator ratings
+  version: e42dbc20600fc40b1957f075ef8cc9686530bb50
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    result_files:
+      en/iiyi/test: release/morqa-experiments-20250928/en/iiyi/iiyi_test-multiref-baselines.json
+      en/iiyi/valid: release/morqa-experiments-20250928/en/iiyi/iiyi_valid-multiref-baselines.json
+      en/liveqa/test: release/morqa-experiments-20250928/en/liveqa/liveqa_test-multiref-baselines.json
+      en/woundcare/test: release/morqa-experiments-20250928/en/woundcare/woundcare_test-multiref-baselines.json
+      en/woundcare/valid: release/morqa-experiments-20250928/en/woundcare/woundcare_valid-multiref-baselines.json
+      zh/iiyi/test: release/morqa-experiments-20250928/zh/iiyi/iiyi_test-multiref-baselines-zh.json
+      zh/iiyi/valid: release/morqa-experiments-20250928/zh/iiyi/iiyi_valid-multiref-baselines-zh.json
+      zh/meddialog/test: release/morqa-experiments-20250928/zh/meddialog/meddialog_test-multiref-baselines-zh.json
+      zh/meddialog/valid: release/morqa-experiments-20250928/zh/meddialog/meddialog_valid-multiref-baselines-zh.json
+      zh/woundcare/test: release/morqa-experiments-20250928/zh/woundcare/woundcare_test-multiref-baselines-zh.json
+      zh/woundcare/valid: release/morqa-experiments-20250928/zh/woundcare/woundcare_valid-multiref-baselines-zh.json
+    rating_files:
+      en/iiyi/test: annotations/en/ratings/iiyi_test_ratings_human_v2.json
+      en/iiyi/valid: annotations/en/ratings/iiyi_valid_ratings_human.json
+      en/liveqa/test: annotations/en/ratings/liveqa_test_ratings_human.json
+      en/woundcare/test: annotations/en/ratings/woundcare_test_ratings_human.json
+      en/woundcare/valid: annotations/en/ratings/woundcare_valid_ratings_human.json
+      zh/iiyi/test: annotations/zh/ratings/iiyi_test_ratings_human-zh.json
+      zh/iiyi/valid: annotations/zh/ratings/iiyi_valid_ratings_human-zh.json
+      zh/meddialog/test: annotations/zh/ratings/meddialog_test_ratings_human-zh.json
+      zh/meddialog/valid: annotations/zh/ratings/meddialog_valid_ratings_human-zh.json
+      zh/woundcare/test: annotations/zh/ratings/woundcare_test_ratings_human-zh.json
+      zh/woundcare/valid: annotations/zh/ratings/woundcare_valid_ratings_human-zh.json
+    evaluators:
+      gpt-4o_##__ratings_prompt: gpt-4o
+      gemini-1.5-pro_##__ratings_prompt: gemini-1.5-pro
+      deepseekv3_##__ratings_prompt: deepseek-v3
+      promethesus7bv2_##__ratings_prompt: prometheus-2-7b
+    labels:
+      subject_prefix: 'MORQA / '
+      harness: MORQA multireference evaluation
+    id_fields:
+      iiyi: encounter_id
+      woundcare: post_id
+      liveqa: encounter_id
+      meddialog: encounter_id
+    question_files:
+      iiyi/valid: questions/iiyi/valid_ht_v2.json
+      iiyi/test: questions/iiyi/test_ht_spanishtestsetcorrected.json
+      woundcare/all: questions/woundcare/woundcarevqa.json
+      liveqa/test: annotations/datasets/liveqa_test.json
+      meddialog/all: annotations/datasets/meddialog_sample.json
+    instructions:
+      en: Assess the completeness and medical accuracy of the candidate answer using the patient question and expert
+        reference answers.
+      zh: Assess the completeness of the candidate answer and its factual consistency with the expert reference
+        answers for the patient question.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/wyim/morqa-eval
+    revision: e42dbc20600fc40b1957f075ef8cc9686530bb50
+    files:
+    - match: .+
+      path: release/{path}
+  - name: annotations
+    url: https://api.osf.io/v2/nodes/kcv2n/files/osfstorage/6993c8f553b2703343593f29/
+    revision: null
+    tree_sha256: 1639ba995e7f807bfee8848a5c5ba8ca9c01f70194ded8cfc18e5346fe08940d
+    files:
+    - match: .+[.]json
+      path: annotations/{path}
+  - name: morqa_license
+    url: https://osf.io/download/e9wkh/?version=1
+    revision: '1'
+    file: annotations/LICENSE-CDLA-Permissive-2.0.txt
+    size: 2354
+    sha256: 4531a67d443284d93ffed0803df5b10634aff21c3d77e381f2d48af01d875868
+  - name: morqa_description
+    url: https://osf.io/download/bewsx/?version=2
+    revision: '2'
+    file: annotations/README.txt
+    size: 1536
+    sha256: dac0912b50f7f1074daecbc54683f46a63437329f27e2cad22905468943f8708
+  - name: question_woundcare_license
+    url: https://osf.io/download/t3ur5/?version=1
+    revision: '1'
+    file: questions/woundcare/license.txt
+    size: 19347
+    sha256: 41003d4a74749c0220e33dd415042164b5a1093ed401f36277234f772d22d3d0
+  - name: question_woundcare_readme_woundcarevqa_dataset
+    url: https://osf.io/download/jquvg/?version=2
+    revision: '2'
+    file: questions/woundcare/README_woundcarevqa_dataset.md
+    size: 5104
+    sha256: eb72a0f69d105112c3fc248d06af0db95f7679105c5b45bfd55e1a7f423c20fe
+  - name: question_woundcare_woundcarevqa
+    url: https://osf.io/download/d5jmp/?version=1
+    revision: '1'
+    file: questions/woundcare/woundcarevqa.json
+    size: 1006107
+    sha256: 71d4712e6eca0f1658f6dceadecd1260707a583cfdd8527519cf0a8740340ede
+  - name: question_woundcare_data_dictionary
+    url: https://osf.io/download/ad7j5/?version=1
+    revision: '1'
+    file: questions/woundcare/data_dictionary.txt
+    size: 4301
+    sha256: e025f04bf13ac617f01726422f7e1ab23698eea68a50a75a486919c63771015c
+  - name: question_iiyi_readme
+    url: https://osf.io/download/25ve8/?version=1
+    revision: '1'
+    file: questions/iiyi/README.md
+    size: 7676
+    sha256: eed41f5bdcc50e681e31fdb7d8f2405ae7cfcb15027dd9b4a348245f3e998ffb
+  - name: question_iiyi_license
+    url: https://osf.io/download/67n5p/?version=1
+    revision: '1'
+    file: questions/iiyi/LICENSE
+    size: 18653
+    sha256: 9bbc1ea9fe5c96df01b311a2ac864d5b18fc87b9948bfd14770e4b44db755ee9
+  - name: question_iiyi_valid_ht_v2
+    url: https://osf.io/download/krj8g/?version=1
+    revision: '1'
+    file: questions/iiyi/valid_ht_v2.json
+    size: 277943
+    sha256: 2a136ba3104896c6bdfccab97db1d9471c0fba256c2f46b88251f75be79469e6
+  - name: question_iiyi_test_ht_spanishtestsetcorrected
+    url: https://osf.io/download/9v83a/?version=1
+    revision: '1'
+    file: questions/iiyi/test_ht_spanishtestsetcorrected.json
+    size: 526834
+    sha256: 8144aba5ed94205d7a2b94d9f0aa5268832b0dd0620ea1e2c1b757e6ca6bb5c1
+grading:
+  rule: Preserve the released scalar evaluator rating unchanged. Human annotations are reference assessments for
+    later meta-evaluation; do not reinterpret the scalar as accuracy, snap off-rubric values, average raters, or
+    normalize LiveQA reference scores.
+  verifiers:
+    published:
+      kind: released_scalar_evaluator_rating
+      source: https://github.com/wyim/morqa-eval/blob/e42dbc20600fc40b1957f075ef8cc9686530bb50/evaluate_rankings2.py
+      implementation: METRIC2EXTRACTFUNC retains each LLM rating via the identity function; cache_system_results
+        associates it with post_id and author_id_candidate.
+      prompt_source: https://arxiv.org/html/2509.12405v1#A1.T10
+      rubric_source: https://arxiv.org/html/2509.12405v1#A1.T11
+      limitations: These are evaluator outputs, not correctness grades. Original completions and parsing requests
+        are not released. Human annotations retain every metric and rater.

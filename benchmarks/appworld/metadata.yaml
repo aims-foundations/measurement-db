@@ -1,0 +1,64 @@
+benchmark:
+  description: 'AppWorld: interactive coding agent benchmark. Per-(agent, task) pass/fail decrypted from
+    the public leaderboard''s experiment bundles; real per-task natural-language instructions from the
+    released task data.'
+  testing_condition: Per-task success booleans from the captured leaderboard experiment bundles. Subjects
+    distinguish the model and agent scaffold; each item contains its full instruction and task-specific
+    grading checks. Test split and database version are item attributes. No original per-run definition
+    commit is inferred.
+  paper_url: https://arxiv.org/abs/2407.18901
+  data_source_url: https://github.com/StonyBrookNLP/appworld-leaderboard
+  subject_type: agent
+  item_type: task
+  license: Apache-2.0
+  citation: "@misc{trivedi2024appworldcontrollableworldapps,\n      title={AppWorld: A Controllable World\
+    \ of Apps and People for Benchmarking Interactive Coding Agents},\n      author={Harsh Trivedi and\
+    \ Tushar Khot and Mareike Hartmann and Ruskin Manku and Vinty Dong and Edward Li and Shashank Gupta\
+    \ and Ashish Sabharwal and Niranjan Balasubramanian},\n      year={2024},\n      eprint={2407.18901},\n\
+    \      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n      url={https://arxiv.org/abs/2407.18901},\n\
+    }"
+  tags:
+  - agent
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2024-07
+  release: private
+  name: AppWorld
+  one_line_description: Evaluates interactive coding agents on tasks spanning a simulated collection of
+    applications.
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/StonyBrookNLP/appworld-leaderboard
+    revision: c1f56015cf7c3441ff1933f5bfbec879798d7bbe
+    git_lfs: true
+    files:
+    - match: experiments/outputs/(?P<experiment>(?:(?:full_code_refl|plan_exec|react)_(?:deepseekcoder|gpt4o|gpt4turbo|llama3)|ipfuncall_(?:gpt4o|gpt4turbo)|cuga|loop|react-gpt4o-2_setbsr_upfront_demos|alibaba_cloud_apsaralab_0118_qwen3_14b_agentrl)_test_(?:normal|challenge))/leaderboard\.bundle
+      path: bundles/{experiment}.bundle
+  - name: tasks
+    url: https://s3.us-west-2.amazonaws.com/appworld.dev/data-0.1.0.bundle
+    revision: null
+    file: data-0.1.0.bundle
+    size: 34280074
+    sha256: fd9f9608c2ec71ed0ac25c3633a738b9129a318a129e31230425b9188e508250
+  - url: https://github.com/StonyBrookNLP/appworld
+    revision: 0a749f16da0c516811fe58e59ec9e2217560f54d
+grading:
+  rule: The provider records task success after its task-specific evaluation checks.

@@ -1,0 +1,3 @@
+- Preserve original IDA Pro and Ghidra outputs from all three evaluation splits. Inputs contain released assembly listings; reference source and tests remain in the grading criterion.
+- Replace the former nonempty-output success proxy with the authors' deterministic edit similarity. These scores are recomputed from captured text, not published correctness grades; no model calls or code execution are performed.
+- Collapse exactly duplicated native records and retain their source positions. Empty output slots and rows without an assembly representation remain in raw. Original binaries, exact tool versions and LLM generations are not supplied by this export.

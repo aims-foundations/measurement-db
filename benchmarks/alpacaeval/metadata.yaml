@@ -1,0 +1,83 @@
+benchmark:
+  name: AlpacaEval 2.0 weighted preferences
+  description: Released per-instruction soft preferences for 221 generators against the fixed
+    gpt4_1106_preview reference, evaluated with the weighted GPT-4-Turbo annotator.
+  testing_condition: Preserve primary native annotations, including unavailable grades and complete
+    outputs. Each response is the evaluated generator's soft preference score against the released
+    reference output. These are raw preferences, before length-control regression. Identical-output
+    comparisons receive the upstream tie value without a new judge call. Model configuration files
+    describe released templates; historical inference settings and checkpoint revisions not recorded
+    with an annotation remain unknown. Nested Vicuna exports add regression estimates to the same
+    judgments and do not introduce additional observations. No models or judges are run.
+  paper_url: https://arxiv.org/abs/2404.04475
+  data_source_url: https://github.com/tatsu-lab/alpaca_eval
+  subject_type: model
+  item_type: instruction
+  license: 'Data: CC-BY-NC-4.0, as declared in the upstream README; code: Apache-2.0.
+    Constituent prompts retain their source licenses.'
+  citation: 'Dubois, Y., Galambosi, B., Liang, P., and Hashimoto, T. B. (2024).
+    Length-Controlled AlpacaEval: A Simple Way to Debias Automatic Evaluators. COLM 2024.'
+  tags: [instruction_following, preference, llm_judge]
+  modality: [text]
+  domain: [general]
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: '2024-01-03'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release/cd543a149df89434d8a54582c0151c0b945c3d20
+      annotations: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json
+      reference: results/gpt4_1106_preview/model_outputs.json
+      judge_prompt: src/alpaca_eval/evaluators_configs/alpaca_eval_clf_gpt4_turbo/alpaca_eval_clf.txt
+    target:
+      reference: gpt4_1106_preview
+      harness: AlpacaEval 2.0
+      item_prefix: 'alpaca_eval:'
+      interactors: opponent=gpt4_1106_preview
+    parsing:
+      unavailable_preference: '-1'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/tatsu-lab/alpaca_eval
+    revision: cd543a149df89434d8a54582c0151c0b945c3d20
+    files:
+    - match: results/[^/]+/(?:weighted_alpaca_eval_gpt4_turbo/)+annotations\.json|results/gpt4_1106_preview/model_outputs\.json
+      path: release/cd543a149df89434d8a54582c0151c0b945c3d20/{path}
+    - match: src/alpaca_eval/models_configs/.*|src/alpaca_eval/annotators/.*\.py|src/alpaca_eval/(?:completion_parsers|processors|utils)\.py|src/alpaca_eval/evaluators_configs/weighted_alpaca_eval_gpt4_turbo/configs\.yaml|src/alpaca_eval/evaluators_configs/alpaca_eval_clf_gpt4_turbo/alpaca_eval_clf\.txt|src/alpaca_eval/leaderboards/data_AlpacaEval_2/weighted_alpaca_eval_gpt4_turbo_leaderboard\.csv|README\.md|LICENSE
+      path: release/cd543a149df89434d8a54582c0151c0b945c3d20/{path}
+  - name: data_license
+    url: https://github.com/tatsu-lab/alpaca_farm
+    revision: 30717ddae735365de756ee2085191b491a71788d
+    files:
+    - match: DATA_LICENSE
+      path: license/30717ddae735365de756ee2085191b491a71788d/{path}
+grading:
+  rule: Compare the evaluated generator's output with the fixed reference output for the same instruction.
+    Import the released soft preference without length-control regression or rejudging. A preference
+    in [1,2] becomes preference minus 1 for generator_2 or 2 minus preference for generator_1.
+    Missing preferences and the reviewed -1 record without a judge completion remain ungraded,
+    with the original value preserved in the trace; other invalid values raise an error.
+    The reference is a comparison output, not a gold correctness answer.
+  verifiers:
+    weighted_preference:
+      kind: released_pairwise_llm_preference
+      annotator: weighted_alpaca_eval_gpt4_turbo
+      judge_model: gpt-4-1106-preview
+      source: https://github.com/tatsu-lab/alpaca_eval/blob/cd543a149df89434d8a54582c0151c0b945c3d20/src/alpaca_eval/completion_parsers.py
+      configuration: https://github.com/tatsu-lab/alpaca_eval/blob/cd543a149df89434d8a54582c0151c0b945c3d20/src/alpaca_eval/evaluators_configs/weighted_alpaca_eval_gpt4_turbo/configs.yaml
+      method: logprob_parser normalizes probabilities over tokens m and M. Output order may be
+        randomized internally; published preference values are restored to the exported order.
+        Identical outputs receive preference 1.5 directly.
+      max_tokens: 1
+      temperature: 1
+      top_logprobs: 5
+      score_field: preference

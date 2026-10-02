@@ -1,0 +1,50 @@
+format_version: 1
+tables:
+  traces:
+    rows: 13000
+    logical_sha256: 7ca79477130da06871f39913744f072ac2bdf8f7e5fb20bf8ceeaaab5060ae9c
+  subjects:
+    rows: 13
+    logical_sha256: def53788109ce43bbb9ef5af5604f883c79e88ab8b0e2a7c1b74d0df991a85ba
+  responses:
+    rows: 13000
+    logical_sha256: 5e823d720cfc7e3dffb0ea68375042b429bd73a9f9793c8c46d68b0fb79e343d
+  items:
+    rows: 1000
+    logical_sha256: d840c4bebfe1ab165db242e2939cc3f98950de0dc6332a7b6ef142eb37516503
+  benchmarks:
+    rows: 1
+    logical_sha256: 5a5e5b81c1cf72b95011aee96cf211263e3ad9250b0a04961f4dfe413ac50ad1
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/med_mcqa:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 13
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/med_mcqa:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 13000
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/med_mcqa:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 9895.0
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: 'https://storage.googleapis.com/crfm-helm-public/medhelm/benchmark_output/runs/v4.0.0/med_mcqa:'
+    locator: 'Thirteen pinned native run directories: run_spec, instances, display_requests, display_predictions,
+      per_instance_stats.'
+    scope: All published attempts for this MedHELM v4.0.0 scenario; each run uses its own item bank.
+    expected: 0

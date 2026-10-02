@@ -1,0 +1,93 @@
+format_version: 1
+tables:
+  traces:
+    rows: 10000
+    logical_sha256: 49ab51c865ebe56ea363dfa3994cbbac94a7de7cd8a4cc88071f0a8d2143d810
+  subjects:
+    rows: 1
+    logical_sha256: 965ccdfa1edb3ed082a9e0147b88d4356591906ec5083c320be27b9a36933f35
+  responses:
+    rows: 10000
+    logical_sha256: 59f71551218663250fa97147d059cbb44ee39adc4c4e091ef893e7066dd433db
+  assets:
+    rows: 8957
+    logical_sha256: 97a63226ac2c59a4336400dafc0144fbaf0b98955e1ee0560f776c08f102f5bc
+  items:
+    rows: 9868
+    logical_sha256: ebff26bd09849f1312b98dcdc2c1265e1965e94ef6a559426a2ebff0645bf10e
+  benchmarks:
+    rows: 1
+    logical_sha256: ea2e57e33f04950dbe1288f0a552c586f690505a5f31d421023081e9c40474cb
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 10000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 9868
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 10000
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 8957
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 10000
+  source_task_types:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 30
+  repeated_records_excluding_id:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+    locator: Official pred_folder/internvl2_5_26b.json and matching ling99/OCRBench_v2 image shards, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 32

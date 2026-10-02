@@ -1,0 +1,130 @@
+benchmark:
+  description: Molecular property reasoning at the functional-group level. This curation links individual
+    model outputs to the 7,146-question test bank, preserving classification correctness and numeric squared
+    errors.
+  testing_condition: The six native question families, with eight released model exports. Boolean responses
+    are correctness; numeric responses are squared error under the historical nonzero-value inclusion
+    rule.
+  paper_url: https://openreview.net/forum?id=VIsPHMMiW8
+  data_source_url: https://huggingface.co/datasets/xuan-liu/FGBench
+  subject_type: model
+  item_type: question
+  license: MIT
+  citation: "@inproceedings{liu2025fgbench,\n  title={FGBench: A Dataset and Benchmark for Molecular Property\
+    \ Reasoning at Functional Group-Level in Large Language Models},\n  author={Liu, Xuan and Ouyang,\
+    \ Siru and Zhong, Xianrui and Han, Jiawei and Zhao, Huimin},\n  booktitle={NeurIPS 2025 Datasets and\
+    \ Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - chemistry
+  - molecular_property
+  - functional_group
+  - reasoning
+  modality:
+  - text
+  domain:
+  - science
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-12
+  name: FGBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    gpt-4o:
+      file: gpt_request/benchmark_result_4o.jsonl
+      raw_label: gpt-4o-2024-11-20
+      parser: standard
+      format: openai_batch
+    o3-mini:
+      file: gpt_request/benchmark_result_o3_mini.jsonl
+      raw_label: o3-mini-2025-01-31
+      parser: standard
+      format: openai_batch
+    llama-3.1-8b:
+      file: results/llama3.1-8b.jsonl
+      raw_label: meta-llama/Llama-3.1-8B-Instruct
+      parser: standard
+      format: jsonl
+      prediction_field: answer
+      label_field: label
+    qwen:
+      file: results/qwen-7b-Instruct.jsonl
+      raw_label: Qwen/Qwen2.5-7B-Instruct
+      parser: standard
+      format: jsonl
+      prediction_field: answer
+      label_field: label
+    chemllm:
+      file: results/ChemLLM-7B-Chat.jsonl
+      raw_label: AI4Chem/ChemLLM-7B-Chat
+      parser: standard
+      format: jsonl
+      prediction_field: output
+      label_field: answer
+    nach0:
+      file: results/nach0_base.jsonl
+      raw_label: insilicomedicine/nach0_base
+      parser: nach0
+      format: jsonl
+      prediction_field: answer
+    molinst:
+      file: results/molinst_results_cl.jsonl
+      raw_label: Llama-3-8B-MolInst
+      parser: molinst
+      format: jsonl
+      prediction_field: answer
+    llasmol:
+      file: results/llasmol_results_2.jsonl
+      raw_label: osunlp/LlaSMol-Mistral-7B
+      parser: llasmol
+      format: jsonl
+      prediction_field: answer
+    parser_patterns:
+      boxed: oxed\{([^\}]+)\}
+      sentence: The answer is therefore .*?([-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?|True|False|true|false).*?\.
+      boolean_tag: BOOLEAN>(.*?)<
+      number_tag: NUMBER>(.*?)<
+      brackets: \[(.*?)\]
+grading:
+  verifiers:
+    boolean:
+      source: https://github.com/xuanliugit/FGBench/blob/fe67aded66bb08534da180ad6073cef42f422666/result_ananlysis/analysis.py
+      rule: Apply the released model-specific answer parser and exact-match the reference Boolean. An
+        unparsed prediction is incorrect.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': incorrect
+          '1': correct
+    numeric:
+      source: https://github.com/xuanliugit/FGBench/blob/fe67aded66bb08534da180ad6073cef42f422666/result_ananlysis/analysis.py
+      rule: Squared difference between the parsed prediction and reference. Preserve the upstream exclusion
+        of zero references, zero predictions, and unparsed outputs as null grades. Square-root of mean
+        graded response yields the source RMSE.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+sources:
+  upstream:
+  - name: questions
+    url: https://huggingface.co/datasets/xuan-liu/FGBench/resolve/24c847c7fb91723e8785cb8fa64932fd8ce1e613/test.jsonl
+    revision: 24c847c7fb91723e8785cb8fa64932fd8ce1e613
+    file: test.jsonl
+    size: 10516742
+    sha256: 7d3eb9550158fe1e52a5f0d5616b532f52b31f72d59748b3950a64cd145421f0
+  - name: predictions
+    url: https://github.com/xuanliugit/FGBench
+    revision: fe67aded66bb08534da180ad6073cef42f422666
+    files:
+    - match: data/(?P<relative>(?:results|gpt_request)/[^/]+\.jsonl)
+      path: '{relative}'

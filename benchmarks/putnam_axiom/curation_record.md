@@ -1,0 +1,3 @@
+- Imports 1,000 model solutions to 500 problems and 5,000 human rubric grades. The redundant `score_total` sum remains in raw data.
+- Checks that every reference solution agrees with the official bank; all 500 abbreviated Mistral statements match canonical prefixes after removing the export’s ellipsis. Full statements and complete solutions are preserved.
+- Each problem/rubric combination is a distinct item (2,500 items), following grading-protocol identity. Individual annotators and full annotation instructions are not supplied by the grading export.

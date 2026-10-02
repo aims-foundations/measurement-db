@@ -1,0 +1,3 @@
+- Imports 9,095 recorded GPT-4o-mini responses, preserving full ordered chat prompts, reference answers, original correctness flags, and complete outputs. Later `llm_judge` / `EM_result` fields are not substituted.
+- Records the applicable numeric-tolerance or exact-string grading protocol in item identity; the numeric rule documents the original zero-reference truthiness behavior.
+- Item aliases include level, task and source row. Canonically identical items are deduplicated while repeated observations receive distinct trials.

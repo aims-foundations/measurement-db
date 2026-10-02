@@ -1,0 +1,3 @@
+- Source: pinned HF images/current metadata, the original human-label release, author code and paper. Preserve complete source bytes and output-image hashes.
+- Mapping: 12,861 unique model/image attempts; 3,750 human grades and 9,111 ungraded attempts. Restore 3,800 image paths and retain all 27,955 source rows as trace provenance; repeated CSV appends are not new trials.
+- Correction: later models' zero placeholders are not successful human grades. Keep historical model settings and auxiliary judge-to-image matches unasserted; no new inference or judging.

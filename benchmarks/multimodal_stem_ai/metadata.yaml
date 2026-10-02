@@ -1,0 +1,106 @@
+benchmark:
+  description: Released model responses and original fractional grades on university STEM assessment questions with
+    archived input images.
+  testing_condition: Import the 17 individual model/prompt-strategy channels across all 255 released question records,
+    preserving original grade_score values in [0,1], including partial credit. The paper describes a 201-question
+    analyzed subset; this data release is larger. The two vote aggregations and image-description intermediate step
+    remain in the raw file, not as additional independent model attempts. Original requests and historical model
+    snapshots are not released; source aliases and strategy names are retained. No models or graders run.
+  paper_url: https://arxiv.org/abs/2507.03013
+  data_source_url: https://github.com/AnnaSou/multimodal-stem-ai
+  subject_type: model
+  item_type: question
+  license: unknown
+  citation: "@inproceedings{dechillaz2025multimodal,\n  title={Challenges for {AI} in Multimodal {STEM} Assessments:\
+    \ a Human-{AI} Comparison},\n  author={de Chillaz, Aymeric and Sotnikova, Anna and Jermann, Patrick and Bosselut,\
+    \ Antoine},\n  booktitle={Proceedings of the 20th Workshop on Innovative Use of NLP for Building Educational\
+    \ Applications (BEA 2025)},\n  year={2025},\n  url={https://aclanthology.org/2025.bea-1.22/}\n}"
+  tags:
+  - stem
+  - multimodal
+  - exam
+  - education
+  - human-ai-comparison
+  modality:
+  - text
+  - image
+  domain:
+  - education
+  - science
+  - reasoning
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2025-07
+  release: public
+  name: Multimodal STEM Assessments (Human-AI)
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      records: runs/all_models_all_mooc_courseware_samples.json
+      input_images: data/curated_dataset/question_images
+    models:
+      basic_prompt: gpt-4o
+      traditional_cot: gpt-4o
+      image_first: gpt-4o
+      gpt_4o_only_image_description: gpt-4o
+      o1_mini_prompt: o1-mini
+      qwen2.5_72b_basic_prompt: qwen/qwen2.5-vl-72b-instruct
+      qwen2.5_72b_traditional_cot: qwen/qwen2.5-vl-72b-instruct
+      qwen2.5_72b_image_first: qwen/qwen2.5-vl-72b-instruct
+      qwen2.5_72b_only_image_description: qwen/qwen2.5-vl-72b-instruct
+      r1_basic_prompt: deepseek/deepseek-r1
+      r1_traditional_cot: deepseek/deepseek-r1
+      r1_image_first: deepseek/deepseek-r1
+      r1_only_image_description: deepseek/deepseek-r1
+      claude_3_7_basic_prompt: anthropic/claude-3.7-sonnet:thinking
+      claude_3_7_traditional_cot: anthropic/claude-3.7-sonnet:thinking
+      claude_3_7_image_first: anthropic/claude-3.7-sonnet:thinking
+      claude_3_7_only_image_description: anthropic/claude-3.7-sonnet:thinking
+    prompt_strategies:
+      basic_prompt: basic_prompt
+      traditional_cot: traditional_cot
+      image_first: image_first
+      gpt_4o_only_image_description: only_image_description
+      o1_mini_prompt: basic_prompt
+      qwen2.5_72b_basic_prompt: basic_prompt
+      qwen2.5_72b_traditional_cot: traditional_cot
+      qwen2.5_72b_image_first: image_first
+      qwen2.5_72b_only_image_description: only_image_description
+      r1_basic_prompt: basic_prompt
+      r1_traditional_cot: traditional_cot
+      r1_image_first: image_first
+      r1_only_image_description: only_image_description
+      claude_3_7_basic_prompt: basic_prompt
+      claude_3_7_traditional_cot: traditional_cot
+      claude_3_7_image_first: image_first
+      claude_3_7_only_image_description: only_image_description
+    labels:
+      harness: Multimodal STEM Assessments released prompt strategies
+grading:
+  verifiers:
+    hybrid:
+      judge: Released hybrid grading pipeline
+      spec:
+        source: https://github.com/AnnaSou/multimodal-stem-ai/blob/c876949dce78c987d88d66ad92af98e9a238d233/code/llm_grading.py
+        class_name: grade_answer and function_grade_samples
+        logic: 'Preserve the published grade_score. Reference code dispatches by question type: answer parsing/matching,
+          numerical tolerance, LLM-assisted option/formula checks, and averaged compound-question sub-scores. Historical
+          manual overrides and exact invocation settings are not recorded per judgment. The numeric domain is [0,1];
+          do not binarize, round or regrade.'
+      rule: The original released grade_score measures correctness, including partial credit for compound questions.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/AnnaSou/multimodal-stem-ai
+    revision: c876949dce78c987d88d66ad92af98e9a238d233
+    files:
+    - match: runs/all_models_all_mooc_courseware_samples\.json|README\.md|code/(llm_grading|llm_prompting|llm_prompts|images_utils)\.py|data/curated_dataset/question_images/.+
+      path: '{path}'

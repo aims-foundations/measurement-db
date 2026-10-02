@@ -1,0 +1,50 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 8d7c3f7f64ba6734e1cbf95d5fc5fc91d11be6f8cbc4a4fd3e0c7c09a8fa956e
+  items:
+    rows: 565
+    logical_sha256: e73183261e21c2116b9a4428194a6b458549469194df7b3a0cdfc1f22eb80484
+  responses:
+    rows: 23730
+    logical_sha256: 85913d3192fa35cc1e32ba5f6f31c1e2d7d17a8aba5117dac5c5ec31f7f7e8b3
+  subjects:
+    rows: 42
+    logical_sha256: 9ebe6694988e1e12a4d199d867583d44dd12b48859bc0aa1a8f24d7482bb7882
+  traces:
+    rows: 23730
+    logical_sha256: a2acb8f74bfbc5a26d0818e2269244f0200a171b8902fa82898392a2095c15ca
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 210
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 23730
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 10990
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
+    locator: Selected native run_spec, instances, display_requests, display_predictions and per_instance_stats
+      files.
+    scope: HELM v1.2.0, all 210 selected run exports; actual task metrics, including ungraded attempts.
+    expected: 0

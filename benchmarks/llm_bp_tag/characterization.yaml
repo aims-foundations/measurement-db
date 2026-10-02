@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 158596
+    logical_sha256: 1edb4739419ba440e129985b20bb60ad2132b6d6903ef3cd57df34bf6c080eb2
+  subjects:
+    rows: 1
+    logical_sha256: 65b61556d857adad1fb775da0d9f5601804de195a520dee7710a92d03eb5bfbf
+  responses:
+    rows: 158596
+    logical_sha256: 4b06e0b8d586ffaca3c03ad73cca583199aeb115c45842887c6662b0882d31b7
+  items:
+    rows: 152139
+    logical_sha256: 8af7c1cecd6565ff5e8036c1ec38e76606619dd89a143d3db9e1cb80a144f85b
+  benchmarks:
+    rows: 1
+    logical_sha256: 67b1bbc3862880dd1274841fbee11a1577092e48272743f871d9411ce1d1fe72
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 158596
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 152139
+  source_graph_datasets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 11
+  source_raw_only_homophily_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 5500
+  source_ambiguous_classifications:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 17471
+  source_unmatched_classifications:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    locator: Pinned original results/nc_*/4o/llm_baseline/response_0.pkl lists, graph test-node arrays and category
+      CSV files; README and run_gpt.py specify ordering and grading.
+    scope: All eleven node-classification datasets, plus the separately captured homophily output files without
+      released sampled node IDs.
+    expected: 74

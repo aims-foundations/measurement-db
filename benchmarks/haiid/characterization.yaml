@@ -1,0 +1,142 @@
+format_version: 1
+tables:
+  traces:
+    rows: 71364
+    logical_sha256: ff4182f5988bb3fcf1fbc62a92d1b94e8c7b391c915d4322c19a16b5b40b4699
+  subjects:
+    rows: 1126
+    logical_sha256: f201f72bbc8e8ef336680acf75bd313e3215bcb69d9f2589e026cfd06887a8db
+  responses:
+    rows: 71364
+    logical_sha256: 73159c824775e63fc492ded5418ba1b121a40587dddce4ded812cd448a8d7db9
+  assets:
+    rows: 88
+    logical_sha256: a10783135a44cb8c29f3e7f2dbc5972c572e1adf2c4bc3c7c9053dc138febf51
+  items:
+    rows: 152
+    logical_sha256: 9624ba2ff71bc827078f4ae15be68069fa1d4f1fb274fd03071ac2fb3adbf3b3
+  benchmarks:
+    rows: 1
+    logical_sha256: ec4d47f0e9663efde92da78ce557fca54711d28945a21410d02b31288f2cf2b4
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 71364
+  source_interactions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 35670
+  source_participants:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 1125
+  source_initial_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 35670
+  source_revised_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 35670
+  source_model_advice:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 24
+  source_neutral_initial:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 458
+  source_neutral_revised:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 681
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 152
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 88
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kailas-v/human-ai-interactions
+    locator: csv.DictReader over the pinned haiid_dataset.csv. Reconcile every before/after judgment, all source
+      cells and context, the 24 invariant dermatology advice values, and complete task bytes. Scoring independently
+      checked against upstream _accuracy.
+    scope: All 35670 released interactions, including incomplete participant sequences. 1125 human participants
+      and one ResNet-18 advisor. Crowd-derived advice is retained per interaction; no unobserved modal-average predictions
+      are added.
+    expected: 1126

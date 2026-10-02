@@ -1,0 +1,84 @@
+format_version: 1
+tables:
+  traces:
+    rows: 784352
+    logical_sha256: 9beafa2d900bea304d3f3b33bc69af19c69d01f8d20c5a5024e49a016cb33781
+  subjects:
+    rows: 254
+    logical_sha256: 68aa7c0c686bf0ff4dbc865f2739e3d6ce306faa2f03f667554722b92e078895
+  responses:
+    rows: 784352
+    logical_sha256: 1fc909b1cfc0a42f14b794f353dc21efdbbe8c9a0ef1c54c148f0a15547e2a57
+  assets:
+    rows: 1201
+    logical_sha256: da5ae28d32c56c6ef7544d8f3a9cf3d91a1baa091e151e6401c389b45c7e35e7
+  items:
+    rows: 3088
+    logical_sha256: dc43896065351340b15ce4790de7472acbd6ae9b40c2f8e302da3ac5e6847625
+  benchmarks:
+    rows: 1
+    logical_sha256: e1733afed3301deac91748ba4e5e90efbac805f8dc09e693081ca73ac1bb94b2
+source_claims:
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 258
+  source_published_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 3088
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 784352
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 784352
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 254
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 3088
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: mmeval/{model}/{model}_AI2D_TEST.xlsx, GPT4o exact_matching_result.xlsx, and the official-checksum
+      task TSV
+    scope: Maintained primary model exports; historical snapshots and retry caches are preserved without counting
+      them as independent trials.
+    expected: 1201

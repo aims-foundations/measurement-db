@@ -1,0 +1,109 @@
+format_version: 1
+tables:
+  assets:
+    rows: 26205
+    logical_sha256: ae2f50d0852c2e81bfc17302ffd5a0bda680b76b8ffabaeeb3275cd16ee51f26
+  benchmarks:
+    rows: 1
+    logical_sha256: 60c9205480d6842f774e4716c7811a9148ba6613aeaf970c9f25fdc88880a9b4
+  items:
+    rows: 93127
+    logical_sha256: c19c0a0c8b27e7109d765177fcbf750c6163e67ad729db4aff5a3abc568e49ac
+  responses:
+    rows: 931478
+    logical_sha256: 733685926dc61c56bc0f8fdb413d9f44b2876ba81bcd3804aad792928a348317
+  subjects:
+    rows: 112
+    logical_sha256: c58b6c651df07550da26ec097bd869f737d786b2377ab59e0b79ca79fc5b3e50
+  traces:
+    rows: 931478
+    logical_sha256: 0ff77e42ebcc778de8e35bc7085b221d1e60f44778197a84e9ad7309e5cf3d72
+source_claims:
+  source_records:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 1110340
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 931478
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 931478
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 93127
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 112
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 26205
+  source_cache_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 178862
+  source_raw_only_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+    locator: Original v2.0.1 schema.json, all supported run_spec/scenario_state/per_instance_stats exports, and
+      original scenario image bytes.
+    scope: Complete supported native requests, including original and perturbed examples. Identical cache copies
+      retain source aliases; records with different grades remain distinct. The 18 image2webpage runs are raw-only
+      because original screenshots are missing and the release schema declares no headline metric. Mixed native
+      metrics retain their original scales.
+    expected: 18

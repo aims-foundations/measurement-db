@@ -1,0 +1,3 @@
+- Preserve all 92,180 attempts, eleven source model configurations, 8,259 content-and-grading items and complete original outputs. Every bank index and all 913 published accuracy summaries are independently checked.
+- Correct 7,073 legacy failure grades to null because the authors exclude unparseable answers; this includes 1,904 empty decoded strings. The other 85,107 grades are unchanged, with 46,187 correct answers.
+- Identify the fine-tuned model's 6,980 pre-2025 training/validation observations and 1,400 held-out-year observations. Preserve declared inference scripts without inferring historical weight revisions or exact per-run settings; aggregate-only stress results remain outside this item-level scope.

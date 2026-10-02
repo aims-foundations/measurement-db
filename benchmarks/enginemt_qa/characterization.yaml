@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  traces:
+    rows: 676
+    logical_sha256: ce2e6b994665d8bc6f1be1e9c79be0deda9d4de6613b62ee13ae47870639dbfe
+  subjects:
+    rows: 1
+    logical_sha256: 8ac3aefe36fd0dc4c54544982f286aece304d3e867d8ab4a38b2b3ccfaee8620
+  responses:
+    rows: 676
+    logical_sha256: 0cdf445fd88dddfcec80186931e10f7f64c5f968ee37e0764eb9ce177ecb5d87
+  assets:
+    rows: 446
+    logical_sha256: b92d7f88ebad2483cc13792b728821ad2ca29d200955b1e51a84e49578f1c4fd
+  items:
+    rows: 676
+    logical_sha256: 652bb57bd65269ee9bae8ec2470fddfa2a77bc7263699561a58a63520787d5a4
+  benchmarks:
+    rows: 1
+    logical_sha256: 49af2d5ac97649371633a2166ec5414ac69c8591b964101e75e1ff2d8dc327eb
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 676
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 676
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 1
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 446
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 525
+  source_export_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 10608
+  source_sensor_sequences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 446
+  source_perception:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 374
+  source_reasoning:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/output_result_all.json
+    locator: Original parallel prediction/label/stage/source-line arrays joined to pinned test_qa.jsonl. Each selected
+      sensor sequence is checked against the pinned HDF5 archive.
+    scope: The 676 uniquely aligned single-choice stage-2/stage-3 attempts, without guessing ambiguous question
+      associations.
+    expected: 302

@@ -1,0 +1,3 @@
+- Import 11,000 original answer/judge records for 22 models and 500 tasks. The overlapping 10,000 HF observations agree exactly and are linked as evidence, not additional trials.
+- Restore 500 original PNGs and distinct tasks; the text-only legacy builder collapsed them to 425 items. Preserve full outputs, judge explanations and available prompts, with the comparison answer in the grading criterion. Unrecorded model settings remain unknown.
+- Preserve the five preference categories with the existing numeric coding and explicit ordinal meanings. Retain the 26 unavailable verdicts as null; empty answers with published judgments remain graded. No inference or judge calls are made.

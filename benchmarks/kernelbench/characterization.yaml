@@ -1,0 +1,153 @@
+format_version: 1
+tables:
+  traces:
+    rows: 73998
+    logical_sha256: edd06e4fd6159c8181614f71d35ac1d6c068adbb765c291982c6147ef62e488f
+  subjects:
+    rows: 19
+    logical_sha256: 66c54f8ed8982b62a1c6433eafd0b2b6011fda68ddd785052f5d108eba2bd42a
+  responses:
+    rows: 73998
+    logical_sha256: 8e216ee199716672b77c701302df1631d195c9ccd88bee89c451801fdaf1ecf0
+  items:
+    rows: 250
+    logical_sha256: 3653aa2735806a23d6f391ad1f8d63cc98ed03183fde3bc52808504d2afd7539
+  benchmarks:
+    rows: 1
+    logical_sha256: 9fc557cafb0d792b47aeb90f78b87d58f966e629e5000926f6559d1c07e9800e
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 73998
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 19
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 250
+  source_baseline_eval_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 1724
+  source_explicit_failure_without_kernel:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 1983
+  source_ungraded_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 14
+  source_refinement_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 2250
+  source_empty_log_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 359
+  source_final_reports:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 2236
+  source_distinct_final_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 1938
+  source_numeric_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 22461
+  source_logs_without_final_report:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 14
+  source_final_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 298
+  source_repeated_sampling_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 47875
+  source_precompile_failure_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScalingIntelligence/kernelbench-samples
+    locator: All JSON files at the pinned official sample release, joined to the original 250 task definitions and
+      checked against the historical harness and saved prompts.
+    scope: Preserve recorded assessments and sample/turn roles. Empty log slots are not attempts; copied final reports
+      are explicit aliases, and distinct final assessments retain their own verdict.
+    expected: 3717

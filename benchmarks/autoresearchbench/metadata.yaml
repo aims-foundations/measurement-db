@@ -1,0 +1,89 @@
+benchmark:
+  name: AutoResearchBench
+  description: Released agent attempts at identifying individual scientific papers and collecting sets of relevant papers.
+  testing_condition: >-
+    One response is one native search-agent pass in the historical example-result exports.
+    The Deep Research examples have two passes per question; Wide Research has one.
+    Items retain the initial system and user messages recorded with the actual attempt,
+    excluding reference answers and later retrieved information from the input.
+    Import the published Deep title-matching judgments and Wide intersection-over-union
+    scores unchanged. Original inference exports retain richer candidate metadata than
+    the Deep evaluation copies; traces preserve the original pass and complete evaluation
+    context, including search messages, timing, candidate state and auxiliary statistics.
+    All released attempts have a recorded judgment. Their model label comes from the
+    original filenames. Exact API checkpoints, runtime settings, search-index snapshots
+    and the Deep judge model were not recorded. Captured code documents the released
+    procedure, without establishing the historical invocation or harness revision.
+    This is the released example subset, not the paper's full benchmark or all models.
+  paper_url: https://arxiv.org/abs/2604.25256
+  data_source_url: https://github.com/CherYou/AutoResearchBench
+  subject_type: model
+  item_type: question
+  license: Apache-2.0, as declared by the upstream code repository and Hugging Face dataset card.
+  citation: AutoResearchBench Team (2026). AutoResearchBench, Benchmarking AI Agents on Complex Scientific Literature Discovery. arXiv:2604.25256.
+  tags: [scientific_literature_discovery, research_agents, arxiv_search]
+  modality: [text]
+  domain: [science, reasoning, agents_and_tool_use]
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: '2026-04'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release/48bf934cc131968311434aa37649cbf32ca53bc0
+    runs:
+      deep: gemini-3.1-flash-lite-preview_academic_deepsearch_example
+      wide: gemini-3.1-flash-lite-preview_academic_widesearch_example
+    evaluation_suffixes:
+      deep: _evaluation.json
+      wide: _eval_results.json
+    subject:
+      harness: AutoResearchBench
+      model_evidence: Original result filename. Exact historical endpoint and runtime settings are unrecorded.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/CherYou/AutoResearchBench
+    revision: 48bf934cc131968311434aa37649cbf32ca53bc0
+    files:
+    - match: '.*'
+      path: release/48bf934cc131968311434aa37649cbf32ca53bc0/{path}
+  - name: license
+    url: https://github.com/CherYou/AutoResearchBench
+    revision: a46c9bfb8968786f73f0a6a5b365b5384cd0f96d
+    files:
+    - match: 'README\.md|LICENSE'
+      path: release/a46c9bfb8968786f73f0a6a5b365b5384cd0f96d/{path}
+  - name: dataset_license
+    url: https://huggingface.co/datasets/Lk123/AutoResearchBench
+    revision: 4df92b46c2905c8593abd857aa3a2cdede142da6
+    files:
+    - match: 'README\.md'
+      path: dataset_license/4df92b46c2905c8593abd857aa3a2cdede142da6/README.md
+grading:
+  verifiers:
+    deep:
+      kind: recorded_llm_title_matching
+      source: https://github.com/CherYou/AutoResearchBench/blob/48bf934cc131968311434aa37649cbf32ca53bc0/evaluate/evaluate_deep_search.py
+      logic: >-
+        Import pass_scores unchanged. The released grader asks an LLM whether candidate
+        and reference titles identify the same paper, allowing shortened titles and
+        punctuation differences. It averages reference-title matches, with explicit
+        empty-reference and None-answer rules. Scores in this release are binary.
+        The actual judge model, invocation and judge replies are unrecorded; do not
+        replace recorded judgments with exact string matching or new judge calls.
+    wide:
+      kind: recorded_arxiv_set_overlap
+      source: https://github.com/CherYou/AutoResearchBench/blob/48bf934cc131968311434aa37649cbf32ca53bc0/evaluate/evaluate_wide_search.py
+      logic: >-
+        Import the recorded IoU of normalized predicted and reference arXiv-ID sets,
+        rounded to six decimal places. Two empty sets score 1. Use the reference IDs
+        recorded by the evaluation, which identifies its ground truth as an external
+        file. Preserve fractional values; total_passes is a trial count, not a grade.

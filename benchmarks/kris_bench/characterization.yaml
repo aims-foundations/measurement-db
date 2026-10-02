@@ -1,0 +1,129 @@
+format_version: 1
+tables:
+  traces:
+    rows: 130192
+    logical_sha256: 28d2dd515cbbb645efdee3843c3389519345fb150eb5656c6f49c1f9adb077ae
+  subjects:
+    rows: 20
+    logical_sha256: f294d0c5b4ef663cb60ebdbbd6d6968c49808d79655932d03f89f7d00dafab43
+  responses:
+    rows: 130192
+    logical_sha256: 3cb2edbc99d7d8f41d617c9af6f88ac26c74a23d1fb89085e1177a0b86d2244e
+  assets:
+    rows: 1665
+    logical_sha256: 88440534bd2ba691e2eefa9f4cf1d5b2723fe089ba36cf329e019c1f7e5b7132
+  items:
+    rows: 8941
+    logical_sha256: 04443b4f98646a82dcdca74cf43e0c3b2b1862f4c528ae315c382a26f4b57edb
+  benchmarks:
+    rows: 1
+    logical_sha256: 62498fbdea85fe18f0e30be81d571187d39dffde790cb8cd4fd4021c9532c858
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 130192
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 20
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 8941
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 1665
+  source_judge_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 36515
+  source_task_wording_differs_from_annotation:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 53
+  source_recorded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 130159
+  source_invalid_upstream_score:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 1
+  source_suffixed_output_names:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 149
+  source_missing_upstream_score:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 32
+  source_task_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 1267
+  source_generated_images:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    locator: All metrics.json and metrics_qwen.json members of the 20 pinned archives, joined to original task annotations
+      and images.
+    scope: Every present rating field, including unavailable grades. Judge families and dimensions remain separate;
+      native wording and image roles are preserved.
+    expected: 23538

@@ -1,0 +1,147 @@
+benchmark:
+  name: Annotating Errors in English Learners' Written Language (WCF)
+  description: Human evaluations of five GPT-4o prompting strategies for written corrective feedback on English-learner errors.
+  testing_condition: >-
+    Import the released test-set human ratings of AI feedback, excluding the human-written reference system.
+    Each saved generation was assessed by two teachers on eight criteria; each identified teacher belongs
+    to the item's grading definition. These judgments do not represent repeated model generations.
+    Retain full system/user prompts, including few-shot examples and oracle
+    error annotations. The generation records retain [NONE] insertion/deletion markers; the rater display
+    removes some of these markers. Preserve both records without rewriting either. Twenty-six template
+    outputs have no released ratings (17 empty outputs and nine nonempty outputs); they remain in raw
+    inputs and contribute no invented human measurements. Reported inference settings are GPT-4o-2024-11-20,
+    temperature 0 and JSON-object output (paper section 4.1).
+  paper_url: https://arxiv.org/abs/2508.06810
+  data_source_url: https://github.com/coynestevencharles/annotating-errors-wcf
+  subject_type: model
+  item_type: task
+  license: No license is stated in the captured upstream repository.
+  citation: >-
+    Coyne et al. (2025). Annotating Errors in English Learners' Written Language Production:
+    Advancing Automated Written Feedback Systems. https://doi.org/10.1007/978-3-031-98459-4_21
+  tags: [education, feedback, grammatical-error-correction, l2-writing]
+  modality: [text]
+  domain: [education, nlp_task]
+  response_type: mixed
+  response_scale: {kind: mixed}
+  categorical: true
+  release_date: 2025-08
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: source_review/892b6402c1adc982532a1ca221ddb863088aae77
+      ratings: rating_dataset/rated_feedback.json
+    subjects:
+      our_tags: gpt-4o-2024-11-20 (keyword-guided, our typology)
+      ERRANT_tags: gpt-4o-2024-11-20 (keyword-guided, ERRANT tags)
+      EXPECT_tags: gpt-4o-2024-11-20 (keyword-guided, EXPECT tags)
+      tagless: gpt-4o-2024-11-20 (keyword-free)
+      template_system: gpt-4o-2024-11-20 (template-guided)
+    generations:
+      our_tags: fb_setting_outputs/test/test_our_tags_fb.jsonl
+      ERRANT_tags: fb_setting_outputs/test/test_ERRANT_tags_fb.jsonl
+      EXPECT_tags: fb_setting_outputs/test/test_EXPECT_tags_fb.jsonl
+      tagless: fb_setting_outputs/test/test_tagless_fb.jsonl
+      template_system: fb_setting_outputs/test/test_template_system_fb.jsonl
+    subject_features:
+      model_identifier: gpt-4o-2024-11-20
+      harness: Annotating Errors WCF
+      response_format: json_object
+    conditions:
+      temperature: '0'
+    metrics:
+      is_relevant: relevant
+      is_factual: factual
+      has_what_and_why: what_and_why
+      has_what_to_do: what_to_do
+      is_comprehensible: comprehensible
+      has_out_of_scope: out_of_scope
+      is_direct: directness
+      feedback_quality: quality
+    directness:
+      Direct: '0'
+      Hint: '1'
+      N/A: '2'
+grading:
+  rule: Import the released teacher judgment for each criterion; retain its original scale and each rater separately.
+  verifiers:
+    human_ratings:
+      kind: published_human_ratings
+      panel: WCF English-teacher rater panel
+      source: https://github.com/coynestevencharles/annotating-errors-wcf/blob/892b6402c1adc982532a1ca221ddb863088aae77/appendix/rating_guidelines.pdf
+      raters: [r_1, r_2, r_3, r_4]
+      repeated_measurements: Two teachers assess the same saved feedback; the trace identifies the rater and native rating task.
+      criteria:
+        relevant:
+          rule: The feedback addresses the highlighted error; relevance does not imply factual correctness.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+            meanings: {'0': Not relevant, '1': Relevant}
+        factual:
+          rule: The feedback gives factually correct information about the language error and its correction.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+            meanings: {'0': Not factually correct, '1': Factually correct}
+        what_and_why:
+          rule: The feedback explains what is wrong and why it is wrong.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+            meanings: {'0': Does not explain what and why, '1': Explains what and why}
+        what_to_do:
+          rule: The feedback explains what the learner should do to fix the highlighted error.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+            meanings: {'0': Does not explain what to do, '1': Explains what to do}
+        comprehensible:
+          rule: The feedback is reasonably comprehensible to an academic learner of English at CEFR B1-B2.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: higher_is_better
+            meanings: {'0': Not comprehensible, '1': Comprehensible}
+        out_of_scope:
+          rule: Flag unnecessary or out-of-scope content, including chat phrases, praise, or assumptions about the learner.
+          response_scale:
+            kind: discrete
+            values: [0, 1]
+            direction: lower_is_better
+            meanings: {'0': No out-of-scope content, '1': Out-of-scope content present}
+        directness:
+          rule: Classify a proposed correction as Direct or Hint; N/A indicates no explanation of what to do. Codes are unordered labels.
+          response_scale:
+            kind: discrete
+            values: [0, 1, 2]
+            direction: unordered
+            meanings: {'0': Direct correction, '1': Hint, '2': Not applicable}
+        quality:
+          rule: >-
+            Overall teacher impression, not a formula over the other criteria: 1 for irrelevant or useless
+            feedback, 2-3 for potentially valid but flawed feedback, and 4-5 for feedback likely to help the learner.
+          response_scale:
+            kind: discrete
+            values: [1, 2, 3, 4, 5]
+            direction: higher_is_better
+            meanings:
+              '1': Irrelevant or otherwise useless
+              '2': Potentially valid but flawed (lower rating)
+              '3': Potentially valid but flawed (higher rating)
+              '4': Likely to help the learner (lower rating)
+              '5': Likely to help the learner (higher rating)
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/coynestevencharles/annotating-errors-wcf
+    revision: 892b6402c1adc982532a1ca221ddb863088aae77
+    files:
+    - match: (?:README\.md|prompts\.py|appendix/.*\.pdf|feedback_dataset/batch_3\.json|rating_dataset/rated_feedback\.json|reference_tags/.*_test\.jsonl|templates/(?:reference_templates_test\.tsv|template_collection\.csv)|fb_setting_outputs/test/.*\.jsonl)
+      path: source_review/892b6402c1adc982532a1ca221ddb863088aae77/{path}

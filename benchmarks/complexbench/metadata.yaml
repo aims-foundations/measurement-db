@@ -1,0 +1,73 @@
+benchmark:
+  description: Released model generations for complex Chinese instructions with composed grading requirements;
+    historical judgments are unavailable.
+  testing_condition: One released generation record per model and instruction. Preserve all 17,250 records,
+    including seven null generated fields, without inventing successful outputs or failures. The intended per-instruction
+    score is the fraction of dependency-adjusted scoring questions satisfied under the official hybrid GPT-4
+    and rule pipeline. No extraction or judgment exports were found in the reviewed release, so every response
+    grade is null. These tables preserve recorded generations, not a scored leaderboard. Full rubric, dependencies,
+    task metadata and unmodified generation records are retained. The old whole-answer rule-only subset was
+    a different local protocol and is retired; it does not reproduce official grading. Native model labels
+    are retained without inferred historical endpoint, decoding or release settings.
+  paper_url: https://arxiv.org/abs/2407.03978
+  data_source_url: https://github.com/thu-coai/ComplexBench
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@article{wen2024benchmarking,\n  title={Benchmarking Complex Instruction-Following with Multiple\
+    \ Constraints Composition},\n  author={Wen, Bosi and Ke, Pei and Gu, Xiaotao and Wu, Lindong and Huang,\
+    \ Hao and Zhou, Jinfeng and Li, Wenchuang and Hu, Binxin and Gao, Wendy and Xu, Jiaxin and others},\n \
+    \ journal={arXiv preprint arXiv:2407.03978},\n  year={2024}\n}"
+  tags:
+  - instruction_following
+  - constraints
+  - composition
+  - chinese
+  modality:
+  - text
+  domain:
+  - general
+  response_type: fraction
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-07
+  name: ComplexBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      tasks: release/data/data_final.json
+      generations: release/llm_generations/*.jsonl
+    labels:
+      subject_prefix: 'ComplexBench / '
+      condition: released_generation; historical_judgments_unavailable
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/thu-coai/ComplexBench
+    revision: 749f4575d5dc981182ecaebb8c292b2a61213cf3
+    files:
+    - match: LICENSE|README\.md|requirements\.txt|eval\.sh|data/.*\.json|evaluation/.*\.py|llm_generations/.*\.jsonl
+      path: release/{path}
+grading:
+  rule: For this instruction, take the arithmetic mean of its binary scoring-question judgments after the official
+    dependency adjustment. A failing declared dependency makes the dependent point false. Questions with rules
+    require GPT-4-extracted spans; other questions require GPT-4 judgments. Released generations alone do not
+    determine those historical judgments. Store an unavailable grade as null; do not replace it with zero or
+    a whole-answer local rule result.
+  verifiers:
+    official_pipeline:
+      kind: hybrid_llm_and_rule
+      source: https://github.com/thu-coai/ComplexBench/blob/749f4575d5dc981182ecaebb8c292b2a61213cf3/eval.sh
+      extraction: evaluation/llm_based_extraction.py:get_data/get_payload
+      rule_evaluation: evaluation/rule_based_evaluation.py:preprocess; evaluation/con_rule.py:decompose_judge
+      llm_evaluation: evaluation/llm_based_evaluation.py
+      dependency_adjustment: evaluation/aggregation.py:get_rely_judgment
+      judge_model: gpt-4-1106-preview
+      assessment_status: historical_judgments_unavailable
+      historical_request_settings: not_recorded

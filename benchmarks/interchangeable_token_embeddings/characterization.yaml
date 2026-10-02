@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 38ab3bf01ddd58edcf6b9e7850df4d16d21e24c9ff2db5e579223eb0fdcb653d
+  items:
+    rows: 199978
+    logical_sha256: 67cc83f7aeb7fdfde4e93142d7b3dde81dc0ac6c056c196cffaf76211bb218b2
+  responses:
+    rows: 399956
+    logical_sha256: ee71aad9e35264502e1c6e738f6ec7ed88fa26a68ffb1072e70ff867eacb2acf
+  subjects:
+    rows: 2
+    logical_sha256: 17ea196a3ae09f0af50e0750a4257da5a504f8266a92d6fd3f4e368d93a00eac
+  traces:
+    rows: 399956
+    logical_sha256: bf350173859bde815257f3193c8e979850bbec47213ab1800bf3bbb32a94d886
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 2
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 199978
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 399956
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 399956
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 225
+  source_invalid_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 452
+  source_correct_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 374667
+  source_summary_files_reconciled:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/necrashter/interchangeable-token-embeddings/tree/2d0e92defbecb1afc1e7b7684965982b0c7d4ea9
+    locator: Four evaluation.json records and their summary.json/summary.txt files, original architecture configs
+      and training logs for the s005-rope-limited-s42 and s005-rope-perturbed-s42 runs. The author README identifies
+      both as alpha-renaming baselines.
+    scope: Original LTLRandom35 test and validation results for the two models with item-level releases. Check every
+      recorded status and source summary. Verifier timeouts and runtime errors remain explicitly ungraded. No inference
+      or solver rerun.
+    expected: 4

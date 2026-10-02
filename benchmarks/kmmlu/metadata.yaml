@@ -1,0 +1,138 @@
+benchmark:
+  name: KMMLU
+  description: Published Korean multiple-choice predictions from the independently maintained Korean LLM Benchmark
+    Suite, matched to the original KMMLU question bank.
+  testing_condition: 'Preserve the published export labels as separate model/configuration subjects. Input content
+    contains the source question and all four choices; exact historical system prompts, few-shot demonstrations,
+    endpoints and sampling settings were not saved in the result CSVs. Only complete category blocks whose entire
+    reference sequence matches the unchanged task bank are assigned to items. Partial or reordered blocks remain
+    in raw without guessed associations. This restores complete categories from otherwise incomplete model files.
+    Identical question/grading pairs share a canonical item while source aliases and every recorded attempt are
+    retained. Grades are reconstructed from the saved parsed prediction using the captured source exact matcher:
+    FAILED remains null, whereas blank, unparsed or FILTERED predictions are graded incorrect by that rule. Human
+    Accuracy is an upstream aggregate field retained in raw, not an AI subject or target-item attribute. Published
+    CSV response text is preserved without further normalization or truncation; any earlier parser normalization
+    cannot be undone.'
+  paper_url: https://arxiv.org/abs/2402.11548
+  data_source_url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+  subject_type: model
+  item_type: task
+  license: 'KMMLU task bank: CC-BY-ND-4.0. Independently published result repository: MIT.'
+  citation: 'Son et al. KMMLU: Measuring Massive Multitask Language Understanding in Korean (2024). Evaluation records:
+    daekeun-ml, Korean LLM Benchmark Suite.'
+  tags:
+  - multilingual
+  - multiple_choice
+  - korean
+  modality:
+  - text
+  domain:
+  - general
+  response_type: binary
+  categorical: true
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Recorded parsed prediction does not match the reference
+      '1': Recorded parsed prediction matches the reference
+  release_date: 2024-02
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      tasks: tasks/data/*-test.csv
+      results: results/*.csv
+    answer_labels:
+      '1': A
+      '2': B
+      '3': C
+      '4': D
+    labels:
+      ungraded_marker: FAILED
+      subject_prefix: 'KMMLU / '
+      input_scope: Original question and choices. Historical surrounding prompt and demonstrations were not recorded.
+    subject_features:
+      harness: Korean LLM Benchmark Suite
+      historical_configuration: not_recorded
+      model_identifier_status: source_export_label
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: 106ed712b5b88f0e531d5fa503bfed76ac31396e
+    files:
+    - match: results/\[KMMLU\] (?P<model>[^/]+)\.csv
+      path: results/{model}.csv
+    - match: README\.md|LICENSE|docs/(?:USAGE|PREVIOUS_RESULTS)\.md|benchmarks/kmmlu_main\.py|core/evaluator\.py|mapping/kmmlu_category\.json
+      path: source/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/HAERAE-HUB/KMMLU
+    revision: d61b3f19e552c576bf5960dd24289763edc36a88
+    files:
+    - match: data/[^/]+-test\.csv|README\.md
+      path: tasks/{path}
+  - name: history_2bc7eb82
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: 2bc7eb829649673b251e3c23ec83734e9089a65b
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/2bc7eb829649673b251e3c23ec83734e9089a65b/{path}
+  - name: history_62491c82
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: 62491c82cb3a0865d19620514594ae2123e595a2
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/62491c82cb3a0865d19620514594ae2123e595a2/{path}
+  - name: history_a18655a9
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: a18655a9a72cdb8591a0671681d37ffedc33779d
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/a18655a9a72cdb8591a0671681d37ffedc33779d/{path}
+  - name: history_b7e0504b
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: b7e0504bc935e2a4ec90aa1fa3698285162e9a61
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/b7e0504bc935e2a4ec90aa1fa3698285162e9a61/{path}
+  - name: history_ce550a85
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: ce550a8521272da891223a022d791fa33c9125ba
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/ce550a8521272da891223a022d791fa33c9125ba/{path}
+  - name: history_d2a615bc
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: d2a615bc8edbffa26041a6f2d537469f774532d2
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/d2a615bc8edbffa26041a6f2d537469f774532d2/{path}
+  - name: history_dc312a71
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: dc312a71d407d47c9979fdd02a8d19693f3b40dc
+    files:
+    - match: (?:benchmarks/)?kmmlu_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: history/dc312a71d407d47c9979fdd02a8d19693f3b40dc/{path}
+grading:
+  rule: "Compare the released parsed prediction with the A\u2013D reference using exact string equality, without\
+    \ reparsing the response text. A match is 1; every other recorded prediction, including blank, unparsed and\
+    \ FILTERED values, is 0 under the released matcher. FAILED is excluded by the source scorer and is retained\
+    \ as an ungraded attempt (null). Do not infer missing per-item observations or use Human Accuracy as an individual\
+    \ grade."
+  verifiers:
+    recorded_option_match:
+      kind: reconstructed_released_exact_match
+      source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset/blob/2bc7eb829649673b251e3c23ec83734e9089a65b/util/evaluate_helper.py
+      function: evaluate
+      prediction_field: pred
+      reference_field: answer
+      excluded_marker: FAILED
+      assignment: Original category-relative position, accepted only for complete blocks with identical reference
+        order.
+      execution: No model inference or re-parsing. Preserve the source's original parsed prediction and response
+        text.

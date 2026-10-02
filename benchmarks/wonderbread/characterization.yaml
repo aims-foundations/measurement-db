@@ -1,0 +1,181 @@
+format_version: 1
+tables:
+  assets:
+    rows: 4954
+    logical_sha256: d45c6ee7158afb3ae7d9dc15036d433866aff06cf1bb64969666a828cfc6137e
+  benchmarks:
+    rows: 1
+    logical_sha256: 83a01f568c2f84d64231b92474a60ab2acb52267f4fe6b929966934b9df8b275
+  items:
+    rows: 9091
+    logical_sha256: a8885ecde361000343a50a83c6d1ce2941dd7276fedcc5fee51a6abdf4ba8c90
+  responses:
+    rows: 21231
+    logical_sha256: bbf4bc87c27547a6be4d12c31ab6a0aeefc13b1153cf0f6cbf720a032b44e7d7
+  subjects:
+    rows: 38
+    logical_sha256: 03a7ba21d5ebc648cf1d871ceaf779b4d6ee9d06e69fe64ad624ab95e9a36cf7
+  traces:
+    rows: 21231
+    logical_sha256: a38132c278bb647e06291c0de5111b72d0dfc6c39c58e1319c7c16e4161a5229
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 38
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 9091
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 21231
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 21231
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 4954
+  source_demonstrations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 948
+  source_question_answering_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 480
+  source_demo_validation_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 5085
+  source_sop_ranking_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 2166
+  source_demo_segmentation_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 28315
+  source_sop_generation_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 1453
+  source_question_answering_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 1440
+  source_demo_validation_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 5085
+  source_sop_ranking_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 972
+  source_demo_segmentation_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 9375
+  source_sop_generation_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HazyResearch/wonderbread/tree/ed052c67aeada04167cdfe92ff8de454aa94627a/data/experimental_results
+    locator: Five native graded result tables, full source-row mappings, Zenodo record 14094162 workflow inputs
+      and original metric implementations.
+    scope: Original graded AI outputs only. QA axes remain ordinal with lower scores better; ranking metrics count
+      whole rankings once; SOP-generation grades are imported without new judge calls; only labeled-workflow segmentation
+      settings have native per-UUID correctness grades.
+    expected: 4359

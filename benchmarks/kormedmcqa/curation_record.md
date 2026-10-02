@@ -1,0 +1,3 @@
+- Sources: pinned original test tables and all seven independent result CSVs; historical writers and graders establish IDs, record semantics and exact matching.
+- Mapping: verify every question/reference association and retain repeated source records. Positive trials are occurrence identifiers, not evidence of independent runs; source trial=0 remains in traces.
+- Fidelity: full question choices, recorded text and parsed predictions; unknown inference settings remain unknown. Task-bank license follows its CC-BY-NC-2.0 release.

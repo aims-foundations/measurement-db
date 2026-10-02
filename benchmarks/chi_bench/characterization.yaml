@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7700
+    logical_sha256: 19c263c89e1408a6ea7c17f2001feea88fd756374e666c76673675bea3c55e20
+  subjects:
+    rows: 62
+    logical_sha256: 6c270d3b443832c2f68a661880856aeae6e93be5e92372d28fa7f043001c435f
+  responses:
+    rows: 7700
+    logical_sha256: e928985f6955f86e1e67be017894cc067f7a7cd1ec2154d66ec4183056f32e52
+  items:
+    rows: 775
+    logical_sha256: c047f1966efe0f4edbf5abdba34ca05f3b88c396e8470515748ed2dab15780e3
+  benchmarks:
+    rows: 1
+    logical_sha256: 354cf5417e819ad978c4d9b6af76594941e2a3d4f3362d90c7fed4b6f921c1a2
+source_claims:
+  source_packets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 46
+  source_physical_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 7750
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 7700
+  source_duplicate_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 50
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 75
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 775
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 62
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 7700
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 33
+  source_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 1092
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 6575
+  source_runs_with_trajectory:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 1175
+  source_trace_artifacts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/actava-ai/leaderboard/tree/07b551add455864490dc3a93a42ec98c793ce9a8/benchmarks/chi-bench/submissions
+    locator: All 46 submission manifests and every trials/*/*/result.json; join task_name to the pinned actava/chi-bench
+      tasks.jsonl and full instruction.md. Duplicate native UUIDs count once.
+    scope: Independent traversal reconciles each run, original grade including nulls, model configuration, grading
+      revision and complete trajectory/reward/scorecard bytes. Count all physical aliases separately from observations.
+    expected: 3675

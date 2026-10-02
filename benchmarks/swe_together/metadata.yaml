@@ -1,0 +1,115 @@
+benchmark:
+  name: SWE-Together
+  description: Released per-replicate judge scores on 109 interactive repository-level coding tasks.
+  testing_condition: Current original website snapshot, captured 2026-09-30. Each non-null models[model].trials
+    entry is one published assessment; response is 1 when its judge score is at least 0.85. The 17 null replicate
+    slots and the one absent model/task cell do not establish recorded attempts and are not fabricated as failures.
+    The snapshot includes source-reported sandbox reruns and rejudging; it supersedes the historical cache rather
+    than adding independent trials to it. Exact historical model snapshots, inference settings, judge identities
+    and trial execution IDs are unavailable. The task bank specifies the initial instruction and subsequent user
+    intents, grading goals and repository context. Complete agent conversations are not released with an authoritative
+    link to these scalar scores.
+  paper_url: https://arxiv.org/abs/2606.29957
+  data_source_url: https://togetherbench.com/metrics.js
+  subject_type: model
+  item_type: task
+  license: Apache-2.0; original repository license and dataset card retained.
+  citation: 'Wu et al. SWE-Together: Interactive Coding-Agent Evaluation. arXiv:2606.29957, 2026.'
+  tags:
+  - coding-agent
+  - multi-turn
+  - swe
+  - interactive
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': published judge score below 0.85
+      '1': published judge score at least 0.85
+  categorical: true
+  release_date: 2026-06
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+  version: metrics-sha256:47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      metrics: website/metrics.js
+      tasks: task_bank/swe_together.jsonl
+      website_tasks: website/tasks.js
+    task_aliases:
+      pi-mono-extensions-event-refacto: pi-mono-extensions-event-refactor
+      pi-mono-tool-execution-write-err: pi-mono-tool-execution-write-error
+      sd-scripts-multiresolution-compa: sd-scripts-multiresolution-compat
+    labels:
+      snapshot: metrics-sha256:47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5
+      subject_prefix: 'SWE-Together / '
+      condition: opencode;published_replicate_slot;historical_request_settings_unavailable
+grading:
+  rule: 'Apply the published success threshold to each released replicate score: judge score >= 0.85. Preserve the
+    exact original fractional score in the assessment trace. The agentic judge assesses completeness against task
+    goals; this builder imports its scores and does not execute or reconstruct a judge.'
+  verifiers:
+    published_judge:
+      kind: published_agentic_judge_score
+      source: https://github.com/Togetherbench/SWE-Together/blob/891d19eb4b3a64a47c3d49bbd066a311e0133254/eval/correctness/run_batch.py
+      outcome_source: https://togetherbench.com/metrics.js
+      field: models[model].trials[replicate_index]
+      historical_judge_identity: not_recorded
+      pass_threshold: 0.85
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: website_metrics
+    url: https://togetherbench.com/metrics.js
+    file: website/metrics.js
+    size: 177299
+    sha256: 47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5
+    revision: sha256:47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5
+  - name: website_index
+    url: https://togetherbench.com/
+    file: website/index.html
+    size: 51048
+    sha256: ab8b25afd126464d7916b44363b6ce07db189c01c4e6f4f87c751b414a4710ff
+    revision: sha256:ab8b25afd126464d7916b44363b6ce07db189c01c4e6f4f87c751b414a4710ff
+  - name: website_tasks
+    url: https://togetherbench.com/tasks.js
+    file: website/tasks.js
+    size: 789146
+    sha256: 7acce8a97e2873142a36c1d899000f26b2d7ef0d249ca0cf0863e0c6ee3d7b68
+    revision: sha256:7acce8a97e2873142a36c1d899000f26b2d7ef0d249ca0cf0863e0c6ee3d7b68
+  - name: website_app
+    url: https://togetherbench.com/app.js
+    file: website/app.js
+    size: 20720
+    sha256: ef8e0fe65f0875b7b1383c6356ba8fc0023fd120342834da02472659d227efe9
+    revision: sha256:ef8e0fe65f0875b7b1383c6356ba8fc0023fd120342834da02472659d227efe9
+  - name: historical_metrics
+    url: https://togetherbench.com/metrics.js
+    file: historical/metrics.js
+    size: 69631
+    sha256: a37acfa432939ec5ac7e2aed15c3fd7fe6090b2f7a9936aa6406d18691fb4365
+    revision: sha256:a37acfa432939ec5ac7e2aed15c3fd7fe6090b2f7a9936aa6406d18691fb4365
+  - name: task_bank
+    url: https://huggingface.co/datasets/yifannnwu/SWE-Together
+    revision: 2c0058153262a333ed1a203a8352d070361e1b30
+    files:
+    - match: README\.md|swe_together\.jsonl
+      path: task_bank/{path}
+  - name: harness
+    url: https://github.com/Togetherbench/SWE-Together
+    revision: 891d19eb4b3a64a47c3d49bbd066a311e0133254
+    files:
+    - match: LICENSE|README\.md|eval/correctness/(run_batch\.py|sandbox\.py|prompts/judge_phase[12]_system\.md)
+      path: harness/{path}

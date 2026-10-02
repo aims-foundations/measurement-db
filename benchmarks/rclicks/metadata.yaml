@@ -1,0 +1,221 @@
+benchmark:
+  description: Per-stimulus click-distribution measurements for 16 released clickability algorithms and variants
+    across five image datasets. Retain original images, object masks, previous segmentation masks and human click
+    references.
+  testing_condition: One response per published model, image/object/click-state and metric. Separate the five metrics
+    in item grading identity; preserve original numeric values without unit conversion or clipping. Higher KS2D,
+    NSS and PDE are better; lower L1 and Wasserstein distance are better. KS2D is the fraction of 100 simulated
+    samples whose 2D KS test does not reject at p > 0.05, not a distance. Source CSVs are recorded metric evidence,
+    not generated model traces. TETRIS uses the original validation list. No click model or stochastic metric is
+    rerun.
+  paper_url: https://arxiv.org/abs/2410.11722
+  data_source_url: https://github.com/emb-ai/rclicks
+  subject_type: model
+  item_type: task
+  license: MIT for the RClicks repository; original image datasets retain their upstream terms
+  citation: "@inproceedings{antonov2024rclicks,\n  title={RClicks: Realistic Click Simulation for Benchmarking Interactive\
+    \ Segmentation},\n  author={Antonov, Anton and Moskalenko, Andrey and Shepelev, Denis and Krapukhin, Alexander\
+    \ and Soshin, Konstantin and Konushin, Anton and Shakhuro, Vlad},\n  booktitle={Advances in Neural Information\
+    \ Processing Systems (NeurIPS)},\n  year={2024},\n}"
+  tags:
+  - interactive_segmentation
+  - click_simulation
+  - computer_vision
+  modality:
+  - image
+  domain:
+  - computer_vision
+  - segmentation
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: null
+  release: public
+  name: 'RClicks: released clickability-model measurements'
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      code: source
+      clicks: source/datasets/clicks.csv
+      validation: source/datasets/TETRIS_val.txt
+      results: source/experiments/eval_cm
+      previous_masks: archives/SUBSEC_MASKS.zip
+    models:
+      ud: Uniform probability over the error mask
+      dt: Distance transform of the error mask
+      si: TranSalNet saliency on the image
+      sm: TranSalNet saliency using the object mask
+      cm: Released clickability model
+      cm_001: Clickability model with original sigma variant 001
+      cm_025: Clickability model with original sigma variant 025
+      cm_05: Clickability model with original sigma variant 05
+      cm_1: Clickability model with original sigma variant 1
+      cm_2: Clickability model with original sigma variant 2
+      cm_10: Clickability model with original sigma variant 10
+      cm_20: Clickability model with original sigma variant 20
+      cm_30: Clickability model with original sigma variant 30
+      cm_60: Clickability model with original sigma variant 60
+      cm_90: Clickability model with original sigma variant 90
+      cm_120: Clickability model with original sigma variant 120
+    archives:
+      Berkeley: archives/Berkeley.zip
+      COCO: archives/COCO_MVal.zip
+      DAVIS: archives/DAVIS.zip
+      GrabCut: archives/GrabCut.zip
+      TETRIS: archives/TETRIS.zip
+    image_prefixes:
+      Berkeley: Berkeley/images/
+      COCO: COCO_MVal/img/
+      DAVIS: DAVIS/img/
+      GrabCut: GrabCut/data_GT/
+      TETRIS: images/
+    mask_prefixes:
+      Berkeley: Berkeley/masks/
+      COCO: COCO_MVal/gt/
+      DAVIS: DAVIS/gt/
+      GrabCut: GrabCut/boundary_GT/
+      TETRIS: masks/
+    previous_mask_prefixes:
+      Berkeley: SUBSEC_MASKS/all_benchmark_datasets/fn_fp/
+      COCO: SUBSEC_MASKS/all_benchmark_datasets/fn_fp/
+      DAVIS: SUBSEC_MASKS/all_benchmark_datasets/fn_fp/
+      GrabCut: SUBSEC_MASKS/all_benchmark_datasets/fn_fp/
+      TETRIS: SUBSEC_MASKS/tetris_fn_fp/tetris_fn_fp_masks/
+    mime_types:
+      .jpg: image/jpeg
+      .png: image/png
+      .bmp: image/bmp
+    stimulus_fields:
+      image_stem: image_stem
+      object_stem: object_stem
+      model_type: model_type
+      click_type: click_type
+      w: w
+      h: h
+    labels:
+      condition: Original RClicks clickability-model evaluation; PC and mobile human clicks combined
+      instruction: Predict a human click-probability map for the supplied image and segmentation state. The object
+        mask is an input to these clickability algorithms; a previous mask is also supplied for subsequent clicks.
+grading:
+  rule: Use the released human click distribution and the original metric implementation. Original image and masks
+    are attached unchanged. The captured dataset loaders specify mask decoding and TETRIS resizing to maximum side
+    2048. Native click coordinates are clipped and rescaled by Clicks.clicks before grading; retain the original
+    coordinates and dimensions in the reference.
+  verifiers:
+    l1:
+      rule: Mean normalized Manhattan distance over all human/simulated point pairs, averaged over 100 samples.
+        Coordinates are divided by object-mask bounding-box width and height; values may exceed 1.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+      implementation:
+        kind: original_recorded_metric
+        source: https://github.com/emb-ai/rclicks
+        revision: e20bf7636198545331a9d383b77e42107e97ea09
+        entry_point: scripts/evaluate_click_models.py:l1
+        execution: Read the published metric cell; do not resample human or simulated clicks.
+    ks2d:
+      rule: Fraction of 100 simulated click samples with a 2D two-sample KS-test p-value strictly greater than 0.05;
+        larger means more samples were not rejected.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: original_recorded_metric
+        source: https://github.com/emb-ai/rclicks
+        revision: e20bf7636198545331a9d383b77e42107e97ea09
+        entry_point: scripts/evaluate_click_models.py:ks2d
+        execution: Read the published metric cell; do not resample human or simulated clicks.
+    wasserstien:
+      rule: Mean multidimensional Wasserstein distance over 100 simulated click samples divided by the object-mask
+        bounding-box diagonal; values may exceed 1. Preserve the original misspelled column name.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+      implementation:
+        kind: original_recorded_metric
+        source: https://github.com/emb-ai/rclicks
+        revision: e20bf7636198545331a9d383b77e42107e97ea09
+        entry_point: scripts/evaluate_click_models.py:wasserstien
+        execution: Read the published metric cell; do not resample human or simulated clicks.
+    nss:
+      rule: Mean z-normalized saliency at human click locations; negative scores remain valid. The original evaluator
+        uses epsilon 1e-9.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation:
+        kind: original_recorded_metric
+        source: https://github.com/emb-ai/rclicks
+        revision: e20bf7636198545331a9d383b77e42107e97ea09
+        entry_point: scripts/evaluate_click_models.py:nss
+        execution: Read the published metric cell; do not resample human or simulated clicks.
+    pde:
+      rule: Mean predicted probability mass at human click locations, with source epsilon 1e-9 in map normalization.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: original_recorded_metric
+        source: https://github.com/emb-ai/rclicks
+        revision: e20bf7636198545331a9d383b77e42107e97ea09
+        entry_point: scripts/evaluate_click_models.py:mean_pde_by_click
+        execution: Read the published metric cell; do not resample human or simulated clicks.
+sources:
+  upstream:
+  - name: source
+    url: https://github.com/emb-ai/rclicks
+    revision: e20bf7636198545331a9d383b77e42107e97ea09
+    files:
+    - match: README[.]md|LICENSE|eval_click_models[.]sh|datasets/.*|rclicks/rclicks/.*|isegm/isegm/data/datasets/.*|scripts/(evaluate_click_models|prepare_click_models_tables)[.]py|experiments/eval_cm/.*
+      path: source/{path}
+  - name: grabcut
+    url: https://drive.usercontent.google.com/download?id=1tU17eJaevYd5PQAwzEK6oG1N9eBJORC4&export=download&confirm=t
+    revision: null
+    file: archives/GrabCut.zip
+    size: 11453763
+    sha256: 15b031ac8ac02fa33da6be3155bba49e1e5e160918d57c134b800151d0a93b4d
+  - name: berkeley
+    url: https://drive.usercontent.google.com/download?id=1yStolKW8AnS5rYm3VhgnID_XReNCXbEJ&export=download&confirm=t
+    revision: null
+    file: archives/Berkeley.zip
+    size: 7238260
+    sha256: 1fdafe037a331a88fc8f4d87c2090bbfb42318d8cdda9f263e8f43c2c7f4c2a7
+  - name: davis
+    url: https://drive.usercontent.google.com/download?id=1DhwMOqbwH4tcIrVfqtSczdofjdHHnMCJ&export=download&confirm=t
+    revision: null
+    file: archives/DAVIS.zip
+    size: 44630891
+    sha256: 55c6062ba6e5ca375d632941f7ce7f789db4cd49543180a5fc9e8e8815421699
+  - name: coco_mval
+    url: https://drive.usercontent.google.com/download?id=1oz1VT8YqykQFfx_Vtp_wtYFGz5mYBOnp&export=download&confirm=t
+    revision: null
+    file: archives/COCO_MVal.zip
+    size: 132781938
+    sha256: 86829703329f28a11ebc93619bc5786752a8cdbd29f70bf5df264054d8f3712d
+  - name: tetris
+    url: https://drive.usercontent.google.com/download?id=1iJgohY1XBSnY-kRUoaRZJlu0HZbyHcyK&export=download&confirm=t
+    revision: null
+    file: archives/TETRIS.zip
+    size: 6809018368
+    sha256: 689b70e0f1fb44b7df2c68333a630fb747b85660586d617ef2c83ca3c333df5b
+  - name: subsec_masks
+    url: https://drive.usercontent.google.com/download?id=1RBKAWrEEITfsoyXW0Dx_14MiGQM_924Z&export=download&confirm=t
+    revision: null
+    file: archives/SUBSEC_MASKS.zip
+    size: 37754538
+    sha256: ee90726ffe452f4d743be087535dfaac4c74a28dd6ef607795f99d8a886c2a4c

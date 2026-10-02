@@ -1,0 +1,126 @@
+benchmark:
+  name: RewardBench
+  description: Original per-item reward-model preference evaluations on the RewardBench core task bank.
+  testing_condition: 'Import all released eval-set-scores files, including the earlier 2,538-item runs. Require
+    exactly one complete historical task-bank version to match every recorded ID, subset, prompt and pair of answers.
+    For DPO exports, which omit IDs, preserve the documented task order and verify every full input pair; row count
+    alone is insufficient. Strip only outer whitespace when comparing chat-rendered inputs and retain both untrimmed
+    task strings and complete native inputs. Literal chat_template fields are preserved; the runtime tokenizer may
+    have overridden that label. DPO reference-free and reference-based rewards define different subjects. Recover
+    declared reference models from the paired summary only after checking every subset mean and the model/scoring
+    identity. Exact historical model and harness revisions are not recorded. Grades are imported unchanged, including
+    native half credit and zeros beside nonfinite rewards. In JSON traces, native NaN numbers are represented by
+    {native_nonfinite_number: NaN}, with NaN stored as a string inside that object; this preserves the distinction
+    from null without invalid JSON. The task pair is shown in source chosen/rejected order as neutral candidates
+    A/B; the original generative judge could shuffle presentation, but its random order and full judgment text were
+    not exported. Model explanations are not invented. Other preference-test sets, best-of-N outputs and aggregate-only
+    models are outside this core-set import. No models or upstream evaluation runners are executed.'
+  paper_url: https://arxiv.org/abs/2403.13787
+  data_source_url: https://huggingface.co/datasets/allenai/reward-bench-results
+  subject_type: reward_model
+  item_type: response_pair
+  license: 'Task database: ODC-By-1.0 (captured LICENSE.md); evaluator code: Apache-2.0. The result card releases
+    native scores for further research without a separate license identifier.'
+  citation: 'Lambert et al. RewardBench: Evaluating Reward Models for Language Modeling. 2024. arXiv:2403.13787.'
+  tags:
+  - reward_modeling
+  - preference
+  - reasoning
+  - safety
+  modality:
+  - text
+  domain:
+  - reward_modeling
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 0.5
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Native incorrect preference verdict; may include nonfinite reward comparisons
+      '0.5': Native unresolved-judgment half credit; not necessarily a genuine tie
+      '1': Native correct preference verdict
+  categorical: true
+  release_date: 2024-03
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: 96302cc604e4f257dc526272c803c4eff27e3469
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results/eval-set-scores
+      aggregates: results/eval-set
+      task_banks: history/*/data/filtered-00000-of-00001.parquet
+    labels:
+      subject_prefix: 'RewardBench / '
+      association: unique_complete_historical_bank_match
+    subject_features:
+      harness: RewardBench core evaluation
+      historical_model_revision: not_recorded
+      historical_harness_revision: not_recorded
+      historical_inference_settings: not_recorded
+grading:
+  rule: Preserve the released per-item results value. Candidate A is the source chosen response; candidate B is
+    the source rejected response. A grade of 1 indicates that the reward model preferred A, and 0 indicates it did
+    not. Generative-judge exports also award 0.5 to unresolved judgments; the original runner includes parsing failures
+    or unsupported cases in this fallback, so 0.5 does not establish a genuine tie. Native zero grades remain zero
+    even when recorded reward scores are NaN; the source protocol uses chosen > rejected. Do not regrade, invoke
+    a judge, truncate the candidate texts, or substitute the reference answer for the model observation.
+  verifiers:
+    reported:
+      kind: source_reported_preference_verdict
+      metric: native per-item results
+      sources:
+      - https://github.com/allenai/reward-bench/blob/e4050493415ed7183a38d1778e148c49904f6f05/scripts/run_rm.py
+      - https://github.com/allenai/reward-bench/blob/e4050493415ed7183a38d1778e148c49904f6f05/scripts/run_dpo.py
+      - https://github.com/allenai/reward-bench/blob/e4050493415ed7183a38d1778e148c49904f6f05/scripts/run_generative.py
+      execution: import_native_verdict_only
+sources:
+  upstream:
+  - name: core_results
+    url: https://huggingface.co/datasets/allenai/reward-bench-results
+    revision: 96302cc604e4f257dc526272c803c4eff27e3469
+    files:
+    - match: (?:README\.md|(?:eval-set|eval-set-scores)/.*\.json)
+      path: results/{path}
+  - name: task_documentation
+    url: https://huggingface.co/datasets/allenai/reward-bench
+    revision: 168d848cdbbea9764fae4a544dc9ca1e6cca4931
+    files:
+    - match: (?:README|LICENSE)\.md
+      path: tasks/{path}
+  - name: evaluation_code
+    url: https://github.com/allenai/reward-bench
+    revision: e4050493415ed7183a38d1778e148c49904f6f05
+    files:
+    - match: (?:LICENSE|.*\.(?:py|md|yaml|yml|toml|txt|json))
+      path: code/{path}
+  - name: historical_tasks_1
+    url: https://huggingface.co/datasets/allenai/reward-bench
+    revision: 01272f0c04adcbe7de26ea6250e03d5a90a6925b
+    files:
+    - match: data/filtered\-00000\-of\-00001\.parquet
+      path: history/01272f0c04adcbe7de26ea6250e03d5a90a6925b/{path}
+  - name: historical_tasks_2
+    url: https://huggingface.co/datasets/allenai/reward-bench
+    revision: 168d848cdbbea9764fae4a544dc9ca1e6cca4931
+    files:
+    - match: data/filtered\-00000\-of\-00001\.parquet
+      path: history/168d848cdbbea9764fae4a544dc9ca1e6cca4931/{path}
+  - name: historical_tasks_3
+    url: https://huggingface.co/datasets/allenai/reward-bench
+    revision: 9e0f7df405b3c198cbac2b63037322d291adb413
+    files:
+    - match: data/filtered\-00000\-of\-00001\.parquet
+      path: history/9e0f7df405b3c198cbac2b63037322d291adb413/{path}
+  - name: historical_tasks_4
+    url: https://huggingface.co/datasets/allenai/reward-bench
+    revision: e6855ed6dda1ee630f8b98b5a49ff3845c49b68f
+    files:
+    - match: data/filtered\-00000\-of\-00001\.parquet
+      path: history/e6855ed6dda1ee630f8b98b5a49ff3845c49b68f/{path}

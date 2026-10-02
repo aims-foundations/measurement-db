@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 21
+    logical_sha256: f2e666abbc44288c371a799506a7d62c4ec91d788397bdf950f2d49cdd33fcda
+  subjects:
+    rows: 7
+    logical_sha256: 68babcd2a2033b3cea2ba09366b1e525d1a7fad2980944fcb6973b41e3dcf1ed
+  responses:
+    rows: 21
+    logical_sha256: d1cf7cb4ea95698319d0e0d1c41c388e5b1b516e4f8c2f1d963392708c36ad3e
+  items:
+    rows: 1
+    logical_sha256: 444922129c684aeaf8dbef181cf380ad396b6da320478e728a4159f9a69c214f
+  benchmarks:
+    rows: 1
+    logical_sha256: 9da5792edc5aa3f1c19987cea81dd99412be3e9db16d190be6c9a4e34a7e1950
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 21
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 7
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 1
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 21
+  source_events:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 179066
+  source_focal_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 24511
+  source_captured_control_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 6
+  source_negative_incomes:
+    kind: count
+    origin: derived_from_data
+    source: https://pub.sakana.ai/coffeebench/data/replay/index.json
+    locator: The complete replay index and all referenced run_start/run_end events; pinned reference harness instruction
+      constructors.
+    scope: Independently reconcile every recorded audit, model, seed, event stream and participant association.
+      Scripted controls stay captured without being added to the focal LLM panel.
+    expected: 4

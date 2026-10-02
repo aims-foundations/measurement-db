@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 122550
+    logical_sha256: d2491dfef00f0d7b96c37441a9c405b20b625daf85981a3f626e56b603db3e2c
+  subjects:
+    rows: 150
+    logical_sha256: 6f7887eb79be4132e30022d969c11f5c79dcd481ef598f0dcca1bf585ab77ca2
+  responses:
+    rows: 122550
+    logical_sha256: ec2ccda593bc4b6186aec1768264312f2510714f5bc9a8b9d7bc7371ba63a05f
+  items:
+    rows: 817
+    logical_sha256: d1208e963e39f9d57fe54e755051e72024b6e2316b8c0b752018b6328ed7e79d
+  benchmarks:
+    rows: 1
+    logical_sha256: 3d087461242f4959b9cbcf042e144dda6e9fb0f98c65fed8f38d1d6d0224985f
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 122550
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 122550
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 150
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 817
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 817
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 35033
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 87517
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 150 pinned result tables and their original run configuration files; exact selections are declared
+      in metadata.yaml.
+    scope: The preserved 150-model panel and native MC1 observations. Native MC2, prompts, tokens and likelihoods
+      remain in full traces; no model execution or regrading.
+    expected: 150

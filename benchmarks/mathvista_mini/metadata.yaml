@@ -1,0 +1,115 @@
+benchmark:
+  name: MathVista MINI
+  description: MathVista testmini visual-mathematical questions with released OpenVLMRecords predictions, cached
+    answer extractions, original images and explicitly derived historical-comparator grades.
+  testing_condition: Preserve every distinct complete prediction export under its literal model label. Exact root,
+    dated and nested copies are aliases, not independent runs. Different complete prediction exports remain distinguishable
+    in traces; occurrence numbering is not proof of independent trials. Use the original 1,000 question/image pairs.
+    Unrecorded model-specific wrappers and inference settings remain unknown. All available dated scorers (57 revisions)
+    share the frozen comparison functions; four recorded revision identifiers are unavailable and undated exports
+    do not identify their scorer. Use the documented frozen comparator uniformly and expose that derivation, including
+    its list-answer bug. Retain unavailable/conflicting grading and original Excel-limited outputs without further
+    truncation. No model or judge is called, and captured pickle caches are not executed.
+  paper_url: https://arxiv.org/abs/2310.02255
+  data_source_url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+  subject_type: model
+  item_type: question
+  license: 'MathVista task/image collection: CC-BY-SA-4.0. OpenVLMRecords and VLMEvalKit code: Apache-2.0, as declared
+    in captured upstream cards and code license.'
+  citation: 'Lu et al. MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts. ICLR
+    2024. Duan et al. VLMEvalKit: An Open-Source Toolkit for Evaluating Large Multi-Modality Models. 2024.'
+  tags:
+  - visual_question_answering
+  - mathematical_reasoning
+  modality:
+  - text
+  - image
+  domain:
+  - mathematics
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The frozen historical comparator reports no match.
+      '1': The frozen historical comparator reports a match.
+  categorical: true
+  release_date: 2023-10
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results
+      tasks: tasks/data/testmini-00000-of-00001-725687bf7a18d64b.parquet
+    parsing:
+      filename_marker: _MathVista_MINI
+      punctuation: .()[],:;!*#{}
+      api_failure: Failed to obtain answer via API
+      historical_text_result: None
+    refusals:
+      people: Sorry, I can't help with images of people yet.
+      file: I can't process this file.
+      missing_image: I'm sorry, but without the image provided
+      indeterminate: Cannot determine the answer
+    image_types:
+      PNG: image/png
+      JPEG: image/jpeg
+      WEBP: image/webp
+      MPO: image/jpeg
+    labels:
+      subject_prefix: 'MathVista MINI / '
+    subject_features:
+      harness: VLMEvalKit
+      configuration_scope: literal_released_model_label
+      historical_inference_settings: not_recorded
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    revision: c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    files:
+    - match: .*/[^/]+_MathVista_MINI(?:[^/]*\.xlsx|_supp\.pkl)|README\.md
+      path: results/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/AI4Math/MathVista
+    revision: 2b6ad69445fbb5695c9b165475e8decdbeb97747
+    files:
+    - match: README\.md|\.gitattributes|annot_testmini\.json|source\.json|data/testmini-[^/]+\.parquet
+      path: tasks/{path}
+  - name: historical_harness
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: aaf24c59feae4f987025e21af32ed4b849cf9105
+    files:
+    - match: vlmeval/dataset/utils/mathvista\.py|vlmeval/utils/matching_util\.py
+      path: historical_harness/{path}
+  - name: harness_evidence
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 6f0370704932cec0d9aa1e73f01954cd786c57ea
+    files:
+    - match: vlmeval/dataset/utils/mathvista\.py|vlmeval/dataset/image_vqa\.py|vlmeval/utils/matching_util\.py|vlmeval/smp/file\.py|run\.py|LICENSE|README\.md
+      path: harness/{path}
+grading:
+  rule: 'Compare released cached answer extractions with the original references using the frozen historical VLMEvalKit
+    MathVista post_check rule. Multiple-choice answers use uppercase token matching, then unique option-text containment;
+    integer and float answers use Python int/float conversion and exact equality. Preserve the historical nonnumeric
+    free-form bug: that branch compares str(None) with the reference, rather than the extracted list. These are
+    derived historical-comparator grades, not newly published leaderboard scores or fresh judgments. Missing/failed
+    extractions and API-failure outputs are null. When released extractions disagree on the binary grade, retain
+    both in the trace and leave the grade null; agreeingly regraded or repeated exports do not become new trials.'
+  verifiers:
+    released_extraction:
+      kind: historical_comparison_of_released_extractions
+      source: https://github.com/open-compass/VLMEvalKit/blob/aaf24c59feae4f987025e21af32ed4b849cf9105/vlmeval/dataset/utils/mathvista.py
+      function: post_check
+      matching_source: https://github.com/open-compass/VLMEvalKit/blob/aaf24c59feae4f987025e21af32ed4b849cf9105/vlmeval/utils/matching_util.py
+      answer_extraction: Released gpt-4o-mini workbook caches, including native deterministic prefetch results.
+      exact_historical_endpoint: Unknown; literal cache suffix is retained without guessing a dated model.
+      missing_or_conflicting_grade: 'null'
+      judge_api: disabled
+      verbose: false

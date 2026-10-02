@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7200
+    logical_sha256: f232022a60217ecf200f2b00ea8616b5c44592de68f8fd866c85dee2c273701f
+  subjects:
+    rows: 24
+    logical_sha256: 36a1d60c11c79e090340994dd2b72e2163e2d988e68d22b495726a1ff5dec7d6
+  responses:
+    rows: 7200
+    logical_sha256: 24443afa74d8c0b07cd90501e2200ed64fd0b5d0db33dc217cb0019a0b5ebc40
+  items:
+    rows: 1200
+    logical_sha256: 439cef79b9ef2587c347db1cab339c763e586478f94ccb429d2838f1f405afdd
+  benchmarks:
+    rows: 1
+    logical_sha256: 46f9915ad3b398eac771203ed9466006d6404e174a063e4623ec26e5928699fc
+source_claims:
+  source_joint_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 3600
+  source_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 7200
+  source_segments:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 150
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 24
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 1200
+  source_calls_with_reasoning:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 1000
+  source_published_metric_values:
+    kind: count
+    origin: derived_from_data
+    source: https://osf.io/27ec5/
+    locator: 'llm-evaluation: 150-benchmark.jsonl, all 24 outputs files, llm evaluation.pdf and llm-performance
+      report.pdf.'
+    scope: Native joint classifier calls and their two scored axes. The independent audit also reconstructs all
+      528 published precision/recall/F1/micro/macro values to their stated precision.
+    expected: 528

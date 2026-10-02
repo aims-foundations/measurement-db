@@ -1,0 +1,129 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4335
+    logical_sha256: 8fc6446625886f4e6e2ff16a4b6ee5244d3d1fb737ef3fb07b949afeb14000ff
+  subjects:
+    rows: 17
+    logical_sha256: 47901e8fdd921b3a7ed690d4d4ef7e371d74bed4258bb28cad0fc252e7ed0750
+  responses:
+    rows: 4335
+    logical_sha256: 6ca32b14a7c0e0065500f0cf96bee04685dbc44d7c195a3ad8b92ed26cefe978
+  assets:
+    rows: 240
+    logical_sha256: cba3795fa3cec251a8d4342f051078c479670e10d2f8048c4c62881b7a6d6067
+  items:
+    rows: 249
+    logical_sha256: afa998f934e3b93c1b66155b6e5c05738cc971668a1c06a0fcc636f0585fa3ea
+  benchmarks:
+    rows: 1
+    logical_sha256: 263dce2178090f938c7a1e2d1a4775cf8e9e01ce789ea386c30c24f0fa3c9782
+source_claims:
+  source_question_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 255
+  source_channels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 17
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 4335
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 17
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 249
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 4335
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 240
+  partial_credit_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 476
+  full_credit_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 2133
+  zero_credit_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 1726
+  ungraded_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 0
+  repeated_input_image_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AnnaSou/multimodal-stem-ai
+    locator: 'Pinned runs/all_models_all_mooc_courseware_samples.json: every individual model/prompt-strategy response
+      and original grade_score; original question images are matched byte for byte.'
+    scope: The complete 255-record release, not the 201-question analyzed subset in the paper. Vote aggregates and
+      image-description intermediate steps are not additional independent attempts.
+    expected: 2

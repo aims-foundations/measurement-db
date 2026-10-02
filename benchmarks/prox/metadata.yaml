@@ -1,0 +1,78 @@
+benchmark:
+  description: "ProX (Programming Every Example) pre-training data refinement \u2014 released per-item\
+    \ math evals. Coverage is the partial slice the authors released: TinyLlama-1.1B continually pre-trained\
+    \ on the original OpenWebMath corpus, at two intermediate checkpoints (0.5B and 1B training tokens),\
+    \ scored per-item (binary correctness) on the paper's 9-task few-shot CoT math suite (GSM8K, MATH,\
+    \ SVAMP, ASDiv, MAWPS, TabMWP, MathQA, MMLU-STEM, SAT-Math). Per-item files for the ProX-refined CPT\
+    \ counterparts were not released."
+  testing_condition: Released TinyLlama-1.1B checkpoints trained on unrefined OpenWebMath for 0.5B or
+    1B tokens. Few-shot chain-of-thought prompting, greedy decoding, temperature 0 and seed 0. Grades
+    are the author harness's stored math-equivalence verdicts; its evaluation.py assigns false on a grading
+    timeout. This release does not supply item-level predictions for the ProX-refined models.
+  paper_url: https://arxiv.org/abs/2409.17115
+  data_source_url: https://github.com/GAIR-NLP/math-evaluation-harness
+  subject_type: model
+  item_type: question
+  license: MIT
+  citation: "@inproceedings{zhou2025programming,\n  title={Programming Every Example: Lifting Pre-training\
+    \ Data Quality Like Experts at Scale},\n  author={Zhou, Fan and Wang, Zengzhi and Liu, Qian and Li,\
+    \ Junlong and Liu, Pengfei},\n  booktitle={International Conference on Machine Learning (ICML)},\n\
+    \  year={2025}\n}"
+  tags:
+  - pretraining-data
+  - data-refinement
+  - continual-pretraining
+  - math-reasoning
+  - intervention
+  modality:
+  - text
+  domain:
+  - mathematics
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': unsuccessful
+      '1': successful
+  categorical: true
+  release_date: 2024-09
+  name: ProX Math CPT Evals
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      0.5B: TinyLlama-1.1B CPT on OpenWebMath (0.5B tokens)
+      1B: TinyLlama-1.1B CPT on OpenWebMath (1B tokens)
+    subject_features:
+      harness: math-evaluation-harness
+      training_corpus: OpenWebMath
+      decoding: greedy
+    conditions:
+      test_condition: temperature=0.0
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/GAIR-NLP/math-evaluation-harness
+    revision: 8e2c3ccc293610415629ae78e4f3805461e98452
+    files:
+    - match: outputs/tinyllama_1_1B_cpt/owm_1B/(?P<checkpoint>0\.5B|1B)/(?P<task>[^/]+)/test_cot_-1_seed0_t0\.0_s0_e-1\.jsonl
+      path: '{checkpoint}/{task}.jsonl'
+    - match: (?:README\.md|LICENSE|[^/]+\.py)
+      path: harness/{path}
+grading:
+  rule: Use each released boolean score from the math-evaluation-harness mathematical-equivalence checker.
+    True is 1 and false is 0.
+  verifiers:
+    math_equal:
+      kind: provider_result_mapping
+      source: https://github.com/GAIR-NLP/math-evaluation-harness/blob/8e2c3ccc293610415629ae78e4f3805461e98452/grader.py
+      function: math_equal
+      result_field: score
+      reference_field: gt
+      logic: Compare the extracted answer with the parsed reference using string, numeric and symbolic
+        equality; see the pinned grader implementation. evaluate.py records grading timeouts as false.

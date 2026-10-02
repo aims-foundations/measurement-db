@@ -1,0 +1,147 @@
+format_version: 1
+tables:
+  traces:
+    rows: 17740
+    logical_sha256: fe0dcd6a1f75fa6d447bebcc03464ac088e3ba1a8805516075425f2979684a46
+  subjects:
+    rows: 26
+    logical_sha256: 4da8f737f4371996e5ea018a522637593710098212e11631594e49647752b2d0
+  responses:
+    rows: 17740
+    logical_sha256: 3ec6bc4781ed824f79f4582c8c9a9fa388d915f39a0880c8019f6022ba28748c
+  assets:
+    rows: 103
+    logical_sha256: 2882567684f6c472555854f1e168bc750ebb106980ae59a817b003b39ab73814
+  items:
+    rows: 2484
+    logical_sha256: 16aab82088181fe9b0cad87e92d28d9969d39136eba460b11bda701c0db7f9b3
+  benchmarks:
+    rows: 1
+    logical_sha256: e177fcc00e125f7aa9821190840e5378b373f5c2b8b463e70263ebc695b6bdcb
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 26
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 2484
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 17740
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 17740
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 103
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 57
+  source_wrapped_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 6
+  source_human_records_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 15
+  source_negative_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 2
+  source_long_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 111
+  source_question_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 2
+  source_ctf_unknown_references:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 97
+  source_turn_count_differences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 91
+  source_best_step_index_differences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/princeton-nlp/intercode
+    locator: data/results and task banks at c3e46d827cfc9d4c704ec078f7abf9f41e3191d8; initial CTF grader at 69922e2f331b36a7d94b5da4a7ed10289e6c4c94.
+    scope: All nonhuman published episodes, retaining recorded maximum rewards, source configurations and complete
+      original records. Publication entries are not guaranteed independent generations. Task resources are pinned
+      released context, not verified historical container or service snapshots.
+    expected: 1

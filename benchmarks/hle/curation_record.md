@@ -1,0 +1,3 @@
+- Sources: pin the Sup AI and DeepWriter releases and official HLE question bank; verify archive members against their Git blobs. Captured inputs remain unchanged.
+- Transform: join native grades to recorded actor episodes, keeping Sup AI and DeepWriter subjects and grading versions separate. Restore overlapping DeepWriter observations, original question images and full untruncated stream events. Internal retries remain within one trial.
+- Review: preserve missing grades and limited execution evidence explicitly. Keep published score/result disagreements and missing full answers visible; verify every observation and reconcile the earlier tables without placeholder questions or new grading.

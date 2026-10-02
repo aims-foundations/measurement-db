@@ -1,0 +1,3 @@
+- Preserve 1,432 native 0–100 scores across 37 agent/model configurations and 40 tasks. All 1,190 prior observations are reconciled; retain the earlier Qiushi Engine/GPT-5.5 batch from original Git history. No model or judge was run.
+- Keep complete instruction templates and original task input assets. Exact recorded instructions, reports, criterion grades and exported logs remain in traces; the source caps logs at 500 lines and 572 runs have summary evidence only.
+- Published rubrics and assets are pinned; full historical hashes and judge settings are unknown. Recorded cost is an estimate. Replace the unsupported CC-BY attribution with the original MIT release terms and preserve source attribution.

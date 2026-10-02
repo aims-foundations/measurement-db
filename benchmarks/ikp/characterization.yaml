@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 268351
+    logical_sha256: 88c598fa9f4c0c052d781588d2a4ba97f9950e4b9f736dd12c4fd383c0c86fe4
+  subjects:
+    rows: 170
+    logical_sha256: 5b85c4885441ffa7749a92b3209c7b47953325d23f1d925e09ae2ef7aabdcc37
+  responses:
+    rows: 268351
+    logical_sha256: 0590950950a7a3416d5b8ba56a7c26a6baa1d3fa2724d0959c94a984798948dc
+  items:
+    rows: 1400
+    logical_sha256: 1f0a16b2b5997841712431844b280837312464dc7e28d1e4b14d9bf8f0e48347
+  benchmarks:
+    rows: 1
+    logical_sha256: dc4098c4077730ef807a7ab20fb3a995061c3e3c9b708ca65e5cf3079ad29e5c
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/19PINE-AI/ikp
+    locator: data/results/*.json matched to data/probes/final_probe_set_v9.json
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 268351
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/19PINE-AI/ikp
+    locator: data/results/*.json matched to data/probes/final_probe_set_v9.json
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 158787
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/19PINE-AI/ikp
+    locator: data/results/*.json matched to data/probes/final_probe_set_v9.json
+    scope: Captured upstream inputs with the filtering decisions documented in curation_record.md.
+    expected: 1400

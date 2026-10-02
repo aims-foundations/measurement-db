@@ -1,0 +1,120 @@
+benchmark:
+  description: 'SugarCrepe: a non-gameable vision-language compositionality benchmark of ~7.5k (image, positive
+    caption, hard-negative caption) triples across 7 hard-negative types (add/replace/swap of attributes, objects,
+    relations). Models must pick the caption that matches the COCO-2017 image. This build ingests the released per-item
+    GPT-4V responses from the official repo (the only model with per-instance outputs released; the 17 CLIP models
+    in the paper have only aggregate accuracy), in two caption-presentation orders (positive-first / negative-first).'
+  testing_condition: 'Retain all 15024 released GPT-4V records across seven negative-caption categories and two
+    presentation orders. Use the exact user-prompt template in the authors GPT-4V README, with the recorded caption
+    order and original COCO validation image; do not identify the correct choice in the input. The release records
+    the label GPT-4V, but not an immutable API model version, system prompt, decoding settings or complete wire
+    requests. Preserve category-specific observations even where their stimuli overlap: six caption pairs occur
+    in two categories, producing 12 repeated ordered stimuli. These records do not establish independent model calls.
+    Historical swap_obj key 108 remains in both result exports although absent from the current question bank. Retain
+    its published input and grades. Preserve full native answers and original COCO attribution. No model, grader
+    or image transformation is executed.'
+  paper_url: https://arxiv.org/abs/2306.14610
+  data_source_url: https://github.com/RAIVNLab/sugar-crepe
+  subject_type: model
+  item_type: task
+  license: MIT for the SugarCrepe release; CC-BY-4.0 for COCO annotations and website. COCO images retain their
+    individual Flickr/Creative Commons licenses, including noncommercial conditions; see each trace and the original
+    COCO annotations.
+  citation: "@inproceedings{hsieh2023sugarcrepe,\n  title={SugarCrepe: Fixing Hackable Benchmarks for Vision-Language\
+    \ Compositionality},\n  author={Hsieh, Cheng-Yu and Zhang, Jieyu and Ma, Zixian and Kembhavi, Aniruddha and\
+    \ Krishna, Ranjay},\n  booktitle={Advances in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks\
+    \ Track},\n  year={2023},\n}"
+  tags:
+  - vision_language
+  - compositionality
+  - image_text_matching
+  - clip
+  - gpt-4v
+  modality:
+  - image
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The released answer is marked incorrect.
+      '1': The released answer is marked correct.
+  categorical: true
+  release_date: 2023-06
+  release: public
+  name: SugarCrepe
+  version: 0047054b243992f0fad63d6f64f7544862daf846
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: release/gpt-4v-results
+      images: coco/val2017.zip
+      annotations: coco/annotations_trainval2017.zip
+      annotation_member: annotations/captions_val2017.json
+      image_prefix: val2017/
+    parsing:
+      summary_key: accuracy
+      prefix: gpt4v-
+    first_caption:
+      positive-first: caption
+      negative-first: negative_caption
+    labels:
+      positive_first: positive-first
+      model: GPT-4V
+      subject_prefix: 'SugarCrepe / '
+      harness: SugarCrepe two-caption image matching
+    prompt:
+      template: "Which caption best describes the image?\n(1) {caption1}\n (2) {caption2}\nOutput (1) or (2)."
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/RAIVNLab/sugar-crepe
+    revision: 0047054b243992f0fad63d6f64f7544862daf846
+    files:
+    - match: (?:LICENSE|README[.]md|data/.+[.]json|gpt-4v-results/.+|data_card[.]pdf|(?:main_eval|text_model_eval)[.]py)
+      path: release/{path}
+  - name: coco_images
+    url: https://s3.amazonaws.com/images.cocodataset.org/zips/val2017.zip
+    file: coco/val2017.zip
+    size: 815585330
+    sha256: 4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05
+    revision: sha256:4f7e2ccb2866ec5041993c9cf2a952bbed69647b115d0f74da7ce8f4bef82f05
+  - name: coco_annotations
+    url: https://s3.amazonaws.com/images.cocodataset.org/annotations/annotations_trainval2017.zip
+    file: coco/annotations_trainval2017.zip
+    size: 252907541
+    sha256: 113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268
+    revision: sha256:113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268
+  - name: coco_download
+    url: https://raw.githubusercontent.com/cocodataset/cocodataset.github.io/5e1c4da72464b1c6f068df0c02c91e3000ea62c4/dataset/download.htm
+    file: coco/download.htm
+    revision: 5e1c4da72464b1c6f068df0c02c91e3000ea62c4
+    size: 13225
+    sha256: 62e500d3e7be567d97c295f5f56c95a416618d0770dd334a0ab943a4c1e6954b
+  - name: coco_termsofuse
+    url: https://raw.githubusercontent.com/cocodataset/cocodataset.github.io/5e1c4da72464b1c6f068df0c02c91e3000ea62c4/dataset/termsofuse.htm
+    file: coco/termsofuse.htm
+    revision: 5e1c4da72464b1c6f068df0c02c91e3000ea62c4
+    size: 2370
+    sha256: bd019f88ee44c29b2f19c5b99888cf5bc2e7c16f57b6e52af8ed3a60462e8bdd
+grading:
+  rule: Preserve the published boolean correct flag (true=1, false=0, null=ungraded). The selected caption is stored
+    in answer.multiple_choice_answer; exact equality to the positive caption agrees with every released grade. Retain
+    original free-form outputs without rerunning extraction or grading.
+  verifiers:
+    published:
+      kind: published_caption_correctness
+      source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846/gpt-4v-results
+      field: correct
+      comparison: answer.multiple_choice_answer == caption
+      limitation: Original correctness flags are retained; the released README provides the prompt, not the full
+        GPT-4V generation or extraction implementation.

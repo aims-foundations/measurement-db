@@ -1,0 +1,86 @@
+benchmark:
+  description: 'REVOLVE solution-optimization evaluation: Llama-3.1-8B-Instruct performs test-time training
+    on GPQA-Diamond (198 items) and MMLU Machine Learning (112 items) multiple-choice questions, optimized
+    either by the TextGrad baseline (v1) or by REVOLVE (v2, response-evolution tracking). Binary exact-match
+    correctness of the extracted answer letter at each optimization stage (initial zero-shot, iterations
+    1-3, majority-vote final).'
+  testing_condition: test_condition encodes dataset (gpqa_diamond / mmlu_machine_learning) and optimization
+    stage (initial, iter1, iter2, iter3, final_majority_vote). Subjects are Llama-3.1-8B-Instruct optimized
+    with TextGrad vs REVOLVE, with the model itself as the optimization engine. Grading uses the authors'
+    answer-letter regex against the gold letter.
+  paper_url: https://arxiv.org/abs/2412.03092
+  data_source_url: https://github.com/Peiyance/REVOLVE
+  subject_type: model
+  item_type: question
+  license: MIT
+  citation: "@inproceedings{zhang2025revolve,\n  title={REVOLVE: Optimizing AI Systems by Tracking Response\
+    \ Evolution in Textual Optimization},\n  author={Zhang, Peiyan and Jin, Haibo and Hu, Leyang and Li,\
+    \ Xinnuo and Kang, Liying and Luo, Man and Song, Yangqiu and Wang, Haohan},\n  booktitle={International\
+    \ Conference on Machine Learning (ICML)},\n  year={2025}\n}"
+  tags:
+  - textual-optimization
+  - test-time-training
+  - prompt-optimization
+  - textgrad
+  - gpqa
+  - mmlu
+  - intervention
+  modality:
+  - text
+  domain:
+  - science
+  - knowledge
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2024-12
+  release: private
+  name: REVOLVE
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      GPQA_diamond_v1_predictions.json: Llama-3.1-8B-Instruct+TextGrad
+      GPQA_diamond_v2_predictions.json: Llama-3.1-8B-Instruct+REVOLVE
+      MMLU_machine_learning_v1_predictions.json: Llama-3.1-8B-Instruct+TextGrad
+      MMLU_machine_learning_v2_predictions.json: Llama-3.1-8B-Instruct+REVOLVE
+    datasets:
+      GPQA_diamond_v1_predictions.json: gpqa_diamond
+      GPQA_diamond_v2_predictions.json: gpqa_diamond
+      MMLU_machine_learning_v1_predictions.json: mmlu_machine_learning
+      MMLU_machine_learning_v2_predictions.json: mmlu_machine_learning
+    stages:
+      '0': initial
+      '1': iter1
+      '2': iter2
+      '3': iter3
+      '4': final_majority_vote
+    parsing:
+      answer_letter: (?i)Answer\s*:\s*\$?([A-D])
+grading:
+  rule: Extract the first answer letter with the upstream Answer-pattern, ignoring case, and compare to
+    the reference letter; no match is incorrect.
+  verifiers:
+    answer_letter:
+      kind: exact_match
+      source: https://github.com/Peiyance/REVOLVE/blob/63fa604d5df7c9c3262c77c9f58d4697cd7b0fbc/evaluation/solution_optimization.py
+      logic: Extract the first answer letter with the upstream Answer-pattern, ignoring case, and compare
+        to the reference letter; no match is incorrect.
+sources:
+  upstream:
+  - name: predictions
+    url: https://github.com/Peiyance/REVOLVE
+    revision: 63fa604d5df7c9c3262c77c9f58d4697cd7b0fbc
+    files:
+    - match: solution_optimization_result/(?P<name>(?:GPQA_diamond|MMLU_machine_learning)_v[12]_predictions\.json)
+      path: '{name}'

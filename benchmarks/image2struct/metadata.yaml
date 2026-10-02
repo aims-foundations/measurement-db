@@ -1,0 +1,175 @@
+benchmark:
+  name: Image2Struct
+  version: HELM Image2Struct v1.0.1
+  description: Original LaTeX and music-sheet image-to-code predictions with their recorded multimodal requests
+    and per-metric grades. Each response is one published grading dimension of an attempt, not an independent model
+    generation. Webpage exports redact their stimuli and outputs and remain raw-only.
+  testing_condition: Import the 364 indexed HELM runs, retaining the 224 unredacted LaTeX/music runs. Preserve actual
+    generation settings, all original images and complete predictions/compiler annotations. Seven legacy grading
+    channels remain distinct; unconfigured metrics create no observations. Values are never clipped or regraded.
+    The exact historical software and weight revisions are not recorded.
+  paper_url: https://arxiv.org/abs/2410.22456
+  data_source_url: https://crfm.stanford.edu/helm/image2struct/v1.0.1/
+  subject_type: vision_language_model
+  item_type: multimodal_request_and_grading_dimension
+  license: 'Metadata: CC-BY-4.0 (paper Appendix L.6). Code: Apache-2.0. Original images and text remain subject
+    to their respective owners; the authors do not claim ownership of these assets.'
+  citation: "@inproceedings{somervilleroberts2024image2struct,\n  title={Image2Struct: Benchmarking Structure Extraction\
+    \ for Vision-Language Models},\n  author={Somerville Roberts, Josselin and Lee, Tony and Wong, Chi Heem and\
+    \ Yasunaga, Michihiro and Mai, Yifan and Liang, Percy},\n  booktitle={NeurIPS Datasets and Benchmarks Track},\n\
+    \  year={2024}\n}"
+  tags:
+  - vision_language
+  - structure_extraction
+  - multimodal
+  modality:
+  - image
+  - text
+  domain:
+  - vision_language
+  - code_generation
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: '2024-10-29'
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    record_files:
+      prediction: display_predictions.json.gz
+      request: display_requests.json.gz
+      instance: instances.json.gz
+    included_domains:
+      image2latex: Released stimuli and predictions.
+      image2musicsheet: Released stimuli and predictions.
+    stimulus_fields:
+      prompt: Native text prompt.
+      multimodal_prompt: Native ordered text and image elements.
+    subject_features:
+      harness: HELM
+      helm_release: Image2Struct v1.0.1
+      historical_revision_status: Exact executed software and weight revisions unrecorded.
+grading:
+  rule: Preserve the selected published per-instance metric exactly. The source compiler and image comparison provide
+    the grade; no model, renderer or external judge is executed here. The reference image is also the input asset.
+    Include released reference code where present, without inventing a reference for music or wild tasks. Similarity
+    metrics without a verified finite storage bound allow any finite native value; this does not normalize or change
+    their units.
+  verifiers:
+    earth_mover_similarity:
+      kind: published_helm_per_instance_metric
+      description: Earth mover similarity, preserving the published floating-point value, including negative values.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    pixel_similarity:
+      kind: published_helm_per_instance_metric
+      description: Pixel similarity between the reference and rendered images.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    lpips_similarity:
+      kind: published_helm_per_instance_metric
+      description: Similarity derived from learned perceptual image patch distance, preserving published values
+        above one.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    ssim_similarity:
+      kind: published_helm_per_instance_metric
+      description: Published structural similarity value, including negative values.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    fid_similarity:
+      kind: published_helm_per_instance_metric
+      description: Cosine similarity between Inception features (CIS), despite the legacy fid_similarity field name;
+        retain floating-point values above one.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    edit_similarity:
+      kind: published_helm_per_instance_metric
+      description: Source-code edit similarity, only where this metric was configured and published.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+    compilation_success:
+      kind: published_helm_per_instance_metric
+      description: Whether the upstream compiler produced a rendered image (1) or reported compilation failure (0).
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Compilation failed.
+          '1': Compilation produced a rendered image.
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/vision_language/image_metrics.py
+      executed_historical_revision: Not recorded. The linked implementation is an inspected reference, not a claim
+        about the executed commit.
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/image2struct/benchmark_output/runs/v1.0.1/run_specs.json?generation=1782237739596081
+    revision: v1.0.1
+    file: run_specs.json
+    size: 998756
+    sha256: 1c97c376971e15e2d8f097256e362c198561d2ed7306e03e18a3588cf7816136
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.0.1
+    prefix: image2struct/benchmark_output/runs/v1.0.1/
+    tree_sha256: 25288851033b8bb9b480b1fda4eaa0c05363ab31cb3f8d6adf8b52be8294b3b2
+    files:
+    - match: (?P<run>image2(?:latex|musicsheet|webpage):(?!subset=real:)[^/,]+,model=[^/,]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{run}/{kind}.json
+  - name: images
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.0.1
+    prefix: image2struct/benchmark_output/scenarios/
+    tree_sha256: 1deeea23fd6b2f3fdc8c7feaba93bb07ecf276e96f2ce576b1751d99e2a6a28b
+    files:
+    - match: (?P<scenario>image2(?:latex|musicsheet))/data/images/(?P<subset>[^/]+)/(?P<image>[^/]+\.png)
+      path: benchmark_output/scenarios/{scenario}/data/images/{subset}/{image}
+  - name: grader_reference
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/vision_language/image_metrics\.py|src/helm/benchmark/scenarios/vision_language/image2struct/(?:latex|musicsheet)_scenario\.py|LICENSE
+      path: grader_reference/{path}

@@ -1,0 +1,126 @@
+benchmark:
+  name: BenGER
+  version: '2.0'
+  description: Recorded language-model attempts at German legal decision and case-solution tasks, with explicit
+    grading protocols.
+  testing_condition: Import all released Grundprinzipien and Benchathon generations, plus ZJS tasks whose ip_cleared
+    flag is true. Preserve actual model identifiers, including separate Gemini 3 Flash and Gemini 3.1 Flash-Lite
+    labels. Recorded token limits and structured-output settings distinguish subjects; response conditions retain
+    temperature and recorded seeds. Use complete recorded system/user prompts where available; 78 Benchathon generations
+    instead have published task text and an explicit missing-historical-prompt marker. Doctrinal decisions use the
+    author's normalized Ja/Nein rule, independently checked against all recorded parsed answers. The original version-2
+    exact-match flags and full generation records remain in traces. Benchathon uses the recorded single-pass GPT-5.4-mini
+    grader; the strict ZJS archive supplies an older GPT-5-nano grader. No new judges are run, and missing grades
+    stay null. Restrict ZJS to permission-cleared text; do not turn redacted search URLs into tasks. Keep full reference
+    solutions, rubric records, alternate judgments and source IDs. No inference.
+  paper_url: https://arxiv.org/abs/2605.28183
+  data_source_url: https://zenodo.org/records/20489788
+  subject_type: model
+  item_type: task
+  license: 'CC BY 4.0 for data; quoted ZJS cases are restricted to the released permission-cleared subset. Author
+    code: Apache-2.0.'
+  citation: 'Nagl et al. (2026). BenGER: Benchmarking LLM Systems on Subsumption-Based Legal Reasoning in German
+    Law.'
+  tags:
+  - legal
+  - german
+  - reasoning
+  modality:
+  - text
+  domain:
+  - law
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    meanings:
+      '0': Incorrect normalized decision or nonpassing recorded case-solution grade.
+      '1': Correct normalized decision or passing recorded case-solution grade.
+    direction: higher_is_better
+  categorical: true
+  release_date: '2026-06-01'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: zenodo-20489788/benger-v2.0.zip
+    exports:
+      grundprinzipien: benger-v2.0/grundprinzipien/grundprinzipien_Grundprinzipien_full_export.json
+      benchathon: benger-v2.0/benchathon/Benchathon_export.json
+      zjs: benger-v2.0/zjs/ZJS Fa╠êlle-tasks-strict.json
+    grading_fields:
+      grundprinzipien: exact_match-mpcelw3h-5gqf
+      benchathon: llm_judge_falloesung-mptmfvee-sqyx
+      zjs: llm_judge_falloesung-mp3ud0rq-5feb
+    decision:
+      pattern: ^\s*(ja|nein)
+    subject_settings:
+      max_tokens: max_tokens
+      structured_output: structured_output
+    reference_fields:
+      grundprinzipien: binary_solution
+      benchathon: musterlösung
+      zjs: Musterlösung
+    fallback_inputs:
+      grundprinzipien: fall
+      benchathon: sachverhalt
+      zjs: Aufgabe
+sources:
+  upstream:
+  - name: results
+    url: https://zenodo.org/api/records/20489788/files/benger-v2.0.zip/content
+    revision: '20489788'
+    file: zenodo-20489788/benger-v2.0.zip
+    size: 1027859827
+    sha256: 9308c94e2b9736c5b265915a41bf9b623fab40dd26d59c0363c821bba6fc0d59
+  - name: derivation
+    url: https://github.com/SebastianNagl/benger-platform
+    revision: 3b75a630d1849781c9155344b45c8c290dd4882d
+    files:
+    - match: README\.md|LICENSE|publications/Dataset_ARR/(?:README\.md|scripts/derive_paper_exports\.py|scripts/derive_zjs_summary\.py|scripts/derive_grundprinzipien_summary\.py)
+      path: github/3b75a630d1849781c9155344b45c8c290dd4882d/{path}
+  - name: decision_rule
+    url: https://github.com/SebastianNagl/benger-platform
+    revision: d31a3ffe33f6e6bc32821272cc1111b0cf749a59
+    files:
+    - match: publications/Benchmark_EMNLP/scripts/_gp_decision\.py
+      path: github/d31a3ffe33f6e6bc32821272cc1111b0cf749a59/{path}
+grading:
+  rule: Interpret binary grades according to the named corpus-specific protocol; null means no released grade.
+  verifiers:
+    grundprinzipien:
+      judge: BenGER normalized Ja/Nein matcher
+      judged_by: null
+      rule: Normalize the recorded parsed short answer and released binary_solution to an initial case-insensitive
+        Ja or Nein token. Grade 1 when they agree, otherwise 0; a missing or unparseable model answer is wrong.
+        This reproduces the author's corrected decision matcher on every captured generation; the old unnormalized
+        exact-match flag remains in the trace.
+      source: https://github.com/SebastianNagl/benger-platform/blob/d31a3ffe33f6e6bc32821272cc1111b0cf749a59/publications/Benchmark_EMNLP/scripts/_gp_decision.py
+      source_field: exact_match-mpcelw3h-5gqf|model:kurzantwort|binary_solution
+      original_metric: The version-2 platform exact_match flag does not normalize trailing punctuation.
+      interpretation: Correct normalized legal yes/no decision; this does not grade the legal reasoning text.
+    benchathon:
+      judge: gpt-5.4-mini
+      judged_by: llm
+      rule: Import the recorded single-pass rubric judgment from llm_judge_falloesung-mptmfvee-sqyx. A passing grade
+        is at least 4 points on the German 0–18 scale, after the upstream score conversion. Keep other judge passes in
+        the trace without treating them as new model generations.
+      source: https://github.com/SebastianNagl/benger-platform/blob/3b75a630d1849781c9155344b45c8c290dd4882d/publications/Dataset_ARR/scripts/derive_paper_exports.py
+      source_field: llm_judge_falloesung-mptmfvee-sqyx|__all_model__|musterlösung
+      rubric: The ten-dimension legal case-solution rubric, original judging prompt, scores and explanations are
+        retained in each generation record.
+    zjs:
+      judge: gpt-5-nano
+      judged_by: llm
+      rule: Import the recorded rubric pass judgment from llm_judge_falloesung-mp3ud0rq-5feb. A passing grade is
+        at least 4 points on the German 0–18 scale, after the upstream score conversion. Preserve a generation with no
+        released grade as null.
+      source: https://zenodo.org/records/20489788
+      source_field: llm_judge_falloesung-mp3ud0rq-5feb|__all_model__|Musterlösung
+      release_limitation: The strict archive contains this gpt-5-nano run, not the later gpt-5.4-mini run described
+        by the paper derivation. Preserve the recorded grader rather than relabeling it.
+      rubric: The original judging prompt, dimension scores and explanations are retained in each generation record.

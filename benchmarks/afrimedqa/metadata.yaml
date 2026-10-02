@@ -1,0 +1,97 @@
+benchmark:
+  name: AfriMed-QA
+  description: Released model responses to multiple-choice medical questions in African healthcare contexts.
+  testing_condition: Import the provider's MCQ releases for the 3,000-question Phase-1 bank, the 3,910-question
+    expert Phase-2 bank and its overlapping 289-question subset. Preserve complete recorded prompts and all
+    saved output fields. Import the native exact-letter grades, retaining ungraded attempts as null. Four output-only
+    files are matched to released questions and options. Identify banks from task correspondence, remove verified
+    file copies and leave cross-model duplicates unattributed. MedQA-USMLE is a separate benchmark. Short-answer
+    and consumer-query files remain captured for separate metric review. Exact model revisions and generation
+    settings are unknown for some source labels.
+  paper_url: https://aclanthology.org/2025.acl-long.96/
+  data_source_url: https://github.com/intron-innovation/AfriMed-QA
+  subject_type: model
+  item_type: question
+  license: CC-BY-NC-SA-4.0
+  citation: 'Olatunji et al. (2025). AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering
+    Benchmark Dataset. ACL 2025.'
+  tags:
+  - medical
+  - multiple_choice
+  - qa
+  modality:
+  - text
+  domain:
+  - medicine
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Extracted prediction does not match the reference letter
+      '1': Extracted prediction matches the reference letter
+  categorical: true
+  release_date: 2024-11
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: source_review/9bb0ffc03ef41a0568c3f47223a23997922afb52/files
+      phase1_reference: results/BioMistral-7B/BioMistral-7B_mcq_base-prompt_0shot_score-0.0000_3000.csv
+      phase2_reference: data/afri_med_qa_15k_v2.5_phase_2_15275.csv
+      medqa_reference: data/MedQA-USMLE-4-options-test.csv
+    excluded_results:
+      results/Phi-3-medium-128k-instruct/Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6708_3910.csv: Byte-identical
+        copy of results/Phi-3-medium-128k-instruct/afrimed-qa-v2_Phi-3-medium-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.6708_3910.csv
+      results/Phi-3-mini-128k-instruct/Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.5903_3910.csv: Byte-identical
+        copy of results/Phi-3-mini-128k-instruct/afrimed-qa-v2_Phi-3-mini-128k-instruct_mcq_base-prompt__no_exp_0-shot_score_0.5903_3910.csv
+      results/gemini_pro/afrimed-qa_mcq_instruct_prompt_3shot.csv: Identical prompts, outputs and grades occur
+        under multiple model names; attribution is unresolved.
+      results/gemini_pro/afrimed-qa_mcq_instruct_prompt_5shot.csv: Identical prompts, outputs and grades occur
+        under multiple model names; attribution is unresolved.
+      results/medlm/afrimed-qa_mcq_instruct_prompt_3shot.csv: Identical prompts, outputs and grades occur under
+        multiple model names; attribution is unresolved.
+      ? results/llama3-405b-instruct-maas/afrimed-qa-v1_llama3-405b-instruct-maas_mcq_base-prompt__no_exp_0-shot_score_0.821_3000.csv
+      : Byte-identical copy of results/llama3-405b-instruct-maas/afrimed-qa-v2_llama3-405b-instruct-maas_mcq_base-prompt__no_exp_0-shot_score_0.7627_3910.csv
+    banks:
+      phase1: afrimedqa-v1
+      expert_phase2: afrimedqa-v2
+      subset_phase2: afrimedqa-v2.5
+    matching:
+      question_pattern: '(?s)###Question: (.*?)\n###Options:'
+    subject_features:
+      harness: AfriMed-QA
+    item_features:
+      language: en
+    grade_values:
+      'True': '1'
+      'False': '0'
+      'true': '1'
+      'false': '0'
+      '1': '1'
+      '0': '0'
+grading:
+  rule: Compare the authors' extracted preds value with the native answer letter using exact equality. Preserve
+    the released correct value; a missing grade remains null. Model-specific extraction is part of the upstream
+    protocol and is not rerun during curation.
+  verifiers:
+    released_accuracy:
+      kind: published_extracted_letter_match
+      source: https://github.com/intron-innovation/AfriMed-QA/blob/9bb0ffc03ef41a0568c3f47223a23997922afb52/src/evals/evaluate.py
+      class: compute_score
+      comparison: data["answer"] == data["preds"]
+      imported_field: correct
+      extraction_sources: https://github.com/intron-innovation/AfriMed-QA/tree/9bb0ffc03ef41a0568c3f47223a23997922afb52/src/models
+      missing_grade: null, never inferred from output
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/intron-innovation/AfriMed-QA
+    revision: 9bb0ffc03ef41a0568c3f47223a23997922afb52
+    files:
+    - match: (?:README\.md|LICENSE|requirements\.txt|bin/.*\.py|src/.*\.py|scripts/.*\.sh|prompts/.*\.txt|data/(?:.*\.csv|croissant-afrimed-qa\.json)|results/.*\.csv|notebooks/.*\.ipynb)
+      path: source_review/9bb0ffc03ef41a0568c3f47223a23997922afb52/files/{path}

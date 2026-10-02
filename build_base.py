@@ -21,6 +21,7 @@ from abc import ABC
 import copy
 import argparse
 import hashlib
+from http.client import IncompleteRead
 import json
 from numbers import Integral
 import os
@@ -29,6 +30,7 @@ import shutil
 import sys
 import tempfile
 import urllib.request
+from urllib.error import URLError
 from pathlib import Path, PurePosixPath
 
 # Quiet the notice spam from the HuggingFace libraries.
@@ -248,6 +250,9 @@ class BenchmarkBuild(ABC):
         *,
         expected_size: int | None = None,
         expected_sha256: str | None = None,
+        request_headers: dict[str, str] | None = None,
+        request_json: dict | None = None,
+        chunk_size: int = 256 * 1024 * 1024,
     ) -> Path:
         """Download and optionally verify one cached source artifact.
 
@@ -255,7 +260,8 @@ class BenchmarkBuild(ABC):
         that threshold applies only to existing caches. A pinned caller can
         instead provide an exact byte count and/or SHA-256, which applies to both
         cached and newly fetched files. Invalid caches are replaced only after a
-        pinned temporary file verifies.
+        pinned temporary file verifies. Large pinned files use bounded HTTP
+        ranges, resuming interrupted transfers before checking the final hash.
         """
         has_pinned_integrity = (
             expected_size is not None or expected_sha256 is not None
@@ -277,23 +283,66 @@ class BenchmarkBuild(ABC):
                     print(f"[{self.slug}] cached {dest}")
                 return dest
 
-        req = urllib.request.Request(
-            url,
-            headers={"User-Agent": "Mozilla/5.0"},
-        )
+        headers = {"User-Agent": "measurement-db", **(request_headers or {})}
+        body = None
+        if request_json is not None:
+            body = json.dumps(request_json, allow_nan=False).encode('utf-8')
+            headers['Content-Type'] = 'application/json'
+        if chunk_size <= 0:
+            raise ValueError("chunk_size must be positive")
         dest.parent.mkdir(parents=True, exist_ok=True)
         temporary_path: Path | None = None
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as response:
-                with tempfile.NamedTemporaryFile(
-                    mode="wb",
-                    dir=dest.parent,
-                    prefix=f".{dest.name}.",
-                    suffix=".tmp",
-                    delete=False,
-                ) as temporary:
-                    temporary_path = Path(temporary.name)
-                    shutil.copyfileobj(response, temporary)
+            with tempfile.NamedTemporaryFile(
+                mode="wb", dir=dest.parent, prefix=f".{dest.name}.",
+                suffix=".tmp", delete=False,
+            ) as temporary:
+                temporary_path = Path(temporary.name)
+                if body is not None or expected_size is None or expected_size <= chunk_size:
+                    request = urllib.request.Request(url, headers=headers, data=body)
+                    with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as response:
+                        shutil.copyfileobj(response, temporary)
+                else:
+                    failures = 0
+                    while temporary.tell() < expected_size:
+                        offset = temporary.tell()
+                        end = min(offset + chunk_size, expected_size) - 1
+                        request = urllib.request.Request(url, headers={**headers, "Range": f"bytes={offset}-{end}"})
+                        try:
+                            with urllib.request.urlopen(request, timeout=timeout) as response:
+                                if response.status == 206:
+                                    expected_range = f"bytes {offset}-{end}/{expected_size}"
+                                    if response.headers.get("Content-Range") != expected_range:
+                                        if (response.headers.get("Content-Encoding") == "gzip"
+                                                and headers.get("Accept-Encoding") != "gzip"):
+                                            # GCS ranges address stored gzip bytes even when a
+                                            # normal GET serves the uncompressed, pinned file.
+                                            # Restart without ranges; retain the exact hash check.
+                                            response.close()
+                                            request = urllib.request.Request(url, headers={**headers, "Accept-Encoding": "identity"})
+                                            with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as whole:
+                                                if whole.status != 200 or whole.headers.get("Content-Encoding") not in (None, "identity"):
+                                                    raise _source_files.SourceDataError("Upstream did not return the complete uncompressed source")
+                                                temporary.seek(0)
+                                                temporary.truncate()
+                                                shutil.copyfileobj(whole, temporary)
+                                            break
+                                        raise _source_files.SourceDataError("Upstream returned an unexpected byte range")
+                                elif response.status == 200 and offset == 0:
+                                    # Servers without Range support may send the complete file.
+                                    end = expected_size - 1
+                                else:
+                                    raise _source_files.SourceDataError("Upstream did not honor a resumed byte range")
+                                shutil.copyfileobj(response, temporary)
+                            if temporary.tell() > end + 1:
+                                raise _source_files.SourceDataError("Upstream exceeded the requested byte range")
+                            if temporary.tell() != end + 1:
+                                raise OSError("Upstream transfer ended before the requested byte range")
+                            failures = 0
+                        except (OSError, URLError, IncompleteRead):
+                            failures += 1
+                            if failures >= 3:
+                                raise
             if has_pinned_integrity:
                 try:
                     _source_files.verify_file(
@@ -356,8 +405,9 @@ class BenchmarkBuild(ABC):
         are identity-bearing and must be supplied here rather than through response
         ``settings``. The effective response scale is resolved from ``INFO`` and
         the criterion and included in identity without duplicating inherited
-        scales in item records. Each attachment mapping contains ``source_path`` (a file
-        beneath ``raw/``), ``path`` (its stable logical POSIX path),
+        scales in item records. Each attachment mapping contains either ``source_path``
+        (a file beneath ``raw/``) or ``data`` (bytes already read from a source table),
+        ``path`` (its stable logical POSIX path),
         ``media_type``, and ``role``. Exact bytes are content-addressed and
         written once to ``assets.parquet``.
         """
@@ -391,7 +441,6 @@ class BenchmarkBuild(ABC):
         manifest_entries: list[dict[str, object]] = []
         seen_logical_paths: set[str] = set()
         allowed_attachment_fields = {
-            "source_path",
             "path",
             "media_type",
             "role",
@@ -401,36 +450,39 @@ class BenchmarkBuild(ABC):
             context = f"{self.slug}: add_item() attachment {ordinal}"
             if not isinstance(attachment, dict):
                 raise BuildContractError(f"{context} must be a mapping")
-            if set(attachment) != allowed_attachment_fields:
+            if set(attachment) not in (
+                allowed_attachment_fields | {"source_path"},
+                allowed_attachment_fields | {"data"},
+            ):
                 raise BuildContractError(
-                    f"{context} must contain exactly "
-                    f"{sorted(allowed_attachment_fields)}"
+                    f"{context} must contain {sorted(allowed_attachment_fields)} "
+                    "and exactly one of source_path or data"
                 )
 
-            supplied_source = attachment["source_path"]
-            if not isinstance(supplied_source, (str, Path)):
-                raise BuildContractError(
-                    f"{context}.source_path must be a string or Path"
-                )
-            source_path = Path(supplied_source)
-            if not source_path.is_absolute():
-                source_path = self.raw_dir / source_path
-            try:
-                resolved_source = source_path.resolve(strict=True)
-            except (FileNotFoundError, OSError) as exc:
-                raise BuildContractError(
-                    f"{context}.source_path is not a readable file: {source_path}"
-                ) from exc
-            try:
-                resolved_source.relative_to(raw_root)
-            except ValueError:
-                raise BuildContractError(
-                    f"{context}.source_path must stay beneath {self.raw_dir}"
-                ) from None
-            if not resolved_source.is_file():
-                raise BuildContractError(
-                    f"{context}.source_path is not a file: {source_path}"
-                )
+            resolved_source = None
+            if "data" in attachment:
+                payload = attachment["data"]
+                if not isinstance(payload, bytes):
+                    raise BuildContractError(f"{context}.data must be bytes")
+            else:
+                supplied_source = attachment["source_path"]
+                if not isinstance(supplied_source, (str, Path)):
+                    raise BuildContractError(f"{context}.source_path must be a string or Path")
+                source_path = Path(supplied_source)
+                if not source_path.is_absolute():
+                    source_path = self.raw_dir / source_path
+                try:
+                    resolved_source = source_path.resolve(strict=True)
+                except (FileNotFoundError, OSError) as exc:
+                    raise BuildContractError(
+                        f"{context}.source_path is not a readable file: {source_path}"
+                    ) from exc
+                if not resolved_source.is_relative_to(raw_root):
+                    raise BuildContractError(
+                        f"{context}.source_path must stay beneath {self.raw_dir}"
+                    )
+                if not resolved_source.is_file():
+                    raise BuildContractError(f"{context}.source_path is not a file: {source_path}")
 
             logical_path = attachment["path"]
             if not isinstance(logical_path, str) or not logical_path:
@@ -473,7 +525,8 @@ class BenchmarkBuild(ABC):
 
             asset_id = self._asset_id_by_source_path.get(resolved_source)
             if asset_id is None:
-                payload = resolved_source.read_bytes()
+                if resolved_source is not None:
+                    payload = resolved_source.read_bytes()
                 asset_id = _measurement_ids.asset_id_from_bytes(payload)
                 existing = self._asset_rows.get(asset_id)
                 if existing is not None and existing["data"] != payload:
@@ -489,7 +542,8 @@ class BenchmarkBuild(ABC):
                         "data": payload,
                     },
                 )
-                self._asset_id_by_source_path[resolved_source] = asset_id
+                if resolved_source is not None:
+                    self._asset_id_by_source_path[resolved_source] = asset_id
 
             seen_logical_paths.add(logical_path)
             manifest_entries.append(
@@ -718,7 +772,7 @@ class BenchmarkBuild(ABC):
         """Fetch named metadata sources, or restore an explicitly selected archive."""
         if self._source_archive is not None:
             return BenchmarkBuild.download(self)
-        artifacts = _source_files.upstream_artifacts(self.source_manifest["upstream"], names)
+        artifacts = _source_files.upstream_artifacts(self.source_manifest["upstream"], names, raw_dir=self.raw_dir)
         root = self.raw_dir.resolve()
         for artifact in artifacts:
             target = self.raw_dir / artifact["file"]
@@ -732,15 +786,32 @@ class BenchmarkBuild(ABC):
             with tempfile.TemporaryDirectory(prefix=".download-", dir=target.parent) as staging:
                 temporary = Path(staging) / "input"
                 if "hf_repo" in artifact:
-                    from huggingface_hub import hf_hub_download
-                    cached = Path(hf_hub_download(artifact["hf_repo"], artifact["hf_path"],
-                                  repo_type="dataset", revision=artifact["hf_revision"]))
+                    from huggingface_hub import hf_hub_download, try_to_load_from_cache
+                    repo_type = artifact.get("hf_repo_type", "dataset")
+                    # Keep byte ranges and checksums on the original representation;
+                    # compressed CDN responses can break streamed/resumed downloads.
+                    # The source commit and expected digest are already pinned.
+                    # Reusing its verified cache avoids a HEAD request per image.
+                    cached = try_to_load_from_cache(artifact["hf_repo"], artifact["hf_path"],
+                                                   repo_type=repo_type, revision=artifact["hf_revision"])
+                    if not isinstance(cached, str):
+                        cached = hf_hub_download(artifact["hf_repo"], artifact["hf_path"],
+                                                repo_type=repo_type, revision=artifact["hf_revision"],
+                                                headers={"Accept-Encoding": "identity"})
+                    cached = Path(cached)
                     _source_snapshots.verify_snapshot_file(cached, artifact)
                     shutil.copyfile(cached, temporary)
                 else:
+                    # GCS transcodes gzip for some browser user agents even
+                    # when Accept-Encoding is set. Keep the stored bytes.
+                    encoding_options = ({"request_headers": {"Accept-Encoding": "gzip", "User-Agent": "measurement-db"}}
+                                        if artifact.get("content_encoding") == "gzip" else {})
+                    if 'request_json' in artifact:
+                        encoding_options['request_json'] = artifact['request_json']
                     self._download(artifact["url"], temporary, timeout=600,
                                    expected_size=artifact["size"],
-                                   expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None)
+                                   expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None,
+                                   **encoding_options)
                 _source_snapshots.verify_snapshot_file(temporary, artifact)
                 temporary.replace(target)
         self._source_artifacts = artifacts
@@ -875,7 +946,9 @@ class BenchmarkBuild(ABC):
         optional = {
             "subjects": {"features", "access_date"},
             "items": {"attachments", "features", "verifier_features"},
-            "responses": {"trial", "test_condition", "interactors"},
+            # reference_answer is the existing add_response compatibility input;
+            # it is never an output column. Explicit None preserves legacy IDs.
+            "responses": {"trial", "test_condition", "interactors", "reference_answer"},
             "traces": set(),
         }
         primary_keys = {"subjects": "subject_key", "items": "item_key",

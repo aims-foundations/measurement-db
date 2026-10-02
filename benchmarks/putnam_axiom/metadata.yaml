@@ -1,0 +1,85 @@
+benchmark:
+  description: University-level Putnam competition math problems; response is a human-graded reasoning rubric
+    (5 ordinal dimensions) on each model solution.
+  testing_condition: Two math LLMs solve 500 Putnam problems; human graders score five reasoning-quality dimensions
+    per solution on a {0, 0.5, 1} scale.
+  paper_url: https://openreview.net/forum?id=kqj2Cn3Sxr
+  data_source_url: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading
+  subject_type: model
+  item_type: problem
+  license: Apache-2.0
+  citation: 'Gulati et al. Putnam-AXIOM: A Functional & Static Benchmark for Measuring Higher Level Mathematical
+    Reasoning in LLMs. ICML 2025.'
+  tags:
+  - mathematics
+  - competition_math
+  - putnam
+  - reasoning
+  - rubric
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 0.5
+    - 1
+    direction: higher_is_better
+  categorical: true
+  release_date: 2024-10
+  multi_single_turn: single_turn
+  name: Putnam-AXIOM
+build:
+  contract_version: 2
+  parameters:
+    rubric_dimensions:
+      score_error_awareness: error_awareness
+      score_faithfulness_to_task: faithfulness_to_task
+      score_intermediate_correctness: intermediate_correctness
+      score_logical_coherence: logical_coherence
+      score_methodological_alignment: methodological_alignment
+grading:
+  verifiers:
+    error_awareness:
+      source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading/tree/be59c5bac29d95e3f514f6a0bb025285bf624910
+      field: human_grade.score_error_awareness
+      rule: Retain the released human-assigned error awareness score on the ordered scale 0, 0.5, 1. The export
+        does not identify individual annotators or include the full annotation instructions.
+    faithfulness_to_task:
+      source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading/tree/be59c5bac29d95e3f514f6a0bb025285bf624910
+      field: human_grade.score_faithfulness_to_task
+      rule: Retain the released human-assigned faithfulness to task score on the ordered scale 0, 0.5, 1. The
+        export does not identify individual annotators or include the full annotation instructions.
+    intermediate_correctness:
+      source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading/tree/be59c5bac29d95e3f514f6a0bb025285bf624910
+      field: human_grade.score_intermediate_correctness
+      rule: Retain the released human-assigned intermediate correctness score on the ordered scale 0, 0.5,
+        1. The export does not identify individual annotators or include the full annotation instructions.
+    logical_coherence:
+      source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading/tree/be59c5bac29d95e3f514f6a0bb025285bf624910
+      field: human_grade.score_logical_coherence
+      rule: Retain the released human-assigned logical coherence score on the ordered scale 0, 0.5, 1. The
+        export does not identify individual annotators or include the full annotation instructions.
+    methodological_alignment:
+      source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading/tree/be59c5bac29d95e3f514f6a0bb025285bf624910
+      field: human_grade.score_methodological_alignment
+      rule: Retain the released human-assigned methodological alignment score on the ordered scale 0, 0.5,
+        1. The export does not identify individual annotators or include the full annotation instructions.
+sources:
+  upstream:
+  - name: items
+    url: https://huggingface.co/datasets/Putnam-AXIOM/putnam-axiom-dataset-ICML-2025-522
+    revision: 3cf12947f7da6cfa825280984ae62d4285d21f13
+    files:
+    - match: data/full_eval-00000-of-00001.parquet
+      path: full_eval.parquet
+  - name: grades
+    url: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading
+    revision: be59c5bac29d95e3f514f6a0bb025285bf624910
+    files:
+    - match: data/train-00000-of-00001.parquet
+      path: grading.parquet

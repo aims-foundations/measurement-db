@@ -1,0 +1,3 @@
+- Preserve all 213,110 observations from the 52 released binary CSVs. Each record independently matches its original log; 32,136 use chain-of-thought prompting, which is now recorded explicitly.
+- Restore complete questions for 2,019 observations affected by upstream colon truncation and retain every full log entry and parsed CSV record. All previous grades are unchanged; the resulting 32,163 content-and-grading items replace 31,945 legacy items.
+- Report answer correctness only, without the paper's known-entity filters. Other ablations, multimodal and multiple-choice releases remain outside this migration scope. Historical endpoint versions and complete API requests are not recorded; no settings are invented. Upstream data licensing is unspecified.

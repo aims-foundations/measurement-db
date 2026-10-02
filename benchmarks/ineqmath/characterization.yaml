@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1000
+    logical_sha256: 7ae25b4a99286b0ad7675a734718e4709d64ad71c797674bc26df228a7caf77c
+  subjects:
+    rows: 1
+    logical_sha256: c5aa733c71c221a35b3bc6462135d2e41ef4f6512910e9e3abcbfce561eb8bd6
+  responses:
+    rows: 1000
+    logical_sha256: 43d556d2610f39da05a276614f9fb3961d192417b4965d91d62410ae13d1874c
+  items:
+    rows: 1000
+    logical_sha256: 498f0906b07241337ef115c0f46fc06483024a2dd90292a6e9799524a426421d
+  benchmarks:
+    rows: 1
+    logical_sha256: 558ba1e71daaf41e80d282534a50bfc150f6ed40a785d9c0126d98fff0e3b0bb
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 1000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 1000
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 1000
+  source_dev_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 400
+  source_test_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 600
+  source_problem_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 300
+  source_prompt_conditions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 4
+  source_export_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 1100
+  source_duplicate_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/lupantech/ineqmath
+    locator: Eight results.json exports and their individual raw/*.json records at the pinned revision.
+    scope: Consolidate the exact zero-shot development copy in the test directory; count other attempts once. Individual
+      judgments are not released.
+    expected: 100

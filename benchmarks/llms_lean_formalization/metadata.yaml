@@ -1,0 +1,107 @@
+benchmark:
+  name: LLMs-Lean historical evaluations of miniF2F and miniCTX
+  description: Published historical round-level Lean-verifier assessments for seven model labels on existing miniF2F
+    and miniCTX tasks; this collection does not introduce a new task benchmark.
+  testing_condition: Preserve all 64,960 recorded grading rounds from the March 2026 result snapshot, including
+    full released proof text and diagnostics. Subjects distinguish the source model label, pass/amend policy and
+    recorded round; these are round-level pipeline assessments, not independent model samples. The historical generator
+    skips new generation after any previous Pass, in both policies. Source Pass can also propagate through a verification
+    timeout. Traces retain all original round arrays, exposing these dependencies without inventing model-call IDs.
+    Item content contains the released Lean header and formal theorem; source informal descriptions remain item
+    attributes. Adaptation history is internal to the submitted proving pipeline and remains in traces, not part
+    of a guessed static model prompt. The pinned source documents prompt templates and endpoint mappings, but per-run
+    configuration and exact historical request payloads are absent. The historical verifier checks header plus generated
+    code without anchoring it to the requested theorem; Pass therefore means recorded compiler acceptance, not a
+    certified solution of the requested task. Preserve reported Pass/Fail, use null for unknown verification results
+    or explicit generation errors, and do not run a newer verifier to overwrite history. These 488 miniF2F and 100
+    miniCTX tasks differ from the paper's later 50-task subsets.
+  paper_url: https://arxiv.org/abs/2606.05632
+  data_source_url: https://github.com/uw-math-ai/LLMsLean
+  subject_type: model
+  item_type: task
+  license: No license declaration in the captured historical repository; original miniF2F and miniCTX terms also
+    apply.
+  citation: Klingner et al. Evaluation of LLMs for Mathematical Formalization in Lean. arXiv:2606.05632 (2026).
+    Historical source snapshot predates the paper's final experiment.
+  tags:
+  - lean
+  - theorem_proving
+  - minif2f
+  - minictx
+  - historical_evaluations
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Source verifier recorded Fail for this grading round
+      '1': Source recorded Pass, including explicitly retained earlier acceptance
+  categorical: true
+  release_date: '2026-03-16'
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      repository: repo
+      results: data/test_data/*.jsonl
+      result_pattern: (?P<dataset>miniCTX|minif2f)_(?P<model>.+)_(?P<policy>amend|pass)_x40_(?P<round_limit>\d+)\.jsonl
+    labels:
+      subject_prefix: 'LLMsLean / '
+      input_scope: released_theorem_and_Lean_context
+    documented_models:
+      deepseek: deepseek-ai/DeepSeek-Prover-V2-7B
+      gemini: google_genai:gemini-3-flash-preview
+      gemini_lite: google_genai:gemini-3.1-flash-lite-preview
+      goedel: Goedel-LM/Goedel-Prover-V2-32B
+      gpt_oss: openai.gpt-oss-120b-1:0
+      kimina: AI-MO/Kimina-Prover-72B
+      opus: us.anthropic.claude-opus-4-5-20251101-v1:0
+    documented_prompts:
+      PROMPT_STEM: "\n        You are an expert in the LEAN 4 theorem prover. Your goal is to generate a correct,\
+        \ formalized proof in LEAN 4 for the provided theorem within the provided context. \n        You may explain\
+        \ your reasoning concisely but output the FULL, COMPLETE formalzed proof at the END of your response with\
+        \ **EXACTLY** the prefix: 'FINAL```', and the suffix '```'. \n        Assume that all of Mathlib is imported.\
+        \ **DO NOT** provide your own import statements. **DO NOT** put anything except valid lean in your final\
+        \ proof. IMMEDIATELY stop after appending the suffix.\n        Your theorem is: "
+      AMEND_STEM: "\n        You are an expert in the LEAN 4 theorem prover. Your goal is to amend an incorrect\
+        \ formalized proof into a correct, formalized proof. \n        You may explain your reasoning but output\
+        \ the full, complete formalzed proof at the end of your response with the prefix: FINAL```, and the suffix\
+        \ ```. \n        Assume that all of Mathlib is imported. Do not provide your own import statements. "
+    subject_features:
+      harness: LLMsLean historical grading pipeline
+      configuration_scope: source_labels_and_recorded_round_only
+      model_revision: not_recorded
+      protocol: reuse_after_success_in_both_policies
+sources:
+  upstream:
+  - name: historical_release
+    url: https://github.com/uw-math-ai/LLMsLean
+    revision: 59c394150a5ce30f0f27f520ba187f7f0d0ac34e
+    files:
+    - match: .*
+      path: repo/{path}
+grading:
+  rule: 'Preserve exact source Pass as 1 and Fail-prefixed diagnostics as 0. Unknown verification outcomes and explicit
+    ERROR: Generation failed outputs are ungraded. This is the published round assessment; copied/propagated passes
+    are not independent fresh proof attempts.'
+  verifiers:
+    lean:
+      kind: published_lean_assessment
+      source: https://github.com/uw-math-ai/LLMsLean/blob/59c394150a5ce30f0f27f520ba187f7f0d0ac34e/winter/verify.py
+      function: verify_parallel
+      lean_version: v4.16.0
+      timeout_seconds: 60
+      accepts: Lean code valid and no sorries, or earlier Pass propagated after timeout
+      scope: Historical source assessments; no re-verification
+      limitation: Does not constrain generated theorem to the requested formal_statement

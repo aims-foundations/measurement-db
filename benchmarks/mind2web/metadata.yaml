@@ -1,0 +1,126 @@
+benchmark:
+  description: Recorded candidate-generation rankings from the Mind2Web authors' fine-tuned DeBERTa-v3-base cross-encoder,
+    joined to complete released train and test action-step inputs.
+  testing_condition: 'Each response is the native Element Recall@50 event for one source action step. This measures
+    candidate retrieval, not complete LLM-agent task success. Input content is a structured source bundle: the exact
+    query (task plus the last three prior human actions), complete cleaned page DOM and available candidate node
+    IDs. It is not represented as the already tokenized pair passed to the cross-encoder: the native formatter prunes
+    each candidate''s ancestor/subtree context and the declared evaluator truncates to a 512-token maximum. Gold
+    candidates and target operations are retained only in grading/provenance, never inserted into the model input.
+    All four native partitions remain identified. Steps with no positive candidate after native page preprocessing
+    receive 0 under the released retrieval metric; they are not skipped. Six ranking records for two absent task
+    IDs remain captured but are not attached to invented inputs. Full scores, ranks, original source positions and
+    candidate metadata are retained. The checkpoint and executed package versions were not recorded in the result
+    file. No inference, embedding, reranking or evaluation execution is performed. Preserve the authors'' evaluation-only
+    and anti-contamination instructions for test data.'
+  paper_url: https://arxiv.org/abs/2306.06070
+  data_source_url: https://huggingface.co/datasets/osunlp/Mind2Web
+  subject_type: model
+  item_type: web_action_step
+  license: cc-by-4.0
+  citation: "@inproceedings{deng2023mind2web,\n  title={Mind2Web: Towards a Generalist Agent for the Web},\n  author={Deng,\
+    \ Xiang and Gu, Yu and Zheng, Boyuan and Chen, Shijie and Stevens, Samuel and Wang, Boshi and Sun, Huan and\
+    \ Su, Yu},\n  booktitle={NeurIPS 2023 Datasets and Benchmarks Track},\n  year={2023},\n}"
+  tags:
+  - web_agent
+  - gui_agent
+  - candidate_generation
+  - dom
+  - single_subject
+  modality:
+  - text
+  domain:
+  - gui_agent
+  - tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': No source positive candidate has a recorded rank below 50.
+      '1': At least one source positive candidate has a recorded rank below 50.
+  categorical: true
+  release_date: '2023-06-10'
+  release: public
+  name: Mind2Web candidate generation
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      training_glob: hf/data/train/*.json
+      training_split: train
+      rankings: hf/scores_all_data.pkl
+      test_archive: hf/test.zip
+      published_test_password: mind2web
+      query_template: 'task is: {task}
+
+        Previous actions: {previous_actions}'
+      recall_k: '50'
+    unmatched_outputs:
+      20514669-24e8-4717-923f-b42a8413bda4_0d4c474e-8b17-43f2-b419-c331084c612c: The recorded action's task ID is
+        absent from the captured official input release.
+      20514669-24e8-4717-923f-b42a8413bda4_2b609f9c-2bd2-402f-a832-b5384396804c: The recorded action's task ID is
+        absent from the captured official input release.
+      20514669-24e8-4717-923f-b42a8413bda4_4319fabc-9177-4490-ac31-e87f3be2a35b: The recorded action's task ID is
+        absent from the captured official input release.
+      6fc30c2b-aded-42a2-9457-f9fdccae3523_a83a67c0-104e-43a0-b312-a48ca8f547dc: The recorded action's task ID is
+        absent from the captured official input release.
+      6fc30c2b-aded-42a2-9457-f9fdccae3523_c7ceccf5-e4ab-4fe9-90d9-e2aa1adb3b75: The recorded action's task ID is
+        absent from the captured official input release.
+      6fc30c2b-aded-42a2-9457-f9fdccae3523_e46d2b57-0742-40b9-8134-79ccdffe45da: The recorded action's task ID is
+        absent from the captured official input release.
+    subject:
+      key: mind2web_released_candidate_ranker
+      label: Mind2Web / fine-tuned DeBERTa-v3-base candidate ranker
+    subject_features:
+      harness: Mind2Web candidate generation
+      base_model: microsoft/deberta-v3-base
+      training_status: fine-tuned by the Mind2Web authors
+      source_attribution: Original README and scores_all_data.pkl
+      historical_weights_revision: not_recorded
+      historical_execution_revision: not_recorded
+      declared_max_seq_length: '512'
+      output_type: candidate relevance score and zero-based rank
+    item_features:
+      input_representation: source query, full cleaned DOM and candidate node IDs before native element-context
+        formatting
+      native_preprocessing: prune candidate DOM, keep last 50 ancestor tokens and first 100 subtree tokens, cross-encoder
+        tokenization then applies its declared maximum length
+      trajectory_context: previous human reference actions, not a newly executed agent trajectory
+grading:
+  rule: 'Copy Element Recall@50 from the recorded ranks: response=1 if any backend_node_id from the action''s pos_candidates
+    has a zero-based cached rank <50, otherwise 0. An empty positive set yields 0, matching the upstream evaluator''s
+    initialized recall vector. Preserve recorded rank order for ties; do not recompute model scores or invent a
+    success threshold for the raw logits.'
+  verifiers:
+    rank_recall:
+      kind: native_cached_rank_recall
+      source: https://github.com/OSU-NLP-Group/Mind2Web/blob/33bd95caeee7bba22dd08ecc935845e15c5e5dc7/src/candidate_generation/metric.py
+      function: CERerankingEvaluator.__call__
+      rule: 'Copy Element Recall@50 from the recorded ranks: response=1 if any backend_node_id from the action''s
+        pos_candidates has a zero-based cached rank <50, otherwise 0. An empty positive set yields 0, matching the
+        upstream evaluator''s initialized recall vector. Preserve recorded rank order for ties; do not recompute
+        model scores or invent a success threshold for the raw logits.'
+      recall_k: 50
+      inputs_source: https://github.com/OSU-NLP-Group/Mind2Web/blob/33bd95caeee7bba22dd08ecc935845e15c5e5dc7/src/candidate_generation/dataloader.py
+      empty_positive_set: failure under the native retrieval event
+      tie_handling: preserve released ranks
+sources:
+  upstream:
+  - name: original_rankings_and_tasks
+    url: https://huggingface.co/datasets/osunlp/Mind2Web
+    revision: 17ece8eb89862368edc0cc806acee6fca5163474
+    files:
+    - match: .+
+      path: hf/{path}
+  - name: declared_harness
+    url: https://codeload.github.com/OSU-NLP-Group/Mind2Web/zip/33bd95caeee7bba22dd08ecc935845e15c5e5dc7
+    revision: 33bd95caeee7bba22dd08ecc935845e15c5e5dc7
+    file: upstream.zip
+    size: 6435504
+    sha256: b7e9308531bb6e4d97562868fac99fe0d358e0c6ef7f35315291a6657b3e1695

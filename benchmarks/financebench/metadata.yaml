@@ -1,0 +1,97 @@
+benchmark:
+  name: FinanceBench
+  one_line_description: Evaluates whether models can answer financial questions about public-company filings
+    across closed-book and context-assisted settings.
+  description: FinanceBench's open-source 150-question financial-QA evaluation sample, including 16 model/context
+    configurations, human correctness labels, model answers, and the 84 provider-released filing PDFs
+    referenced by the sample.
+  paper_url: https://arxiv.org/abs/2311.11944v1
+  data_source_url: https://github.com/patronus-ai/financebench/tree/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+  license: unknown
+  modality:
+  - text
+  domain:
+  - finance
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect answer or refusal
+      '1': correct answer
+  categorical: true
+  release_date: 2023-11
+  multi_single_turn: single_turn
+  testing_condition: 'The provider reports evaluations in November 2023 with temperature 0.01, maximum
+    output length 2,048, and provider-default system prompts. The 16 subject configurations combine four
+    model endpoint labels with closed-book, oracle, long-context, and retrieval harness modes. Each response
+    is 1 only for the provider''s human label Correct Answer; the original three-way label and full released
+    model answer are retained. Each semantic question links its provider-released target filing PDF as
+    a source_document asset. This is source preservation, not a claim that every model directly received
+    the PDF: closed-book did not, oracle received released evidence-page text, long-context used an unpinned
+    PyMuPDF/tokenizer transformation, and retrieval used dynamic chunks that were not retained. The paper
+    says the historical shared store indexed 360 documents, while the released notebook now constructs
+    only the 84-document open-sample corpus; no historical vector store or dependency lock was released.'
+  subject_type: model configuration
+  item_type: financial question with source filing
+  citation: "@misc{islam2023financebench,\n  title={FinanceBench: A New Benchmark for Financial Question\
+    \ Answering},\n  author={Pranab Islam and Anand Kannappan and Douwe Kiela and Rebecca Qian and Nino\
+    \ Scherrer and Bertie Vidgen},\n  year={2023},\n  eprint={2311.11944},\n  archivePrefix={arXiv},\n\
+    \  primaryClass={cs.CL}\n}"
+  tags:
+  - financial-qa
+  - retrieval
+  - long-context
+  benchmark_features:
+    item_bank: open_source_human_eval_sample
+    grading: provider_human_review
+  release: private
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      root: financebench-22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+      questions_member: data/financebench_open_source.jsonl
+      document_information_member: data/financebench_document_information.jsonl
+      notebook_member: evaluation_playground.ipynb
+      pdfs_prefix: pdfs
+      results_prefix: results
+      archive: financebench-22257c455f9f9ca9ca3dc67456d9a32e60c7ef08.tar.gz
+    settings:
+      harness: FinanceBench evaluation_playground
+      access_date: 2023-11
+      max_output_tokens: '2048'
+      system_prompt: provider default
+      replicate_target: meta/llama-2-70b-chat:02e509c789964a7ea8736978a43525956ef40397be9033abf9fd2badfe68c9e3
+sources:
+  upstream:
+  - name: provider_archive
+    url: https://codeload.github.com/patronus-ai/financebench/tar.gz/22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    revision: 22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    file: financebench-22257c455f9f9ca9ca3dc67456d9a32e60c7ef08.tar.gz
+    size: 582618160
+    sha256: 7d6afa76a2f95534f508617aab0dc07afe19b244939d3bc7b613f0e2cfc1c1ba
+  - name: paper_v1
+    url: https://arxiv.org/pdf/2311.11944v1
+    revision: v1
+    file: financebench-paper-2311.11944v1.pdf
+    size: 457088
+    sha256: 17300ab2316144111bcc878f91f9f35606367cae1cec3fca7c56ae9f87067e2f
+  - name: documents
+    url: https://github.com/patronus-ai/financebench
+    revision: 22257c455f9f9ca9ca3dc67456d9a32e60c7ef08
+    files:
+    - match: pdfs/(?P<name>[^/]+\.pdf)
+      path: source_documents/{name}
+grading:
+  rule: The released research-team human review labels the answer Correct Answer, rather than Incorrect
+    Answer or Refusal.
+  verifiers:
+    human_review:
+      spec: FinanceBench research-team human review. Label Correct Answer when the response is substantively
+        correct, allowing minor unit deviations and very small rounding errors; label Incorrect Answer
+        when it is wrong or its stated reasoning contradicts the evidence; label Refusal when the model
+        explicitly says it cannot answer.

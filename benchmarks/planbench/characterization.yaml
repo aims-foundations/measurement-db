@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 38061
+    logical_sha256: 1178fdad1e67841cb3d734f2bbab1d6f980d706cbfe80ef33584c3febb74bbdb
+  subjects:
+    rows: 42
+    logical_sha256: fa167055befe05b5a675f1c834dc03faccf930b2b2e4bda2bea261f2ccdcf59a
+  responses:
+    rows: 38061
+    logical_sha256: ad6e3bfe890810760f21e0db7c54ee40f8367b78275fbf35450914b230a1fcd7
+  items:
+    rows: 11076
+    logical_sha256: 536d1d7ef07ff7034429de5875a0658b4c5daee8aac7cc31210c1a117dad2397
+  benchmarks:
+    rows: 1
+    logical_sha256: f8bf38b22d0a57d067c271f695be288e2fac976e0ef67b5506bbff6088829828
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 38061
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 11076
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 42
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 17
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 38061
+  source_query_only:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 2859
+  source_duplicate_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 31
+  source_adaptive:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 180
+  source_single_prompt:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 37881
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 0
+  source_numeric_annotations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 200
+  source_blank_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/karthikv792/LLMs-Planning/tree/fc638a1aff7df3fe7a1a1d289fa2c04cc24dc284/llm_planning_analysis/results
+    locator: Original JSON instances, final Boolean verdicts and complete source records; independent full source
+      audit
+    scope: Pinned release; single-prompt and adaptive assessments. Identical export copies count once; query-only
+      placeholders do not count as attempts.
+    expected: 9

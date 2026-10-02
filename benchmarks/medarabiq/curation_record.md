@@ -1,0 +1,3 @@
+- Source: 40,419 recorded QIMMA attempts from 80 model labels and 81 run configurations across five Arabic medical tasks; 499 bank positions contain 497 distinct task/grading definitions.
+- Transformation: join exact task and run identifiers, preserve every original output and setting, and copy native MCQ accuracy or cached BERTScore F1. Independently verify all associations and 729 published metric means; retain 162 repeated task occurrences.
+- Limits: this is the QIMMA-curated version, not the original paper evaluation. Historical weight commits are unknown; BLEU/chrf++ fields are corpus inputs, not individual grades. Original licensing restricts redistribution, so raw inputs and formatted tables remain local pending clarification. No model or scorer was rerun.

@@ -1,0 +1,91 @@
+format_version: 1
+tables:
+  assets:
+    rows: 8914
+    logical_sha256: 19e22ebf4f8ebefc9ccca29cb824e82171d5779fc18da4baec7a5cd74e9a9821
+  benchmarks:
+    rows: 1
+    logical_sha256: 5c4521c7b22a5c47e23a0923491d0d9cd2c2e2c767b82d59842ece74376fd7bf
+  items:
+    rows: 8616
+    logical_sha256: 538dac14b21de26d8427fe59c31bff59eec5d302359f3e1bfc8dbdf7be051fdb
+  responses:
+    rows: 17232
+    logical_sha256: 152f68ac6d05c29cb44cfe6828431cb652b8ba55cc3833310fa42cfd0a3421c3
+  subjects:
+    rows: 4
+    logical_sha256: d17cf0f86180d5becb9c11e92da553b6814217c95b796ff30723620f505471bd
+  traces:
+    rows: 17232
+    logical_sha256: 3a6a6ef7b8091ca9d61bf63b4da3a5844da62b2890f31ccb0582deb4c7a2cf02
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 8616
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 8914
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 17232
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 17232
+  source_training_validation_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 8616
+  source_standalone_evaluation_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RRRong/3EED/tree/129fe3cc45722423c917943a4480ba454eb352bd
+    locator: 'baseline_ckpt_pred.zip: all non-Mac-resource prediction.json files, original run configurations and
+      captured evaluator; 3eed_dataset.zip: corresponding native annotations and input assets.'
+    scope: Every saved per-frame prediction in both distinct result collections. Dataset target annotations independently
+      match recorded utterances and reference boxes after the native coordinate transform. Four recorded configurations
+      remain distinct; saved files need not reproduce broader original log aggregates.
+    expected: 8616

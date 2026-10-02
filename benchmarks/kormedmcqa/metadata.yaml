@@ -1,0 +1,111 @@
+benchmark:
+  name: KorMedMCQA
+  description: Published Korean healthcare licensing-exam predictions from the independently maintained Korean LLM
+    Benchmark Suite.
+  testing_condition: Join the source subset/index identifier to the unchanged original test bank and verify every
+    reference answer. Retain every exported record, including repeated IDs, short debug exports and incomplete model
+    files. The source writer emits trial=0 for every record and appends batches. Our positive trial numbers distinguish
+    source-record occurrences within a model, canonical question and condition; they do not establish independent
+    experimental runs. Exact repeated records are retained because the export does not distinguish a repeated generation
+    from duplicated logging. Original IDs, source trial values, positions and full recorded text are preserved in
+    traces. Only source export labels identify models/configurations; exact API identifiers, inference settings
+    and surrounding prompts were not recorded. Item content contains the question and all five choices. Reference
+    answers and source rationale fields are excluded from predictive inputs. Grades are reconstructed using the
+    captured original exact matcher, not a new model or parser.
+  paper_url: https://arxiv.org/abs/2403.01469
+  data_source_url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+  subject_type: model
+  item_type: task
+  license: 'KorMedMCQA task bank: CC-BY-NC-2.0. Independent result repository: MIT.'
+  citation: 'Kweon et al. KorMedMCQA: Multi-Choice Question Answering Benchmark for Korean Healthcare Professional
+    Licensing Examinations (2024). Evaluation records: daekeun-ml, Korean LLM Benchmark Suite.'
+  tags:
+  - multilingual
+  - multiple_choice
+  - korean
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: binary
+  categorical: true
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Recorded parsed prediction does not match the reference
+      '1': Recorded parsed prediction matches the reference
+  release_date: 2024-03
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      tasks: tasks/*/test-*.parquet
+      results: results/*.csv
+    answer_labels:
+      '1': A
+      '2': B
+      '3': C
+      '4': D
+      '5': E
+    labels:
+      ungraded_marker: FAILED
+      subject_prefix: 'KorMedMCQA / '
+      input_scope: Original question and choices. Historical surrounding prompt and demonstrations were not recorded.
+    subject_features:
+      harness: Korean LLM Benchmark Suite
+      historical_configuration: not_recorded
+      model_identifier_status: source_export_label
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: 106ed712b5b88f0e531d5fa503bfed76ac31396e
+    files:
+    - match: results/\[KorMedMCQA\] (?P<model>[^/]+)\.csv
+      path: results/{model}.csv
+    - match: README\.md|LICENSE|benchmarks/kormedmcqa_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py
+      path: source/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/sean0042/KorMedMCQA
+    revision: 79efd6f91edfc8036330d7a4daa88b9f2deb9a82
+    files:
+    - match: (?:doctor|dentist|nurse|pharm)/test-[^/]+\.parquet|README\.md
+      path: tasks/{path}
+  - name: history_7eae2131
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: 7eae2131669e0e97ee616748df232ecbe07b5ec4
+    files:
+    - match: benchmarks/kormedmcqa_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py|config/question_templates\.py
+      path: history/7eae2131669e0e97ee616748df232ecbe07b5ec4/{path}
+  - name: history_b64e4fd6
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: b64e4fd6dda9785049fd3968c1d3b35321d38743
+    files:
+    - match: benchmarks/kormedmcqa_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py|config/question_templates\.py
+      path: history/b64e4fd6dda9785049fd3968c1d3b35321d38743/{path}
+  - name: history_dc312a71
+    url: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    revision: dc312a71d407d47c9979fdd02a8d19693f3b40dc
+    files:
+    - match: benchmarks/kormedmcqa_main\.py|core/evaluator\.py|util/(?:evaluate_helper|custom_parser)\.py|config/question_templates\.py
+      path: history/dc312a71d407d47c9979fdd02a8d19693f3b40dc/{path}
+grading:
+  rule: Compare the released parsed prediction with the A–E reference by exact string equality, without reparsing
+    the response text. A match is 1; a blank or other nonmatching prediction is 0. FAILED is excluded by the released
+    scorer and remains ungraded (null).
+  verifiers:
+    recorded_option_match:
+      kind: reconstructed_released_exact_match
+      source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset/blob/b64e4fd6dda9785049fd3968c1d3b35321d38743/util/evaluate_helper.py
+      function: evaluate
+      prediction_field: pred
+      reference_field: answer
+      excluded_marker: FAILED
+      assignment: Explicit source subset/index ID, verified against the unchanged original test-bank reference.
+      execution: No model inference or new parsing. Use the original saved prediction and preserve the full CSV
+        record.

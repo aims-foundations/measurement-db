@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1
+    logical_sha256: 70899825dccda316fac8c2f51499e3b54921b564b21345bbca9fc52221c25324
+  subjects:
+    rows: 1
+    logical_sha256: ca693c102aa961b1f08dfa6238ee73f34927f58c1312d02141d8933cb9d72d4c
+  responses:
+    rows: 1
+    logical_sha256: 9e48894601d4fc7bd0ba1ec9af7039ab5cd53347017fda58e38aef5574f880f8
+  items:
+    rows: 1
+    logical_sha256: 4a4013da0277ef19223e1ffbdfb47d8370578587e78a7923f807b2eed33ac64e
+  benchmarks:
+    rows: 1
+    logical_sha256: d1cd5a50aa76e64d6d312ec0f8a63413c766eb64ed7f384d5e7d83d1564044d1
+source_claims:
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 1
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 1
+  source_api_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 2
+  source_input_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 113
+  source_input_columns:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 10
+  source_trace_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 5
+  source_unresolved_notebook_results:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/codeKgu/RADAR/blob/c93aed8cea239ea965c4212eb6b5cdd4b0db44e5/notebooks/code_agent.ipynb
+    locator: Saved code-agent result and original model log; direct_prompting.ipynb retained as unresolved source
+      evidence.
+    scope: One complete released demonstration. Both logged prompts, assistant outputs and token counts match. This
+      is not the paper-wide evaluation matrix.
+    expected: 1

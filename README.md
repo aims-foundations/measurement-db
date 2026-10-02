@@ -7,10 +7,12 @@ The AI Measurement Data Bank is community-owned infrastructure for turning fragm
 - [Explore the AI Measurement Data Bank](https://aimslab.stanford.edu/measurement-db)
 - [Access the released data](https://huggingface.co/datasets/aims-foundations/measurement-db)
 
-The [`benchmarks/`](benchmarks) directory contains the six public curation
-examples: MathArena, MMDocRAG, Multi-SWE-bench, REAL, ResearchCodeBench, and
-SWE-rebench. Each includes its builder, source manifest, read-only tests, and
-curation record. Generated data remain on Hugging Face rather than in Git.
+The [`benchmarks/`](benchmarks) directory contains the six released examples—MathArena,
+MMDocRAG, Multi-SWE-bench, REAL, ResearchCodeBench, and SWE-rebench—and additional
+benchmarks migrated to the same tabular builder contract. Each includes source
+metadata, a reviewed characterization, and a curation record. Publishing a builder
+here does not imply a Hugging Face data release. Raw inputs, generated tables,
+and model-fitting outputs are excluded from Git.
 
 ## Contributing
 
@@ -87,6 +89,61 @@ can be inserted into the destination, and `{path}` preserves the upstream path.
 For a single HTTP URL, specify `file`, `size`, and `sha256` instead. See REAL for
 both forms. MathArena uses `fetch_sources("*")` to select all its named releases.
 Unnamed entries document additional references without downloading them.
+
+For GitHub files stored with Git LFS, set `git_lfs: true` on that source.
+The downloader verifies the pointer against the pinned commit, then downloads
+the large file and verifies its declared SHA-256 and size.
+
+For file-level DVC releases, `dvc_index: <registry source name>` reads pointers
+from a named GitHub source at the same commit. Set the data source URL to the
+HTTPS DVC cache root; `files` matches original paths without `.dvc`, and
+`tree_sha256` pins the selected paths, sizes and MD5 hashes. The downloader
+verifies both the original pointers and the downloaded files. Directory pointers
+are not supported.
+
+Encrypted JSON releases can use the shared `read_gpg_json` reader (requires
+GnuPG). The provider's public password belongs in metadata; decoding uses an
+isolated temporary directory and leaves captured inputs unchanged.
+
+Public GCS sources use a bucket URL, an object `prefix`, the same `files` rules,
+and a `tree_sha256` fingerprint of the selected object paths, generations, sizes,
+MD5 checksums and content encodings. Downloads select each recorded generation
+and verify its bytes; a changed inventory requires review. Gzip-encoded objects
+stay compressed under `raw/` with a `.gz` suffix, so their captured bytes match
+the provider's checksum.
+
+For HELM releases, `helm_index: {source: release, group: <scenario>}` selects
+run directories from a separately declared, checksum-pinned HTTP manifest.
+The GCS prefix is the project root (for example, `safety/`); file patterns then
+match the manifest's versioned run paths. This preserves the release's actual
+model panel without listing hundreds of file URLs in metadata.
+Omit `group` to select the complete release panel, including all its tasks.
+
+For static transcript sites, `html_index: <source name>` selects same-site links
+from a separately pinned HTML index. The `files` patterns select pages, and
+`tree_sha256` pins their paths, sizes and SHA-256 content hashes. The downloader
+checks the complete selection, including cached files, before building tables.
+
+JSON manifests use `json_index: {source: manifest, records: [models, runs],
+path: "{run_id}.json"}` to select files beneath the source URL. `records`
+walks nested object/list fields, and `path` uses values from each resulting
+record. `source` can also name another JSON-indexed collection, for example when
+each trajectory lists its screenshots. The manifest checksum and each collection's
+`tree_sha256` pin membership and file contents; duplicate paths, changed bytes,
+dependency cycles and paths outside the source are rejected.
+
+Public data APIs can declare a JSON POST body with `request_json` on a pinned
+HTTP source. A JSON index can supply `query` parameter templates for an API
+endpoint while `path` names each local document. HTML embedded in those JSON
+documents can link source files through, for example,
+`html_index: {source: items, field: itemHTML, tag: img, attribute: src}`.
+The same content hashes and immutable-cache checks apply to these API responses.
+
+Public Google Drive folder URLs support the same `files` rules. Their
+`tree_sha256` pins selected relative paths, Drive file IDs, sizes and SHA-256
+content hashes. The shared loader visits the complete folder tree and checks
+cached bytes as well as downloads; unavailable folders or a changed selection
+stop the build. No per-file URL list or Google login is needed for public folders.
 
 The shared downloader creates `raw/`, verifies files against the upstream repository's
 hashes or the declared HTTP checksum, and fetches missing inputs. Existing raw files

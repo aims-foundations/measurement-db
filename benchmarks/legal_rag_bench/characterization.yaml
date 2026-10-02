@@ -1,0 +1,97 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1800
+    logical_sha256: c204089f9eb8f8265b6d17fb2c93ab44aa5adfda403c6c15a669134ea698aba7
+  subjects:
+    rows: 6
+    logical_sha256: 0dad569aa7d4fa030b457051b01ee93fa898e9006a6f0f663a14c9ca5fc3e0a8
+  responses:
+    rows: 1800
+    logical_sha256: 08b54c7fe609bab6d2bd3c69baec5895524edccbdea505baa65433dfb1fa7855
+  assets:
+    rows: 1
+    logical_sha256: 84825dbfad8ada3291c7ae57568a2fc69d9b52d67dcf45c717a43b7f576992d9
+  items:
+    rows: 300
+    logical_sha256: 871366e68220d8607d8038d1da87fcda0e35c1f9b1aa4a2cde17927183ca7b98
+  benchmarks:
+    rows: 1
+    logical_sha256: 198aefdc9a5aa201c15b2cccdd49fc676fce4de4493bdcecdcac6d7595eb911b
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 1800
+  source_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 600
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 100
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 300
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 6
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 1800
+  source_retrieved_passages:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 3000
+  source_corpus_passages:
+    kind: count
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected: 4876
+  criterion_successes:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://media.isaacus.com/posts/legal-rag-bench/legal-rag-bench-results.jsonl
+    locator: All 600 JSONL records; question/corpus JSONL snapshots and the pinned evaluator.
+    scope: Three dependent grades per answer. Verify all source fields, question/reference correspondence,
+      retrieved passage text, pipeline identities, grading instruments and corpus bytes.
+    expected:
+      correctness: 489
+      groundedness: 549
+      retrieval: 382
+    absolute_tolerance: 0

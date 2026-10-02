@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  traces:
+    rows: 65238
+    logical_sha256: 1d4f8c6d2465b064818a5e4bc052f085a39c4b7e433a4592a61bba75075947d2
+  subjects:
+    rows: 50
+    logical_sha256: aa766aec3b3aeb7d77ab418adcf42568d81d0e4de3fd91cfb91c4c33382fa821
+  responses:
+    rows: 65238
+    logical_sha256: d29e625c24995cb03b3918ba910e9895de7ae322ebcd2736794e59986b515947
+  items:
+    rows: 10065
+    logical_sha256: 293b0d6cf8eeb13f47fd5432f676d6df91530dc206dc500ddec46bd53b88c41b
+  benchmarks:
+    rows: 1
+    logical_sha256: 2509d3dd28854445012b3baa73783a4088279402e0439d59d7cbb38765590026
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 65238
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 65238
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 50
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 10065
+  source_harness_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 41
+  source_judgment_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 12
+  source_arena_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 7150
+  source_graded_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 58088
+  source_ungraded_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 7150
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 38628
+  source_gsm8k_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 1400
+  source_mmlu_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Auto-CAP/open-moe-llm-leaderboard/tree/b8098a584cd82fb4a9c9e91b2e2fd6c1ed8e549b
+    locator: All samples in auto-cap/results at 3a710349b806e39b7ff7e07cd52b1964d7dddc4b and every archived arena_hard_results
+      judgment-input record in the author repository.
+    scope: Preserve every original source occurrence, complete request/output record and recorded configuration.
+      Import published binary grades unchanged; ungraded Arena-Hard attempts remain null. Export occurrences do
+      not establish independent model executions.
+    expected: 56688

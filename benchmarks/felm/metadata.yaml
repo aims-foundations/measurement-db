@@ -1,0 +1,83 @@
+benchmark:
+  name: FELM (released ChatGPT segment annotations)
+  description: Human factuality annotations of 4,426 segments from 847 released ChatGPT answers across five domains.
+  testing_condition: Curate the answer-generator annotation layer, not the unreleased per-item predictions of factuality-detector
+    models. The item stimulus is the original prompt. The verifier identifies the zero-based output segment being
+    assessed, so these are correlated segment-level measurements of 847 parent answers, not 4,426 independent prompt
+    executions. Preserve every Boolean from the author-documented combined all.jsonl, including four empty segments
+    labeled true. Its 4,426 labels differ from paper/README totals and from the alternative per-domain data.zip;
+    the latter is archived separately and is not merged as extra attempts or substituted for the combined labels.
+    Retain duplicate prompt/protocol observations as repeated trials. Traces wrap complete original JSONL lines
+    as text to preserve all parent context, comments, annotation types, references and two upstream NaN parent-response
+    values within valid JSON wrappers. Flag those unavailable parent answers without reconstructing them from segments.
+    Annotator comments are not assumed to be complete reference solutions. ChatGPT is the recorded generator name;
+    its exact checkpoint and inference settings are not supplied, and detector defaults do not identify the generator.
+  paper_url: https://arxiv.org/abs/2310.00741
+  data_source_url: https://huggingface.co/datasets/hkust-nlp/felm
+  subject_type: model
+  item_type: task
+  license: CC-BY-NC-SA-4.0 for the FELM dataset. The separately captured evaluator code is MIT licensed.
+  citation: 'Chen, S., Zhao, Y., Zhang, J., Chern, I.-C., Gao, S., Liu, P., and He, J. FELM: Benchmarking Factuality
+    Evaluation of Large Language Models. NeurIPS Datasets and Benchmarks (2023).'
+  tags:
+  - factuality
+  - human_annotations
+  - segment_level
+  - chatgpt
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The released human annotation marks this segment as containing a factual error.
+      '1': The released human annotation marks this segment as factual.
+  categorical: true
+  release_date: 2023-10
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      records: data/all.jsonl
+    domains:
+      wk: world_knowledge
+      science: science
+      math: math
+      reasoning: reasoning
+      writing_rec: writing_rec
+    subject:
+      label: ChatGPT (FELM response generator)
+    subject_features:
+      configuration_scope: Released ChatGPT answer generator. Exact checkpoint and inference configuration are unspecified.
+sources:
+  upstream:
+  - name: data
+    url: https://huggingface.co/datasets/hkust-nlp/felm
+    revision: 0692036ffdeecdc8dc1c69035faa7805a15c38d5
+    files:
+    - match: (?:README\.md|all\.jsonl|data\.zip|felm\.py)
+      path: data/{path}
+  - name: reference
+    url: https://github.com/hkust-nlp/felm
+    revision: 3436e2bb92da76ccbe71f3e5ebbf71ba6d5b6518
+    files:
+    - match: (?:README\.md|eval/.*\.(?:py|sh|txt))
+      path: reference/{path}
+grading:
+  rule: 'Preserve the original human factuality label for the selected output segment: true is 1 and false is 0.
+    Segment position selects a grade within an existing parent answer; it is not additional input to the generator.
+    Do not infer a label from the correction comment, repair empty segments, or rerun a factuality detector.'
+  verifiers:
+    annotation:
+      kind: released_human_segment_annotation
+      source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+      field: labels[segment_index]
+      scope: Annotations of existing ChatGPT answers, not detector accuracy. All segments of a parent record share
+        one generated answer.

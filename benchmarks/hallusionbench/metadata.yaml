@@ -1,0 +1,133 @@
+benchmark:
+  name: HallusionBench
+  description: Released image-context reasoning outputs from OpenVLMRecords, with original HallusionBench sample
+    outputs preserved separately.
+  testing_condition: The maintained OpenVLMRecords exports evaluate 951 image-bearing questions under VLMEvalKit.
+    Their exact model wrappers, decoding settings and execution revisions are not recorded uniformly. Derive explicit
+    exact-matching grades with the frozen upstream yes/no extractor; these are curation-derived grades, not reconstructed
+    GPT-judge leaderboard scores. Empty exports and recorded API failures remain ungraded. Keep historical copies
+    and generation caches in raw without counting overlapping records as additional trials. The original 254-question
+    sample uses an earlier question-bank revision; preserve its full outputs, including text-only questions, without
+    asserting an unverified model identity or inherited heuristic grades. Current author-released images provide
+    complete stimuli at the published image coordinates; their exact historical capture date is unknown. Original
+    Drive result files currently return 404. No new model calls or API judging.
+  paper_url: https://arxiv.org/abs/2310.14566
+  data_source_url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+  subject_type: model
+  item_type: visual_question
+  license: 'Author HallusionBench release: BSD-3-Clause. OpenVLMRecords and VLMEvalKit: Apache-2.0. Preserve original
+    image attribution and source metadata.'
+  citation: 'Guan, T. et al. (2024). HallusionBench: An Advanced Diagnostic Suite for Entangled Language Hallucination
+    and Visual Illusion in Large Vision-Language Models. CVPR. Duan, H. et al. (2024). VLMEvalKit: An Open-Source
+    Toolkit for Evaluating Large Multi-Modality Models.'
+  tags:
+  - vision_language
+  - hallucination
+  - visual_reasoning
+  modality:
+  - text
+  - image
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect or unparseable output under the declared exact matcher
+      '1': Extracted answer equals the reference
+  categorical: true
+  release_date: '2023-10-23'
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      release: release
+      predictions: mmeval/*/*_HallusionBench.xlsx
+      bank: author/HallusionBench.json
+      sample: author/HallusionBench_result_sample.json
+      historical_bank: historical/HallusionBench.json
+      images: images/data
+    coordinates:
+      category: category
+      subcategory: subcategory
+      visual_input: visual_input
+      set_id: set_id
+      figure_id: figure_id
+      question_id: question_id
+    parsing:
+      punctuation: ;/[]"{}()=+\_-><@`,?!
+      numeric_comma: (?:\d),(?:\d)
+      period: (?<!\d)\.(?!\d)
+      period_limit: '32'
+      failure: Failed to obtain answer via API
+      suffix: _HallusionBench.xlsx
+    answers:
+      '0': 'No'
+      '1': 'Yes'
+    labels:
+      sample: HallusionBench reference sample (model unspecified)
+    subject_features:
+      harness: VLMEvalKit
+      configuration_scope: Primary released export. Exact checkpoint revisions and model-specific prompt wrappers
+        or decoding settings are unavailable unless recorded in the source label.
+    sample_features:
+      harness: HallusionBench reference sample
+      configuration_scope: Source does not explicitly identify the generating model. Preserve the recorded attempt
+        without assigning GPT-4V or a correctness grade.
+    protocols:
+      primary: exact_matching
+      sample: ungraded_reference_sample
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    revision: c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    files:
+    - match: .*/[^/]+_HallusionBench(?:_supp\.pkl|\.xlsx)|README\.md
+      path: release/{path}
+  - name: images
+    url: https://huggingface.co/datasets/rayguan/HallusionBench
+    revision: 2067dfdce5abc7efdbb0927f4721ae282f0b6c51
+    files:
+    - match: data/.*\.(?:png|PNG)|README\.md
+      path: images/{path}
+  - name: author
+    url: https://github.com/tianyi-lab/HallusionBench
+    revision: 744007c232c292942c7f80eb61edb2465482da31
+    files:
+    - match: HallusionBench(?:_result_sample)?\.json|README\.md|LICENSE\.md|utils\.py|gpt4v_benchmark\.py|evaluation\.py
+      path: author/{path}
+  - name: historical
+    url: https://github.com/tianyi-lab/HallusionBench
+    revision: d41cca866cf701a9ac7453b18971a581661d55af
+    files:
+    - match: HallusionBench\.json|README\.md
+      path: historical/{path}
+  - name: harness
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 6f0370704932cec0d9aa1e73f01954cd786c57ea
+    files:
+    - match: vlmeval/dataset/(?:image_base\.py|image_yorn\.py|utils/yorn\.py)|vlmeval/smp/misc\.py|LICENSE|README\.md
+      path: harness/{path}
+grading:
+  rule: For maintained OpenVLMRecords exports, use the frozen VLMEvalKit exact-matching path with no API fallback.
+    Lowercase the complete output and apply the source punctuation routine. Exactly one of the words yes and no
+    yields that answer; both or neither yield Unknown, which scores zero. A matching reference scores one. Missing
+    outputs and the recorded API-failure marker remain null. The earlier, unattributed author sample remains ungraded.
+  verifiers:
+    exact_matching:
+      kind: deterministic_answer_extraction
+      source: https://github.com/open-compass/VLMEvalKit/blob/6f0370704932cec0d9aa1e73f01954cd786c57ea/vlmeval/dataset/utils/yorn.py
+      function: YOrN_Extraction
+      mode: exact_matching
+      api_fallback: false
+    ungraded_reference_sample:
+      kind: unavailable_original_judgment
+      source: https://github.com/tianyi-lab/HallusionBench/blob/744007c232c292942c7f80eb61edb2465482da31/HallusionBench_result_sample.json
+      note: No correctness annotation or explicit generating-model identifier in this sample. Do not reuse previous
+        locally inferred grades.

@@ -1,0 +1,3 @@
+- Source: pinned author archive with 1,364 original reasoning traces from four models and four task suites; retain all native annotations and probability records.
+- Mapping: include complete input fields and ordered options; separate answer correctness and human faithfulness into grading protocols. Keep 149 unavailable parsed-answer grades and 60 missing faithfulness labels as nulls.
+- Review: task indices sometimes identify different inputs; preserve those variants. Flag 63 inconsistent or undefined combined-type annotations without rewriting labels. These are generator measurements, not detector results; no fresh inference or judging is performed.

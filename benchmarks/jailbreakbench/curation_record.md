@@ -1,0 +1,3 @@
+- Sources: pin the complete public artifact and harness archives; preserve all 18 result exports, attack metadata and 200 DSN evaluation logs. Three test-artifact rows are harness fixtures.
+- Transform: retain 1637 actual target outputs and 3074 judgments across the primary and historical LlamaGuard1 protocols, with exact attack prompts, full responses and backend/attack provenance.
+- Correction: exclude 163 unsubmitted placeholders from observations while retaining their raw records. Preserve seven behavior-definition variants and 13 inconsistent aggregate totals without using totals to change individual grades.

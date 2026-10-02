@@ -1,0 +1,5 @@
+- Scope: MedHELM v4.0.0, 13 model runs, 13,000 observations and 992 distinct full-prompt/grading items. Sources and the selected metric are pinned in `metadata.yaml`.
+- Import: preserve each run’s full prompts, references, generation settings, published grades and complete prediction/annotation traces. Repeated canonical items retain every attempt.
+- Checks: every observation reconciled independently with native requests, predictions and per-instance grades; fixed schemas, relationships and storage types validated.
+- Migration: all original model/question-stem/grade observations match exactly. Full request prompts now include the released instructions and answer choices, and previously omitted traces are restored.
+- Limits: the run exports do not identify their harness commit. Captured grader code is an inspected reference, not a claimed execution revision; dataset licensing is not inferred from HELM’s code license.

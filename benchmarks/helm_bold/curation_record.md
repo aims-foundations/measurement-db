@@ -1,0 +1,5 @@
+- Scope: HELM classic v0.4.0, 42 complete native run exports, 42,000 observations and 2,028 canonical prompt/grading items. Sources and the metric are pinned in `metadata.yaml`.
+- Import: retain each run’s actual prompts, generation settings, references or category metadata, native grades and complete prediction/annotation traces. Original requests remain verbatim in traces; canonical item identity normalizes NFC and surrounding whitespace.
+- Checks: all 42,000 observations independently reconciled with native files; prior model/question-stem/grade records match exactly after applying the old thresholds. 0 formerly thresholded fractional grades are now preserved.
+- Traces: include every completion from the native request result. The stored grade remains a request-level fraction; individual completion grades are not inferred.
+- Limits: the releases do not record the executed harness commit. Linked grader code is an inspected reference; its code license is not assumed to cover the dataset.

@@ -1,0 +1,3 @@
+- Source: pinned official GHOSTS/miniGHOSTS JSON files with all original answers and annotations; per-component licensing follows paper Appendix B.3.
+- Mapping: preserve 1,066 native 1–5 ratings with released prompts and three distinct model/version subjects. Keep the 570 withheld-prompt observations in raw only; do not replace questions with source citations.
+- Review: independently compare every retained source record, prompt, grade and full annotation trace. Reviewer comments and response MSC labels remain in traces, without changing item identity or becoming reference answers.

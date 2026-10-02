@@ -1,0 +1,128 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 8a6e1bf731d67faccd225de1586959d97342be9dc0b711edb3f4365474a3bfcf
+  items:
+    rows: 2942
+    logical_sha256: 57b5bdefcad314d27197fc5bc8940fc6dc224eff05712035d65d3de79822a57e
+  responses:
+    rows: 7355
+    logical_sha256: a7d4bb6e7bb161a203cb17d3096a6e66bf292e8087f7424c4ab79577f05b915e
+  subjects:
+    rows: 5
+    logical_sha256: 61f1d31d0759650ef2c0c81cc5e3031a3cb0354f968e3b2527df492611ab38a5
+  traces:
+    rows: 7355
+    logical_sha256: c350310e4f44b605d112b13656ce4a1bbe0a9e34688b3cacb827e475b3e24828
+source_claims:
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 2000
+  source_text_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 1471
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 5
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 2942
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 7355
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 7355
+  source_released_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 10000
+  source_withheld_non_text:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 2645
+  source_empty_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 20
+  source_exception_corrections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 4
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jungokasai/IgakuQA/tree/2bc4c3d159cf5505f6253d24a909fbd53237e239
+    locator: All 1,609 original data/judgements/*/lightblue__igakuqa_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every original prediction on a text-only question, preserving source model, stimulus language, exact
+      native grader exceptions and full recorded outputs. Human-majority predictions are a derived comparator, not
+      an individual student or model.
+    expected: 4943

@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4426
+    logical_sha256: 18e2d29682d875958ae01ddb8bfe95dbfc5ec74c1d9130899a0dcd7ec8781fa1
+  subjects:
+    rows: 1
+    logical_sha256: e07f308de291104354ab18647cc1d7b78b85152c069370dcb336e177df0c466d
+  responses:
+    rows: 4426
+    logical_sha256: 76ac5d974f3a18e4ee45b9c582791714dcfdcefa21607ae05bcc7d86b19a1d90
+  items:
+    rows: 4412
+    logical_sha256: 1d2282fd0f7240b723174d3faca76baf1116c1be61f78c3b12464de3e359403a
+  benchmarks:
+    rows: 1
+    logical_sha256: 2a2cad13055d839466d16a0ae26f488e90cf6711dc3fa9dee2f1be5c4d6a47b2
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 4426
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 4412
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 1
+  source_parent_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 847
+  source_factual_segments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 3639
+  source_error_segments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 787
+  source_repeated_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 14
+  source_empty_segments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 4
+  source_unavailable_parent_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hkust-nlp/felm/blob/0692036ffdeecdc8dc1c69035faa7805a15c38d5/all.jsonl
+    locator: Read all 847 native lines and all aligned segment/label positions independently of the DataFrame builder.
+      Check original prompts, segment selectors, source issues, complete native text and every Boolean annotation.
+    scope: Combined all.jsonl release only. Its 4,426 labels differ from prose counts and the alternate per-domain
+      ZIP; do not merge or substitute those versions.
+    expected: 2

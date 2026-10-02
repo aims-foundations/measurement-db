@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 92180
+    logical_sha256: f5a995577acc82dc9a096d4500381deabb8bcf7de60a644a04bb8a559af7af63
+  subjects:
+    rows: 11
+    logical_sha256: 6807f269697a04cc33d5bf49defd74f16da7d8f0ebfef1b57589a1696797da9d
+  responses:
+    rows: 92180
+    logical_sha256: 9b5d8c899b8dbe292d77493fb1269beeedeca03a0ac3131bcc3f903f90f846c9
+  items:
+    rows: 8259
+    logical_sha256: 84d247f4ec0ca9044fd8be384af5348e7d6dfcb37f816367d8aa151f7f148000
+  benchmarks:
+    rows: 1
+    logical_sha256: e7db5f85b4c89e692f4197692b03f42ad0a9bee91c8fe73ceb2e3f93050e4c2e
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 92180
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 8259
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 92180
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 12
+  source_bank_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 8380
+  source_summary_groups:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 913
+  source_graded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 85107
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 7073
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 1904
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 46187
+  source_finetuned_development_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 6980
+  source_finetuned_held_out_year_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rodrigo-carrillo/PeruMedQA/tree/709158accc32fed76e32b0c9b6c3b0ef759766ab
+    locator: The twelve result Parquets under 02.LLMs Results; original bank indices checked against 01.Datasets/combined_exam_dataset.csv
+      and grades checked against all 913 rows of All_Models_Results_2026-01-21.csv.
+    scope: All published model attempts; unparseable outputs are ungraded, and the fine-tuned configuration retains
+      its training/validation-year versus held-out-year distinction.
+    expected: 1400

@@ -1,0 +1,3 @@
+- Preserve 1,980 Sierra trials and 2,350 HAL records with complete traces, restoring 1,038 clipped conversations. Keep 16 HAL errors ungraded.
+- Retain original task IDs in traces, including identical retail tasks 93 and 95. Keep literal agent settings and complete grading criteria; historical database snapshots are unknown.
+- Flag HAL few-shot runs withdrawn for test-example leakage. Use native attempts instead of heatmap averages; curate tau2-bench separately.

@@ -1,0 +1,193 @@
+benchmark:
+  name: VisIT-Bench
+  description: Released vision-language generations, individual human preferences, GPT-4 pairwise judgments and
+    human-checked caption-conditioned GPT-4 responses.
+  testing_condition: Read original observations only. Distinguish human preference, human correctness and reference-free
+    GPT-4 comparison protocols. Preserve all human source rows and their original texts. The human_verified_reference
+    alias is a caption-conditioned GPT-4 output verified by humans, not a human-authored response. Retain the published
+    September 2023 comparison snapshot and additional explicit leaderboard pairs with both judgments in the released
+    cache. Use the last cached value per query as the upstream reader does, while preserving every original cache
+    entry in raw. Other cache experiments lack reviewed subject associations and remain in raw. Released task text
+    and images are retained; exact generation prompt wrappers and historical snapshots are unavailable. Twenty Winoground
+    grading images referenced by ten caption-conditioned examples are unavailable in the author archive; their URLs
+    and complete captions remain recorded. Native NaN generation fields are represented as null with an explicit
+    list of original nonfinite fields; their raw bytes and published grades are retained. No model, judge or upstream
+    executable is run.
+  paper_url: https://arxiv.org/abs/2308.06595
+  data_source_url: https://github.com/mlfoundations/VisIT-Bench
+  subject_type: model
+  item_type: task
+  license: Original contributions are CC BY 4.0; images retain their individual upstream licenses. The author license
+    permits commercial test-set use but prohibits commercial training. Preserve license_agreement.txt and original
+    public_images_metadata; do not treat all image bytes as CC BY 4.0.
+  citation: 'Bitton et al. VisIT-Bench: A Benchmark for Vision-Language Instruction Following Inspired by Real-World
+    Use. NeurIPS 2023 Datasets and Benchmarks.'
+  tags:
+  - vision_language
+  - human_evaluation
+  - preference
+  modality:
+  - image
+  - text
+  domain:
+  - preference
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  multi_single_turn: single_turn
+  release_date: 2023-08
+  release: public
+  granularity: item
+  version: 45b9bf8d080be86bb13e05697bc8db468698c634
+  one_line_description: Measures instruction following through original human and GPT-4 judgments, retaining the
+    original visual or caption inputs.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      dataset: dataset/test/metadata.csv
+      human: release/visit_bench_human_preferences.csv
+      multi: release/visit_bench_multi_images.csv
+      judgment_archive: judgments/battle_info_for_leaderboard_no_human_refs_Sep142023.json.zip
+      judgment_member: battle_info_for_leaderboard_no_human_refs_Sep142023.json
+      image_archive: historical/visit_bench_images.zip
+      image_prefix: visit_bench_images/
+      cache_archive: sandbox/gpt-4_cache.jsonl.zip
+      cache_member: gpt-4_cache.jsonl
+      queries: sandbox/leaderboard_submission_model_queries/*.jsonl
+    labels:
+      harness: VisIT-Bench
+      reference_alias: human_verified_reference
+      reference_model: GPT-4 (caption-conditioned)
+      configuration_status: Literal source model label. Exact historical snapshot, generation settings and serialized
+        prompt wrappers are unavailable.
+      caption_input: Released instruction and ordered instruction-conditioned captions supplied to GPT-4. Images
+        were available to the human verifier, not this text-only generator.
+      visual_input: Released image and instruction supplied to the vision-language model. Historical prompt wrappers
+        are unavailable.
+      trace_scope: Complete native record and task association. Source records and reused completions do not imply
+        independent generation runs.
+    request:
+      template: 'OK. Here is the image description, the instruction, and the two response options, Response A and
+        Response B.
+
+        Image context: {}
+
+
+        Instruction:
+
+        {}
+
+
+        Response A: {}
+
+
+        Response B: {}
+
+
+        Think step-by-step and finish your response with "Overall, Response X is better." where X is either A or
+        B.'
+      extraction_suffix: '
+
+        Please extract the final answer from the above text.'
+    image_signatures:
+      ffd8ff: image/jpeg
+      89504e47: image/png
+      '52494646': image/webp
+grading:
+  rule: Keep the released grading interpretation, separating model inputs from judge context and retaining complete
+    native evidence.
+  verifiers:
+    human_pairwise:
+      judge: anonymous human annotator
+      judged_by: human
+      rule: Read the recorded forced-choice preference. The selected model receives 1 and its opponent receives
+        0. Retain individual human votes; repeated texts do not establish duplicate annotations.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Not selected in the original forced-choice comparison
+          '1': Selected in the original forced-choice comparison
+      source: https://arxiv.org/abs/2308.06595
+      kind: released_human_preference
+      scope: The release does not identify individual raters. These votes may reuse one model generation.
+    human_correctness:
+      judge: anonymous human annotator
+      judged_by: human
+      rule: Read human_ratings_gpt4_correct as a Boolean correctness judgment. The target GPT-4 response was generated
+        from instruction-conditioned captions, not from direct access to the images.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Human annotator marked the GPT-4 response incorrect
+          '1': Human annotator marked the GPT-4 response correct
+      source: https://arxiv.org/abs/2308.06595
+      kind: released_human_correctness
+      scope: Preserve all source records, including an identical repeated single-image record. Source-row conditions
+        do not assert independent executions.
+    gpt4_pairwise:
+      judge: gpt-4
+      judged_by: llm
+      rule: 'Combine the two recorded A/B and B/A preferences exactly as the published Elo importer: two identical
+        non-tie winners produce 1 for that winner and 0 for the other model; all other combinations produce 0.5
+        for both. In particular, one win plus one tie is a tie. This is a head-to-head outcome, not a correctness
+        grade or an Elo rating.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 0.5
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Two orderings both prefer the opponent
+          '0.5': No unanimous winner across the two orderings
+          '1': Two orderings both prefer this model
+      source: https://github.com/Hritikbansal/visit_bench_sandbox/blob/e0c911cc245703ec1818f089888cd6f9061cbfa3/elo_analysis.py
+      kind: recorded_reference_free_pairwise
+      scope: The original instruction-conditioned caption is judge context. No reference answer was passed. Historical
+        model snapshots and request settings are not recorded. Published GCS verdicts take precedence over overlapping
+        later cache exports; raw cache records are retained.
+      parser: https://github.com/Hritikbansal/visit_bench_sandbox/blob/e0c911cc245703ec1818f089888cd6f9061cbfa3/pairwise_eval.py
+      requests: https://github.com/Hritikbansal/visit_bench_sandbox/blob/e0c911cc245703ec1818f089888cd6f9061cbfa3/evaluate_all_queries.py
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/mlfoundations/VisIT-Bench
+    revision: 45b9bf8d080be86bb13e05697bc8db468698c634
+    files:
+    - match: (README\.md|visit_bench_human_preferences\.csv|visit_bench_multi_images\.csv|visit_fully_annotated_example\.csv)
+      path: release/{path}
+  - name: dataset
+    url: https://huggingface.co/datasets/mlfoundations/VisIT-Bench
+    revision: e08ea1c0eded7a091a7c8e0e61e7a0fadd9083f1
+    files:
+    - match: .*
+      path: dataset/{path}
+  - name: historical
+    url: https://huggingface.co/datasets/mlfoundations/VisIT-Bench
+    revision: 2d08c7fa1a80282b5601380afd0c063d600c7358
+    files:
+    - match: (README\.md|license_agreement\.txt|single_image_full_dataset\.csv|visit_bench_images\.zip)
+      path: historical/{path}
+  - name: sandbox
+    url: https://github.com/Hritikbansal/visit_bench_sandbox
+    revision: e0c911cc245703ec1818f089888cd6f9061cbfa3
+    files:
+    - match: .*
+      path: sandbox/{path}
+  - name: judgments
+    url: https://storage.googleapis.com/ai2-jack-public/visit_bench/battle_info_for_leaderboard_no_human_refs_Sep142023.json.zip
+    file: judgments/battle_info_for_leaderboard_no_human_refs_Sep142023.json.zip
+    size: 25375831
+    sha256: 420dd9c28f50d87016dcc275c9232b92b496454146e56fde1db88f437e0133fc
+    revision: sha256:420dd9c28f50d87016dcc275c9232b92b496454146e56fde1db88f437e0133fc

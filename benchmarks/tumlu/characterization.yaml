@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: bb12ce8deea844437833469ff45087d15ff54f5150404b8d57ca200173e4019b
+  items:
+    rows: 133944
+    logical_sha256: abf19a37ea2b8b4bea965b9b210644ac3feacaadf47314db9b28db5bbccbeeae
+  responses:
+    rows: 143316
+    logical_sha256: 8128f325109ef9e28ec05d5affab8678d05042fb6498f02a89e5883c7469d7cf
+  subjects:
+    rows: 30
+    logical_sha256: 0ed366aa8f8ff19ebe5ff13248e5a9a35e917064abc1f6b4654b9865e5f3906c
+  traces:
+    rows: 143316
+    logical_sha256: d427c6873a65ad7a2085f9831860ddc23f748cb11c08eaf9ca56c3f6bd57e3b4
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 30
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 133944
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 143316
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 143316
+  source_languages:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 12
+  source_api_error_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 868
+  source_unavailable_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 5928
+  source_cot_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 42487
+  source_direct_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 100829
+  source_graded_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 1508
+  source_empty_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    locator: Original data/<language>/outputs/<prompting mode>/<model>/<course>.json records and scripts/utils.py.
+    scope: All recorded attempts. Exact system/user inputs and their own shuffled references define items. Two prompting
+      modes remain separate subject configurations. Missing native language keywords imply unavailable grades.
+    expected: 14

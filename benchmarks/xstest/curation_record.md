@@ -1,0 +1,3 @@
+- Preserve 2,250 released completions and all 11,250 judgment slots across five configurations and 450 prompts. The 11 unparseable GPT-4 labels remain null; category codes are unordered, not success scores.
+- Correct the legacy Llama 2 identity from 7B to the paper-reported 70B. Separate the five grading protocols; human annotation columns do not establish individual rater identities. Retain full native records and paper-reported settings without inventing historical snapshots.
+- Keep recorded prompt wording for v2-195, which differs from both task banks. Preserve both banks and all duplicate exports; their agreement flags differ only in capitalization. Each completion has multiple judgments, not multiple generations.

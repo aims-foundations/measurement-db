@@ -1,0 +1,97 @@
+benchmark:
+  description: 'NESTER: dataflow-guided neuro-symbolic type inference for Python. Released per-item data
+    covers the human evaluation of high-level program generation on ManyTypes4Py samples: GPT-4, GPT-4o
+    and GPT-4o mini generations each graded on four binary criteria (correctness, explainability, factuality,
+    consistency) by human annotators. Recovered from deleted xlsx blobs in the authors'' GitHub repository.'
+  testing_condition: 'Three released model spreadsheets, 94 annotated source rows each. Four human grading
+    criteria produce 1,128 dependent observations. Repeated prompts under distinct source IDs are retained
+    as recorded rows, not claimed independent tasks. One GPT-4o prompt cell has an appended GPT4 annotation:
+    reconstruct its input from the identical-ID clean prompt in both other sheets and retain the complete
+    original cell. Its missing primary output remains missing; all four supplied grades are preserved.
+    Model attribution follows filenames and paper Table 2. Exact API versions, full request envelopes,
+    individual annotator votes and adjudication are not recorded.'
+  paper_url: https://proceedings.mlr.press/v267/li25cj.html
+  data_source_url: https://github.com/stbst1/Nester
+  subject_type: model
+  item_type: prompt
+  license: unknown
+  citation: "@inproceedings{li2025nester,\n  title={Dataflow-Guided Neuro-Symbolic Language Models for\
+    \ Type Inference},\n  author={Li, Gen and Wan, Yao and Zhang, Hongyu and Zhao, Zhou and Jiang, Wenbin\
+    \ and Shi, Xuanhua and Jin, Hai and Wang, Zheng},\n  booktitle={International Conference on Machine\
+    \ Learning (ICML)},\n  year={2025}\n}"
+  tags:
+  - type-inference
+  - neuro-symbolic
+  - python
+  - manytypes4py
+  - program-generation
+  - human-evaluation
+  modality:
+  - text
+  domain:
+  - software_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The released human annotation marks this criterion unsatisfied.
+      '1': The released human annotation marks this criterion satisfied.
+  categorical: true
+  release_date: 2024-10
+  name: NESTER
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    models:
+      gpt4.xlsx: GPT-4
+      gpt4-o.xlsx: GPT-4o
+      gpt4o-mini.xlsx: GPT-4o mini
+    criteria:
+      Correctness: correctness
+      explainability: explainability
+      factuality: factuality
+      consistency: consistency
+    annotation:
+      marker: 'GPT4×:'
+      affected_id: repos/0mars/monoskel/packages/monomanage/setup.py--global@global--package_directory--local
+      source_file: gpt4-o.xlsx
+grading:
+  verifiers:
+    human:
+      kind: released_human_annotation
+      source: https://proceedings.mlr.press/v267/li25cj.html
+      locator: Section 4.4 and Table 2
+      annotators: The paper describes three Computer Science masters students with five years of Python
+        experience. Individual votes and an aggregation rule are not released.
+      criteria:
+        correctness: Human judgment of whether the generated high-level program produces an accurate execution
+          result.
+        explainability: Human judgment of whether the generated program clarifies the type-inference process.
+        factuality: Human judgment of whether its steps agree with the original Python code.
+        consistency: Human judgment of whether results are consistent across repeated executions.
+      execution: Import spreadsheet 0/1 judgments without executing generated programs or regrading them.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/stbst1/Nester
+    revision: 51dd5af87d1bd2a8874bb46778837cf749fbeab9
+    files:
+    - match: (?:gpt4\.xlsx|gpt4-o\.xlsx|gpt4o-mini\.xlsx)
+      path: '{path}'
+  - name: documentation
+    url: https://github.com/stbst1/Nester
+    revision: 51dd5af87d1bd2a8874bb46778837cf749fbeab9
+    files:
+    - match: README\.md
+      path: source_review/51dd5af87d1bd2a8874bb46778837cf749fbeab9/{path}
+  - name: paper
+    url: https://raw.githubusercontent.com/mlresearch/v267/main/assets/li25cj/li25cj.pdf
+    revision: PMLR-v267-li25cj
+    file: source_review/c9a529e574417acbe6e6f316e70c49becd39a3f8f221aff6824545389920e3a0/paper.pdf
+    size: 1974847
+    sha256: c9a529e574417acbe6e6f316e70c49becd39a3f8f221aff6824545389920e3a0

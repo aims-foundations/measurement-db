@@ -1,0 +1,199 @@
+benchmark:
+  paper_url: https://arxiv.org/abs/2104.14478
+  data_source_url: https://github.com/google/wmt-mqm-human-evaluation
+  license: Apache-2.0
+  citation: "@misc{freitag2021expertserrorscontextlargescale,\n      title={Experts, Errors, and Context: A Large-Scale\
+    \ Study of Human Evaluation for Machine Translation},\n      author={Markus Freitag and George Foster and David\
+    \ Grangier and Viresh Ratnakar and Qijun Tan and Wolfgang Macherey},\n      year={2021},\n      eprint={2104.14478},\n\
+    \      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      doi={https://doi.org/10.1162/tacl_a_00437},\n\
+    \      url={https://arxiv.org/abs/2104.14478},\n}"
+  tags:
+  - reasoning
+  - multilingual
+  modality:
+  - text
+  domain:
+  - translation
+  - multilingual
+  release_date: 2021-04
+  name: 'WMT MQM: per-rater error indicators'
+  description: Published expert translation-error annotations represented by the existing six-category, three-severity
+    binary readout.
+  testing_condition: Retain the eight originally curated 2020–2022 campaign/language tables. One observation records
+    whether a human rater annotated at least one error in a declared category/severity bucket for a translated segment.
+    This curator-defined error-indicator grid is not the upstream scalar MQM score. Preserve original annotation
+    rows, comments, raters and all target-text variants; attach author-corrected 2020 translation text without changing
+    the annotations. Exclude nominal source segments whose recorded source-text variants disagree after removing
+    annotation span markers and trimming boundary whitespace; originals remain in raw. Do not treat annotator quality-control
+    checks as model errors. No model or external judge runs.
+  subject_type: translation_system_or_human_reference
+  item_type: source_segment_and_grading_dimension
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: lower_is_better
+    meanings:
+      '0': The rater recorded no error in this declared category/severity bucket.
+      '1': The rater recorded at least one error in this declared category/severity bucket.
+  categorical: true
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    campaigns:
+      newstest2020/ende/mqm_newstest2020_ende.tsv: '2020'
+      newstest2020/zhen/mqm_newstest2020_zhen.tsv: '2020'
+      newstest2021/ende/mqm_newstest2021_ende.tsv: '2021'
+      newstest2021/zhen/mqm_newstest2021_zhen.tsv: '2021'
+      generalMT2022/ende/mqm_generalMT2022_ende.tsv: '2022'
+      generalMT2022/enru/mqm_generalMT2022_enru.tsv: '2022'
+      generalMT2022/enzh/mqm_generalMT2022_enzh.tsv: '2022'
+      generalMT2022/zhen/mqm_generalMT2022_zhen.tsv: '2022'
+    language_pairs:
+      newstest2020/ende/mqm_newstest2020_ende.tsv: en-de
+      newstest2020/zhen/mqm_newstest2020_zhen.tsv: zh-en
+      newstest2021/ende/mqm_newstest2021_ende.tsv: en-de
+      newstest2021/zhen/mqm_newstest2021_zhen.tsv: zh-en
+      generalMT2022/ende/mqm_generalMT2022_ende.tsv: en-de
+      generalMT2022/enru/mqm_generalMT2022_enru.tsv: en-ru
+      generalMT2022/enzh/mqm_generalMT2022_enzh.tsv: en-zh
+      generalMT2022/zhen/mqm_generalMT2022_zhen.tsv: zh-en
+    corrected_files:
+      newstest2020/ende/mqm_newstest2020_ende.tsv: newstest2020/ende/mqm_newstest2020_ende.no-postedits.tsv
+      newstest2020/zhen/mqm_newstest2020_zhen.tsv: newstest2020/zhen/mqm_newstest2020_zhen.no-postedits.tsv
+    column_aliases:
+      candidate: target
+      document_id: doc
+      doc_segment_id: seg_id
+      system_id: system
+      rater_id: rater
+    categories:
+      Accuracy: Accuracy
+      Fluency: Fluency
+      Style: Style
+      Terminology: Terminology
+      Locale: Locale
+      Non-translation: Non-translation
+    severities:
+      major: major
+      minor: minor
+      neutral: neutral
+    category_mapping:
+      Accuracy/Addition: Accuracy
+      Accuracy/Mistranslation: Accuracy
+      Accuracy/Omission: Accuracy
+      Accuracy/Source language fragment: Accuracy
+      Accuracy/Untranslated text: Accuracy
+      Fluency/Character encoding: Fluency
+      Fluency/Display: Fluency
+      Fluency/Grammar: Fluency
+      Fluency/Inconsistency: Fluency
+      Fluency/Punctuation: Fluency
+      Fluency/Register: Fluency
+      Fluency/Spelling: Fluency
+      Found: ''
+      Locale convention/Address format: Locale
+      Locale convention/Currency format: Locale
+      Locale convention/Date format: Locale
+      Locale convention/Name format: Locale
+      Locale convention/Telephone format: Locale
+      Locale convention/Time format: Locale
+      Missed: ''
+      No-error: ''
+      Non-translation!: Non-translation
+      Other: ''
+      Source error: ''
+      Style/Awkward: Style
+      Terminology/Inappropriate for context: Terminology
+      Terminology/Inconsistent: Terminology
+      Terminology/Inconsistent use of terminology: Terminology
+      accuracy/addition: Accuracy
+      accuracy/mistranslation: Accuracy
+      accuracy/omission: Accuracy
+      accuracy/untranslated: Accuracy
+      addition: Accuracy
+      agreement: Fluency
+      capitalization: Fluency
+      currency_format: Locale
+      date_time_format: Locale
+      do_not_translate: Terminology
+      fluency/display: Fluency
+      fluency/grammar: Fluency
+      fluency/inconsistency: Fluency
+      fluency/punctuation: Fluency
+      fluency/register: Fluency
+      fluency/spelling: Fluency
+      grammar: Fluency
+      inconsistency: Fluency
+      lacks_creativity: Style
+      locale_convention/address: Locale
+      locale_convention/currency: Locale
+      locale_convention/date: Locale
+      locale_convention/name: Locale
+      locale_convention/time: Locale
+      markup_tag: Fluency
+      measurement_format: Locale
+      mistranslation: Accuracy
+      mt_hallucination: Non-translation
+      no-error: ''
+      non_translation: Non-translation
+      number_format: Locale
+      omission: Accuracy
+      other: ''
+      punctuation: Fluency
+      register: Fluency
+      source_error: ''
+      source_issue: ''
+      spelling: Fluency
+      style/awkward: Style
+      terminology/inappropriate: Terminology
+      terminology/inconsistent: Terminology
+      unnatural_flow: Style
+      untranslated: Accuracy
+      whitespace: Fluency
+      word_order: Fluency
+      wrong_named_entity: Accuracy
+    severity_mapping:
+      HOTW-test: ''
+      Major: major
+      Minor: minor
+      Neutral: neutral
+      No-error: ''
+      critical: major
+      major: major
+      minor: minor
+      neutral: neutral
+      no-error: ''
+    no_error_categories:
+      No-error: reviewed_without_errors
+      no-error: reviewed_without_errors
+    protocol:
+      harness: WMT released expert MQM annotations
+      readout: legacy_binary_category_severity_presence
+      trial_scope: independent recorded human rating, not an additional model generation
+      configuration_status: source system labels only, executed historical checkpoints and inference settings unrecorded
+grading:
+  rule: The response is 1 if at least one released human annotation maps to the selected category and severity,
+    otherwise 0 for that reviewed rating unit. Use the explicitly listed category and severity mappings; the legacy
+    major bucket includes critical annotations. A No-error annotation establishes a reviewed unit with zero errors.
+    Units containing only ignored categories or annotator checks do not establish a graded observation. This derived
+    binary indicator is not an upstream MQM penalty or a model-success grade. Preserve every original annotation
+    in the trace.
+  verifiers:
+    human:
+      kind: released_human_error_annotations
+      source: https://github.com/google/wmt-mqm-human-evaluation/tree/29acd6999aaea3586378c9dcb58d8cc4820cede3
+      scope: published category and severity annotations; do not re-grade or run a model
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/google/wmt-mqm-human-evaluation
+    revision: 29acd6999aaea3586378c9dcb58d8cc4820cede3
+    files:
+    - match: .*
+      path: '{path}'

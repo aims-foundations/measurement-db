@@ -1,0 +1,165 @@
+format_version: 1
+tables:
+  traces:
+    rows: 57072
+    logical_sha256: 37ee6535a76fb70cd833e2be9fe3bab372da82ddbeb37ba4373a7382efe19a96
+  subjects:
+    rows: 6
+    logical_sha256: 63bcd1ef5752639b79a74cee5af0aabc190c96b316ea527aa6cccde62afb3be1
+  responses:
+    rows: 57072
+    logical_sha256: fac6c2e4922fa4c971cc335deac3a912f3d14adea8de0a694a3f672a005c10af
+  items:
+    rows: 51760
+    logical_sha256: f5851799e6eb73abc77700e18153d574273306aa63c64634ea4fb86d457239e1
+  benchmarks:
+    rows: 1
+    logical_sha256: 5eeaa3e8ab5f237d44b1a3894afd7a3cb1e75df0c5d02be5ee32f26c069ffa64
+source_claims:
+  source_nonletter_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 29
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 42239
+  source_anthropic_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 28536
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 57072
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 57072
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 51760
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 6
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 12
+  source_language_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected: 9512
+  source_correct_by_group:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/juletx/BertaQA/tree/6d610d06377277691f16cdb7c31fb1f0fca4b5ce/results
+    locator: Twelve API-result JSONL files, checked against both official question banks and the two evaluation
+      scripts.
+    scope: Every native result, complete system/few-shot/target prompt, strict reference grade and API
+      response; preserves all non-letter failures.
+    expected:
+      claude-3-haiku-20240307/en/Gai orokorrak: 2013
+      claude-3-haiku-20240307/en/Euskal gaiak: 1388
+      claude-3-haiku-20240307/eu/Gai orokorrak: 1910
+      claude-3-haiku-20240307/eu/Euskal gaiak: 1376
+      claude-3-opus-20240229/en/Gai orokorrak: 2197
+      claude-3-opus-20240229/en/Euskal gaiak: 1700
+      claude-3-opus-20240229/eu/Gai orokorrak: 2174
+      claude-3-opus-20240229/eu/Euskal gaiak: 1686
+      claude-3-sonnet-20240229/en/Gai orokorrak: 2067
+      claude-3-sonnet-20240229/en/Euskal gaiak: 1379
+      claude-3-sonnet-20240229/eu/Gai orokorrak: 1991
+      claude-3-sonnet-20240229/eu/Euskal gaiak: 1327
+      gpt-3.5-turbo-0125/en/Gai orokorrak: 1971
+      gpt-3.5-turbo-0125/en/Euskal gaiak: 1302
+      gpt-3.5-turbo-0125/eu/Gai orokorrak: 1584
+      gpt-3.5-turbo-0125/eu/Euskal gaiak: 1117
+      gpt-4-0125-preview/en/Gai orokorrak: 2193
+      gpt-4-0125-preview/en/Euskal gaiak: 1706
+      gpt-4-0125-preview/eu/Gai orokorrak: 2134
+      gpt-4-0125-preview/eu/Euskal gaiak: 1642
+      gpt-4-0613/en/Gai orokorrak: 2187
+      gpt-4-0613/en/Euskal gaiak: 1652
+      gpt-4-0613/eu/Gai orokorrak: 2055
+      gpt-4-0613/eu/Euskal gaiak: 1488
+    absolute_tolerance: 0
+  paper_accuracy_percent:
+    kind: aggregate
+    origin: reported
+    source: https://arxiv.org/html/2406.07302v1
+    locator: 'Tables 2 and 4: six API models, two languages and local/global subsets.'
+    scope: Accuracy percentages rounded to the two decimal places reported in the paper.
+    expected:
+      gpt-3.5-turbo-0125/en/Euskal gaiak: 55.08
+      gpt-3.5-turbo-0125/en/Gai orokorrak: 82.4
+      gpt-3.5-turbo-0125/eu/Euskal gaiak: 47.25
+      gpt-3.5-turbo-0125/eu/Gai orokorrak: 66.22
+      gpt-4-0613/en/Euskal gaiak: 69.88
+      gpt-4-0613/en/Gai orokorrak: 91.43
+      gpt-4-0613/eu/Euskal gaiak: 62.94
+      gpt-4-0613/eu/Gai orokorrak: 85.91
+      gpt-4-0125-preview/en/Euskal gaiak: 72.17
+      gpt-4-0125-preview/en/Gai orokorrak: 91.68
+      gpt-4-0125-preview/eu/Euskal gaiak: 69.46
+      gpt-4-0125-preview/eu/Gai orokorrak: 89.21
+      claude-3-haiku-20240307/en/Euskal gaiak: 58.71
+      claude-3-haiku-20240307/en/Gai orokorrak: 84.16
+      claude-3-haiku-20240307/eu/Euskal gaiak: 58.21
+      claude-3-haiku-20240307/eu/Gai orokorrak: 79.85
+      claude-3-sonnet-20240229/en/Euskal gaiak: 58.33
+      claude-3-sonnet-20240229/en/Gai orokorrak: 86.41
+      claude-3-sonnet-20240229/eu/Euskal gaiak: 56.13
+      claude-3-sonnet-20240229/eu/Gai orokorrak: 83.24
+      claude-3-opus-20240229/en/Euskal gaiak: 71.91
+      claude-3-opus-20240229/en/Gai orokorrak: 91.85
+      claude-3-opus-20240229/eu/Euskal gaiak: 71.32
+      claude-3-opus-20240229/eu/Gai orokorrak: 90.89
+    absolute_tolerance: 0

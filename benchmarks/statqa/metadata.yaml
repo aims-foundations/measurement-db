@@ -1,0 +1,109 @@
+benchmark:
+  description: Statistical method and column selection over described tabular datasets. Preserve the released general-analysis
+    answers and qualitative explanatory replies.
+  testing_condition: Separate original model labels and prompting strategies. Use the released canonical task definition,
+    including column attributes and available methods; historical few-shot choices are unknown. Retain duplicate
+    source rows as separate recorded observations. Preserve the original scorer and flag its reference-parser defect.
+    Qualitative replies remain ungraded.
+  paper_url: https://proceedings.neurips.cc/paper_files/paper/2024/file/729786203d330da046dd8091c2d92a66-Paper-Datasets_and_Benchmarks_Track.pdf
+  data_source_url: https://github.com/HKUSTDial/StatQA
+  subject_type: model
+  item_type: task
+  license: GPL-3.0 as declared by the original repository LICENSE. This capture includes the released benchmark
+    definitions and outputs, not unrelated upstream Kaggle datasets.
+  citation: "@inproceedings{zhu2024statqa,\n author = {Zhu, Yizhang and Du, Shiyin and Li, Boyan and Luo, Yuyu and\
+    \ Tang, Nan},\n booktitle = {Advances in Neural Information Processing Systems},\n title = {Are Large Language\
+    \ Models Good Statisticians?},\n year = {2024}\n}"
+  tags:
+  - statistics
+  - tabular_reasoning
+  - method_selection
+  modality:
+  - text
+  - tabular
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Does not pass the released joint-selection scorer, including parser failures
+      '1': Both selected column and method sets pass the released scorer
+  categorical: true
+  release_date: 2024-06
+  release: public
+  name: StatQA
+  granularity: item
+  multi_single_turn: single_turn
+  version: mini-StatQA and original Extracted Answer archive at 3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      answers: Model_x20_Answer/Origin_x20_Answer/Extracted_x20_Answer.zip
+      bank: StatQA/mini-StatQA.csv
+      prompts: Data/Integrated_x20_Dataset/Dataset_x20_with_x20_Prompt/Test_x20_Set/mini-StatQA_x20_for_x20_zero-shot.csv
+      column_metadata: Data/Metadata/Column_x20_Metadata
+    patterns:
+      configuration: ^(?P<model>.+)_(?P<strategy>zero-shot-CoT|one-shot-CoT|stats-prompt|zero-shot|one-shot)(?P<explanation>-Explain)?$
+    prompt:
+      question_separator: '
+
+        ### Statistical Question: '
+      response_separator: '
+
+        ### Response: '
+      response_suffix: 'The answer of relevant columns and applicable methods in JSON format is:'
+    labels:
+      harness: StatQA released evaluation
+      input_scope: Canonical task definition from the source question and released column-information template and
+        method list. Exact historical prompts, including demonstrations, are unavailable.
+      configuration_status: The release scripts specify temperature zero, but per-attempt snapshots, generation
+        logs and the exact few-shot demonstrations are not recorded.
+      grade_scope: General Analysis uses the released accuracy rule on extracted answers. Qualitative Analysis is
+        retained without inventing binary grades.
+      valid_grade: released_accuracy_rule
+      invalid_answer: answer_parser_failure
+      invalid_reference: reference_parser_failure
+      qualitative: binary_grade_not_released
+      general_scope: General Analysis
+      qualitative_scope: Qualitative Analysis
+grading:
+  rule: 'For General Analysis, reproduce compare_and_count_answer_row and model_answer_score_policy(acc): parse
+    the extracted answer as JSON and parse the reference after the original global single-to-double-quote replacement;
+    compare lowercased, stripped sets of columns and methods. Each target must have at least one correct value and
+    no missing or extra values. Both targets must pass. The released scorer assigns zero when either parser fails,
+    including the documented apostrophe-in-reference defect; flag these cases without silently repairing historical
+    grading. Qualitative Analysis contains full explanatory replies but no released binary grades, so these attempts
+    remain ungraded.'
+  verifiers:
+    selection:
+      kind: released_joint_selection_accuracy
+      source: https://github.com/HKUSTDial/StatQA/blob/3d5f6b5b6926600dc952f39d79dfdef82999aeeb/analyze_model_answer.py
+      functions:
+      - compare_and_count_answer_row
+      - model_answer_score_policy
+      - calculate_model_answer_score_for_row
+      rule: 'For General Analysis, reproduce compare_and_count_answer_row and model_answer_score_policy(acc): parse
+        the extracted answer as JSON and parse the reference after the original global single-to-double-quote replacement;
+        compare lowercased, stripped sets of columns and methods. Each target must have at least one correct value
+        and no missing or extra values. Both targets must pass. The released scorer assigns zero when either parser
+        fails, including the documented apostrophe-in-reference defect; flag these cases without silently repairing
+        historical grading. Qualitative Analysis contains full explanatory replies but no released binary grades,
+        so these attempts remain ungraded.'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/HKUSTDial/StatQA
+    revision: 3d5f6b5b6926600dc952f39d79dfdef82999aeeb
+    files:
+    - match: ^(?:LICENSE|README\.md|analyze_model_answer\.py|utils\.py|prompt_wording\.py|Evaluation/.*\.py|Construction/prompt_organization\.py|Model
+        Answer/Origin Answer/Extracted Answer\.zip|Model Answer/Task Performance/Selected Performance/selected_overall\.csv|StatQA/mini-StatQA\.csv|Data/Metadata/Column
+        Metadata/.*\.csv|Data/Integrated Dataset/Dataset with Prompt/Test Set/mini-StatQA for zero-shot\.csv)$
+      path: release/{path}

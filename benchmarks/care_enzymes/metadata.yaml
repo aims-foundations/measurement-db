@@ -1,0 +1,141 @@
+benchmark:
+  name: 'CARE: Classification and Retrieval of Enzymes'
+  description: Released enzyme-classification and reaction-to-enzyme retrieval predictions from CARE.
+  testing_condition: 'Import all 45 final result files and one separately identified June 2024 legacy sample.
+    Use the released evaluator''s k=1, EC-level-4 statistic: average exact-match credit over the reference
+    EC labels. Missing rank-zero predictions are failures, not absent observations; multi-function enzymes
+    can receive fractional credit. Retain every original column and ranked prediction without truncation. Split-specific
+    reaction models/reference databases are distinct subject configurations. Text-augmented methods receive
+    an EC description derived from the reference class by the upstream protocol; keep these input variants
+    separate. The legacy sample has a resolved original reaction and reference, but its exact prompt mode and
+    API request are unavailable, and its recorded columns were lexically reordered by the historical helper.
+    It is a separate collection, not an additional final-paper replicate. Full model messages, resolved weights/API
+    snapshots, and historical Foldseek structures are not released. No inference, retraining, or subjective
+    judging.'
+  paper_url: https://arxiv.org/abs/2406.15669
+  data_source_url: https://github.com/jsunn-y/CARE
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: 'CARE: a Benchmark Suite for the Classification and Retrieval of Enzymes (2024). NeurIPS Datasets
+    and Benchmarks; arXiv:2406.15669.'
+  tags:
+  - enzymes
+  - protein_classification
+  - reaction_retrieval
+  modality:
+  - text
+  domain:
+  - science
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  release_date: 2024-06
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      release: github/e570c36300bce1dd345bb726612784e518aae6b9
+      historical: github/ef59be606cac6aa813ae57f5157446c0301ad02e
+    historical_sample:
+      file: task2_baselines/results_summary/ChatGPT/easy_protein_test_results_df.csv
+      bank: splits/task2/easy_reaction_test.csv
+      input: historical_prompt_unresolved
+      collection: legacy_20240604
+      method: ChatGPT
+      task: task2
+      split: easy
+      notes: The Entry field contains reaction SMILES, despite the protein filename. Match it to the original
+        June input bank. Historical helper lexically sorts predictions; original model order cannot be reconstructed.
+    harness:
+      name: CARE
+      revision: e570c36300bce1dd345bb726612784e518aae6b9
+      reference: https://github.com/jsunn-y/CARE/blob/e570c36300bce1dd345bb726612784e518aae6b9/performance_evaluation.ipynb
+      settings_scope: Method/export and training-split distinctions are recorded. The final notebooks specify
+        gpt-4o-mini; the June notebook specifies gpt-4. Exact executed requests, API snapshots and all trained
+        checkpoints are not identified in the result CSVs.
+    identity_columns:
+      protein: Entry
+      reaction: Reaction
+    input_modes:
+      task1/BLAST: protein_sequence
+      task1/CLEAN: protein_sequence
+      task1/ChatGPT: protein_sequence
+      task1/Foldseek: protein_sequence
+      task1/Pika: protein_sequence
+      task1/random: protein_sequence
+      task2/CLIPZyme: reaction_smiles
+      task2/CREEP: reaction_smiles
+      task2/CREEP_text: reaction_smiles_and_description
+      task2/ChatGPT: reaction_text
+      task2/ChatGPT_text: reaction_text_and_description
+      task2/Similarity: reaction_smiles
+      task2/random: reaction_smiles
+    delimiters:
+      task1/BLAST: '; '
+      task1/CLEAN: ''
+      task1/ChatGPT: ','
+      task1/Foldseek: '; '
+      task1/Pika: ','
+      task1/random: ''
+      task2/CLIPZyme: ''
+      task2/CREEP: ''
+      task2/CREEP_text: ''
+      task2/ChatGPT: ','
+      task2/ChatGPT_text: ','
+      task2/Similarity: ''
+      task2/random: ''
+    split_specific_models:
+      task2/CLIPZyme: separate trained model or reference database
+      task2/CREEP: separate trained model or reference database
+      task2/CREEP_text: separate trained model or reference database
+      task2/Similarity: separate trained model or reference database
+    primary_input:
+      protein_sequence: Sequence
+      reaction_smiles: Reaction
+      reaction_text: Reaction Text
+      reaction_smiles_and_description: Reaction
+      reaction_text_and_description: Reaction Text
+      historical_prompt_unresolved: Reaction
+    additional_input:
+      reaction_smiles_and_description: Text
+      reaction_text_and_description: Text
+      historical_prompt_unresolved: Reaction Text
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/jsunn-y/CARE
+    revision: e570c36300bce1dd345bb726612784e518aae6b9
+    files:
+    - match: (?:.*results_summary/.*|.*\.(?:md|py|ipynb|json|sh)|LICENSE|requirements\.txt|processed_data/(?:EC_list\.txt|text2EC\.csv)|splits/.*_test\.csv)
+      path: github/e570c36300bce1dd345bb726612784e518aae6b9/{path}
+  - name: historical
+    url: https://github.com/jsunn-y/CARE
+    revision: ef59be606cac6aa813ae57f5157446c0301ad02e
+    files:
+    - match: (?:splits/task2/easy_reaction_test\.csv|task2_baselines/ChatGPT/ChatGPT\.ipynb)
+      path: github/ef59be606cac6aa813ae57f5157446c0301ad02e/{path}
+grading:
+  rule: 'CARE k=1, EC level 4: use column 0, substitute 0.0.0.0 for an empty prediction, apply the method''s
+    native list delimiter, and replace tokens lacking exactly three dots with 0.0.0.0. For every semicolon-separated
+    reference EC, award 1 if any decoded candidate matches all four components, otherwise 0; response is their
+    mean. Do not strip additional whitespace, treat any one match as full credit, or discard empty predictions.
+    Historical sample uses its recorded column 0, whose original model order is not recoverable.'
+  verifiers:
+    rank_zero_level_four:
+      kind: recorded_prediction_exact_ec_recall
+      k: 1
+      ec_level: 4
+      reference_implementation: https://github.com/jsunn-y/CARE/blob/e570c36300bce1dd345bb726612784e518aae6b9/performance_evaluation.ipynb
+      functions:
+      - get_results
+      - expand_list
+      - get_accuracy_level
+      - get_average_accuracy
+      missing_prediction: 0.0.0.0
+      reference_delimiter: ;
+      historical_order_reference: https://github.com/jsunn-y/CARE/blob/ef59be606cac6aa813ae57f5157446c0301ad02e/task2_baselines/ChatGPT/ChatGPT.ipynb

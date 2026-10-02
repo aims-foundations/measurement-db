@@ -1,0 +1,350 @@
+benchmark:
+  name: FETV
+  description: Released video-generation measurements for four models on 619 prompts, including individual human
+    ratings and five automatic alignment metrics.
+  testing_condition: "Retain each published rating without averaging or rejudging: three 1\u20135 human dimensions,\
+    \ applicable 1\u20133 attribute-alignment dimensions, and five automatic metrics. Distinguish annotators and\
+    \ metrics in item grading protocols. These are correlated ratings of one generated video per model/prompt, not\
+    \ independent generation trials. Keep the 2,476 complete generated outputs in their original archives and link\
+    \ every measurement to its exact member and SHA-256. CogVideo receives the released Chinese source prompt; preserve\
+    \ the original English evaluation prompt in the grading rule and trace. Other models use the English prompt.\
+    \ Input text represents the released source prompts, not an independently recorded historical inference envelope.\
+    \ Historical weight revisions, complete runtime settings and Otter judge-to-score associations are not asserted.\
+    \ Auxiliary QA records remain captured for review. Real reference videos are not AI subjects; corpus-level FID/FVD\
+    \ statistics are excluded from item-level responses."
+  paper_url: https://arxiv.org/abs/2311.01813
+  data_source_url: https://github.com/llyx97/FETV-EVAL
+  subject_type: model
+  item_type: prompt
+  license: CC-BY-4.0 for the FETV dataset, as declared by the authors. Captured code retains its component-specific
+    upstream licenses.
+  citation: 'Liu, Y. et al. (2023). FETV: A Benchmark for Fine-Grained Evaluation of Open-Domain Text-to-Video Generation.
+    NeurIPS Datasets and Benchmarks.'
+  tags:
+  - text_to_video
+  - human_evaluation
+  - video_generation
+  modality:
+  - text
+  - video
+  domain:
+  - general
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-11
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      prompts: FETV/fetv_data.json
+      chinese_prompts: FETV-EVAL/cogvideo/datas/fetv_data_cn.txt
+      human_scores: FETV-EVAL/manual_eval_results/*/*.json
+      automatic_scores: FETV-EVAL/auto_eval_results/*/*.json
+    models:
+      cogvideo: CogVideo
+      modelscope-t2v: ModelScopeT2V
+      text2video-zero: Text2Video-Zero
+      zeroscope: ZeroScope-v2-576w
+    model_aliases:
+      damo-text2video: modelscope-t2v
+    human_dimensions:
+      static_quality: static_quality
+      temporal_quality: temporal_quality
+      alignment: alignment
+      fine-grained_alignment.color: attribute_color
+      fine-grained_alignment.quantity: attribute_quantity
+      fine-grained_alignment.camera view: attribute_camera_view
+      fine-grained_alignment.speed: attribute_speed
+      fine-grained_alignment.motion direction: attribute_motion_direction
+      fine-grained_alignment.event order: attribute_event_order
+    archives:
+      cogvideo: videos/cogvideo.zip
+      modelscope-t2v: videos/modelscope-t2v.zip
+      text2video-zero: videos/text2video-zero.zip
+      zeroscope: videos/zeroscope.zip
+    video_prefixes:
+      cogvideo: cogvideo/videos/
+      modelscope-t2v: modelscope-t2v/videos/
+      text2video-zero: text2video-zero/videos/
+      zeroscope: output_videos/videos/
+    media_types:
+      .gif: image/gif
+      .mp4: video/mp4
+    input_scope:
+      description: Released generation source prompt. Exact historical inference envelope and stage-specific runtime
+        settings are not asserted.
+    subject_features:
+      harness: FETV
+      configuration_scope: Author-reported generator. Historical weight revision and complete inference settings
+        are not recorded in the score files.
+sources:
+  upstream:
+  - name: benchmark
+    url: https://github.com/llyx97/FETV
+    revision: b11d85c4e25e9502f5050f4bb3216eb7d4bd6251
+    files:
+    - match: (?:README\.md|fetv_data\.json|LICENSE.*|video_qa_eval/.*\.(?:json|py))
+      path: FETV/{path}
+  - name: scores
+    url: https://github.com/llyx97/FETV-EVAL
+    revision: 1385218bc92899e85aae0941888d8ddcf94bd65d
+    files:
+    - match: (?:README\.md|LICENSE.*|datas/fetv_data\.json|manual_eval_results/.*\.json|auto_eval_results/(?:BLIPScore|CLIPScore|CLIPScore-ft|Otter-VQA|UMTScore)/.*\.json|auto_eval\.py|auto_human_correlation\.py|video_dataset\.py|metrics/.*\.py|utils/(?:video2frames|visualization_manual_results|collect_real_video)\.py|(?:cogvideo|modelscope-t2v|text2video-zero|zeroscope)/(?:README\.md|LICENSE|run\.sh|[^/]+\.py|datas/[^/]+\.(?:json|txt))|UMT/(?:README\.md|tasks/t2v_eval(?:_utils)?\.py|exp/t2v_eval/configs/[^/]+\.py))
+      path: FETV-EVAL/{path}
+  - name: videos
+    url: https://huggingface.co/datasets/lyx97/FETV_gen_videos
+    revision: 1490404acde8c2c5ef4d87d8dc49f7b1b1dc0e21
+    files:
+    - match: (?:README\.md|(?:cogvideo|modelscope-t2v|text2video-zero|zeroscope)\.zip)
+      path: videos/{path}
+  - name: paper
+    url: https://arxiv.org/pdf/2311.01813v3
+    file: paper.pdf
+    size: 11671595
+    sha256: d4c7e23a1312357ba2c8bf800bb3888f545d1ba1489030d60bd9ca029b9bd0b0
+    revision: 2311.01813v3
+  - name: instructions
+    url: https://drive.usercontent.google.com/download?id=1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg&export=download&confirm=t
+    file: manual-instructions.zip
+    size: 47863955
+    sha256: 9de13d20d0419834ce14ff79a54e2376b87aead24671ef21de44130af87c39ea
+    revision: null
+grading:
+  verifiers:
+    static_quality:
+      rule: "Rate individual-frame naturalness and visual artifacts using the released 1\u20135 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      implementation:
+        kind: released_human_rating
+        field: static_quality
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    temporal_quality:
+      rule: "Rate the naturalness and consistency of frame transitions using the released 1\u20135 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      implementation:
+        kind: released_human_rating
+        field: temporal_quality
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    alignment:
+      rule: "Rate overall agreement between the generated video and the original English evaluation prompt using\
+        \ the released 1\u20135 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        direction: higher_is_better
+      implementation:
+        kind: released_human_rating
+        field: alignment
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_color:
+      rule: "Rate agreement with the original English evaluation prompt for color using the released 1\u20133 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.color
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_quantity:
+      rule: "Rate agreement with the original English evaluation prompt for quantity using the released 1\u2013\
+        3 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.quantity
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_camera_view:
+      rule: "Rate agreement with the original English evaluation prompt for camera view using the released 1\u2013\
+        3 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.camera view
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_speed:
+      rule: "Rate agreement with the original English evaluation prompt for speed using the released 1\u20133 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.speed
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_motion_direction:
+      rule: "Rate agreement with the original English evaluation prompt for motion direction using the released\
+        \ 1\u20133 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.motion direction
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    attribute_event_order:
+      rule: "Rate agreement with the original English evaluation prompt for event order using the released 1\u2013\
+        3 rubric."
+      response_scale:
+        kind: discrete
+        values:
+        - 1
+        - 2
+        - 3
+        direction: higher_is_better
+        meanings:
+          '1': Does not match the specified attribute.
+          '2': Partly matches the specified attribute.
+          '3': Matches the specified attribute.
+      implementation:
+        kind: released_human_rating
+        field: fine-grained_alignment.event order
+        source: https://drive.google.com/file/d/1bqeuOIhZ2YJdqfNr3B1azNXXs5tRSncg/view
+        local_instructions: manual-instructions.zip
+        historical_rater_identity: Anonymous human0, human1 or human2 as reported in the source path.
+    CLIPScore:
+      rule: Preserve the released cosine similarity between the prompt embedding and the normalized mean of 16 frame
+        embeddings from CLIP ViT-B/32.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: released_automatic_score
+        metric: CLIPScore
+        source: https://github.com/llyx97/FETV-EVAL/blob/1385218bc92899e85aae0941888d8ddcf94bd65d/auto_eval.py
+        historical_verifier_revision: null
+    CLIPScore-ft:
+      rule: Preserve the released CLIP video-text cosine similarity using the MSR-VTT fine-tuned model.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: released_automatic_score
+        metric: CLIPScore-ft
+        source: https://github.com/llyx97/FETV-EVAL/blob/1385218bc92899e85aae0941888d8ddcf94bd65d/auto_eval.py
+        historical_verifier_revision: null
+    BLIPScore:
+      rule: Preserve the released normalized video-text embedding dot product from BLIP; the published export uses
+        dot_sims, not the separately computed ITM probability.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: released_automatic_score
+        metric: BLIPScore
+        source: https://github.com/llyx97/FETV-EVAL/blob/1385218bc92899e85aae0941888d8ddcf94bd65d/auto_eval.py
+        historical_verifier_revision: null
+    Otter-VQA:
+      rule: Preserve the released fraction of Vicuna-generated questions that receive an Otter answer beginning
+        with yes. No new question generation or judging is performed.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      implementation:
+        kind: released_automatic_score
+        metric: Otter-VQA
+        source: https://arxiv.org/html/2311.01813v3#A4.SS1
+        historical_verifier_revision: null
+    UMTScore:
+      rule: Preserve the released UMT cross-modal matching logit; negative values are valid and must not be clipped
+        or rescaled.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+      implementation:
+        kind: released_automatic_score
+        metric: UMTScore
+        source: https://github.com/llyx97/FETV-EVAL/blob/1385218bc92899e85aae0941888d8ddcf94bd65d/UMT/tasks/t2v_eval_utils.py
+        historical_verifier_revision: null

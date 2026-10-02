@@ -1,0 +1,3 @@
+- Source: 600 complete Isaacus viewer records, pinned by SHA-256, matched to all 100 questions and the 4,876-passage HF corpus. All 3,000 retrieved passage texts match the corpus; native empty footnotes are retained.
+- Three grading protocols produce 1,800 dependent observations. Original grades are unchanged; complete contexts, answers and judge explanations are retained for every grade. Retrieval flags are independently recomputed from passage IDs.
+- Pipeline identity includes the embedder and generator. The captured reference code uses renamed Gemini/result aliases; its configuration is documented without claiming a recovered exact API request. No inference or rejudging is performed.

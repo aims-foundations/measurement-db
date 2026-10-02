@@ -1,0 +1,88 @@
+benchmark:
+  name: CMMLU
+  description: Chinese multiple-choice knowledge questions with complete OpenCompass model predictions and a versioned reconstruction of option-extraction accuracy.
+  testing_condition: >-
+    Preserve all 254,804 records from 22 reported system labels and 67 question categories. Items contain each exact
+    recorded prompt, including CoT/no-CoT instructions and source formatting defects, with only surrounding whitespace
+    trimmed; traces preserve the exact original prompt including trailing newlines. Repeated
+    prompts remain separate attempts. The HF release contains predictions and gold options, but no historical grades
+    or full run configurations. Responses are reconstructed using the pinned OpenCompass match_answer_pattern and
+    AccEvaluator reference protocol; they are not claimed to reproduce the original leaderboard. This parser selects
+    the first matching answer after an ASCII colon, preserves the captured letter's case, and gives an unmatched
+    output zero. Consequently, a semantically correct answer with a full-width colon can fail this format-sensitive
+    statistic. Do not interpret it as independently verified semantic correctness. No model inference or LLM judging
+    is performed. Two source labels, rlhf-lmdeploy and sft-s2-lmdeploy, do not identify a public model checkpoint.
+  paper_url: https://arxiv.org/abs/2306.09212
+  data_source_url: https://huggingface.co/datasets/opencompass/compass_academic_predictions
+  subject_type: model
+  item_type: question
+  license: CMMLU questions use CC-BY-NC-SA-4.0; the OpenCompass prediction release does not declare a separate license.
+  citation: >-
+    Li et al. (2023). CMMLU: Measuring massive multitask language understanding in Chinese. arXiv:2306.09212.
+  tags: [multilingual, multiple-choice, knowledge, reconstructed-grading]
+  modality: [text]
+  domain: [knowledge, reasoning]
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values: [0, 1]
+    meanings:
+      '0': The reference parser's extracted option does not exactly equal the recorded gold, including no match.
+      '1': The reference parser's extracted option exactly equals the recorded gold.
+    direction: higher_is_better
+  categorical: true
+  release_date: 2023-06
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      prediction_glob: compass/results_stations/cmmlu-*/*.json
+      reference_parser: reference/opencompass/opencompass/utils/text_postprocessors.py
+      reference_config: reference/opencompass/opencompass/configs/datasets/cmmlu/cmmlu_0shot_cot_gen_305931.py
+      reference_evaluator: reference/opencompass/opencompass/openicl/icl_evaluator/icl_hf_evaluator.py
+      official_question_glob: reference/cmmlu/data/test/*.csv
+    labels:
+      category_prefix: cmmlu-
+      cot_instruction: 请在回答之前一步步思考.
+      subject_prefix: 'CMMLU / '
+      grade_status: reconstructed_with_pinned_reference_protocol
+    subject_protocol:
+      harness: OpenCompass
+      historical_config: not_recorded
+      model_identifier_status: upstream_filename_only
+sources:
+  upstream:
+  - name: predictions
+    url: https://huggingface.co/datasets/opencompass/compass_academic_predictions
+    revision: 5622641c535418314afa7790ca1f87fd520c8ae7
+    files:
+    - match: results_stations/cmmlu-[^/]+/[^/]+\.json|README\.md
+      path: compass/{path}
+  - name: grading_reference
+    url: https://github.com/open-compass/opencompass
+    revision: c49666653ca1f46b0619945ed557d7048d6cba19
+    files:
+    - match: opencompass/utils/text_postprocessors\.py|opencompass/configs/datasets/cmmlu/cmmlu_0shot_cot_gen_305931\.py|opencompass/openicl/icl_evaluator/icl_hf_evaluator\.py|LICENSE
+      path: reference/opencompass/{path}
+  - name: official_questions
+    url: https://github.com/haonan-li/CMMLU
+    revision: d6e7b716d8ac694f38969a6c0407437d1fded799
+    files:
+    - match: data/test/[^/]+\.csv|README_EN\.md
+      path: reference/cmmlu/{path}
+grading:
+  rule: >-
+    Apply the pinned OpenCompass reference match_answer_pattern to the full released prediction, taking the first
+    regular-expression match. Return 1 if its captured option exactly equals the released gold string, otherwise 0;
+    no match yields the empty string and therefore 0. Do not normalize colons, change case, choose a later match or
+    fall back to an arbitrary trailing letter. This is reconstructed format-sensitive option accuracy, not an original
+    recorded leaderboard grade or a fresh semantic judgment.
+  verifiers:
+    reconstructed_option_accuracy:
+      kind: rule_based
+      source: https://github.com/open-compass/opencompass/blob/c49666653ca1f46b0619945ed557d7048d6cba19/opencompass/configs/datasets/cmmlu/cmmlu_0shot_cot_gen_305931.py
+      function: match_answer_pattern
+      answer_pattern: '(?i)答案\s*:\s*[\W]*([A-D])[\W]*'
+      comparison: case-sensitive exact equality, as in AccEvaluator
+      assessment_status: reconstructed_reference_protocol_not_historical_grade

@@ -1,0 +1,3 @@
+- **Sources:** Pinned author JSONL predictions, the original diagram archive and paper. Preserve source bytes in `raw/`.
+- **Conversion:** Keep full recorded queries, ordered diagram bytes and replies. Import all attempts and reproduce the released binary-verdict parser. Empty replies remain null.
+- **Limits:** One answer-ID/image conflict remains ungraded with both source claims retained. Historical model snapshots are unknown. Code is Apache-2.0; external dataset redistribution terms need clarification.

@@ -1,0 +1,4 @@
+- Scope: 1,956 released capsule runs, 270 capsule/difficulty items and 11 model/scaffold/cost configurations. Two post-paper files remain excluded, as declared in `metadata.yaml`.
+- Import: join the results archive to native prompts and reference answers. Read the encrypted test bank with the publicly documented password, without modifying `raw/`; preserve fractional question accuracy.
+- Checks: independently reconcile every grade, instruction, reference and all 1,454 result reports. All non-trace tables are unchanged; one report previously clipped at 16,000 characters is restored to its full 840,302 characters.
+- Limits: result reports are final answers, not full agent trajectories. Historical execution commits are unknown, and CodeOcean environments remain external references.

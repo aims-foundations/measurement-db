@@ -1,0 +1,130 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4079
+    logical_sha256: c96e979cc37bf350cabda2afd190e30216f9df17ab5216fab9e8649b36253487
+  subjects:
+    rows: 14
+    logical_sha256: 452d0c95f18694c7f00cf958c1a816f8ce717e3aa871c8e2d5c9dc58c42ebe95
+  responses:
+    rows: 4079
+    logical_sha256: 6c8b1fe4f0bac0f96003c011d06ae5ece847ff539dfe9fb26682bb658067cd04
+  items:
+    rows: 787
+    logical_sha256: 969f05c04b77a4a596c71f18e6d72b48a93d5c6db0bb65dd987d5e83cbec2637
+  benchmarks:
+    rows: 1
+    logical_sha256: bd8f3a456898dc555cc90bb4a362505ea9ec1dc449d27d2abf7de6c1b4dc2830
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 4079
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 14
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 787
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 4079
+  source_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 700
+  source_sessions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 50
+  source_initial_components:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 3556
+  source_next_components:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 3992
+  source_matched_criteria:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 3469
+  source_not_aligned:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 1809
+  source_aligned:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 2157
+  source_added_or_rewritten_criteria:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 523
+  source_omitted_criteria:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 87
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 113
+  source_fallback_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 61
+  source_missing_grade_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Pxplore/pxplore-algo/tree/42ea4af81d815d4c779fc29ab15a5b1fd5690e0d
+    locator: model/data/eval/*.json joined to model/data/test/*.json; model/calculate_reward.py.
+    scope: All fourteen policy exports; every next-state component and omitted initial criterion, without regrading.
+    expected: 26

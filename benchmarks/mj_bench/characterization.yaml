@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  traces:
+    rows: 210965
+    logical_sha256: 298c304a4c6d267431bc4a65d0bc059e12b22dde282a28bd1779f0b72859cd81
+  subjects:
+    rows: 82
+    logical_sha256: 28091082259cb8cbf828c0cdb991f7a8067efd50c9e9ba08d5cb6bcfa6d98f53
+  responses:
+    rows: 210965
+    logical_sha256: 8711e271dd67862aa5792683a4fdbd399d811aec5ed21551da294feaf12cca4f
+  assets:
+    rows: 5241
+    logical_sha256: 1d198bc366b076c2c2626327f6ae4bba1074e64f9b73f7a847b878461b0984e1
+  items:
+    rows: 27054
+    logical_sha256: 96f0eecbc30a1bdb72a12f45d12a6f97e82d0e790a8218f897a28cf1feca5571
+  benchmarks:
+    rows: 1
+    logical_sha256: 47b8918a8f1d2c7e05550df742e91241d836dfe87608930c093ff19e3579b2b1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 210965
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 82
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 27054
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 5241
+  source_export_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 478956
+  source_development_rows_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 1000
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 104309
+  source_bias_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 83003
+  source_unavailable_preferences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 23653
+  source_conflicting_preferences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/BillChan226/MJ-Bench
+    locator: Native result exports and task annotations at e24f526dc5261fa110b54028d45e4c2b0a79eee8, plus the declared
+      official repository and pinned image releases.
+    scope: An independent direct-file census reconciles every recorded model output, source export alias, full image
+      hash, historical task definition and recorded preference. No inference or new judgment.
+    expected: 0

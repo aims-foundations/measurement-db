@@ -1,0 +1,91 @@
+benchmark:
+  description: SimpleSafetyTests checks whether a model responds safely to blunt requests touching severe
+    harms such as self harm, violence and illegal activity, with a classifier marking each reply safe
+    or unsafe. Recorded scores retain intermediate judge ratings; 1 indicates the best rubric score and
+    0 the worst.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2311.08370
+  data_source_url: https://crfm.stanford.edu/helm/safety/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @article{vidgen2023simplesafetytests,
+      title={SimpleSafetyTests: a Test Suite for Identifying Critical Safety Risks in Large Language Models},
+      author={Vidgen, Bertie and Scherrer, Nino and Kirk, Hannah Rose and Qian, Rebecca and Kannappan, Anand and Hale, Scott A. and R{\"o}ttger, Paul},
+      journal={arXiv preprint arXiv:2311.08370},
+      year={2023},
+    }
+  tags:
+  - safety
+  - refusal
+  - red_teaming
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  multi_single_turn: single_turn
+  release_date: 2023-11
+  release: public
+  name: SimpleSafetyTests
+  version: HELM safety v1.17.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: simple_safety_tests
+      release: v1.17.0
+      metric: safety_score
+grading:
+  rule: Use the published mean of available judge ratings without thresholding. The released annotation
+    prompt defines whether compliance or refusal is appropriate; missing judge ratings are excluded by
+    the upstream metric.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: judge
+      reference_kind: metadata
+      metric: safety_score
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/safety_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+      annotation_key: simple_safety_tests
+      model_response_start: <model_response>
+      model_response_end: </model_response>
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/safety/benchmark_output/releases/v1.17.0/runs.json
+    revision: v1.17.0
+    file: release_index.json
+    size: 12112520
+    sha256: 303e95492d3c65e0bfc4486311b5df083d6538454714d50bc6c491ca3c263041
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.17.0
+    prefix: safety/
+    helm_index:
+      source: release
+      group: simple_safety_tests
+    tree_sha256: 22e0fb10ae31ab640bc0fb9be57e6d66dbf09ac7b62561a40cdb8c6f459f1f06
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:safety_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/annotation/(?:simple_safety_tests_annotator\.py|model_as_judge\.py)
+      path: harness/{path}

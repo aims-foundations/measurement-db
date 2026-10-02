@@ -1,0 +1,148 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: ef8e1e07eca4452ea9ec698ff2611730462caf66d64de73c706ec27702bd0a66
+  items:
+    rows: 840
+    logical_sha256: ce0b3a00f791d294f1937b0f070a3f9df67c1c4a31d630c7d65bc44019b6f49c
+  responses:
+    rows: 192575
+    logical_sha256: 0935f8d66fd56563f58356bda550b65a720a7c65fb96b31f97656779eb0febd2
+  subjects:
+    rows: 647
+    logical_sha256: 2251ea4a56a53bd3c38f15bbc0ee9ef7eda62fb07357bb65d12be68658da94c4
+  traces:
+    rows: 192575
+    logical_sha256: 351b59bc26bba937c29301e7ff894a03c0e7d3f6f534c11b848900ec9b0d62a7
+source_claims:
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 120
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 647
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 840
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 192575
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 192575
+  source_null_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 123
+  source_invalid_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 12
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 568
+  source_long_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 1844
+  source_error_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 367
+  source_judge_explanations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 13175
+  source_positional_misalignments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 5555
+  source_model_question_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/shisa-ai/shaberi/tree/59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    locator: All 1,609 original data/judgements/*/lightblue__tengu_bench/*.json files and the pinned 120-question
+      author bank.
+    scope: Every recorded judgment, including nulls and invalid native scores, linked to its original question,
+      reference, rubric, answerer, judge and complete output. Different judges can rate different generations; no
+      cross-judge output substitution.
+    expected: 2312

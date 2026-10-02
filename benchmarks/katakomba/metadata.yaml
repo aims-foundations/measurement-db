@@ -1,0 +1,131 @@
+benchmark:
+  name: Katakomba
+  description: Released final-checkpoint NetHack episode outcomes for 572 independently trained offline-RL policies
+    across 38 character-configuration tasks.
+  testing_condition: A subject is one recorded trained policy at its last saved evaluation checkpoint, with its
+    actual training seed and configuration. An item is a procedural NetHack task specified by role, race and alignment;
+    its 50 recorded episodes are repeated trials. Array positions record completion order within that policy's evaluation
+    and do not identify a common game world across policies. The release contains 570 policies evaluated at step
+    500000 and two longer runs at step 6600000. Of 738 finished public runs, 572 expose per-episode score arrays.
+    The other 166 have configurations and aggregate summaries but no such arrays in their public run-file listings.
+    Scores are ratios to the task's AutoAscend reference mean, may be negative, and are not success probabilities
+    or percentages. The captured outcome records include return and depth, but no action/observation trajectories,
+    exact starting game state or policy weights. The current pinned harness documents the task and normalization;
+    run-specific code and configuration are preserved separately, without asserting that the current Git revision
+    produced the historical runs.
+  paper_url: https://arxiv.org/abs/2306.08772
+  data_source_url: https://wandb.ai/tlab/NetHack
+  subject_type: model
+  item_type: procedural_rl_task
+  license: Apache-2.0 for the Katakomba source code. NetHack, NLE and the published experiment files retain their
+    respective upstream terms.
+  citation: 'Kurenkov, Nikulin, Tarasov and Kolesnikov. Katakomba: Tools and Benchmarks for Data-Driven NetHack.
+    NeurIPS Datasets and Benchmarks, 2023.'
+  tags:
+  - offline_rl
+  - nethack
+  - sequential_decision_making
+  modality:
+  - grid
+  domain:
+  - reinforcement_learning
+  response_type: continuous_unbounded
+  categorical: false
+  response_scale:
+    kind: interval
+    min: null
+    max: null
+    direction: higher_is_better
+  release_date: null
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      experiments: experiments
+      harness: upstream.tar.gz
+    algorithms:
+      bc: Behavioral Cloning
+      cql: Conservative Q-Learning
+      awac: Advantage-Weighted Actor-Critic
+      iql: Implicit Q-Learning
+      rem: Random Ensemble Mixture
+    task:
+      environment: Katakomba NetHackChallenge
+      objective: Maximize in-game NetHack score through sequential actions in the procedural environment.
+      definition_source: https://github.com/tinkoff-ai/katakomba/blob/f7935bea46c5aa3ebc97fa5ab006afd4752aafe6/katakomba/env.py
+      input_scope: Character-configuration task. Episode-specific starting observations and game RNG states are
+        not released.
+    normalizers:
+      arc-dwa-law: '5445.69'
+      arc-gno-neu: '5316.57'
+      arc-hum-law: '5826.35'
+      arc-hum-neu: '6636.44'
+      bar-hum-cha: '18228.11'
+      bar-hum-neu: '17836.68'
+      bar-orc-cha: '17594.38'
+      cav-dwa-law: '11893.48'
+      cav-gno-neu: '10083.06'
+      cav-hum-law: '12462.82'
+      cav-hum-neu: '12113.87'
+      hea-gno-neu: '3783.93'
+      hea-hum-neu: '4068.27'
+      kni-hum-law: '14137.06'
+      mon-hum-cha: '18353.3'
+      mon-hum-law: '16091.57'
+      mon-hum-neu: '17456.05'
+      pri-elf-cha: '7109.35'
+      pri-hum-cha: '8262.56'
+      pri-hum-law: '6847.99'
+      pri-hum-neu: '7732.69'
+      ran-elf-cha: '9014.18'
+      ran-gno-neu: '6965.04'
+      ran-hum-cha: '8378.5'
+      ran-hum-neu: '8067.99'
+      ran-orc-cha: '7608.48'
+      rog-hum-cha: '4818.2'
+      rog-orc-cha: '4897.69'
+      sam-hum-law: '11009.36'
+      tou-hum-neu: '4211.47'
+      val-dwa-law: '23473.61'
+      val-hum-law: '26103.03'
+      val-hum-neu: '18624.77'
+      wiz-elf-cha: '5005.16'
+      wiz-gno-neu: '4317.51'
+      wiz-hum-cha: '5316.82'
+      wiz-hum-neu: '5323.48'
+      wiz-orc-cha: '5016.74'
+    item_features:
+      task_scope: Procedural environment distribution
+      episode_identity: Trial index is within-run completion order and is not a shared game identifier
+sources:
+  upstream:
+  - name: experiments
+    url: https://wandb.ai/tlab/NetHack
+    revision: null
+    tree_sha256: 9f69e4cf507715a2a8d6c006fc60abbea7090ee924c5cd13b45a3e1ba958c9da
+    wandb_runs:
+      state: finished
+      latest_step: (?P<step>[0-9]+)_normalized_scores\.npy
+      step_files: (?P<step>[0-9]+)_(normalized_scores|returns|depths)\.npy
+    files:
+    - match: '[a-z0-9]+/(config\.yaml|wandb-summary\.json|diff\.patch|requirements\.txt|code/.+\.py|[0-9]+_(normalized_scores|returns|depths)\.npy)'
+      path: experiments/{path}
+  - name: harness
+    url: https://codeload.github.com/tinkoff-ai/katakomba/tar.gz/f7935bea46c5aa3ebc97fa5ab006afd4752aafe6
+    revision: f7935bea46c5aa3ebc97fa5ab006afd4752aafe6
+    file: upstream.tar.gz
+    size: 1037877
+    sha256: e42d5bc63da5c2cff7e35b717807f12023818d86b0994b3d1c54b0ddfb2e4f14
+grading:
+  rule: Divide the recorded episode return by the released AutoAscend mean score for this role-race-alignment task.
+    Keep the saved ratio without multiplying by 100, clipping or binarizing.
+  verifiers:
+    normalized_return:
+      kind: recorded_environment_score
+      source: https://github.com/tinkoff-ai/katakomba/blob/f7935bea46c5aa3ebc97fa5ab006afd4752aafe6/katakomba/env.py
+      function: OfflineNetHackChallengeWrapper.get_normalized_score
+      reference_source: https://github.com/tinkoff-ai/katakomba/blob/f7935bea46c5aa3ebc97fa5ab006afd4752aafe6/katakomba/utils/scores.py
+      reference_table: MEAN_SCORES_AUTOASCEND
+      execution: Read the published episode ratios and verify them against returns and the source normalizers. Do
+        not run new policies or manufacture outcomes from summary statistics.

@@ -1,0 +1,94 @@
+benchmark:
+  name: EngineMT-QA (unambiguous single-choice release subset)
+  description: Multiple-choice questions about aero-engine sensor sequences, paired with the answers in the original
+    ITFormer result export.
+  testing_condition: 'Retain the 676 stage-2/stage-3 records whose single-letter reference and source JSONL line
+    identify exactly one question. Preserve all 10,608 released predictions in raw; ambiguous, open-ended and multiple-answer
+    records are outside this curated subset. The export names no checkpoint or runtime configuration: the accompanying
+    0.5B launch defaults do not establish the identity of this particular run. Grades are deterministic conversions
+    of released answers using the option-set exact-match rule at the commit that introduced the export, not newly
+    generated answers or saved upstream per-item grades. Attach original float64 sensor arrays assembled by the
+    released loader: a scalar ID supplies 600 time steps; a ten-ID list supplies the first 60 steps from each ID
+    in order. These are source task inputs, not a claim that historical model tensors or request rendering were
+    logged. The loader casts inputs to float32 at execution. All 33 released channels are retained; no authoritative
+    channel-name mapping is supplied.'
+  paper_url: https://arxiv.org/abs/2506.20093
+  data_source_url: https://github.com/Pandalin98/ITFormer-ICML25
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: 'Wang, Y. et al. ITFormer: Bridging Time Series and Natural Language for Multi-Modal QA with Large-Scale
+    Multitask Dataset. ICML (2025).'
+  tags:
+  - time_series
+  - multimodal
+  - question_answering
+  - aero_engine
+  modality:
+  - text
+  - time_series
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect under the released option-set exact-match rule.
+      '1': Correct under the released option-set exact-match rule.
+  categorical: true
+  release_date: 2025-06
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: release/output_result_all.json
+      questions: data/test_qa.jsonl
+      sensors: data/time_series_data.h5
+    stage_names:
+      '2': perception
+      '3': reasoning
+    subject:
+      label: ITFormer released run (checkpoint unspecified)
+    subject_features:
+      harness: ITFormer
+      configuration_scope: The result export identifies neither model size nor checkpoint. Launch-script defaults
+        are not recorded run configuration.
+    input_features:
+      input_scope: Original task text and float64 sensor values. The published loader casts to float32. Channel
+        semantics and historical runtime settings are unrecorded.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/Pandalin98/ITFormer-ICML25
+    revision: a2414a5a3f88d91a3e74af82e2890c969bbb0b5e
+    files:
+    - match: (?:README\.md|LICENSE|output_result_all\.json|inference\.py|train_sft\.py|dataset/dataset\.py|utils/metrics\.py|EXP/exp_instruct\.py|scripts/run_inference\.sh|yaml/infer\.yaml)
+      path: release/{path}
+  - name: data
+    url: https://huggingface.co/datasets/pandalin98/EngineMT-QA
+    revision: ea2051a15512212976c22c1a075ec549c7d48eef
+    files:
+    - match: (?:README\.md|test_qa\.jsonl|time_series_data\.h5)
+      path: data/{path}
+  - name: input_audit
+    url: https://github.com/Pandalin98/ITFormer-ICML25
+    revision: b80142fc8b6ab2be8f148f3bb7a7534bb32f318b
+    files:
+    - match: docs/ISSUE_23_CHANNEL_AUDIT\.md
+      path: input-audit/{path}
+grading:
+  rule: For the retained single-letter-reference records, split the prediction on whitespace, lowercase its tokens,
+    retain only a through f, deduplicate, and compare that set with the whitespace-split original reference. This
+    is the released closed_question_metrics exact-match rule at the result-export commit. Do not use the later revised
+    parser.
+  verifiers:
+    exact_match:
+      kind: deterministic_option_set_match
+      source: https://github.com/Pandalin98/ITFormer-ICML25/blob/a2414a5a3f88d91a3e74af82e2890c969bbb0b5e/utils/metrics.py
+      function: closed_question_metrics
+      metric: exact_match_accuracy

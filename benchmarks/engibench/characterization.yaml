@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 18
+    logical_sha256: adb34bf314db41ed77c63966bddd5203bf50e3a92bde0e063b886e5b28311566
+  subjects:
+    rows: 2
+    logical_sha256: 504df788533953c51a5989870ed163fdd96f04fe0dc80412a4aa3a4e2d0a866e
+  responses:
+    rows: 18
+    logical_sha256: 3f4c10fcb1d4762791a204cd4c08ee40f1e3640e13c0064273c7af8ff4d423bb
+  items:
+    rows: 9
+    logical_sha256: c463e2bd465cc98a3ead8e7e0d09c0bfd9fc37d53f3a97daf18b7a0dc457ed1d
+  benchmarks:
+    rows: 1
+    logical_sha256: fc578507407ae436cba8b9c90e4c65d99fe4516b59995d04228d3290652a3946
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 18
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 9
+  source_conditions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 3
+  source_designs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 6
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 2
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 18
+  source_negative_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/IDEALLab/EngiOpt
+    locator: 'example_easy_model.ipynb and example_hard_model.ipynb: literal conditions and saved optimality-gap
+      stdout.'
+    scope: Saved demonstrations only; reconcile every method/condition/criterion, signed value and complete
+      notebook without executing code.
+    expected: 4

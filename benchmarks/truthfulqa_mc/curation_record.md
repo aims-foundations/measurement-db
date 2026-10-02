@@ -1,0 +1,3 @@
+- Preserve the existing 150-model panel: 122,550 original MC1 observations over 817 questions; every captured result matches its pinned upstream release.
+- Restore complete QA prompts, answer choices, recorded model configurations and untruncated native likelihood/token records. The fixed QA prefix and recorded few-shot sentinels are retained.
+- Keep historical grades unchanged. MC2 remains in traces, including the old first-zero split behavior for two noncontiguous reference-label lists; the reference grader is not asserted to be the exact historical installed revision.

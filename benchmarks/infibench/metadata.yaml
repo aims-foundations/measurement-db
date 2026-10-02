@@ -1,0 +1,109 @@
+benchmark:
+  name: InfiBench
+  version: v2.1; historical v2.0.0 development release
+  description: Per-attempt programming-question grades from the author-released InfiBench evaluation logs, including
+    three human-answer comparators and the historical two-model development release.
+  testing_condition: One response is one released sampled completion, not the mean of best-of-ten groups used in
+    the published leaderboard. Use native all_scores where available; reconstruct the historical development scores
+    only from original component totals and caps. Preserve scores outside the nominal zero-to-one range without
+    clipping. Items contain original question text and grading definitions; unsaved chat templates and inference
+    settings are not invented. Link raw completions only through exact source filename aliases, case IDs and native
+    within-case row order. Unmatched raw files remain captured, and grading-only traces do not claim to be full
+    conversations. The two releases remain distinct evaluation configurations; independence of their underlying
+    generations is not established. No model or grader execution.
+  paper_url: https://arxiv.org/abs/2404.07940
+  data_source_url: https://figshare.com/articles/dataset/InfiBench_Detail_Evaluation_Data/26104864/2
+  subject_type: model_or_human_answer_collection
+  item_type: programming_question_and_grading_protocol
+  license: 'Figshare evaluation release: CC BY 4.0. Both captured GitHub code repositories: Apache-2.0. Original
+    question and answer sources retain their attribution requirements.'
+  citation: "@inproceedings{li2024infibench,\n  title={InfiBench: Evaluating the Question-Answering Capabilities\
+    \ of Code Large Language Models},\n  author={Li, Linyi and Xu, Shijie and Liu, Yuhao and Lin, Ya and others},\n\
+    \  booktitle={NeurIPS 2024 Datasets and Benchmarks Track},\n  year={2024},\n}"
+  tags:
+  - code
+  - question_answering
+  - free_form
+  modality:
+  - text
+  domain:
+  - code
+  response_type: continuous_unbounded
+  response_scale:
+    kind: interval
+    min: null
+    max: null
+    direction: higher_is_better
+  categorical: false
+  release_date: '2024-08-15'
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      legacy: legacy.tar.gz
+      harness: harness.tar.gz
+      results: infibench_detail_evaluation_data.zip
+      responses: infibench_raw_responses.tar
+      legacy_suite: suite_v2.0.0_dev.yaml
+      legacy_results: results/.*\.yaml
+      modern_cases: bigcode_eval/infibench/batched_cases/suite_v2.1_data.csv
+    parsing:
+      result_prefix_pattern: ^eval_\d+_|^v210_
+    labels:
+      harness: InfiBench author evaluation release
+      input_scope: original_question_text_without_unrecorded_chat_wrappers
+      historical_configuration: The development release includes its original params.yaml configuration. The full
+        release identifies runs through source report labels. Exact endpoint revisions, timestamps, chat templates
+        and inference settings are unavailable unless explicitly recorded.
+grading:
+  rule: Preserve the native per-attempt normalized grader score. Its component functions, caps, reference rules
+    and dependencies are retained in the original source definition. Values are not binary accuracy and are not
+    best-of-ten summary scores.
+  verifiers:
+    legacy_dev:
+      kind: released_deterministic_grading
+      source: https://github.com/infi-coder/infibench-evaluator/blob/96cb098c143e42464acdab4ba22da00193039da6/grader_main.py
+      score_components:
+      - keywords
+      - blank_filling
+      - unit_test
+      - similarity
+      - custom
+      function: grade_response
+      scope: Reconstruct the existing grade from saved component scores and totals, applying source max/min caps
+        and full_score. Do not rerun generated code, tests or similarity models.
+    v2_1:
+      kind: released_deterministic_grading
+      source: https://github.com/infi-coder/infibench-evaluation-harness/blob/736de98209ed546ef59992ab8edc0c03d02ffde6/bigcode_eval/infibench/grader_main.py
+      function: grade_response
+      scope: Read the original all_scores entry and retain its corresponding native detail. Reconcile its component
+        arithmetic without rerunning generated code, tests or similarity models.
+sources:
+  upstream:
+  - name: legacy
+    url: https://codeload.github.com/infi-coder/infibench-evaluator/tar.gz/96cb098c143e42464acdab4ba22da00193039da6
+    revision: 96cb098c143e42464acdab4ba22da00193039da6
+    file: legacy.tar.gz
+    size: 1389152
+    sha256: eb8d0c64b282e594521ac659b101854c56ada7b652a70d3567b0629b7a431a57
+  - name: harness
+    url: https://codeload.github.com/infi-coder/infibench-evaluation-harness/tar.gz/736de98209ed546ef59992ab8edc0c03d02ffde6
+    revision: 736de98209ed546ef59992ab8edc0c03d02ffde6
+    file: harness.tar.gz
+    size: 3367710
+    sha256: 2b1e50292ce0cd85b940e29b256958d25e1302ddc607adea1ce9d6179f3f2578
+  - name: results
+    url: https://ndownloader.figshare.com/files/47248789
+    revision: Figshare article 26104864 version 2
+    file: infibench_detail_evaluation_data.zip
+    size: 20496794
+    sha256: 74a4de86d647706b1174a108f562dcabc2015ed49ed81e1ebb2095a6533f0fab
+  - name: responses
+    url: https://ndownloader.figshare.com/files/48607108
+    revision: Figshare article 26104864 version 2
+    file: infibench_raw_responses.tar
+    size: 72214513
+    sha256: 97ddf325c4dd1e88c4b54401249a6016cc9a5fa890262b4ab471afc42df376e0

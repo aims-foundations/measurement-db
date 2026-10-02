@@ -1,0 +1,72 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2500
+    logical_sha256: 4061a4898a56c1c0a511115742f4947c4a5dd117bdeab4740f27620185db2af5
+  subjects:
+    rows: 25
+    logical_sha256: fcd04588dea060e9e2a230159091b0b9b4a6253fa9be2d9c6d38b90e3094b3a1
+  responses:
+    rows: 2500
+    logical_sha256: b8b5027075b209797a640d76d0361c0e8ef3ce9086fe01d0130311ba1569e42f
+  items:
+    rows: 100
+    logical_sha256: 35c82702f5c115ed40612a67d2f163619a6e640430655b9d48286b5e832c1ed9
+  benchmarks:
+    rows: 1
+    logical_sha256: f4f074a27dbc83f4f4025018850aa028f2911c86d27ef08aa730be14bd79171a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 2500
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 100
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 25
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 2500
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 2500
+  source_missing_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/embodied-agent-interface/embodied-agent-interface/tree/531c62f8df2cb392bdf1907923c76da41cad4fe6
+    locator: The author-linked helm_output.zip BEHAVIOR goal_interpretation model files, original prompt map and
+      all_conditions.json.
+    scope: Independently reconcile every native answer, literal model label, task prompt and symbolic reference.
+      Historical grade exports are absent; no grading is executed.
+    expected: 0

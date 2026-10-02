@@ -1,0 +1,82 @@
+benchmark:
+  description: Released accuracy judgments for eight OpenClaw agents on 492 exploratory financial data-analysis
+    tasks.
+  testing_condition: Preserve all 3,936 published task scores, including 154 partial-credit values, at their
+    released numerical precision. The task bank contains 391 single-answer and 101 multi-answer rubrics. Each
+    item includes its complete released user prompt, reference/rubric and the 19 original workspace files,
+    with source inconsistencies unchanged. The leaderboard's model IDs and benchmark version are recorded labels;
+    exact historical inference settings, judge deployment and API requests are not available. The reported
+    version e9fe78b is not a resolvable commit in the current public Git repository. Preserve all native outcome/process/cost
+    statistics as result records; these are not agent transcripts. Task-authoring process annotations and the
+    clean control environment are captured source data, not additional model runs. No inference or new LLM
+    judging.
+  paper_url: https://arxiv.org/abs/2605.02503
+  data_source_url: https://github.com/GTML-LAB-sysu/DataClaw
+  subject_type: agent
+  item_type: task
+  license: MIT
+  citation: "@article{zhang2026dataclawbench,\n  title={DataClawBench: An Agent Benchmark for Exploratory Real-World\
+    \ Financial Data Analysis},\n  author={Zhang, Qiaohong and Ye, Weihao and Chen, Jialong and Luo, Yi and\
+    \ Li, BoYuan and Deng, Bowen and Zheng, Zibin and Lin, Jianhao and Zheng, Wei-Shi and Chen, Chuan},\n \
+    \ journal={arXiv preprint arXiv:2605.02503},\n  year={2026}\n}"
+  tags:
+  - agent
+  - data-analysis
+  - finance
+  - exploratory
+  - openclaw
+  - process-oriented
+  modality:
+  - text
+  domain:
+  - finance
+  - agents_and_tool_use
+  - reasoning
+  response_type: fraction
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2026-05
+  name: DataClawBench
+  multi_single_turn: multi_turn
+  version: leaderboard e9fe78b, generated 2026-04-27
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      leaderboard: release/docs/index.html
+      tasks: release/tasks
+      assets: release/assets
+    patterns:
+      leaderboard_anchor: const D =
+      frontmatter: ^---\s*\n(?P<frontmatter>.*?)\n---\s*\n(?P<body>.*)$
+      sections: ^##\s+(?P<section>[^\n]+)\n(?P<section_text>.*?)(?=^##\s+|\Z)
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/GTML-LAB/DataClaw
+    revision: b6ede120d42750ff0e6303467776976b7074ba84
+    files:
+    - match: (?!.*__pycache__/).+
+      path: release/{path}
+grading:
+  rule: Use the published final-answer accuracy. Single-answer tasks use semantic equivalence; multi-answer
+    tasks average per-part correctness. Preserve fractional scores without thresholding or new judging.
+  verifiers:
+    accuracy:
+      kind: released_llm_judgment
+      historical_judge_model: null
+      source: https://huggingface.co/datasets/GTML-LAB/DataClaw/blob/b6ede120d42750ff0e6303467776976b7074ba84/dataclaw/utils/grading.py
+      functions:
+      - grade_in_container
+      - _build_judge_prompt
+      - _normalize_judge_response
+      criterion: Judge the final assistant answer against the task's expected behavior and full LLM Judge Rubric.
+        The recorded total is on a zero-to-one scale.
+      implementation_scope: The pinned public grader documents the protocol. Its configurable default model
+        does not identify the judge used for each historical leaderboard result.
+      source_precision: Retain each released numeric score, including rounded fractions; do not reconstruct
+        unavailable per-part verdicts.

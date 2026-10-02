@@ -1,0 +1,167 @@
+format_version: 1
+tables:
+  traces:
+    rows: 202096
+    logical_sha256: 8292adecb41e75a8a9c5141dcf9e2ee77dd994353703fbc8a42e6cfd466360bc
+  subjects:
+    rows: 28
+    logical_sha256: fa804f7dbc0fef5ae8b01e7b1440f03334f6b96c7af99f7014761751c9181705
+  responses:
+    rows: 202096
+    logical_sha256: 2b3083b89d8ac716b987807f2dbac3ab375b786bfa99b49ef71d0a6ecc304885
+  assets:
+    rows: 2027
+    logical_sha256: 78457d17407c6d159a6cd44ed80e9a83bcef21d41a4866e10b9b719133be6716
+  items:
+    rows: 12631
+    logical_sha256: d4f0f2da4af2cd5a7c0861d09b90543166278ccaa3bfdee216d2fbbc718edd69
+  benchmarks:
+    rows: 1
+    logical_sha256: dfa03e9d13e85e09a2e0612821bf1f7bacf12dac1bd4dee330a39b66850d641c
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 202096
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 12631
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 28
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 202096
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 2027
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 171860
+  source_tie_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 10575
+  source_changed_annotation_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected: 1
+  source_correct_by_configuration:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/inseong00/CAF-Score
+    locator: Thirty-two native CAF-Score exports, paired original/processed BRACE annotations and pinned
+      official audio files.
+    scope: Every released prediction variant, caption pair, answer, configuration and audio byte; all
+      native reported accuracies independently reconciled.
+    expected:
+      audiocaps_hallu/audioflamingo3_laionclap/smoothed: 3565
+      audiocaps_hallu/audioflamingo3_laionclap/raw: 3163
+      audiocaps_hallu/audioflamingo3_m2dclap/smoothed: 3660
+      audiocaps_hallu/audioflamingo3_m2dclap/raw: 3233
+      audiocaps_hallu/audioflamingo3_mgaclap/smoothed: 3666
+      audiocaps_hallu/audioflamingo3_mgaclap/raw: 3232
+      audiocaps_hallu/audioflamingo3_msclap_slide_max/smoothed: 3372
+      audiocaps_hallu/audioflamingo3_msclap_slide_max/raw: 3027
+      audiocaps_hallu/qwen3omni_laionclap/smoothed: 3681
+      audiocaps_hallu/qwen3omni_laionclap/raw: 3375
+      audiocaps_hallu/qwen3omni_m2dclap/smoothed: 3747
+      audiocaps_hallu/qwen3omni_m2dclap/raw: 3420
+      audiocaps_hallu/qwen3omni_mgaclap/smoothed: 3732
+      audiocaps_hallu/qwen3omni_mgaclap/raw: 3407
+      audiocaps_hallu/qwen3omni_msclap_slide_max/smoothed: 3577
+      audiocaps_hallu/qwen3omni_msclap_slide_max/raw: 3285
+      audiocaps_main/audioflamingo3_laionclap/smoothed: 807
+      audiocaps_main/audioflamingo3_laionclap/raw: 801
+      audiocaps_main/audioflamingo3_m2dclap/smoothed: 780
+      audiocaps_main/audioflamingo3_m2dclap/raw: 779
+      audiocaps_main/audioflamingo3_mgaclap/smoothed: 788
+      audiocaps_main/audioflamingo3_mgaclap/raw: 789
+      audiocaps_main/audioflamingo3_msclap_slide_max/smoothed: 638
+      audiocaps_main/audioflamingo3_msclap_slide_max/raw: 629
+      audiocaps_main/qwen3omni_laionclap/smoothed: 833
+      audiocaps_main/qwen3omni_laionclap/raw: 827
+      audiocaps_main/qwen3omni_m2dclap/smoothed: 862
+      audiocaps_main/qwen3omni_m2dclap/raw: 848
+      audiocaps_main/qwen3omni_mgaclap/smoothed: 829
+      audiocaps_main/qwen3omni_mgaclap/raw: 814
+      audiocaps_main/qwen3omni_msclap_slide_max/smoothed: 718
+      audiocaps_main/qwen3omni_msclap_slide_max/raw: 711
+      clotho_hallu/audioflamingo3_laionclap_slide_max/smoothed: 5678
+      clotho_hallu/audioflamingo3_laionclap_slide_max/raw: 4704
+      clotho_hallu/audioflamingo3_m2dclap_slide_max/smoothed: 5829
+      clotho_hallu/audioflamingo3_m2dclap_slide_max/raw: 4832
+      clotho_hallu/audioflamingo3_mgaclap_slide_max/smoothed: 5881
+      clotho_hallu/audioflamingo3_mgaclap_slide_max/raw: 4855
+      clotho_hallu/audioflamingo3_msclap_slide_max/smoothed: 5867
+      clotho_hallu/audioflamingo3_msclap_slide_max/raw: 4849
+      clotho_hallu/qwen3omni_laionclap_slide_max/smoothed: 5991
+      clotho_hallu/qwen3omni_laionclap_slide_max/raw: 5534
+      clotho_hallu/qwen3omni_m2dclap_slide_max/smoothed: 6095
+      clotho_hallu/qwen3omni_m2dclap_slide_max/raw: 5621
+      clotho_hallu/qwen3omni_mgaclap_slide_max/smoothed: 6108
+      clotho_hallu/qwen3omni_mgaclap_slide_max/raw: 5611
+      clotho_hallu/qwen3omni_msclap_slide_max/smoothed: 6096
+      clotho_hallu/qwen3omni_msclap_slide_max/raw: 5613
+      clotho_main/audioflamingo3_laionclap_slide_max/smoothed: 948
+      clotho_main/audioflamingo3_laionclap_slide_max/raw: 947
+      clotho_main/audioflamingo3_m2dclap_slide_max/smoothed: 908
+      clotho_main/audioflamingo3_m2dclap_slide_max/raw: 911
+      clotho_main/audioflamingo3_mgaclap_slide_max/smoothed: 905
+      clotho_main/audioflamingo3_mgaclap_slide_max/raw: 902
+      clotho_main/audioflamingo3_msclap_slide_max/smoothed: 948
+      clotho_main/audioflamingo3_msclap_slide_max/raw: 946
+      clotho_main/qwen3omni_laionclap_slide_max/smoothed: 970
+      clotho_main/qwen3omni_laionclap_slide_max/raw: 970
+      clotho_main/qwen3omni_m2dclap_slide_max/smoothed: 963
+      clotho_main/qwen3omni_m2dclap_slide_max/raw: 952
+      clotho_main/qwen3omni_mgaclap_slide_max/smoothed: 938
+      clotho_main/qwen3omni_mgaclap_slide_max/raw: 922
+      clotho_main/qwen3omni_msclap_slide_max/smoothed: 989
+      clotho_main/qwen3omni_msclap_slide_max/raw: 982
+    absolute_tolerance: 0

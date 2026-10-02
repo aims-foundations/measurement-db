@@ -1,0 +1,4 @@
+- Sources: pinned BiGGen result splits and upstream grading code; 76,555 saved generations from 103 model identifiers, yielding 979,855 ratings across 4,589 item–judge definitions.
+- Import: table operations retain full instructions, references, rubrics, outputs and feedback. Each position in a Prometheus score list remains a separate rating of the same generation.
+- Corrections and limits: restore previously omitted Prometheus ratings and truncated text; preserve 354 missing grades and distinguish base/chat and dated model variants. Exclude unreleased human ratings and explicitly unsupported judge tasks. Historical run settings and per-rating feedback alignment remain unknown.
+- Validation: every rating reconciles independently with the source; five shared checks, ten deliberate-corruption checks, three parser tests and a clean download pass. Captured upstream inputs remain unchanged.

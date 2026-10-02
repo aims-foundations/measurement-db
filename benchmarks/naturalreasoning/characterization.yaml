@@ -1,0 +1,74 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1145824
+    logical_sha256: 18d81cc6138d6e991b25ae49a0cef03df4b03cdff8ef0e57ced27713da5b7e1d
+  subjects:
+    rows: 1
+    logical_sha256: 3f394ce9a6be2a15c44e9e31dc6f9b54e3deb4701c35b47d6b8a38fe1a5e8fdf
+  responses:
+    rows: 1145824
+    logical_sha256: 31d69df35fb8d13268119c4853788f4f71330453377588146052ffef90b0e25b
+  items:
+    rows: 1145824
+    logical_sha256: cc4a9243aaa89b07c206eb300a9a1e0cfca3120f3c65e2b3ce83477d7e0d611f
+  benchmarks:
+    rows: 1
+    logical_sha256: e90d5c2bb303e48b5bc2788775086ba346c2c0b3473a001962013d76434877d2
+source_claims:
+  source_missing_references:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 209574
+  source_maximum_response_characters:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 49699
+  source_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 1145824
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 1145824
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 1
+  source_saved_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 0
+  source_captured_author_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/facebook/natural_reasoning/tree/99eea5dc6bfa45a925eb42600e81dc90377ba237
+    locator: Complete full.jsonl and all five files in the original author release.
+    scope: Every recorded generated answer, preserving its question and available reference; no saved correctness
+      verdicts or newly computed grades.
+    expected: 5

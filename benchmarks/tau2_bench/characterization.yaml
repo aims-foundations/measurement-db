@@ -1,0 +1,72 @@
+format_version: 1
+tables:
+  traces:
+    rows: 23342
+    logical_sha256: ff04a6a803564d33c08f08201c1d6762e2d6e9048f9b18d7c92580b725801b63
+  subjects:
+    rows: 31
+    logical_sha256: 2f7e25e3672e0a3b2f8423239703a41b2674fd7d74bbd8847123da20cf77bd68
+  responses:
+    rows: 23342
+    logical_sha256: 6c3034b090bd33d0e63e786b8c91b2cead9ab6beee1977b9a63bc7d052647c28
+  items:
+    rows: 2388
+    logical_sha256: d87c24a47e5c6bbefd1f856aad8e105ee0b7903947e0d8aaea02e209b3e5bbb2
+  benchmarks:
+    rows: 1
+    logical_sha256: f5dcf968a90f616d4153b1a770265f5d2cb5773d2e5d319c73c812392eaa5b97
+source_claims:
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 17434
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 5776
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 132
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 23342
+  source_run_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 62
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau2-bench/tree/363133ada1936491fb5bcec33cd62c3518a99f65/data/tau2/results/final
+    locator: repo_results/*.json and the pinned s3_trajectories/*/*.json original simulations; metadata.yaml lists
+      every source.
+    scope: All captured airline, retail, telecom and telecom-workflow attempts, including logged API errors with
+      unavailable grades. No aggregate scores are expanded into observations.
+    expected: 23342

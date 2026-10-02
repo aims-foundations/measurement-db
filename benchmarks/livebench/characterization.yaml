@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 165334
+    logical_sha256: 24d7473f1293b69706fdb2dff53112c38cd4b620efbe8be8a19bc52ce823c8dd
+  subjects:
+    rows: 200
+    logical_sha256: 781524c77e4112cec6b7b5987e212884b09add91546f936a5d74664f8b39f657
+  responses:
+    rows: 165334
+    logical_sha256: 4cf19967fbef7e83817cb849b70f85a9ae833a3b122f3cd45483daa4c9845649
+  items:
+    rows: 1286
+    logical_sha256: bf6c1fe026182f1fe897388e87cd99b774a8910ec73a2e57a62ac584f01d3c55
+  benchmarks:
+    rows: 1
+    logical_sha256: 3e3329ddc27a1c29ad618b1d4242f0081e56294a3f5fde51d2311a7906777506
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 165334
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 200
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 1286
+  source_excluded_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 6902
+  source_unavailable_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 100
+  source_grade_export_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 538264
+  source_partial_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/livebench/model_judgment/commits/main
+    locator: Distinct (question_id, model, turn, timestamp) events in pinned original judgment exports, joined to
+      released question history.
+    scope: Available-question grading events only; exact model-generation linkage and historical grader configuration
+      are not established.
+    expected: 28289

@@ -1,0 +1,3 @@
+- Join five published graded task families to complete workflow text, ordered screenshots, reference SOPs and captured model outputs; retain the original task ablations and model labels. No model or judge calls.
+- Preserve QA rubric direction (1 best, 3 worst), group ranking correlations once per complete ranking, and add the previously omitted SOP-generation grades. All metric scales remain distinct.
+- Keep human QA references, ungraded segmentation settings and SOP-improvement outputs in raw. Only graded segmentation UUIDs with verified original input sequences enter the tables. Provider routing and image limits come from the pinned harness.

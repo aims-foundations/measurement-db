@@ -1,0 +1,54 @@
+format_version: 1
+tables:
+  traces:
+    rows: 277106
+    logical_sha256: 71183efe16700b7e28d6eece8902290d53359d37faedcdb920085e031d2554cb
+  subjects:
+    rows: 20
+    logical_sha256: 541a47f0b008997bb6a7688f2fce72f721db167a0901f4ea8c4dbc2cfdc2d410
+  responses:
+    rows: 277106
+    logical_sha256: a6e11284773ea1ccb941624ced41fd65bb243d5f0b7e65721fc67863a6b7b0d0
+  items:
+    rows: 13953
+    logical_sha256: d82cdde0676b853d694b2599d0bc5a451404bf85ec37d77b7c5c634cf8dadcf8
+  benchmarks:
+    rows: 1
+    logical_sha256: d6000fe32635246a5223176ff02098507df1c0160cd8d3ea3a9996000b39a204
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1Wpgeh6_FH-DRiPPVqbJYI3wTGNB4lbwk
+    locator: Twenty MMLU prediction files pinned in metadata.yaml, joined to the author-published question
+      bank
+    scope: Native records and reference-matching subset; conflicting historical answers remain excluded, without
+      imputation.
+    expected: 20
+  source_records:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1Wpgeh6_FH-DRiPPVqbJYI3wTGNB4lbwk
+    locator: Twenty MMLU prediction files pinned in metadata.yaml, joined to the author-published question
+      bank
+    scope: Native records and reference-matching subset; conflicting historical answers remain excluded, without
+      imputation.
+    expected: 277634
+  source_matching_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1Wpgeh6_FH-DRiPPVqbJYI3wTGNB4lbwk
+    locator: Twenty MMLU prediction files pinned in metadata.yaml, joined to the author-published question
+      bank
+    scope: Native records and reference-matching subset; conflicting historical answers remain excluded, without
+      imputation.
+    expected: 277106
+  source_reference_conflicts:
+    kind: count
+    origin: derived_from_data
+    source: https://drive.google.com/drive/folders/1Wpgeh6_FH-DRiPPVqbJYI3wTGNB4lbwk
+    locator: Twenty MMLU prediction files pinned in metadata.yaml, joined to the author-published question
+      bank
+    scope: Native records and reference-matching subset; conflicting historical answers remain excluded, without
+      imputation.
+    expected: 528

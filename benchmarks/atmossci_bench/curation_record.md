@@ -1,0 +1,3 @@
+- Import the pinned upstream main MCQ, extra MCQ and OEQ exports; retain ungraded attempts and collapse only identical judgment copies.
+- Restore each recorded MCQ problem, options and optional knowledge. Preserve applied answer keys and fractional grades, including disagreements with generation-time keys; no rejudging.
+- Keep complete native JSON, source positions, run metadata and question-bank records in traces. Historical API requests and unspecified settings remain unknown.

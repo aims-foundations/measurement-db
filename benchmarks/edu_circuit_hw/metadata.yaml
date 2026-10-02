@@ -1,0 +1,121 @@
+benchmark:
+  name: EDU-CIRCUIT-HW
+  description: Released model transcriptions of 513 anonymized circuit-analysis homework samples and the available
+    recognition-error judgments for six MLLMs.
+  testing_condition: Observation-set transcription only. Retain all 3078 archived model attempts; 184 lack a published
+    judgment and eight judge API exceptions are ungraded. Other published judgments yield 1 for no significant recognition
+    error and 0 for reported recognition errors. This deliberately corrects the upstream summary script, which counts
+    judge API exceptions as recognition errors. Gold transcriptions use expert corrections for 293 samples and the
+    author-documented reviewed Gemini transcription for the remaining 220. Original input PNGs and complete model
+    Markdown are retained; no image resizing, inference or rejudging. Textbook problem context is withheld upstream.
+  paper_url: https://arxiv.org/abs/2602.00095
+  data_source_url: https://github.com/gt-learning-innovation/CIRCUIT_EDU_HW_ACL
+  subject_type: model
+  item_type: handwritten solution
+  license: 'Code: Apache-2.0. The Georgia Tech dataset record states In Copyright; its CC0 statement covers metadata
+    only. No explicit CC-BY-NC dataset license was found in the captured release.'
+  citation: 'Sun, W. et al. EDU-CIRCUIT-HW: Evaluating Multimodal Large Language Models on Real-World University-Level
+    STEM Student Handwritten Solutions. arXiv:2602.00095 (2026).'
+  tags:
+  - handwriting_recognition
+  - multimodal
+  - circuit_analysis
+  - education
+  modality:
+  - text
+  - image
+  domain:
+  - education
+  - science
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Published judge reports a significant recognition error.
+      '1': Published judge reports no significant recognition errors.
+  categorical: true
+  release_date: 2026-01
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: EDU-CIRCUIT-HW_v1.zip
+      results: release/check_recognition_error_val/LLM-as-a-judge-selection/0_finaloutput/*.csv
+      split: EDU-CIRCUIT-HW_v1/Screenshot_output_anon/set_splitting/obsetf_involved_data.csv
+    columns:
+      Homework ID: homework
+      Student ID: student
+      Question ID: question
+      Recognition Errors: judgment
+    keys:
+      homework: homework
+      student: student
+      question: question
+    patterns:
+      transcript: ^EDU-CIRCUIT-HW_v1/(?:Observationset_Final|Rectified_recognized_markdown_done_Anon)/(?P<folder>[^/]+)/Homework_collected_database_trial_(?P<homework>Homework\d+)_(?P<student>student_\d+)/models/(?P<model>[^/]+)/Compare/(?P<question>.+?)(?:_(?P<page>\d+))?_markdown\.md$
+      image: ^EDU-CIRCUIT-HW_v1/Screenshot_output_anon/(?P<homework>Homework\d+)/(?P<student>student_\d+)/(?P<question>.+?)(?:_\((?P<page>\d+)\))?\.png$
+      result_model: ^Recognition_Detection_(.+)_obsetf_gemini-2\.5-pro\.csv$
+    model_folders:
+      v6_claude_sonnet4p5: claude-sonnet-4-5-20250929
+      v6_Gemini_2p5: gemini-2.5-pro
+      v6_Gemini_3: gemini-3-pro-preview
+      v6_gpt5p1: gpt-5.1
+      v6_qwen3vl8bthinking: qwen3-vl-8b-thinking
+      v6_qwen3vlplus: qwen3-vl-plus
+    model_labels:
+      claude-sonnet-4-5-20250929: Claude-4.5-Sonnet
+      gemini-2.5-pro: Gemini-2.5-Pro
+      gemini-3-pro-preview: Gemini-3-Pro-Preview
+      gpt-5.1: GPT-5.1
+      qwen3-vl-8b-thinking: Qwen3-VL-8B-Thinking
+      qwen3-vl-plus: Qwen3-VL-Plus
+    reference_priority:
+      Final_4_LLM_judge: '0'
+      v6_Gemini_2p5: '1'
+    grading_text:
+      no_error: no significant errors found
+      exception: 'Error:'
+    task:
+      instruction: Transcribe this anonymized handwritten circuit-analysis solution, including mathematical derivations
+        and circuit diagrams, into Markdown.
+    input_scope:
+      description: Original released PNG pixels for the observation sample. The author withholds copyrighted textbook
+        problem statements, so historical problem context and full model request envelopes are unavailable. No text
+        from recognition judgments is supplied as input.
+    subject_features:
+      harness: EDU-CIRCUIT-HW
+      configuration_scope: Published model identifier and observation-set folder. Historical request settings and
+        exact backend revisions are not asserted.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/gt-learning-innovation/CIRCUIT_EDU_HW_ACL
+    revision: d56d72861f443337d47d44714ee4ef8d4f6e5429
+    files:
+    - match: (?:README\.md|LICENSE|digital_library_release/README\.md|check_recognition_error_val/LLM-as-a-judge-selection/0_finaloutput/[^/]+\.csv|(?!(?:docs)/).*\.py|.*Prompts/.*\.txt)
+      path: release/{path}
+  - name: archive
+    url: https://repository.gatech.edu/server/api/core/bitstreams/09496897-10b3-4675-bcf5-73b5b9802cd2/content
+    revision: EDU-CIRCUIT-HW_v1
+    file: EDU-CIRCUIT-HW_v1.zip
+    size: 9098243683
+    sha256: 00ad7d5608999739cf95005d01638992c33490ead1829a6f4f8e1727e5993078
+grading:
+  rule: 'Use the released recognition-error report against the expert-verified reference: 1 if it starts with the
+    no-significant-errors marker, 0 for a substantive recognition-error report. Missing reports and Error: judge
+    API exceptions are null. This is transcription recognition quality, not correctness of the student circuit solution.'
+  verifiers:
+    recognition:
+      kind: published_llm_judgment
+      model: gemini-2.5-pro
+      source: https://github.com/gt-learning-innovation/CIRCUIT_EDU_HW_ACL/blob/d56d72861f443337d47d44714ee4ef8d4f6e5429/check_recognition_error_val/step_9_run_LLM_as_a_judge_on_data_debug_full_data.py
+      reference_policy: Prefer expert-corrected Markdown; otherwise use the original Gemini transcription explicitly
+        described by the authors as reviewed and correct. Drop the first source-image line for the comparison text,
+        as the published judge does.
+      exception_policy: The upstream display script counts API exceptions as one error. MeasurementDB preserves
+        the attempt and original exception, with an unavailable grade instead of a fabricated recognition failure.

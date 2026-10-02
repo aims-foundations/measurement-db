@@ -1,0 +1,145 @@
+benchmark:
+  description: Original MMOral closed/open dental radiograph tasks and released OPTG voter/ensemble choice records.
+  testing_condition: A subject is an explicitly named released voter or ensemble policy, not an inferred canonical
+    model. Import complete and partial closed-question choice maps. Merge only the two explicitly reproduced v19/v20
+    copies; equal answers from distinct smoke policies remain distinct. Compare each released choice with the unchanged
+    original answer key using the source normalizer. Ensemble selection uses benchmark labels, and detailed label
+    exposure is described in the preserved source study. These records are not independent zero-shot model evaluations.
+    The original task bank supplies question text, ordered choices and original radiographs, not reconstructed historical
+    API prompts. The study compact export replaces 38 literal None options with NaN; flag those coordinates and
+    retain the original option text. The exact historical presentation of those options, model revisions, prompts,
+    decoding settings and derived crops/overlays are not established by the choice maps. Retain all 578 open questions
+    as an unobserved task bank; no open-question predictions or grades are invented. No model, ensemble-selection
+    algorithm or judge is executed.
+  paper_url: https://arxiv.org/abs/2509.09254
+  data_source_url: https://github.com/zmeik/OPTG_Analizer
+  subject_type: system
+  item_type: dental radiograph question
+  license: The OralGPT HF task card and OPTG source repository declare MIT; preserve both attributions.
+  citation: "@inproceedings{hao2025mmoral,\n  title={Towards Better Dental AI: A Multimodal Benchmark and Instruction\
+    \ Dataset for Panoramic X-ray Analysis},\n  author={Hao, Jing and Fan, Yuxuan and Sun, Yanpeng and Guo, Kaixin\
+    \ and Lin, Lizhuo and Yang, Jinrong and Ai, Qiyong Hemis and Wong, Lun M and Tang, Hao and Hung, Kuo Feng},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - medical
+  - dental
+  - radiology
+  - multimodal
+  - vqa
+  modality:
+  - image
+  - text
+  domain:
+  - medicine
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-09
+  release: public
+  granularity: item
+  name: MMOral-Bench recorded policies
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      compact_tasks: optg/data/mmoral_compact_questions.json
+      policy_prefix: optg/
+      ensemble_prefix: optg/predictions/
+    choices:
+      option1: A
+      option2: B
+      option3: C
+      option4: D
+    copied_exports:
+      optg/predictions/v19_reproduced_from_bundle.json: optg/predictions/v19_primary_370.json
+      optg/predictions/v20_reproduced_from_bundle.json: optg/predictions/v20_strict_363.json
+    prompt:
+      question: '{question}
+
+        '
+      options: 'Options:
+
+        '
+      choice: '{letter}. {value}
+
+        '
+    subject_features:
+      source_study: OPTG_Analizer
+      evaluated_entity: released named voter or ensemble policy
+      historical_model_revision: not_established_per_export
+      historical_prompt_and_decoding: not_released_with_choice_maps
+      visual_preprocessing: variants may use derived crops and overlays, consult preserved study notes
+      label_exposure: ensemble selection uses benchmark labels, base-voter exposure is not independently established
+      input_export_caveat: 38 literal None options become NaN in compact export, actual historical presentation
+        is unknown
+    tasks:
+      closed: tasks/MMOral-OPG-Bench-Closed-Ended.tsv
+      open: tasks/MMOral-OPG-Bench-Open-Ended.tsv
+    prediction_globs:
+      ensembles: optg/predictions/*.json
+      voters: optg/voter_predictions/*.json
+    parsing:
+      aligned_fields: question category type answer file_name
+      missing_option_literal: None
+    labels:
+      image_media_type: image/jpeg
+      input_scope: original benchmark task definition, historical policy prompt and transformed images are not reconstructed
+      subject_prefix: 'MMOral / OPTG / '
+grading:
+  verifiers:
+    closed:
+      rule: Normalize the recorded choice with strip, upper and its first character, as in the source normalize_answer
+        function; compare A/B/C/D with the original task answer. Unrecognized choices remain ungraded. This is a
+        letter-comparison grade, not a claim of label-blind evaluation.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Normalized choice differs from the released answer key.
+          '1': Normalized choice matches the released answer key.
+      verifier:
+        kind: recorded_choice_comparison
+        source: https://github.com/zmeik/OPTG_Analizer/blob/a44e45affbad7bd1c1a099456b33857ba1b7047c/src/mmoral_oracle_lite.py
+        functions:
+        - normalize_answer
+        - score_predictions
+        model_or_judge_execution: none
+    open:
+      rule: The official open-question rubric compares a predicted answer with the released reference and requests
+        a correctness score from 0 to 1. This import contains task references only; no open-question prediction
+        or judgment is available in the selected result release.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      verifier:
+        kind: official_reference_based_llm_rubric
+        source: https://github.com/isjinghao/OralGPT/blob/efd9fb4e68b2f63a4b52f7352cae8710685469dd/MMOral-Bench-EvalKit/eval_MMOral-OPG-Open.py
+        imported_judgments: none
+        execution: not_performed
+sources:
+  upstream:
+  - name: tasks
+    url: https://huggingface.co/datasets/OralGPT/MMOral-OPG-Bench
+    revision: dbab248c3a09cc4c46682e0d5004fb246d84e92e
+    files:
+    - match: MMOral-OPG-Bench-(?:Closed|Open)-Ended\.tsv|README\.md
+      path: tasks/{path}
+  - name: optg
+    url: https://github.com/zmeik/OPTG_Analizer
+    revision: a44e45affbad7bd1c1a099456b33857ba1b7047c
+    files:
+    - match: .*
+      path: optg/{path}
+  - name: author
+    url: https://github.com/isjinghao/OralGPT
+    revision: efd9fb4e68b2f63a4b52f7352cae8710685469dd
+    files:
+    - match: README\.md|LICENSE(?:\.md)?|MMOral-Bench-EvalKit/(?:README\.md|eval_MMOral-OPG-(?:Closed|Open)\.py|vlmeval/dataset/mmoral\.py)
+      path: author/{path}

@@ -1,0 +1,5 @@
+- Captured AGC-Bench revision `30918045d5c1cf318e698c73469400de2251b9e6` and pinned component references: 267,018 native attempts across 83 model labels and 67 component datasets, plus 182,924 individual panel judgments.
+- Kept native and panel grading protocols distinct, with judge identity attached to the item. Preserved full prompts, outputs, source run labels, and all 52,888 previous grades and 1,000 previous reference answers.
+- Reconstructed IRFL's text and shuffled image choices from its upstream task bank and scenario. All 1,950 recorded IRFL grades agree; the tables include 642 original images.
+- Preserved 555 AnaloBench partial-credit scores. Flagged 121 invalid ratings and 4,150 exported model predictions as unavailable grades, retaining their original values in traces. Aggregate scores, calibrated targets and distilled predictions are trace metadata.
+- Exact API settings and native judge identities are not fully recorded. Component implementations include proxy metrics; metadata links to the actual run specifications and explains each score's interpretation.

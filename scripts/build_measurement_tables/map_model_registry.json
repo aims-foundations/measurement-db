@@ -6259,6 +6259,12 @@
   "release_date": "2024-02-15",
   "release_date_url": "https://blog.google/technology/ai/google-gemini-next-generation-model-february-2024/"
  },
+ "gemini-1.5-flash-8b-001": {
+  "model": "Google Gemini 1.5 Flash-8B",
+  "company": "Google",
+  "release_date": "2024-10-03",
+  "release_date_url": "https://developers.googleblog.com/en/gemini-15-flash-8b-is-now-generally-available-for-use/"
+ },
  "gemini-1.5-pro-001": {
   "model": "Google Gemini 1.5 Pro",
   "company": "Google",

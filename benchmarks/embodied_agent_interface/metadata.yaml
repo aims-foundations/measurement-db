@@ -1,0 +1,89 @@
+benchmark:
+  name: Embodied Agent Interface
+  description: 'Released BEHAVIOR goal-interpretation answers: full task prompts, symbolic goal references and recorded
+    LLM outputs; historical grades are unavailable.'
+  testing_condition: One released answer per native model label and BEHAVIOR goal-interpretation task. Preserve
+    all 2500 attempts without executing a model, simulator or grader. The intended score is per-task goal-condition
+    F1, but the original answer archive contains no judgments; all response grades remain null. These are recorded
+    attempts, not a reconstructed scored leaderboard. The legacy builder locally recomputed grades and is not the
+    source of published historical judgments. Other EAI modules remain in the untouched original archive, outside
+    this curated subset. Literal model labels, including source spelling, are retained; historical request settings
+    are not recorded.
+  paper_url: https://arxiv.org/abs/2410.07166
+  data_source_url: https://github.com/embodied-agent-interface/embodied-agent-interface
+  subject_type: model
+  item_type: task
+  license: The author code repository declares MIT; its dataset card declares Apache-2.0. Preserve both original
+    notices and the author-linked output archive without changing its contents.
+  citation: 'Li et al. Embodied Agent Interface: Benchmarking LLMs for Embodied Decision Making. NeurIPS 2024 Datasets
+    and Benchmarks.'
+  tags:
+  - embodied
+  - planning
+  - goal_interpretation
+  modality:
+  - text
+  domain:
+  - embodied agents
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-10
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: 531c62f8df2cb392bdf1907923c76da41cad4fe6
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      prompts: release/src/behavior_eval/evaluation/goal_interpretation/resources/data/goal_interpretation_prompts.json
+      conditions: release/src/behavior_eval/evaluation/goal_interpretation/resources/data/all_conditions.json
+      archive: outputs/helm_output.zip
+      members: helm_output/behavior/goal_interpretation/*_outputs.json
+    labels:
+      subject_prefix: 'Embodied Agent Interface / '
+      simulator: behavior
+      module: goal_interpretation
+      settings_status: not_recorded
+      grade_status: historical_judgments_unavailable
+      condition: simulator=behavior;module=goal_interpretation;historical_judgments_unavailable
+grading:
+  rule: The official goal interpreter parses the model answer into symbolic conditions and compares them with annotated
+    alternatives. Each annotated goal uses the alternative with most satisfied conditions. Per-task F1 combines
+    precision and recall from satisfied, unsatisfied and false-positive conditions; unparseable outputs are treated
+    as empty predictions by that grader. No original per-task grade is present in this archive, so store null instead
+    of computing or guessing a historical judgment.
+  verifiers:
+    official_pipeline:
+      kind: symbolic_goal_comparison
+      source: https://github.com/embodied-agent-interface/embodied-agent-interface/blob/531c62f8df2cb392bdf1907923c76da41cad4fe6/src/behavior_eval/evaluation/goal_interpretation/scripts/evaluate_results.py
+      parser: parse_json
+      comparison: evaluate_goals
+      metric: compute_confusion_metrics
+      assessment_status: historical_judgments_unavailable
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/embodied-agent-interface/embodied-agent-interface
+    revision: 531c62f8df2cb392bdf1907923c76da41cad4fe6
+    files:
+    - match: LICENSE|README\.md|src/eai_eval/utils/download_utils\.py|src/behavior_eval/evaluation/goal_interpretation/(resources/data/(all_conditions|goal_interpretation_prompts)\.json|scripts/evaluate_results\.py)
+      path: release/{path}
+  - name: outputs
+    url: https://drive.usercontent.google.com/download?id=15RG2tVWDiDQpXioyT4TTB64sOIQqUl5d&export=download&confirm=t
+    file: outputs/helm_output.zip
+    size: 1439328
+    sha256: 3c11e46f3621e53a4a9d341049be7d643a95153d16cd116b795c93481a8e805b
+    revision: sha256:3c11e46f3621e53a4a9d341049be7d643a95153d16cd116b795c93481a8e805b
+  - name: dataset_notice
+    url: https://huggingface.co/datasets/Inevitablevalor/EmbodiedAgentInterface
+    revision: f60616799615aea641a47f333bc3b74f45092568
+    files:
+    - match: README\.md
+      path: dataset_notice/{path}

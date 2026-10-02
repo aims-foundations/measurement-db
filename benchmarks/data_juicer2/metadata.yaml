@@ -1,0 +1,151 @@
+benchmark:
+  name: Data-Juicer 2.0
+  description: Published processing-time measurements for Data-Juicer 2.0 deduplication, CPU/GPU operators
+    and cloud-scale workloads.
+  testing_condition: 'Import 22 explicitly reported measurements: six deduplication cells, eight CPU/GPU cells
+    and eight prose values. Response is processing time in seconds, lower is better. Two approximate values
+    retain their qualifiers; one strict lower bound has a null point response with the bound preserved in its
+    result record. Each item is one processing workload. These are published workload-level timings, not independent
+    seed-level logs or LLM correctness observations. Exact historical software versions, input subsets and
+    raw execution logs are unavailable. The pinned current repository supplies documentation and scripts, not
+    evidence of the historical run configuration. Numeric values absent from figure labels are not estimated
+    from plotted positions. The GPU table is Table 4 in the PDF and Table 3 in the HTML. No evaluation execution
+    or new judging.'
+  paper_url: https://arxiv.org/abs/2501.14755v3
+  data_source_url: https://arxiv.org/html/2501.14755v3
+  subject_type: system
+  item_type: processing_workload
+  granularity: item
+  multi_single_turn: single_turn
+  license: 'Protocol code: Apache-2.0; paper: arXiv non-exclusive distribution license (full paper captures
+    retained locally).'
+  citation: "@article{chen2025datajuicer2,\n  title={Data-Juicer 2.0: Cloud-Scale Adaptive Data Processing\
+    \ for and with Foundation Models},\n  author={Chen, Daoyuan and Huang, Yilun and Pan, Xuchen and Jiang,\
+    \ Nana and Wang, Haibin and Zhang, Yilei and Ge, Ce and Chen, Yushuo and Zhang, Wenhao and Ma, Zhijian\
+    \ and Huang, Jun and Lin, Wei and Li, Yaliang and Ding, Bolin and Zhou, Jingren},\n  journal={arXiv preprint\
+    \ arXiv:2501.14755},\n  year={2025}\n}"
+  tags:
+  - data_processing
+  - scalability
+  - infrastructure
+  - multimodal
+  - deduplication
+  modality:
+  - text
+  - image
+  domain:
+  - ml_engineering
+  response_type: continuous_unbounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: null
+    direction: lower_is_better
+  categorical: false
+  release_date: '2024-12-23'
+  version: arXiv:2501.14755v3 (2025-10-29)
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      paper_html: paper/data-juicer-v3.html
+      paper_source: paper/data-juicer-v3-source.tar.gz
+    tables:
+      dedup: S6.T2
+      operators: A8.T3
+    engines:
+      dedup: RayDeduplicator
+      operators: operator
+    patterns:
+      time: ^(?P<qualifier>~|about|over)?\s*(?P<number>[\d,]+(?:\.\d+)?)\s*(?P<unit>s|min|h)$
+    qualifiers:
+      as_printed: as_printed
+      '~': approximate
+      about: approximate
+      over: strict_lower_bound
+    unit_seconds:
+      s: '1'
+      min: '60'
+      h: '3600'
+    subject:
+      prefix: 'Data-Juicer 2.0 '
+    task_descriptions:
+      dedup: MinHash deduplication of the reported {dataset_size} RedPajama/CommonCrawl text corpus.
+      operators: Process 10,000 image-text pairs using {operation}; the reported allocation is np={np} and
+        VRAM={vram}. The test machine has 64 processors and eight Nvidia A100 GPUs; the comparison enables
+        or disables GPU support. Exact input identities and model snapshots are unavailable.
+      multimodal: Process the multimodal five-operator recipe at {scale}x the 560K-sample base dataset (LLaVA
+        image-text pairs). Exact replicated inputs and historical configuration are unavailable.
+      storage: Process the reported {scale}x dataset for the CPFS storage comparison. The statement does not
+        specify the recipe modality or exact input subset.
+      scaleup: Process the reported {scale}x dataset for the Ray core-count comparison. The statement does
+        not restate the recipe modality, storage configuration or exact input subset.
+      splitting: Process the reported {scale}x dataset for the adaptive subset-splitting comparison. The statement
+        does not specify the recipe modality or exact input subset.
+    prose_series:
+      multimodal: prose_multimodal
+      storage: prose_storage
+      scaleup: prose_scaleup
+      splitting: prose_splitting
+    prose_multimodal:
+      paragraph: S6.SS5.p1
+      pattern: For multimodal recipes, using (?P<cores>[\d,]+) Ray-DLC cores process datasets in (?P<value_1>[\d,.]+)s
+        and (?P<value_2>[\d,.]+)s for (?P<scale_1>[\d,]+)x and (?P<scale_2>[\d,]+)x dataset sizes, respectively
+      engine: Ray-DLC
+    prose_storage:
+      paragraph: S6.SS5.p2
+      pattern: to process the (?P<scale>[\d,]+)x dataset with (?P<cores>[\d,]+) cores in Ray mode takes (?P<value_1>[\d,.]+)s,
+        .*? than the standard CPFS \((?P<value_2>[\d,.]+)s\)
+      engine: Ray
+      storage_1: AI-oriented CPFS
+      storage_2: standard CPFS
+    prose_scaleup:
+      paragraph: S6.SS5.p2
+      pattern: scale up the dataset to (?P<scale>[\d,]+)x, resulting in times of (?P<value_1>[\d,.]+)s and
+        (?P<value_2>[\d,.]+)s with (?P<cores_1>[\d,]+) and (?P<cores_2>[\d,]+) cores, respectively
+      engine: Ray
+    prose_splitting:
+      paragraph: S6.SS5.p3
+      pattern: with (?P<nodes>[\d,]+) Ray-DLC nodes and (?P<cores>[\d,]+) cores, our subset splitting method
+        reduces the processing time of the (?P<scale>[\d,]+)x dataset from (?P<qualifier_1>over) (?P<value_1>[\d,.]+)s
+        to (?P<qualifier_2>about) (?P<value_2>[\d,.]+)s
+      engine: Ray-DLC
+      splitting_1: without adaptive subset splitting
+      splitting_2: with adaptive subset splitting
+sources:
+  upstream:
+  - name: protocol
+    url: https://github.com/datajuicer/data-juicer
+    revision: 70e8950888f3fc917112b4279c99570637fc9236
+    files:
+    - match: (?:README\.md|LICENSE|docs/Distributed\.md|tests/benchmark_performance/(?:report\.py|run\.sh|configs/(?:text|image)\.yaml))
+      path: protocol/{path}
+  - name: paper_html
+    url: https://arxiv.org/html/2501.14755v3
+    revision: arXiv:2501.14755v3
+    file: paper/data-juicer-v3.html
+    size: 370991
+    sha256: 0e3e6bf9082eae07fa86408441e4c44c275998b3f08d62c939e55b066e95adc5
+  - name: paper_pdf
+    url: https://arxiv.org/pdf/2501.14755v3
+    revision: arXiv:2501.14755v3
+    file: paper/data-juicer-v3.pdf
+    size: 4237280
+    sha256: 5e867a91308a2cb55f15d16fbe60ac254047e18eb0ee73b8727ff566e1aa48ae
+  - name: paper_source
+    url: https://arxiv.org/src/2501.14755v3
+    revision: arXiv:2501.14755v3
+    file: paper/data-juicer-v3-source.tar.gz
+    size: 3374982
+    sha256: d78355cda8ca8673dca510f217bb51492dba5db9909a0cac110763b52c71756d
+grading:
+  rule: Retain the published processing time, converting minutes and hours to seconds. Keep approximate point
+    values explicitly qualified. A strict lower bound has no exact point response; store null and preserve
+    the bound. No success/failure threshold or new measurement is applied.
+  verifiers:
+    runtime:
+      kind: published_runtime
+      source: https://arxiv.org/html/2501.14755v3
+      measurement: elapsed_processing_time_seconds
+      historical_timer_implementation: null
+      extraction: Original timing cells and explicitly stated prose measurements; no plotted-point estimates.

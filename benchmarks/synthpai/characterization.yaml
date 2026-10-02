@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 12578
+    logical_sha256: b27b75803319ef034a5985c995be67dd94f69dd4129fb3193046674b141e8708
+  subjects:
+    rows: 18
+    logical_sha256: 41c79bb926c88f28c63b155b108666a4d951b8c90503a37394b74bc642bd242a
+  responses:
+    rows: 12578
+    logical_sha256: ecc4c27ef026096fcb2636215693a19819b1766e4548f03056ad2b3e6a8223f6
+  items:
+    rows: 9220
+    logical_sha256: 7c89f6edc9421a4dc3cfe06f21fc13c6e3a949327e6854079caedc8b8599e789
+  benchmarks:
+    rows: 1
+    logical_sha256: d469a5c17faa4c2085b01a909ee9ea031f5a14bb1cf65347288313d689e95f1d
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 12578
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 18
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 9220
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 12578
+  source_profiles:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 294
+  source_measured_joint_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 4826
+  source_joint_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 5277
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 7593
+  source_incorrect:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 3627
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 658
+  source_shortened_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 94
+  source_partial:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 700
+  source_username_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/eth-sri/SynthPAI/tree/ba9edc9c8aa1d398bc43bb619a8d859351df9d9c
+    locator: data/synthpai_merged_evals.jsonl; data/thread/predicted and results/predicted original generation/log
+      associations.
+    scope: All native human_evaluated attribute entries, including empty grade lists; first-rank grades of joint
+      calls.
+    expected: 1

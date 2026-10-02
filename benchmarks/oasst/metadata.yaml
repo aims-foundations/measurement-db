@@ -1,0 +1,89 @@
+benchmark:
+  description: Original model-generated assistant replies with their released human preference ranks and complete
+    prompt/output records from the OASST1 all-messages export.
+  testing_condition: 'Select assistant messages whose synthetic flag is true and whose model_name is supplied. Keep
+    every recorded generation, including unranked and moderator-halted conversations. The selected replies all follow
+    a root prompter message, which supplies the complete released conversation context. Subjects retain all 31 literal
+    model/configuration labels. Response is the original zero-based rank within a particular comparison group: lower
+    is preferred, not a binary correctness score. Candidate sets vary, and two source groups have gaps in their
+    recorded ranks; preserve these without renumbering. Missing rank means ungraded, not failure. Original sibling
+    identities and comparison groups remain associated with each observation. Human-written messages and model-generated
+    initial prompts are not response observations. The native export does not provide exact chat templates, individual
+    ballots or all checkpoint identifiers, so these are not inferred.'
+  paper_url: https://arxiv.org/abs/2304.07327
+  data_source_url: https://huggingface.co/datasets/OpenAssistant/oasst1
+  subject_type: model
+  item_type: conversation_prompt
+  license: Apache-2.0
+  citation: "@misc{k\xF6pf2023openassistantconversationsdemocratizing,\n      title={OpenAssistant Conversations\
+    \ -- Democratizing Large Language Model Alignment},\n      author={Andreas K\xF6pf and Yannic Kilcher and Dimitri\
+    \ von R\xFCtte and Sotiris Anagnostidis and Zhi-Rui Tam and Keith Stevens and Abdullah Barhoum and Nguyen Minh\
+    \ Duc and Oliver Stanley and Rich\xE1rd Nagyfi and Shahul ES and Sameer Suri and David Glushkov and Arnav Dantuluri\
+    \ and Andrew Maguire and Christoph Schuhmann and Huu Nguyen and Alexander Mattick},\n      year={2023},\n  \
+    \    eprint={2304.07327},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2304.07327},\n\
+    }"
+  tags:
+  - human_preference
+  - conversation
+  - model_outputs
+  modality:
+  - text
+  domain:
+  - preference
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    direction: lower_is_better
+    meanings:
+      '0': original rank 0 in the reply comparison group (zero is most preferred)
+      '1': original rank 1 in the reply comparison group (zero is most preferred)
+      '2': original rank 2 in the reply comparison group (zero is most preferred)
+      '3': original rank 3 in the reply comparison group (zero is most preferred)
+      '4': original rank 4 in the reply comparison group (zero is most preferred)
+  categorical: true
+  release_date: '2023-04-12'
+  release: public
+  name: 'OpenAssistant OASST1: model-attributed assistant replies'
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      messages: 2023-04-12_oasst_all.messages.jsonl.gz
+    labels:
+      harness: OpenAssistant conversation collection
+      input_scope: Complete released root prompt. The export does not specify an exact chat template or system prompt.
+      configuration_scope: Literal source model/configuration label. Unrecorded settings are unknown.
+grading:
+  rule: Preserve the released zero-based human preference rank among replies to the same prompt. Raters compare
+    fulfillment of the request, factual accuracy and the OpenAssistant guidelines. Rank zero is most preferred;
+    lower is better. The rank is relative to the released comparison group, not an absolute correctness judgment.
+    Preserve unavailable ranks as null and do not repair gaps in a source ranking.
+  verifiers:
+    preference:
+      kind: released_human_reply_rank
+      source: https://github.com/LAION-AI/Open-Assistant/blob/f1e6ed9526f5817531f3ab85441a40b3671ddccb/docs/docs/tasks/rank_assistant_replies.md
+      export_source: https://github.com/LAION-AI/Open-Assistant/blob/f1e6ed9526f5817531f3ab85441a40b3671ddccb/backend/oasst_backend/utils/tree_export.py
+      aggregation: Use the original message.rank field. Individual human ballots are not released in this export;
+        no preference is recomputed.
+sources:
+  upstream:
+  - name: messages
+    url: https://huggingface.co/datasets/OpenAssistant/oasst1
+    revision: fdf72ae0827c1cda404aff25b6603abec9e3399b
+    files:
+    - match: 2023-04-12_oasst_all\.messages\.jsonl\.gz|README\.md|LICENSE
+      path: '{path}'
+  - name: protocol
+    url: https://github.com/LAION-AI/Open-Assistant
+    revision: f1e6ed9526f5817531f3ab85441a40b3671ddccb
+    files:
+    - match: docs/docs/tasks/rank_assistant_replies\.md|backend/oasst_backend/utils/tree_export\.py|backend/oasst_backend/utils/ranking\.py|oasst\-data/oasst_data/schemas\.py|LICENSE
+      path: protocol/{path}

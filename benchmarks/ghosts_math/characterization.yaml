@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1066
+    logical_sha256: ae46f30f7e24479cd69c0c762786f86ad776e165f89cdf5cdb029229bf40844b
+  subjects:
+    rows: 3
+    logical_sha256: 8299b81dd2c1568ed45fb91824b91ef653f51f5eeaa00fe90566aba901a2a323
+  responses:
+    rows: 1066
+    logical_sha256: 4ae1fbcd1e88a98f72f2d929e0f2f126f1209ff045948bf0e929c956e7ad3581
+  items:
+    rows: 478
+    logical_sha256: dffaf84d97387f9a50ec86566f4fb57092be00218f317462562ba9723a0c253b
+  benchmarks:
+    rows: 1
+    logical_sha256: 6deb63d2c7defa126c5755c6c99ab9d77a2d40b7d1b23349957c2310cc32503f
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 51
+  source_all_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 1636
+  source_withheld_prompt_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 570
+  source_released_prompt_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 1066
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 1066
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 478
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/friederrr/GHOSTS/zip/680da88564708d57dac1041f7add6be45f0a4bc5
+    locator: Independently read every category JSON and nested record; compare each retained prompt, model/version,
+      original rating and all annotation fields with the formatted tables.
+    scope: All 51 released JSON files contain 1636 observations. The 570 with withheld prompt text remain raw-only;
+      retain all 1066 records with available prompts.
+    expected: 3

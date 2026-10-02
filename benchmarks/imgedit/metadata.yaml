@@ -1,0 +1,106 @@
+benchmark:
+  description: Original input images, editing instructions, BAGEL output images and saved judge responses for the
+    737 single-turn ImgEdit tasks.
+  testing_condition: The BAGEL authors link this result archive in EVAL.md. Preserve 454 original average_score.json
+    grades and 283 attempts omitted by the original parser as null, with complete judge text and generated-image
+    archive references. The original parser recognizes three integer rating lines in each graded attempt and none
+    in each omitted attempt. All nine category means and the overall mean reconcile. The documented grader is gpt-4o-2024-11-20;
+    historical API metadata, precise checkpoint revision and random seed are not recorded. The task-specific rubric
+    and documented grader define item identity. The old hand-transcribed 130 leaderboard cells are aggregates and
+    are retired as individual responses. This cohort is not the benchmark authors' different GPT-4.1 leaderboard
+    protocol. No generation or external judging is rerun.
+  paper_url: https://openreview.net/forum?id=uUCSrMlfD3
+  data_source_url: https://huggingface.co/datasets/Andy1621/BAGEL_results
+  subject_type: image_editing_model
+  item_type: image_and_edit_instruction
+  license: Apache-2.0 as declared by both original Hugging Face dataset cards. Images retain applicable source rights.
+  citation: "@inproceedings{ye2025imgedit,\n  title={ImgEdit: A Unified Image Editing Dataset and Benchmark},\n\
+    \  author={Ye, Yang and He, Xianyi and Li, Zongjian and Lin, Bin and Yuan, Shenghai and Yan, Zhiyuan and Hou,\
+    \ Bohan and Yuan, Li},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - image_editing
+  - instruction_following
+  - generation
+  - gpt_judge
+  modality:
+  - image
+  - text
+  domain:
+  - general
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 1
+    max: 5
+    direction: higher_is_better
+  categorical: false
+  release_date: 2025-05
+  release: public
+  name: 'ImgEdit-Bench: released BAGEL single-turn evaluation'
+  granularity: item
+  multi_single_turn: single_turn
+  version: BAGEL result archive 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      inputs: Benchmark.tar
+      results: imgedit_t4_i1.5.zip
+      tasks: Benchmark/singleturn/singleturn.json
+      rubrics: Benchmark/singleturn/judge_prompt.json
+      input_prefix: Benchmark/singleturn/
+      output_prefix: imgedit_t4_i1.5/
+    files:
+      judgments: result.json
+      grades: average_score.json
+      jsonl: result.jsonl
+      summary: typescore.json
+    labels:
+      model: BAGEL
+      subject_key: imgedit_t4_i1.5
+      condition: singleturn
+      judge: gpt-4o-2024-11-20
+      saved: native_grade_present
+      omitted: native_parser_no_score
+    subject_features:
+      harness: BAGEL ImgEdit evaluation
+      source_run: imgedit_t4_i1.5
+      text_cfg: '4'
+      image_cfg: '1.5'
+      cfg_renorm_min: '0'
+      configuration_scope: CFG values follow the named release and author documentation. Exact historical checkpoint
+        revision and seed are unavailable.
+grading:
+  rule: Use the complete source edit-type rubric. Preserve the publisher's saved arithmetic mean of three integer
+    judge ratings, rounded to two decimals. An attempt without a saved native grade remains ungraded.
+  verifiers:
+    native_judge:
+      kind: released_image_edit_judgment
+      source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/eval/gen/imgedit/basic_bench.py
+      parser_source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/eval/gen/imgedit/step1_get_avgscore.py
+      documented_judge: gpt-4o-2024-11-20
+      parser: For each line, split the stripped text on colon-space. Keep the second part only when there are exactly
+        two parts and it is all digits. Average retained integers and round to two decimals. Omit records with no
+        recognized integers.
+      limitation: Original responses lack API metadata. The documented judge version is not independently attested
+        by each saved result. Preserve parser omissions and original judge text without regrading.
+sources:
+  upstream:
+  - name: benchmark
+    url: https://huggingface.co/datasets/sysuyy/ImgEdit/resolve/f8de753484a2b6bd37f135fd20d308b66b09a523/Benchmark.tar
+    revision: f8de753484a2b6bd37f135fd20d308b66b09a523
+    file: Benchmark.tar
+    size: 50319360
+    sha256: d59ed1d4f68bfd068667ae76c98619e59ade30a5434fe9237cf10bb79450786e
+  - name: imgedit_t4_i1_5
+    url: https://huggingface.co/datasets/Andy1621/BAGEL_results/resolve/941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165/imgedit_t4_i1.5.zip
+    revision: 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165
+    file: imgedit_t4_i1.5.zip
+    size: 1099107325
+    sha256: e311fc0102a74d8fbd47ad177b3f89e70002921d6b3f27b3a649ace36baf6132
+  - name: harness
+    url: https://github.com/ByteDance-Seed/Bagel
+    revision: a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f
+    files:
+    - match: (?:EVAL\.md|LICENSE|README\.md|eval/gen/gen_images_mp_imgedit\.py|eval/gen/imgedit/basic_bench\.py|eval/gen/imgedit/step1_get_avgscore\.py|eval/gen/imgedit/step2_typescore\.py|scripts/eval/run_imgedit\.sh)
+      path: harness/{path}

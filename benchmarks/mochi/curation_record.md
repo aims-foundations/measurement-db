@@ -1,0 +1,3 @@
+- Import all released SVM and distance-readout estimates for 2,019 image sets; keep source coordinates and complete original rows. Repeated exports of the same statistic are counted once.
+- Preserve the exact images and each result file's image order, condition and corresponding answer index. Neutral attachment names keep reference labels out of the task input.
+- These are normalized average accuracies, including below-chance negative values, not individual attempts or SVM decision values. Per-repetition outputs and exact historical checkpoints are unavailable; the pooled distance statistic is identified explicitly. Correct the legacy citation and license using the paper.

@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 23854
+    logical_sha256: bf9862e8494ccc0d0a7740d46fadae4d4f94c5706fe67fd4fcc28ad79a153fb8
+  subjects:
+    rows: 20
+    logical_sha256: 5d7b4b973ed4f5630442d7205fa94fb8752fa35358d3b73697a88cc69d5e03f2
+  responses:
+    rows: 23854
+    logical_sha256: dfce2915c0eba79793e3f9c3d538550acc72ae9f6a372a4974336fb715c82bf2
+  items:
+    rows: 1854
+    logical_sha256: 448a079f82db6947ab5446c08671ff847b1d3112bd427fbbd0a6eedf0c3c837c
+  benchmarks:
+    rows: 1
+    logical_sha256: 277b206a49ae2ba6bf630760659a17e582becb44bc25fcc2b64659008369fc10
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 23854
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 1854
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 20
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 23854
+  source_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 16072
+  source_missing_candidates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 18788
+  source_errors:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 6287
+  source_timeouts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 1495
+  source_empty_solutions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 1
+  source_tasks_with_interface:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/HKUST-KnowComp/Perfcodebench/tree/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    locator: executable_tasks/*/instance.json, baseline/, reference/, harness/ and candidate/*/eval_result.json;
+      independent native-source reconciliation
+    scope: One strict correctness-and-runnability assessment per generated candidate, excluding missing_candidate
+      placeholders and preserving full original execution records.
+    expected: 1244

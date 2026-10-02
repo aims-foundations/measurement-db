@@ -1,0 +1,188 @@
+benchmark:
+  name: DPAI Arena
+  description: Published blind and test-informed software-agent evaluations on enterprise Java/Spring tasks.
+  testing_condition: 'Import the fifteen public leaderboard reports captured in September 2026. Each contains 153
+    tasks evaluated in blind and test-informed conditions. Preserve the published normalized score on its original
+    phase-specific scale, including partial credit, timeout results, empty-patch attempts and pipeline failures.
+    A skipped patch collector does not imply an unattempted task: the native records include completed agent executions.
+    Retain the zero score for the one failed-patch record that reached no scoring evaluator. The reconstructed item
+    includes the released issue, repository, base commit and condition-specific test information; it is not a historical
+    API transcript. Exact historical execution and grading-code revisions are not identified in these reports. Use
+    per-attempt model and CLI version fields; use the native prediction source filename when the CLI name is omitted,
+    and leave unknown CLI versions null.'
+  paper_url: https://dpaia.dev/
+  data_source_url: https://dpaia.dev/
+  subject_type: agent
+  item_type: task
+  license: The grading specifications are Apache-2.0. A data-specific redistribution license for the TeamCity reports
+    and task dataset is not stated in the inspected releases.
+  citation: DPAI Arena. Developer Productivity AIrena. https://dpaia.dev/.
+  tags:
+  - software_engineering
+  - agent
+  - enterprise
+  modality:
+  - text
+  domain:
+  - coding
+  - agents_and_tool_use
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: null
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    reports:
+      prefix: reports/
+    tasks:
+      file: ee-dataset/datasets/java-spring-ee-dataset.json
+      scope: Released issue and repository state with test information in the informed condition. Not a reconstruction
+        of the full historical API envelope.
+    subject:
+      source_pattern: /([^/]+)-(?:blind|informed)-predictions\.json$
+      scope: Configured model label and per-attempt CLI identity. Omitted versions remain unknown. The source filename
+        supplies an omitted CLI name.
+sources:
+  upstream:
+  - name: report_37019
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:37019/artifacts/content/merged_standard_153x_report.json
+    file: reports/37019/merged_standard_153x_report.json
+    size: 72791360
+    sha256: 69708a7c84d3cc35197907bb237654aa73308034ab4be0fdcbda444bcebd8f26
+    revision: '37019'
+  - name: report_37635
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:37635/artifacts/content/merged_standard_153x_report.json
+    file: reports/37635/merged_standard_153x_report.json
+    size: 78967297
+    sha256: c4a1c3a7b29f406e276958dfb764f3455261c8e24fbbaceee5c8d09f8718803f
+    revision: '37635'
+  - name: report_37943
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:37943/artifacts/content/merged_standard_153x_report.json
+    file: reports/37943/merged_standard_153x_report.json
+    size: 75498676
+    sha256: aa1930a212a9001cb5e250133f419b05656fc02c38791d18dc912160de2ae90f
+    revision: '37943'
+  - name: report_38251
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:38251/artifacts/content/merged_standard_153x_report.json
+    file: reports/38251/merged_standard_153x_report.json
+    size: 72461970
+    sha256: ea0290890d4f80597581dc435e5e69a361fb6b42ef1fa7add5256d983067e1d9
+    revision: '38251'
+  - name: report_38559
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:38559/artifacts/content/merged_standard_153x_report.json
+    file: reports/38559/merged_standard_153x_report.json
+    size: 78436431
+    sha256: 59f202b2d2c26d2e85e8c90b131724ca9acd12d1cb90654ee654ec67e038b31d
+    revision: '38559'
+  - name: report_38867
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:38867/artifacts/content/merged_standard_153x_report.json
+    file: reports/38867/merged_standard_153x_report.json
+    size: 75232565
+    sha256: 387082cc2e6413b75a14037906834476b08a156bc1390e8d6f6d4f9c70c9b73d
+    revision: '38867'
+  - name: report_39483
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:39483/artifacts/content/merged_standard_153x_report.json
+    file: reports/39483/merged_standard_153x_report.json
+    size: 121250329
+    sha256: 575d694b80c03ca05e4d5c8924c1575e56cabf7797ffe568da3c19a1830ad746
+    revision: '39483'
+  - name: report_39791
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:39791/artifacts/content/merged_standard_153x_report.json
+    file: reports/39791/merged_standard_153x_report.json
+    size: 92685445
+    sha256: 62c2a2c81f2052b6fea243668edc525ac5e620222989740a4fcef72af4a5f64f
+    revision: '39791'
+  - name: report_40099
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:40099/artifacts/content/merged_standard_153x_report.json
+    file: reports/40099/merged_standard_153x_report.json
+    size: 76112829
+    sha256: d84e39e9434cadeaaca1fb5b6c2f0f30571875e124ccbc3ecc260e38848570e1
+    revision: '40099'
+  - name: report_41639
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:41639/artifacts/content/merged_standard_153x_report.json
+    file: reports/41639/merged_standard_153x_report.json
+    size: 76531533
+    sha256: 522cbc5cb512cc05888c76d4d8649ad1dbc4476bbd32be6cb649297bad10e92f
+    revision: '41639'
+  - name: report_42871
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:42871/artifacts/content/merged_standard_153x_report.json
+    file: reports/42871/merged_standard_153x_report.json
+    size: 73653389
+    sha256: 75d8ae598a8c6c9178d0e1d3c859936a544a19ed9c69bdec46f70a6ff8f68960
+    revision: '42871'
+  - name: report_43798
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:43798/artifacts/content/merged_standard_153x_report.json
+    file: reports/43798/merged_standard_153x_report.json
+    size: 71484608
+    sha256: 0842d07792747845ea0fc23fee2d020129fe82e4616333d5524a6119319a53c6
+    revision: '43798'
+  - name: report_44418
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:44418/artifacts/content/merged_standard_153x_report.json
+    file: reports/44418/merged_standard_153x_report.json
+    size: 403330880
+    sha256: c5ceef5fd14bb84f6fd4c54113d8c2c1e79fef42922788761f653c286c9bf0bd
+    revision: '44418'
+  - name: report_44880
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:44880/artifacts/content/merged_standard_153x_report.json
+    file: reports/44880/merged_standard_153x_report.json
+    size: 62081459
+    sha256: 969f31025b4dd40aa62dee4c0a220c5b3c6601cc3a70016f40b04c8e5b0ab9ef
+    revision: '44880'
+  - name: report_45654
+    url: https://dpaia.teamcity.com/guestAuth/app/rest/builds/id:45654/artifacts/content/merged_standard_153x_report.json
+    file: reports/45654/merged_standard_153x_report.json
+    size: 387273017
+    sha256: ed1f5a69e474b4ec35295fa352f28d30e206bd44f10ad51408e1e9c8ee92ab8d
+    revision: '45654'
+  - name: ee_dataset
+    url: https://github.com/dpaia/ee-dataset
+    revision: b38c9e54fb5028ad4d910ed1e3c9075da9dfa07a
+    files:
+    - match: (?!\.github/).*
+      path: ee-dataset/{path}
+  - name: ee_bench_specs
+    url: https://github.com/dpaia/ee-bench-specs
+    revision: c083596f54955d04fa00e56697f8c829fc475e21
+    files:
+    - match: (?!\.github/).*
+      path: ee-bench-specs/{path}
+grading:
+  rule: Preserve score.normalized_score from the released evaluation record. The author scores targeted tests and
+    regression checks with a weighted sum, normalized to 100 for blind and 50 for informed evaluation. These are
+    pipeline outcomes, including upstream setup, patch and checker failures, not binary correctness. Keep the exact
+    source score rather than recalculating or imputing it. The attached reference patch and test definitions describe
+    the matching released task.
+  verifiers:
+    blind:
+      tests_visible: false
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      implementation:
+        kind: published_result_field
+        field: score.normalized_score
+        source: https://dpaia.dev/
+        protocol_source: https://github.com/dpaia/ee-bench-specs/blob/c083596f54955d04fa00e56697f8c829fc475e21/jvm/dpaia-jvm-evaluation.yaml
+        historical_run_verifier_revision: null
+        scope: Import published native grading results. Do not execute tests or judge patches again.
+        phase: blind
+    informed:
+      tests_visible: true
+      response_scale:
+        kind: interval
+        min: 0
+        max: 50
+        direction: higher_is_better
+      implementation:
+        kind: published_result_field
+        field: score.normalized_score
+        source: https://dpaia.dev/
+        protocol_source: https://github.com/dpaia/ee-bench-specs/blob/c083596f54955d04fa00e56697f8c829fc475e21/jvm/dpaia-jvm-evaluation.yaml
+        historical_run_verifier_revision: null
+        scope: Import published native grading results. Do not execute tests or judge patches again.
+        phase: informed

@@ -1,0 +1,138 @@
+benchmark:
+  license: QATCH declares Apache-2.0. Spider is CC-BY-SA-4.0. Original constituent-table attribution is retained
+    in the QATCH source README; source-specific terms continue to apply.
+  data_source_url: https://github.com/spapicchio/QATCH
+  description: Original QATCH question-answering and semantic-parsing results, with complete table contexts and
+    five distinct recorded grading protocols.
+  modality:
+  - text
+  - table
+  domain:
+  - tabular
+  - code
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  paper_url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/62a24b69b820d30e9e5ad4f15ff7bf72-Abstract-Datasets_and_Benchmarks.html
+  release_date: '2023-06-15'
+  release: public
+  name: QATCH
+  version: 82fa7ad7d6fb607977b525f853d39dc056a95911
+  granularity: item
+  subject_type: model
+  item_type: task
+  multi_single_turn: single_turn
+  testing_condition: Import all nine original result CSVs, including the large semantic-parsing custom-table files
+    and both Spider splits. Question-answering models received different sampled custom tables; recover each complete
+    table and column order from the released SELECT * and unfiltered column projections. Keep original recorded
+    table-cell strings as attachments, with their verified headers in item content. Official Spider database bytes
+    and schemas accompany the corresponding questions. These resources preserve the known task context, not a claim
+    that raw SQLite or attachment bytes were directly passed to a model. Publication rows identify recorded observations,
+    not guaranteed independent generations. Exact historical prompt serialization, endpoint versions and runtime
+    settings are not fully available. Separate QA/SP configurations and unnamed RESDSQL from RESDSQL-large. Each
+    applicable metric is a separate grading protocol and therefore part of item identity. Tuple order is not evaluated
+    for non-ORDERBY tasks; omit those inapplicable observations. Three blank cell-precision grades remain unavailable,
+    not zero. Preserve all recorded scores and complete source records without clipping, normalization or regrading.
+    Eight merged QA source rows have count-query targets inconsistent with the official Spider databases; four SP
+    rows contain source text-decoding differences. Other reference differences reflect exported numeric precision
+    or small floating-point differences. Preserve the published references and scores, and document these source
+    issues rather than silently correcting them.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: qatch-results.zip
+      spider: spider-data.zip
+      spider_prefix: spider_data/
+      result_pattern: generated_tests/*/*/*/*.csv
+      merged: generated_tests/question-answering/spider/tests_results_merged.csv
+    labels:
+      harness: QATCH original released evaluation
+      table_attachment: table_cells.pydata
+      database_attachment: database.sqlite
+    models:
+      chatgpt: ChatGPT
+      tapas: TAPAS-wtq
+      tapas-wtq: TAPAS-wtq
+      tapex: TAPEX-wtq
+      tapex-wtq: TAPEX-wtq
+      resdsql: RESDSQL
+      resdsql-large: RESDSQL-large
+    merged_models:
+      chatgpt: chatgpt
+      tapas: tapas
+      tapex: tapex
+grading:
+  rule: Preserve each original metric value and its published reference, including documented upstream target inconsistencies.
+    Missing applicable grades remain null.
+  verifiers:
+    cell_precision:
+      kind: released_deterministic_metric
+      metric: cell_precision
+      source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/cell_precision_tag.py
+      normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
+      rule: Fraction of predicted cells matching target cells after the original source normalization.
+      scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
+        model inference or graders are rerun.
+    cell_recall:
+      kind: released_deterministic_metric
+      metric: cell_recall
+      source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/cell_recall_tag.py
+      normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
+      rule: Fraction of target cells found among predicted cells after the original source normalization.
+      scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
+        model inference or graders are rerun.
+    tuple_cardinality:
+      kind: released_deterministic_metric
+      metric: tuple_cardinality
+      source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_cardinality_tag.py
+      normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
+      rule: Ratio of the smaller row count to the larger row count, with the source empty-output handling.
+      scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
+        model inference or graders are rerun.
+    tuple_constraint:
+      kind: released_deterministic_metric
+      metric: tuple_constraint
+      source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_constraint_tag.py
+      normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
+      rule: Original row-wise overlap measure preserving tuple associations and source multiplicity handling.
+      scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
+        model inference or graders are rerun.
+    tuple_order:
+      kind: released_deterministic_metric
+      metric: tuple_order
+      source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/tuple_order_tag.py
+      normalization_source: https://github.com/spapicchio/QATCH/blob/82fa7ad7d6fb607977b525f853d39dc056a95911/src/metrics/abstract_metric.py
+      rule: Original normalized rank-order score, applicable only to the released ORDERBY tasks.
+      scope: Import the recorded value. Model outputs and published targets are preserved verbatim; no SQL predictions,
+        model inference or graders are rerun.
+sources:
+  upstream:
+  - name: results
+    url: https://drive.usercontent.google.com/download?id=1_z8N52QNAHnxpHv54VhbvYu7DbKV6QRv&export=download&confirm=t
+    revision: null
+    file: qatch-results.zip
+    size: 216761341
+    sha256: b64ad292c5fdc2be063947ab0003cc3ba61c081c9c421d1729617763d69d1fc9
+  - name: spider
+    url: https://drive.usercontent.google.com/download?id=1403EGqzIDoHMdQF4c9Bkyl7dZLZ5Wt6J&export=download&confirm=t
+    revision: null
+    file: spider-data.zip
+    size: 205800266
+    sha256: 00636695dabed6b5f4b8328a16b13e069a2f16591d5efcce57660669c85b121b
+  - name: original_protocol
+    url: https://github.com/spapicchio/QATCH
+    revision: 82fa7ad7d6fb607977b525f853d39dc056a95911
+    files:
+    - match: .*\.py|README\.md
+      path: protocol/{path}
+  - name: license_and_attribution
+    url: https://github.com/spapicchio/QATCH
+    revision: ae47e4496e33a9894f822184ddb44d90164f4aa8
+    files:
+    - match: LICENSE|README\.md
+      path: release/{path}

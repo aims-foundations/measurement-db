@@ -1,0 +1,158 @@
+benchmark:
+  name: RISEBench
+  description: Reasoning-informed visual editing on 360 temporal, causal, spatial and logical tasks. This
+    import contains 21 author-released model exports and two historical BAGEL configurations, with individual
+    image-completion judgments and separate grading protocols.
+  testing_condition: The model receives an instruction and input image. LLM judges assess generated images
+    using task references and category-specific rubrics. Historical BAGEL results and the later author
+    release retain distinct grading protocols. Native component scores, completion flags, judge explanations
+    and available generated images are preserved; failed judge parses remain ungraded. Seven author-marked
+    missing-image failures retain their native zero grades. Precise weight revisions, seeds and most generation
+    settings are unreported. Hailuo records assess released images extracted from videos. Later-release
+    judge identity is not recorded per run; the captured code documents a GPT-4.1 default, which is not
+    asserted as an observed run setting. Hailuo records include the released video-generation prompt as
+    an additional item input and preserve the complete generated video alongside its judged image.
+  paper_url: https://openreview.net/forum?id=T3UksaPK64
+  data_source_url: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: 'Zhao et al. (2025). Envisioning Beyond the Pixels: Benchmarking Reasoning-Informed Visual
+    Editing. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - visual-editing
+  - multimodal
+  - reasoning
+  - image-generation
+  modality:
+  - image
+  - text
+  domain:
+  - reasoning
+  - general
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Does not meet the released completion rule.
+      '1': Meets the released completion rule.
+  categorical: true
+  release_date: 2025-05
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    subjects:
+      rise_t4_i1.5: BAGEL
+      rise_t4_i2_think: BAGEL
+    thinking:
+      rise_t4_i1.5: disabled
+      rise_t4_i2_think: enabled
+    cfg_img_scale:
+      rise_t4_i1.5: '1.5'
+      rise_t4_i2_think: '2.0'
+    subject_features:
+      harness: BAGEL RISE evaluation
+      cfg_text_scale: '4'
+      cfg_renorm_min: '0'
+    grading_fields:
+      reference_img: Reference image used by the judge when supplied.
+      consistency_free: Native flag controlling consistency judgment.
+      reasoning_img: Native flag requesting the input image for reasoning judgment.
+      reasoning_img_op: Native flag requesting a reference image for reasoning judgment.
+      reasoning_wo_ins: Native flag selecting the logical rubric without instruction text.
+      problem: Native logical-task variant marker.
+      reference_old: Historical reference retained in the released task record.
+    current_subjects:
+      BAGEL_with_cot: BAGEL
+      BAGEL_without_cot: BAGEL
+      emu2: EMU2
+      flux-canny: FLUX.1-Canny
+      gemini-banana: Gemini-2.5-Flash-Image
+      gemini-banana-pro: Gemini-3-pro-image-preview
+      gemini2: Gemini-2.0-Flash-exp
+      gemini2-preview: Gemini-2.0-Flash-pre
+      gpt-image-1: GPT-Image-1
+      gpt-image-1-mini: GPT-Image-1-mini
+      gpt-image-1.5: GPT-Image-1.5
+      gpt-image-2: GPT-Image-2
+      hailuo: Hailuo
+      hidream: HiDream-Edit
+      omnigen: OmniGen
+      ovis-u1: Ovis-U1
+      qwen-image-edit-2509: Qwen-Image-Edit-2509
+      qwen-image-edit-2511: Qwen-Image-Edit-2511
+      seedream-4.0: Seedream-4.0
+      step1x: Step1X-Edit
+      wan2_2: Wan2.2
+    current_subject_features:
+      harness: RISEBench author evaluation
+    current_thinking:
+      BAGEL_with_cot: enabled
+      BAGEL_without_cot: disabled
+    video_inputs:
+      hailuo: current/hailuo/hailuo_result/hailuo_result.json
+grading:
+  rule: 'Import the released complete field. For temporal, causal and spatial tasks, completion requires
+    ApprConsistency=5, Reasoning=5 and VisualPlausibility=5. Logical tasks require ApprConsistency=5 and
+    Reasoning=5. The historical rule does not exempt consistency-free tasks: their absent consistency
+    score prevents completion. Preserve this behavior rather than applying the newer corrected rule.'
+  verifiers:
+    published_judgments:
+      kind: llm_judgment
+      judge: gpt-4.1-2025-04-14
+      source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/eval/gen/rise/gpt_eval.py
+      prompt_source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/eval/gen/rise/utils.py
+      function: calculate_completion
+      policy: Preserve the recorded historical judgments; no new judge calls or parser corrections.
+    current_judgments:
+      kind: llm_judgment
+      source: https://github.com/PhoenixZ810/RISEBench/blob/5f226519b25c005bb32fb83864bbd1845ab85c23/gpt_eval.py
+      prompt_source: https://github.com/PhoenixZ810/RISEBench/blob/5f226519b25c005bb32fb83864bbd1845ab85c23/utils.py
+      function: calculate_completion
+      documented_default_judge: gpt-4.1-2025-04-14
+      run_judge_identity: Not recorded in the native worksheets; the code default is not treated as a
+        confirmed run configuration.
+      rule: Import complete when match_log is succeed. A failed judge parse has no usable grade and is
+        null, even though the native completion calculation falls through to zero. For temporal, causal
+        and spatial tasks, completion requires Reasoning=5 and VisualPlausibility=5, plus ApprConsistency=5
+        unless consistency_free is supplied. Logical tasks require ApprConsistency=5 and Reasoning=5.
+        The seven explicit upstream auto-fail judgments for missing images are retained as recorded failures,
+        with their native explanations.
+      policy: Preserve native judge text and component scores; do not reparse, regenerate or rejudge outputs.
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/Andy1621/BAGEL_results
+    revision: 941ea2a3d05aa2c054ec5e8c0ac8eb7c952d6165
+    files:
+    - match: rise_t4_i(?:1\.5|2_think)\.zip
+      path: results/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/PhoenixZ/RISEBench
+    revision: 265f052e94914c5c9317d27f325eee60df5ca410
+    files:
+    - match: (?:data\.zip|datav2_total_w_subtask\.json|README\.md)
+      path: tasks/{path}
+  - name: harness
+    url: https://github.com/ByteDance-Seed/Bagel
+    revision: a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f
+    files:
+    - match: (?:EVAL\.md|eval/gen/gen_images_mp_rise\.py|eval/gen/rise/(?:gpt_eval|utils)\.py|scripts/eval/run_rise\.sh)
+      path: harness/{path}
+  - name: current_results
+    url: https://huggingface.co/datasets/zpy777/RISEBench_Outputs
+    revision: 01cdcc1d8a557825bb103a9987cf1bbf91510bca
+    files:
+    - match: (?:README\.md|[^/]+/.+\.(?:png|jpg|jpeg|txt|xlsx|csv|pkl|mp4|json|py|zip))
+      path: current/{path}
+  - name: current_harness
+    url: https://github.com/PhoenixZ810/RISEBench
+    revision: 5f226519b25c005bb32fb83864bbd1845ab85c23
+    files:
+    - match: (?:README\.md|gpt_eval\.py|utils\.py)
+      path: current_harness/{path}

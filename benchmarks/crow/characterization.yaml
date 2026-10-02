@@ -1,0 +1,118 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5900
+    logical_sha256: 945365d66c7f78d301e22409d80b821bb65115f59432a376e097ba7e3d49c528
+  subjects:
+    rows: 34
+    logical_sha256: a48e3db4b8e9a7386c69fe89e99c8a80b3bd5714e2b3716977a61d13e2bb410e
+  responses:
+    rows: 5900
+    logical_sha256: 725e9244a21a99f4cfdce88bd41877d4513bd652fb645f6fb3fdc040e239d59a
+  items:
+    rows: 1984
+    logical_sha256: d8b35f3bd208b957e6e93d50ebe5a26e886353877e4fec02eec298cf8dd90310
+  benchmarks:
+    rows: 1
+    logical_sha256: 91b2908e7a597090beaadbc8324de82b2bc00577f9a0b3d064c3279e95b43d5a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 5900
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 1984
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 34
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 5900
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 62
+  source_unique_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 34
+  source_graded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 4976
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 924
+  source_early_rule_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 1184
+  source_attack_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NayMyatMin/BackdoorLLM
+    locator: The four pinned historical commits in metadata.yaml, their result JSON files and task-specific
+      keyword graders.
+    scope: Independent reconciliation of all unique native exports and their full records. Grades are reconstructed
+      with a compatible captured rule, not asserted original per-item labels; checkpoint and defense identities
+      remain unknown.
+    expected: 633

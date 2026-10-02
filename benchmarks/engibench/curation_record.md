@@ -1,0 +1,3 @@
+- Source: the two saved EngiOpt example notebooks at `7a98ba52107ccd42d91809f276a1bf7339c85898`; two methods, three explicit Beams2D conditions and 18 printed numerical grades. This is a demonstration subset, not the full paper evaluation.
+- Conversion: extract conditions and printed arrays without executing notebook code; preserve signed gaps and complete notebook records, including rendered designs. Each grading protocol defines a distinct item.
+- Limitations: baseline designs are locally optimized rather than certified optima. Weight digests, generation RNG state, installed simulator versions and full numerical histories are unavailable; the GAN used a local checkpoint and diffusion used a mutable W&B alias.

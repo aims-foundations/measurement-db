@@ -1,0 +1,201 @@
+benchmark:
+  name: EgoSchema (released LLoVi configurations)
+  description: Published LLoVi question-answering results on the 500-question public EgoSchema subset, retaining
+    the available caption-based inputs and eleven model/prompt configurations.
+  testing_condition: One recorded answer per public-subset question and LLoVi configuration. Curate the caption-fed
+    QA stage; different captions, summaries, prompt templates and demonstrations define different inputs. Preserve
+    the released final pred values, including documented fallback predictions and 34 unparsed choices. The original
+    scorer gives unparsed choices zero, consistent with every released summary; do not apply later random-guess
+    credit. Six published few-shot demonstrations are also evaluation targets, affecting twelve observations across
+    the two few-shot configurations. Complete native records are retained, but unreleased intermediate CoT messages
+    and request histories cannot be restored. No inference or new judging.
+  paper_url: https://arxiv.org/abs/2308.09126
+  data_source_url: https://github.com/CeeZh/LLoVi
+  subject_type: model
+  item_type: caption-based video question
+  license: No explicit license was found for the captured LLoVi output/data archives or EgoSchema annotations. Do
+    not infer MIT permission from the previous builder.
+  citation: Mangalam, K., Akshulakov, R. and Malik, J. EgoSchema (NeurIPS 2023). Zhang, C. et al. A Simple LLM Framework
+    for Long-Range Video Question-Answering (arXiv:2312.17235).
+  tags:
+  - video_qa
+  - egocentric
+  - captions
+  - multiple_choice
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Recorded choice is incorrect or unparsed (-1).
+      '1': Recorded choice matches the public reference.
+  categorical: true
+  release_date: 2023-08
+  multi_single_turn: multi_turn, single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: output.zip
+      inputs: data.zip
+      result_prefix: output/egoschema/
+      examples: data/egoschema/few_shot_6.json
+      example_captions: data/egoschema/lavila_subset.json
+      example_summaries: output/egoschema/sum_q_500_data.json
+      gold: reference/subset_answers.json
+    configurations:
+      cot.json: cot
+      fewshot.json: fewshot
+      fewshot_sum.json: fewshot_sum
+      llama.json: llama
+      qa_sum_q_500.json: qa_sum_q_500
+      qa_sum_q_500_1106.json: qa_sum_q_500_1106
+      standard_qa.json: standard_qa
+      standard_qa_1106.json: standard_qa_1106
+      standard_qa_blip2.json: standard_qa_blip2
+      standard_qa_gpt4.json: standard_qa_gpt4
+      standard_qa_gpt4_1106.json: standard_qa_gpt4_1106
+    target_fields:
+      duration: duration
+      narration: narration
+      question: question
+      optionA: optionA
+      optionB: optionB
+      optionC: optionC
+      optionD: optionD
+      optionE: optionE
+      prompt_template: prompt_template
+    input_scope:
+      description: Recorded caption-fed QA-stage inputs, prompt templates and released demonstrations. Original
+        video bytes, historical API envelopes and intermediate CoT messages are not included. Prompt templates are
+        preserved, not executed or silently reconstructed.
+    subject_scope:
+      description: Model/configuration labels are documented by the author README. Historical alias revisions and
+        request-specific settings are not asserted. Published predictions can include the documented fallback to
+        another configuration.
+    cot:
+      raw_label: LLoVi (GPT-3.5-turbo, chain-of-thought)
+      model: gpt-3.5-turbo
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: cot.json
+      demonstrations: none
+    fewshot:
+      raw_label: LLoVi (GPT-3.5-turbo, few-shot)
+      model: gpt-3.5-turbo
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: fewshot.json
+      demonstrations: captions
+    fewshot_sum:
+      raw_label: LLoVi (GPT-3.5-turbo, few-shot + summary)
+      model: gpt-3.5-turbo
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: fewshot_sum.json
+      demonstrations: summary
+    llama:
+      raw_label: LLoVi (LLaMA backbone)
+      model: meta-llama/Llama-2-70b-chat-hf
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: llama.json
+      demonstrations: none
+    qa_sum_q_500:
+      raw_label: LLoVi (GPT-3.5-turbo, QA + summary)
+      model: gpt-3.5-turbo
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: qa_sum_q_500.json
+      demonstrations: none
+    qa_sum_q_500_1106:
+      raw_label: LLoVi (GPT-3.5-turbo-1106, QA + summary)
+      model: gpt-3.5-turbo-1106
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: qa_sum_q_500_1106.json
+      demonstrations: none
+    standard_qa:
+      raw_label: LLoVi (GPT-3.5-turbo, standard QA)
+      model: gpt-3.5-turbo
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: standard_qa.json
+      demonstrations: none
+    standard_qa_1106:
+      raw_label: LLoVi (GPT-3.5-turbo-1106, standard QA)
+      model: gpt-3.5-turbo-1106
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: standard_qa_1106.json
+      demonstrations: none
+    standard_qa_blip2:
+      raw_label: LLoVi (GPT-3.5-turbo, BLIP-2 captions, standard QA)
+      model: gpt-3.5-turbo
+      captioner: BLIP-2
+      harness: LLoVi
+      configuration: standard_qa_blip2.json
+      demonstrations: none
+    standard_qa_gpt4:
+      raw_label: LLoVi (GPT-4, standard QA)
+      model: gpt-4
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: standard_qa_gpt4.json
+      demonstrations: none
+    standard_qa_gpt4_1106:
+      raw_label: LLoVi (GPT-4-1106, standard QA)
+      model: gpt-4-1106-preview
+      captioner: LaViLa
+      harness: LLoVi
+      configuration: standard_qa_gpt4_1106.json
+      demonstrations: none
+sources:
+  upstream:
+  - name: initial
+    url: https://github.com/CeeZh/LLoVi
+    revision: 32ea8a5ee2f1519de123a393f0b0186ce0368d17
+    files:
+    - match: (?:README\.md|LICENSE|.*\.py)
+      path: initial/{path}
+  - name: llovi
+    url: https://github.com/CeeZh/LLoVi
+    revision: 6e847c0546c37b9a6f21686a4071011494730b69
+    files:
+    - match: (?:README\.md|LICENSE|.*\.py)
+      path: llovi/{path}
+  - name: reference
+    url: https://github.com/egoschema/EgoSchema
+    revision: 505c787376b5e066d0ae406d0e0d41245cebba15
+    files:
+    - match: (?:README\.md|questions\.json|subset_answers\.json)
+      path: reference/{path}
+  - name: output
+    revision: sha256:c6357268dc392c31cac3dcbfe787ee6fa18c7ed410ffca7b1f2d6c059751f0b7
+    url: https://drive.usercontent.google.com/download?id=1d7a-FuQzdfQ7ZAzU5Y8HJpog1gm_sye_&export=download&confirm=t
+    file: output.zip
+    size: 16555912
+    sha256: c6357268dc392c31cac3dcbfe787ee6fa18c7ed410ffca7b1f2d6c059751f0b7
+  - name: data
+    revision: sha256:bdca96d279607167cf867f69d35ae358df5572eee20f2a60020fd2b2a2f8c353
+    url: https://drive.usercontent.google.com/download?id=13M10CB5ePPVlycn754_ff3CwnpPtDfJA&export=download&confirm=t
+    file: data.zip
+    size: 14588065
+    sha256: bdca96d279607167cf867f69d35ae358df5572eee20f2a60020fd2b2a2f8c353
+grading:
+  rule: "Compare the released final integer pred with truth (both zero-indexed A\u2013E); an unparsed -1 is incorrect.\
+    \ Preserve the original binary scorer used by the archived results, including any already-applied fallback."
+  verifiers:
+    choice:
+      kind: released_choice_equality
+      source: https://github.com/CeeZh/LLoVi/blob/32ea8a5ee2f1519de123a393f0b0186ce0368d17/eval.py
+      function: eval_qa_egoschema
+      later_change: The current scorer adds 0.2 for unparsed predictions; the archived summaries and original scorer
+        do not.

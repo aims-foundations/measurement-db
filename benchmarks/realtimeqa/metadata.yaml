@@ -1,0 +1,104 @@
+benchmark:
+  name: RealTime QA
+  description: Released weekly news-question predictions in multiple-choice and free-text generation settings.
+  testing_condition: Import single-week baseline exports from the pinned author release. Multiple-choice grades
+    use native prediction-list equality without guessing an index offset; generation uses the native normalized
+    exact-match metric, not token F1. Preserve full question definitions and original predictions separately for
+    each mode. Question dates are part of the task; exact historical prompts, endpoint revisions, inference settings
+    and the precise retrieved passages supplied to each run are not recorded in the prediction exports. Literal
+    model/configuration filename tokens are preserved without inventing historical model versions. Generation questions
+    excluded by the native except rule, malformed generation records and missing references remain ungraded observations.
+    A raw score is model confidence, not correctness. Cumulative exports may overlap weekly releases and are kept
+    raw-only; February 2022 demonstration outputs lack released questions and are also raw-only. The June 13 outputs
+    explicitly identify June 10 tasks, available in backnumber/2022/20220610_qa.jsonl. Captured search inputs and
+    complete evaluation code remain in raw. These grades reconstruct the released scoring protocol; no model, search,
+    judge or generated program is run.
+  paper_url: https://arxiv.org/abs/2207.13332
+  data_source_url: https://github.com/realtimeqa/realtimeqa_public
+  subject_type: model
+  item_type: question
+  license: No dataset license identified in the captured author result repository; the old MIT attribution is unverified.
+  citation: 'Kasai et al. RealTime QA: What is the Answer Right Now? NeurIPS Datasets and Benchmarks, 2023.'
+  tags:
+  - question_answering
+  - temporal
+  - news
+  - retrieval
+  modality:
+  - text
+  domain:
+  - knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Incorrect under the original exact-match rule
+      '1': Correct under the original exact-match rule
+  categorical: true
+  release_date: 2022-07
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: upstream
+    patterns:
+      weekly_prediction: (\d{8}(?:-time|_cnn)?)_qa(_nota)?_(.+)\.jsonl
+      counter: 年|歳|人|년
+    unavailable_questions:
+      '20220201': Six demonstration task definitions are absent from the captured release.
+    question_aliases:
+      20220613_qa: backnumber/2022/20220610_qa.jsonl
+    labels:
+      subject_prefix: 'RealTime QA / '
+      condition: released_weekly_prediction
+    subject_features:
+      harness: RealTime QA released weekly baseline
+      historical_model_revision: not_recorded
+      historical_inference_settings: not_recorded
+      historical_prompt_wrapper: not_recorded
+      source_revision: ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+grading:
+  verifiers:
+    multiple_choice:
+      kind: reconstructed_native_metric
+      metric: multiple_choice_accuracy
+      source: https://github.com/realtimeqa/realtimeqa_public/blob/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3/scripts/evaluate_main.py
+      function: accuracy
+      index_conversion: none
+      rule: Compare the complete prediction list to the complete released answer list with native equality. Indices
+        are zero-based as stored upstream; do not shift them. Missing references produce a null grade. reference_answer
+        stores the original index list and all original choices as JSON.
+    generation:
+      kind: reconstructed_native_metric
+      metric: generation_exact_match
+      source: https://github.com/realtimeqa/realtimeqa_public/blob/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3/scripts/evaluate_main.py
+      function: gen_eval
+      normalization_source: https://github.com/realtimeqa/realtimeqa_public/blob/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3/scripts/utils/tools.py
+      rule: Use normalized exact match against every permutation of the referenced answer texts, joined with spaces.
+        Normalization lowercases, removes ASCII punctuation and the counters 年, 歳, 人, 년, and collapses whitespace.
+        The native grader excludes questions ending with except in the final ten lowercased, stripped characters.
+        Missing references, excluded questions and non-string generations remain null. The selected response metric
+        is EM; token F1 is not substituted. reference_answer stores the original indices and choices as JSON.
+  rule: Reconstruct native multiple-choice accuracy and generation exact match; keep ungradable attempts null.
+sources:
+  upstream:
+  - name: author_release
+    url: https://github.com/realtimeqa/realtimeqa_public
+    revision: ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    files:
+    - match: (?:README\.md|(?:past|latest|backnumber|baseline_results|scripts)/.*)
+      path: upstream/{path}
+  - name: published_results
+    url: https://github.com/realtimeqa/realtimeqa.github.io
+    revision: 866dc789974c9652839245f0400d3caa8f490ef0
+    files:
+    - match: (?:index\.md|docs/results/.*\.md)
+      path: published_results/{path}

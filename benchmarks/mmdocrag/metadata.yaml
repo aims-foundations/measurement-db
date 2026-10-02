@@ -1,26 +1,26 @@
 benchmark:
   name: MMDocRAG
-  description: MMDocRAG tests whether models can answer questions about documents by weaving retrieved
-    text and images into a cited answer, which a judge model rates for fluency, citation quality, coherence,
-    reasoning and factuality.
-  testing_condition: 'test_condition is the run config "{mode}/quotes{N}": mode is "pure-text" (quotes
-    as text input) or "multimodal" (quotes as interleaved text+image for VLMs), and N (15 or 20) is the
-    number of retrieved quotes given as context. Items are individual questions (q_id); response is the
-    per-item LLM-as-judge answer-quality score (mean of Fluency, Citation Quality, Text-Image Coherence,
-    Reasoning Logic, Factuality) normalized to [0, 1] (divided by 5). The judge is gpt-4o-2024-08-06 for
-    pure-text answers and the same model given the cited images for multimodal answers, prompted with
-    prompt_bank/evaluation_answer.txt; each dimension is graded 0-5, where 0 is "completely fails to meet
-    the requirement" and is the grade an empty or failed answer receives. Responses are left unobserved
-    (None) for the 0.04% of rows whose judge output did not yield all five dimensions.'
+  description: MMDocRAG tests whether models can answer questions about documents by weaving retrieved text
+    and images into a cited answer, which a judge model rates for fluency, citation quality, coherence, reasoning
+    and factuality.
+  testing_condition: 'test_condition is the run config "{mode}/quotes{N}": mode is "pure-text" (quotes as text
+    input) or "multimodal" (quotes as interleaved text+image for VLMs), and N (15 or 20) is the number of retrieved
+    quotes given as context. Items are individual questions (q_id); response is the per-item LLM-as-judge answer-quality
+    score (mean of Fluency, Citation Quality, Text-Image Coherence, Reasoning Logic, Factuality) normalized
+    to [0, 1] (divided by 5). The judge is gpt-4o-2024-08-06 for pure-text answers and the same model given
+    the cited images for multimodal answers, prompted with prompt_bank/evaluation_answer.txt; each dimension
+    is graded 0-5, where 0 is "completely fails to meet the requirement" and is the grade an empty or failed
+    answer receives. Responses are left unobserved (None) for the 0.04% of rows whose judge output did not
+    yield all five dimensions.'
   paper_url: https://openreview.net/forum?id=W4b3v9jx1p
   data_source_url: https://github.com/MMDocRAG/MMDocRAG
   subject_type: model
   item_type: task
   license: CC-BY-NC-4.0
   citation: "@inproceedings{dong2025mmdocrag,\n  title={Benchmarking Retrieval-Augmented Multimodal Generation\
-    \ for Document Question Answering},\n  author={Dong, Kuicai and Chang, Yujing and Huang, Shijie and\
-    \ Wang, Yasheng and Tang, Ruiming and Liu, Yong},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks\
-    \ Track},\n  year={2025},\n}"
+    \ for Document Question Answering},\n  author={Dong, Kuicai and Chang, Yujing and Huang, Shijie and Wang,\
+    \ Yasheng and Tang, Ruiming and Liu, Yong},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n\
+    \  year={2025},\n}"
   tags:
   - multimodal_rag
   - document_qa
@@ -69,6 +69,24 @@ benchmark:
   release: public
 build:
   contract_version: 2
+  parameters:
+    layout:
+      preferred_gold: evaluation_20.jsonl
+      fallback_gold: evaluation_15.jsonl
+      evaluation_directory: eval
+      trace_directory: resp
+    subject_aliases:
+      Internvl3-38B: internvl3-38b
+      Internvl3-78B: internvl3-78b
+    released_variants:
+      qvq-max-no-think: no-think
+      qwen3-14b-no-think: no-think
+      qwen3-30b-a3b-no-think: no-think
+      qwen3-4b-no-think: no-think
+      qwen3-8b-no-think: no-think
+    patterns:
+      evaluation: ^(?P<model>.+?)_(?P<mode>pure-text|multimodal)(?:_response)?_quotes(?P<quotes>\d+)(?:_llm-judge\.jsonl|\.jsonl(?:_evaluation\.jsonl)?)$
+      dimension_noise: '[^a-z0-9]'
 sources:
   upstream:
   - url: https://github.com/MMDocRAG/MMDocRAG
@@ -81,3 +99,18 @@ sources:
       path: eval/{name}
     - match: response/(?P<name>[^/]+\.jsonl)
       path: resp/{name}
+grading:
+  rule: Mean of the five 0-5 scores for Fluency, Citation Quality, Text-Image Coherence, Reasoning Logic, and
+    Factuality, divided by 5. A missing or invalid dimension leaves the grade unavailable.
+  verifiers:
+    release:
+      judged_by: llm
+      spec: Provider MMDocRAG evaluation using prompt_bank/evaluation_answer.txt; exact judge configuration
+        is not attributed per released cell. Preserve the released dimension grades without rejudging.
+      dimensions:
+      - Fluency
+      - Citation Quality
+      - Text-Image Coherence
+      - Reasoning Logic
+      - Factuality
+      maximum: 5

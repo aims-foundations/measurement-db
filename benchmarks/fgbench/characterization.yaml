@@ -1,0 +1,42 @@
+format_version: 1
+tables:
+  traces:
+    rows: 57168
+    logical_sha256: 244b434b654ab5c587ac59aae7b9bb79c8355edc5623a1c962ebc38799666d01
+  subjects:
+    rows: 8
+    logical_sha256: cb09c459161c72f6d7ea3c111f2a184d4205aab9e4187699419f663e0056997f
+  responses:
+    rows: 57168
+    logical_sha256: 05c1dd1ff302a7fd0a66ceb48498fc9e8d81181a2edb9cc345b6532e0843d8f5
+  items:
+    rows: 7146
+    logical_sha256: 3c973f85921bc36c28307386ccf557e97bf1cedb5b1952ff02e3c5103e92cdbd
+  benchmarks:
+    rows: 1
+    logical_sha256: 86325f45f44d397399bcbc4fb1dbe5b61b49e92cac2b7d51e3104990f88e566b
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
+    locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
+      numeric attempts remain present.
+    expected: 8
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
+    locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
+      numeric attempts remain present.
+    expected: 7146
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/xuanliugit/FGBench/tree/fe67aded66bb08534da180ad6073cef42f422666/data
+    locator: Eight well-formed model exports joined to the pinned HF test.jsonl bank
+    scope: Excludes the malformed Llama-3.1-70B export and OpenAI request files. Ungraded
+      numeric attempts remain present.
+    expected: 57168

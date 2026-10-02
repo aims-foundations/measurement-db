@@ -1,0 +1,120 @@
+format_version: 1
+tables:
+  traces:
+    rows: 240857
+    logical_sha256: c0e496aac86a7bbd79aedf4bb37c75b5aa210df9bd9fd38f51c164eca1260fcc
+  subjects:
+    rows: 254
+    logical_sha256: 223ccb2f7559cff544083cf4641b49af3185858469f4a4f4417524befbc04358
+  responses:
+    rows: 240857
+    logical_sha256: 50e0dd38fdd09f6e9413a208458eea716bc089506c7b4a97c00bc26ae2baed6f
+  assets:
+    rows: 346
+    logical_sha256: b0cdaba114c3392b8cb485de75eab1d08a5dec108b946e468d0c70b50fb7a731
+  items:
+    rows: 1205
+    logical_sha256: b76da2ccd24ab07152541c4ce398acf9d4877ef0ea9b244c94c6f1b62b4be858
+  benchmarks:
+    rows: 1
+    logical_sha256: 89f31fd949e5c3fd8c88c4d7c526878a3810f0ccb93e634d1d88ac2bae60d442
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 240857
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 253
+  source_unattributed_sample:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 254
+  source_derived_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 239475
+  source_missing_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 1128
+  source_unparseable_exact_matching:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 19717
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 1205
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 254
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All 253 maintained HallusionBench workbooks reconciled independently with openpyxl; sample joined exactly
+      to the original 254-question bank. Exact matcher checked against both frozen upstream functions. Image bytes
+      and every original question and output checked.
+    scope: Maintained 951-question model exports plus the original unattributed 254-question sample. Grades are
+      derived with the declared exact matcher; 1128 unavailable outputs and all original sample judgments remain
+      null. Historical snapshots and generation caches remain raw evidence, not additional trials.
+    expected: 346

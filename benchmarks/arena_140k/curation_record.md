@@ -1,0 +1,4 @@
+- Import all 135,634 native votes from the pinned seven-shard release as 271,268 model-side observations; retain all 53 source model names and distinguish displayed sides and opponents.
+- Keep wins, losses, ties and mutual rejection distinct in the original records. Preference scores are not correctness labels; source generation settings and individual judge identities are unavailable.
+- Restore prior conversational context for 27,319 votes and preserve full current conversations and native metadata in JSON traces. Prior replies can originate from other models; item text excludes the current replies being judged.
+- Validate every observation against the native Parquet records, including repeated session/order values, self-comparisons and empty assistant replies. Inputs remain immutable, and no evaluation is rerun. Public data mirroring is withheld because two upstream prompts contain apparent credentials; local curation preserves the source records.

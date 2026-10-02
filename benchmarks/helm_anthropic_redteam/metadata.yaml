@@ -1,0 +1,90 @@
+benchmark:
+  description: Anthropic Red Team tests whether models avoid complying with adversarial prompts taken
+    from human red teaming conversations, with a safety classifier judging each response as safe or unsafe.
+    Recorded scores retain intermediate judge ratings; 1 indicates the best rubric score and 0 the worst.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2209.07858
+  data_source_url: https://crfm.stanford.edu/helm/safety/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @article{ganguli2022redteaming,
+      title={Red Teaming Language Models to Reduce Harms: Methods, Scaling Behaviors, and Lessons Learned},
+      author={Ganguli, Deep and Lovitt, Liane and Kernion, Jackson and Askell, Amanda and Bai, Yuntao and Kadavath, Saurav and Mann, Ben and Perez, Ethan and Schiefer, Nicholas and Ndousse, Kamal and Jones, Andy and Bowman, Sam and Chen, Anna and Conerly, Tom and DasSarma, Nova and Drain, Dawn and Elhage, Nelson and El-Showk, Sheer and Fort, Stanislav and Hatfield-Dodds, Zac and Henighan, Tom and Hernandez, Danny and Hume, Tristan and Jacobson, Josh and Johnston, Scott and Kravec, Shauna and Olsson, Catherine and Ringer, Sam and Tran-Johnson, Eli and Amodei, Dario and Brown, Tom and Joseph, Nicholas and McCandlish, Sam and Olah, Chris and Kaplan, Jared and Clark, Jack},
+      journal={arXiv preprint arXiv:2209.07858},
+      year={2022},
+      url={https://arxiv.org/abs/2209.07858},
+    }
+  tags:
+  - safety
+  - red_teaming
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  multi_single_turn: single_turn
+  release_date: 2022-08
+  release: public
+  name: Anthropic Red Team
+  version: HELM safety v1.17.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: anthropic_red_team
+      release: v1.17.0
+      metric: safety_score
+grading:
+  rule: Use the published mean of available judge ratings without thresholding. The released annotation
+    prompt defines whether compliance or refusal is appropriate; missing judge ratings are excluded by
+    the upstream metric.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: judge
+      reference_kind: metadata
+      metric: safety_score
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/safety_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+      annotation_key: anthropic_red_team
+      model_response_start: <MODEL_RESPONSE_START>
+      model_response_end: </MODEL_RESPONSE_END>
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/safety/benchmark_output/releases/v1.17.0/runs.json
+    revision: v1.17.0
+    file: release_index.json
+    size: 12112520
+    sha256: 303e95492d3c65e0bfc4486311b5df083d6538454714d50bc6c491ca3c263041
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.17.0
+    prefix: safety/
+    helm_index:
+      source: release
+      group: anthropic_red_team
+    tree_sha256: 4cc052b036f080b5c1fa5a9a4c0985e33f6d00895a0c24cc4d8e62eda2f4c9eb
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:safety_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/annotation/(?:anthropic_red_team_annotator\.py|model_as_judge\.py)
+      path: harness/{path}

@@ -1,0 +1,100 @@
+benchmark:
+  description: Engineering-design tasks with released simulation-based pass/fail judgments. The native
+    release includes single-answer trials and iterative refinement chains.
+  testing_condition: 'Items retain the released task prompt, output-structure source and input images.
+    Single-answer trials and iterative refinement are separate subject configurations. For refinement,
+    test_condition records the native iteration number: successive outcomes belong to one dependent chain,
+    not independent attempts. Import explicit pass flags; an explicit evaluation failure is ungraded.
+    The open subset duplicates the full collection after newline normalization and is not counted twice.
+    Exact API requests, historical harness revisions and the iterative controller are not released. Image
+    order in the original API requests is unrecorded; attachments preserve the task images as a set. The
+    released DeepSeek driver sends only prompt text.'
+  paper_url: https://arxiv.org/abs/2509.16204
+  data_source_url: https://github.com/AGI4Engineering/EngDesign
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{guo2025engdesign,\n  title={Toward Engineering AGI: Benchmarking the Engineering\
+    \ Design Capabilities of LLMs},\n  author={Guo, Xingang and Li, Yaxin and Kong, XiangYi and others},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - engineering
+  - design
+  - reasoning
+  - verification
+  - agi
+  modality:
+  - text
+  domain:
+  - science
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The native evaluator records that the design did not pass.
+      '1': The native evaluator records that the design passed.
+  categorical: true
+  release_date: null
+  name: EngDesign
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: source_review/c8ec338cc5f846d792d93728b00c9448111139e5.zip
+    patterns:
+      single: 'tasks/(?P<task>[^/]+)/logs/[^/]+_log_(?P<model>.+)_(?P<trial>\d+)(?: \d+)?\.jsonl'
+      iterative: iterative_result/(?P<run>[^/]+)/(?P<task>[^/]+)/[^/]+_log_[^/]+_iteration_(?P<file_iteration>\d+)\.jsonl
+      sections: (?ms)^Attempt (?P<iteration>\d+):[ \t]*\r?\n(?P<section>.*?)(?=^Attempt \d+:[ \t]*\r?\n|\Z)
+    models:
+      4o: GPT-4o
+      claude3_7: Claude 3.7 Sonnet
+      claude3_7_thinking: Claude 3.7 Sonnet Thinking
+      deepseek_chat: DeepSeek V3
+      deepseek-chat: DeepSeek V3
+      deepseek_r1: DeepSeek R1
+      deepseek-reasoner: DeepSeek R1
+      gemini_flash: Gemini 2.0 Flash
+      gemini_pro: gemini-2.5-pro-preview-05-06
+      o1: o1
+      o3: o3
+      o3_high: o3-high
+      o4_mini: o4-mini
+      o4_mini_high: o4-mini-high
+    iterative_models:
+      iterative_gpt_4o: GPT-4o
+      iterative_o1: o1
+      iterative_o3: o3
+      iterative_o4_mini: o4-mini
+    null_pass_status:
+      evaluation_failure: Evaluation failed
+    reasoning_effort:
+      Claude 3.7 Sonnet Thinking: extended
+      o3-high: high
+      o4-mini-high: high
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/AGI4Engineering/EngDesign/zip/c8ec338cc5f846d792d93728b00c9448111139e5
+    revision: c8ec338cc5f846d792d93728b00c9448111139e5
+    file: source_review/c8ec338cc5f846d792d93728b00c9448111139e5.zip
+    size: 43777898
+    sha256: ede9106d4bf49241f9b090071a56e767e71d43ad2fe2386c182cb6eb9f175399
+grading:
+  rule: 'Use the explicit passed field in the published result: true is success, false is failure, and
+    Evaluation failed is an unavailable grade. The released task-specific evaluate.py defines the simulation
+    checks; no simulation or new model call is performed by this import.'
+  verifiers:
+    native_pass:
+      kind: released_simulation_result
+      field: passed
+      source_template: https://github.com/AGI4Engineering/EngDesign/blob/c8ec338cc5f846d792d93728b00c9448111139e5/tasks/{task}/evaluate.py
+      definition_revision: c8ec338cc5f846d792d93728b00c9448111139e5
+      historical_run_revision: null
+      historical_run_revision_note: The archived task definition accompanies the released results; a per-run
+        code revision was not recorded.

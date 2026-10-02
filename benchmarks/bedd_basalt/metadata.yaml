@@ -1,0 +1,161 @@
+benchmark:
+  name: 'BEDD: MineRL BASALT Evaluation Dataset'
+  description: Recorded human judgments of Minecraft agent videos on four open-ended BASALT tasks.
+  testing_condition: Import every accepted human rating after the author's banned-worker exclusion. Keep 15 AI agents
+    as subjects; Human1/Human2 are comparison references. Each task/world-seed input has a distinct grading protocol
+    for its question, worker, displayed position and comparison video. Direct yes/no answers remain 1/0; the question
+    about harming a village has lower-is-better direction. Comparative judgments use win=1, draw=0.5, loss=0; not-applicable
+    ratings remain null. Repeated ratings are observations of the same saved agent video, not new agent executions.
+    Full original records, free-text justifications and exact output-video links are retained in traces. Videos
+    are model outputs and are not input assets. Task goals come from the captured author interface. The release
+    does not reconstruct historical pixel observations, checkpoints or complete agent configurations. No inference.
+  paper_url: https://arxiv.org/abs/2312.02405
+  data_source_url: https://zenodo.org/records/8021960
+  subject_type: agent
+  item_type: task
+  license: MIT, as declared by the Zenodo evaluation-data record and upstream code.
+  citation: 'Milani et al. (2023). BEDD: The MineRL BASALT Evaluation and Demonstrations Dataset for Training and
+    Benchmarking Agents that Solve Fuzzy Tasks. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - minecraft
+  - human_judgment
+  - agent
+  modality:
+  - video
+  - text
+  domain:
+  - navigation
+  - planning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: '2023-06-14'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      judgments: zenodo-8021960/code_data_images.zip
+      videos: zenodo-8021960/agent_videos.zip
+      answers_member: code_data_images/human_answers.json
+      banned_member: code_data_images/banned_workers.json
+      task_instructions: github/0807ec6edf27631026b5e6f0804d215aca564d8c/evaluation_server/static/dist/js/basalt_tasks_metadata.js
+      environment_config: github/0807ec6edf27631026b5e6f0804d215aca564d8c/evaluation_server/config.py
+    human_references:
+      first: Human1
+      second: Human2
+    options:
+      subject_prefix: BASALT/
+      video_path_pattern: ^agent_videos/(?P<subject_key>[^/]+)/(?P<task>[^/]+)/seed_(?P<seed>[0-9]+)\.mp4$
+    task_goals:
+      FindCave: The player should search for a cave, and terminate the episode when it is inside one.
+      MakeWaterfall: 'After spawning in a mountainous area, the player should build a beautiful waterfall and then
+        reposition itself to take a scenic picture of the same waterfall.
+
+        The picture of the waterfall is can be taken by facing the waterfall at a good angle and then terminating
+        the episode.'
+      CreateVillageAnimalPen: 'After spawning in a (plains) village, the player should build an animal pen next
+        to one of the houses in a village.
+
+        Animal pens must contain two of a single kind of animal (you are only allowed to pen chickens, cows, pigs,
+        sheep or rabbits).
+
+        The animal pen should not contain more than one type of animal.
+
+        Don''t harm the village. Players may terraform the area around a house to build a pen.
+
+        When we say not to harm the village, examples include taking animals from existing pens, damaging existing
+        houses or farms, and attacking villagers.'
+      BuildVillageHouse: 'The player should build a new house in the style of the village (random biome), in an
+        appropriate location (e.g. next to the path through the village), without harming the village in the process.
+
+        Then the player should give a brief tour of the house (i.e. spin around slowly such that all of the walls
+        and the roof are visible).'
+    environments:
+      FindCave: MineRLBasaltFindCave-v0
+      MakeWaterfall: MineRLBasaltMakeWaterfall-v0
+      CreateVillageAnimalPen: MineRLBasaltCreateVillageAnimalPen-v0
+      BuildVillageHouse: MineRLBasaltBuildVillageHouse-v0
+sources:
+  upstream:
+  - name: judgments
+    url: https://zenodo.org/api/records/8021960/files/code_data_images.zip/content
+    revision: '8021960'
+    file: zenodo-8021960/code_data_images.zip
+    size: 3929928
+    sha256: febb8908d6e4f936f2d6744ca450339fdc309ecdcdce5b9d052637e49c01e557
+  - name: videos
+    url: https://zenodo.org/api/records/8021960/files/agent_videos.zip/content
+    revision: '8021960'
+    file: zenodo-8021960/agent_videos.zip
+    size: 12066462062
+    sha256: 338be37ec88b6a6e611cf0d242cfac997c1cbbb0d77d3a0a8bd2462ad638f0d6
+  - name: readme
+    url: https://zenodo.org/api/records/8021960/files/README.md/content
+    revision: '8021960'
+    file: zenodo-8021960/README.md
+    size: 1542
+    sha256: 7f9f9210ec99aa4454f07a2bf56dec108a6c474c1814c21bfe57024973bf5831
+  - name: instructions
+    url: https://github.com/minerllabs/basalt-benchmark
+    revision: 0807ec6edf27631026b5e6f0804d215aca564d8c
+    files:
+    - match: README\.md|LICENSE|evaluation_server/(?:config\.py|add_agent_for_evaluation\.py|initialize_database_with_baseline_results\.py|README\.md|static/dist/js/basalt_tasks_metadata\.js)|basalt/rollout_model\.py
+      path: github/0807ec6edf27631026b5e6f0804d215aca564d8c/{path}
+grading:
+  rule: Recorded BEDD human comparison. Exclude workers listed in the released banned_workers.json; do not aggregate
+    raters or create new agent runs.
+  verifiers:
+    human:
+      overall_question: Which player better accomplished the task overall?
+      negative_questions:
+      - Did the player harm the village? Examples include taking animals from existing pens, damaging existing houses
+        or farms, and attacking villagers.
+      rules:
+        direct: Retain the recorded yes/no answer as 1/0. Interpret its direction using the question.
+        comparison: 'Retain this worker''s selected player: win=1, draw=0.5, loss=0; not applicable is ungraded.'
+        overall: 'Retain this worker''s overall preference: win=1, draw=0.5, loss=0.'
+      protocol: Recorded BEDD human comparison. Exclude workers listed in the released banned_workers.json; do not
+        aggregate raters or create new agent runs.
+      scales:
+        direct_positive:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: higher_is_better
+          meanings:
+            '0': The worker answered no.
+            '1': The worker answered yes.
+        direct_negative:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: lower_is_better
+          meanings:
+            '0': The worker answered no to harming the village.
+            '1': The worker answered yes to harming the village.
+        overall:
+          kind: discrete
+          values:
+          - 0
+          - 0.5
+          - 1
+          direction: higher_is_better
+          meanings:
+            '0': The comparison video was preferred.
+            '0.5': The worker selected a draw.
+            '1': The evaluated agent video was preferred.
+        comparison:
+          kind: discrete
+          values:
+          - 0
+          - 0.5
+          - 1
+          direction: higher_is_better
+          meanings:
+            '0': The comparison video was preferred.
+            '0.5': The worker selected a draw.
+            '1': The evaluated agent video was preferred.

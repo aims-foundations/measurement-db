@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 0aaef82655e83d3185a074483399452e8728365c768583a3bb38730c628e0d90
+  items:
+    rows: 14287
+    logical_sha256: 6937113e5c365c7ce0a44fbd07b0fce9710192ffc1685daa87823d53889b290c
+  responses:
+    rows: 171412
+    logical_sha256: 78c392d0406a6e3d2802312bf1b4c83fe10015e9b5505707360bb0fe81e28d33
+  subjects:
+    rows: 12
+    logical_sha256: 210f86292ab75487548e47232fe743f5dbf6d5781d0ba49181427ea5895ff230
+  traces:
+    rows: 171412
+    logical_sha256: ace490062eaa0763b22c42f5c47c7de0bc29d5f8599fb7c16569a876957ff0db
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 12
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 14287
+  source_workflow_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 12
+  distinct_conversation_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 171412
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 171412
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 171412
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 165325
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 6087
+  conversations_exceeding_former_trace_cap:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/SWE-bench/WikiHowAgent-trajectories
+    locator: All total_conversations records in the twelve pinned corrected JSON files; config_files resolves to
+      the pinned reference YAML. Each original completion flag is checked against its full conversation.
+    scope: The entire released completion collection; pedagogic rubric values remain in original records. It is
+      broader than the subset described in the paper.
+    expected: 16

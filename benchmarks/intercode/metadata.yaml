@@ -1,0 +1,201 @@
+benchmark:
+  name: InterCode
+  description: Released interactive coding episodes in SQL, Bash, Python and capture-the-flag environments,
+    with their original maximum rewards and complete trajectories.
+  testing_condition: Import all 57 AI result files, including the six files wrapped under logs; exclude the
+    human run. Task IDs in results are task-bank row positions, including for MBPP. Each original source file
+    and record identifies a published observation, not necessarily an independent generation. Preserve identical
+    records across exports without deduplicating across models. Separate model, environment, prompting strategy
+    and recorded turn/refinement budgets. The file named 25_turns reports 15 turns; the explicit model in a
+    Python filename takes precedence over its inconsistent parent directory. Bash fs_1 to fs_4 identify different
+    input filesystems, not few-shot counts. SQL handicap runs provide the released schema in the initial stimulus.
+    Native SQL rewards can be negative; the original CTF pilot used a different signed flag grader. Keep each
+    protocol and scale explicit. Attach pinned source SQL data, Bash setup descriptions and non-solution CTF
+    input files without executing them. These are released task-context resources, not verified historical
+    container images or external service snapshots. Recorded CTF questions remain authoritative where two differ
+    from current descriptions. Historical CTF flags change between releases, so CTF criteria retain the grading
+    rule without assigning a current flag to a historical run. Source traces retain every field and are not
+    clipped; 91 original turn counts differ from the recorded action-list length, and one published best-step
+    index is a -1 sentinel despite a recorded step; all remain unchanged. Historical runtime/model revisions
+    and full API request dialogues are not generally available.
+  paper_url: https://arxiv.org/abs/2306.14898
+  data_source_url: https://github.com/princeton-nlp/intercode
+  subject_type: model
+  item_type: task
+  license: InterCode declares MIT. Its NL2Bash, Spider, MBPP and CTF constituent sources retain their source-specific
+    terms and attribution in the captured repository.
+  citation: '@inproceedings{yang2023intercode, title={InterCode: Standardizing and Benchmarking Interactive
+    Coding with Execution Feedback}, author={Yang, John and Prabhakar, Akshara and Narasimhan, Karthik and
+    Yao, Shunyu}, booktitle={NeurIPS Datasets and Benchmarks}, year={2023}}'
+  tags:
+  - interactive_coding
+  - agent
+  - execution_feedback
+  modality:
+  - text
+  - code
+  domain:
+  - code
+  - tool_use
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-06
+  release: public
+  version: c3e46d827cfc9d4c704ec078f7abf9f41e3191d8
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: upstream-source.zip
+      prefix: intercode-c3e46d827cfc9d4c704ec078f7abf9f41e3191d8/
+      results: data/results/
+    labels:
+      harness: InterCode released evaluation
+      resource_revision: c3e46d827cfc9d4c704ec078f7abf9f41e3191d8
+    models:
+      text-davinci-003: text-davinci-003
+      text-bison-001: text-bison-001
+      chat-bison-001: chat-bison-001
+      gpt-3.5: gpt-3.5
+      gpt-4: gpt-4
+      starchat: starchat
+      vicuna: vicuna
+    initial_ctf_files:
+      data/results/ctf/ic_ctf_gpt-4_25_turns.json: ic_ctf_initial
+    task_banks:
+      ./data/spider/dev_spider.json: data/sql/spider/ic_spider_dev.json
+      ./data/python/mbpp/ic_mbpp.json: data/python/mbpp/ic_mbpp.json
+      ./data/ctf/ic_ctf.json: data/ctf/ic_ctf.json
+      ./data/ctf/ctf_test.json: data/ctf/ic_ctf.json
+      ./data/nl2bash/nl2bash_fs_1.json: data/nl2bash/nl2bash_fs_1.json
+      ./data/nl2bash/nl2bash_fs_2.json: data/nl2bash/nl2bash_fs_2.json
+      ./data/nl2bash/nl2bash_fs_3.json: data/nl2bash/nl2bash_fs_3.json
+      ./data/nl2bash/nl2bash_fs_4.json: data/nl2bash/nl2bash_fs_4.json
+    resources:
+      data/sql/spider/ic_spider_dev.json: data/sql/spider/ic_spider_dbs\.sql
+      data/python/mbpp/ic_mbpp.json: (?!)
+      data/ctf/ic_ctf.json: data/ctf/task_assets/{task}/.*
+      data/nl2bash/nl2bash_fs_1.json: docker/(nl2bash\.Dockerfile|bash_scripts/setup_nl2b_fs_1\.sh)
+      data/nl2bash/nl2bash_fs_2.json: docker/(nl2bash\.Dockerfile|bash_scripts/setup_nl2b_fs_2\.sh)
+      data/nl2bash/nl2bash_fs_3.json: docker/(nl2bash\.Dockerfile|bash_scripts/setup_nl2b_fs_3\.sh)
+      data/nl2bash/nl2bash_fs_4.json: docker/(nl2bash\.Dockerfile|bash_scripts/setup_nl2b_fs_4\.sh)
+    question_variants:
+      data/results/ctf/ic_ctf_gpt-4_25_turns.json:0: You have access to the file 'unpackme.flag.py' that contains
+        the hidden flag
+      data/results/ctf/ic_ctf_multiturn_gpt-4_10_turns.json:20: Using netcat (nc) is going to be pretty important.
+        Can you connect to 2019shell1.picoctf.com at port 4158 to get the flag?
+    definition_variants:
+      data/results/ctf/ic_ctf_gpt-4_25_turns.json:0: You have 'read' access to the file 'unpackme.flag.py'
+        that contains the hidden flag
+      data/results/ctf/ic_ctf_multiturn_gpt-4_10_turns.json:20: Using netcat (nc) is going to be pretty important.
+        Can you connect to jupiter.challenges.picoctf.org at port 25103 to get the flag?
+    media_types:
+      .sql: application/sql
+      .sh: text/x-shellscript
+      .py: text/x-python
+      .txt: text/plain
+      .jpg: image/jpeg
+      .png: image/png
+      .pdf: application/pdf
+      .zip: application/zip
+      .gz: application/gzip
+grading:
+  rule: Preserve each original summary.max_reward on the environment-specific grading scale, without clipping,
+    normalization or regrading.
+  verifiers:
+    ic_sql:
+      kind: released_execution_reward
+      environment: ic_sql
+      source: https://github.com/princeton-nlp/intercode/blob/c3e46d827cfc9d4c704ec078f7abf9f41e3191d8/intercode/envs/sql/sql_env.py
+      rule: Maximum recorded execution reward across the episode. SQL compares result multisets by intersection
+        over union, multiplied by signed Kendall correlation when defined; negative rewards are valid.
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      scope: Import summary.max_reward and preserve the original episode. No actions, evaluation code, model
+        calls or new grading are executed.
+    ic_bash:
+      kind: released_execution_reward
+      environment: ic_bash
+      source: https://github.com/princeton-nlp/intercode/blob/c3e46d827cfc9d4c704ec078f7abf9f41e3191d8/intercode/envs/bash/bash_env.py
+      rule: 'Maximum recorded execution reward across the episode. Bash combines a 0.01 base with three components
+        weighted 0.33: filesystem changes, matching changed-file contents, and command-output similarity. Preserve
+        recorded floating-point values.'
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      scope: Import summary.max_reward and preserve the original episode. No actions, evaluation code, model
+        calls or new grading are executed.
+    ic_python:
+      kind: released_execution_reward
+      environment: ic_python
+      source: https://github.com/princeton-nlp/intercode/blob/c3e46d827cfc9d4c704ec078f7abf9f41e3191d8/intercode/envs/python/python_env.py
+      rule: Maximum recorded execution reward across the episode. The MBPP grader compares each submitted-function
+        RPC result with the reference-function RPC result under the released tests and setup code, and records
+        the matching fraction.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      scope: Import summary.max_reward and preserve the original episode. No actions, evaluation code, model
+        calls or new grading are executed.
+    ic_ctf:
+      kind: released_execution_reward
+      environment: ic_ctf
+      source: https://github.com/princeton-nlp/intercode/blob/c3e46d827cfc9d4c704ec078f7abf9f41e3191d8/intercode/envs/ctf/ctf_env.py
+      rule: 'Maximum recorded flag reward across the episode: the later CTF grader compares the submitted flag
+        to the historical target case-insensitively. Historical flags are not fixed by the released episode
+        logs and are not inferred from the current task bank.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': No recorded successful flag submission.
+          '1': At least one successful flag submission.
+      scope: Import summary.max_reward and preserve the original episode. No actions, evaluation code, model
+        calls or new grading are executed.
+    ic_ctf_initial:
+      kind: released_execution_reward
+      environment: ic_ctf_initial
+      source: https://github.com/princeton-nlp/intercode/blob/69922e2f331b36a7d94b5da4a7ed10289e6c4c94/intercode/envs/game/ctf_env.py
+      rule: Maximum recorded reward in the original four-task CTF experiment. Its grader compares flags case-sensitively
+        and assigns 1 for success and -1 for an incorrect submission; other steps may record 0. Historical
+        reference flags are not inferred from later definitions.
+      response_scale:
+        kind: discrete
+        values:
+        - -1
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '-1': Best recorded step reward is an incorrect flag submission.
+          '0': Best recorded step reward is neutral.
+          '1': At least one successful flag submission.
+      scope: Preserve this earlier grading protocol separately from the later 0/1 CTF protocol.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/princeton-nlp/intercode/zip/c3e46d827cfc9d4c704ec078f7abf9f41e3191d8
+    revision: c3e46d827cfc9d4c704ec078f7abf9f41e3191d8
+    file: upstream-source.zip
+    size: 106198989
+    sha256: 32e552a468fd69efb7a2cfe13bc591a79246c5db46f3fb629f9cec6dbb1720d7
+  - name: initial_ctf_grader
+    url: https://raw.githubusercontent.com/princeton-nlp/intercode/69922e2f331b36a7d94b5da4a7ed10289e6c4c94/intercode/envs/game/ctf_env.py
+    revision: 69922e2f331b36a7d94b5da4a7ed10289e6c4c94
+    file: ctf_initial_env.py
+    size: 4472
+    sha256: f652b85c9a2dbdef2064741a345d1f084282080640d9e8429bcfd71a514fee1b

@@ -1,0 +1,3 @@
+- **Sources:** Pinned SCReasoner outputs and Situat3DChange validation annotations/images; scene arrays from the LEO release linked by the upstream setup instructions. Original bytes remain in `raw/`.
+- **Conversion:** Join each recorded response to its scene pair, situation and pose. Keep full replies and source records; use released distance grades and the documented normalization of judge ratings. Missing grades remain null.
+- **Limits:** Historical checkpoint, generation settings and sampled point subsets are unknown. Paper aggregates are not observations. Keep data local pending clarification of the underlying 3RScan recipient-agreement terms.

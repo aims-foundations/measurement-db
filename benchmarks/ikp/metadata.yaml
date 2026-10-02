@@ -1,0 +1,72 @@
+benchmark:
+  description: IKP asks models factual questions that range from things almost anyone knows to extreme
+    long tail trivia, counting refusals as wrong. Because accuracy tracks model size closely, it doubles
+    as a way to estimate the parameter count of a closed model.
+  testing_condition: 'Per-(model, probe) binary correctness scored at lambda=0 (no hallucination penalty;
+    accuracy = fraction correct), graded by the upstream Gemini 3 Flash judge. Single condition throughout:
+    every model answers the same 1,400 probes in the same zero-shot format. Cells left unobserved are
+    failed API calls, which upstream excludes from its own denominator; 89 of the 1,400 probes are flagged
+    by upstream as having unreliable gold answers and are excluded from the paper''s headline accuracy
+    but retained here.'
+  paper_url: https://arxiv.org/abs/2604.24827
+  data_source_url: https://github.com/19PINE-AI/ikp
+  subject_type: model
+  item_type: question
+  license: CC-BY-4.0
+  citation: "@article{li2026ikp,\n  title={Incompressible Knowledge Probes: Estimating Black-Box LLM Parameter\
+    \ Counts via Factual Capacity},\n  author={Li, Bojie},\n  journal={arXiv preprint arXiv:2604.24827},\n\
+    \  year={2026}\n}"
+  tags:
+  - ikp
+  - factual-knowledge
+  - parameter-estimation
+  - frontier-models
+  - llm-eval
+  modality:
+  - text
+  domain:
+  - knowledge
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': wrong answer or refusal
+      '1': correct answer
+  categorical: true
+  release_date: 2026-04
+  release: private
+  name: IKP
+  one_line_description: Evaluates factual recall across seven tiers of obscurity, using an LLM judge to
+    distinguish correct answers, incorrect answers, and refusals.
+build:
+  contract_version: 2
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/19PINE-AI/ikp
+    revision: e5c4231985048bb2db5dc2611b6eb659b891791d
+    files:
+    - match: data/results/(?P<name>[^/]+\.json)
+      path: ikp/data/results/{name}
+  - name: probes
+    url: https://github.com/19PINE-AI/ikp
+    revision: e5c4231985048bb2db5dc2611b6eb659b891791d
+    files:
+    - match: data/probes/final_probe_set_v9.json
+      path: ikp/data/probes/final_probe_set_v9.json
+grading:
+  rule: The upstream three-way judge marks the answer CORRECT rather than WRONG or REFUSAL; response is
+    the released correct flag.
+  verifiers:
+    judge:
+      kind: llm_judge
+      source: https://github.com/19PINE-AI/ikp/blob/e5c4231985048bb2db5dc2611b6eb659b891791d/scripts/run_evaluation.py
+      function: judge_response
+      model: google/gemini-3-flash-preview
+      logic: Classify the response against the question and gold answer as CORRECT, WRONG, or REFUSAL;
+        no credit for wrong answers or refusals.

@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 16168
+    logical_sha256: 4b575954f6616221eaf4b459c8908e0fb1a60599474d7ec7e1f0a651e5bddb96
+  subjects:
+    rows: 5
+    logical_sha256: 48ddebc667bb1b6817a9c3e1b6df3191e82d7f3d457dc278cd2aa4668ea7d286
+  responses:
+    rows: 16168
+    logical_sha256: 40d89bcba56fbb43640d6509692366df02b8a47c8a57278e217ae37f7e93e8b9
+  items:
+    rows: 10921
+    logical_sha256: 814210a6623a0c081163d67be59dd84c3b1b69281b5d312ab9d3d8f6a831d74f
+  benchmarks:
+    rows: 1
+    logical_sha256: 56609ca0e2ddeaec389db83c05f06e70ece5aef04f5cd0ce8bfbb25a85cf0cfe
+source_claims:
+  source_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 16337
+  source_invalid_serializations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 1
+  source_alias_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 169
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 16164
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 8792
+  source_recorded_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 6268
+  source_legacy_parser_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 3135
+  source_annotation_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 13029
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 4
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 16168
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 5
+  source_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 10921
+  source_question_answer_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 550
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/gtfintechlab/SubjECTive-QA/tree/612ff46a5c2da6734157e1824e305509637c31cf
+    locator: Original LLM CSVs and updated rating annotations; scripts/final_datasets_test_5768.xlsx and both API
+      prompt scripts.
+    scope: Distinct original requests; every source row remains in its alias list. Native prompts/settings are used
+      where recorded. Legacy-parser grades and unrecorded chat prompts remain explicit.
+    expected: 16168

@@ -1,0 +1,3 @@
+- Import 36 published method–volume results with five distinct quality assessments each (180 grades). Preserve rounded source values and keep the 36 runtimes in traces.
+- Bundle all six original TIFF inputs; keep gold/confidence masks in grading references. Capture 30 original segmentation arrays and the released MATLAB grader. Six MusMusculus_2 outputs are unavailable.
+- Replace legacy text-only inputs and reversed time-point descriptions with the original volumes and Info.txt. Binary outputs remain unchanged in raw with exact trace references; no model or grader was rerun.

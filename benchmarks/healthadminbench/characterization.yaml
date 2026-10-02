@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7020
+    logical_sha256: 021393dbe006e2ef8d0e8f02fe902f53ae108cfe110c9090fe20aa54f225418e
+  subjects:
+    rows: 7
+    logical_sha256: 97af6991b2aebbb6f85b5dc1de52c034ecdf6ace8b3642be5ad51a7b9d903fdf
+  responses:
+    rows: 7020
+    logical_sha256: 90a30672d962948c0b43d3cc64bee560abb912e976196bc4c8e4e5b97e50ae25
+  items:
+    rows: 540
+    logical_sha256: ada5238157ef2275ccc15439814055b0cd5f31e6a54c6ef50064e3fb37fbb7fb
+  benchmarks:
+    rows: 1
+    logical_sha256: a724f8b5f4903a7d46d352df62f4097b97530757e8a1dc7a0b2c3f3e88f30fb7
+source_claims:
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 3510
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 7020
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 135
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 7
+  removed_checks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 473
+  strict_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 802
+  revised_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 936
+  changed_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 134
+  evaluator_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 40752
+  llm_evaluator_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 12504
+  runs_with_evaluator_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 3240
+  runs_without_evaluator_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/som-shahlab/health-admin-bench
+    locator: Independent csv.DictReader and JSON traversal of the pinned score table, task definitions, process-check
+      audit and official website evaluator records.
+    scope: All 3510 publicly released run records and their two grading variants. The 7020 judgments are not 7020
+      independent agent attempts. Evaluator records exclude unavailable agent actions/screenshots.
+    expected: 270

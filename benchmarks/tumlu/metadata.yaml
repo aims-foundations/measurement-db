@@ -1,0 +1,81 @@
+benchmark:
+  description: Released Turkic-language multiple-choice model attempts with their complete recorded few-shot context,
+    shuffled choices and original answer-extraction protocol.
+  testing_condition: 'Both no_cot_instruct and cot_instruct are separate subject configurations. Items retain the
+    exact system and user inputs; the reference answer is taken from the same response record because choices were
+    shuffled for each model. All released attempts remain, including [INVALID] API-error outputs. The pinned native
+    parser has no Uyghur-Latin answer keyword: these attempts have unavailable grades rather than an invented parser.
+    No model or judge execution.'
+  paper_url: https://arxiv.org/abs/2502.11020
+  data_source_url: https://github.com/ceferisbarov/TUMLU/tree/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+  subject_type: model
+  item_type: multiple_choice_prompt
+  license: No explicit license is included in the pinned original Git repository.
+  citation: "@misc{isbarov2025tumluunifiednativelanguage,\n      title={TUMLU: A Unified and Native Language Understanding\
+    \ Benchmark for Turkic Languages},\n      author={Jafar Isbarov and Arofat Akhundjanova and Mammad Hajili and\
+    \ Kavsar Huseynova and Dmitry Gaynullin and Anar Rzayev and Osman Tursun and Aizirek Turdubaeva and Ilshat Saetov\
+    \ and Rinat Kharisov and Saule Belginova and Ariana Kenbayeva and Amina Alisheva and Abdullatif Köksal and Samir\
+    \ Rustamov and Duygu Ataman},\n      year={2025},\n      eprint={2502.11020},\n      archivePrefix={arXiv},\n\
+    \      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2502.11020},\n}"
+  tags:
+  - domain-specific
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The upstream parser did not extract the recorded correct choice.
+      '1': The upstream parser extracted the recorded correct choice.
+  categorical: true
+  release_date: 2025-02
+  release: public
+  name: TUMLU
+  version: 24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: data/*/outputs/**/*.json
+      parser: scripts/utils.py
+    labels:
+      harness: TUMLU native five-shot evaluation
+      parser_function: find_matching_pattern
+      answer_dictionary: ANSWER_DICT
+      api_error: '[INVALID]'
+      input_scope: The original system and user strings, including the recorded demonstrations and exact choice
+        order.
+      historical_configuration: Source scripts declare temperature 0, max_tokens 1024 and top_p 1. These are script
+        defaults, not per-request telemetry. Exact historical runtime and checkpoint revisions are not recorded.
+    prompting_variants:
+      no_cot_instruct: five-shot direct answer
+      cot_instruct: five-shot chain of thought
+grading:
+  rule: Apply the pinned upstream find_matching_pattern to the recorded output and compare its result exactly with
+    that record's answer letter. Preserve the upstream pattern priority and Cyrillic-character substitutions. An
+    unextractable answer, including [INVALID], scores 0 as in get_acc. If the upstream language keyword is undefined,
+    retain an unavailable grade and the complete original attempt.
+  verifiers:
+    native:
+      kind: native_answer_extraction
+      source: https://github.com/ceferisbarov/TUMLU/blob/24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8/scripts/utils.py
+      function: find_matching_pattern
+      comparison: Exact comparison with the same record's answer; get_acc(normalize=False).
+      missing_keyword: The original ANSWER_DICT lacks uyghur-latin; do not infer a replacement.
+sources:
+  upstream:
+  - name: original
+    url: https://github.com/ceferisbarov/TUMLU
+    revision: 24299df1b71e4b3ccdd2ad131c9b809c0e5ac1e8
+    files:
+    - match: .*
+      path: '{path}'

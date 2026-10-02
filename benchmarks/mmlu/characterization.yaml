@@ -1,0 +1,114 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2106300
+    logical_sha256: 44c34503cbef2610e8a94009f6b97fe5441a98a30576197389b526e9b283c192
+  subjects:
+    rows: 150
+    logical_sha256: 6f7887eb79be4132e30022d969c11f5c79dcd481ef598f0dcca1bf585ab77ca2
+  responses:
+    rows: 2106300
+    logical_sha256: 287f445842f23dab9bb25271d80df0ebbc4e4ba24760bc27ea679e35f0f93bae
+  items:
+    rows: 14015
+    logical_sha256: a8d911d565dbe0dabb00d1fa0b0b970fdc9035d2d7fca95ab49146c68b67f5e6
+  benchmarks:
+    rows: 1
+    logical_sha256: f5721715d5f6ddb29e7307dbe1420bf76cbb6025272637a9b102916d1840b657
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 150
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 14015
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 2106300
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 2106300
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 150
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 8550
+  source_task_families:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 57
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 844797
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 1261503
+  source_repeated_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 4050
+  source_truncated_contexts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 72434
+  source_effective_fewshot_sentinels:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/open-llm-leaderboard-old
+    locator: All 8,550 native task tables and 150 matching run summaries, pinned separately in metadata.yaml.
+    scope: The preserved 150-model panel and all 57 task families. Keep repeated source occurrences, full rendered
+      prompts, likelihoods, token IDs and recorded configuration. No model execution or regrading.
+    expected: 1053150

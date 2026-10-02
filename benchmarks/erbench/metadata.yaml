@@ -1,0 +1,100 @@
+benchmark:
+  description: Answer correctness in ERBench's released binary-question CSVs across eight model folders and seven
+    domain/task splits.
+  testing_condition: Preserve the 213,110 published binary CSV observations, including 32,136 chain-of-thought observations
+    identified by exact correspondence with the original logs. Restore questions truncated at colons by the upstream
+    CSV parser and retain complete logged outputs alongside the original parsed records. The score measures answer
+    correctness, not ERBench's separate rationale or hallucination metrics. All CSV rows are retained; the paper's
+    model-specific known-entity filters are not applied. Logs record questions and outputs, not complete API requests.
+    Literal source model labels are retained without inventing endpoint versions or inference settings. Other binary
+    ablation logs, multimodal results and multiple-choice results are separate releases outside this CSV migration
+    scope; they are not treated as additional trials.
+  paper_url: https://arxiv.org/abs/2403.05266
+  data_source_url: https://github.com/DILAB-KAIST/ERBench
+  subject_type: model
+  item_type: question
+  license: 'Unknown: the pinned upstream repository does not declare a license for these results.'
+  citation: "@inproceedings{oh2024erbench,\n  title={{ERB}ench: An Entity-Relationship based Automatically Verifiable\
+    \ Hallucination Benchmark for Large Language Models},\n  author={Jio Oh and Soyeon Kim and Junseok Seo and Jindong\
+    \ Wang and Ruochen Xu and Xing Xie and Steven Euijong Whang},\n  booktitle={The Thirty-eighth Conference on\
+    \ Neural Information Processing Systems Datasets and Benchmarks Track},\n  year={2024},\n  url={https://openreview.net/forum?id=vJaWizbBdA}\n\
+    }"
+  tags:
+  - hallucination
+  - factuality
+  - entity_relationship
+  - automatically_verifiable
+  modality:
+  - text
+  domain:
+  - knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Released parsed answer does not match the gold answer
+      '1': Released parsed answer matches the gold answer
+  categorical: true
+  release_date: 2024-03
+  release: public
+  name: ERBench
+  version: 2eca983dbe79d18cf3b2bf205114999764d061a3
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: binary/results
+    models:
+      claude: released model folder
+      gemini: released model folder
+      gpt35: released model folder
+      gpt4: released model folder
+      gpt_finetune: released model folder
+      gpt_finetune_2: released model folder
+      llama: released model folder
+      mistral: released model folder
+    cot_results:
+      claude/movie_foreign_year: Exact CSV-to-log correspondence
+      claude/soccer_olympic: Exact CSV-to-log correspondence
+      gemini/movie_foreign_year: Exact CSV-to-log correspondence
+      gemini/soccer_olympic: Exact CSV-to-log correspondence
+      gpt35/soccer_olympic: Exact CSV-to-log correspondence
+      gpt4/movie_foreign_year: Exact CSV-to-log correspondence
+      gpt4/soccer_olympic: Exact CSV-to-log correspondence
+      llama/movie_foreign_year: Exact CSV-to-log correspondence
+      llama/soccer_olympic: Exact CSV-to-log correspondence
+    labels:
+      subject_prefix: 'ERBench / '
+    prompting:
+      'False': standard
+      'True': chain_of_thought
+    patterns:
+      entry: (?ms)^(?P<log_entry>(?P<entity_idx>[0-9]+)-(?P<question_idx>[0-9]+)th question[^\n]*\n.*?)(?=^[0-9]+-[0-9]+th
+        question|\Z)
+      question: '(?m)^Q: (?P<content>[^\n]*)'
+      gold: '(?m)^Gold Answer: (?P<log_gold>[^\n]*)'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/DILAB-KAIST/ERBench
+    revision: 2eca983dbe79d18cf3b2bf205114999764d061a3
+    files:
+    - match: (?:README[.]md|binary/(?:run_qa[.]py|error_analysis[.]py|utils[.]py|demo_prompt/[^/]+[.]txt|results/(?:claude|gemini|gpt35|gpt4|gpt_finetune|gpt_finetune_2|llama|mistral)/(?:crafted_df/[^/]+[.]csv|[^/]+[.]log)))
+      path: '{path}'
+grading:
+  rule: A response is 1 exactly when the released model_answer equals gold_answer, otherwise 0. The released unsure
+    answer is incorrect. Missing or unknown values are rejected, never converted to failures.
+  verifiers:
+    answer:
+      kind: exact_match_of_released_parsed_answer
+      source: https://github.com/DILAB-KAIST/ERBench/blob/2eca983dbe79d18cf3b2bf205114999764d061a3/binary/error_analysis.py
+      implementation: qa_split and numerical_analysis
+      score: answer correctness (A)
+      scope: Use the released parsed model_answer and gold_answer; do not regrade rationale correctness or apply
+        the paper's known-entity selection.

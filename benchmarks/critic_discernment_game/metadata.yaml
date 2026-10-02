@@ -1,0 +1,84 @@
+benchmark:
+  description: Released Lighteval observations for the Llama-3.1-8B-Instruct baseline and a CDG-trained
+    checkpoint on GSM8K and MATH-500.
+  testing_condition: 'Import all eight native detail files without recomputing extractive_match. Full
+    rendered prompts, reference solutions, generations, extraction details and token records are preserved.
+    Decoding temperature is a response condition. Subjects distinguish checkpoint and the task generation_size reported in the
+    source summary. This task setting (512 or 32768) is not asserted to be the effective run cap: the
+    released launcher separately sets max_new_tokens=8192. Exact model/harness commit identifiers and
+    the historical effective cap are unreported. Published GSM8K/MATH-500 means are reconciled with every
+    row; no API calls or fresh judging are performed.'
+  paper_url: https://arxiv.org/abs/2506.22920
+  data_source_url: https://github.com/PinzhengWang322/Critic_Discernment_Game
+  subject_type: model
+  item_type: question
+  license: unknown
+  citation: "@inproceedings{wang2025cdg,\n  title={Improving Rationality in the Reasoning Process of Language\
+    \ Models through Self-playing Game},\n  author={Wang, Pinzheng and Li, Juntao and Tang, Zecheng and\
+    \ Gui, Haijia and Zhang, Min},\n  booktitle={International Conference on Machine Learning (ICML)},\n\
+    \  year={2025}\n}"
+  tags:
+  - self-play
+  - reasoning
+  - math
+  - gsm8k
+  - math500
+  - cdg
+  - intervention
+  modality:
+  - text
+  domain:
+  - mathematics
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The released extractive_match judgment is incorrect.
+      '1': The released extractive_match judgment is correct.
+  categorical: true
+  release_date: 2025-06
+  name: Critic-Discernment Game
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      root: source_review/b3a531e5f2bd0cff22fdb62cc3f35e9bf16e667a
+    models:
+      llama-base: Llama-3.1-8B-Instruct
+      llama-CDG2: Llama-3.1-8B-Instruct-CDG
+    temperatures:
+      temp0: '0'
+      temp0.75: '0.75'
+    summary_files:
+      llama-base/gsm8k: gsm8k.json
+      llama-base/math_500: math500.json
+      llama-CDG2/gsm8k: gsm8k.json
+      llama-CDG2/math_500: math_500.json
+grading:
+  rule: Import the native binary extractive_match metric, based on Lighteval English expression/LaTeX
+    answer extraction and symbolic matching against the released reference solution; do not regrade or
+    threshold the metric.
+  verifiers:
+    native_match:
+      kind: published_extractive_match
+      source: https://github.com/PinzhengWang322/Critic_Discernment_Game/blob/b3a531e5f2bd0cff22fdb62cc3f35e9bf16e667a/lt_eval/openr1/evaluate.py
+      field: metrics.extractive_match
+      interpretation: Import the native binary extractive_match metric, based on Lighteval English expression/LaTeX
+        answer extraction and symbolic matching against the released reference solution; do not regrade
+        or threshold the metric.
+      reported_precision: 5
+      reported_fallback_mode: first_match
+      execution: Read saved judgments only; the exact historical Lighteval revision is unreported.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    revision: b3a531e5f2bd0cff22fdb62cc3f35e9bf16e667a
+    files:
+    - match: (?:README\.md|lt_eval/.*)
+      path: source_review/b3a531e5f2bd0cff22fdb62cc3f35e9bf16e667a/{path}

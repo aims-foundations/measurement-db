@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  traces:
+    rows: 265650
+    logical_sha256: dc1766656ee97b0ee3ec04708984b0591dc95598f3a70fef80bcf934878ecd41
+  subjects:
+    rows: 253
+    logical_sha256: 0f724d1f5ea003f6ecad100bd9041b765b1ba0a6bc648e78de40e6be79a70031
+  responses:
+    rows: 265650
+    logical_sha256: 1b74ca044f1d3af407f73fd408bfc0c0e15c79af3af1b5d641adf729775eaf0e
+  assets:
+    rows: 1100
+    logical_sha256: 5fb5c64c4247348126c20d51520486ed29715df715d9ebc0b634699693d5fd62
+  items:
+    rows: 1050
+    logical_sha256: 0295f1520e8270c74e3bea9f565f41a9934f2c82bb203b5bef205a73128e1ef5
+  benchmarks:
+    rows: 1
+    logical_sha256: 29bba7ff2654c4ebc40a8bfd3c2300c64b0aa05c6fc245d0bf0814144c85de1e
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 265650
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 253
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 1050
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 265650
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 1100
+  source_image_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 1140
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 265650
+  empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 93
+  api_failure_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords/tree/c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    locator: Maintained mmeval/*/*_MMMU_DEV_VAL.xlsx exports and the original-checksum task TSV, read independently
+      of the builder.
+    scope: All released ungraded predictions and original images. Every source record is preserved; no surrogate
+      grade or leaderboard aggregate is substituted.
+    expected: 354

@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 6046
+    logical_sha256: ca4eef4c23e1c49306a4b50666acc62546903d1154b7ad6c395128bbc5042615
+  subjects:
+    rows: 31
+    logical_sha256: 7d25cb776b9173687e1cd432730f04b40a32d883baf5d5eaf6d3bd1c6c42207c
+  responses:
+    rows: 6046
+    logical_sha256: beecd1e7ce8c148ab8a6d4bf1b68a0fbbc1c391a6cf2c69145a68700a0f15481
+  items:
+    rows: 3597
+    logical_sha256: cb98057e3ac361938937e6fa56fbdc53c0dede10ab7fd68d581e7e5d3f0bcacd
+  benchmarks:
+    rows: 1
+    logical_sha256: 583ace6e4953129533845ada5860caa7d6f245f6a9d0d41cea51f87285f8b5f8
+source_claims:
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 6046
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 31
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 3597
+  source_initial_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 3607
+  source_additional_calls:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 2439
+  source_native_structured_result:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 6026
+  source_unmatched_human_references:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 5
+  source_auxiliary_assessment_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 213
+  source_decoded_native_json_string:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 16
+  source_unparseable_native_result:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs/tree/8b2a97c1c86e57474964afff03978ffa7cda68ee
+    locator: 'imo-shortlist.json and math_arena_results.json: original final-grading stage_cache cells, sampling_results
+      and matched student_metadata; pinned source formatter documents inputs.'
+    scope: Recorded final grading calls, including additional samples and unparseable outputs. Counts are derived
+      from original caches; auxiliary analysis cells are counted separately and remain raw-only.
+    expected: 4

@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 32503
+    logical_sha256: 0be5c1be2e6fa146ef1b6cb03f01c29302e5594fffa9cf1548bd8baa9384824d
+  subjects:
+    rows: 68
+    logical_sha256: d730e14687b11ce805e3372f757fafa49aeedad8d860c982ea47fd480afb06f8
+  responses:
+    rows: 32503
+    logical_sha256: 7f481f8a6ff466e1d0d0213dbb950dd3dcd00cd0bf738e04cc75be1ecaf023fc
+  items:
+    rows: 1414
+    logical_sha256: 45eaff735a93df0100c473a279ea8a337bd5aea2be83567b7437e91eb9829be2
+  benchmarks:
+    rows: 1
+    logical_sha256: cc32728160caf5d52d494f06b7745fff9d247e6e1155cc0ec67bee2361b93251
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 32503
+  source_versions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 17
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 68
+  source_task_bank_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 688
+  source_missing_user_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 97
+  source_empty_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 1392
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 0
+  source_empty_attempt_zeros_without_judgment:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 3
+  source_item_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/MathArena
+    locator: All seventeen pinned *_outputs/data/*.parquet releases and their corresponding task banks; native correct
+      and grading_details fields are imported without rerunning evaluations.
+    scope: Complete current release. Original source rows, model configurations, requests and conversations are
+      independently compared against every output association; missing requests are explicitly distinguished from
+      recorded prompts.
+    expected: 1414

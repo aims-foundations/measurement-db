@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 14806
+    logical_sha256: c38d57d517033ef59ed34cb5c30c71f41f0e4a8e03dee2c67521b896da962af7
+  subjects:
+    rows: 11
+    logical_sha256: 2c33f4a56bdba074764e630a0c21b48168b435aabf16f713b4f75cc568f788fe
+  responses:
+    rows: 14806
+    logical_sha256: 6e0f8cef97e68757fa487094c4daa8e2af4ae7521ceaf82a2251f557952d0272
+  items:
+    rows: 13951
+    logical_sha256: a8d2442c2d28b623823ecf06e8279e06d5a56daf160070f688b90762975cb44e
+  benchmarks:
+    rows: 1
+    logical_sha256: 240cc1ef160bccb66f21b99fcb928dfe8b696aca73e3dbfd57295b04456b0ec5
+source_claims:
+  source_prediction_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 14861
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 14806
+  source_unresolved_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 55
+  source_official_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 13948
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 13951
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 11
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 14806
+  source_scoring_reference_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 11
+  source_official_reference_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/liyucheng09/Contamination_Detector/releases/tag/v0.1.1rc2
+    locator: 'model_predictions.zip: every ceval record, joined by category and numeric item ID to benchmarks.zip/benchmarks/ceval.json;
+      compare all official ceval/ceval-exam Parquet questions at the metadata revision.'
+    scope: Independent JSON/Arrow traversal checks every record. Retain historical question/reference variants and
+      original equality grades; exactly 55 unmapped Yi shuffle records remain source-only. All official questions
+      remain available, including items without responses.
+    expected: 22

@@ -1,0 +1,100 @@
+benchmark:
+  name: DORIS-MAE
+  description: "Published Anno-GPT relevance judgments and explanations for scientific requirement\u2013abstract\
+    \ pairs."
+  testing_condition: Preserve every released annotation record, including repeated aspect/abstract pairs. Reconstruct
+    the published librarian prompt using the original abstract and the aspect text, without adding a title or substituting
+    masked text. The response is the model's reported relevance category, not correctness against a human gold label.
+    Only seven released human-test pairs share explicit IDs with this annotation matrix; keep those votes and their
+    majority labels as supplementary references. Do not manufacture outputs for other human-test cases. Historical
+    API envelopes and attempt identifiers are not released.
+  paper_url: https://arxiv.org/abs/2310.04678
+  data_source_url: https://zenodo.org/records/8299749
+  subject_type: model
+  item_type: task
+  license: 'DORIS-MAE dataset: CC-BY-NC-4.0, as declared in the Zenodo release and upstream dataset license.'
+  citation: Wang, J. et al. (2023). Scientific Document Retrieval using Multi-level Aspect-based Queries. NeurIPS
+    Datasets and Benchmarks.
+  tags:
+  - scientific_retrieval
+  - relevance_annotation
+  - language_models
+  modality:
+  - text
+  domain:
+  - science
+  - nlp_task
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    - 2
+    direction: null
+    meanings:
+      '0': 'DISAGREE: the abstract does not address the requirement.'
+      '1': 'DISPUTE or AGREE: adaptable or partially addresses the requirement.'
+      '2': 'CONCUR: directly and completely addresses the requirement.'
+  categorical: true
+  release_date: '2023-08-29'
+  multi_single_turn: single_turn
+  version: '1'
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      data: DORIS-MAE_dataset_v1.json
+    prompt:
+      template: "You are a reference librarian. A user wants to find a scientific paper that satisfies a particular\
+        \ requirement. Based on the abstract of the paper, you will determine whether the requirement is met. \n\
+        \nHere is the user requirement: {req}\n\nHere is the abstract: {abstract}\n\nExplain whether the abstract\
+        \ satisfies the user requirement. Think step by step, showing all of your reasoning. Use the following *rules*\
+        \ to determine whether the requirement is satisfied: \ndisagree means the abstract does not address the\
+        \ user requirement; \ndispute means the abstract does not directly address the user requirement, but is\
+        \ adaptable to fulfill the user\u2019s need; \nconcur means the abstract directly and completely addresses\
+        \ the user requirement; \nagree means the abstract directly addresses only a portion of the user requirement,\
+        \ but not in its entirety. Think carefully about the aforementioned *rules* to decide whether you [DISAGREE,\
+        \ DISPUTE, AGREE, CONCUR] based on the definition of these 4 options. After you have provided your reasoning,\
+        \ state your final selection in *all capital* letters at the *end* of your response."
+    subject:
+      raw_label: gpt-3.5-turbo-0301
+      harness: Anno-GPT
+    subject_features:
+      configuration_source: Published Anno-GPT harness, not per-attempt API logs
+      reported_temperature: '0'
+      reported_max_tokens: '310'
+      reported_top_p: '1'
+      reported_presence_penalty: '0'
+      reported_frequency_penalty: '0'
+    input_scope:
+      note: Prompt reconstructed from the published template and exact released aspect/abstract text
+    parsing:
+      ungraded_score: '-1'
+sources:
+  upstream:
+  - name: dataset
+    url: https://zenodo.org/api/records/8299749/files/DORIS-MAE_dataset_v1.json/content
+    file: DORIS-MAE_dataset_v1.json
+    size: 1081281638
+    sha256: 50e328db762c0e1077f80d4b658f8a9ad58b6fc00e0310a5647605c9523d93bc
+    revision: '8299749'
+  - name: protocol
+    url: https://github.com/Real-Doris-Mae/Doris-Mae-Dataset
+    revision: d962ce6417e1c83e4eb4eb8a5ff9e3cf534d2c1c
+    files:
+    - match: (?:README\.md|.*license\.md|LICENSE\.md|gpt_annotation/.*\.py|gpt_annotation/prompt_config/prompt_config\.pickle|benchmarking/dataset_util\.py)
+      path: protocol/{path}
+grading:
+  rule: 'Preserve the released score as an ordinal relevance judgment: DISAGREE=0, DISPUTE/AGREE=1, CONCUR=2. This
+    measures the model''s relevance decision, not correctness or retrieval accuracy. Preserve source corrections
+    instead of reparsing the explanation. A human majority reference is supplementary, applies only to explicitly
+    matching test pairs and is never substituted for the response.'
+  verifiers:
+    released:
+      kind: published_annotation_label
+      source: https://github.com/Real-Doris-Mae/Doris-Mae-Dataset/blob/d962ce6417e1c83e4eb4eb8a5ff9e3cf534d2c1c/gpt_annotation/annotation_util.py
+      function: parse_answer
+      grade_origin: released_score_field
+      human_reference: Strict majority among the three released votes when the aspect and abstract IDs match; no
+        tie breaker.

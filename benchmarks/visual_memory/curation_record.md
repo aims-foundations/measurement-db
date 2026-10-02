@@ -1,0 +1,3 @@
+- Preserve the existing 15 released configurations and all 237,500 nearest-neighbor outcomes; the public source bucket also contains experiments outside this slice.
+- Replace image-ID descriptions with the original 47,500 query images and neutral instructions. Verify image identities and reference classes against the original author-linked archives.
+- Retain complete neighbor traces and immutable pinned inputs. Apply only the authors' explicit k=1 comparison; no embedding model or retrieval is rerun.

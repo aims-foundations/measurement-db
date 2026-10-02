@@ -1,0 +1,64 @@
+benchmark:
+  description: 'Abstract-Reason benchmark: rule-based symbolic reasoning tasks (basic/extended computation,
+    non-decimal number bases, symbolic function inference, symbolic manipulation) with systematic symbol remapping
+    to separate genuine abstraction from memorization.'
+  testing_condition: test_condition encodes the task level and dataset (e.g. "level=l2_chat;task=chat_add_base3_raw_dataset").
+    Items are individual questions rendered as chat prompts (in-context rule examples + final question); the
+    l4_chat datasets are the symbol-remapped variants. Subject is gpt-4o-mini, the only model with released
+    per-item outputs. response = 1.0 if the item is correct.
+  paper_url: https://arxiv.org/abs/2505.23833
+  data_source_url: https://github.com/MAC-AutoML/abstract-reason-benchmark
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@inproceedings{ma2025benchmarking,\n  title={Benchmarking Abstract and Reasoning Abilities Through\
+    \ A Theoretical Perspective},\n  author={Ma, Qingchuan and Wu, Yuhang and Zheng, Xiawu and Ji, Rongrong},\n\
+    \  booktitle={International Conference on Machine Learning (ICML)},\n  year={2025},\n}"
+  tags:
+  - abstract-reasoning
+  - symbolic
+  - arithmetic
+  - reasoning
+  modality:
+  - text
+  domain:
+  - reasoning
+  - mathematics
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect or unsolved
+      '1': correct or solved
+  categorical: true
+  release_date: 2025-05
+  multi_single_turn: single_turn
+  name: Abstract-Reason
+build:
+  contract_version: 2
+  parameters:
+    subject:
+      model: gpt-4o-mini
+grading:
+  verifiers:
+    numeric:
+      source: https://github.com/MAC-AutoML/abstract-reason-benchmark/blob/51450721dd8c793864178de1ebe5bc42df757960/test_openai.py
+      rule: 'Use the recorded is_correct flag: on l0/l3 tasks the upstream parser extracts the last numbers
+        and requires absolute error below 0.01; unparsable output and a zero-valued reference fail the historical
+        truthiness check. Preserve the released verdict.'
+    exact:
+      source: https://github.com/MAC-AutoML/abstract-reason-benchmark/blob/51450721dd8c793864178de1ebe5bc42df757960/test_openai.py
+      rule: Use the recorded is_correct flag from exact agreement between the extracted answer and the reference
+        string. Preserve the released verdict; do not substitute later llm_judge or EM_result fields.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/MAC-AutoML/abstract-reason-benchmark
+    revision: 51450721dd8c793864178de1ebe5bc42df757960
+    files:
+    - match: gpt-4o-mini/result/(?P<relative>.+/output\.json)
+      path: abstract-reason-benchmark/gpt-4o-mini/result/{relative}

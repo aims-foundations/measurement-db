@@ -1,0 +1,5 @@
+- Scope: HELM thaiexam v1.2.0, 210 native run exports, 23,730 observations and 565 canonical prompt/grading items. Sources and grading are declared in `metadata.yaml`.
+- Import: preserve each run’s full prompts, native task/language/exam definitions, request settings, accepted references and complete traces. Missing grades remain null; repeated attempts are retained.
+- Checks: independently reconciled all 23,730 observations with native requests, predictions, references, grades and traces; shared schema and relationship checks passed.
+- Migration: all 23,730 previous model/stem/exam/grade records match under the legacy model aliases. Two SEA-LION variants previously shared a subject ID; their native identifiers and configurations now remain distinct. Full prompts distinguish 565 items instead of 562 stems.
+- Limits: the release does not identify its executed harness commit. Captured grader code is an inspected reference; dataset licensing is not inferred from the code license.

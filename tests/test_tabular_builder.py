@@ -110,6 +110,24 @@ def test_explicit_trials_and_omitted_traces(fixture):
     assert not (output / "traces.parquet").exists()
 
 
+def test_legacy_null_reference_identity_is_preserved_without_an_output_column(fixture):
+    builder, source, output = fixture
+    builder.inputs["responses"]["reference_answer"] = None
+    builder.main_from_args(["--source", str(source), "--output", str(output)])
+
+    class LegacyRowFixture(RowFixture):
+        def add_response(self, **kwargs):
+            return super().add_response(**kwargs, reference_answer=None)
+
+    reload()
+    old_output = output.parent / "legacy-row-tables"
+    LegacyRowFixture(str(builder.dir / "build.py")).main_from_args(
+        ["--source", str(source), "--output", str(old_output)])
+    for path in output.glob("*.parquet"):
+        pd.testing.assert_frame_equal(pd.read_parquet(path), pd.read_parquet(old_output / path.name))
+    assert "reference_answer" not in pd.read_parquet(output / "responses.parquet").columns
+
+
 @pytest.mark.parametrize("table,column,row,value,message", [
     ("subjects", "subject_key", 1, "s1", "duplicate subject_key"),
     ("items", "item_key", 1, "i1", "duplicate item_key"),
@@ -131,6 +149,38 @@ def test_invalid_inputs_fail_before_writing(fixture, table, column, row, value, 
         builder.inputs["responses"]["trial"] = pd.Series([1, 2, 3, 1, 2], dtype=object)
     builder.inputs[table].loc[row, column] = value
     with pytest.raises(BuildContractError, match=message):
+        builder.main_from_args(["--source", str(source), "--output", str(output)])
+    assert not list(output.glob("*.parquet"))
+
+
+def test_embedded_asset_bytes_match_file_assets_without_writing_raw(fixture):
+    builder, source, output = fixture
+    builder.main_from_args(["--source", str(source), "--output", str(output)])
+    expected = {p.stem: pd.read_parquet(p) for p in output.glob("*.parquet")}
+    payload = (source / "context.txt").read_bytes()
+    embedded = {key: value for key, value in ATTACHMENT.items() if key != "source_path"}
+    embedded["data"] = payload
+    builder.inputs["items"]["attachments"] = [[embedded], [embedded]]
+    (source / "context.txt").unlink()
+    pd.DataFrame({"data": [payload]}).to_parquet(source / "images.parquet")
+    original_source = (source / "images.parquet").read_bytes()
+    second = output.parent / "embedded-tables"
+    reload()
+    builder.main_from_args(["--source", str(source), "--output", str(second)])
+    assert sorted(p.name for p in source.iterdir()) == ["images.parquet"]
+    assert (source / "images.parquet").read_bytes() == original_source
+    for name, frame in expected.items():
+        pd.testing.assert_frame_equal(frame, pd.read_parquet(second / f"{name}.parquet"))
+
+
+@pytest.mark.parametrize("attachment", [
+    {"data": "not bytes", "path": "context.txt", "media_type": "text/plain", "role": "context"},
+    {**ATTACHMENT, "data": b"ambiguous"},
+])
+def test_invalid_embedded_assets_are_rejected(fixture, attachment):
+    builder, source, output = fixture
+    builder.inputs["items"]["attachments"] = [[attachment], [attachment]]
+    with pytest.raises(BuildContractError, match="bytes|exactly one"):
         builder.main_from_args(["--source", str(source), "--output", str(output)])
     assert not list(output.glob("*.parquet"))
 

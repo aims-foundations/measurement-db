@@ -1,0 +1,137 @@
+benchmark:
+  name: FIND
+  description: Released function-interpretation conversations and available native grades for numeric, string and
+    synthetic-neuron functions.
+  testing_condition: Preserve all 10,336 nonempty recorded conversations, including two without a final description.
+    Forty-nine entirely empty output folders do not establish attempts and remain in raw only. Each attempt has
+    a numeric MSE measurement or an explicitly ungraded measurement; 61 additional description annotations are separate
+    grading protocols for the same generations. Only 408 grades are released. Preserve 16 grade/written-answer conflicts
+    and one unparseable judge answer without changing native scores. The item contains the complete messages preceding
+    the first assistant reply, including hints and 18 extra initial user messages. Hidden function code and state
+    hashes are reference material in the grading criterion, not the input prompt. Temporary paths and other native
+    prompt differences are preserved as item variants. Historical model revisions, full inference settings, and
+    exact grading execution configurations are unavailable. No new inference, code execution or judging is performed.
+  paper_url: https://arxiv.org/abs/2309.03886
+  data_source_url: https://github.com/multimodal-interpretability/FIND
+  subject_type: model
+  item_type: task
+  license: MIT as declared for the function dataset in Zenodo record 8039658. The interpretation archive and captured
+    code repository do not include a separate license declaration.
+  citation: 'Schwettmann, S. et al. (2023). FIND: A Function Description Benchmark for Evaluating Interpretability
+    Methods. NeurIPS Datasets and Benchmarks.'
+  tags:
+  - interpretability
+  - function_description
+  - tool_use
+  modality:
+  - text
+  domain:
+  - reasoning
+  - programming
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: '2023-06-13'
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      interpretations: FIND-interpretations.zip
+      functions: FIND-dataset.zip
+    models:
+      gpt-4: gpt-4
+      gpt-3.5-turbo: gpt-3.5-turbo
+      llama-2-13b: llama-2-13b
+      llama-2-70b: llama-2-70b
+      gpt-4-milan: gpt-4-milan
+    categories:
+      numeric: numeric
+      strings: strings
+      neurons_entities: neurons_entities
+      neurons_entities_hints: neurons_entities
+      neurons_relations: neurons_relations
+      neurons_relations_hints: neurons_relations
+    metrics:
+      test/test.json: mse
+      test/test_desc.json: description
+      test/test_desc_data.json: description_data
+    subject_features:
+      harness: FIND
+      configuration_scope: Released interpreter label and method. Historical model revision and full inference settings
+        are not reported per attempt.
+sources:
+  upstream:
+  - name: interpretations
+    url: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+    revision: null
+    file: FIND-interpretations.zip
+    size: 101224402
+    sha256: 541aa7a57047744426324b4337cfcd59eaff7e29a01132c37b32188b9e915ae3
+  - name: functions
+    url: https://zenodo.org/records/8039658/files/FIND-dataset.zip
+    revision: null
+    file: FIND-dataset.zip
+    size: 2146374
+    sha256: db68777fb5ffc3f47369d2d079cf0c4e6a71fd498a2f27014b5d413fb7b98760
+  - name: code
+    url: https://github.com/multimodal-interpretability/FIND
+    revision: 670d837a27cfd39e82d8eefd82976657f3b46a58
+    files:
+    - match: (?:README\.md|src/(?:run_interpretations|evaluate_interpretations)/.*\.(?:py|txt|json|md))
+      path: code/{path}
+grading:
+  verifiers:
+    mse:
+      rule: Preserve the released test/test.json mse scalar unchanged. It is not the separately documented NMSE
+        or a binary success flag; the historical test grid and implementation revision are unknown.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better
+      implementation:
+        kind: released_numeric_error
+        source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+        field: test/test.json:mse
+        historical_evaluator_revision: null
+    ungraded:
+      rule: Retain a recorded interpreter attempt whose evaluation grade is not included in the release. Its response
+        is null; do not convert the description to a numerical score or run a new evaluator.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+      implementation:
+        kind: unavailable_released_evaluation
+        source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+        historical_evaluator_revision: null
+    description:
+      rule: Preserve the released test_desc.json desc_score without reparsing the judge response. Some stored grades
+        contradict the written answer. Flag these issues; the historical judge identity and exact protocol are unknown,
+        so score direction is not asserted.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+      implementation:
+        kind: released_description_annotation
+        source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+        field: test/test_desc.json:desc_score
+        historical_judge: null
+    description_data:
+      rule: Preserve the separate test_desc_data.json desc_score. Its undocumented relationship to test_desc.json
+        is not treated as a duplicate or an independent new generation; retain a distinct grading protocol with
+        unknown direction and judge.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+      implementation:
+        kind: released_alternate_description_annotation
+        source: https://data.csail.mit.edu/FIND/FIND-interpretations.zip
+        field: test/test_desc_data.json:desc_score
+        historical_judge: null

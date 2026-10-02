@@ -1,0 +1,58 @@
+format_version: 1
+tables:
+  traces:
+    rows: 10386
+    logical_sha256: b0181aeceb2410941fcc6a6f1cb67816a04d1f4d4cd11889d854737b24e0fa17
+  subjects:
+    rows: 18
+    logical_sha256: fbabb49b4a43bc2e5138e6c4c14c845d4b5a4a20487190492c280082e0442cca
+  responses:
+    rows: 10530
+    logical_sha256: 470d5435c4da1198f7ee95124fb3f21ffff2acec9f47727310aaeae3176ddb35
+  items:
+    rows: 585
+    logical_sha256: cfea1e155bfccca4b7c318401baa7d1ee7f53e76ce40341a4a6b9318b824dffb
+  benchmarks:
+    rows: 1
+    logical_sha256: 43df64eab2572bc55db6b608cd50edfb1ad23db27a279b31faa13f720e83cff0
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StonyBrookNLP/appworld-leaderboard
+    locator: 'raw/data-0.1.0.bundle; raw/bundles/*.bundle: metadata.json, evaluations/*/individual, tasks/*/logs/environment_io.md'
+    scope: All 36 captured official leaderboard bundles and their released task definitions. Scores and
+      literal trace bytes are reconciled by model, scaffold and task.
+    expected: 10530
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StonyBrookNLP/appworld-leaderboard
+    locator: 'raw/data-0.1.0.bundle; raw/bundles/*.bundle: metadata.json, evaluations/*/individual, tasks/*/logs/environment_io.md'
+    scope: All 36 captured official leaderboard bundles and their released task definitions. Scores and
+      literal trace bytes are reconciled by model, scaffold and task.
+    expected: 2664
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StonyBrookNLP/appworld-leaderboard
+    locator: 'raw/data-0.1.0.bundle; raw/bundles/*.bundle: metadata.json, evaluations/*/individual, tasks/*/logs/environment_io.md'
+    scope: All 36 captured official leaderboard bundles and their released task definitions. Scores and
+      literal trace bytes are reconciled by model, scaffold and task.
+    expected: 585
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StonyBrookNLP/appworld-leaderboard
+    locator: 'raw/data-0.1.0.bundle; raw/bundles/*.bundle: metadata.json, evaluations/*/individual, tasks/*/logs/environment_io.md'
+    scope: All 36 captured official leaderboard bundles and their released task definitions. Scores and
+      literal trace bytes are reconciled by model, scaffold and task.
+    expected: 18
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StonyBrookNLP/appworld-leaderboard
+    locator: 'raw/data-0.1.0.bundle; raw/bundles/*.bundle: metadata.json, evaluations/*/individual, tasks/*/logs/environment_io.md'
+    scope: All 36 captured official leaderboard bundles and their released task definitions. Scores and
+      literal trace bytes are reconciled by model, scaffold and task.
+    expected: 10386

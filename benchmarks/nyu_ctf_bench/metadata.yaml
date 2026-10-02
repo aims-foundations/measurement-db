@@ -1,0 +1,150 @@
+benchmark:
+  description: Published challenge-level flag-recovery assessments from 15 NYU CTF leaderboard submissions, with
+    original challenge inputs and released agent trajectories.
+  testing_condition: Each row is one published submission/challenge assessment, not an inferred individual execution
+    attempt. The three baseline submissions report pass@5; other submissions report pass@1. Missing or errored runs
+    count as failure under the upstream summary policy, but challenge keys absent from a submitted summary remain
+    absent here. Published false assessments without released traces do not establish whether an attempt took place.
+    Separate all submitted agent configurations, including CRAKEN with and without Graph-RAG. Task inputs come from
+    the pinned original repository and its linked forensic archive. Historical server state and unreleased trajectories
+    are not reconstructed. Original upstream truncation is retained; this builder adds none and executes no challenge
+    or agent.
+  paper_url: https://arxiv.org/abs/2406.05590
+  data_source_url: https://github.com/NYU-LLM-CTF/NYU_CTF_Bench
+  subject_type: model
+  item_type: task
+  license: GPL-2.0 for the NYU_CTF_Bench task repository, with original notices retained. The separate leaderboard_submissions
+    repository and linked forensic input do not declare explicit redistribution terms; raw and formatted data remain
+    local pending clarification. The previous blanket MIT attribution is unsupported.
+  citation: "@inproceedings{shao2024nyuctf,\n  title={NYU CTF Bench: A Scalable Open-Source Benchmark Dataset for\
+    \ Evaluating LLMs in Offensive Security},\n  author={Shao, Minghao and Jancheska, Sofija and Udeshi, Meet and\
+    \ Dolan-Gavitt, Brendan and Xi, Haoran and Milner, Kimberly and Chen, Boyuan and Yin, Max and Garg, Siddharth\
+    \ and Krishnamurthy, Prashanth and Khorrami, Farshad and Karri, Ramesh and Shafique, Muhammad},\n  booktitle={NeurIPS\
+    \ 2024 Datasets and Benchmarks Track},\n  year={2024},\n}"
+  tags:
+  - cybersecurity
+  - ctf
+  - offensive_security
+  - agent
+  modality:
+  - text
+  domain:
+  - cybersecurity
+  - software_engineering
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': published assessment reports no successful flag recovery within its stated allowance
+      '1': published assessment reports successful flag recovery within its stated allowance
+  categorical: true
+  release_date: 2024-06
+  release: public
+  name: NYU CTF Bench
+  version: 69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      tasks_archive: tasks.tar.gz
+      tasks_root: NYU_CTF_Bench-4c5744f55a31a58e03d6118c9dbb1c18e5bbdfa9
+      results_archive: results.tar.gz
+      results_root: leaderboard_submissions-69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+      bank: test_dataset.json
+    labels:
+      subject_prefix: 'NYU CTF / '
+      condition: published_submission_assessment
+      default_media_type: application/octet-stream
+    formats:
+      baseline: transcripts/(?P<submission>[^/]+)/(?P<task_path>.+)/conversation\.[^/]+\.[1-5]\.json
+      nyu: transcripts/(?P<submission>[^/]+)/(?P<task_id>20[^/]+)\.json
+      enigma: transcripts/(?P<submission>[^/]+)/(?P<category>[^_]+)_(?P<title>[^/]+)\.traj
+    submission_formats:
+      baseline_: baseline
+      craken_: nyu
+      dcipher_: nyu
+      enigma_: enigma
+    public_fields:
+      name: name
+      category: category
+      description: description
+      box: box
+      internal_port: internal_port
+      port: port
+      proto: proto
+      urls: urls
+      compose: compose
+    baseline_settings:
+      model: model
+      backend: backend
+      formatter: formatter
+      prompt_set: prompt_set
+      max_rounds: max_rounds
+      disable_docker: disable_docker
+      disable_markdown: disable_markdown
+    component_settings:
+      planner_model: planner_model
+      executor_model: executor_model
+      autoprompter_model: autoprompter_model
+    media_types:
+      .zip: application/zip
+      .gz: application/gzip
+      .png: image/png
+      .jpg: image/jpeg
+      .pdf: application/pdf
+      .txt: text/plain
+      .py: text/x-python
+      .json: application/json
+    external_inputs:
+      test/2023/CSAW-Finals/forensics/forensings/forensings.zip: forensings.zip
+grading:
+  rule: Recover the original challenge flag. Preserve the published Boolean summary assessment without rerunning
+    or regrading it. Missing/errored executions may count as false in this upstream assessment; an absent summary
+    key creates no observation. Released trace availability is recorded separately.
+  verifiers:
+    pass@1:
+      kind: published_flag_recovery_summary
+      maximum_attempts: 1
+      aggregate: any successful attempt within the stated allowance
+      missing_execution_policy: upstream may report false
+      missing_summary_key_policy: no observation
+      executed_by_builder: false
+      sources:
+      - https://github.com/NYU-LLM-CTF/leaderboard_submissions/blob/69def02a79e8b1d890e1e0d5c11106a9f40e11e1/scripts/nyu_summary.py
+      - https://github.com/NYU-LLM-CTF/leaderboard_submissions/blob/69def02a79e8b1d890e1e0d5c11106a9f40e11e1/scripts/enigma_summary.py
+    pass@5:
+      kind: published_flag_recovery_summary
+      maximum_attempts: 5
+      aggregate: any successful attempt within the stated allowance
+      missing_execution_policy: upstream may report false
+      missing_summary_key_policy: no observation
+      executed_by_builder: false
+      sources:
+      - https://github.com/NYU-LLM-CTF/leaderboard_submissions/blob/69def02a79e8b1d890e1e0d5c11106a9f40e11e1/scripts/baseline_summary.py
+sources:
+  upstream:
+  - name: tasks
+    url: https://codeload.github.com/NYU-LLM-CTF/NYU_CTF_Bench/tar.gz/4c5744f55a31a58e03d6118c9dbb1c18e5bbdfa9
+    file: tasks.tar.gz
+    revision: 4c5744f55a31a58e03d6118c9dbb1c18e5bbdfa9
+    size: 1591046244
+    sha256: ce5a4621f32b97c1f6576a15ad63e6b151fda369e2944267b98d9159fe4467b4
+  - name: results
+    url: https://codeload.github.com/NYU-LLM-CTF/leaderboard_submissions/tar.gz/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    file: results.tar.gz
+    revision: 69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    size: 146155181
+    sha256: bb03e3dc5b7014ee39c369e27f685ffbbf3178aabaabe0d9c6fce32131830054
+  - name: forensings
+    url: https://drive.usercontent.google.com/download?id=1ir5S2c42ACzXLma8j69RvrHOBNo_2ILg&export=download&confirm=t
+    file: forensings.zip
+    revision: sha256:d7754455afabf7d9778022a4f963e1e0ba81f9a003323458a52e33eb33268d89
+    size: 436127134
+    sha256: d7754455afabf7d9778022a4f963e1e0ba81f9a003323458a52e33eb33268d89

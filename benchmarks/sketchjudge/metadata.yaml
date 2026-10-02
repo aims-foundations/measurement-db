@@ -1,0 +1,134 @@
+benchmark:
+  name: SketchJudge
+  description: 'SketchJudge (arXiv 2601.06944): 16 multimodal LLMs act as graders of 1,015 hand-drawn student STEM
+    answers (geometry, physics, chart, flowchart). response = binary grading accuracy, 1 iff the model''s correctness
+    verdict matches the expert gold label, under WithRef/NoRef settings and baseline/CoT/rubric prompt styles.'
+  testing_condition: Import every released model response with its complete recorded query and ordered diagram inputs.
+    Separate the recorded model, reference setting and prompt family. The original evaluator skips invalid replies.
+    One record names a different student answer from its recorded image path and remains explicitly ungraded. The
+    paper reports temperature zero, but exact historical API model revisions are not recorded. This conversion measures
+    binary verdict accuracy and preserves error diagnoses in the original trace.
+  paper_url: https://arxiv.org/abs/2601.06944
+  data_source_url: https://github.com/yuhangsu82/SketchJudge
+  subject_type: model
+  item_type: diagram_grading_task
+  license: Apache-2.0 for the GitHub project. The external diagram archive has no separate license declaration;
+    captured data remain local pending redistribution clarification.
+  citation: "@article{su2026sketchjudge,\n  title={SketchJudge: A Diagnostic Benchmark for Grading Hand-drawn Diagrams\
+    \ with Multimodal Large Language Models},\n  author={Su, Yuhang and Wang, Mei and Zhong, Yaoyao and Li, Guozhang\
+    \ and Li, Shixing and Feng, Yihan and Huang, Hua},\n  journal={arXiv preprint arXiv:2601.06944},\n  year={2026}\n\
+    }"
+  tags:
+  - multimodal
+  - diagram-grading
+  - hand-drawn
+  - stem
+  - education
+  - llm-judge
+  - error-diagnosis
+  - sketches
+  modality:
+  - text
+  - image
+  domain:
+  - education
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Model verdict disagrees with the expert label
+      '1': Model verdict agrees with the expert label
+  categorical: true
+  release_date: 2026-01
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: SketchJudge_v1 with the pinned original JSONL model outputs
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      dataset: SketchJudge_v1.zip
+      master: SketchJudge_v1/master.json
+      taxonomy: SketchJudge_v1/taxonomy.json
+      prefix: SketchJudge_v1/
+    models:
+      claude_3_7_output: Claude-3.7-Sonnet
+      doubao_output: Doubao-Seed-1.6-Vision
+      ernie_output: ERNIE-4.5-Turbo-VL
+      gemini_2.5_flash_output: Gemini-2.5-Flash
+      gemma3_27b_output: Gemma-3-27B-it
+      gemma3_4b_output: Gemma-3-4B-it
+      glm_4_6v_output: GLM-4.6V
+      gpt_5_output: GPT-5
+      llama_4_output: Llama-4-Scout-17B-16E-Instruct
+      mistral_large_3_output: Mistral-Large-3
+      o3_output: o3
+      qianfan_70_output: Qianfan-VL-70B
+      qianfan_8_output: Qianfan-VL-8B
+      qianfan_vl_70_output: Qianfan-VL-70B
+      qianfan_vl_8_output: Qianfan-VL-8B
+      qwen_vl_3b_it_output: Qwen2.5-VL-3B-Instruct
+      qwen_vl_72b_it_output: Qwen2.5-VL-72B-Instruct
+      qwen_vl_7b_it_output: Qwen2.5-VL-7B-Instruct
+    patterns:
+      prompt_suffix: _(cot|rubric)$
+      image_column: image_\d+
+      image_path: (?:^|/)(images/.*)
+    labels:
+      harness: SketchJudge released evaluation
+      input_scope: Complete recorded query and ordered original diagram bytes. Historical image preprocessing and
+        exact API snapshots are not recorded.
+      configuration_status: The paper reports deterministic decoding at temperature zero. Per-call model revision
+        and generation metadata are unavailable.
+      grade_scope: Binary verdict accuracy reconstructed with the released parser. Fine-grained error diagnoses
+        remain in the full source trace.
+      valid_input: verified
+      conflicting_input: answer_id_image_conflict
+      valid_grade: verified_verdict_match
+      invalid_grade: response_unavailable_or_invalid
+    media_types:
+      image: image/png
+grading:
+  rule: 'Apply the released evaluator safe_load_response schema: JSON object with a Boolean is_correct, optional
+    integer error_count and optional list error_list. The binary grade is agreement with the expert Boolean verdict.
+    Empty or malformed replies and conflicting answer-ID/image associations remain ungraded. Preserve the original
+    record and diagrams without repairing the output or inferring an intended image.'
+  verifiers:
+    verdict:
+      kind: binary_verdict_agreement
+      source: https://github.com/yuhangsu82/SketchJudge/blob/811fde74fe57ac65abc43266f244c2da460365a5/eval.py
+      functions:
+      - safe_load_json
+      - safe_load_response
+      - evaluate_all
+      rule: 'Apply the released evaluator safe_load_response schema: JSON object with a Boolean is_correct, optional
+        integer error_count and optional list error_list. The binary grade is agreement with the expert Boolean
+        verdict. Empty or malformed replies and conflicting answer-ID/image associations remain ungraded. Preserve
+        the original record and diagrams without repairing the output or inferring an intended image.'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/yuhangsu82/SketchJudge
+    revision: 811fde74fe57ac65abc43266f244c2da460365a5
+    files:
+    - match: .*
+      path: release/{path}
+  - name: dataset
+    url: https://drive.usercontent.google.com/download?id=1JBPqQRgbogIruV9RlQlcCCPVCGBkGKQs&export=download&confirm=t
+    file: SketchJudge_v1.zip
+    size: 312510426
+    sha256: aef8b110116b842558dbc82e3dda701cfdeb630b5e2e78d6e259eb6f440032d2
+    revision: sha256:aef8b110116b842558dbc82e3dda701cfdeb630b5e2e78d6e259eb6f440032d2
+  - name: paper
+    url: https://arxiv.org/pdf/2601.06944
+    file: paper.pdf
+    size: 3992289
+    sha256: cbbb07ad538d020e56a96ff8b4905c1db6a0cd2270f9a5ff32447ef0080ae436
+    revision: sha256:cbbb07ad538d020e56a96ff8b4905c1db6a0cd2270f9a5ff32447ef0080ae436

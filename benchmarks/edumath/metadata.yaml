@@ -1,0 +1,126 @@
+benchmark:
+  name: EDUMATH
+  description: Released mathematical word-problem generations and two published automatic quality judgments for
+    eleven generator models.
+  testing_condition: 'Items describe the released grade, standard, substandard and mathematical topic for generation.
+    Generated questions, solutions and judge reasoning are outputs stored in traces. The randomly selected few-shot
+    examples and complete historical generation prompts are not released per row, so these items describe the available
+    generation conditions, not full API envelopes. Preserve the two original grading scales: the Gemma LLM judge
+    uses 1 for high quality, while the ModernBERT classifier uses 0 for GOOD. Separate grading protocols define
+    distinct items. Repeated generations under a shared condition remain separate trials, numbered in CSV order.
+    Import existing judgments only; no model inference or regrading.'
+  paper_url: https://arxiv.org/abs/2510.06965
+  data_source_url: https://github.com/bryanchrist/EDUMATH
+  subject_type: model
+  item_type: generation condition
+  license: GPL-3.0; the author README explicitly covers datasets, model and code. Model weights have additional
+    base-model license conditions.
+  citation: 'Christ, B. R. et al. EDUMATH: Generating Standards-aligned Educational Math Word Problems. arXiv:2510.06965.'
+  tags:
+  - education
+  - mathematics
+  - generation
+  - quality_judgment
+  modality:
+  - text
+  domain:
+  - education
+  - mathematics
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    input:
+      file: release/data/all_model_samples.csv
+    conditions:
+      grade: grade
+      standard: standard
+      substandard: substandard
+      math_topic: math_topic
+    judges:
+      model_labels: llm
+      classifier_labels: classifier
+    subject_features:
+      harness: EDUMATH
+      configuration_scope: Published generator label. Per-row historical weight revisions and generation settings
+        are not provided.
+    input_scope:
+      description: Released generation conditions only. Per-row random few-shot examples and full historical API
+        prompts are unavailable.
+    prompt:
+      template: 'Generate a mathematical word problem and its solution for the following educational conditions.
+
+
+        Grade: {grade}
+
+
+        Standard: {standard}
+
+
+        Substandard: {substandard}
+
+
+        Mathematical topics:
+
+        {math_topic}'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/bryanchrist/EDUMATH
+    revision: 640ba01e31b210063f7ac838befb7a77fb5906fa
+    files:
+    - match: (?:LICENSE|README\.md|annotate\.py|generate\.py|generate_with_interests\.py|train_classifier\.py|data/(?:all_model_samples|matched_standards_summarized)\.csv)
+      path: release/{path}
+grading:
+  rule: Retain both native published quality labels with their opposite documented directions. The generated solution
+    is part of the subject output and is not a reference answer.
+  verifiers:
+    llm:
+      implementation:
+        kind: published_quality_judgment
+        column: model_labels
+        source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/annotate.py
+        interpretation_source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/annotate.py
+        model: google/gemma-3-27b-it (released annotation-script default)
+        historical_model_revision: null
+        scope: Preserve the released label. The code documents interpretation but does not prove an exact historical
+          per-row model revision.
+      criterion:
+        rule: High quality requires solvability, accurate solution, educational appropriateness and alignment with
+          all specified mathematical topics. The original Yes./No. parser stores Yes as 1 and No as 0.
+        response_scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: higher_is_better
+          meanings:
+            '0': Not high quality according to the published LLM judgment.
+            '1': High quality according to the published LLM judgment.
+    classifier:
+      implementation:
+        kind: published_quality_judgment
+        column: classifier_labels
+        source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/annotate.py
+        interpretation_source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/train_classifier.py
+        model: bryanchrist/EDUMATH_classifier (ModernBERT)
+        historical_model_revision: null
+        scope: Preserve the released label. The code documents interpretation but does not prove an exact historical
+          per-row model revision.
+      criterion:
+        rule: 'The released classifier argmax label uses id2label {0: GOOD, 1: NOT GOOD}. Keep that original code
+          without inversion; lower is better.'
+        response_scale:
+          kind: discrete
+          values:
+          - 0
+          - 1
+          direction: lower_is_better
+          meanings:
+            '0': GOOD according to the published classifier prediction.
+            '1': NOT GOOD according to the published classifier prediction.

@@ -1,0 +1,192 @@
+benchmark:
+  name: NIS3D
+  description: Recorded 3D nuclei segmentation quality on six embryonic microscopy volumes.
+  testing_condition: Import the five published quality metrics for each of six segmentation configurations on six
+    individual image volumes (36 segmentation results assessed five ways, represented by 180 grade rows and 30 volume/grading
+    identities). Grades are the unmodified, rounded values from paper Table 3; no segmentation or grading is rerun.
+    The 36 measured runtimes remain in traces, rather than being treated as segmentation grades. Original TIFF inputs
+    are embedded once as assets; ground-truth and confidence maps remain separate grading references in the captured
+    archive. Thirty original method-output arrays are available for five volumes; MusMusculus_2 arrays are absent.
+    Source filenames associate these arrays with the published experiments; they are not asserted to reproduce the
+    rounded paper scores. Human reference rows and proposed train/test splits are retained in raw but not counted
+    as AI observations. Exact historical software/checkpoint revisions are not released.
+  paper_url: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+  data_source_url: https://zenodo.org/records/11456029
+  subject_type: model
+  item_type: image_3d
+  license: CC-BY-4.0 (Zenodo volume and result archives); MIT (GitHub documentation/code).
+  citation: "@inproceedings{zheng2023nis3d,\n  title={NIS3D: A Completely Annotated Benchmark for Dense 3D Nuclei\
+    \ Image Segmentation},\n  author={Zheng, Wei and Peng, James Cheng and Hou, Zeyuan and Lyu, Boyu and Wang, Mengfan\
+    \ and Mi, Xuelong and Qiao, Shuoxuan and Wan, Yinan and Yu, Guoqiang},\n  booktitle={NeurIPS Datasets and Benchmarks\
+    \ Track},\n  year={2023}\n}"
+  tags:
+  - 3d
+  - microscopy
+  - instance_segmentation
+  - per_volume
+  modality:
+  - image
+  domain:
+  - biology
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2023-12
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: Zenodo v1; paper Table 3
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      paper: paper.pdf
+      page: '9'
+      volumes_archive: NIS3D.zip
+      volumes_prefix: NIS3D/NIS3D/
+      results_archive: NIS3D_ExperimentResult.zip
+      results_prefix: NIS3D_ExperimentResult/Peer Method Result/
+      evaluator_prefix: NIS3D_ExperimentResult/Evaluation Code/
+    method_aliases:
+      3d Suite: 3D Suite
+    labels:
+      condition: published_baseline
+      grade_status: published_rounded_per_volume_score
+      prediction_scope: Original binary segmentation array referenced by archive member and SHA-256; not converted
+        to text or regraded.
+      input_role: microscopy_volume
+      media_type: image/tiff
+    subject_features:
+      hardware: NVIDIA V100 GPU and Intel Xeon Platinum 8268 CPU
+      protocol_source: paper section 4.1 and supplement section 3.1
+      model_revision: not_recorded
+      software_revision: not_recorded
+    patterns:
+      paper_row: ^\s*(?:(?P<volume>Zebrafish [12]|Drosophila [12]|Mus Musculus [12])\s+)?(?P<source_method>3[Dd]
+        Suite|Cellpose_cyto|Cellpose_nuclei|StarDist|Vaa3D|QCAnet|Human)\s+(?P<W_F1>[0-9]+(?:\.[0-9]+)?)\s+(?P<W_Precision>[0-9]+(?:\.[0-9]+)?)\s+(?P<W_Recall>[0-9]+(?:\.[0-9]+)?)\s+(?P<W_IoU>[0-9]+(?:\.[0-9]+)?)\s+(?P<W_SEG>[0-9]+(?:\.[0-9]+)?)\s+(?P<time_seconds>[0-9]+|N/A)\s*$
+    methods:
+      3D Suite: 3d_suite
+      Cellpose_cyto: cellpose_cyto
+      Cellpose_nuclei: cellpose_nuclei
+      StarDist: stardist
+      Vaa3D: vaa3d
+      QCAnet: QCAnet
+    method_protocols:
+      3D Suite: Fiji 3D iterative thresholding. minimum and maximum cell volumes tuned to each image.
+      Cellpose_cyto: Pretrained cyto model. image-specific diameter and z-aspect from supplementary Table 1. other
+        settings default.
+      Cellpose_nuclei: Pretrained nuclei model. image-specific diameter and z-aspect from supplementary Table 1.
+        other settings default.
+      StarDist: Pretrained 3D model, tutorial with 2D model path replaced by the 3D model. other settings default.
+      Vaa3D: Gradient-vector-flow segmentation. default diffusion iterations and fusion threshold. cell-size setting
+        varies by image.
+      QCAnet: Pretrained 3D model with default settings.
+    volumes:
+      Zebrafish 1: Zebrafish_1
+      Zebrafish 2: Zebrafish_2
+      Drosophila 1: Drosophila_1
+      Drosophila 2: Drosophila_2
+      Mus Musculus 1: MusMusculus_1
+      Mus Musculus 2: MusMusculus_2
+    ground_truth_files:
+      Zebrafish_1: GroundTruth.tif
+      Zebrafish_2: GroundTruth.tif
+      Drosophila_1: GroundTruth.tif
+      Drosophila_2: GroundTruth.tif
+      MusMusculus_1: GroundTruth.tif
+      MusMusculus_2: gt.tif
+    confidence_files:
+      Zebrafish_1: ConfidenceScore.tif
+      Zebrafish_2: ConfidenceScore.tif
+      Drosophila_1: ConfidenceScore.tif
+      Drosophila_2: ConfidenceScore.tif
+      MusMusculus_1: ConfidenceScore.tif
+      MusMusculus_2: scoreOfConfidence.tif
+grading:
+  rule: Use the reported confidence-weighted quality metric for the individual image volume. Ground-truth labels
+    and confidence masks belong only to grading. The released evaluator ignores detections whose majority lies in
+    an undefined region and uses mutual best-IoU matches; its configured IoUThres is unused. Paper rounding is preserved
+    without recomputation.
+  verifiers:
+    W_F1:
+      kind: recorded_3d_segmentation_metric
+      source: https://zenodo.org/records/11457793
+      function: evaluateScore_3
+      execution: import_published_scores_only
+      name: W-F1
+      field: wF1
+      rule: 'Confidence-weighted detection F1: 2*wTP/(2*wTP+FP+wFN).'
+    W_Precision:
+      kind: recorded_3d_segmentation_metric
+      source: https://zenodo.org/records/11457793
+      function: evaluateScore_3
+      execution: import_published_scores_only
+      name: W-Precision
+      field: wprecision
+      rule: 'Confidence-weighted detection precision: wTP/(wTP+FP).'
+    W_Recall:
+      kind: recorded_3d_segmentation_metric
+      source: https://zenodo.org/records/11457793
+      function: evaluateScore_3
+      execution: import_published_scores_only
+      name: W-Recall
+      field: wrecall
+      rule: 'Confidence-weighted detection recall: wTP/(wTP+wFN).'
+    W_IoU:
+      kind: recorded_3d_segmentation_metric
+      source: https://zenodo.org/records/11457793
+      function: evaluateScore_3
+      execution: import_published_scores_only
+      name: W-IoU
+      field: wIoU
+      rule: Weighted foreground overlap using the original confidence-map encoding, as implemented in evaluateScore_3.m.
+    W_SEG:
+      kind: recorded_3d_segmentation_metric
+      source: https://zenodo.org/records/11457793
+      function: evaluateScore_3
+      execution: import_published_scores_only
+      name: W-SEG
+      field: wSEG
+      rule: 'Confidence-weighted instance overlap: sum(GtIoU.*GtVot)/(wTP+FP+wFN).'
+sources:
+  upstream:
+  - name: license
+    url: https://raw.githubusercontent.com/yu-lab-vt/NIS3D/d39f1162aed226f5e76b3d19607392b8caa3bb2b/LICENSE
+    revision: d39f1162aed226f5e76b3d19607392b8caa3bb2b
+    file: code/LICENSE
+    size: 1080
+    sha256: 301e1865d9298cd3b049fb9e3f343ed6ab31557c970f45855b7c8029fd38a8a2
+  - name: readme
+    url: https://raw.githubusercontent.com/yu-lab-vt/NIS3D/d39f1162aed226f5e76b3d19607392b8caa3bb2b/README.md
+    revision: d39f1162aed226f5e76b3d19607392b8caa3bb2b
+    file: code/README.md
+    size: 5944
+    sha256: 3e09f20af593cf2c4b4bee1abed105b6e5d70c1ea58b3bad3fb8f5f9659da7cf
+  - name: paper
+    url: https://proceedings.neurips.cc/paper_files/paper/2023/file/0f2cd3d09a132757555b602e2dd43784-Paper-Datasets_and_Benchmarks.pdf
+    revision: null
+    file: paper.pdf
+    size: 21429348
+    sha256: bfb5a2f0dc0f948a33a99ddf6bd7ca6926afc5f5fa6d61425b4d55b79420fa5e
+  - name: supplement
+    url: https://proceedings.neurips.cc/paper_files/paper/2023/file/0f2cd3d09a132757555b602e2dd43784-Supplemental-Datasets_and_Benchmarks.pdf
+    revision: null
+    file: supplement.pdf
+    size: 9038111
+    sha256: 5804df044e28c30b2cbe1100e6c3b53512bdb7c60d902a2208633833fbea519a
+  - name: volumes
+    url: https://zenodo.org/api/records/11456029/files/NIS3D.zip/content
+    revision: 10.5281/zenodo.11456029
+    file: NIS3D.zip
+    size: 3296003909
+    sha256: 3eb60b48eba87a5eeb71e9676d6df64296adc3dd93234a1db80cd9a0da28cd83
+  - name: segmentations
+    url: https://zenodo.org/api/records/11457793/files/NIS3D_ExperimentResult.zip/content
+    revision: 10.5281/zenodo.11457793
+    file: NIS3D_ExperimentResult.zip
+    size: 144203679
+    sha256: f7a73f50feb8b686a4dfd9b56ba297db962be74969e8c813ce2a93f6288cdd5e

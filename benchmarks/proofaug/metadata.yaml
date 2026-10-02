@@ -1,0 +1,76 @@
+benchmark:
+  description: 'ProofAug: cumulative theorem-proving results of deepseek-math-7b-base + ProofAug (mixed prompting
+    strategy, <=2100 queries/problem, Isabelle) on the curated miniF2F-test — a full 244-problem binary solved/unsolved
+    matrix (161 solved, 66.0%).'
+  testing_condition: Complete cumulative mixed-strategy ProofAug campaign on curated miniF2F-test, with up
+    to 2,100 model queries per problem. Each response describes campaign success, not a single generation attempt.
+  paper_url: https://arxiv.org/abs/2501.18310
+  data_source_url: https://github.com/haoxiongliu/ProofAug
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: 'Liu et al., ProofAug: Efficient Neural Theorem Proving via Fine-grained Proof Structure Analysis,
+    ICML 2025.'
+  tags:
+  - theorem-proving
+  - formal-math
+  - isabelle
+  - minif2f
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect or unsolved
+      '1': correct or solved
+  categorical: true
+  release_date: 2025-01
+  multi_single_turn: single_turn
+  name: ProofAug
+build:
+  contract_version: 2
+  parameters:
+    subject:
+      model: deepseek-ai/deepseek-math-7b-base
+    subject_features:
+      harness: ProofAug
+      strategy: mixed cumulative
+      query_budget: '2100'
+      prover: Isabelle/PISA
+    item_text:
+      instruction: Prove the following theorem in Isabelle/Isar.
+      informal: 'Informal statement: '
+      formal: 'Formal statement:
+
+        '
+    evaluation:
+      condition: method=ProofAug;strategy=mixed;budget<=2100;prover=Isabelle;split=miniF2F-test-curated
+grading:
+  rule: Isabelle/HOL accepts a complete, type-checked Isar proof of the theorem stated in the formal statement,
+    using the released ProofAug/PISA pipeline. Response is cumulative success across the documented mixed-strategy
+    campaign.
+  verifiers:
+    isabelle:
+      source: https://github.com/haoxiongliu/ProofAug/blob/4bf8ea2e877ebf66a4b6392d50b6e4675038c18a/isabelle_src/main.py
+      engine: Isabelle/HOL via PISA
+      rule: Isabelle/HOL accepts a complete, type-checked Isar proof of the theorem stated in the formal statement,
+        using the released ProofAug/PISA pipeline. Response is cumulative success across the documented mixed-strategy
+        campaign.
+      coverage_evidence: The isabelle_src/README.md identifies cum.tar.gz as the cumulative 66.0% result on
+        the full curated miniF2F-test bank.
+sources:
+  upstream:
+  - name: benchmark
+    url: https://github.com/haoxiongliu/ProofAug
+    revision: 4bf8ea2e877ebf66a4b6392d50b6e4675038c18a
+    files:
+    - match: isabelle_src/(?P<relative>cum\.tar\.gz|datasets/minif2f-test-curated\.jsonl)
+      path: ProofAug/isabelle_src/{relative}

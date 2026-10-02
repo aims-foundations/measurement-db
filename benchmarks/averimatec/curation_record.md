@@ -1,0 +1,4 @@
+- Recover 152 complete development predictions from published AIC CTU notebook outputs; all claims match the released development set, including 210 claim images.
+- Count the evidence-reformatted notebook copy once with the original prediction. Preserve both full output variants, including questions, evidence, verdicts and justifications.
+- Use only the upstream deterministic verdict-correctness component. The full evidence-conditioned score and exact historical model configuration are not recoverable from these exports; neither is inferred.
+- Check every source association, grade, image byte and duplicate-copy transformation. Exercise the shared downloader, dataset checks and normal build command without running a model or judge.

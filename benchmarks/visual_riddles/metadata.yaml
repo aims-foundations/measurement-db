@@ -1,0 +1,88 @@
+benchmark:
+  description: 'Visual Riddles: a commonsense and world-knowledge challenge for large vision and language models.
+    Each item is an AI-generated image with an open-ended question requiring visual reasoning plus world knowledge.
+    Per-(model, item) responses are human-rated correct/incorrect on the open-ended task.'
+  testing_condition: Curate the released open-ended human-rated AI answers only. Each image and question is a distinct
+    input. Direct LVLMs and the end-to-end Gemini image-to-caption-to-answer pipeline share image/question items;
+    the human-caption condition has separate items containing the released caption and question. Images linked to
+    human-caption items are source context, not claimed text-model inputs. Subjects distinguish all eight literal
+    model/pipeline configurations. The paper describes majority correctness judgments by three humans; individual
+    votes are not released. Preserve boolean grades, full answer text, and original row/entry positions. Seven absent
+    answers per caption pipeline remain absent. The 1200 human responses remain in the raw source but are outside
+    the AI-subject scope. Generated intermediate captions, exact open-ended request templates, historical inference
+    settings and immutable model revisions are not supplied; do not reconstruct them from multiple-choice or automatic-judge
+    prompts. API names in the paper are mutable aliases. No model or judge is executed.
+  paper_url: https://arxiv.org/abs/2407.19474
+  data_source_url: https://huggingface.co/datasets/visual-riddles/visual_riddles
+  subject_type: model
+  item_type: task
+  license: Apache-2.0 declared; see upstream card for commercial-training restriction and retained image rights
+  citation: "@misc{bittonguetta2024visualriddlescommonsenseworld,\n      title={Visual Riddles: a Commonsense and\
+    \ World Knowledge Challenge for Large Vision and Language Models},\n      author={Nitzan Bitton-Guetta and Aviv\
+    \ Slobodkin and Aviya Maimon and Eliya Habba and Royi Rassin and Yonatan Bitton and Idan Szpektor and Amir Globerson\
+    \ and Yuval Elovici},\n      year={2024},\n      eprint={2407.19474},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n\
+    \      url={https://arxiv.org/abs/2407.19474},\n}"
+  tags:
+  - vision-language
+  - commonsense
+  - world-knowledge
+  modality:
+  - image
+  - text
+  domain:
+  - reasoning
+  - knowledge
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Human majority judges the answer incorrect
+      '1': Human majority judges the answer correct
+  categorical: true
+  release_date: 2024-07
+  release: public
+  name: Visual Riddles
+  version: f944390e356887f91be078458ec492adb23a4e2a
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      table: release/test/metadata.csv
+      images: release/test
+    labels:
+      subject_prefix: 'Visual Riddles / '
+      harness: Visual Riddles open-ended human-rated evaluation
+    input_modes:
+      LVLM: image
+      gemini-1.5-pro-caption_LLM: image
+      human-caption_LLM: human_caption
+    pipelines:
+      LVLM: Image and question to answer
+      gemini-1.5-pro-caption_LLM: Gemini image captioning then Gemini caption-question answering (intermediate caption
+        unavailable)
+      human-caption_LLM: Released human caption and question to Gemini answer
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/visual-riddles/visual_riddles
+    revision: f944390e356887f91be078458ec492adb23a4e2a
+    files:
+    - match: (?:README[.]md|[.]gitattributes|test/metadata[.]csv|test/[^/]+[.]jpg)
+      path: release/{path}
+grading:
+  rule: 'Preserve human_rating: true becomes 1, false becomes 0, and a missing grade remains null. The paper defines
+    correctness as matching the reference answer without hallucinations, with a majority vote from three annotators.
+    Do not substitute automatic-judge labels or regrade the answer.'
+  verifiers:
+    human:
+      kind: released_human_majority_correctness
+      source: https://arxiv.org/html/2407.19474v1#S4.SS2
+      field: model_rated_answers-open_ended[].human_rating
+      aggregation: Majority vote of three annotators, per the paper; individual votes unavailable
+      notebook: https://colab.research.google.com/drive/1E3Kpc9xFkD97CEobN79C9jdLJNIcbz0s

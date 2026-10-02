@@ -1,0 +1,134 @@
+format_version: 1
+tables:
+  traces:
+    rows: 979855
+    logical_sha256: 20f57b17179e955afb6e2f0a11d33cbdca57474fd2101f1fd7496849affe14e9
+  subjects:
+    rows: 103
+    logical_sha256: 153ded464c683ba6ec0a0d248cadb5933140110f3372604cb8fc5e4ccea21f0a
+  responses:
+    rows: 979855
+    logical_sha256: 8bf68d49277d9cc6aa7c04e88a2cfaed87c55877bd3151570a334f50678820f4
+  items:
+    rows: 4589
+    logical_sha256: 84975ea6b1e1f550a7fa3d42c01ccd36e4052ec9c37a4237b1ef1977a933cc58
+  benchmarks:
+    rows: 1
+    logical_sha256: 840fa06e835a859c931c71efb799f13f3e5c1395025b6713f9c1976081945ff1
+source_claims:
+  source_ungraded_measurements:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 354
+  source_unreleased_human_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 73359
+  source_inapplicable_prometheus_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 3708
+  source_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 76555
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 979855
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 979855
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 103
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 4589
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected: 107
+  source_rating_histograms:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/prometheus-eval/BiGGen-Bench-Results
+    locator: Five native Parquet shards from the four declared default BiGGen result splits.
+    scope: Every model generation and applicable judge rating, including list positions, null grades,
+      exact instruction/rubric variants and full output/feedback.
+    expected:
+      human_score/5: 955
+      gpt4_score/4.0: 26761
+      gpt4_04_turbo_score/4.0: 29763
+      claude_score/3.0: 18057
+      prometheus_8x7b_score/3: 81206
+      prometheus_8x7b_score/4: 162436
+      prometheus_8x7b_bgb_score/3: 73720
+      prometheus_8x7b_bgb_score/4: 129531
+      prometheus_8x7b_bgb_score/5: 43696
+      human_score/1: 531
+      gpt4_score/1.0: 16241
+      gpt4_04_turbo_score/3.0: 12394
+      claude_score/1.0: 11461
+      prometheus_8x7b_score/1: 37819
+      prometheus_8x7b_score/2: 37919
+      prometheus_8x7b_bgb_score/1: 80744
+      prometheus_8x7b_bgb_score/2: 45804
+      gpt4_score/5.0: 9175
+      gpt4_04_turbo_score/5.0: 10564
+      claude_score/5.0: 11618
+      prometheus_8x7b_score/5: 54050
+      human_score/4: 772
+      gpt4_score/2.0: 9383
+      gpt4_04_turbo_score/2.0: 9460
+      claude_score/2.0: 11522
+      human_score/3: 495
+      claude_score/4.0: 23639
+      gpt4_score/3.0: 14991
+      gpt4_04_turbo_score/1.0: 14351
+      human_score/2: 443
+      gpt4_04_turbo_score/null: 23
+      prometheus_8x7b_score/null: 67
+      claude_score/null: 258
+      gpt4_score/null: 4
+      prometheus_8x7b_bgb_score/null: 2
+    absolute_tolerance: 0

@@ -47,7 +47,7 @@ properties:
     allOf:
       - if:
           properties:
-            response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal]}
+            response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal, nominal]}
         then:
           properties:
             categorical: {const: true}
@@ -96,6 +96,7 @@ properties:
           - likert_10
           - win_rate
           - ordinal
+          - nominal
           - fraction
           - continuous_bounded
           - continuous_unbounded
@@ -106,7 +107,7 @@ properties:
         $ref: "#/$defs/response_scale"
       categorical:
         description: >-
-          Optional for binary/error-presence, Likert, ordinal, or continuous
+          Optional for binary/error-presence, Likert, ordinal, nominal, or continuous
           types: the builder derives the classification and rejects conflicts.
           Fractions, rates, and mixed scales require an explicit boolean.
         type: boolean
@@ -240,15 +241,119 @@ $defs:
                   - required: [file, size, sha256]
                     not: {required: [files]}
                   - required: [files]
-                    not: {required: [file]}
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [dvc_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
                     properties:
                       revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                      url:
+                        not: {pattern: '^https://(?:drive\.google\.com|api\.osf\.io)/'}
+                  - required: [files, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [json_index]}, {required: [wandb_runs]}]}
+                    properties:
+                      url: {type: string, pattern: '^https://api\.osf\.io/v2/nodes/[A-Za-z0-9]+/files/osfstorage/(?:[A-Za-z0-9]+/)?(?:\?[^\s]+)?$'}
+                  - required: [files, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [json_index]}]}
+                    properties:
+                      url: {type: string, pattern: '^https://drive\.google\.com/drive/folders/[A-Za-z0-9_-]+$'}
+                  - required: [files, prefix, tree_sha256]
+                    not: {required: [file]}
+                    properties:
+                      url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
+                  - required: [files, html_index, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}]}
+                  - required: [files, json_index, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}]}
+                  - required: [files, dvc_index, tree_sha256]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                  - required: [files, wandb_runs, tree_sha256]
+                    not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
+                    properties:
+                      url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
+                  - required: [files, zip_members, tree_sha256]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                      url: {type: string, pattern: '^https://huggingface\.co/(?:datasets|spaces)/[^/]+/[^/]+$'}
+                  - required: [files, zip_members, tree_sha256, size]
+                    properties:
+                      revision: {type: string, pattern: '^"[^"\r\n]+"$'}
+                      url: {type: string, pattern: '^https://[^\s?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
+                  - required: [files, zip_members, tree_sha256, size]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9]+$'}
+                      url: {type: string, pattern: '^https://zenodo\.org/records/[0-9]+/files/[^/?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
             - if:
                 anyOf:
                   - required: [files]
                   - required: [file]
               then:
                 required: [name]
+            - if:
+                required: [helm_index]
+              then:
+                required: [files, prefix, tree_sha256]
+                properties:
+                  prefix: {type: string, pattern: '/$'}
+                  url: {type: string, pattern: '^https://storage\.googleapis\.com/[a-z0-9._-]+$'}
+            - if:
+                required: [html_index]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [json_index]}]}
+            - if:
+                required: [json_index]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [html_index]}]}
+            - if:
+                required: [dvc_index]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [html_index]}, {required: [json_index]}, {required: [wandb_runs]}, {required: [zip_members]}]}
+            - if:
+                required: [git_lfs]
+                properties: {git_lfs: {const: true}}
+              then:
+                required: [files]
+                properties:
+                  url: {type: string, pattern: '^https://github\.com/[^/]+/[^/]+$'}
+            - if:
+                required: [tree_paths]
+              then:
+                required: [files]
+                properties:
+                  url: {type: string, pattern: '^https://github\.com/[^/]+/[^/]+$'}
+            - if:
+                required: [wandb_runs]
+              then:
+                required: [files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}]}
+                properties:
+                  url: {type: string, pattern: '^https://wandb\.ai/[A-Za-z0-9_-]+/[A-Za-z0-9_-]+$'}
+            - if:
+                required: [request_json]
+              then:
+                required: [file, size, sha256]
+            - if:
+                required: [zip_members]
+              then:
+                required: [name, files, tree_sha256]
+                not: {anyOf: [{required: [file]}, {required: [prefix]}, {required: [html_index]}, {required: [json_index]}, {required: [helm_index]}, {required: [git_lfs]}, {required: [tree_paths]}, {required: [wandb_runs]}, {required: [request_json]}]}
+                oneOf:
+                  - properties:
+                      revision: {type: string, pattern: '^[0-9a-f]{40}$'}
+                      url: {type: string, pattern: '^https://huggingface\.co/(?:datasets|spaces)/[^/]+/[^/]+$'}
+                  - required: [size]
+                    properties:
+                      revision: {type: string, pattern: '^"[^"\r\n]+"$'}
+                      url: {type: string, pattern: '^https://[^\s?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
+                  - required: [size]
+                    properties:
+                      revision: {type: string, pattern: '^[0-9]+$'}
+                      url: {type: string, pattern: '^https://zenodo\.org/records/[0-9]+/files/[^/?#]+\.zip(?:\?[^\s]*)?$'}
+                      zip_members: {maxItems: 1}
           properties:
             name:
               description: Name selected by the builder's fetch_sources() call.
@@ -267,8 +372,92 @@ $defs:
               pattern: '^[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$'
             size: {type: integer, minimum: 0}
             sha256: {type: string, pattern: '^[0-9a-f]{64}$'}
+            request_json:
+              description: JSON body for a public data-retrieval POST endpoint. The returned bytes remain pinned by size and sha256; omit for GET.
+              type: object
+            git_lfs:
+              description: Resolve selected GitHub LFS pointers to their SHA-256-pinned large files.
+              type: boolean
+            tree_paths:
+              description: Optional repository-relative paths or component-wise globs limiting GitHub tree traversal; selected directories include their descendants.
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items: {$ref: '#/$defs/nonempty_string'}
+            zip_members:
+              description: Select ZIP paths in a pinned HF repository, or one HTTPS ZIP filename with its exact size and strong ETag in revision. Versioned Zenodo ZIP URLs instead use their numeric record ID as revision, verified against the original record. File patterns match archive.zip/member/path; all selected original bytes require a SHA-256 content-tree pin. ETag-based requests also enforce If-Match.
+              type: array
+              minItems: 1
+              uniqueItems: true
+              items:
+                type: string
+                pattern: '^(?!.*(?:^|/)\.\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*\.zip$'
+            prefix:
+              description: Object-name prefix in a public GCS bucket; file patterns match relative to this prefix.
+              $ref: '#/$defs/nonempty_string'
+            tree_sha256:
+              description: SHA-256 of the selected source tree. GCS includes object versions, sizes, MD5 hashes and encodings; HTML, JSON and ZIP selections include selected paths, sizes and SHA-256 content hashes; public Google Drive folders include paths, file IDs, sizes and SHA-256 content hashes; OSF includes paths, file IDs, versions, sizes and native SHA-256 hashes; W&B includes run-relative paths, sizes and provider MD5 hashes.
+              type: string
+              pattern: '^[0-9a-f]{64}$'
+            dvc_index:
+              description: Named GitHub source containing original file-level DVC pointers at the same revision. The source URL is the explicit HTTPS cache root; files patterns match paths without .dvc. The tree pin covers paths, sizes and original MD5 hashes. Directory pointers are unsupported.
+              type: string
+              pattern: '^[a-z][a-z0-9_]*$'
+            html_index:
+              description: Pinned HTML link source. An object extracts a declared HTML field from a pinned JSON source or JSON-indexed collection; files patterns select same-site links, including explicit query parameters.
+              oneOf:
+                - type: string
+                  pattern: '^[a-z][a-z0-9_]*$'
+                - type: object
+                  additionalProperties: false
+                  required: [source, field, tag, attribute]
+                  properties:
+                    source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+                    field: {$ref: '#/$defs/nonempty_string'}
+                    tag: {enum: [a, img]}
+                    attribute: {enum: [href, src]}
+            wandb_runs:
+              description: Select public W&B runs by state. Optionally keep step_files only at the maximum latest_step match per run; both expressions must capture the numeric step in a named group.
+              type: object
+              additionalProperties: false
+              required: [state]
+              dependentRequired:
+                latest_step: [step_files]
+                step_files: [latest_step]
+              properties:
+                state: {$ref: '#/$defs/nonempty_string'}
+                latest_step: {$ref: '#/$defs/nonempty_string'}
+                step_files: {$ref: '#/$defs/nonempty_string'}
+            json_index:
+              description: Select same-site files from records in a pinned JSON manifest or another JSON-indexed collection; expand nested object/list fields in records order, then format path using each record. An empty records list selects the root object or root array. String or integer IDs are available as {value}; object records use their field names. Every collection pins its complete selected contents with tree_sha256.
+              type: object
+              additionalProperties: false
+              required: [source, records, path]
+              properties:
+                source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+                records:
+                  type: array
+                  minItems: 0
+                  items: {$ref: '#/$defs/nonempty_string'}
+                path: {$ref: '#/$defs/nonempty_string'}
+                skip_missing_path:
+                  description: Skip records lacking a field referenced by the path template, for optional released artifacts. Invalid paths and duplicate links still fail validation.
+                  type: boolean
+                query:
+                  description: Optional query parameter templates for the source URL as an API endpoint; path remains the logical filename used by files patterns.
+                  type: object
+                  minProperties: 1
+                  additionalProperties: {$ref: '#/$defs/nonempty_string'}
+            helm_index:
+              description: Select all run directories in a pinned HELM release manifest, optionally limited to one group.
+              type: object
+              additionalProperties: false
+              required: [source]
+              properties:
+                source: {type: string, pattern: '^[a-z][a-z0-9_]*$'}
+                group: {$ref: '#/$defs/nonempty_string'}
             files:
-              description: Select files from the pinned repository tree and map them into raw/.
+              description: Select files from a pinned source tree and map them into raw/.
               type: array
               minItems: 1
               items:

@@ -1,0 +1,145 @@
+benchmark:
+  description: Published circuit-level placement and synthesis measurements, full released design kits and native
+    metric scales.
+  testing_condition: Curate all individual-design result cells in final NeurIPS 2025 Tables 6, 7, 8 and 11. Preserve
+    original printed values, rounding and units without normalizing to a baseline. Main placement tables cover 16
+    of 20 designs; resource Tables 4 and 5 additionally establish seven or1200 attempts whose PPA grades are unavailable
+    and remain null. Retain all 20 released design kits. Keep placement and synthesis experiments distinct, including
+    apparently reused baseline values and inconsistencies between paper tables. Resource measurements remain trace
+    metadata. Normalized summaries in Tables 2, 9 and 10 are not new trials. The earlier arXiv paper uses a different
+    design collection and is not joined to the final release. Asset roles distinguish published design files, baseline
+    placements and reference RTL; these captures do not establish the exact historical file revisions delivered
+    to each algorithm. No EDA tools, placement algorithms, model inference or judging are run. Individual algorithm-produced
+    placements and full evaluation logs are not released. One canonical response is one reported design/method/metric
+    measurement, not a recovered seed-level trial. Metrics and experimental comparisons can be dependent.
+  paper_url: https://openreview.net/forum?id=gDkQ5iesrI
+  data_source_url: https://huggingface.co/datasets/MIRA-Lab/ChiPBench-D
+  subject_type: model
+  item_type: circuit_design
+  license: 'Released ChiPBench code and HF dataset: BSD-3-Clause. Individual designs retain their upstream licenses,
+    including Solderpad, BSD-3-Clause and Apache as listed in the paper; captured source files retain their notices.'
+  citation: "@inproceedings{wang2025chipbench,\n  title={Benchmarking End-To-End Performance of AI-Based Chip Placement\
+    \ Algorithms},\n  author={Wang, Zhihai and Geng, Zijie and Tu, Zhaojie and Wang, Jie and Qian, Yuxi and Xu,\
+    \ Zhexuan and Liu, Ziyan and Xu, Siyuan and Tang, Zhentao and Kai, Shixiong and Yuan, Mingxuan and Hao, Jianye\
+    \ and Li, Bin and Wu, Feng},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - chip_placement
+  - eda
+  - electronic_design_automation
+  - ppa
+  modality:
+  - text
+  - code
+  domain:
+  - science
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-12
+  name: ChiPBench
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      paper: neurips-2025.pdf
+      designs: designs/data
+      reference: reference/ea28bebab06977b348a74d3fd07275bb828ca68e
+    parsing:
+      placement_pages: 16,17
+      resource_page: '15'
+      commercial_page: '18'
+      synthesis_page: '19'
+      metrics: macro_hpwl,regularity,hpwl,congestion,wirelength,wns,tns,nvp,power,area
+      methods: WireMask-EA,SA,AutoDMP,MaskPlace,ChiPFormer,MaskRegulate,DREAMPlace,Hier-RTLMP
+      resource_methods: WireMask-EA,SA,AutoDMP,MaskPlace,ChiPFormer,MaskRegulate,DREAMPlace
+      design_row_pattern: ^\s*\S+\s+[-+]?\d+(?:\.\d+)?(?:\s+[-+]?\d+(?:\.\d+)?){6,9}\s*$
+      commercial_end: 'Table 9:'
+      synthesis_end: '
+
+        F  License'
+      synthesis_columns: design,wns:Yosys,wns:Synopsys-DC,tns:Yosys,tns:Synopsys-DC,nvp:Yosys,nvp:Synopsys-DC,power:Yosys,power:Synopsys-DC,area:Yosys,area:Synopsys-DC
+    design_aliases:
+      bpbe_: bp_be
+      bpfe_: bp_fe
+      bpmulti_: bp_multi
+      swervwrapper_: swerv_wrapper
+    resource_markers:
+      evaluation_minutes: 'Table 4:'
+      peak_memory_mb: 'Table 5:'
+    synthesis_rtl:
+      ariane133: flow/designs/src/ariane133|flow/designs/nangate45/ariane133
+      ariane136: flow/designs/src/ariane136|flow/designs/nangate45/ariane136
+      bp: flow/designs/src/black_parrot|flow/designs/nangate45/black_parrot
+      bp_be: flow/designs/src/bp_be_top|flow/designs/nangate45/bp_be_top
+      bp_fe: flow/designs/src/bp_fe_top|flow/designs/nangate45/bp_fe_top
+      swerv_wrapper: flow/designs/src/swerv|flow/designs/nangate45/swerv|flow/designs/nangate45/swerv_wrapper
+    subject:
+      harness: ChiPBench OpenROAD evaluation flow
+      study: NeurIPS 2025 final paper
+    reported_settings:
+      ChiPFormer: Default model; 100 online fine-tuning iterations; custom non-square-canvas and macro-I/O adjustments
+        reported in Appendix B.
+      MaskPlace: 3000 epochs; custom non-square-canvas adjustment reported in Appendix B.
+      MaskRegulate: Only generated macro positions retained; benchmark reader adapted to ChiPBench as reported in
+        Appendix B.
+      DREAMPlace: Only generated macro positions retained for the placement comparison.
+      AutoDMP: Only generated macro positions retained for the placement comparison.
+    reported_units:
+      macro_hpwl: µm
+      regularity: µm
+      hpwl: µm
+      congestion: '%'
+      wirelength: µm
+      wns: ns
+      tns: ns
+      nvp: count
+      power: nW
+      area: µm²
+    metric_rules:
+      macro_hpwl: Half-perimeter wirelength of macro nets, as printed in the placement-results table.
+      regularity: Native macro-placement regularity statistic, as printed in the source table.
+      hpwl: Reported placement-stage half-perimeter wirelength.
+      congestion: Native routing congestion statistic. The paper labels it percent, while get_usage in the released
+        extractor divides the reported percentage by 100; retain the printed number without conversion.
+      wirelength: Total reported routed wirelength.
+      wns: Worst setup slack after the downstream flow; larger (less negative) is better.
+      tns: Total negative setup slack after the downstream flow; larger (less negative) is better.
+      nvp: Number of setup timing violations.
+      power: Total reported internal, switching and leakage power. The paper labels values nW; raw per-run unit
+        records are unavailable, so retain the printed number and unit label without conversion.
+      area: Reported standard-cell instance area after the downstream flow.
+sources:
+  upstream:
+  - name: paper
+    url: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+    revision: null
+    file: neurips-2025.pdf
+    size: 3722383
+    sha256: 2e07c6174b02bd7aed6614810f7b36112c2972c87287dde7e1fcbf3beba4f442
+  - name: designs
+    url: https://huggingface.co/datasets/MIRA-Lab/ChiPBench-D
+    revision: 7dbe2a0a6af5b72017c323cf74b30dbcb7814baf
+    files:
+    - match: README\.md|chipbench_meta_data\.json|download_dataset\.py|data/.*
+      path: designs/{path}
+  - name: reference
+    url: https://github.com/MIRALab-USTC/ChiPBench
+    revision: ea28bebab06977b348a74d3fd07275bb828ca68e
+    files:
+    - match: README\.md|LICENSE|benchmarking/.*|flow/scripts/.*|flow/designs/src/(?:ariane133|ariane136|black_parrot|bp_be_top|bp_fe_top|swerv)/.*|flow/designs/nangate45/(?:ariane133|ariane136|black_parrot|bp_be_top|bp_fe_top|swerv|swerv_wrapper)/.*
+      path: reference/ea28bebab06977b348a74d3fd07275bb828ca68e/{path}
+grading:
+  rule: Import the original per-design metric cell from the final paper. Reported numerical precision and apparent
+    source inconsistencies remain unchanged. Unreported metric values remain null; no aggregate is expanded into
+    invented trials.
+  verifiers:
+    native_metric:
+      kind: published_physical_measurement
+      source: https://proceedings.neurips.cc/paper_files/paper/2025/file/1cba8502063fab9df252a63968691768-Paper-Datasets_and_Benchmarks_Track.pdf
+      reference_implementation: https://github.com/MIRALab-USTC/ChiPBench/blob/ea28bebab06977b348a74d3fd07275bb828ca68e/benchmarking/getMetric.py
+      historical_revision: The captured implementation documents the metric extraction; the exact historical runtime
+        revision is not recorded.
+      logic: Import printed native OpenROAD-flow measurements; each item identifies the metric, stage, reported
+        unit and score direction. No new numerical simulation or normalization.

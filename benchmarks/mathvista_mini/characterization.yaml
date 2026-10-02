@@ -1,0 +1,121 @@
+format_version: 1
+tables:
+  traces:
+    rows: 285000
+    logical_sha256: 2da426cdf375a63347aa995ec1e598eabae9a542531522092bae499600546a2a
+  subjects:
+    rows: 263
+    logical_sha256: 67129f54d5c02a754bd948f03c8f665c916a8974c18bd71e68f8ea1ff1ce132f
+  responses:
+    rows: 285000
+    logical_sha256: 4e6d85c321c6ac2de5d460e5075bd74262e50a5c962f84b31ff099f9401e7984
+  assets:
+    rows: 972
+    logical_sha256: 8fa10dc20e4fea6689b68370302c942693fc88eb1b6f124b107808e24ff7161b
+  items:
+    rows: 1000
+    logical_sha256: c9bc474b5b0ea9e9bcbd35d66bb2adf6a128bc2ce1982ed49c4bbd75a5e6b68f
+  benchmarks:
+    rows: 1
+    logical_sha256: cac355822b19c99369cd04a6ff7d6eaab1a5974a0b37c2e92bb2b70c2f86f656
+source_claims:
+  source_workbook_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 808000
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 285000
+  source_prediction_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 285
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 263
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 1000
+  source_extraction_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 270013
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 16180
+  source_conflicting_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 2
+  source_excel_limit_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 8
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    locator: All pinned MathVista_MINI prediction/extraction workbooks; exact whole-export grouping and frozen historical
+      post_check, plus the official 1,000-item image task bank.
+    scope: Complete released workbook records. Passive caches are retained as additional original-source evidence. Original workbook cells are decoded independently of the builder;
+      grades are independently checked with the frozen upstream deterministic functions, without model or judge
+      calls.
+    expected: 972

@@ -1,0 +1,168 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1012300
+    logical_sha256: e834d3b8b68a641ebc35a84ebd97c2c17c748babb5c2be2dce02119f3fa840b1
+  subjects:
+    rows: 30
+    logical_sha256: 94f5057a600275238ee83f61bfcd11a2d44ec52602e58ecdcc1d4911aa638842
+  responses:
+    rows: 1012300
+    logical_sha256: 78544cc6450505f1b7d9eaccdfd6b49d93f495ab632a1d74e39fa7beb7e998ed
+  items:
+    rows: 35015
+    logical_sha256: 707ef323b8105c08d4abffedfab18098b121cad2b175490792fb086c1f35d36b
+  benchmarks:
+    rows: 1
+    logical_sha256: 7773ba1a8fe7ea87d70feb733c227bea4ce951372bfa3062cb348b95b1c09400
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 1012300
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 30
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 35015
+  source_task_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 35030
+  source_raw_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 1050428
+  source_verified_category_blocks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 1311
+  source_restored_from_partial_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 136550
+  source_ungraded_source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 5070
+  source_blank_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 13907
+  source_filtered_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 40
+  source_repeated_question_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 420
+  source_held_blocks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 39
+  source_held_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 38128
+  source_reordered_complete_blocks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 7
+  source_repeated_task_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/daekeun-ml/evaluate-llm-on-korean-dataset
+    locator: All 30 captured KMMLU result CSVs and 45 original task-bank CSVs at the declared pins. Historical writer
+      and grader snapshots establish ordered category emission and FAILED exclusion.
+    scope: Only complete category blocks with identical reference order are associated with items. Preserve every
+      retained parsed prediction, native response string and source position; do not infer omitted rows or historical
+      inference settings.
+    expected: 15

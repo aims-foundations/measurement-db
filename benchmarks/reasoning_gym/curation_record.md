@@ -1,0 +1,3 @@
+- Restore 186,250 individual completions from 19 source runs and 14 model/provider configurations, preserving recorded rewards, full prompts and outputs, provider/inference settings and evaluator commits. Aggregate Acc@N and best-of-N values remain source evidence.
+- Keep grader exceptions as ungraded attempts, with the original zero/error retained in the trace. Normalize the single reward one float64 ULP above 1 to 1 and retain its source value. No inference or grading is rerun.
+- Preserve the Grok-named hard run (5,000 completions) in raw only because its summary instead identifies OpenAI o3-mini; do not guess its subject. Other recorded runs remain eligible.

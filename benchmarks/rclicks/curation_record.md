@@ -1,0 +1,3 @@
+- Preserve all 251,820 published metric cells from 16 clickability algorithms/variants and 5,807 image/object/click states. Images, object masks, previous masks and human click references come from the author-linked releases.
+- Correct the former UD and SM descriptions and KS2D direction; keep separate metric scales, including distances above 1 and negative NSS. No scores are clipped or recomputed.
+- Traces contain the original metric rows and source positions, not generated click maps. TETRIS retains the released validation subset; no new model evaluation or click sampling is performed.

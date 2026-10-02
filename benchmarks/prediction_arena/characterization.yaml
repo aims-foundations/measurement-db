@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 798
+    logical_sha256: 2f84dc6ef1868aef5ec0be1baa775bf8cd69583fc8297a85c0ba1c4e4a69d5d9
+  subjects:
+    rows: 10
+    logical_sha256: 215f60142b07741bdaa66d33dde848fe92099e79a2e689cd77906e23cfb45c26
+  responses:
+    rows: 798
+    logical_sha256: 33295903d21a6c1cbe6e1ce4d755efc3ce74a57a6a0ec4467a2aaf7969936bd9
+  items:
+    rows: 621
+    logical_sha256: 58410ab5e2062dc35a59e8e030fd9f73ed0457b27e4eb40f9143066bd03b84b2
+  benchmarks:
+    rows: 1
+    logical_sha256: 340d64cea3a3f66b07f6042bee94007f30c37e8dd429a92c04163f7fddf11c51
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 10
+  source_markets:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 621
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 798
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 798
+  source_positive_profit:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 463
+  source_zero_profit:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 0
+  source_negative_profit:
+    kind: count
+    origin: derived_from_data
+    source: https://www.predictionarena.ai/api/agents
+    locator: September 30, 2026 roster plus its ten /api/agents/{id}/settlements responses; native IDs link every
+      captured Kalshi market query.
+    scope: Only the capped source snapshot is counted. Positive realized profit defines success; no assumption of
+      forecast correctness or complete historical coverage.
+    expected: 335

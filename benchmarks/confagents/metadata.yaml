@@ -1,0 +1,67 @@
+benchmark:
+  description: 'ConfAgents medical multiple-choice diagnosis: per-(agent, question) binary correctness
+    (1 = final answer matches the gold option) on a released 16-question subset (8 MedBullets + 8 MedQA)
+    answered by four agent frameworks (ConfAgents, ColaCare, MDAgents, MedAgent).'
+  testing_condition: Four released agent frameworks answer 16 multiple-choice questions. Source dataset
+    is an item attribute; backend models and unreported inference settings remain unknown.
+  paper_url: https://arxiv.org/abs/2508.04915
+  data_source_url: https://github.com/PKU-AICare/evaluation-playground
+  subject_type: model
+  item_type: question
+  license: unknown
+  citation: "@article{zhao2025confagents,\n  title={ConfAgents: A Conformal-Guided Multi-Agent Framework\
+    \ for Cost-Efficient Medical Diagnosis},\n  author={Zhao, Huiya and Zhu, Yinghao and Wang, Zixiang\
+    \ and Wang, Yasha and Gao, Junyi and Ma, Liantao},\n  journal={arXiv preprint arXiv:2508.04915},\n\
+    \  year={2025}\n}"
+  tags:
+  - medical
+  - clinical
+  - multi-agent
+  - medical-diagnosis
+  - multiple-choice
+  - confagents
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': criterion not satisfied
+      '1': criterion satisfied
+  categorical: true
+  release_date: 2025-08
+  release: private
+  name: ConfAgents
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    methods:
+      conformal: ConfAgents
+      colacare: ColaCare
+      mdagents: MDAgents
+      medagent: MedAgent
+sources:
+  upstream:
+  - url: https://raw.githubusercontent.com/PKU-AICare/evaluation-playground/main/data/ConfAgents.json
+    revision: null
+    name: results
+    file: ConfAgents.json
+    size: 85435
+    sha256: 10b3fc026a46a4e09b23c2286c24cda7acf6353bf868b04a98d9507790913f3d
+  - url: https://github.com/PKU-AICare/ConfAgents
+    revision: 49ba770f3c194c95cabfeba808cdb0acab44301f
+  - url: https://github.com/PKU-AICare/ConfAgents/releases/download/Dataset/data.zip
+    revision: null
+grading:
+  rule: Strip surrounding whitespace from the released final_answer and reference option; grade 1 exactly
+    when the strings match, otherwise 0.
+  verifiers:
+    exact_answer:
+      spec: Compare stripped final_answer and reference_answer strings with exact case-sensitive equality.

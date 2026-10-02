@@ -1,0 +1,51 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 99faf016607f46455f0ef4b4987ace7ca14fc13758af6d784dc6fbbc9d611116
+  items:
+    rows: 2006
+    logical_sha256: d63df0641534d25644b6d85f0743828a8232d35e47982d226c165e98ea84bdd0
+  responses:
+    rows: 42000
+    logical_sha256: 5a80a75811f93a6d97f31870bfbebb45bf8f46ddb09ee4c7e51a0f151285d0c6
+  subjects:
+    rows: 42
+    logical_sha256: 3bc694f569ae27cb93961d7650d8a9c1b54342fd88bc8efbea4c08d43f1f3425
+  traces:
+    rows: 42000
+    logical_sha256: db6046c5527ac456e15b9cc2f165e519389b537e30649335fbd28a1bc67930f5
+source_claims:
+  source_model_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/classic/benchmark_output/releases/v0.4.0/runs.json
+    locator: Selected scenario group; native run_spec, instances, display_requests, display_predictions
+      and per_instance_stats files. Complete native results are included where the metric aggregates completions.
+    scope: HELM v0.4.0, 42 complete run exports; no thresholding of native grades.
+    expected: 42
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/classic/benchmark_output/releases/v0.4.0/runs.json
+    locator: Selected scenario group; native run_spec, instances, display_requests, display_predictions
+      and per_instance_stats files. Complete native results are included where the metric aggregates completions.
+    scope: HELM v0.4.0, 42 complete run exports; no thresholding of native grades.
+    expected: 42000
+  source_grade_sum:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/classic/benchmark_output/releases/v0.4.0/runs.json
+    locator: Selected scenario group; native run_spec, instances, display_requests, display_predictions
+      and per_instance_stats files. Complete native results are included where the metric aggregates completions.
+    scope: HELM v0.4.0, 42 complete run exports; no thresholding of native grades.
+    expected: 1221.9
+    absolute_tolerance: 1.0e-09
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://storage.googleapis.com/crfm-helm-public/classic/benchmark_output/releases/v0.4.0/runs.json
+    locator: Selected scenario group; native run_spec, instances, display_requests, display_predictions
+      and per_instance_stats files. Complete native results are included where the metric aggregates completions.
+    scope: HELM v0.4.0, 42 complete run exports; no thresholding of native grades.
+    expected: 0

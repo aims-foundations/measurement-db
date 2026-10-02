@@ -1,0 +1,109 @@
+benchmark:
+  name: VisualWebArena
+  description: Released automatic and human success judgments of multimodal web-agent trajectories on VisualWebArena.
+  testing_condition: Import the 300 native trajectories and 300 individual human ratings released by AgentRewardBench.
+    Preserve both binary grading channels as distinct item protocols; two judgments do not represent two agent executions.
+    Join each rating by exact agent, experiment and task ID. Use the 910-task bank from libvisualwebarena 0.0.15,
+    the version recorded in every trajectory, and verify its instructions and input-image paths. Retain complete
+    released JSON records, including failures; source image omissions and external screenshot paths remain explicit.
+    No agents, environments or graders are run.
+  paper_url: https://arxiv.org/abs/2401.13649
+  data_source_url: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+  subject_type: agent
+  item_type: task
+  license: 'AgentRewardBench custom dataset terms: use must be lawful and respect third-party rights and applicable
+    third-party conditions; the source describes research use under applicable fair-use provisions. Derivatives
+    must retain those terms, captured in raw/README.md. The VisualWebArena code''s MIT license is not asserted to
+    license these separately released trajectories.'
+  citation: 'Koh et al. (2024), VisualWebArena: Evaluating Multimodal Agents on Realistic Visual Web Tasks, arXiv:2401.13649.
+    Lu et al. (2025), AgentRewardBench: Evaluating Automatic Evaluations of Web Agent Trajectories, arXiv:2504.08942.'
+  tags:
+  - agent
+  - web_agent
+  - human_evaluation
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': unsuccessful
+      '1': successful
+  categorical: true
+  multi_single_turn: multi_turn
+  granularity: item
+  release_date: 2024-01
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      trajectories: cleaned/visualwebarena/*/*/*.json
+      annotations: data/annotations.csv
+      benchmark_filter: visualwebarena
+      task_archive: packages/libvisualwebarena-0.0.15-py3-none-any.whl
+      task_member: visualwebarena/test_raw.json
+      input_images: task_reference/environment_docker/webarena-homepage/static/input_images
+      input_url_prefix: __HOMEPAGE__/static/input_images/
+      recorded_goal_pattern: '\nInput image '
+      recorded_image_pattern: 'url: ''([^'']+)'''
+      image_path_prefix: /static/input_images/
+    labels:
+      harness: AgentRewardBench / AgentLab GenericAgent
+grading:
+  verifiers:
+    human:
+      judge: AgentRewardBench expert annotators
+      rule: The released human annotation assesses whether the trajectory successfully fulfilled its original task.
+      values:
+        Successful: 1.0
+        Unsuccessful: 0.0
+      spec:
+        kind: released_human_annotation
+        source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench/blob/b6d17e646009d6cb63d5dd7be78807b680693f61/data/annotations.csv
+        field: trajectory_success
+        interpretation: Keep each original human rating and its anonymous annotator label in the trace; do not majority-vote
+          or regrade.
+        publication: https://arxiv.org/abs/2504.08942
+    automatic:
+      rule: The released binary cum_reward reports the automatic environment success judgment for this trajectory.
+      spec:
+        kind: released_environment_reward
+        field: summary_info.cum_reward
+        package: libvisualwebarena==0.0.15
+        interpretation: Retain the original 0 or 1 without regrading; the task-specific evaluation configuration
+          is included as reference.
+        differs_from_human: This judgment is a separate grading protocol from the human annotation.
+sources:
+  upstream:
+  - name: released_records
+    url: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    revision: b6d17e646009d6cb63d5dd7be78807b680693f61
+    files:
+    - match: cleaned/visualwebarena/[^/]+/[^/]+/[^/]+\.json|README\.md|data/annotations\.csv
+      path: '{path}'
+  - name: task_images
+    url: https://github.com/web-arena-x/visualwebarena
+    revision: 89f5af29305c3d1e9f97ce4421462060a70c9a03
+    files:
+    - match: environment_docker/webarena-homepage/static/input_images/.+|README\.md|LICENSE
+      path: task_reference/{path}
+  - name: libvisualwebarena
+    url: https://files.pythonhosted.org/packages/5c/de/321b533a7ec8538396addbc3206eef0ada4153208f783679e6091d94b2f7/libvisualwebarena-0.0.15-py3-none-any.whl
+    revision: sha256:02c2f66b6a7ccb98e11c6decd8b00e8fc262223b002b80a13464e20bcdfe2999
+    file: packages/libvisualwebarena-0.0.15-py3-none-any.whl
+    size: 7551760
+    sha256: 02c2f66b6a7ccb98e11c6decd8b00e8fc262223b002b80a13464e20bcdfe2999
+  - name: browsergym_visualwebarena
+    url: https://files.pythonhosted.org/packages/47/5a/5022fb0e073b51caa8190b839d2055743f2f645de52af3d6afd67d22a71b/browsergym_visualwebarena-0.13.3-py3-none-any.whl
+    revision: sha256:a42c200023497a4970290fce39b419a93aadfc9e92c02ae602704d2957e5e531
+    file: packages/browsergym_visualwebarena-0.13.3-py3-none-any.whl
+    size: 9222
+    sha256: a42c200023497a4970290fce39b419a93aadfc9e92c02ae602704d2957e5e531

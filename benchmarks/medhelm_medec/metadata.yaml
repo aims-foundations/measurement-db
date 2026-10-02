@@ -1,0 +1,73 @@
+benchmark:
+  description: 'MedHELM medec: per-(model, item) medec_error_flag_accuracy in {0,1} (1=correct) on 597
+    detecting whether a clinical note contains a medical error (error-flag accuracy). 13 models from the
+    MedHELM v4.0.0 release.'
+  testing_condition: Published zero-shot MedHELM run; model deployment and generation settings are subject
+    features. Grades are imported unchanged.
+  paper_url: https://arxiv.org/abs/2505.23802
+  data_source_url: https://crfm.stanford.edu/helm/medhelm/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: "@article{bedi2025medhelm,\n  title={MedHELM: Holistic Evaluation of Large Language Models\
+    \ for Medical Tasks},\n  author={Bedi, Suhana and Cui, Hejie and Fuentes, Miguel and Unell, Alyssa\
+    \ and others and Shah, Nigam H.},\n  journal={arXiv preprint arXiv:2505.23802},\n  year={2025},\n}"
+  tags:
+  - medical
+  - clinical
+  - medhelm
+  - helm
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2024-12
+  release: public
+  name: MedHELM MEDEC
+  version: MedHELM v4.0.0
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: medec
+      release: v4.0.0
+      metric: medec_error_flag_accuracy
+grading:
+  rule: 'Error-flag accuracy only: the stripped response CORRECT means no error; any other output means
+    an error. Compare with the reference error flag. This is not correction or sentence-localization accuracy.'
+  verifiers:
+    published:
+      kind: published_helm_metric
+      metric: medec_error_flag_accuracy
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/medec_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+sources:
+  upstream:
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v4.0.0
+    prefix: 'medhelm/benchmark_output/runs/v4.0.0/medec:'
+    tree_sha256: eddaae6dbdb3d1cc8a0bcd35574705dfda8e66bf206efa73314892c071f95b57
+    files:
+    - match: (?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py|medec_metrics\.py)
+      path: harness/{path}

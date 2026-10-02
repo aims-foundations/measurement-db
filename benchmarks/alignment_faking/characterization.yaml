@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2138969
+    logical_sha256: b74dce2d16d1704f460ed2640ad1a0e78431a7b6528d0b03f112efb2616a9d14
+  subjects:
+    rows: 4278
+    logical_sha256: c24ee8334ee18378412c0ad4c5bb7bfc99994286c15221d8b613c444d303f28b
+  responses:
+    rows: 2138969
+    logical_sha256: 04b1158e5018b964c2d1a5286d0be79df721ca01ff5ae6c8bb8efda736e1e7af
+  items:
+    rows: 1464
+    logical_sha256: 9f966e9d0705b0975ab87e72026c1037affdec729497c4fc926e17d6c5d09cfe
+  benchmarks:
+    rows: 1
+    logical_sha256: c559cba59bbf68ece062dec0c17e34f171952c055afe811b8f6e53d9783243c6
+source_claims:
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 45120
+  source_positive_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 861066
+  source_negative_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 1232783
+  source_unknown_prompt_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 115000
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 2138969
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 2138969
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 155
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 4278
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 1464
+  source_user_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 244
+  source_published_prompt_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Anthropic/alignment-faking-rl/tree/8f43dc993db186ea10f530b72b7ce9bcd8f78262
+    locator: All 155 encrypted_transcripts/*.parquet files; prompt variants described in the official article
+      Appendix A
+    scope: Every released evaluation attempt, including missing judgments and unspecified prompt variants;
+      no new inference or grading.
+    expected: 2

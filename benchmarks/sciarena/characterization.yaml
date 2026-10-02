@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 26408
+    logical_sha256: c2da6f4934a84d25833127858a1aca4a835d641cfd05f6d3b6806102a527f1da
+  subjects:
+    rows: 23
+    logical_sha256: 3e8f452157d693aa543ce3ead31b5305e7db9c400ba3c8e40d0c04e0e0e6e76d
+  responses:
+    rows: 26408
+    logical_sha256: f35d2646c993257da941e3e4661463d8e6d1c0335b1b7a77cf0e82dcc6fe5af7
+  items:
+    rows: 8393
+    logical_sha256: ca827c67a81dedb2b4228bacac2a3e589903b1d72096b7ffb569af2543f56e40
+  benchmarks:
+    rows: 1
+    logical_sha256: 8716de17ea034aed65aa36bc8a3d1f15e307c8eb0d8e8ac4c5de3b2d0ee0974c
+source_claims:
+  source_vote_b:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 6242
+  source_paper_entries:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 391889
+  source_empty_citation_lists:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 35
+  source_nonfinite_citation_authors:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 110
+  source_vote_a:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 6041
+  source_vote_tie:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 734
+  source_vote_bad:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 187
+  source_votes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 13204
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 26408
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 26408
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 23
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 8393
+  source_unique_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 8181
+  source_duplicate_subset_votes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/yale-nlp/SciArena-with-paperbank
+    locator: Pinned train.json vote IDs and original paper_bank lists, reconciled with SciArena train.json and the
+      2,000-row test subset.
+    scope: Human relative preferences and released literature context, with no duplicate observations from the evaluation
+      subset.
+    expected: 2000

@@ -1,0 +1,146 @@
+benchmark:
+  name: DevBench
+  description: Published model choice scores for lexical mapping, visual vocabulary and grammatical comprehension,
+    with available complete image inputs.
+  testing_condition: 'Curate the released forced-choice arrays for Looking While Listening, Visual Vocabulary and
+    TROG. Use the author R comparison rule: remove singleton axes, subtract yes/no scores when present, and require
+    the first image score to strictly exceed every distractor. Preserve every native numeric row in traces. Each
+    trial combines scores across its candidate image/text pairs, not a single generative conversation. Retain original
+    manifest positions. Two TROG trials lack their eight named images in the author-linked historical release and
+    remain captured but unscored. Winoground arrays are captured but excluded because its required image source
+    is gated. Semantic-task embeddings and unpublished OpenCLIP training-checkpoint arrays are outside this item-level
+    curation. No model execution, new human/LLM judgments, or statistical analyses are performed. Historical model
+    weight and run revisions are not recorded in the released arrays.'
+  paper_url: https://arxiv.org/abs/2406.10215
+  data_source_url: https://github.com/alvinwmtan/dev-bench
+  subject_type: model
+  item_type: task
+  license: Component-specific. The author README describes Looking While Listening assets as CC-BY-NC-SA or more
+    permissive, and links to THINGSplus CC0 images. An explicit license for the captured historical TROG image repository
+    and model-output arrays was not found; the former legacy MIT claim is not retained.
+  citation: 'Tan, A. W. M. et al. (2024). DevBench: A multimodal developmental benchmark for language learning.
+    NeurIPS Datasets and Benchmarks.'
+  tags:
+  - vision_language
+  - developmental
+  - multimodal
+  - forced_choice
+  modality:
+  - image
+  - text
+  domain:
+  - language
+  - cognition
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The target did not strictly outrank every distractor, including ties.
+      '1': The target strictly outranked every distractor.
+  categorical: true
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    image_columns:
+      option_1: image1
+      option_2: image2
+      option_3: image3
+      option_4: image4
+    zip_images:
+      component: lex-viz_vocab
+      file: images_THINGSplus-CC0.zip
+      prefix: images/
+      suffix: .jpg
+    media_types:
+      .png: image/png
+      .jpg: image/jpeg
+    subject_features:
+      harness: DevBench
+      configuration_scope: Released array filename identifies the model and scoring variant. Exact historical weight
+        and execution revisions are not asserted.
+    input_scope:
+      description: Original manifest text and ordered image choices. The array stores scores for constituent image-text
+        comparisons, not a full historical API transcript.
+    components:
+      lex-lwl: lex_lwl
+      lex-viz_vocab: lex_viz_vocab
+      gram-trog: gram_trog
+    lex_lwl:
+      manifest: release/assets/lex-lwl/manifest.csv
+      arrays: release/evals/lex-lwl/*.npy
+      prefix: lwl_
+      choices: '2'
+    lex_viz_vocab:
+      manifest: release/assets/lex-viz_vocab/manifest.csv
+      arrays: release/evals/lex-viz_vocab/*.npy
+      prefix: vv_
+      choices: '4'
+    gram_trog:
+      manifest: release/assets/gram-trog/manifest.csv
+      arrays: release/evals/gram-trog/*.npy
+      prefix: trog_
+      choices: '4'
+    file_images:
+      lex-lwl: lex_lwl_images
+      gram-trog: gram_trog_images
+    lex_lwl_images:
+      root: release/assets/lex-lwl
+      glob: images*/*
+      prefix: ''
+    gram_trog_images:
+      root: trog
+      glob: '*.png'
+      prefix: images/
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/alvinwmtan/dev-bench
+    revision: 59b8f29aedb5ef01eceaab6d736e213ff0189ef1
+    files:
+    - match: (?:README\.md|eval\.py|eval_model\.py|data_handling\.py|model_classes/.*\.py|comparison/.*\.R|assets/(?:lex-lwl/.*|(?:lex-viz_vocab|gram-trog|gram-winoground)/manifest\.csv)|evals/(?:lex-lwl|lex-viz_vocab|gram-trog|gram-winoground)/[^/]+\.npy)
+      path: release/{path}
+  - name: trog_images
+    url: https://github.com/levante-framework/core-tasks
+    revision: 145b4e7ba590d5aa855fb0541de5f6cce2dc84b6
+    files:
+    - match: assets/TROG/original/(?P<name>[^/]+)
+      path: trog/{name}
+  - name: vocabulary_images
+    url: https://osf.io/wb36u/download
+    file: images_THINGSplus-CC0.zip
+    size: 1177368548
+    sha256: ed86912f6848ac5cf8b405a727f875295cc081cdd64271e80ae4d607b7d447e3
+    revision: '1'
+grading:
+  rule: Follow the original forced-choice comparison in the author R script. Squeeze singleton dimensions. For an
+    additional two-value yes/no axis, subtract the second value from the first using double precision, as in R.
+    A response of 1 requires image1 to have a strictly larger score than every distractor; ties receive 0. Use only
+    the released numeric outputs. Do not fit human-response models or recompute statistical analyses.
+  verifiers:
+    lex-lwl:
+      kind: deterministic_published_choice_rule
+      source: https://github.com/alvinwmtan/dev-bench/blob/59b8f29aedb5ef01eceaab6d736e213ff0189ef1/comparison/lex-lwl.R
+      rule: image1 strictly greater than every distractor
+      score_axis: Original manifest order
+      native_output: Released NumPy array; allow_pickle=False
+      historical_run_verifier_revision: null
+    lex-viz_vocab:
+      kind: deterministic_published_choice_rule
+      source: https://github.com/alvinwmtan/dev-bench/blob/59b8f29aedb5ef01eceaab6d736e213ff0189ef1/comparison/lex-viz_vocab.R
+      rule: image1 strictly greater than every distractor
+      score_axis: Original manifest order
+      native_output: Released NumPy array; allow_pickle=False
+      historical_run_verifier_revision: null
+    gram-trog:
+      kind: deterministic_published_choice_rule
+      source: https://github.com/alvinwmtan/dev-bench/blob/59b8f29aedb5ef01eceaab6d736e213ff0189ef1/comparison/gram-trog.R
+      rule: image1 strictly greater than every distractor
+      score_axis: Original manifest order
+      native_output: Released NumPy array; allow_pickle=False
+      historical_run_verifier_revision: null

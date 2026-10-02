@@ -1,0 +1,182 @@
+benchmark:
+  description: Item-level MMLU predictions released for AGI-Elo, a study of joint task difficulty and AI-system
+    competency. This curation covers the released question-answering observations, not derived Elo ratings.
+  testing_condition: Twenty released MMLU model exports. Keep observations whose task identifier and reference
+    answer agree with the author-published item bank. Other AGI-Elo task families are not included.
+  paper_url: https://openreview.net/forum?id=hYVhxKGD8Y
+  data_source_url: https://github.com/SS47816/AGI-Elo
+  subject_type: model
+  item_type: question
+  license: Apache-2.0
+  citation: "@inproceedings{sun2025agielo,\n  title={AGI-Elo: How Far Are We From Mastering A Task?},\n  author={Sun,\
+    \ Shuo and Zhao, Yimin and Lee, Christina Dao Wen and Sun, Jiawei and Yuan, Chengran and Huang, Zefan and\
+    \ Li, Dongen and Yeoh, Justin K. W. and Prakash, Alok and Malone, Thomas W. and Ang Jr., Marcelo H.},\n\
+    \  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - elo
+  - rating_system
+  - task_difficulty
+  - model_competency
+  - agi
+  modality:
+  - text
+  domain:
+  - general
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: 2025-12
+  name: AGI-Elo
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    answer_parser:
+      reasoning_block: (?s)<think>.*?</think>
+      choice: \b([ABCD])\b
+grading:
+  rule: Remove <think>...</think> blocks and select the first standalone uppercase A, B, C, or D. Correctness
+    is exact agreement with the released reference choice; an unparsed output is incorrect.
+  verifiers:
+    multiple_choice:
+      source: https://github.com/SS47816/AGI-Elo/blob/39fdf034932548e370b211d39524e99e2a1e8087/AGI_Elo/pipeline/question_answering.py
+      function: compute_match_results
+      rule: Remove <think>...</think> blocks and select the first standalone uppercase A, B, C, or D. Correctness
+        is exact agreement with the released reference choice; an unparsed output is incorrect.
+sources:
+  upstream:
+  - name: items
+    url: https://huggingface.co/datasets/ztony0712/question_answering
+    revision: 140ed2c9b31a42ab80b6f37e641e27aa111560d2
+    files:
+    - match: data/test-00000-of-00001.parquet
+      path: mmlu_items.parquet
+  - name: bloomz_1b1
+    url: https://drive.google.com/uc?export=download&id=1U9RiAUrf8o_BAuE1GIzaQLNmV0SECy2f
+    file: mmlu_predictions/BLOOMZ-1B1.pkl
+    size: 885841
+    sha256: 00182d9c99818f4d0a634fbb88b6ffff1826ff489cf83073e0a3326e2f51ba39
+    revision: null
+  - name: bloomz_1b7
+    url: https://drive.google.com/uc?export=download&id=1QtFeOtVVb3xPoHYcvWj-UIp6a-snv7p6
+    file: mmlu_predictions/BLOOMZ-1B7.pkl
+    size: 884487
+    sha256: b8d81ed101384d7b773ec1f3e85dd65f2ac273bc084497d6df2eda35441d7b80
+    revision: null
+  - name: bloomz_7b1
+    url: https://drive.google.com/uc?export=download&id=14c7wzkNvdNyJNZIy8aB-acb66Bl3CKGQ
+    file: mmlu_predictions/BLOOMZ-7B1.pkl
+    size: 791415
+    sha256: 6ae08fb769403f45d4770fa56c38ff1af21e8f625b33759535d7fba406518133
+    revision: null
+  - name: chatgpt_4o_mini
+    url: https://drive.google.com/uc?export=download&id=1u8am2bCYWeGgnCoxCY2hYcrzvFpVBV26
+    file: mmlu_predictions/ChatGPT-4o-mini.pkl
+    size: 885349
+    sha256: 4575a0617967488c3526f92691a0f76d5d6ac17b87aa96546cd3e8f7fdf3bacf
+    revision: null
+  - name: chatgpt_4o
+    url: https://drive.google.com/uc?export=download&id=1s4Pl7ZItZ6B7FtsEY4ayABHaQ3ZGpRcb
+    file: mmlu_predictions/ChatGPT-4o.pkl
+    size: 1198808
+    sha256: fda4186046f72532e9fa7db63be979f1dea2242620d2558e639b05ffd87247b1
+    revision: null
+  - name: claude_3_7_sonnet
+    url: https://drive.google.com/uc?export=download&id=1nyESiBpXaWGYIDUdnb2remAJ3OigBH2M
+    file: mmlu_predictions/Claude-3.7-Sonnet.pkl
+    size: 885418
+    sha256: 68c22f9c1cbb40e8445f51d5d7891aea726bfb3d1648d37dcf010d642a96e3cb
+    revision: null
+  - name: deepseek_r1_distill_qwen_1_5b
+    url: https://drive.google.com/uc?export=download&id=16DaY4G1W3GA36QrrBbKheovi5T3wCRdS
+    file: mmlu_predictions/DeepSeek-R1-Distill-Qwen-1.5B.pkl
+    size: 885212
+    sha256: db74fb76542d3901daf437a1c494ee318de8149f29789db6e1a709f8c37742dc
+    revision: null
+  - name: deepseek_r1_distill_qwen_7b
+    url: https://drive.google.com/uc?export=download&id=1dtKV-WwzUggvLcdE5Zp3eEBP-FBFpiZC
+    file: mmlu_predictions/DeepSeek-R1-Distill-Qwen-7B.pkl
+    size: 885213
+    sha256: 42f22f1e23087d8b3c7074a0a43eaf576f5daf0551f22795aecdc70d68a6a429
+    revision: null
+  - name: deepseek_r1
+    url: https://drive.google.com/uc?export=download&id=124sMHtCEt0RLQJY2GbEzBVc9RqilGkGH
+    file: mmlu_predictions/DeepSeek-R1.pkl
+    size: 30465561
+    sha256: 7f11da019b1472801d2cc182ed18080a88639f72fa3d70ff331897a8eb67ca13
+    revision: null
+  - name: deepseek_v3_0324
+    url: https://drive.google.com/uc?export=download&id=1wr3su-vY6U6gUsBBdYfPSJX4VKwr_lbA
+    file: mmlu_predictions/DeepSeek-V3-0324.pkl
+    size: 897097
+    sha256: 180e731ca8bac208885db2254293eaf4664557e23a12d318236b80d9d632887f
+    revision: null
+  - name: gpt_4_1_mini
+    url: https://drive.google.com/uc?export=download&id=1ZUvPwPatv1ZltslAw5D8rI2rAOvjSydq
+    file: mmlu_predictions/GPT-4.1-mini.pkl
+    size: 888339
+    sha256: f8dca4acca9e0c67aa8e719e55307b7dd0dfecd23b8ee5807f04d38b1347ecfe
+    revision: null
+  - name: gpt_4_1_nano
+    url: https://drive.google.com/uc?export=download&id=10HcGCsRlm12-U-mBOzZ9WKzdvMAixwbL
+    file: mmlu_predictions/GPT-4.1-nano.pkl
+    size: 954947
+    sha256: 644a937de969224942fb30c52c2252153bd7381068f6b438592540a8dc287f25
+    revision: null
+  - name: gpt_4_1
+    url: https://drive.google.com/uc?export=download&id=1zAWNNMdfHQVZ9tfFfB2vOdt4SbyEdbyU
+    file: mmlu_predictions/GPT-4.1.pkl
+    size: 946566
+    sha256: 056ab0d59c2891f410f3a2035c317d0b7dafcaf6516cb9ac6f8c3e6c0f09578e
+    revision: null
+  - name: gemini_2_5_pro_exp
+    url: https://drive.google.com/uc?export=download&id=1I2wiBBRG8G9ID8cOEJ7N3mt8hAXiJaiQ
+    file: mmlu_predictions/Gemini-2.5-Pro-Exp.pkl
+    size: 943041
+    sha256: de3f1878a4b7ee7ac11407f9aaa27fcc923aebd6f8807f0037c1528df95c25c1
+    revision: null
+  - name: gemma_3_27b
+    url: https://drive.google.com/uc?export=download&id=1hJN_I3Y-AFe-eSGKmuCBJHV3MUuvmy-g
+    file: mmlu_predictions/Gemma-3-27B.pkl
+    size: 885188
+    sha256: f1dce86e39292f2fe63cae01633475e5c4d697b07df066c0794f35e2f477123d
+    revision: null
+  - name: llama_3_1_8b_instruct
+    url: https://drive.google.com/uc?export=download&id=1Rb7bWo-ptNSCDV4LZ9lyPLh0P_w0hP-F
+    file: mmlu_predictions/Llama-3.1-8B-Instruct.pkl
+    size: 892469
+    sha256: 38d12f96a6cea76b979e4f418c22414ac1deb54d7bc1bd0a246b7b982269a99c
+    revision: null
+  - name: llama_4_maverick
+    url: https://drive.google.com/uc?export=download&id=10llfr1yA39pEigDnT6XGpWDoj5l1LTXK
+    file: mmlu_predictions/Llama-4-Maverick.pkl
+    size: 1589385
+    sha256: 76784d0142c244906aaf839b4cbf9b81dca679887501168fe5b85088fa7ebe93
+    revision: null
+  - name: llama_4_scout
+    url: https://drive.google.com/uc?export=download&id=1pRb89K1TYM6kkE3NVAo19ZhbhbXjDA_n
+    file: mmlu_predictions/Llama-4-Scout.pkl
+    size: 2794643
+    sha256: 3db303b50b9347fee3cc0d11e8b02118809c9a695fd1222e8ed9be0baa330058
+    revision: null
+  - name: qwq_32b_preview
+    url: https://drive.google.com/uc?export=download&id=1pWWAmlBgthvQQA2CE3u3Hoce1pZLGj2Y
+    file: mmlu_predictions/QwQ-32B-Preview.pkl
+    size: 1235659
+    sha256: 0583990fe90124bb9142f54282370ed330799a2c2330706f6076f090c033ef7e
+    revision: null
+  - name: qwen_2_5_72b
+    url: https://drive.google.com/uc?export=download&id=1epW-5xiJWk9eo7Rup8JQUfx6lNX0426Z
+    file: mmlu_predictions/Qwen-2.5-72B.pkl
+    size: 955119
+    sha256: d7652087c2b33d3de8b058e8b53dcacdc5128e322d467da44b356a235008dfe6
+    revision: null

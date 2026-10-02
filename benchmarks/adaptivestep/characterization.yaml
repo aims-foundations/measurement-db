@@ -1,0 +1,114 @@
+format_version: 1
+tables:
+  traces:
+    rows: 988160
+    logical_sha256: ec953afc27faab628b676443923f477aafc3effa852f2f0649d69bd52dec3aa1
+  subjects:
+    rows: 3
+    logical_sha256: e6c194e72c846af3f1adb24e12e4c5461d7b6aceedf892a345e51c01178b158f
+  responses:
+    rows: 988160
+    logical_sha256: b471b78ab49275719641db1332dda7ab140f849068e10dc812bd82f72d759e7e
+  items:
+    rows: 4525
+    logical_sha256: dc4c6704e324b2edd1f6ec11624e823de1a28dfcf3681c92159b4284fc86041e
+  benchmarks:
+    rows: 1
+    logical_sha256: 8e780f78877f339e0c8bd88206bbb82e1eb877300e15f70e8582bb89ef6ebc26
+source_claims:
+  source_pools:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 4526
+  source_reference_corrections:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 4
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 988160
+  source_graded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 931328
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 611383
+  source_original_math_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 611134
+  source_corrected_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 249
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 8
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 56832
+  source_unique_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 2707
+  source_prompt_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 4525
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Lux0926/ASPRM
+    locator: Pinned ASPRM math/code HF candidate files and question-matched GSM8k/MATH500 references listed in metadata.yaml.
+    scope: All final candidate solutions. Independent parsing checks every policy model, prompt, reference, grade,
+      original grade, candidate position and full trace; code verdicts remain unavailable.
+    expected: 3

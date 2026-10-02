@@ -1,0 +1,3 @@
+- Curates the authors’ MMLU prediction exports: 20 models, 277,106 responses, complete answer text, and questions with ordered choices. Derived Elo ratings and other task families are outside this release.
+- Joins on task ID and reference answer; 528 conflicting historical references remain in `raw/` and are excluded. Three model files have missing rows, which are not fabricated.
+- Applies the published deterministic answer parser without model calls. The coding sample has inconsistent expected outputs and remains pending source clarification; its observations are not mixed into MMLU.

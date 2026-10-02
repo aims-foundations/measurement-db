@@ -1,0 +1,198 @@
+benchmark:
+  name: JETTS generator response pool
+  description: Original scored generator responses released by JETTS across eight math, code and instruction-following
+    component datasets.
+  testing_condition: 'Import all 328685 outputs in the 44 reranking/refinement pool exports, including 31981 fractional
+    AlpacaEval judgments. These are generator measurements on existing component benchmarks, not the JETTS judge
+    leaderboard or a new independent task set. Each record retains its original component and query. The paper specifies
+    one greedy seed followed by up to nine temperature-1.0, top-p-0.95 samples; the released reader uses the first
+    response as the refinement seed. Separate these decoding configurations and preserve the actual list lengths:
+    855 nominal response slots are absent and are not failures or extra attempts. Original request logs, model checkpoint
+    revisions and system messages are unavailable. All recorded per-response scores are imported unchanged. Beam-search
+    trees and newly generated judge/refinement outputs are distinct source products outside this released response-pool
+    import. No new evaluation is performed.'
+  paper_url: https://arxiv.org/abs/2504.15253
+  data_source_url: https://github.com/SalesforceAIResearch/jetts-benchmark
+  subject_type: model
+  item_type: task
+  license: Apache-2.0 for the JETTS code. Original component datasets retain their own terms.
+  citation: 'Zhou et al. Evaluating Judges as Evaluators: The JETTS Benchmark of LLM-as-Judges as Test-Time Scaling
+    Evaluators. ICML 2025.'
+  tags:
+  - test_time_scaling
+  - generator_responses
+  - math
+  - code
+  - instruction_following
+  modality:
+  - text
+  domain:
+  - mathematics
+  - software_engineering
+  - instruction_following
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: null
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      pool: reranking_and_refinement.tar.gz
+      prefix: reranking_and_refinement/
+    subject_features:
+      harness: JETTS released generator response pool
+      configuration_scope: Source model aliases and published sampling protocol. Immutable checkpoints and original
+        per-call request logs are unavailable.
+    temperatures:
+      greedy: '0'
+      sampled: '1.0'
+    top_p:
+      greedy: not specified for greedy decoding
+      sampled: '0.95'
+    observation:
+      input_scope: Exact released query content. Unknown system messages and request wrappers are not reconstructed.
+sources:
+  upstream:
+  - name: response_pool
+    url: https://storage.googleapis.com/download/storage/v1/b/sfr-jetts-benchmark-data/o/reranking_and_refinement.tar.gz?generation=1750124990468031&alt=media
+    file: reranking_and_refinement.tar.gz
+    size: 159271046
+    sha256: 249bf9eb17ae71e62c0a6555e0a1eda836e4b0859e3a2b46f62e99158e3afe60
+    revision: '1750124990468031'
+  - name: harness
+    url: https://codeload.github.com/SalesforceAIResearch/jetts-benchmark/tar.gz/18c3e9e26deed2bd2d644164b2e1823389d8d1e7
+    revision: 18c3e9e26deed2bd2d644164b2e1823389d8d1e7
+    file: upstream.tar.gz
+    size: 14367206
+    sha256: 20f3d03b3b1f28037728f8d71d0446987e49a7105fcb8847320a82653269fac0
+grading:
+  rule: Preserve each component's original per-response score and full grading context. Do not infer missing attempts
+    from a nominal ten-sample design or convert continuous preference scores to binary outcomes.
+  verifiers:
+    gsm8k:
+      kind: published_component_grade
+      component: GSM8K
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields:
+      - input_correct_responses
+      constraint_fields: []
+      rule: Math-Verify final-answer agreement with the released accepted-answer list. Preserve the recorded score,
+        including upstream parser failures.
+      response_scale: &id001
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Does not satisfy the component grading protocol
+          '1': Satisfies the component grading protocol
+      execution: Import original grades. No generator, judge or test execution during curation.
+    math:
+      kind: published_component_grade
+      component: MATH level 5
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields:
+      - input_correct_responses
+      - solution
+      constraint_fields: []
+      rule: Math-Verify final-answer agreement with the original MATH solution. Preserve the complete solution and
+        accepted-answer metadata for provenance.
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    champ:
+      kind: published_component_grade
+      component: CHAMP
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: llm
+      reference_fields:
+      - problem_answer
+      constraint_fields: []
+      rule: The generator summarizes its answer and GPT-4o grades that summary against the reference. Preserve the
+        stored binary grade and the complete released summary.
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    humaneval:
+      kind: published_component_grade
+      component: HumanEval+
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields: []
+      constraint_fields: []
+      rule: EvalPlus sanitizes the generated solution and evaluates the extended HumanEval+ tests. Preserve the
+        recorded pass/fail verdict. Per-test results are not released in this pool.
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    mbpp:
+      kind: published_component_grade
+      component: MBPP+
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields: []
+      constraint_fields: []
+      rule: EvalPlus sanitizes the generated solution and evaluates the extended MBPP+ tests. Preserve the recorded
+        pass/fail verdict. Per-test results are not released in this pool.
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    bigcodebench:
+      kind: published_component_grade
+      component: BigCodeBench
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields: []
+      constraint_fields: []
+      rule: BigCodeBench instruct/full evaluation with sanitized code. Preserve the recorded pass/fail verdict,
+        saved response and unsanitized raw_response. Per-test results are not released in this pool.
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    ifeval:
+      kind: published_component_grade
+      component: IFEval
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: script
+      reference_fields: []
+      constraint_fields:
+      - instruction_id_list
+      - kwargs
+      rule: 'Prompt-level strict instruction-following accuracy: all specified instruction checks must pass. Preserve
+        the recorded verdict and complete instruction parameters.'
+      response_scale: *id001
+      execution: Import original grades. No generator, judge or test execution during curation.
+    alpacaeval:
+      kind: published_component_grade
+      component: AlpacaEval
+      source: https://github.com/SalesforceAIResearch/jetts-benchmark/blob/18c3e9e26deed2bd2d644164b2e1823389d8d1e7/jetts_eval/evaluate_refinement.py
+      documentation: https://arxiv.org/html/2504.15253v1#A1
+      response_field: responses[].metadata.score
+      judged_by: llm
+      reference_fields: []
+      constraint_fields: []
+      rule: The released per-response AlpacaEval preference score relative to GPT-4 Turbo, using GPT-4 Turbo as
+        judge. Preserve the fractional value in [0,1] without thresholding. This is not a binary correctness judgment
+        or a length-controlled aggregate win rate. Individual judge transcripts and reference responses are absent
+        from the pool.
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      execution: Import original grades. No generator, judge or test execution during curation.

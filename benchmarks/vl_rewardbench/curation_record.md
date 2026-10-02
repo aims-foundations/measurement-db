@@ -1,0 +1,3 @@
+- Recovered 111,452 released judgments from 16 models by joining the inference archive to matching question, candidate-answer, and human-ranking records. The 1,532 presented items retain both answer orders and 736 original images; all imported observation contents and complete traces were checked against the source.
+- The archive predates the current item bank. Unmatched or changed definitions stay in raw inputs; 5,755 unparsed judgments are retained with null grades. These are per-trial verdicts, not the paper’s majority-vote accuracy.
+- Source model identifiers are preserved; identifiers not recognized by the shared model registry retain unknown normalized metadata. The former claim that no item-level results were released was incorrect.

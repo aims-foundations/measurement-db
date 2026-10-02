@@ -1,0 +1,97 @@
+benchmark:
+  name: Lo-Hi Drug Discovery Benchmark
+  description: Complete published molecule-level prediction records for the Lo and Hi drug-discovery tasks, with
+    their reference measurements and native aggregate ranking protocol. Individual grades are unavailable.
+  testing_condition: Import all three folds, both train and test partitions, and every released model output without
+    the earlier fold-1 or 2,000-molecule cap. A subject identifies the source method trained on a particular task,
+    dataset and fold; fitted weights and realized random seeds are not released with the prediction CSVs. Item content
+    is the exact released SMILES string before descriptor or graph featurization, with the task/dataset as attributes.
+    Preserve every original CSV field, including serialized index columns, reference values, predictions and cluster
+    IDs. Repeated molecule rows remain separate source occurrences. Hi outputs mix class labels, probabilities and
+    unbounded decision scores across methods and must not all be interpreted as probabilities. The authors grade
+    whole prediction vectors or molecule clusters; therefore every individual response grade is null. Per-item scale
+    declarations describe the applicable native aggregate metric, not a fabricated individual score. Training predictions
+    remain explicitly marked as train and must not be counted as held-out performance. The HIV-Hi mlp_ecfp4 training
+    exports contain 43,330 extra repeated positive-class records from the documented oversampling routine; retain
+    these source occurrences without interpreting them as independent trials or additional molecules. Every other
+    prediction file exactly matches its declared source split as a multiset of molecules, references and clusters.
+  paper_url: https://arxiv.org/abs/2310.06399
+  data_source_url: https://github.com/SteshinSS/lohi_neurips2023
+  subject_type: model
+  item_type: molecule
+  license: MIT
+  citation: 'Steshin, Simon. Lo-Hi: Practical ML Drug Discovery Benchmark. NeurIPS 2023 Datasets and Benchmarks,
+    arXiv:2310.06399.'
+  tags:
+  - drug_discovery
+  - cheminformatics
+  - molecular_property
+  - ranking
+  modality:
+  - text
+  domain:
+  - chemistry
+  - medicine
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-10
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: upstream.zip
+      prefix: lohi_neurips2023-1686b016e360537ce4eb9e5996de6254be64fb3f/
+      prediction_pattern: predictions/(?P<task>hi|lo)/(?P<dataset>[^/]+)/(?P<model>[^/]+)/(?P<partition>train|test)_(?P<fold>[123])\.csv
+    labels:
+      subject_prefix: 'Lo-Hi / '
+      input_scope: released_SMILES_before_model_featurization
+      grade_status: no_native_per_molecule_grade
+    subject_features:
+      harness: lohi_neurips2023
+      configuration_scope: method_task_dataset_and_fold
+      fitted_weights: not_released
+      realized_seed: not_recorded
+grading:
+  verifiers:
+    hi:
+      kind: native_aggregate_ranking
+      source: https://github.com/SteshinSS/lohi_neurips2023/blob/1686b016e360537ce4eb9e5996de6254be64fb3f/code/metrics.py
+      function: get_hi_metrics
+      headline_metric: average_precision
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: The native Hi evaluator applies scipy.special.expit to the full prediction vector and reports sklearn
+        average_precision_score against all reference values; ROC-AUC and BEDROC are additional aggregate metrics.
+        No per-molecule grade is defined. Preserve each native prediction and reference in its trace and leave response
+        null; do not invent a classification threshold or assign the aggregate score to each molecule.
+    lo:
+      kind: native_aggregate_ranking
+      source: https://github.com/SteshinSS/lohi_neurips2023/blob/1686b016e360537ce4eb9e5996de6254be64fb3f/code/metrics.py
+      function: get_lo_metrics
+      headline_metric: mean_within_cluster_spearman
+      response_scale:
+        kind: interval
+        min: -1
+        max: 1
+        direction: higher_is_better
+      rule: The native Lo evaluator computes Spearman correlation within each source cluster, replaces undefined
+        correlations with zero, and averages across clusters; mean per-cluster R-squared and MAE are additional
+        aggregate metrics. No per-molecule grade is defined. Preserve each native prediction, reference and cluster
+        in its trace and leave response null; do not present an output activity value or an aggregate ranking score
+        as an individual grade.
+sources:
+  upstream:
+  - name: published_release
+    file: upstream.zip
+    url: https://codeload.github.com/SteshinSS/lohi_neurips2023/zip/1686b016e360537ce4eb9e5996de6254be64fb3f
+    revision: 1686b016e360537ce4eb9e5996de6254be64fb3f
+    size: 34869257
+    sha256: 7204b2b0d5269f942ca4db7996a76b8f6d76c3c50c8c0efe636f2799f66df1db

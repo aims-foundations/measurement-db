@@ -1,0 +1,3 @@
+- Source: pinned ITFormer export, test questions and complete EngineMT-QA sensor archive; retain 676 unambiguous single-choice attempts from the 10,608-record export.
+- Mapping: join by source line, stage and reference only when one question remains. Preserve full answers and source positions; attach all 600 × 33 input values using the original loader’s scalar/ten-cycle rule.
+- Scope: all 676 previous grades are unchanged under the historical exact-match metric (525 correct). Remove the unsupported 0.5B checkpoint assumption; ambiguous records remain in raw, and no model evaluation is run.

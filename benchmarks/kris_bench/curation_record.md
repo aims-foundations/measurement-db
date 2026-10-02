@@ -1,0 +1,3 @@
+- Sources: pinned original annotations/images, the HF task bank, all 20 output archives and grading code; shared downloads reproduce these captures.
+- Mapping: preserve each judge record’s wording and original 1–5 dimension rating, including task-card inconsistencies; original inputs, reference images and generated outputs remain distinct.
+- Fidelity: full judge records and output-image hashes; 32 missing and one invalid upstream rating remain ungraded with their native values/status preserved. Historical API and judge settings remain unknown.

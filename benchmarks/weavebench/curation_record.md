@@ -1,0 +1,4 @@
+- Scope: 114 author-selected best hybrid rollouts, with three model labels and seven distinct model/runtime pairs. This gallery is not an unbiased comparison or the full evaluation sweep.
+- Grading: preserve all original final scores and use the paper's 0.80 pass threshold. Task check scripts are evidence for the agent judge, not reference solutions or the final judgment themselves.
+- Traces: retain all 8,343 action steps, 2,808 notes and 2,430 linked screenshots in the original archive. Produced-file contents and historical VM/request/judge settings are unavailable in the gallery.
+- Migration: all 114 previous model/task/runtime/grade associations reconcile. Replace short score summaries with complete published gallery records; shared checks and a clean upstream rebuild verify the tables. No evaluation is rerun.

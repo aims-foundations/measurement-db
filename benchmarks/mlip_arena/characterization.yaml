@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 122640
+    logical_sha256: dad36809edaab2de805c7323ce0e350d0fcd4e3df8ad72c42da5c25d0295da59
+  subjects:
+    rows: 71
+    logical_sha256: bff62358aa461a116a9f1a01cdaa2775e07680f63e4652df4978c3fa3d16ccdc
+  responses:
+    rows: 122640
+    logical_sha256: 7b395107fb9d8199999cd925490f8d320d757508f3af7d8c93bc2e9d684f8a6e
+  items:
+    rows: 13706
+    logical_sha256: b6f9ae5ef24e2d292fbff516276e6003ceeb82ecbb94e0742bf7eaaf3aa759eb
+  benchmarks:
+    rows: 1
+    logical_sha256: e114e6dfbe1e7a9e8599d58cab90d5660c67fae5eaac8c4ebac8d6c37cd01a1b
+source_claims:
+  source_missing_curve_placeholders:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 33
+  source_export_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 29003
+  source_stability_frames:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 548928
+  source_stability_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 1346
+  source_simulations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 28914
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 71
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 122640
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 116036
+  source_export_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/atomind-ai/mlip-arena
+    locator: Original per-system files at GitHub 6239aea513c494aeab237fc96ef133b9b1cc204f and HF 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4.
+    scope: Independent direct-file census and complete comparison of structure inputs, source aliases, native result
+      fields, grading references and per-system assessments. Group stability frames by run. No model, optimization
+      or molecular dynamics executed.
+    expected: 89

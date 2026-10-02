@@ -1,0 +1,93 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3936
+    logical_sha256: ff779b90f8511f83d585e3d2cc8ece51bb112e7620b15acafce9efe110cadbf9
+  subjects:
+    rows: 8
+    logical_sha256: b7264d1e6054a6008a4f7468d4d334807288459b7f90d4f0ad7dc4b2c1fb0744
+  responses:
+    rows: 3936
+    logical_sha256: 32370ad2572a0c9ac5ad4eaf429e8d2aa35ff4f7f54c114650208bae187489ee
+  assets:
+    rows: 19
+    logical_sha256: 13b97f5f53fccfdf021d891381e370c7ae18d627e29ea2fa6d9e8969edc461dc
+  items:
+    rows: 492
+    logical_sha256: 6e24af07af9e8b0a1b1346fddd969a7287de4d52b2ddaba59ababdba42f97dc9
+  benchmarks:
+    rows: 1
+    logical_sha256: 724bb84b9f84514b5794e279f7f40381a575454740e57cd979e8052d4717d0e5
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 3936
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 492
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 19
+  source_partial_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 154
+  source_accuracy_summaries:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 64
+  source_multi_answer_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 101
+  source_result_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 3936
+  source_agent_transcripts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/GTML-LAB/DataClaw/tree/b6ede120d42750ff0e6303467776976b7074ba84
+    locator: docs/index.html const D; tasks/*.md; assets/qa_gold; assets/database.
+    scope: Reconcile every released model/task score, full task/rubric, workspace byte and result record. Match
+      all model/category accuracy summaries. Distinguish task-authoring references from unavailable agent transcripts.
+    expected: 0

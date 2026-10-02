@@ -1,0 +1,42 @@
+format_version: 1
+tables:
+  traces:
+    rows: 64
+    logical_sha256: b7c06f7aaaf96be143b7b221d6c2fe62de18019fad918303497ce583aeb08abc
+  subjects:
+    rows: 4
+    logical_sha256: 8bdeff9c52a92c15086161033071bd9efd059602e7a2ed66f254efc345f72714
+  responses:
+    rows: 64
+    logical_sha256: 12d6816abadbb952282b559eb07cdf665e846b54b80c78c355a731c05f1fd10f
+  items:
+    rows: 16
+    logical_sha256: 111e79c1c0b661a12d2b1e6138b09fc7145e2b7031cea2c921b26a58966b7ddf
+  benchmarks:
+    rows: 1
+    logical_sha256: 9467590e89b5ec108bf5cb118139da2d0e4c499bdf883f4a84cbc3bd6593a956
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-AICare/evaluation-playground
+    locator: 'raw/ConfAgents.json: reference_answer, options and four framework final_answer fields'
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 64
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-AICare/evaluation-playground
+    locator: 'raw/ConfAgents.json: reference_answer, options and four framework final_answer fields'
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 36
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-AICare/evaluation-playground
+    locator: 'raw/ConfAgents.json: reference_answer, options and four framework final_answer fields'
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 16
