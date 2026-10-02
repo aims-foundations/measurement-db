@@ -83,6 +83,136 @@ import numpy as np
 from measurement_db.scripts.build_measurement_tables.normalize_evaluation_settings import canonicalize_features, features_string
 from measurement_db.scripts.curate_benchmarks.native_result_audits import _threeeed, _features
 
+import types
+from unittest.mock import patch
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _proteininvbench
+
+class ProteinInvBenchSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary=tempfile.TemporaryDirectory(dir=ROOT)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory=Path(temporary.name)/'proteininvbench'
+        self.raw=self.directory/'raw';self.raw.mkdir(parents=True)
+        self.metadata=yaml.safe_load(((ROOT / 'benchmarks/proteininvbench')/'metadata.yaml').read_text())
+        profile=self.metadata['grading']['verifiers']['native']
+        grader=b'{"cells":[],"metadata":{"synthetic_fixture":true}}'
+        profile['sha256']=hashlib.sha256(grader).hexdigest()
+        path=self.raw/profile['file'];path.parent.mkdir(parents=True);path.write_bytes(grader)
+        (self.directory/'metadata.yaml').write_text(yaml.safe_dump(self.metadata,sort_keys=False))
+        self.inputs={};self.results={}
+        self.vocabulary=['<cls>','<pad>','<eos>','<unk>','A','L']
+        for dataset in ['CATH4.2','CATH4.3']:
+            proteins=[]
+            for title,sequence in [('one.A','ALA'),('two.B','A'*500)]:
+                coordinates={atom:[[i+0.12345678901234567,0.,1.] for i in range(len(sequence))] for atom in ['N','CA','C','O']}
+                if title=='one.A':coordinates['N'][1][0]=float('nan')
+                proteins.append(dict(name=title,seq=sequence,coords=coordinates))
+            self.inputs[f'data/{dataset.lower()}/chain_set.jsonl']='\n'.join(json.dumps(row) for row in proteins).encode()+b'\n'
+            for model in ['StructGNN','GVP','PiFold']:
+                native=dict(title=[],true_seq=[],pred_probs=[])
+                for entry in proteins:
+                    tokens=np.array([self.vocabulary.index(letter) for letter in entry['seq']],dtype=np.int64)
+                    mask=np.ones(len(tokens),dtype=bool)
+                    if entry['name']=='one.A':mask[1]=False
+                    target=tokens if model=='GVP' else tokens[mask]
+                    if model=='StructGNN':target=np.pad(target,(0,len(tokens)-len(target)))
+                    probabilities=np.zeros((len(target),len(self.vocabulary)),dtype=np.float32)
+                    prediction=target.copy();prediction[1]=(prediction[1]+1)%len(self.vocabulary)
+                    probabilities[np.arange(len(target)),prediction]=1.
+                    native['title'].append(entry['name']);native['true_seq'].append(target);native['pred_probs'].append(probabilities)
+                root=f'model_zoom/{dataset}/{model}'
+                self.results[root+'/results.pt']=self.pack(native)
+                self.results[root+'/model_param.json']=json.dumps(dict(data_name=dataset,method=model,augment_eps=0.,seed=111)).encode()
+        for dataset in ['PDB','CATH4.3_noise0.5']:
+            root=f'model_zoom/{dataset}/StructGNN'
+            self.results[root+'/results.pt']=self.pack(dict(title=['raw-only'],true_seq=[np.array([4])],pred_probs=[np.array([[0,0,0,0,1,0]],dtype=np.float32)]))
+        self.write_archive(self.raw/'model_zoom.tar.gz',self.results)
+        self.write_archive(self.raw/'data.tar.gz',self.inputs)
+        cls=runpy.run_path(str((ROOT / 'benchmarks/proteininvbench')/'build.py'))['ProteinInvBench']
+        output=self.directory.parent/'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory/'build.py')).main_from_args(['--source',str(self.raw),'--output',str(output)])
+        self.frames={p.stem:pd.read_parquet(p) for p in output.glob('*.parquet')}
+
+    def pack(self,record):
+        names=['transformers','transformers.models','transformers.models.esm','transformers.models.esm.tokenization_esm']
+        modules={name:types.ModuleType(name) for name in names}
+        tokenizer_type=type('EsmTokenizer',(),{'__module__':names[-1]})
+        modules[names[-1]].EsmTokenizer=tokenizer_type
+        tokenizer=tokenizer_type();tokenizer.all_tokens=self.vocabulary
+        tokenizer._token_to_id={token:i for i,token in enumerate(self.vocabulary)}
+        with patch.dict(sys.modules,modules):return pickle.dumps(dict(record,tokenizer=tokenizer),protocol=2)
+
+    @staticmethod
+    def write_archive(path,members):
+        with tarfile.open(path,'w:gz') as archive:
+            for name,content in members.items():
+                info=tarfile.TarInfo(name);info.size=len(content)
+                archive.addfile(info,io.BytesIO(content))
+
+    def test_native_targets_full_probabilities_and_padding_convention(self):
+        result=_proteininvbench(self.directory,self.frames,self.metadata)
+        self.assertEqual(result,dict(source_responses=12,source_traces=12,source_subjects=6,source_items=8,
+            source_original_proteins=4,source_assets=0,source_raw_only_collections=2,source_raw_only_predictions=2))
+        self.assertGreater(self.frames['traces'].trace.str.len().max(),16000)
+        self.assertIn(float(np.float32(2/3)),self.frames['responses'].response.tolist())
+        shuffled={name:frame.iloc[::-1].reset_index(drop=True) for name,frame in self.frames.items()}
+        self.assertEqual(_proteininvbench(self.directory,shuffled,self.metadata),result)
+
+    def test_corrupted_tables_fail_complete_original_record_checks(self):
+        cases=['grade','null_grade','subject_link','item_link','content','reference','rule','verifier','features','raw_item_id',
+               'configuration','condition','trial','trace_title','trace_probabilities','trace_target','trace_vocabulary',
+               'source_row','input_member','configuration_member','missing_response','missing_trace','duplicate_trace']
+        for case in cases:
+            frames={name:frame.copy(deep=True) for name,frame in self.frames.items()}
+            responses,items,traces=[frames[name] for name in ['responses','items','traces']]
+            if case=='grade':responses.loc[0,'response']=0.123
+            elif case=='null_grade':responses.loc[0,'response']=None
+            elif case=='subject_link':responses.loc[0,'subject_id']=next(x for x in frames['subjects'].subject_id if x!=responses.loc[0,'subject_id'])
+            elif case=='item_link':responses.loc[0,'item_id']=next(x for x in items.item_id if x!=responses.loc[0,'item_id'])
+            elif case=='content':items.loc[0,'content']='{}'
+            elif case in ['reference','rule']:
+                criterion=json.loads(items.loc[0,'grading_criterion'])
+                criterion['reference_answer' if case=='reference' else 'rule']='{}'
+                items.loc[0,'grading_criterion']=json.dumps(criterion)
+            elif case=='verifier':items.loc[0,'verifier']='{}'
+            elif case=='features':items.loc[0,'item_features']='dataset=unknown'
+            elif case=='raw_item_id':items.loc[0,'raw_item_id']='unknown'
+            elif case=='configuration':frames['subjects'].loc[0,'subject_features_extra']='configuration={}'
+            elif case=='condition':responses.loc[0,'test_condition']='different_protocol'
+            elif case=='trial':responses.loc[0,'trial']=2
+            elif case=='missing_response':frames['responses']=responses.iloc[1:]
+            elif case=='missing_trace':frames['traces']=traces.iloc[1:]
+            elif case=='duplicate_trace':traces.loc[0,'trace']=traces.loc[1,'trace']
+            else:
+                trace=json.loads(traces.loc[0,'trace'])
+                if case=='trace_title':trace['record']['title']='wrong'
+                elif case=='trace_probabilities':trace['record']['pred_probs'][0][0]+=0.0001
+                elif case=='trace_target':trace['record']['true_seq'][0]=99
+                elif case=='trace_vocabulary':trace['vocabulary'][4]='X'
+                elif case=='source_row':trace['source_row']=999
+                elif case=='input_member':trace['input_member']='wrong input'
+                elif case=='configuration_member':trace['configuration_member']='wrong run'
+                traces.loc[0,'trace']=json.dumps(trace)
+            with self.subTest(case=case),self.assertRaises((ValueError,KeyError,IndexError,RuntimeError)):
+                _proteininvbench(self.directory,frames,self.metadata)
+
+    def test_changed_original_input_grader_or_layout_is_rejected(self):
+        member=next(iter(self.inputs));rows=[json.loads(line) for line in self.inputs[member].splitlines()]
+        rows[0]['coords']['CA'][0][0]+=0.1
+        self.write_archive(self.raw/'data.tar.gz',dict(self.inputs,**{member:b'\n'.join(json.dumps(row).encode() for row in rows)+b'\n'}))
+        with self.assertRaises((ValueError,KeyError)):_proteininvbench(self.directory,self.frames,self.metadata)
+        self.write_archive(self.raw/'data.tar.gz',self.inputs)
+        profile=self.metadata['grading']['verifiers']['native'];path=self.raw/profile['file'];original=path.read_bytes()
+        path.write_bytes(b'changed grader')
+        with self.assertRaises(ValueError):_proteininvbench(self.directory,self.frames,self.metadata)
+        path.write_bytes(original)
+        self.metadata['build']['parameters']['preprocessing']['StructGNN']='full'
+        with self.assertRaises(ValueError):_proteininvbench(self.directory,self.frames,self.metadata)
+
+
 class ThreeEEDSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)

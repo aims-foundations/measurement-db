@@ -30903,6 +30903,117 @@ def _threeeed(directory, tables, metadata):
         source_standalone_evaluation_responses=sum(count for run, count in run_counts.items() if run != 'final_6384'))
 
 
+def _proteininvbench(directory, tables, metadata):
+    import hashlib
+    import io
+    import tarfile
+    import numpy as np
+    from measurement_db.scripts.curate_benchmarks.read_native_pickle import read_native_pickle, native_json_value
+
+    raw=Path(directory)/'raw'
+    profile=metadata['grading']['verifiers']['native']
+    _check(hashlib.sha256((raw/profile['file']).read_bytes()).hexdigest(),profile['sha256'],'ProteinInvBench original grading notebook')
+    _check(metadata['benchmark']['response_scale'],dict(kind='interval',min=0,max=1,direction='higher_is_better'),
+           'ProteinInvBench recovery scale')
+    layouts=dict(StructGNN='finite_padded',GraphTrans='finite_padded',GCA='finite_padded',ProteinMPNN='full',GVP='full',
+                 AlphaDesign='finite_compact',PiFold='finite_compact',KWDesign='finite_compact')
+    _check(metadata['build']['parameters']['preprocessing'],layouts,'ProteinInvBench original per-model layouts')
+    inputs, sources, configurations={}, {}, {}
+    raw_only_collections=raw_only_records=0
+    with tarfile.open(raw/'model_zoom.tar.gz','r|gz') as archive:
+        for member in archive:
+            if not member.isfile():continue
+            if member.name.endswith('/model_param.json'):
+                configurations[member.name.rsplit('/',1)[0]]=json.load(archive.extractfile(member))
+            if not member.name.endswith('/results.pt'):continue
+            _,dataset,model,_=member.name.split('/')
+            record=read_native_pickle(io.BytesIO(archive.extractfile(member).read()))
+            if dataset not in ['CATH4.2','CATH4.3']:
+                raw_only_collections+=1;raw_only_records+=len(record['title']);continue
+            _check(len(record['title'])==len(record['true_seq'])==len(record['pred_probs']),True,'ProteinInvBench parallel original tensor arrays')
+            vocab=record['tokenizer'].state['all_tokens']
+            _check(record['tokenizer'].state['_token_to_id'],{token:i for i,token in enumerate(vocab)},'ProteinInvBench original vocabulary')
+            _check(len(record['title']),len(set(record['title'])),'ProteinInvBench unique protein within each run')
+            for index,(name,truth,probability) in enumerate(zip(record['title'],record['true_seq'],record['pred_probs']),1):
+                sources[member.name,index]=dict(dataset=dataset,model=model,name=name,truth=truth,probability=probability,
+                    vocabulary=vocab,run=member.name.rsplit('/',1)[0])
+    wanted={(value['dataset'],value['name']) for value in sources.values()}
+    with tarfile.open(raw/'data.tar.gz','r|gz') as archive:
+        for member in archive:
+            if member.name not in ['data/cath4.2/chain_set.jsonl','data/cath4.3/chain_set.jsonl']:continue
+            dataset=member.name.split('/')[1].upper()
+            for line in archive.extractfile(member):
+                record=json.loads(line)
+                key=dataset,record['name']
+                if key in wanted:
+                    _check(key in inputs,False,'ProteinInvBench unique original backbone')
+                    inputs[key]=record
+    _check(set(inputs),wanted,'ProteinInvBench every recorded protein has an original backbone')
+    _check(len(tables.get('assets', [])),0,'ProteinInvBench backbone coordinates are complete inline structured inputs')
+    items={row.item_id:row for row in tables['items'].itertuples()}
+    subjects={row.subject_id:row for row in tables['subjects'].itertuples()}
+    traces=tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces),len(sources),'ProteinInvBench one complete trace per original prediction')
+    seen=set();used_items=set();used_subjects=set();definitions=set();subject_definitions=set()
+    for row in tables['responses'].itertuples():
+        trace=json.loads(traces[row.response_id])
+        key=trace['source_member'],trace['source_row']
+        _check(key in seen,False,'ProteinInvBench no repeated or invented original result')
+        seen.add(key);source=sources[key]
+        dataset,model,name=source['dataset'],source['model'],source['name']
+        entry=inputs[dataset,name];truth=source['truth'];probability=source['probability'];vocab=source['vocabulary']
+        _check(trace['source_file'],'model_zoom.tar.gz','ProteinInvBench prediction archive attribution')
+        _check(trace['input_archive'],'data.tar.gz','ProteinInvBench original backbone archive attribution')
+        _check(trace['input_member'],f'data/{dataset.lower()}/chain_set.jsonl','ProteinInvBench original input member')
+        _check(trace['configuration_member'],source['run']+'/model_param.json','ProteinInvBench original configuration member')
+        _check(trace['record']['title'],name,'ProteinInvBench recorded protein identity')
+        _check(np.array_equal(np.asarray(trace['record']['true_seq']),truth),True,'ProteinInvBench unchanged native targets')
+        _check(np.array_equal(np.asarray(trace['record']['pred_probs']),probability),True,'ProteinInvBench complete unchanged probabilities')
+        _check(trace['vocabulary'],vocab,'ProteinInvBench unchanged native vocabulary')
+        _check(probability.shape,(len(truth),len(vocab)),'ProteinInvBench original tensor dimensions')
+        correct=sum(int(a)==int(b) for a,b in zip(truth,probability.argmax(axis=1)))
+        _check(row.response,float(np.float32(correct/len(truth))),'ProteinInvBench original float32 mean over all stored positions')
+        _check(row.trial,1,'ProteinInvBench one saved trial per run/protein')
+        _check(row.test_condition,f'dataset={dataset};metric=sequence_recovery;scope=unperturbed_CATH','ProteinInvBench explicit unperturbed scope')
+        config=configurations[source['run']]
+        _check((config['data_name'],config['method'],config['augment_eps']),(dataset,model,0),'ProteinInvBench native model/dataset and no hidden coordinate noise')
+        subject=subjects[row.subject_id];extra=_features(subject.subject_features_extra)
+        _check((subject.display_name,subject.harness),(model,'ProteinInvBench'),'ProteinInvBench original subject attribution')
+        _check((extra['source_run'],extra['source_release'],extra['preprocessing']),
+               (source['run'],'Zenodo-8031783',layouts[model]),'ProteinInvBench configuration scope')
+        _check(json.loads(extra['configuration']),config,'ProteinInvBench complete original configuration')
+        subject_definitions.add(json.dumps([model,config,source['run'],layouts[model]],sort_keys=True))
+        coordinates=np.stack([np.asarray(entry['coords'][atom],dtype=float) for atom in ['N','CA','C','O']],axis=1)
+        valid=[i for i in range(len(entry['seq'])) if np.isfinite(coordinates[i].sum())]
+        positions=list(range(len(entry['seq']))) if layouts[model]=='full' else valid
+        if layouts[model]=='finite_padded':positions=positions+[-1]*(len(entry['seq'])-len(valid))
+        expected=[vocab.index(entry['seq'][i]) if i>=0 else 0 for i in positions]
+        _check(truth.tolist(),expected,'ProteinInvBench target sequence aligned to original coordinate layout')
+        item=items[row.item_id]
+        content=dict(task=metadata['build']['parameters']['labels']['task'],backbone=native_json_value(entry['coords']))
+        _check(json.loads(item.content),content,'ProteinInvBench full backbone stimulus without target sequence substitution')
+        _check(item.raw_item_id,f'{dataset}/{name}','ProteinInvBench original protein identifier')
+        features=dict(dataset=dataset,source_protein=name)
+        _check(_features(item.item_features),features,'ProteinInvBench original input features')
+        reference=dict(amino_acid_sequence=entry['seq'],token_ids=expected,vocabulary=vocab,coordinate_positions=positions)
+        criterion=json.loads(item.grading_criterion)
+        _check(json.loads(criterion['reference_answer']),reference,'ProteinInvBench independent complete reference and layout')
+        _check(criterion['rule'],metadata['grading']['rule'],'ProteinInvBench declared native reduction')
+        verifier=json.loads(item.verifier)
+        _check((verifier['class'],json.loads(verifier['spec'])),('exact_matcher',profile),'ProteinInvBench notebook provenance')
+        _check(pd.isna(item.asset_manifest) or item.asset_manifest == '[]',True,'ProteinInvBench no invented external asset link')
+        definitions.add(json.dumps([content,features,reference,criterion['rule'],verifier],sort_keys=True))
+        used_items.add(row.item_id);used_subjects.add(row.subject_id)
+    _check(seen,set(sources),'ProteinInvBench complete released unperturbed CATH observations')
+    _check(used_items,set(items),'ProteinInvBench no extra or unused item definitions')
+    _check(used_subjects,set(subjects),'ProteinInvBench no extra or unused configurations')
+    _check(len(items),len(definitions),'ProteinInvBench canonical stimulus and grading definitions')
+    _check(len(subjects),len(subject_definitions),'ProteinInvBench complete distinct run configurations')
+    return dict(source_responses=len(sources),source_traces=len(sources),source_subjects=len(subjects),source_items=len(items),
+        source_original_proteins=len(inputs),source_assets=0,source_raw_only_collections=raw_only_collections,
+        source_raw_only_predictions=raw_only_records)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -30910,6 +31021,8 @@ def verify_native_results(directory, tables_directory=None):
     metadata = yaml.safe_load((directory / "metadata.yaml").read_text())
     if directory.name == 'oasst':
         return _oasst(directory, tables, metadata)
+    if directory.name == 'proteininvbench':
+        return _proteininvbench(directory, tables, metadata)
     if directory.name == 'threeeed':
         return _threeeed(directory, tables, metadata)
     if directory.name == 'tumlu':

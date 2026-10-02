@@ -57,6 +57,13 @@ class _DataUnpickler(pickle.Unpickler):
         if module == "fastchat.conversation" and name in {"Conversation", "SeparatorStyle"}:
             # A captured prompt template is data; never import FastChat or render it.
             return type(name, (StoredRecord,), {"source_type": module + "." + name})
+        if (module, name) in {
+            ("transformers.models.esm.tokenization_esm", "EsmTokenizer"),
+            ("transformers.tokenization_utils", "Trie"),
+        }:
+            # ProteinInvBench records its vocabulary with the prediction tensors.
+            # Read that state without importing Transformers or calling a tokenizer.
+            return type(name, (StoredRecord,), {"source_type": module + "." + name})
         # These scientific objects remain inert records. In particular, never
         # import a serialized calculator or instantiate an upstream model.
         scientific_records = {

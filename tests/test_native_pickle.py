@@ -112,6 +112,25 @@ def test_tensor_view_preserves_offset_and_stride():
     np.testing.assert_array_equal(result, [[1, 3, 5], [7, 9, 11]])
 
 
+def test_recorded_protein_vocabulary_is_data_without_transformers_imports(tmp_path):
+    import sys
+    path = tmp_path / "protein_vocabulary.pkl"
+    path.write_bytes(b"ctransformers.models.esm.tokenization_esm\nEsmTokenizer\n(tR"
+                     b"(V_token_to_id\n(VA\nI5\ndVtokens_trie\n"
+                     b"ctransformers.tokenization_utils\nTrie\n(tR(dbdb.")
+    before = set(sys.modules)
+    restored = native_json_value(read_native_pickle(path))
+    assert restored == {
+        "stored_type": "transformers.models.esm.tokenization_esm.EsmTokenizer", "args": [], "kwargs": {},
+        "state": {"_token_to_id": {"A": 5}, "tokens_trie": {
+            "stored_type": "transformers.tokenization_utils.Trie", "args": [], "kwargs": {}, "state": {}}},
+    }
+    assert not any(name.startswith("transformers") for name in set(sys.modules) - before)
+    path.write_bytes(b"ctransformers.models.esm.tokenization_esm\nload_vocab_file\n.")
+    with pytest.raises(pickle.UnpicklingError, match="Unsupported native data global"):
+        read_native_pickle(path)
+
+
 @pytest.mark.parametrize("offset,shape,strides", [(-1, (2,), (1,)), (0, (99,), (1,)),
     (0, (2,), (-1,)), (0, (2, 2), (1,)), (20, (1,), (1,))])
 def test_invalid_tensor_reference(offset, shape, strides):
