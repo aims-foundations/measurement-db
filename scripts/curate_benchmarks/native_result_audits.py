@@ -31014,6 +31014,175 @@ def _proteininvbench(directory, tables, metadata):
         source_raw_only_predictions=raw_only_records)
 
 
+def _vhelm(directory, tables, metadata):
+    import gzip
+    import hashlib
+    import re
+
+    raw = Path(directory) / 'raw'
+    with gzip.open(raw / 'catalog/schema.json.gz', 'rt') as stream:
+        schema = json.load(stream)
+    headline = {g['name']: g['environment']['main_name'] for g in schema['run_groups']
+                if g.get('environment', {}).get('main_name')}
+    source, events, cached_events = {}, defaultdict(list), set()
+    profiles = metadata['grading']['verifiers']
+    for metric, low, high, direction in [
+        ('exact_match', 0, 1, 'higher_is_better'), ('quasi_exact_match', 0, 1, 'higher_is_better'),
+        ('prometheus_vision', 1, 5, 'higher_is_better'), ('toxic_frac', 0, 1, 'lower_is_better')]:
+        scale = profiles[metric]['response_scale']
+        bounds = (min(scale['values']), max(scale['values'])) if scale['kind'] == 'discrete' else (scale['min'], scale['max'])
+        _check((bounds, scale['direction'], profiles[metric]['metric']), ((low, high), direction, metric),
+               'VHELM native metric scale and interpretation')
+    raw_only = 0
+    for path in sorted((raw / 'runs').rglob('run_spec.json.gz')):
+        with gzip.open(path, 'rt') as stream:
+            spec = json.load(stream)
+        scenario = spec['name'].split(':')[0]
+        metrics = {headline[group] for group in spec['groups'] if group in headline}
+        if scenario == 'image2webpage':
+            _check(metrics, set(), 'VHELM unranked webpage scope is explicit')
+            raw_only += 1
+            continue
+        _check(len(metrics), 1, 'VHELM original release headline metric')
+        metric = metrics.pop()
+        run = str(path.parent.relative_to(raw))
+        with gzip.open(path.with_name('per_instance_stats.json.gz'), 'rt') as stream:
+            stats = json.load(stream)
+        values, metric_records = {}, defaultdict(list)
+        for row in stats:
+            perturbation = row.get('perturbation')
+            projected = ({key: perturbation[key] for key in ('name', 'robustness', 'fairness', 'computed_on')
+                          if key in perturbation} if perturbation else None)
+            identity = (row['instance_id'], row['train_trial_index'], json.dumps(projected, sort_keys=True))
+            for measure in row['stats']:
+                if measure['name']['name'] != metric:
+                    continue
+                value = measure.get('mean')
+                if identity in values:
+                    _check(value, values[identity], 'VHELM repeated metric entry agrees')
+                values[identity] = value
+                metric_records[identity].append(measure)
+        with gzip.open(path.with_name('scenario_state.json.gz'), 'rt') as stream:
+            states = json.load(stream)['request_states']
+        used = set()
+        for position, state in enumerate(states, 1):
+            perturbation = state['instance'].get('perturbation')
+            projected = ({key: perturbation[key] for key in ('name', 'robustness', 'fairness', 'computed_on')
+                          if key in perturbation} if perturbation else None)
+            identity = (state['instance']['id'], state['train_trial_index'], json.dumps(projected, sort_keys=True))
+            _check(identity in used, False, 'VHELM unique native request and perturbation')
+            used.add(identity)
+            score = values.get(identity)
+            normalized = {**state, 'result': {k: v for k, v in state['result'].items() if k != 'cached'}}
+            signature = hashlib.sha256(json.dumps([scenario, metric, normalized], sort_keys=True, allow_nan=False).encode()).hexdigest()
+            cached = bool(state['result'].get('cached'))
+            if cached:
+                cached_events.add(signature)
+            location = run, position
+            source[location] = dict(native=state, metric=metric, score=score, scenario=scenario,
+                signature=signature, cached=cached, metric_records=metric_records.get(identity, []))
+            events[signature].append(location)
+        _check(set(values) <= used, True, 'VHELM no grades without original requests')
+    _check(bool(source), True, 'VHELM nonempty supported native observations')
+    expected_groups = []
+    for signature, locations in events.items():
+        if signature in cached_events:
+            by_grade = defaultdict(list)
+            for location in locations:
+                by_grade[source[location]['score']].append(location)
+            expected_groups.extend(frozenset(group) for group in by_grade.values())
+        else:
+            expected_groups.extend(frozenset([location]) for location in locations)
+
+    subjects = {}
+    for row in tables['subjects'].itertuples():
+        extra = _features(row.subject_features_extra)
+        configuration = json.loads(extra['generation_settings'])
+        _check(row.display_name, configuration['model'], 'VHELM literal source model label')
+        _check(row.harness, 'VHELM', 'VHELM harness attribution')
+        _check(extra['release'], 'v2.0.1', 'VHELM release attribution')
+        subjects[row.subject_id] = configuration
+    items = {row.item_id: row for row in tables['items'].itertuples()}
+    assets = tables['assets'].set_index('asset_id').to_dict('index')
+    traces = tables['traces'].set_index('response_id').trace.to_dict()
+    _check(len(traces), len(tables['responses']), 'VHELM exactly one complete trace per observation')
+    image_bytes, used_assets, used_items, used_subjects = {}, set(), set(), set()
+    seen_locations, actual_groups, item_definitions, subject_definitions = Counter(), [], set(), set()
+    item_aliases = defaultdict(set)
+    for row in tables['responses'].itertuples():
+        trace = json.loads(traces[row.response_id])
+        aliases = trace['source_aliases']
+        locations = [(alias['run_key'], alias['source_row']) for alias in aliases]
+        _check(bool(locations) and len(locations) == len(set(locations)), True, 'VHELM unique nonempty source aliases')
+        original = source[locations[0]]
+        _check(trace['native_record'], original['native'], 'VHELM unchanged complete original request/result')
+        _check(trace['metric_records'], original['metric_records'], 'VHELM complete original metric evidence')
+        _check(trace['metric'], original['metric'], 'VHELM source-declared headline metric')
+        score = None if pd.isna(row.response) else float(row.response)
+        _check(score, original['score'], 'VHELM original grade or explicitly absent judgment')
+        for alias, location in zip(aliases, locations):
+            other = source[location]
+            _check(alias['cached'], other['cached'], 'VHELM original cache flag for every alias')
+            _check((other['signature'], other['score']), (original['signature'], score), 'VHELM aliases are identical cache observations')
+            seen_locations[location] += 1
+        actual_groups.append(frozenset(locations))
+        state, metric, scenario = original['native'], original['metric'], original['scenario']
+        configuration = {key: value for key, value in state['request'].items() if key not in ('prompt', 'multimodal_prompt')}
+        _check(subjects[row.subject_id], configuration, 'VHELM full request configuration without stimulus leakage')
+        subject_definitions.add(json.dumps(configuration, sort_keys=True))
+        item = items[row.item_id]
+        item_aliases[row.item_id].add(scenario + '/' + str(state['instance']['id']))
+        content = dict(text=state['request']['prompt'], multimedia_elements=state['request']['multimodal_prompt']['media_objects'])
+        _check(json.loads(item.content), content, 'VHELM complete ordered multimodal stimulus')
+        features = _features(item.item_features)
+        _check((features['scenario'], json.loads(features['perturbation'])),
+               (scenario, state['instance'].get('perturbation')), 'VHELM full native perturbation attributes')
+        mode = profiles[metric]['reference_mode']
+        references = ([ref['output']['text'] for ref in state['instance']['references'] if 'correct' in ref.get('tags', [])]
+                      if mode == 'correct_tagged' else ([state['instance']['references'][0]['output']['text']] if mode == 'first' else []))
+        criterion = dict(reference_answer=json.dumps(references, ensure_ascii=False) if references else None,
+            rule=profiles[metric]['criterion'], response_scale=profiles[metric]['response_scale'])
+        _check(json.loads(item.grading_criterion), criterion, 'VHELM native reference and metric-specific scale')
+        verifier = json.loads(item.verifier)
+        _check(verifier['class'], profiles[metric]['verifier_class'], 'VHELM verifier kind')
+        _check(json.loads(verifier['spec']), profiles[metric], 'VHELM complete verifier provenance')
+        manifest = []
+        for media in content['multimedia_elements']:
+            if not media.get('location'):
+                continue
+            location = media['location']
+            if location not in image_bytes:
+                relative = location.removeprefix('benchmark_output/scenarios/')
+                relative = re.sub(r'[^A-Za-z0-9._/-]', lambda m: f'_x{ord(m[0]):02x}_', relative)
+                data = (raw / 'assets' / relative).read_bytes()
+                digest = hashlib.sha256(data).hexdigest()
+                _check(digest in assets, True, 'VHELM complete original input image')
+                _check(assets[digest]['data'] == data and assets[digest]['byte_size'] == len(data), True, 'VHELM unchanged input bytes')
+                image_bytes[location] = digest
+            digest = image_bytes[location]
+            used_assets.add(digest)
+            manifest.append(dict(asset_id=digest, path=location, media_type=media['content_type'], role='input', ordinal=len(manifest)+1))
+        _check(json.loads(item.asset_manifest), manifest, 'VHELM ordered input image associations')
+        _check(row.test_condition, f'release=v2.0.1;scenario={scenario};metric={metric}', 'VHELM explicit score interpretation')
+        item_definitions.add(json.dumps([content, features, criterion, verifier, manifest], sort_keys=True))
+        used_items.add(row.item_id);used_subjects.add(row.subject_id)
+    _check(Counter(actual_groups), Counter(expected_groups), 'VHELM exact cache grouping without lost or invented observations')
+    _check(seen_locations, Counter({location: 1 for location in source}), 'VHELM every original supported source record accounted for once')
+    _check(set(items), used_items, 'VHELM no additional or unobserved items')
+    _check(set(subjects), used_subjects, 'VHELM no additional or unobserved configurations')
+    _check(set(assets), used_assets, 'VHELM no additional or unlinked assets')
+    _check(len(items), len(item_definitions), 'VHELM canonical stimulus/grading definitions')
+    _check(len(subjects), len(subject_definitions), 'VHELM canonical generation configurations')
+    for item_id, aliases in item_aliases.items():
+        _check(items[item_id].raw_item_id in aliases, True, 'VHELM retained original item identifier')
+    for _, group in tables['responses'].groupby(['subject_id', 'item_id', 'test_condition', 'interactors'], dropna=False):
+        _check(sorted(group.trial.tolist()), list(range(1, len(group)+1)),
+               'VHELM distinct contiguous trial numbers for repeated observations')
+    return dict(source_records=len(source), source_responses=len(expected_groups), source_traces=len(expected_groups),
+        source_items=len(item_definitions), source_subjects=len(subject_definitions), source_assets=len(used_assets),
+        source_cache_aliases=len(source)-len(expected_groups), source_raw_only_runs=raw_only)
+
+
 def verify_native_results(directory, tables_directory=None):
     directory = Path(directory)
     root = Path(tables_directory) if tables_directory is not None else directory / "formatted_tables"
@@ -31023,6 +31192,8 @@ def verify_native_results(directory, tables_directory=None):
         return _oasst(directory, tables, metadata)
     if directory.name == 'proteininvbench':
         return _proteininvbench(directory, tables, metadata)
+    if directory.name == 'vhelm':
+        return _vhelm(directory, tables, metadata)
     if directory.name == 'threeeed':
         return _threeeed(directory, tables, metadata)
     if directory.name == 'tumlu':

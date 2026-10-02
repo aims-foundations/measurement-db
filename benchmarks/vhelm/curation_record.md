@@ -1,0 +1,3 @@
+- Preserve every supported v2.0.1 request, original image, full output and native grade; use the metric named in the original release schema. Remove the legacy 80-item and one-run caps.
+- Keep perturbed inputs separate and retain complete native perturbation metadata. Identical cached exports share an observation with explicit source aliases; missing judgments remain null.
+- Keep the 18 image2webpage runs in raw pending recovery of their 300 original screenshots. Pin original GCS object generations and checksums; perform no model or judge calls.

@@ -1072,3 +1072,5 @@ SOURCE_AUDITS["wonderbread"] = verify_native_results
 SOURCE_AUDITS["threeeed"] = verify_native_results
 
 SOURCE_AUDITS["proteininvbench"] = verify_native_results
+
+SOURCE_AUDITS["vhelm"] = verify_native_results

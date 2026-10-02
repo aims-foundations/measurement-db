@@ -1,0 +1,160 @@
+benchmark:
+  description: Original VHELM vision-language requests, image inputs, recorded outputs and release-declared task
+    grades.
+  testing_condition: Use the headline metric declared by each run group in the original v2.0.1 schema. Preserve
+    original and perturbed requests, full generation settings and missing grades. Identical cached records copied
+    between run exports are aliases of one observation, retaining every source location; unproven independent repeats
+    are not collapsed. The 18 image2webpage runs remain raw-only because their 300 input screenshots are absent
+    from the public image tree and no headline metric is declared for them in this release schema. No arbitrary
+    run or item cap, new inference or new judging.
+  paper_url: https://arxiv.org/abs/2410.07112
+  data_source_url: https://storage.googleapis.com/crfm-helm-public/vhelm/benchmark_output/runs/v2.0.1/
+  subject_type: model
+  item_type: task
+  license: The captured HELM code is Apache-2.0. Underlying visual datasets retain their own source licenses; the
+    public run exports do not supply a single replacement license for all inputs.
+  citation: "@article{lee2024vhelm,\n  title={VHELM: A Holistic Evaluation of Vision Language Models},\n  author={Lee,\
+    \ Tony and Tu, Haoqin and Wong, Chi Heem and Zheng, Wenhao and Zhou, Yiyang and Mai, Yifan and Roberts, Josselin\
+    \ Somerville and Yasunaga, Michihiro and Yao, Huaxiu and Xie, Cihang and Liang, Percy},\n  journal={Advances\
+    \ in Neural Information Processing Systems (NeurIPS) Datasets and Benchmarks Track},\n  year={2024}\n}"
+  tags:
+  - vision_language
+  - holistic_eval
+  - multimodal
+  - helm
+  modality:
+  - image
+  - text
+  domain:
+  - vision_language
+  - general
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-10
+  release: public
+  name: VHELM
+  version: v2.0.1
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      schema: catalog/schema.json.gz
+      runs: runs/**/run_spec.json.gz
+      asset_prefix: benchmark_output/scenarios/
+      asset_folder: assets/
+    labels:
+      harness: VHELM
+      release: v2.0.1
+    identity:
+      perturbation_fields: name,robustness,fairness,computed_on
+    raw_only_scenarios:
+      image2webpage: Missing original screenshots and no release-declared headline metric. Preserve the complete
+        run files as raw-only evidence.
+grading:
+  rule: Use the original release schema to select the task metric. Import its native per-instance mean without recomputation.
+    References and scale remain specific to that metric.
+  verifiers:
+    exact_match:
+      kind: published_exact_match
+      verifier_class: exact_matcher
+      reference_mode: correct_tagged
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': incorrect
+          '1': correct
+      criterion: Retain the released exact-match grade against the accepted references. The original request contains
+        the answer options and any prompt-specific output mapping.
+      metric: exact_match
+      source_code_status: Inspected reference implementation. The exact historical code revision is not recorded
+        by these run exports.
+    quasi_exact_match:
+      kind: published_quasi_exact_match
+      verifier_class: exact_matcher
+      reference_mode: correct_tagged
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': incorrect
+          '1': correct
+      criterion: Retain the released reference-match grade after the native HELM normalization. Do not substitute
+        a different match metric.
+      metric: quasi_exact_match
+      source_code_status: Inspected reference implementation. The exact historical code revision is not recorded
+        by these run exports.
+    prometheus_vision:
+      kind: published_vision_judge
+      verifier_class: judge
+      reference_mode: first
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/prometheus_vision_critique_metrics.py
+      response_scale:
+        kind: interval
+        min: 1
+        max: 5
+        direction: higher_is_better
+      criterion: Retain the released Prometheus-Vision score on its original 1–5 scale. The reference implementation
+        uses the first image, first reference and first completion. Missing judgments remain null.
+      metric: prometheus_vision
+      source_code_status: Inspected reference implementation. The exact historical code revision is not recorded
+        by these run exports.
+    toxic_frac:
+      kind: published_toxicity_metric
+      verifier_class: judge
+      reference_mode: none
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/toxicity_metrics.py
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: lower_is_better
+      criterion: Retain the released fraction of completions whose Perspective toxicity score meets the native 0.5
+        threshold. Lower values indicate less toxicity; no new API assessment is made.
+      metric: toxic_frac
+      source_code_status: Inspected reference implementation. The exact historical code revision is not recorded
+        by these run exports.
+sources:
+  upstream:
+  - name: catalog
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v2.0.1
+    prefix: vhelm/benchmark_output/runs/v2.0.1/
+    tree_sha256: 455eedbbbcb97de99a6473dbbc6b1ff7ccc997e526aaabf6bcc9f6b286521156
+    files:
+    - match: '[^/]+\.json'
+      path: catalog/{path}
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v2.0.1
+    prefix: vhelm/benchmark_output/runs/v2.0.1/
+    tree_sha256: 0ad93de5a868a49f0a3635d4218ee420eab4b175d91111361714951acbea404a
+    files:
+    - match: (?P<before>[^/]*?)model=(?P<model>[^/,]+)(?P<after>[^/]*)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests|scenario_state)\.json
+      path: runs/{model}/{before}/{after}/{kind}.json
+  - name: assets
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v2.0.1
+    prefix: vhelm/benchmark_output/scenarios/
+    tree_sha256: 913448052a5f714b3e8672c4b2fd8fa05f145e296185b0d3f39219a297b49877
+    files:
+    - match: (?:a_okvqa|bingo|crossmodal_3600|exams_v|fair_face|flickr30k|gqa|hateful_memes|math_vista|mementos|mm_safety_bench|mme|mmmu|pairs|pope|real_world_qa|seed_bench|unicorn|vibe_eval|viz_wiz|vqa)/.*
+      path: assets/{path}
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: LICENSE|docs/vhelm\.md|src/helm/benchmark/metrics/.*|src/helm/benchmark/static/schema_vhelm\.yaml|src/helm/benchmark/presentation/run_entries_vhelm\.conf
+      path: grader/{path}

@@ -213,6 +213,146 @@ class ProteinInvBenchSourceAuditTests(unittest.TestCase):
         with self.assertRaises(ValueError):_proteininvbench(self.directory,self.frames,self.metadata)
 
 
+from measurement_db.scripts.curate_benchmarks.native_result_audits import _vhelm
+
+class VHELMSourceAuditTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(dir=ROOT)
+        self.addCleanup(temporary.cleanup)
+        self.addCleanup(build_base._tables.reload)
+        build_base._tables.reload()
+        self.directory = Path(temporary.name) / 'vhelm'
+        self.raw = self.directory / 'raw'
+        self.raw.mkdir(parents=True)
+        self.metadata = yaml.safe_load(((ROOT / 'benchmarks/vhelm') / 'metadata.yaml').read_text())
+        (self.directory / 'metadata.yaml').write_text(yaml.safe_dump(self.metadata, sort_keys=False))
+        self.write_json('catalog/schema.json.gz', dict(run_groups=[dict(name=name, environment=dict(main_name=metric))
+            for name, metric in [('qa', 'exact_match'), ('caption', 'prometheus_vision'), ('safety', 'toxic_frac')]]))
+        image = base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aemkAAAAASUVORK5CYII=')
+        self.asset = self.raw / 'assets/fixture/image.png'
+        self.asset.parent.mkdir(parents=True)
+        self.asset.write_bytes(image)
+        base = self.state('base', 'Question A?')
+        repeat = self.state('repeat', 'Question B?')
+        original = self.state('variant', 'Question C?')
+        variant = self.state('variant', 'Translated C?', perturbation=dict(
+            name='translation', robustness=True, fairness=False, computed_on='perturbed', language_code='zh;extra=x'))
+        regraded = self.state('regraded', 'Question D?')
+        self.write_run('runs/qa/original', 'qa', [(base, 1), (repeat, 0), (original, 1), (variant, 0), (regraded, 1)])
+        cached_base, cached_regraded = copy.deepcopy(base), copy.deepcopy(regraded)
+        cached_base['result']['cached'] = cached_regraded['result']['cached'] = True
+        self.write_run('runs/qa/copied', 'qa', [(cached_base, 1), (repeat, 0), (cached_regraded, 0)])
+        caption = self.state('caption', 'Describe the image.', max_tokens=256)
+        missing = self.state('missing', 'Another description.', max_tokens=256)
+        self.write_run('runs/caption/one', 'caption', [(caption, 4), (missing, None)])
+        cached_missing = copy.deepcopy(missing)
+        cached_missing['result']['cached'] = True
+        self.write_run('runs/caption/copied', 'caption', [(cached_missing, None)])
+        self.write_run('runs/safety/one', 'safety', [(self.state('safety', 'Assess this example.'), 0.8)])
+        self.write_json('runs/raw-only/run_spec.json.gz', dict(name='image2webpage:fixture', groups=['webpage']))
+        cls = runpy.run_path(str((ROOT / 'benchmarks/vhelm') / 'build.py'))['VHELM']
+        output = self.directory.parent / 'tables'
+        with contextlib.redirect_stdout(io.StringIO()):
+            cls(str(self.directory / 'build.py')).main_from_args(['--source', str(self.raw), '--output', str(output)])
+        self.frames = {path.stem: pd.read_parquet(path) for path in output.glob('*.parquet')}
+
+    @staticmethod
+    def state(identifier, text, max_tokens=64, perturbation=None):
+        media = [dict(content_type='text', text=text),
+                 dict(content_type='image/png', location='benchmark_output/scenarios/fixture/image.png')]
+        instance = dict(id=identifier, input=dict(multimedia_content=dict(media_objects=media)),
+            references=[dict(output=dict(text='yes'), tags=['correct']), dict(output=dict(text='no'), tags=[])])
+        if perturbation is not None:
+            instance['perturbation'] = perturbation
+        return dict(instance=instance, train_trial_index=0,
+            request=dict(model='fixture/vlm', prompt=text, multimodal_prompt=dict(media_objects=media),
+                         temperature=0., max_tokens=max_tokens, stop_sequences=['===;end\n']),
+            result=dict(cached=False, success=True, request_time=0.25,
+                        completions=[dict(text='Full original output. ' * 1000, tokens=[], logprob=0.)]))
+
+    def write_json(self, relative, value):
+        path = self.raw / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(path, 'wt') as stream:
+            json.dump(value, stream)
+
+    def write_run(self, root, scenario, records):
+        metric = dict(qa='exact_match', caption='prometheus_vision', safety='toxic_frac')[scenario]
+        self.write_json(root + '/run_spec.json.gz', dict(name=scenario + ':fixture', groups=[scenario]))
+        self.write_json(root + '/scenario_state.json.gz', dict(request_states=[row for row, _ in records]))
+        grades = []
+        for row, score in records:
+            stat = dict(name=dict(name=metric), count=0 if score is None else 1)
+            if score is not None:
+                stat['mean'] = score
+            entry = dict(instance_id=row['instance']['id'], train_trial_index=0,
+                stats=[stat, dict(name=dict(name='not_the_headline_metric'), mean=0.25)])
+            if row['instance'].get('perturbation'):
+                entry['perturbation'] = dict(row['instance']['perturbation'])
+            grades.append(entry)
+            if row['instance']['id'] == 'base':
+                grades.append(copy.deepcopy(entry))
+        self.write_json(root + '/per_instance_stats.json.gz', grades)
+
+    def test_complete_native_records_cache_aliases_and_metric_scales(self):
+        result = _vhelm(self.directory, self.frames, self.metadata)
+        self.assertEqual(result, dict(source_records=12, source_responses=10, source_traces=10,
+            source_items=8, source_subjects=2, source_assets=1, source_cache_aliases=2, source_raw_only_runs=1))
+        self.assertEqual(self.frames['responses'].response.isna().sum(), 1)
+        self.assertGreater(self.frames['traces'].trace.str.len().min(), 16000)
+        self.assertEqual(self.frames['responses'].trial.max(), 2)
+        shuffled = {name: frame.iloc[::-1].reset_index(drop=True) for name, frame in self.frames.items()}
+        self.assertEqual(_vhelm(self.directory, shuffled, self.metadata), result)
+
+    def test_corruption_of_final_associations_and_payload_is_rejected(self):
+        cases = ['grade', 'missing_grade', 'subject_link', 'item_link', 'configuration', 'content', 'perturbation',
+            'criterion', 'verifier', 'asset_bytes', 'asset_link', 'condition', 'trace_record', 'trace_metric',
+            'trace_grade_evidence', 'alias_flag', 'alias_location', 'missing_trace', 'missing_response', 'trial', 'item_alias']
+        for case in cases:
+            frames = {name: frame.copy(deep=True) for name, frame in self.frames.items()}
+            responses, items, traces = [frames[name] for name in ['responses', 'items', 'traces']]
+            if case == 'grade': responses.loc[0, 'response'] = 0.75
+            elif case == 'missing_grade': responses.loc[responses.response.first_valid_index(), 'response'] = None
+            elif case == 'subject_link': responses.loc[0, 'subject_id'] = next(x for x in frames['subjects'].subject_id if x != responses.loc[0, 'subject_id'])
+            elif case == 'item_link': responses.loc[0, 'item_id'] = next(x for x in items.item_id if x != responses.loc[0, 'item_id'])
+            elif case == 'configuration':
+                features = _features(frames['subjects'].loc[0, 'subject_features_extra'])
+                config = json.loads(features['generation_settings']); config['max_tokens'] = 999
+                features['generation_settings'] = json.dumps(config).replace(';', r'\u003b').replace('=', r'\u003d')
+                frames['subjects'].loc[0, 'subject_features_extra'] = features_string(canonicalize_features(features))
+            elif case == 'content': items.loc[0, 'content'] = '{}'
+            elif case == 'item_alias': items.loc[0, 'raw_item_id'] = 'unknown/item'
+            elif case == 'perturbation': items.loc[0, 'item_features'] = 'scenario=qa;perturbation=null'
+            elif case == 'criterion': items.loc[0, 'grading_criterion'] = '{}'
+            elif case == 'verifier': items.loc[0, 'verifier'] = '{}'
+            elif case == 'asset_bytes': frames['assets'].at[0, 'data'] = b'changed original image'
+            elif case == 'asset_link': items.loc[0, 'asset_manifest'] = '[]'
+            elif case == 'condition': responses.loc[0, 'test_condition'] = 'wrong native condition'
+            elif case == 'missing_trace': frames['traces'] = traces.iloc[1:]
+            elif case == 'missing_response': frames['responses'] = responses.iloc[1:]
+            elif case == 'trial': responses.loc[0, 'trial'] = 9
+            else:
+                trace = json.loads(traces.loc[0, 'trace'])
+                if case == 'trace_record': trace['native_record']['result']['completions'][0]['text'] = 'clipped'
+                elif case == 'trace_metric': trace['metric'] = 'wrong_metric'
+                elif case == 'trace_grade_evidence': trace['metric_records'] = []
+                elif case == 'alias_flag': trace['source_aliases'][0]['cached'] = not trace['source_aliases'][0]['cached']
+                elif case == 'alias_location': trace['source_aliases'][0]['source_row'] = 999
+                traces.loc[0, 'trace'] = json.dumps(trace)
+            with self.subTest(case=case), self.assertRaises((ValueError, KeyError, IndexError, RuntimeError)):
+                _vhelm(self.directory, frames, self.metadata)
+
+    def test_changed_original_image_or_scale_is_rejected(self):
+        original = self.asset.read_bytes()
+        self.asset.write_bytes(b'changed image')
+        with self.assertRaises((ValueError, KeyError)):
+            _vhelm(self.directory, self.frames, self.metadata)
+        self.asset.write_bytes(original)
+        self.metadata['grading']['verifiers']['toxic_frac']['response_scale']['direction'] = 'higher_is_better'
+        with self.assertRaises((ValueError, KeyError)):
+            _vhelm(self.directory, self.frames, self.metadata)
+
+
 class ThreeEEDSourceAuditTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parent)
