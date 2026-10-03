@@ -142,6 +142,29 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(result["results"][0]["status"], "not_reported")
         self.assertEqual(result["results"][0]["job_url"], job["html_url"])
 
+    def test_github_copied_successful_jobs_keep_the_original_attempt_and_log(self):
+        self.batch(["alpha"], ["passed"], attempt=1)
+        original = {"id": 100, "name": "Reproduce alpha", "run_attempt": 1,
+                    "conclusion": "success", "html_url": "https://github.com/jobs/100",
+                    "started_at": "2026-10-03T20:00:00Z", "completed_at": "2026-10-03T20:01:00Z"}
+        copied = {**original, "id": 200, "run_attempt": 2, "html_url": "https://github.com/jobs/200"}
+        with patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}):
+            result = self.collect([["alpha"]], [original, copied])
+        row = result["results"][0]
+        self.assertEqual((row["status"], row["run_attempt"], row["job_url"]),
+                         ("passed", 1, original["html_url"]))
+
+    def test_new_successful_execution_without_an_artifact_cannot_reuse_an_old_pass(self):
+        self.batch(["alpha"], ["passed"], attempt=1)
+        original = {"id": 100, "name": "Reproduce alpha", "run_attempt": 1,
+                    "conclusion": "success", "started_at": "2026-10-03T20:00:00Z",
+                    "completed_at": "2026-10-03T20:01:00Z"}
+        rerun = {**original, "id": 200, "run_attempt": 2, "started_at": "2026-10-03T21:00:00Z",
+                 "completed_at": "2026-10-03T21:01:00Z"}
+        with patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}):
+            result = self.collect([["alpha"]], [original, rerun])
+        self.assertEqual(result["results"][0]["status"], "not_reported")
+
     def test_duplicate_selection_is_rejected(self):
         with self.assertRaises(ValueError):
             self.collect([["alpha"], ["alpha"]])

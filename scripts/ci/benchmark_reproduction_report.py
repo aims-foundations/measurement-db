@@ -84,7 +84,7 @@ def github_jobs() -> list[dict]:
         request = urllib.request.Request(
             f"{base}/repos/{repository}/actions/runs/{run_id}/jobs?filter=all&per_page=100&page={page}",
             headers={"Authorization": "Bearer " + os.environ["GITHUB_TOKEN"],
-                     "Accept": "application/vnd.github+json"},
+                     "Accept": "application/vnd.github+json", "Cache-Control": "no-cache"},
         )
         with urllib.request.urlopen(request, timeout=30) as response:
             batch = json.load(response)["jobs"]
@@ -138,6 +138,15 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
     for group in groups:
         name = "Reproduce " + ", ".join(group)
         job = latest_jobs.get(name, {})
+        # GitHub copies successful jobs into later attempts with new IDs but
+        # their original execution timestamps. Find the execution that actually
+        # produced the artifact, rather than treating the copy as a missing rerun.
+        if job.get("conclusion") == "success" and job.get("started_at") and job.get("completed_at"):
+            executions = [previous for previous in jobs if previous["name"] == name and
+                          previous.get("conclusion") == "success" and
+                          previous.get("started_at") == job["started_at"] and
+                          previous.get("completed_at") == job["completed_at"]]
+            job = min(executions, key=lambda previous: previous["id"])
         candidates = [data for data in documents if data["job_name"] == name and
                       [row["benchmark"] for row in data["results"]] == group]
         latest = max(candidates, key=lambda data: data["run_attempt"], default=None)
@@ -178,8 +187,9 @@ def cell(value: object) -> str:
 def markdown(data: dict) -> str:
     rows = data["results"]
     counts = Counter(row["status"] for row in rows)
+    noun = "benchmark" if len(rows) == 1 else "benchmarks"
     lines = ["# Benchmark reproduction report", "",
-             f"**{len(rows)} benchmarks:** " + " · ".join(
+             f"**{len(rows)} {noun}:** " + " · ".join(
                  f"{counts[status]} {label}" for status, label in STATUSES.items()), ""]
     if data.get("hf_revision"):
         lines.extend([f"HF reference: `{data['hf_revision']}`", ""])
