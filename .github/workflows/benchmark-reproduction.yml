@@ -23,7 +23,12 @@ concurrency:
 
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    # Rebuild reviewed repository branches; fork PRs must not execute on this host.
+    if: >-
+      github.repository == 'aims-foundations/measurement-db' &&
+      (github.event_name != 'pull_request' ||
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     outputs:
       matrix: ${{ steps.select.outputs.matrix }}
       has_benchmarks: ${{ steps.select.outputs.has_benchmarks }}
@@ -40,6 +45,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - name: Create a fresh job environment
+        run: |
+          python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
+          echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
       - name: Test change detection and strict byte comparison
         run: python -m unittest discover -s tests -p test_benchmark_reproduction.py -v
       - name: Select every changed benchmark
@@ -64,11 +73,12 @@ jobs:
     needs: changes
     if: needs.changes.outputs.has_benchmarks == 'true'
     name: Reproduce ${{ join(matrix.benchmarks, ', ') }}
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      max-parallel: 4
+      # One installed runner executes one job at a time.
+      max-parallel: 1
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     defaults:
       run:
@@ -85,6 +95,10 @@ jobs:
           cache-dependency-path: |
             measurement_db/requirements.txt
             measurement_db/scripts/ci/reproduction-constraints.txt
+      - name: Create a fresh job environment
+        run: |
+          python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
+          echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
       - name: Install the build dependencies and matching Parquet writer
         run: python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
       - name: Rebuild from declared upstream sources and compare every table byte for byte

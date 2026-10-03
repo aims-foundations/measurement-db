@@ -280,8 +280,8 @@ the offline CI tests and change detection, without accessing HF or rebuilding.
 
 Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
 has access to `aims-foundations/measurement-db`. The dataset is gated; missing
-credentials or access fail the check. Fork PRs do not receive repository secrets;
-their reviewed commits need a branch in this repository to run this check.
+credentials or access fail the check. Fork PRs are skipped; their reviewed commits
+need a branch in this repository to run this check with repository secrets.
 
 Each run resolves the HF `migration/tabular-builders-20260924` branch to one
 immutable commit shared by all jobs. It executes `benchmarks/<slug>/build.py`
@@ -300,9 +300,31 @@ Success requires the exact same set of tables and byte-identical files, includin
 optional traces and assets, row order, and Parquet metadata. Missing references,
 missing builders, build errors, extra tables, and any byte difference fail.
 SHA-256 values for both files appear in the job log. Jobs continue independently
-after another benchmark fails. The workflow uses at most four concurrent jobs;
+after another benchmark fails. The workflow uses one concurrent reproduction job;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
-Very large builds may need a runner with more memory or disk than `ubuntu-latest`.
+
+Both jobs target a native Linux x64 self-hosted runner with the custom label
+`measurement-db-reproduction`. The runner runs as a systemd user service on
+`skampere1`, with its installation, runner home, tool cache, downloads,
+and temporary builds under
+`/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
+interactive login, or AFS credentials. Each job creates a fresh Python virtual
+environment. A single runner processes one job at a time; additional concurrency
+requires separate runner installations and a higher `max-parallel` setting.
+
+Before activating this runner for the public repository, configure **Settings >
+Actions > General > Fork pull request workflows** to require approval for all
+outside collaborators. Review all workflow and executable changes before
+approving a fork run. The fork condition in this workflow prevents accidental
+execution; it is not an access-control boundary because a PR can modify workflow
+files. The service runs as `sttruong` and has that account's filesystem access.
+It needs no sudo: user lingering keeps systemd running after logout and starts
+it at boot. A user crontab restores the service definition under `/run/user`
+after reboot, avoiding the AFS home directory. The installer is
+`deployment/install-user-service.py` in the installation directory. Use
+`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage it; `stop`
+also prevents cron from restarting it. Trusted push/PR events and manual
+dispatches are picked up automatically once the workflow is pushed.
 
 The CI constraints pin pandas and PyArrow to versions recorded in the published
 migration tables. To run the same comparison locally after authenticating to HF:
