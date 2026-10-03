@@ -151,7 +151,10 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
                       [row["benchmark"] for row in data["results"]] == group]
         latest = max(candidates, key=lambda data: data["run_attempt"], default=None)
         # Never use an older success to hide a newer job whose artifact is missing.
-        if latest and int(job.get("run_attempt", 1)) > latest["run_attempt"]:
+        # Without job metadata, an earlier artifact cannot establish whether a
+        # group was reused or rerun. Require a current-attempt result in that case.
+        job_attempt = int(job.get("run_attempt", os.environ.get("GITHUB_RUN_ATTEMPT", "1")))
+        if latest and job_attempt > latest["run_attempt"]:
             latest = None
         if latest:
             result_rows = finalize_batch(latest, job.get("conclusion") or latest.get("job_status", "unknown"))["results"]

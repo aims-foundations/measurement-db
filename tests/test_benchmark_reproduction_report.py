@@ -128,10 +128,18 @@ class ReportTests(unittest.TestCase):
         self.batch(["alpha"], ["passed"], attempt=1)
         self.batch(["beta"], ["failed"], attempt=1)
         self.batch(["beta"], ["passed"], attempt=2)
+        jobs = [{"id": 100, "name": "Reproduce alpha", "run_attempt": 1, "conclusion": "success"},
+                {"id": 200, "name": "Reproduce beta", "run_attempt": 2, "conclusion": "success"}]
         with patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}):
-            result = self.collect([["alpha"], ["beta"]])
+            result = self.collect([["alpha"], ["beta"]], jobs)
         self.assertEqual(result["counts"]["passed"], 2)
         self.assertEqual([row["run_attempt"] for row in result["results"]], [1, 2])
+
+    def test_missing_job_metadata_cannot_certify_an_older_attempt(self):
+        self.batch(["alpha"], ["passed"], attempt=1)
+        with patch.dict(os.environ, {"GITHUB_RUN_ATTEMPT": "2"}):
+            result = self.collect([["alpha"]])
+        self.assertEqual(result["results"][0]["status"], "not_reported")
 
     def test_missing_rerun_artifact_never_falls_back_to_an_old_pass(self):
         self.batch(["alpha"], ["passed"], attempt=1)
