@@ -50,7 +50,7 @@ jobs:
           python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
           echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
       - name: Test change detection and strict byte comparison
-        run: python -m unittest discover -s tests -p test_benchmark_reproduction.py -v
+        run: python -m unittest discover -s tests -p 'test_benchmark_reproduction*.py' -v
       - name: Select every changed benchmark
         id: select
         run: python scripts/ci/benchmark_reproduction.py select
@@ -75,6 +75,9 @@ jobs:
     name: Reproduce ${{ join(matrix.benchmarks, ', ') }}
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     timeout-minutes: 360
+    env:
+      HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
+      BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}
     strategy:
       fail-fast: false
       # Four native runner instances each execute one job at a time.
@@ -88,6 +91,8 @@ jobs:
         with:
           path: measurement_db
           persist-credentials: false
+      - name: Initialize individual benchmark results
+        run: /usr/bin/python3 scripts/ci/benchmark_reproduction_report.py init --report "$RUNNER_TEMP/benchmark-report/results.json"
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -104,7 +109,60 @@ jobs:
       - name: Rebuild from declared upstream sources and compare every table byte for byte
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
-          BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}
           PYTHONUNBUFFERED: '1'
-        run: python scripts/ci/benchmark_reproduction.py verify --revision "$HF_REVISION"
+        run: python scripts/ci/benchmark_reproduction.py verify --revision "$HF_REVISION" --report "$RUNNER_TEMP/benchmark-report/results.json"
+      - name: Summarize this group's benchmark results
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: /usr/bin/python3 scripts/ci/benchmark_reproduction_report.py finalize --report "$RUNNER_TEMP/benchmark-report/results.json" --job-status "$JOB_STATUS"
+      - name: Upload individual benchmark results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results-${{ github.run_attempt }}-${{ strategy.job-index }}
+          path: ${{ runner.temp }}/benchmark-report/results.json
+          if-no-files-found: warn
+
+  report:
+    name: Benchmark report
+    needs: [changes, reproduce]
+    if: always() && needs.changes.result != 'skipped'
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: measurement_db
+          persist-credentials: false
+      - name: Download every group's results
+        id: results
+        if: needs.changes.outputs.has_benchmarks == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          pattern: benchmark-results-*
+          path: ${{ runner.temp }}/benchmark-results
+          github-token: ${{ github.token }}
+          run-id: ${{ github.run_id }}
+      - name: Publish the complete benchmark report
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          MATRIX_JSON: ${{ needs.changes.outputs.matrix }}
+          HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
+          CHANGES_RESULT: ${{ needs.changes.result }}
+          DOWNLOAD_OUTCOME: ${{ steps.results.outcome }}
+        run: >-
+          /usr/bin/python3 measurement_db/scripts/ci/benchmark_reproduction_report.py aggregate
+          --reports-dir "$RUNNER_TEMP/benchmark-results"
+          --output-dir "$RUNNER_TEMP/benchmark-run-report"
+      - name: Upload the complete benchmark report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-run-report-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/benchmark-run-report/
+          if-no-files-found: warn

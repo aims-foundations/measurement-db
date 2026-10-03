@@ -14,6 +14,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
+
+if __package__:
+    from . import benchmark_reproduction_report as reports
+else:
+    import benchmark_reproduction_report as reports
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -196,6 +202,7 @@ def main() -> int:
     verify = commands.add_parser("verify", help="Build and compare one or more benchmarks")
     verify.add_argument("benchmarks", nargs="*")
     verify.add_argument("--revision", default=HF_BRANCH)
+    verify.add_argument("--report", type=Path, help="Checkpoint individual benchmark outcomes as JSON")
     args = parser.parse_args()
     if args.command == "select":
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
@@ -207,23 +214,50 @@ def main() -> int:
             for name, value in values.items():
                 output.write(f"{name}={value}\n")
         return 0
-    revision = resolve_revision(args.revision)
-    print(f"HF reference: {HF_REPOSITORY}@{revision}", flush=True)
     if args.command == "resolve":
+        revision = resolve_revision(args.revision)
+        print(f"HF reference: {HF_REPOSITORY}@{revision}", flush=True)
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
             output.write(f"revision={revision}\n")
         return 0
     slugs = args.benchmarks or json.loads(os.environ.get("BENCHMARKS_JSON", "[]"))
     if not isinstance(slugs, list) or not slugs:
         parser.error("Specify at least one benchmark")
+    report = reports.new_batch(slugs, args.revision)
+    if args.report:
+        reports.save(args.report, report)
+    try:
+        revision = resolve_revision(args.revision)
+    except Exception as exc:
+        for row in report["results"]:
+            row["message"] = reports.safe_message(f"HF reference resolution failed: {type(exc).__name__}: {exc}")
+        if args.report:
+            reports.save(args.report, report)
+        raise
+    report["hf_revision"] = revision
+    print(f"HF reference: {HF_REPOSITORY}@{revision}", flush=True)
     failures = []
-    for slug in slugs:
+    for slug, row in zip(slugs, report["results"]):
         print(f"\n=== {slug} ===", flush=True)
+        started = time.monotonic()
+        row.update(status="running", started_at=reports.utc_now(), message="Verification is running.")
+        if args.report:
+            reports.save(args.report, report)
         try:
             verify_benchmark(ROOT, slug, revision)
         except Exception as exc:
             print(f"FAIL {slug}: {exc}", file=sys.stderr, flush=True)
+            row.update(status="failed", message=reports.safe_message(f"{type(exc).__name__}: {exc}"))
             failures.append(slug)
+        except (KeyboardInterrupt, SystemExit):
+            row.update(status="interrupted", message="Verification was interrupted before completion.")
+            raise
+        else:
+            row.update(status="passed", message="Every published table matched byte for byte.")
+        finally:
+            row.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=reports.utc_now())
+            if args.report:
+                reports.save(args.report, report)
     if failures:
         print(f"Failed benchmarks: {', '.join(failures)}", file=sys.stderr)
     return bool(failures)

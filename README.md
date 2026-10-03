@@ -303,7 +303,22 @@ SHA-256 values for both files appear in the job log. Jobs continue independently
 after another benchmark fails. The workflow uses up to four concurrent reproduction jobs;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
-Both jobs target a native Linux x64 self-hosted runner with the custom label
+The final **Benchmark report** job publishes a table on the workflow run's
+**Summary** page, with one row per selected benchmark: result, elapsed time,
+failure details, and a link to its job log. Each grouped job also publishes its
+own summary. The **benchmark-run-report-<attempt>** artifact contains
+`summary.md`, `results.csv`, and `results.json` with full failure messages.
+Results are checkpointed after each benchmark and uploaded even when a job
+fails. A passing benchmark remains visible if another benchmark in its group
+fails. **NOT RUN** means verification never started; **INTERRUPTED** means it
+started without completing; **NOT REPORTED** means no usable artifact arrived.
+Missing reports are never counted as passes. Reruns use the latest result for
+each group at the same source and HF revisions, retaining prior successful
+groups when only failed jobs are rerun. A forcibly cancelled run or an unavailable
+runner can prevent the final report from being published; already uploaded group
+reports remain available. Existing historical runs do not gain these reports.
+
+All workflow jobs target a native Linux x64 self-hosted runner with the custom label
 `measurement-db-reproduction`. The runner runs as a systemd user service on
 `skampere1`, with its installation, runner home, tool cache, downloads,
 and temporary builds under
