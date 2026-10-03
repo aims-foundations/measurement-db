@@ -77,8 +77,8 @@ jobs:
     timeout-minutes: 360
     strategy:
       fail-fast: false
-      # One installed runner executes one job at a time.
-      max-parallel: 1
+      # Four native runner instances each execute one job at a time.
+      max-parallel: 4
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     defaults:
       run:

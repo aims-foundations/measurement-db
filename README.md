@@ -300,7 +300,7 @@ Success requires the exact same set of tables and byte-identical files, includin
 optional traces and assets, row order, and Parquet metadata. Missing references,
 missing builders, build errors, extra tables, and any byte difference fail.
 SHA-256 values for both files appear in the job log. Jobs continue independently
-after another benchmark fails. The workflow uses one concurrent reproduction job;
+after another benchmark fails. The workflow uses up to four concurrent reproduction jobs;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
 Both jobs target a native Linux x64 self-hosted runner with the custom label
@@ -309,8 +309,13 @@ Both jobs target a native Linux x64 self-hosted runner with the custom label
 and temporary builds under
 `/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
 interactive login, or AFS credentials. Each job creates a fresh Python virtual
-environment. A single runner processes one job at a time; additional concurrency
-requires separate runner installations and a higher `max-parallel` setting.
+environment. Four independent runner instances process one job each. The original
+instance lives at the installation root, and the other three live under
+`runners/02`, `runners/03`, and `runners/04`. Each has its own checkout, Python tool
+cache, download cache, and temporary directory. Full runs still group benchmarks
+in pairs; each pair runs sequentially within its job, so at most four benchmarks
+are being rebuilt at once. Larger pools require more runner installations and a
+higher `max-parallel` setting.
 
 Before activating this runner for the public repository, configure **Settings >
 Actions > General > Fork pull request workflows** to require approval for all
@@ -322,8 +327,9 @@ It needs no sudo: user lingering keeps systemd running after logout and starts
 it at boot. A user crontab restores the service definition under `/run/user`
 after reboot, avoiding the AFS home directory. The installer is
 `deployment/install-user-service.py` in the installation directory. Use
-`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage it; `stop`
-also prevents cron from restarting it. Trusted push/PR events and manual
+`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage all four; append
+`1`, `2`, `3`, or `4` to manage one instance. `stop` also prevents cron from
+restarting the selected instances. Trusted push/PR events and manual
 dispatches are picked up automatically once the workflow is pushed.
 
 The CI constraints pin pandas and PyArrow to versions recorded in the published
