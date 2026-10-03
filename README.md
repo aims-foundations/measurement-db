@@ -300,7 +300,7 @@ Success requires the exact same set of tables and byte-identical files, includin
 optional traces and assets, row order, and Parquet metadata. Missing references,
 missing builders, build errors, extra tables, and any byte difference fail.
 SHA-256 values for both files appear in the job log. Jobs continue independently
-after another benchmark fails. The workflow uses up to four concurrent reproduction jobs;
+after another benchmark fails. The workflow uses up to 16 concurrent reproduction jobs;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
 The final **Benchmark report** job publishes a table on the workflow run's
@@ -324,13 +324,21 @@ All workflow jobs target a native Linux x64 self-hosted runner with the custom l
 and temporary builds under
 `/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
 interactive login, or AFS credentials. Each job creates a fresh Python virtual
-environment. Four independent runner instances process one job each. The original
-instance lives at the installation root, and the other three live under
-`runners/02`, `runners/03`, and `runners/04`. Each has its own checkout, Python tool
+environment. Sixteen independent runner instances process one job each. The original
+instance lives at the installation root, and the other 15 live under
+`runners/02` through `runners/16`. Each has its own checkout, Python tool
 cache, download cache, and temporary directory. Full runs still group benchmarks
-in pairs; each pair runs sequentially within its job, so at most four benchmarks
-are being rebuilt at once. Larger pools require more runner installations and a
-higher `max-parallel` setting.
+in pairs; each pair runs sequentially within its job, so at most 16 benchmarks
+are being rebuilt at once. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
+NumExpr, and Arrow CPU pools to use two threads, and Arrow I/O pools to use four.
+These are library settings, not an operating-system CPU quota. Larger pools
+require more runner installations and a higher `max-parallel` setting.
+
+An existing run keeps the workflow configuration from its original commit.
+GitHub's **Re-run jobs** also uses that commit. To apply a new parallelism limit,
+start a fresh **Run workflow** dispatch on the updated branch. A new manual run
+on the same branch cancels the previous manual run through the workflow's
+concurrency group; preserve any needed results before replacing an active run.
 
 Before activating this runner for the public repository, configure **Settings >
 Actions > General > Fork pull request workflows** to require approval for all
@@ -342,8 +350,8 @@ It needs no sudo: user lingering keeps systemd running after logout and starts
 it at boot. A user crontab restores the service definition under `/run/user`
 after reboot, avoiding the AFS home directory. The installer is
 `deployment/install-user-service.py` in the installation directory. Use
-`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage all four; append
-`1`, `2`, `3`, or `4` to manage one instance. `stop` also prevents cron from
+`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage all 16; append
+an instance number from `1` to `16` to manage one instance. `stop` also prevents cron from
 restarting the selected instances. Trusted push/PR events and manual
 dispatches are picked up automatically once the workflow is pushed.
 

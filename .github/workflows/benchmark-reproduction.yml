@@ -78,10 +78,17 @@ jobs:
     env:
       HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
       BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}
+      # Keep library thread pools bounded when many builders share this host.
+      OMP_NUM_THREADS: '2'
+      OMP_THREAD_LIMIT: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      NUMEXPR_NUM_THREADS: '2'
+      ARROW_IO_THREADS: '4'
     strategy:
       fail-fast: false
-      # Four native runner instances each execute one job at a time.
-      max-parallel: 4
+      # Sixteen native runner instances each execute one job at a time.
+      max-parallel: 16
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     defaults:
       run:
