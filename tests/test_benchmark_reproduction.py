@@ -2,6 +2,7 @@
 
 import contextlib
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -15,6 +16,10 @@ from scripts.ci import benchmark_reproduction as reproduction
 
 
 REVISION = "a" * 40
+
+
+class RemoteEntryNotFoundError(Exception):
+    """Offline stand-in for huggingface_hub.errors.RemoteEntryNotFoundError."""
 
 
 class RepositoryTest(unittest.TestCase):
@@ -192,6 +197,12 @@ class ByteComparisonTests(unittest.TestCase):
 
 
 class BuildExecutionTests(RepositoryTest):
+    def mock_hub(self, hub=None):
+        return patch.dict(sys.modules, {
+            "huggingface_hub": hub or self.hub(),
+            "huggingface_hub.errors": SimpleNamespace(RemoteEntryNotFoundError=RemoteEntryNotFoundError),
+        })
+
     def hub(self):
         api = Mock()
         api.list_repo_tree.return_value = [file("alpha/responses.parquet")]
@@ -213,6 +224,7 @@ assert Path.cwd().name == 'measurement_db'
 for key in ('MEASUREMENT_DB_SOURCE_REPO', 'MEASUREMENT_DB_SOURCE_REVISION',
             'MEASUREMENT_DB_SOURCE_MANIFEST'):
     assert key not in os.environ, key
+assert os.environ['GITHUB_TOKEN'] == 'test-builder-token'
 directory = Path(__file__).parent
 assert not (directory / 'raw').exists()
 assert not (directory / 'formatted_tables').exists()
@@ -222,11 +234,12 @@ output.mkdir()
 """)
         old_raw = self.write("benchmarks/alpha/raw/input.json", "local input")
         old_output = self.write("benchmarks/alpha/formatted_tables/responses.parquet", "local output")
-        with patch.dict(sys.modules, {"huggingface_hub": self.hub()}), \
+        with self.mock_hub(), \
                 patch.dict(os.environ, {
                     "MEASUREMENT_DB_SOURCE_REPO": "other/archive",
                     "MEASUREMENT_DB_SOURCE_REVISION": "stale-archive-revision",
                     "MEASUREMENT_DB_SOURCE_MANIFEST": "stale-local-manifest",
+                    "GITHUB_TOKEN": "test-builder-token",
                 }), \
                 contextlib.redirect_stdout(io.StringIO()):
             reproduction.verify_benchmark(self.root, "alpha", REVISION)
@@ -235,15 +248,131 @@ output.mkdir()
 
     def test_nonzero_builder_exit_fails_even_when_outputs_exist(self):
         self.write("benchmarks/alpha/build.py", "raise SystemExit(3)\n")
-        with patch.dict(sys.modules, {"huggingface_hub": self.hub()}), \
+        hub = self.hub()
+        with self.mock_hub(hub), \
                 contextlib.redirect_stdout(io.StringIO()):
             with self.assertRaises(subprocess.CalledProcessError):
                 reproduction.verify_benchmark(self.root, "alpha", REVISION)
+        hub.HfApi().list_repo_tree.assert_not_called()
 
     def test_deleted_builder_fails(self):
-        with patch.dict(sys.modules, {"huggingface_hub": self.hub()}):
+        with self.mock_hub():
             with self.assertRaisesRegex(ValueError, "Missing builder"):
                 reproduction.verify_benchmark(self.root, "missing", REVISION)
+
+    def successful_builder(self):
+        marker = self.root / "builder-ran"
+        self.write("benchmarks/alpha/build.py", f"""
+from pathlib import Path
+output = Path(__file__).parent / 'formatted_tables'
+output.mkdir()
+(output / 'responses.parquet').write_bytes(b'fresh build')
+Path({str(marker)!r}).write_text(str(output))
+""")
+        return marker
+
+    def test_missing_reference_is_checked_only_after_the_real_builder_finishes(self):
+        for error in (None, RemoteEntryNotFoundError("folder absent")):
+            with self.subTest(error=error):
+                marker = self.successful_builder()
+                marker.unlink(missing_ok=True)
+                hub = self.hub()
+
+                def listing(*args, **kwargs):
+                    self.assertTrue(marker.is_file())
+                    self.assertTrue(Path(marker.read_text()).is_dir())
+                    if error:
+                        raise error
+                    return []
+
+                hub.HfApi().list_repo_tree.side_effect = listing
+                phases = []
+                with self.mock_hub(hub), contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaises(reproduction.MissingReferenceError):
+                        reproduction.verify_benchmark(self.root, "alpha", REVISION,
+                                                      progress=lambda phase, revision=None: phases.append(phase))
+                self.assertEqual(phases, ["build", "reference", "reference"])
+                self.assertFalse(Path(marker.read_text()).exists())  # Scratch cleanup still runs.
+
+    def test_unavailable_reference_revision_does_not_prevent_the_build(self):
+        marker = self.successful_builder()
+        hub = self.hub()
+        with self.mock_hub(hub), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, "could not be pinned"):
+                reproduction.verify_benchmark(self.root, "alpha", "")
+        self.assertTrue(marker.is_file())
+        hub.HfApi().list_repo_tree.assert_not_called()
+
+    def test_cli_reference_resolution_failure_still_builds_every_benchmark(self):
+        alpha_marker = self.successful_builder()
+        beta_marker = self.root / "beta-ran"
+        self.write("benchmarks/beta/build.py", (self.root / "benchmarks/alpha/build.py").read_text()
+                   .replace(str(alpha_marker), str(beta_marker)))
+        path = self.root / "report.json"
+
+        def resolve(revision):
+            self.assertTrue(alpha_marker.exists())
+            raise PermissionError("reference access denied")
+
+        with self.mock_hub(), patch.object(reproduction, "ROOT", self.root), \
+                patch.object(sys, "argv", ["ci", "verify", "alpha", "beta", "--report", str(path)]), \
+                patch.object(reproduction, "resolve_revision", side_effect=resolve), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(reproduction.main(), 1)
+        rows = json.loads(path.read_text())["results"]
+        self.assertTrue(beta_marker.exists())
+        self.assertEqual([row["status"] for row in rows], ["reference_failed", "reference_failed"])
+        self.assertTrue(all(row["build_status"] == "passed" for row in rows))
+
+    def test_missing_reference_does_not_skip_pair_and_both_use_one_pinned_revision(self):
+        alpha_marker = self.successful_builder()
+        beta_marker = self.root / "beta-ran"
+        self.write("benchmarks/beta/build.py", (self.root / "benchmarks/alpha/build.py").read_text()
+                   .replace(str(alpha_marker), str(beta_marker)))
+        path = self.root / "report.json"
+        hub = self.hub()
+        hub.HfApi().repo_info.return_value = SimpleNamespace(sha=REVISION)
+
+        def listing(repo, *, repo_type, revision, path_in_repo):
+            self.assertEqual(revision, REVISION)
+            if path_in_repo == "alpha":
+                self.assertTrue(alpha_marker.exists())
+                raise RemoteEntryNotFoundError("alpha has no published reference")
+            self.assertTrue(beta_marker.exists())
+            return [file("beta/responses.parquet")]
+
+        hub.HfApi().list_repo_tree.side_effect = listing
+        with self.mock_hub(hub), patch.object(reproduction, "ROOT", self.root), \
+                patch.object(sys, "argv", ["ci", "verify", "alpha", "beta", "--report", str(path)]), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(reproduction.main(), 1)
+        report = json.loads(path.read_text())
+        self.assertEqual([row["status"] for row in report["results"]], ["reference_missing", "passed"])
+        self.assertTrue(all(row["build_status"] == "passed" for row in report["results"]))
+        self.assertEqual(report["hf_revision"], REVISION)
+        hub.HfApi().repo_info.assert_called_once()
+
+    def test_reference_access_and_network_errors_are_not_missing_references(self):
+        self.successful_builder()
+        for error in (PermissionError("gated reference"), ConnectionError("connection reset")):
+            with self.subTest(error=error):
+                path = self.root / "report.json"
+                hub = self.hub()
+                hub.HfApi().list_repo_tree.side_effect = error
+                with self.mock_hub(hub), patch.object(reproduction, "ROOT", self.root), \
+                        patch.object(sys, "argv", ["ci", "verify", "alpha", "--revision", REVISION,
+                                                  "--report", str(path)]), \
+                        contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(reproduction.main(), 1)
+                row = json.loads(path.read_text())["results"][0]
+                self.assertEqual((row["status"], row["build_status"]), ("reference_failed", "passed"))
+
+    def test_zero_exit_without_generated_tables_is_a_build_failure(self):
+        hub = self.hub()
+        with self.mock_hub(hub), contextlib.redirect_stdout(io.StringIO()):
+            with self.assertRaisesRegex(ValueError, "produced no Parquet"):
+                reproduction.verify_benchmark(self.root, "alpha", REVISION)
+        hub.HfApi().list_repo_tree.assert_not_called()
 
     def test_batch_continues_after_failure_but_exits_unsuccessfully(self):
         with patch.object(sys, "argv", ["benchmark_reproduction.py", "verify", "alpha", "beta"]), \

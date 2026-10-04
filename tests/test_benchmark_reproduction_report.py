@@ -48,8 +48,10 @@ class ReportTests(unittest.TestCase):
         path = self.root / "batch.json"
         observed = []
 
-        def verify(root, slug, revision):
+        def verify(root, slug, revision, *, progress):
             observed.append([row["status"] for row in json.loads(path.read_text())["results"]])
+            progress("reference", REVISION)
+            progress("comparison")
             if slug == "alpha":
                 raise ValueError("Byte mismatch: responses.parquet")
 
@@ -58,9 +60,10 @@ class ReportTests(unittest.TestCase):
                 patch.object(reproduction, "verify_benchmark", side_effect=verify), \
                 contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(reproduction.main(), 1)
-        self.assertEqual(observed, [["running", "not_run"], ["failed", "running"]])
+        self.assertEqual(observed, [["running", "not_run"], ["comparison_failed", "running"]])
         rows = json.loads(path.read_text())["results"]
-        self.assertEqual([row["status"] for row in rows], ["failed", "passed"])
+        self.assertEqual([row["status"] for row in rows], ["comparison_failed", "passed"])
+        self.assertTrue(all(row["build_status"] == "passed" for row in rows))
         self.assertIn("Byte mismatch", rows[0]["message"])
         self.assertIsNotNone(rows[1]["duration_seconds"])
 
@@ -75,15 +78,37 @@ class ReportTests(unittest.TestCase):
         self.assertEqual([row["status"] for row in json.loads(path.read_text())["results"]],
                          ["passed", "interrupted", "not_run"])
 
-    def test_reference_resolution_failure_is_not_a_benchmark_failure(self):
+    def test_build_and_comparison_outcomes_are_distinct_in_checkpoints(self):
         path = self.root / "batch.json"
-        with patch.object(sys, "argv", ["ci", "verify", "alpha", "--report", str(path)]), \
-                patch.object(reproduction, "resolve_revision", side_effect=PermissionError("access denied")):
-            with self.assertRaises(PermissionError):
-                reproduction.main()
-        row = json.loads(path.read_text())["results"][0]
-        self.assertEqual(row["status"], "not_run")
-        self.assertIn("reference resolution failed", row["message"])
+        outcomes = {
+            "alpha": ("build", ValueError("source download failed")),
+            "beta": ("reference", reproduction.MissingReferenceError("no published tables")),
+            "gamma": ("reference", PermissionError("access denied")),
+            "delta": ("comparison", ValueError("Byte mismatch: responses.parquet")),
+        }
+
+        def verify(root, slug, revision, *, progress):
+            phase, error = outcomes[slug]
+            progress(phase)
+            raise error
+
+        with patch.object(sys, "argv", ["ci", "verify", *outcomes, "--revision", REVISION, "--report", str(path)]), \
+                patch.object(reproduction, "verify_benchmark", side_effect=verify), \
+                contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(reproduction.main(), 1)
+        rows = json.loads(path.read_text())["results"]
+        self.assertEqual([row["status"] for row in rows],
+                         ["build_failed", "reference_missing", "reference_failed", "comparison_failed"])
+        self.assertEqual([row["build_status"] for row in rows], ["failed", "passed", "passed", "passed"])
+        self.assertEqual([row["comparison_status"] for row in rows],
+                         ["not_run", "reference_missing", "reference_failed", "comparison_failed"])
+
+    def test_interruption_during_comparison_retains_successful_build(self):
+        batch = reports.new_batch(["alpha"], REVISION)
+        batch["results"][0].update(status="running", build_status="passed", comparison_status="running")
+        row = reports.finalize_batch(batch, "cancelled")["results"][0]
+        self.assertEqual((row["status"], row["build_status"], row["comparison_status"]),
+                         ("interrupted", "passed", "interrupted"))
 
     def test_setup_failure_keeps_every_benchmark_not_run(self):
         batch = reports.finalize_batch(reports.new_batch(["alpha", "beta"], REVISION), "failure")
@@ -211,6 +236,25 @@ class ReportTests(unittest.TestCase):
                 patch.object(reports, "github_jobs", return_value=[]), \
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(reports.main(), 0)
+
+    def test_missing_reference_stays_nonpassing_in_all_report_formats(self):
+        data, path = self.batch(["alpha"], ["reference_missing"])
+        data["results"][0].update(build_status="passed", comparison_status="reference_missing")
+        reports.save(path, data)
+        output = self.root / "output"
+        with patch.dict(os.environ, {"MATRIX_JSON": '{"include":[{"benchmarks":["alpha"]}]}'}), \
+                patch.object(sys, "argv", ["report", "aggregate", "--reports-dir", str(self.artifacts),
+                                           "--output-dir", str(output)]), \
+                patch.object(reports, "github_jobs", return_value=[]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(reports.main(), 1)
+        report = json.loads((output / "results.json").read_text())
+        self.assertEqual(report["counts"]["passed"], 0)
+        self.assertEqual(report["counts"]["reference_missing"], 1)
+        with (output / "results.csv").open() as stream:
+            row = next(csv.DictReader(stream))
+        self.assertEqual((row["build_status"], row["comparison_status"]), ("passed", "reference_missing"))
+        self.assertIn("| REFERENCE MISSING | PASS | REFERENCE MISSING |", (output / "summary.md").read_text())
 
     def test_job_lookup_paginates_beyond_one_hundred_jobs(self):
         responses = [io.StringIO(json.dumps({"jobs": [{"id": i} for i in range(100)]})),

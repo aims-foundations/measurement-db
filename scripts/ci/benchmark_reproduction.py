@@ -28,6 +28,10 @@ HF_BRANCH = "migration/tabular-builders-20260924"
 ZERO_SHA = "0" * 40
 
 
+class MissingReferenceError(ValueError):
+    """The upstream build succeeded, but published comparison tables are absent."""
+
+
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=root).decode()
 
@@ -82,6 +86,8 @@ def build_matrix(slugs: list[str]) -> dict:
 
 
 def resolve_revision(revision: str) -> str:
+    if re.fullmatch(r"[0-9a-f]{40}", revision):
+        return revision
     from huggingface_hub import HfApi
 
     sha = HfApi().repo_info(HF_REPOSITORY, repo_type="dataset", revision=revision).sha
@@ -116,7 +122,7 @@ def reference_files(api, slug: str, revision: str) -> dict[str, str]:
             raise ValueError(f"Ambiguous published table: {name}")
         files[name] = entry.path
     if not files:
-        raise ValueError(f"No published Parquet tables for {slug} at {revision}")
+        raise MissingReferenceError(f"No published Parquet tables for {slug} at {revision}")
     return files
 
 
@@ -164,22 +170,17 @@ def compare_tables(generated: Path, expected: dict[str, Path]) -> None:
         raise ValueError("\n".join(problems))
 
 
-def verify_benchmark(root: Path, slug: str, revision: str) -> None:
-    from huggingface_hub import HfApi, hf_hub_download
-
+def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> None:
+    """Build from upstream first, then fetch references and compare exact bytes."""
+    progress = progress or (lambda phase, revision=None: None)
+    progress("build")
     validate_slug(slug)
     if not (root / "benchmarks" / slug / "build.py").is_file():
         raise ValueError(f"Missing builder: benchmarks/{slug}/build.py")
-    files = reference_files(HfApi(), slug, revision)
     with tempfile.TemporaryDirectory(prefix=f"measurement-db-{slug}-") as temporary:
         scratch = Path(temporary)
         workspace = scratch / "measurement_db"  # Builders import this package name.
         copy_build_source(root, workspace)
-        expected = {
-            name: Path(hf_hub_download(HF_REPOSITORY, remote, repo_type="dataset",
-                                      revision=revision, local_dir=scratch / "reference"))
-            for name, remote in sorted(files.items())
-        }
         env = os.environ.copy()
         # HF supplies expected tables only. Archive overrides would bypass the
         # author's upstream sources declared in each benchmark's metadata.yaml.
@@ -190,7 +191,30 @@ def verify_benchmark(root: Path, slug: str, revision: str) -> None:
         command = [sys.executable, f"benchmarks/{slug}/build.py"]
         print(f"Rebuilding {slug} from metadata.yaml upstream sources: {' '.join(command)}", flush=True)
         subprocess.run(command, cwd=workspace, env=env, check=True)
-        compare_tables(workspace / "benchmarks" / slug / "formatted_tables", expected)
+        generated = workspace / "benchmarks" / slug / "formatted_tables"
+        if not any(generated.rglob("*.parquet")):
+            raise ValueError(f"Builder produced no Parquet tables for {slug}")
+        print(f"BUILD PASS {slug}: upstream build completed.", flush=True)
+        progress("reference")
+        if not revision:
+            raise ValueError("HF reference could not be pinned; see the workflow's reference resolution step.")
+        from huggingface_hub import HfApi, hf_hub_download
+        from huggingface_hub.errors import RemoteEntryNotFoundError
+
+        revision = resolve_revision(revision)
+        progress("reference", revision)
+        print(f"Comparing {slug} against {HF_REPOSITORY}@{revision}", flush=True)
+        try:
+            files = reference_files(HfApi(), slug, revision)
+            expected = {
+                name: Path(hf_hub_download(HF_REPOSITORY, remote, repo_type="dataset",
+                                          revision=revision, local_dir=scratch / "reference"))
+                for name, remote in sorted(files.items())
+            }
+        except RemoteEntryNotFoundError as exc:
+            raise MissingReferenceError(f"Published reference missing for {slug} at {revision}: {exc}") from exc
+        progress("comparison")
+        compare_tables(generated, expected)
 
 
 def main() -> int:
@@ -226,34 +250,52 @@ def main() -> int:
     report = reports.new_batch(slugs, args.revision)
     if args.report:
         reports.save(args.report, report)
-    try:
-        revision = resolve_revision(args.revision)
-    except Exception as exc:
-        for row in report["results"]:
-            row["message"] = reports.safe_message(f"HF reference resolution failed: {type(exc).__name__}: {exc}")
-        if args.report:
-            reports.save(args.report, report)
-        raise
-    report["hf_revision"] = revision
-    print(f"HF reference: {HF_REPOSITORY}@{revision}", flush=True)
     failures = []
     for slug, row in zip(slugs, report["results"]):
         print(f"\n=== {slug} ===", flush=True)
         started = time.monotonic()
-        row.update(status="running", started_at=reports.utc_now(), message="Verification is running.")
-        if args.report:
-            reports.save(args.report, report)
+        row.update(status="running", started_at=reports.utc_now(), message="Building from declared upstream sources.")
+
+        def progress(phase, revision=None):
+            row.update(phase=phase, build_status="running" if phase == "build" else "passed",
+                       comparison_status="not_run" if phase == "build" else "running")
+            row["message"] = {
+                "build": "Building from declared upstream sources.",
+                "reference": "Upstream build passed; preparing comparison references.",
+                "comparison": "Upstream build passed; comparing every table byte for byte.",
+            }[phase]
+            if revision is not None:
+                report["hf_revision"] = revision
+            if args.report:
+                reports.save(args.report, report)
+
+        progress("build")
         try:
-            verify_benchmark(ROOT, slug, revision)
+            verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress)
         except Exception as exc:
-            print(f"FAIL {slug}: {exc}", file=sys.stderr, flush=True)
-            row.update(status="failed", message=reports.safe_message(f"{type(exc).__name__}: {exc}"))
+            if row["phase"] == "build":
+                status = "build_failed"
+                row["build_status"] = "failed"
+            elif row["phase"] == "reference":
+                status = "reference_missing" if isinstance(exc, MissingReferenceError) else "reference_failed"
+                row["comparison_status"] = status
+            else:
+                status = "comparison_failed"
+                row["comparison_status"] = status
+            prefix = "Upstream build passed. " if row["build_status"] == "passed" else ""
+            message = reports.safe_message(f"{prefix}{type(exc).__name__}: {exc}")
+            print(f"{reports.STATUSES[status]} {slug}: {message}", file=sys.stderr, flush=True)
+            row.update(status=status, message=message)
             failures.append(slug)
         except (KeyboardInterrupt, SystemExit):
             row.update(status="interrupted", message="Verification was interrupted before completion.")
+            for field in ("build_status", "comparison_status"):
+                if row[field] == "running":
+                    row[field] = "interrupted"
             raise
         else:
-            row.update(status="passed", message="Every published table matched byte for byte.")
+            row.update(status="passed", build_status="passed", comparison_status="passed",
+                       message="Upstream build passed; every published table matched byte for byte.")
         finally:
             row.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=reports.utc_now())
             if args.report:

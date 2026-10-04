@@ -55,19 +55,19 @@ jobs:
         id: select
         run: python scripts/ci/benchmark_reproduction.py select
       - name: Install Hub client
+        id: hub
         if: steps.select.outputs.has_benchmarks == 'true'
+        continue-on-error: true
         run: python -m pip install 'huggingface_hub>=1.0,<2'
       - name: Resolve the HF branch to one immutable commit
         id: reference
-        if: steps.select.outputs.has_benchmarks == 'true'
+        if: steps.select.outputs.has_benchmarks == 'true' && steps.hub.outcome == 'success'
+        # Reference availability must never prevent the upstream builds.
+        # An empty revision makes successful builds report REFERENCE ERROR.
+        continue-on-error: true
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        run: |
-          if [ -z "$HF_TOKEN" ]; then
-            echo '::error::Set the HF_TOKEN Actions secret to a read token with access to aims-foundations/measurement-db. Fork PRs do not receive this secret; run their reviewed commits on a branch in this repository.'
-            exit 1
-          fi
-          python scripts/ci/benchmark_reproduction.py resolve
+        run: python scripts/ci/benchmark_reproduction.py resolve
 
   reproduce:
     needs: changes

@@ -280,14 +280,23 @@ the offline CI tests and change detection, without accessing HF or rebuilding.
 
 Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
 has access to `aims-foundations/measurement-db`. The dataset is gated; missing
-credentials or access fail the check. Fork PRs are skipped; their reviewed commits
+credentials or access prevent reference comparison but do not block upstream
+builds. Author-hosted gated sources still require their own access through this
+token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
+Fork PRs are skipped; their reviewed commits
 need a branch in this repository to run this check with repository secrets.
 
-Each run resolves the HF `migration/tabular-builders-20260924` branch to one
-immutable commit shared by all jobs. It executes `benchmarks/<slug>/build.py`
+Each run attempts to resolve the HF `migration/tabular-builders-20260924` branch
+to one immutable commit shared by all jobs. If that preparation fails, upstream
+builds still run and successful builds report **REFERENCE ERROR**. Jobs never
+fall back to independently resolving a moving HF branch.
+Each benchmark first executes `benchmarks/<slug>/build.py`
 in a temporary source checkout, downloading the authors' inputs declared in
 `sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
 only the expected output tables; it does not select the build's raw inputs.
+Only after a successful upstream build does the job list and download those
+reference tables and compare them. Missing reference tables therefore cannot
+prevent an upstream build from being attempted.
 The check clears `MEASUREMENT_DB_SOURCE_REPO`, `MEASUREMENT_DB_SOURCE_REVISION`,
 and `MEASUREMENT_DB_SOURCE_MANIFEST` so inherited archive overrides cannot
 redirect those downloads. Existing local raw inputs and tables are never reused
@@ -304,13 +313,21 @@ after another benchmark fails. The workflow uses up to 16 concurrent reproductio
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
 The final **Benchmark report** job publishes a table on the workflow run's
-**Summary** page, with one row per selected benchmark: result, elapsed time,
+**Summary** page, with one row per selected benchmark: overall result, upstream
+build status, comparison status, elapsed time,
 failure details, and a link to its job log. Each grouped job also publishes its
 own summary. The **benchmark-run-report-<attempt>** artifact contains
 `summary.md`, `results.csv`, and `results.json` with full failure messages.
 Results are checkpointed after each benchmark and uploaded even when a job
 fails. A passing benchmark remains visible if another benchmark in its group
-fails. **NOT RUN** means verification never started; **INTERRUPTED** means it
+fails. **BUILD FAILED** identifies an upstream download/build failure.
+**COMPARISON FAILED** means the build passed but comparison failed, including
+byte differences and missing or extra generated tables. **REFERENCE MISSING**
+means the build passed but published comparison tables are absent;
+**REFERENCE ERROR** covers reference access, resolution, and network failures.
+Neither reference status counts as a reproduction pass; the workflow remains
+unsuccessful unless every selected benchmark builds and matches its references.
+**NOT RUN** means verification never started; **INTERRUPTED** means it
 started without completing; **NOT REPORTED** means no usable artifact arrived.
 Missing reports are never counted as passes. Reruns use the latest result for
 each group at the same source and HF revisions, retaining prior successful

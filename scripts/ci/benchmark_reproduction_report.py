@@ -19,7 +19,9 @@ import urllib.request
 
 
 STATUSES = {
-    "passed": "PASS", "failed": "FAIL", "interrupted": "INTERRUPTED",
+    "passed": "PASS", "build_failed": "BUILD FAILED",
+    "comparison_failed": "COMPARISON FAILED", "reference_missing": "REFERENCE MISSING",
+    "reference_failed": "REFERENCE ERROR", "failed": "FAIL", "interrupted": "INTERRUPTED",
     "not_run": "NOT RUN", "not_reported": "NOT REPORTED",
 }
 
@@ -59,6 +61,7 @@ def new_batch(slugs: list[str], revision: str = "") -> dict:
         "job_name": "Reproduce " + ", ".join(slugs),
         "created_at": utc_now(),
         "results": [{"benchmark": slug, "status": "not_run", "duration_seconds": None,
+                     "build_status": "not_run", "comparison_status": "not_run",
                      "message": "Verification did not start."} for slug in slugs],
     }
 
@@ -68,6 +71,9 @@ def finalize_batch(data: dict, job_status: str) -> dict:
     for row in data["results"]:
         if row["status"] == "running":
             row.update(status="interrupted", message="Verification started but did not record a result.")
+            for field in ("build_status", "comparison_status"):
+                if row.get(field) == "running":
+                    row[field] = "interrupted"
         elif row["status"] == "not_run":
             row["message"] = safe_message(f"Verification did not start (job: {job_status}). " + row["message"])
     return data
@@ -204,16 +210,22 @@ def markdown(data: dict) -> str:
         lines.append("No benchmarks were selected." if not data.get("warnings") else
                      "No benchmark results are available; see the report notes above.")
     else:
-        lines.extend(["| Benchmark | Result | Duration | Details | Job log |",
-                      "| --- | --- | ---: | --- | --- |"])
+        lines.extend(["| Benchmark | Result | Upstream build | Comparison | Duration | Details | Job log |",
+                      "| --- | --- | --- | --- | ---: | --- | --- |"])
         for row in rows:
             seconds = row.get("duration_seconds")
             duration = f"{seconds:.1f}s" if seconds is not None else "—"
             message = row.get("message", "")
             detail = cell(message[:320] + ("…" if len(message) > 320 else ""))
             link = f"[Logs]({row['job_url']})" if row.get("job_url") else "—"
-            lines.append(f"| `{row['benchmark']}` | {STATUSES[row['status']]} | {duration} | {detail} | {link} |")
-        lines.extend(["", "NOT RUN means verification did not start. NOT REPORTED means no usable result artifact",
+            build = STATUSES.get(row.get("build_status"), "—")
+            comparison = STATUSES.get(row.get("comparison_status"), "—")
+            lines.append(f"| `{row['benchmark']}` | {STATUSES[row['status']]} | {build} | {comparison} | {duration} | {detail} | {link} |")
+        lines.extend(["", "PASS requires both a successful upstream build and an exact byte comparison.",
+                      "REFERENCE MISSING means the build passed but published tables are absent; REFERENCE ERROR",
+                      "means reference preparation failed (for example, access or network errors). Neither counts as PASS.",
+                      "COMPARISON FAILED includes byte differences and missing or extra generated tables.",
+                      "NOT RUN means verification did not start. NOT REPORTED means no usable result artifact",
                       "was received; it does not imply that the benchmark failed. Full details are in the JSON/CSV artifact."])
     return "\n".join(lines) + "\n"
 
@@ -259,7 +271,8 @@ def main() -> int:
     args.output_dir.mkdir(parents=True, exist_ok=True)
     save(args.output_dir / "results.json", data)
     with (args.output_dir / "results.csv").open("w", newline="", encoding="utf-8") as output:
-        fields = ["benchmark", "status", "duration_seconds", "message", "job_url", "runner", "run_attempt", "hf_revision"]
+        fields = ["benchmark", "status", "build_status", "comparison_status", "duration_seconds", "message",
+                  "job_url", "runner", "run_attempt", "hf_revision"]
         writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
         writer.writeheader()
         writer.writerows(data["results"])
