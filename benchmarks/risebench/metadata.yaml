@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: RISEBench
   description: Reasoning-informed visual editing on 360 temporal, causal, spatial and logical tasks. This
     import contains 21 author-released model exports and two historical BAGEL configurations, with individual

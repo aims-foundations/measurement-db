@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: HarmBench
   description: Released model generations and native attack-success judgments from the HarmBench text and multimodal
     playground.

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: IneqMath
   description: Olympiad inequality problems expressed as bound estimation or relation prediction. This release preserves
     1000 distinct GPT-4o-mini example outputs across four prompt conditions, with individual grades unavailable.

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: FELM (released ChatGPT segment annotations)
   description: Human factuality annotations of 4,426 segments from 847 released ChatGPT answers across five domains.
   testing_condition: Curate the answer-generator annotation layer, not the unreleased per-item predictions of factuality-detector

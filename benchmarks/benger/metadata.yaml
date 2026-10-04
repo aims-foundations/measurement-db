@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BenGER
   version: '2.0'
   description: Recorded language-model attempts at German legal decision and case-solution tasks, with explicit

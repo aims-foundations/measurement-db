@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: FETV
   description: Released video-generation measurements for four models on 619 prompts, including individual human
     ratings and five automatic alignment metrics.

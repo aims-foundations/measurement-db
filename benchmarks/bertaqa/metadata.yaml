@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BertaQA
   description: Released API-model responses to parallel English and Basque trivia questions about local Basque culture and global topics.
   testing_condition: >-

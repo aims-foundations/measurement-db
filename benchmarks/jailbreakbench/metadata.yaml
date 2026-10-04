@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: JailbreakBench
   description: Released final target-model outputs under five jailbreak methods, with primary and available historical
     judge decisions kept as separate grading protocols.

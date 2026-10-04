@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Annotating Errors in English Learners' Written Language (WCF)
   description: Human evaluations of five GPT-4o prompting strategies for written corrective feedback on English-learner errors.
   testing_condition: >-

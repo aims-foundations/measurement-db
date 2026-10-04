@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'Released EngiOpt Beams2D demonstration results: conditional GAN and conditional diffusion
     outputs at three explicit design conditions, with initial, cumulative and final signed optimality
     gaps.'

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: University-level Putnam competition math problems; response is a human-graded reasoning rubric
     (5 ordinal dimensions) on each model solution.
   testing_condition: Two math LLMs solve 500 Putnam problems; human graders score five reasoning-quality dimensions

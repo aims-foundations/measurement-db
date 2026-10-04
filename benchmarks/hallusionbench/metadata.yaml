@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: HallusionBench
   description: Released image-context reasoning outputs from OpenVLMRecords, with original HallusionBench sample
     outputs preserved separately.

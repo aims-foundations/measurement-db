@@ -43,6 +43,7 @@ benchmark:
   categorical: true
   release_date: 2026-03
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: S-GRADES
   multi_single_turn: single_turn
 build:

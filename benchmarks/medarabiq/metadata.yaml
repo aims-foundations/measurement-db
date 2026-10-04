@@ -33,7 +33,8 @@ benchmark:
     kind: mixed
   categorical: false
   release_date: 2025-05
-  release: public
+  release: withheld
+  release_reason: "The captured NYU license withholds further distribution and modification rights; clarification is required before data publication."
   granularity: item
   multi_single_turn: single_turn
 build:

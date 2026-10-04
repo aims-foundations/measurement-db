@@ -1,4 +1,6 @@
 benchmark:
+  release: withheld
+  release_reason: "The curation record reports apparent credentials in upstream prompts retained by the formatted data."
   name: Arena 140K
   description: Human preferences between paired language-model conversations from Arena's released text-only votes.
   testing_condition: >-

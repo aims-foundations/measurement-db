@@ -19,6 +19,7 @@ import urllib.request
 
 
 STATUSES = {
+    "skipped_withheld": "SKIPPED (WITHHELD)",
     "passed": "PASS", "build_failed": "BUILD FAILED",
     "comparison_failed": "COMPARISON FAILED", "reference_missing": "REFERENCE MISSING",
     "reference_failed": "REFERENCE ERROR", "failed": "FAIL", "interrupted": "INTERRUPTED",
@@ -79,6 +80,12 @@ def finalize_batch(data: dict, job_status: str) -> dict:
     return data
 
 
+def withheld_result(slug: str, reason: str) -> dict:
+    return {"benchmark": slug, "status": "skipped_withheld", "duration_seconds": 0,
+            "build_status": "not_run", "comparison_status": "not_run", "phase": "metadata",
+            "message": safe_message(f"release: withheld — {reason}")}
+
+
 def github_jobs() -> list[dict]:
     """Include prior attempts so successful jobs survive a rerun of failed jobs."""
     if not os.environ.get("GITHUB_TOKEN"):
@@ -101,9 +108,13 @@ def github_jobs() -> list[dict]:
 
 
 def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
-            changes_result: str = "success") -> dict:
+            changes_result: str = "success", withheld: dict[str, str] | None = None) -> dict:
     groups = [entry["benchmarks"] for entry in matrix["include"]]
-    expected = [slug for group in groups for slug in group]
+    withheld = withheld or {}
+    if not isinstance(withheld, dict) or any(not isinstance(reason, str) or not reason.strip()
+                                            for reason in withheld.values()):
+        raise ValueError("Withheld benchmarks must have release reasons")
+    expected = [slug for group in groups for slug in group] + list(withheld)
     if expected:
         new_batch(expected)  # Validate names and reject duplicate coverage.
     warnings = []
@@ -140,7 +151,9 @@ def collect(matrix: dict, directory: Path, revision: str, jobs: list[dict],
     for job in jobs:
         if job["id"] > latest_jobs.get(job["name"], {}).get("id", -1):
             latest_jobs[job["name"]] = job
-    rows = []
+    rows = [dict(withheld_result(slug, reason), job_url="", runner="", hf_revision=revision,
+                 run_attempt=int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")))
+            for slug, reason in withheld.items()]
     for group in groups:
         name = "Reproduce " + ", ".join(group)
         job = latest_jobs.get(name, {})
@@ -222,6 +235,7 @@ def markdown(data: dict) -> str:
             comparison = STATUSES.get(row.get("comparison_status"), "—")
             lines.append(f"| `{row['benchmark']}` | {STATUSES[row['status']]} | {build} | {comparison} | {duration} | {detail} | {link} |")
         lines.extend(["", "PASS requires both a successful upstream build and an exact byte comparison.",
+                      "SKIPPED (WITHHELD) means release metadata prevented execution; no build or comparison ran.",
                       "REFERENCE MISSING means the build passed but published tables are absent; REFERENCE ERROR",
                       "means reference preparation failed (for example, access or network errors). Neither counts as PASS.",
                       "COMPARISON FAILED includes byte differences and missing or extra generated tables.",
@@ -264,7 +278,8 @@ def main() -> int:
         warnings.append("Job log links unavailable: " + safe_message(exc))
     matrix = json.loads(os.environ.get("MATRIX_JSON") or '{"include": []}')
     data = collect(matrix, args.reports_dir, os.environ.get("HF_REVISION", ""), jobs,
-                   os.environ.get("CHANGES_RESULT", "success"))
+                   os.environ.get("CHANGES_RESULT", "success"),
+                   json.loads(os.environ.get("WITHHELD_JSON") or '{}'))
     data["warnings"].extend(warnings)
     if os.environ.get("DOWNLOAD_OUTCOME", "success") not in ("success", "skipped"):
         data["warnings"].append("Artifact download did not complete; some results may be unavailable.")
@@ -280,7 +295,7 @@ def main() -> int:
     (args.output_dir / "summary.md").write_text(summary, encoding="utf-8")
     publish_summary(summary)
     print(summary)
-    return int(any(row["status"] != "passed" for row in data["results"]) or
+    return int(any(row["status"] not in ("passed", "skipped_withheld") for row in data["results"]) or
                os.environ.get("CHANGES_RESULT", "success") != "success" or
                os.environ.get("DOWNLOAD_OUTCOME", "success") not in ("success", "skipped"))
 

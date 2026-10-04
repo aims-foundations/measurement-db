@@ -18,8 +18,10 @@ import time
 
 if __package__:
     from . import benchmark_reproduction_report as reports
+    from .benchmark_release import load_release
 else:
     import benchmark_reproduction_report as reports
+    from benchmark_release import load_release
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -30,6 +32,10 @@ ZERO_SHA = "0" * 40
 
 class MissingReferenceError(ValueError):
     """The upstream build succeeded, but published comparison tables are absent."""
+
+
+class WithheldBenchmark(ValueError):
+    """Publication policy excludes this benchmark from reproduction CI."""
 
 
 def git(root: Path, *args: str) -> str:
@@ -83,6 +89,21 @@ def build_matrix(slugs: list[str]) -> dict:
     size = max(1, math.ceil(len(slugs) / 256))
     return {"include": [{"benchmarks": slugs[i:i + size]}
                         for i in range(0, len(slugs), size)]}
+
+
+def select_releases(root: Path, slugs: list[str]) -> tuple[list[str], dict[str, str]]:
+    public, withheld = [], {}
+    for slug in slugs:
+        validate_slug(slug)
+        directory = root / "benchmarks" / slug
+        if not (directory / "build.py").is_file():
+            raise ValueError(f"Missing builder: benchmarks/{slug}/build.py")
+        release, reason = load_release(directory / "metadata.yaml")
+        if release == "withheld":
+            withheld[slug] = reason
+        else:
+            public.append(slug)
+    return public, withheld
 
 
 def resolve_revision(revision: str) -> str:
@@ -173,10 +194,13 @@ def compare_tables(generated: Path, expected: dict[str, Path]) -> None:
 def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> None:
     """Build from upstream first, then fetch references and compare exact bytes."""
     progress = progress or (lambda phase, revision=None: None)
-    progress("build")
     validate_slug(slug)
     if not (root / "benchmarks" / slug / "build.py").is_file():
         raise ValueError(f"Missing builder: benchmarks/{slug}/build.py")
+    release, reason = load_release(root / "benchmarks" / slug / "metadata.yaml")
+    if release == "withheld":
+        raise WithheldBenchmark(reason)
+    progress("build")
     with tempfile.TemporaryDirectory(prefix=f"measurement-db-{slug}-") as temporary:
         scratch = Path(temporary)
         workspace = scratch / "measurement_db"  # Builders import this package name.
@@ -231,8 +255,10 @@ def main() -> int:
     if args.command == "select":
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
         slugs = changed_benchmarks(ROOT, os.environ["GITHUB_EVENT_NAME"], event)
-        values = {"matrix": json.dumps(build_matrix(slugs), separators=(",", ":")),
-                  "has_benchmarks": str(bool(slugs)).lower()}
+        public, withheld = select_releases(ROOT, slugs)
+        values = {"matrix": json.dumps(build_matrix(public), separators=(",", ":")),
+                  "withheld": json.dumps(withheld, separators=(",", ":")),
+                  "has_benchmarks": str(bool(public)).lower()}
         print(json.dumps({"benchmarks": slugs, **values}, indent=2))
         with Path(os.environ["GITHUB_OUTPUT"]).open("a") as output:
             for name, value in values.items():
@@ -254,7 +280,10 @@ def main() -> int:
     for slug, row in zip(slugs, report["results"]):
         print(f"\n=== {slug} ===", flush=True)
         started = time.monotonic()
-        row.update(status="running", started_at=reports.utc_now(), message="Building from declared upstream sources.")
+        row.update(status="running", phase="metadata", started_at=reports.utc_now(),
+                   message="Checking benchmark release metadata.")
+        if args.report:
+            reports.save(args.report, report)
 
         def progress(phase, revision=None):
             row.update(phase=phase, build_status="running" if phase == "build" else "passed",
@@ -269,11 +298,15 @@ def main() -> int:
             if args.report:
                 reports.save(args.report, report)
 
-        progress("build")
         try:
             verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress)
+        except WithheldBenchmark as exc:
+            row.update(reports.withheld_result(slug, str(exc)))
+            print(f"SKIPPED (WITHHELD) {slug}: {exc}", flush=True)
         except Exception as exc:
-            if row["phase"] == "build":
+            if row["phase"] == "metadata":
+                status = "failed"
+            elif row["phase"] == "build":
                 status = "build_failed"
                 row["build_status"] = "failed"
             elif row["phase"] == "reference":

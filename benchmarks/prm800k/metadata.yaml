@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released human process ratings of a fixed GPT-4-derived research generator on MATH problems.
   testing_condition: One fixed research generator is described by the paper; generation is an annotation-selection
     round, not a model identifier. Preserve every released model candidate, its native -1/0/+1 or unavailable rating,

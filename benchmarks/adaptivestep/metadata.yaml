@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AdaptiveStep candidate pools
   description: Released math and code candidate solutions used for AdaptiveStep Best-of-N evaluation. The tables
     measure individual policy-generator attempts, not reward-model selection or token-guided decoding.

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DPAI Arena
   description: Published blind and test-informed software-agent evaluations on enterprise Java/Spring tasks.
   testing_condition: 'Import the fifteen public leaderboard reports captured in September 2026. Each contains 153

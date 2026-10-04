@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Iterative scientific-discovery trajectories on 137 systems-biology tasks. Agents receive
     a partial SBML model, design simulated experiments, and submit a reconstructed model. The curated
     release includes six reaction-recovery metrics derived from final models and explicitly unavailable

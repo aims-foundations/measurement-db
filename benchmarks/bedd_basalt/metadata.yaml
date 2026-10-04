@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: 'BEDD: MineRL BASALT Evaluation Dataset'
   description: Recorded human judgments of Minecraft agent videos on four open-ended BASALT tasks.
   testing_condition: Import every accepted human rating after the author's banned-worker exclusion. Keep 15 AI agents

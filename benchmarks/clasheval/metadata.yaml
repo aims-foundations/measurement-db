@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: ClashEval records how six language models answer factual questions with and without altered
     retrieved context. The import retains each released context-conditioned attempt and one reused closed-book
     answer per model/question.

@@ -188,6 +188,31 @@ Set `benchmark.release_date` explicitly to `null` when unknown. Known dates use
 quoted `YYYY-MM` or `YYYY-MM-DD` strings with valid calendar values; retain the
 available precision rather than guessing a month or day.
 
+Every `metadata.yaml` must explicitly set `benchmark.release` to `public` or
+`withheld` in this repository. `public` records the decision to publish the
+formatted tables under their source terms. `withheld` prevents publication and
+skips reproduction CI; it requires a nonempty `benchmark.release_reason`.
+Keep the underlying terms in `license` and evidence in `curation_record.md`.
+Private benchmarks belong in the separate repository; shared tooling still
+recognizes `private`, but this repository's metadata check rejects it. The
+template starts withheld. Missing legacy inline decisions also default to
+withheld. `release_reason` is authoring metadata and adds no Parquet column.
+
+The [2026-10-04 release inventory](docs/release-reconciliation-2026-10-04.csv)
+records all 290 previous values, decisions, reasons, and existing license and
+curation evidence. It is a migration snapshot; `metadata.yaml` remains the
+current source of truth. The repository policy is public unless the reviewed
+evidence identifies a concrete redistribution restriction, unmet source-access
+condition, or sensitive content in the formatted data. A missing or historical
+private flag, an unknown license, and noncommercial or attribution conditions
+alone do not make a benchmark withheld. Unclear licensing remains documented
+in the inventory and source metadata; public is a repository decision, not a
+new license grant or a claim of legal clearance. Earlier holds based only on
+unclear licensing are superseded explicitly in release_reason. Raw-only holds
+remain in the curation records where the formatted tables exclude that material.
+No private definitions were moved and no publication tooling was changed in
+this migration. Upload review must still respect the original source terms.
+
 Fixed verifier descriptions belong in the optional `grading.verifiers` mapping
 in `metadata.yaml`, exposed to builders through `self.grading`. Each named
 description is a nonempty JSON-compatible object; its fields describe the
@@ -286,11 +311,19 @@ token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
 Fork PRs are skipped; their reviewed commits
 need a branch in this repository to run this check with repository secrets.
 
-Each run attempts to resolve the HF `migration/tabular-builders-20260924` branch
+Selection first reads each changed benchmark's `metadata.yaml`. Withheld
+benchmarks are excluded from the job matrix before build dependency installation,
+source downloads, or reference access. The complete report lists each as
+**SKIPPED (WITHHELD)** with its reason; skips are neither passes nor failures.
+An all-withheld selection runs no reproduction jobs and does not resolve HF.
+Missing, invalid, duplicate, or private release declarations fail selection.
+Direct `verify` commands apply the same release check before executing a builder.
+
+Each run with public benchmarks attempts to resolve the HF `migration/tabular-builders-20260924` branch
 to one immutable commit shared by all jobs. If that preparation fails, upstream
 builds still run and successful builds report **REFERENCE ERROR**. Jobs never
 fall back to independently resolving a moving HF branch.
-Each benchmark first executes `benchmarks/<slug>/build.py`
+Each selected public benchmark first executes `benchmarks/<slug>/build.py`
 in a temporary source checkout, downloading the authors' inputs declared in
 `sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
 only the expected output tables; it does not select the build's raw inputs.

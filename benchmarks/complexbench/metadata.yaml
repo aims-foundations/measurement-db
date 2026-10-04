@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released model generations for complex Chinese instructions with composed grading requirements;
     historical judgments are unavailable.
   testing_condition: One released generation record per model and instruction. Preserve all 17,250 records,

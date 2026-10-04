@@ -43,7 +43,7 @@ benchmark:
     egocentric videos.
   multi_single_turn: single_turn
   granularity: item
-  release: private
+  release: public
 build:
   contract_version: 2
   parameters:

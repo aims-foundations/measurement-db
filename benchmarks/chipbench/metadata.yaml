@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Published circuit-level placement and synthesis measurements, full released design kits and native
     metric scales.
   testing_condition: Curate all individual-design result cells in final NeurIPS 2025 Tables 6, 7, 8 and 11. Preserve

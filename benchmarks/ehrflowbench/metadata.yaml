@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: EHRFlowBench
   description: Published completion flags and full answer text for seven agent frameworks on the 20-task HealthFlow
     review subset, with the original EHR inputs and reference reports.

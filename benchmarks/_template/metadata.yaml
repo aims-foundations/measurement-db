@@ -39,7 +39,8 @@ benchmark:
     }
   tags:
     - example
-  release: private
+  release: withheld
+  release_reason: Publication review has not been completed.
 
 build:
   contract_version: 2

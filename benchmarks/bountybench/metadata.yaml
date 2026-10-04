@@ -1,4 +1,6 @@
 benchmark:
+  release: withheld
+  release_reason: "The curation record reports an apparent API credential in an upstream log retained by the formatted data."
   name: BountyBench
   description: Recorded cybersecurity-agent workflows for vulnerability detection, exploitation and patching.
   testing_condition: The public experimental-success-runs-10-agents folder is a selected-run release, not all attempted

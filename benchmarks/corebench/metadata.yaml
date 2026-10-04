@@ -29,7 +29,7 @@ benchmark:
     direction: higher_is_better
   categorical: false
   release_date: 2024-09
-  release: private
+  release: public
   one_line_description: Evaluates agents on reproducing scientific code and answering questions about
     its outputs.
   multi_single_turn: multi_turn

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'NESTER: dataflow-guided neuro-symbolic type inference for Python. Released per-item data
     covers the human evaluation of high-level program generation on ManyTypes4Py samples: GPT-4, GPT-4o
     and GPT-4o mini generations each graded on four binary criteria (correctness, explainability, factuality,

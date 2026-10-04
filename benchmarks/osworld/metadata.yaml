@@ -38,7 +38,8 @@ benchmark:
     direction: higher_is_better
   categorical: false
   release_date: 2024-04
-  release: public
+  release: withheld
+  release_reason: "The curation record reports potential credentials in the upstream capture and withholds both raw and formatted data."
   multi_single_turn: multi_turn
   version: 5473c39e42a538a187a9b2c2b499db59d560fd8c
   granularity: item

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Stochastic vehicle routing benchmark. This curation preserves the released individual route
     exports and their cost, constraint violation, feasibility, runtime, and robustness metrics.
   testing_condition: Individual route exports for four solvers on eight captured instances. Each recorded

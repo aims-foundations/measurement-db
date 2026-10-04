@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: JETTS generator response pool
   description: Original scored generator responses released by JETTS across eight math, code and instruction-following
     component datasets.

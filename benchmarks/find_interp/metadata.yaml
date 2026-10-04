@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: FIND
   description: Released function-interpretation conversations and available native grades for numeric, string and
     synthetic-neuron functions.

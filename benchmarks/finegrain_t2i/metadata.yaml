@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: FineGRAIN (T2I)
   description: Released text-to-image generations on 760 prompts covering 27 failure modes, with human annotations
     for the five original generators.

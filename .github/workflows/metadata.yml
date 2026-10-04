@@ -19,8 +19,8 @@ jobs:
         with:
           python-version: '3.11'
       - run: pip install -r requirements.txt pytest==8.3.5
-      - name: Require compact metadata for all public benchmarks
-        run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current benchmarks/*/metadata.yaml
+      - name: Require explicit public or withheld metadata for every benchmark
+        run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current --public-repository benchmarks/*/metadata.yaml
       - name: Require reviewed characterizations and source claims
         run: python -m scripts.build_measurement_tables.validate_characterization --benchmarks-dir benchmarks
       - name: Test shared validation and available datasets without downloads

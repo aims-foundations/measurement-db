@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: HIVMedQA
   description: Published HIV question-answering runs and five clinical judge ratings, retaining reference-guided,
     reference-free and reference-paraphrasing conditions separately.

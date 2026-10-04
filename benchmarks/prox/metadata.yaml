@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: "ProX (Programming Every Example) pre-training data refinement \u2014 released per-item\
     \ math evals. Coverage is the partial slice the authors released: TinyLlama-1.1B continually pre-trained\
     \ on the original OpenWebMath corpus, at two intermediate checkpoints (0.5B and 1B training tokens),\

@@ -32,6 +32,7 @@ jobs:
     outputs:
       matrix: ${{ steps.select.outputs.matrix }}
       has_benchmarks: ${{ steps.select.outputs.has_benchmarks }}
+      withheld: ${{ steps.select.outputs.withheld }}
       hf_revision: ${{ steps.reference.outputs.revision }}
     defaults:
       run:
@@ -49,9 +50,11 @@ jobs:
         run: |
           python -m venv --clear "$RUNNER_TEMP/measurement-db-venv"
           echo "$RUNNER_TEMP/measurement-db-venv/bin" >> "$GITHUB_PATH"
-      - name: Test change detection and strict byte comparison
+      - name: Install the metadata reader
+        run: python -m pip install 'PyYAML>=6,<7'
+      - name: Test change detection, release policy, and strict byte comparison
         run: python -m unittest discover -s tests -p 'test_benchmark_reproduction*.py' -v
-      - name: Select every changed benchmark
+      - name: Read release metadata and select public benchmarks
         id: select
         run: python scripts/ci/benchmark_reproduction.py select
       - name: Install Hub client
@@ -160,6 +163,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           MATRIX_JSON: ${{ needs.changes.outputs.matrix }}
+          WITHHELD_JSON: ${{ needs.changes.outputs.withheld }}
           HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
           CHANGES_RESULT: ${{ needs.changes.result }}
           DOWNLOAD_OUTCOME: ${{ steps.results.outcome }}

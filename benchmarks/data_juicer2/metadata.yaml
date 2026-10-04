@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Data-Juicer 2.0
   description: Published processing-time measurements for Data-Juicer 2.0 deduplication, CPU/GPU operators
     and cloud-scale workloads.

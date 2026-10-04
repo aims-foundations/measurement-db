@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Coding LLMs predict a runtime test outcome (passed/failed/error) for 435 library-level cases
     derived from SWE-bench Verified; response is per-item outcome-prediction correctness.
   testing_condition: Exact three-category test-outcome correctness over the v05_clean generation release. This

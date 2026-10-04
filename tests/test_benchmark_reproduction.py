@@ -33,6 +33,7 @@ class RepositoryTest(unittest.TestCase):
         self.git("config", "user.email", "ci@example.invalid")
         for slug in ("alpha", "beta", "_template"):
             self.write(f"benchmarks/{slug}/build.py", "# builder\n")
+            self.write(f"benchmarks/{slug}/metadata.yaml", "benchmark:\n  release: public\n")
         self.write("README.md", "fixture\n")
         self.base = self.commit()
 
@@ -104,6 +105,78 @@ class ChangedBenchmarksTests(RepositoryTest):
         self.assertLessEqual(len(matrix), 256)
         self.assertEqual([slug for job in matrix for slug in job["benchmarks"]], slugs)
         self.assertEqual(reproduction.build_matrix([]), {"include": []})
+
+
+class ReleaseSelectionTests(RepositoryTest):
+    def withhold(self, slug="beta"):
+        return self.write(f"benchmarks/{slug}/metadata.yaml",
+                          "benchmark:\n  release: withheld\n  release_reason: Permission pending.\n")
+
+    def test_withheld_benchmarks_are_excluded_from_the_job_matrix(self):
+        self.withhold()
+        public, withheld = reproduction.select_releases(self.root, ["alpha", "beta"])
+        self.assertEqual(public, ["alpha"])
+        self.assertEqual(withheld, {"beta": "Permission pending."})
+        self.assertEqual(reproduction.build_matrix(public), {"include": [{"benchmarks": ["alpha"]}]})
+
+    def test_selection_cli_reports_all_withheld_without_scheduling_jobs(self):
+        self.withhold("alpha")
+        self.withhold("beta")
+        event = self.write("event.json", '{"inputs": {"benchmark": ""}}')
+        output = self.root / "output"
+        with patch.dict(os.environ, {"GITHUB_EVENT_PATH": str(event), "GITHUB_EVENT_NAME": "workflow_dispatch",
+                                     "GITHUB_OUTPUT": str(output)}), \
+                patch.object(reproduction, "ROOT", self.root), patch.object(sys, "argv", ["ci", "select"]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(reproduction.main(), 0)
+        values = dict(line.split("=", 1) for line in output.read_text().splitlines())
+        self.assertEqual(values["has_benchmarks"], "false")
+        self.assertEqual(json.loads(values["matrix"]), {"include": []})
+        self.assertEqual(set(json.loads(values["withheld"])), {"alpha", "beta"})
+
+    def test_invalid_missing_private_and_duplicate_decisions_fail_closed(self):
+        for text in ("benchmark: {}", "benchmark:\n  release: private", "benchmark:\n  release: invalid",
+                     "benchmark:\n  release: withheld", "benchmark:\n  release: withheld\n  release_reason: ' '",
+                     "benchmark:\n  release: withheld\n  release: public", "benchmark: [", "benchmark: null"):
+            with self.subTest(text=text):
+                self.write("benchmarks/alpha/metadata.yaml", text)
+                with self.assertRaises(ValueError):
+                    reproduction.select_releases(self.root, ["alpha"])
+        (self.root / "benchmarks/alpha/metadata.yaml").unlink()
+        with self.assertRaisesRegex(ValueError, "metadata.yaml"):
+            reproduction.select_releases(self.root, ["alpha"])
+
+    def test_direct_verification_skips_before_workspace_build_or_reference_access(self):
+        self.withhold("alpha")
+        with patch.object(reproduction, "copy_build_source") as copy, \
+                patch.object(reproduction.subprocess, "run") as build, \
+                patch.object(reproduction, "resolve_revision") as reference:
+            with self.assertRaises(reproduction.WithheldBenchmark):
+                reproduction.verify_benchmark(self.root, "alpha", REVISION)
+        copy.assert_not_called()
+        build.assert_not_called()
+        reference.assert_not_called()
+
+    def test_direct_cli_records_skip_and_continues_the_public_benchmark(self):
+        self.withhold("alpha")
+        report = self.root / "report.json"
+        original = reproduction.verify_benchmark
+
+        def verify(root, slug, revision, **kwargs):
+            if slug == "alpha":
+                return original(root, slug, revision, **kwargs)
+            kwargs["progress"]("build")
+            kwargs["progress"]("comparison")
+
+        with patch.object(reproduction, "ROOT", self.root), \
+                patch.object(reproduction, "verify_benchmark", side_effect=verify) as runner, \
+                patch.object(sys, "argv", ["ci", "verify", "alpha", "beta", "--report", str(report)]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(reproduction.main(), 0)
+        rows = json.loads(report.read_text())["results"]
+        self.assertEqual([row["status"] for row in rows], ["skipped_withheld", "passed"])
+        self.assertEqual(rows[0]["build_status"], "not_run")
+        self.assertEqual(runner.call_count, 2)
 
 
 def file(path):

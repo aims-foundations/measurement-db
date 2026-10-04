@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: The Elicitation Game
   description: Released WMDP multiple-choice outcomes under prefilling, adversarial-suffix and anti-refusal interventions,
     with original questions and available answer records.

@@ -27,7 +27,7 @@ benchmark:
     kind: mixed
   categorical: true
   release_date: 2024-06
-  release: private
+  release: public
   name: AgentDojo
   one_line_description: Evaluates task utility and attacker-goal success for tool-using agents exposed
     to prompt injection.

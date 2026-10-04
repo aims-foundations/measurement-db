@@ -39,7 +39,7 @@ benchmark:
       '1': correct answer
   categorical: true
   release_date: 2026-04
-  release: private
+  release: public
   name: IKP
   one_line_description: Evaluates factual recall across seven tiers of obscurity, using an LLM judge to
     distinguish correct answers, incorrect answers, and refusals.

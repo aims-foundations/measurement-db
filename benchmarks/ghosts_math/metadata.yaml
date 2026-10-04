@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: GHOSTS
   description: Human ratings of ChatGPT and GPT-4 answers to natural-language mathematics questions with released
     prompt text.

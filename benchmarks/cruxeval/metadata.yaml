@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Recorded execution verdicts and postprocessed generations for input and output prediction on
     Python functions.
   testing_condition: 'Preserve all 992,000 recorded boolean verdicts from 124 exports: 800 functions, two prediction

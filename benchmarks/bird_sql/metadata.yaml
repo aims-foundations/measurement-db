@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BIRD (text-to-SQL)
   description: Published Petavue evaluations of text-to-SQL models on a 360-question BIRD development subset.
   testing_condition: Import all 43,200 released inference rows. Keep the 24 native model/provider combinations and

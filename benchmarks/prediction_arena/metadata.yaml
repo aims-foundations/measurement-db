@@ -49,6 +49,7 @@ benchmark:
   name: Prediction Arena
   version: api-capture-2026-09-30
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   multi_single_turn: multi_turn
   granularity: item
 build:

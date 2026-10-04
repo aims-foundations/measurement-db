@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: LawBench
   description: Released Chinese legal-task predictions with complete recorded prompts and deterministic native scoring.
   testing_condition: Preserve all 918000 released predictions across 18 tasks, 51 source model labels and both prompting

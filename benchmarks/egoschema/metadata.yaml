@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: EgoSchema (released LLoVi configurations)
   description: Published LLoVi question-answering results on the 500-question public EgoSchema subset, retaining
     the available caption-based inputs and eleven model/prompt configurations.

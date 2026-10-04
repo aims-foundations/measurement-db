@@ -362,10 +362,11 @@ benchmarks:
       type: string
       nullable: true
       description: >-
-        Public/private publish gate (replaced the old manifest.yaml):
-        "public" makes the benchmark eligible for the public HF mirror,
-        "private" keeps it private. Declared in build.py's `INFO`; omitting
-        it defaults to "private".
+        Publication decision: "public" permits public publication, "private"
+        belongs in the separate private repository, and "withheld" prevents
+        publication. Metadata requires an explicit decision; legacy inline
+        builders default to "withheld". The public repository permits only
+        public and withheld. release_reason is authoring metadata, not a column.
     - name: n_response_values
       type: int
       nullable: true

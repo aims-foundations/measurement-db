@@ -37,6 +37,7 @@ benchmark:
   categorical: false
   release_date: 2023-06
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: MT-Bench
   version: a4b674ca573c24143824ac7f60d9173e7081e37d
   granularity: item

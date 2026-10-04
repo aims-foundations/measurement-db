@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Readability of educational answers from base, grade-prompted and grade-finetuned GPT models. Preserve
     the released DGPT answers and integrate their recorded readability estimates with the authors' classifier.
   testing_condition: All 14 released result files contain 740 question occurrences, representing 734 distinct questions.

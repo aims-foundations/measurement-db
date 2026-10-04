@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DQVis expert-reviewed generations
   description: Published expert judgments of generated natural-language queries and associated biomedical visualization
     specifications.

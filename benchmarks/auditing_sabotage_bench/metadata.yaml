@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Auditing Sabotage Bench
   description: Recorded AI audits of honest and sabotaged machine-learning research codebases and their papers.
   testing_condition: 'One observation is one AI audit in the released ground-truth CSVs. Subjects distinguish

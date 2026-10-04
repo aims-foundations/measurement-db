@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'ProofAug: cumulative theorem-proving results of deepseek-math-7b-base + ProofAug (mixed prompting
     strategy, <=2100 queries/problem, Isabelle) on the curated miniF2F-test — a full 244-problem binary solved/unsolved
     matrix (161 solved, 66.0%).'

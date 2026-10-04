@@ -36,7 +36,7 @@ benchmark:
       '1': correct
   categorical: true
   release_date: 2024-07
-  release: private
+  release: public
   name: Causal Axioms (Axiomatic Training)
   multi_single_turn: single_turn
 build:

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: KorMedMCQA
   description: Published Korean healthcare licensing-exam predictions from the independently maintained Korean LLM
     Benchmark Suite.

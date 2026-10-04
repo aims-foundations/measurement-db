@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Item-level MMLU predictions released for AGI-Elo, a study of joint task difficulty and AI-system
     competency. This curation covers the released question-answering observations, not derived Elo ratings.
   testing_condition: Twenty released MMLU model exports. Keep observations whose task identifier and reference

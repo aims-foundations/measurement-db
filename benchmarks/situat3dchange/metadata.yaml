@@ -39,7 +39,8 @@ benchmark:
     direction: higher_is_better
   categorical: false
   release_date: 2025-10
-  release: public
+  release: withheld
+  release_reason: "3RScan permits sharing with research associates and colleagues after they accept its terms; public mirroring of the captured point clouds has not been established."
   granularity: item
   multi_single_turn: single_turn
   version: Released validation v2 annotations and SCReasoner outputs

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'End-to-end legal RAG benchmark: 100 Victorian criminal-law questions x (3 embedders x
     2 frontier LLMs), judged on binary correctness, groundedness, and retrieval accuracy.'
   testing_condition: 'Six RAG pipelines (three embedding models and two generators) each answer 100 questions

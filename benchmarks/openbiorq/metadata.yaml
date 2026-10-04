@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'OpenBioRQ: 657-question core of unsolved biomedical research questions for tool-using
     agents, graded by a frozen per-question checklist; solve = checklist score >= 0.5. Full per-(model
     x item) matrix released for 11 agents (roster, held-out, frontier, no-tool ablations).'

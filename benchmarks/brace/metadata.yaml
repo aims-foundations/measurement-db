@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'Released CAF-Score caption-pair decisions on BRACE audio: correctness of smoothed and
     raw score variants against the annotations actually used in the third-party evaluation.'
   testing_condition: Import the 32 CAF-Score exports at alpha=0.8, with separate system identities for

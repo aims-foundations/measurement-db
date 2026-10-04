@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: ChartMuseum
   description: Chart question answering with the 162 released Claude 3.7 Sonnet development outputs and their original
     images.

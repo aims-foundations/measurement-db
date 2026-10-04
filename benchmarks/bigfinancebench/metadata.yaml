@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BigFinanceBench
   description: Financial-research agent runs with independent model judgments of final answers and analyst rubrics.
     Evaluation-only data; do not use for training.

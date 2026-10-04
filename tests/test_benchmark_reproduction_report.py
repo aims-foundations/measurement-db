@@ -237,6 +237,29 @@ class ReportTests(unittest.TestCase):
                 contextlib.redirect_stdout(io.StringIO()):
             self.assertEqual(reports.main(), 0)
 
+    def test_all_withheld_run_reports_skips_without_missing_artifacts_or_false_passes(self):
+        output = self.root / "output"
+        with patch.dict(os.environ, {"MATRIX_JSON": '{"include":[]}', "DOWNLOAD_OUTCOME": "skipped",
+                                     "WITHHELD_JSON": '{"alpha":"Permission pending."}'}), \
+                patch.object(sys, "argv", ["report", "aggregate", "--reports-dir", str(self.artifacts),
+                                           "--output-dir", str(output)]), \
+                patch.object(reports, "github_jobs", return_value=[]), \
+                contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(reports.main(), 0)
+        data = json.loads((output / "results.json").read_text())
+        self.assertEqual(data["counts"]["skipped_withheld"], 1)
+        self.assertEqual(data["counts"]["passed"], 0)
+        self.assertEqual(data["counts"]["not_reported"], 0)
+        self.assertIn("Permission pending.", (output / "summary.md").read_text())
+
+    def test_withheld_and_public_results_have_complete_nonoverlapping_coverage(self):
+        self.batch(["alpha"], ["passed"])
+        matrix = {"include": [{"benchmarks": ["alpha"]}]}
+        result = reports.collect(matrix, self.artifacts, REVISION, [], withheld={"beta": "Review pending."})
+        self.assertEqual([row["status"] for row in result["results"]], ["passed", "skipped_withheld"])
+        with self.assertRaises(ValueError):
+            reports.collect(matrix, self.artifacts, REVISION, [], withheld={"alpha": "Review pending."})
+
     def test_missing_reference_stays_nonpassing_in_all_report_formats(self):
         data, path = self.batch(["alpha"], ["reference_missing"])
         data["results"][0].update(build_status="passed", comparison_status="reference_missing")

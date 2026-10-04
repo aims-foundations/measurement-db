@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AlpacaEval 2.0 weighted preferences
   description: Released per-instruction soft preferences for 221 generators against the fixed
     gpt4_1106_preview reference, evaluated with the weighted GPT-4-Turbo annotator.

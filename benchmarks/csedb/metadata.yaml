@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released clinical answers and LLM assessments from the main, prompt-optimization and repeated-generation
     experiments.
   testing_condition: 'Each response row is one released model/case assessment. The three main files mostly

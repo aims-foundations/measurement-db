@@ -50,6 +50,7 @@ OPTIONAL_KEYS = (
 )
 
 CURATION_ONLY_KEYS = (
+    "release_reason",
     "testing_condition",
     "subject_type",
     "item_type",
@@ -111,7 +112,7 @@ MULTI_SINGLE_TURN_VALUES = {
     "multi_turn, single_turn",
 }
 GRANULARITIES = {"item", "aggregate", "not_released"}
-RELEASE_VALUES = {"public", "private"}
+RELEASE_VALUES = {"public", "private", "withheld"}
 ONE_LINE_DESCRIPTION_STARTERS = (
     "Measures",
     "Evaluates",
@@ -146,6 +147,7 @@ class BenchmarkInfo(BenchmarkInfoRequired, total=False):
     multi_single_turn: str
     granularity: str
     release: str
+    release_reason: str
     benchmark_features: dict | str
     testing_condition: str
     subject_type: str
@@ -294,7 +296,7 @@ def validate_info(info: object, *, context: str = "benchmark") -> None:
     if features is not None and not isinstance(features, (dict, str)):
         problems.append("'benchmark_features' must be a dict, string, or None")
 
-    for key in ("testing_condition", "subject_type", "item_type", "citation"):
+    for key in ("release_reason", "testing_condition", "subject_type", "item_type", "citation"):
         value = info.get(key)
         if value is not None and not isinstance(value, str):
             problems.append(f"{key!r} must be a string when supplied")

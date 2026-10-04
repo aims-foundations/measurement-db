@@ -317,9 +317,17 @@ def main():
     parser = argparse.ArgumentParser(description=main.__doc__)
     parser.add_argument("paths", type=Path, nargs="+")
     parser.add_argument("--require-current", action="store_true")
+    parser.add_argument("--public-repository", action="store_true",
+                        help="Reject private releases in the public measurement-db repository")
     args = parser.parse_args()
     for path in args.paths:
         metadata = load_benchmark_metadata(path)
+        if args.public_repository:
+            from ..ci.benchmark_release import validate_public_release
+            try:
+                validate_public_release(metadata["benchmark"])
+            except ValueError as exc:
+                parser.error(f"{path}: {exc}")
         if args.require_current and metadata["build"]["contract_version"] != 2:
             parser.error(f"{path}: new and public benchmarks require contract_version: 2")
         print(f"Validated {path}")

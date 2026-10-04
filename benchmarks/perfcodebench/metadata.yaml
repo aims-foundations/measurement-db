@@ -42,6 +42,7 @@ benchmark:
   categorical: true
   release_date: 2026-05
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: PerfCodeBench
   version: 7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
   granularity: item

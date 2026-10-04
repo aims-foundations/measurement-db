@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AutoResearchBench
   description: Released agent attempts at identifying individual scientific papers and collecting sets of relevant papers.
   testing_condition: >-
