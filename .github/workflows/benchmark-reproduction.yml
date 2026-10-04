@@ -116,6 +116,7 @@ jobs:
       - name: Rebuild from declared upstream sources and compare every table byte for byte
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           PYTHONUNBUFFERED: '1'
         run: python scripts/ci/benchmark_reproduction.py verify --revision "$HF_REVISION" --report "$RUNNER_TEMP/benchmark-report/results.json"
       - name: Summarize this group's benchmark results
