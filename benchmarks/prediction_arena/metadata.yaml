@@ -48,8 +48,12 @@ benchmark:
   release_date: 2026-03
   name: Prediction Arena
   version: api-capture-2026-09-30
-  release: public
-  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  release: withheld
+  release_reason: >-
+    Tables include Kalshi market descriptions and API payloads. Section 3.1 of the Kalshi Developer Agreement
+    restricts sharing API data with third parties without prior written authorization; no authorization covering
+    this redistribution is recorded. Withheld pending such authorization. Evidence:
+    https://kalshi-public-docs.s3.amazonaws.com/Kalshi-Developer-Agreement.pdf (reviewed 2026-10-04).
   multi_single_turn: multi_turn
   granularity: item
 build:
