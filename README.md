@@ -345,6 +345,12 @@ SHA-256 values for both files appear in the job log. Jobs continue independently
 after another benchmark fails. The workflow uses up to 16 concurrent reproduction jobs;
 changes exceeding GitHub's 256-job matrix limit are split into small batches.
 
+Jobs use Python 3.11 unless `build.parameters.runtime.python_version` declares
+a quoted version in the benchmark's metadata. Batches contain only benchmarks
+using the same interpreter. LawBench pins Python 3.12.12 because its native
+scorer's floating-point summation must reproduce the published grades; use that
+version for local LawBench builds too.
+
 The final **Benchmark report** job publishes a table on the workflow run's
 **Summary** page, with one row per selected benchmark: overall result, upstream
 build status, comparison status, elapsed time,

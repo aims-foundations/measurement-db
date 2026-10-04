@@ -18,10 +18,19 @@ from measurement_db.build_base import BenchmarkBuild, Judge
 
 
 class LawBench(BenchmarkBuild):
+    def _check_python_version(self):
+        required = self.build_parameters["runtime"]["python_version"]
+        current = ".".join(map(str, sys.version_info[:3]))
+        if current != required:
+            raise ValueError(f"LawBench requires Python {required}; found {current}. "
+                "The native information-extraction scorer depends on Python's float summation.")
+
     def download(self):
+        self._check_python_version()
         return self.fetch_sources("upstream")
 
     def build_tables(self) -> dict[str, pd.DataFrame]:
+        self._check_python_version()
         parameters = self.build_parameters
         prefix = parameters["paths"]["prefix"]
         archive_path = self.raw_dir / parameters["paths"]["archive"]

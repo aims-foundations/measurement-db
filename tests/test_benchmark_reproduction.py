@@ -106,6 +106,35 @@ class ChangedBenchmarksTests(RepositoryTest):
         self.assertEqual([slug for job in matrix for slug in job["benchmarks"]], slugs)
         self.assertEqual(reproduction.build_matrix([]), {"include": []})
 
+    def test_runtime_pins_are_read_without_importing_builders(self):
+        self.write("benchmarks/alpha/metadata.yaml", "benchmark:\n  release: public\n"
+                   "build:\n  parameters:\n    runtime:\n      python_version: '3.12.12'\n")
+        versions = reproduction.python_versions(self.root, ["alpha", "beta"])
+        self.assertEqual(versions, {"alpha": "3.12.12", "beta": "3.11"})
+        self.assertEqual(reproduction.build_matrix(["alpha", "beta"], versions), {"include": [
+            {"benchmarks": ["alpha"], "python_version": "3.12.12"},
+            {"benchmarks": ["beta"], "python_version": "3.11"},
+        ]})
+
+    def test_mixed_runtime_batches_stay_within_matrix_limit(self):
+        slugs = [f"benchmark_{n}" for n in range(511)] + ["lawbench"]
+        versions = {"lawbench": "3.12.12"}
+        matrix = reproduction.build_matrix(slugs, versions)["include"]
+        self.assertLessEqual(len(matrix), 256)
+        self.assertCountEqual([slug for job in matrix for slug in job["benchmarks"]], slugs)
+        for job in matrix:
+            self.assertEqual({versions.get(slug, "3.11") for slug in job["benchmarks"]}, {job["python_version"]})
+        self.assertEqual([job for job in matrix if "lawbench" in job["benchmarks"]],
+                         [{"benchmarks": ["lawbench"], "python_version": "3.12.12"}])
+
+    def test_invalid_runtime_pin_fails_selection(self):
+        for value in ("3.12", "'latest'", "'[3.11, 3.12]'", "null"):
+            with self.subTest(value=value):
+                self.write("benchmarks/alpha/metadata.yaml", "benchmark:\n  release: public\n"
+                           f"build:\n  parameters:\n    runtime:\n      python_version: {value}\n")
+                with self.assertRaisesRegex(ValueError, "quoted Python version"):
+                    reproduction.python_versions(self.root, ["alpha"])
+
 
 class ReleaseSelectionTests(RepositoryTest):
     def withhold(self, slug="beta"):
@@ -117,7 +146,8 @@ class ReleaseSelectionTests(RepositoryTest):
         public, withheld = reproduction.select_releases(self.root, ["alpha", "beta"])
         self.assertEqual(public, ["alpha"])
         self.assertEqual(withheld, {"beta": "Permission pending."})
-        self.assertEqual(reproduction.build_matrix(public), {"include": [{"benchmarks": ["alpha"]}]})
+        self.assertEqual(reproduction.build_matrix(public),
+                         {"include": [{"benchmarks": ["alpha"], "python_version": "3.11"}]})
 
     def test_selection_cli_reports_all_withheld_without_scheduling_jobs(self):
         self.withhold("alpha")

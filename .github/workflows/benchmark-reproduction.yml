@@ -105,7 +105,7 @@ jobs:
         run: /usr/bin/python3 scripts/ci/benchmark_reproduction_report.py init --report "$RUNNER_TEMP/benchmark-report/results.json"
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python_version }}
           cache: pip
           cache-dependency-path: |
             measurement_db/requirements.txt

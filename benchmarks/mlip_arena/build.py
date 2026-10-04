@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+import math
 from pathlib import Path
 import re
 import sqlite3
@@ -113,7 +114,8 @@ class MLIPArena(BenchmarkBuild):
                     rule = grading['combustion']
                     table['enthalpy_difference'] = table.energies.map(lambda values:
                         (values[-1] - values[0]) / rule['water_count'] * rule['energy_conversion'] - rule['reference_enthalpy'])
-                    table['com_drift'] = table.com_drifts.map(lambda values: float(np.linalg.norm(values[-1])))
+                    # Keep the published norm's rounding independent of NumPy's BLAS kernel.
+                    table['com_drift'] = table.com_drifts.map(lambda values: math.hypot(*values[-1]))
                 parts.append(table)
 
         # 4. A stability file contains many frames per simulation. Group them

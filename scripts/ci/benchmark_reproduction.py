@@ -83,12 +83,36 @@ def changed_benchmarks(root: Path, event_name: str, event: dict) -> list[str]:
     return sorted(slugs)
 
 
-def build_matrix(slugs: list[str]) -> dict:
+def python_versions(root: Path, slugs: list[str]) -> dict[str, str]:
+    """Honor benchmark-specific interpreter pins without importing builders."""
+    import yaml
+
+    versions = {}
+    for slug in slugs:
+        path = root / "benchmarks" / slug / "metadata.yaml"
+        metadata = yaml.safe_load(path.read_text())
+        runtime = metadata.get("build", {}).get("parameters", {}).get("runtime", {})
+        version = runtime.get("python_version", "3.11")
+        if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+(?:\.\d+)?", version):
+            raise ValueError(f"{path}: runtime.python_version must be a quoted Python version")
+        versions[slug] = version
+    return versions
+
+
+def build_matrix(slugs: list[str], versions: dict[str, str] | None = None) -> dict:
     # GitHub permits at most 256 matrix jobs. Usually there is one builder per
-    # job; large migrations use small batches and still check every benchmark.
+    # job; large migrations batch only benchmarks using the same interpreter.
+    groups: dict[str, list[str]] = {}
+    for slug in slugs:
+        groups.setdefault((versions or {}).get(slug, "3.11"), []).append(slug)
+    if len(groups) > 256:
+        raise ValueError("Too many Python versions for GitHub's 256-job matrix limit")
     size = max(1, math.ceil(len(slugs) / 256))
-    return {"include": [{"benchmarks": slugs[i:i + size]}
-                        for i in range(0, len(slugs), size)]}
+    while sum(math.ceil(len(group) / size) for group in groups.values()) > 256:
+        size += 1
+    return {"include": [{"benchmarks": group[i:i + size], "python_version": version}
+                        for version, group in groups.items()
+                        for i in range(0, len(group), size)]}
 
 
 def select_releases(root: Path, slugs: list[str]) -> tuple[list[str], dict[str, str]]:
@@ -256,7 +280,7 @@ def main() -> int:
         event = json.loads(Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
         slugs = changed_benchmarks(ROOT, os.environ["GITHUB_EVENT_NAME"], event)
         public, withheld = select_releases(ROOT, slugs)
-        values = {"matrix": json.dumps(build_matrix(public), separators=(",", ":")),
+        values = {"matrix": json.dumps(build_matrix(public, python_versions(ROOT, public)), separators=(",", ":")),
                   "withheld": json.dumps(withheld, separators=(",", ":")),
                   "has_benchmarks": str(bool(public)).lower()}
         print(json.dumps({"benchmarks": slugs, **values}, indent=2))

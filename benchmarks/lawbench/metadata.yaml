@@ -67,6 +67,7 @@ build:
       3-4: 死刑|无期
       3-5: 死刑|无期
     runtime:
+      python_version: '3.12.12'
       workers: '8'
       python_hash_seed: '0'
     packages:
