@@ -158,6 +158,8 @@ class MJBench(BenchmarkBuild):
                 dimension = next((name for name in ['alignment', 'artifacts', 'safety', 'bias'] if name in path.parts), None)
                 if 'images_dir' in table:
                     dimension = 'bias'
+                if dimension is None and closed:
+                    dimension = 'alignment'
                 if dimension is None:
                     dimension = parameters['legacy_dimensions'][re.sub(r'_?0\.0$', '', basename).lower()]
                 table['dimension'] = dimension

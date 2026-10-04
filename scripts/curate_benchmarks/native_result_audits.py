@@ -15956,6 +15956,8 @@ def _mj_bench_sources(directory, metadata):
                     scale = suffix[2] if suffix else '10' if closed else 'not_recorded'
                     dimension = next((d for d in ['alignment', 'artifacts', 'safety', 'bias'] if d in path.parts), None)
                     if 'images_dir' in columns: dimension = 'bias'
+                    if dimension is None and closed:
+                        dimension = 'alignment'
                     if dimension is None:
                         legacy = re.sub(r'_?0\.0$', '', stem).lower()
                         dimension = 'safety' if legacy in {'nsfw', 'toxic'} else 'artifacts'
