@@ -31,6 +31,12 @@ the benchmark reproducibility workflow remains a separate correctness check.
 If tables are released after the merge, manually run **Deploy website to Vercel**
 on `main` to refresh the website.
 
+PRs targeting `main` from branches in this repository deploy a preview when they
+change benchmark or website files. Open the **Deploy website to Vercel** check
+to find its website link. You can also run the workflow manually on a feature
+branch; only `main` deploys production. Fork and Dependabot PR deployments are
+skipped because GitHub does not provide the required deployment secrets.
+
 ## Contributing
 
 Curating a benchmark is not simply a data-cleaning task. It requires reconstructing what was measured, which systems were evaluated, how the evaluation was conducted, and what each recorded outcome means. Contributors will gain firsthand experience with the structure and limitations of modern AI evaluation data. For participants in the Predictive AI Evaluation Competition, this work can also inform the development of prediction methods and expand the public evidence available for training them. For benchmark authors, curation makes their results easier to discover, compare, and reuse. For measurement researchers and practitioners, it creates a common foundation for studying the validity, reliability, and generalizability of AI evaluations. Under appropriate conditions, contributors will also be eligible for the AI Measurement Data award under the NeurIPS 2026 Predictive AI Evaluation Competition.

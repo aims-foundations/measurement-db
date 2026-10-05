@@ -69,10 +69,27 @@ then builds and deploys Next.js to the existing Vercel project. Pushes to `main`
 that change `benchmarks/`, website code, or rendering/analysis scripts deploy
 production; equivalent pushes to `migration/tabular-builders-20260924-build-test`
 deploy the preview at `measurement-db-build-test.vercel.app/measurement-db`.
-The workflow checks the full push diff, including merges with more than 300
-changed files. Unrelated changes skip deployment. Manual runs refresh the data
-even without code changes. The deployment checks out the latest branch contents
-and pins one public HF revision for the build.
+
+PRs targeting `main` from branches in this repository also deploy previews on
+opening, reopening, and new commits. Each PR has its own GitHub deployment
+environment and website URL, linked from the **Deploy website to Vercel** check
+and its run summary. PR previews build GitHub's merge commit so they include the
+target branch's changes. Fork and Dependabot PR deployments are skipped because
+GitHub withholds the deployment secrets.
+
+The workflow checks the full push or PR diff, including more than 300 changed
+files. Unrelated changes skip deployment. Manual runs refresh the data even
+without code changes: choose **Actions → Deploy website to Vercel → Run workflow**
+and select a branch. Feature branches deploy previews; `main` deploys production.
+Before the workflow is on `main`, use the CLI:
+
+```bash
+gh workflow run deploy-website.yml --repo aims-foundations/measurement-db --ref YOUR_BRANCH
+```
+
+Push and manual deployments check out the latest branch contents. Every build
+pins one public HF revision. Independent branches and PRs do not cancel each
+other's deployments or replace the build-test preview alias.
 
 Tables must already be published on HF before the merge. This workflow neither
 executes benchmark builders nor uploads tables; reproduction CI remains separate.

@@ -1,4 +1,4 @@
-"""Exercise the deployment workflow's change detector against real Git pushes."""
+"""Exercise the deployment workflow's change detector against Git history."""
 
 import os
 from pathlib import Path
@@ -40,12 +40,13 @@ class WebsiteDeploymentTests(unittest.TestCase):
         self.git("commit", "-qm", "fixture")
         return self.git("rev-parse", "HEAD")
 
-    def check(self, *, event="push", before=None):
+    def check(self, *, event="push", before=None, after=None):
         output = self.root / "result.txt"
         output.unlink(missing_ok=True)
         result = subprocess.run(
             ["bash", "-e", "-o", "pipefail", "-c", self.script], cwd=self.root,
             env={**os.environ, "GITHUB_EVENT_NAME": event, "BEFORE": before or self.base,
+                 "AFTER": after or self.git("rev-parse", "HEAD"),
                  "GITHUB_SHA": self.git("rev-parse", "HEAD"), "GITHUB_OUTPUT": str(output)},
             text=True, capture_output=True,
         )
@@ -83,6 +84,35 @@ class WebsiteDeploymentTests(unittest.TestCase):
         result, output = self.check(before="missing-commit")
         self.assertNotEqual(result.returncode, 0)
         self.assertEqual(output, "")
+
+    def test_pull_request_checks_all_commits_not_just_the_latest_push(self):
+        self.write("benchmarks/new_benchmark/metadata.yaml")
+        self.commit()
+        self.write("docs/notes.md")
+        head = self.commit()
+        result, output = self.check(event="pull_request", after=head)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "deploy=true")
+
+    def test_pull_request_ignores_changes_only_on_the_base_branch(self):
+        self.write("docs/notes.md")
+        head = self.commit()
+        self.git("checkout", "-q", "--detach", self.base)
+        self.write("website/components/added_on_main.tsx")
+        base = self.commit()
+        result, output = self.check(event="pull_request", before=base, after=head)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "deploy=false")
+
+    def test_pull_request_detects_deleted_benchmark_with_diverged_base(self):
+        (self.root / "benchmarks/example/metadata.yaml").unlink()
+        head = self.commit()
+        self.git("checkout", "-q", "--detach", self.base)
+        self.write("docs/notes.md")
+        base = self.commit()
+        result, output = self.check(event="pull_request", before=base, after=head)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output, "deploy=true")
 
 
 if __name__ == "__main__":

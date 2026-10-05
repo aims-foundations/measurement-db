@@ -3,6 +3,8 @@ name: Deploy website to Vercel
 on:
   push:
     branches: [main, migration/tabular-builders-20260924-build-test]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -18,16 +20,20 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - name: Check the full push for benchmark or website changes
+      - name: Check for benchmark or website changes
         id: check
         env:
-          BEFORE: ${{ github.event.before }}
+          BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          AFTER: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           website_changed=false
           if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
             website_changed=true
           else
-            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$GITHUB_SHA" -- \
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              BEFORE=$(git merge-base "$BEFORE" "$AFTER")
+            fi
+            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
               benchmarks/ website/ schema.md scripts/render_website/ \
               scripts/analyze_measurements/ .github/workflows/deploy-website.yml)
             if [ -n "$changed_paths" ]; then website_changed=true; fi
@@ -38,19 +44,22 @@ jobs:
     needs: changes
     if: >-
       needs.changes.outputs.deploy == 'true' &&
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test')
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'))
     concurrency:
-      group: vercel-measurement-db-${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      group: vercel-measurement-db-${{ github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     environment:
-      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-      url: ${{ steps.deploy.outputs.url }}
+      name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
+      url: ${{ steps.deploy.outputs.url }}/measurement-db
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       OMP_NUM_THREADS: 2
       MKL_NUM_THREADS: 2
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -59,7 +68,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.ref }}
+          ref: ${{ github.event_name == 'pull_request' && github.sha || github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -110,7 +119,7 @@ jobs:
       - name: Pull Vercel environment
         run: >-
           pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV"
-          --git-branch="$GITHUB_REF_NAME" --token="$VERCEL_TOKEN"
+          --git-branch="$DEPLOY_BRANCH" --token="$VERCEL_TOKEN"
       - name: Build Vercel output
         run: |
           flags=()
@@ -139,7 +148,7 @@ jobs:
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
-            --meta githubDeployment=1 --meta githubCommitRef="$GITHUB_REF_NAME" \
+            --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
             --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
@@ -152,7 +161,7 @@ jobs:
               -- --fail --silent --show-error --max-time 120 --output /dev/null
           done
       - name: Update preview alias
-        if: env.DEPLOY_ENV == 'preview'
+        if: github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test'
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |
