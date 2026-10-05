@@ -51,6 +51,7 @@ jobs:
       group: vercel-measurement-db-${{ github.ref }}
       cancel-in-progress: true
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 1440
     environment:
       name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
       url: ${{ steps.deploy.outputs.url }}/measurement-db

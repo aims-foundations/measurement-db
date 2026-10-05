@@ -119,6 +119,7 @@ If the HF release happens later, run **Deploy website to Vercel** manually on
 GitHub Actions needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
 The deployment job uses the existing `measurement-db-reproduction` self-hosted
 runners: the migrated tables exceed a standard hosted runner's disk capacity.
+Full rendering and analysis can take hours, so the job allows up to 24 hours.
 Its Python dependencies are isolated in a job-local environment; HF maintains
 the shared download cache.
 The reused Vercel project has the historical name `measurement-db-private`;
