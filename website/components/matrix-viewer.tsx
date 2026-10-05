@@ -348,7 +348,7 @@ const MATH_RE =
   // \begin{env}…\end{env} | $$…$$ | \[…\] | \(…\) | $…$ (not preceded by \, $
   // or a word char; not followed by a digit or another $ — keeps dollar
   // amounts as text)
-  /(\\begin\{([a-zA-Z*]+)\}[\s\S]+?\\end\{\2\})|\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<![\\$\w])\$((?:\\[\s\S]|[^$])+?)\$(?![\d$])/g;
+  /(\\begin\{([a-zA-Z*]+)\}[\s\S]+?\\end\{\2\})|\$\$([\s\S]+?)\$\$|\\\[([\s\S]+?)\\\]|\\\(([\s\S]+?)\\\)|(?<![\\$\w])\$((?:\\[\s\S]|[^$\\])+?)\$(?![\d$])/g;
 
 /** Rewrite every math span to the $$-delimited form remark-math parses
  *  (single-$ parsing is disabled there — this pre-pass is the sole judge of
