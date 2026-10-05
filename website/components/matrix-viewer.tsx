@@ -406,31 +406,29 @@ const MD_COMPONENTS: Components = {
   ),
   code: (p) => <code className="font-mono text-[0.75rem]" {...p} />,
   a: (p) => <a className="text-[var(--lagunita)] underline" {...p} />,
-  img: ({ node: _node, src, alt, ...p }) => (
-    // Plain <img>, not next/image: item images (e.g. edu_circuit_hw's
-    // handwritten solutions, extracted to /benchmarks/item-images/ by
-    // generate_benchmark_gallery) are static exports with unknown dimensions. The srcs are
-    // embedded in the click-data payloads, so they arrive as root-absolute
-    // /benchmarks/... paths and route through the gallery proxy; any other
-    // site-relative src just needs the basePath prefix, and external URLs are
-    // left alone.
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      className="my-2 max-h-[24rem] max-w-full rounded border border-[var(--line)]"
-      src={
-        typeof src !== "string"
-          ? src
-          : src.startsWith("/benchmarks/")
-            ? withBase(src)
-            : src.startsWith("/")
-              ? withBase(src)
-              : src
-      }
-      alt={alt ?? "item image"}
-      loading="lazy"
-      {...p}
-    />
-  ),
+  img: ({ node: _node, src, alt, ...p }) => {
+    if (
+      typeof src !== "string" ||
+      !/^(?:data:image\/|https?:\/\/|\/)/.test(src)
+    ) {
+      return (
+        <span className="text-[var(--muted)]">
+          Image unavailable{alt ? `: ${alt}` : ""}
+        </span>
+      );
+    }
+    return (
+      // Source images have unknown dimensions and may be embedded data URLs.
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        className="my-2 max-h-[24rem] max-w-full rounded border border-[var(--line)]"
+        src={src.startsWith("/") ? withBase(src) : src}
+        alt={alt ?? "item image"}
+        loading="lazy"
+        {...p}
+      />
+    );
+  },
   blockquote: (p) => (
     <blockquote
       className="my-2 border-l-2 border-[var(--line)] pl-3 text-[var(--muted)]"
