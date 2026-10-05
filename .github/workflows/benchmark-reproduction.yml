@@ -91,8 +91,8 @@ jobs:
       ARROW_IO_THREADS: '4'
     strategy:
       fail-fast: false
-      # Sixteen native runner instances each execute one job at a time.
-      max-parallel: 16
+      # Sixty-four native runner instances each execute one job at a time.
+      max-parallel: 64
       matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     defaults:
       run:
