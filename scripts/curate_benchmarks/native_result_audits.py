@@ -15928,6 +15928,7 @@ def _mj_bench_sources(directory, metadata):
     for pattern in ['result/**/*.json', 'closesource_result/**/*.json', 'online_result/**/*.json', 'backup/bias_dataset.json']:
         paths.update((raw/'author').glob(pattern))
     for path in sorted(paths):
+        source_parts = path.relative_to(raw).parts
         rows = json.loads(path.read_text())
         columns = set().union(*(row.keys() for row in rows))
         if 'ranking_id' in columns:
@@ -15954,7 +15955,7 @@ def _mj_bench_sources(directory, metadata):
                     mode = 'multi_image' if 'vlm_pred' in columns else 'single_image' if {'output_0', 'vlm_output'}.intersection(columns) else 'not_recorded'
                     style = suffix[1] if suffix else 'number' if closed else 'not_recorded'
                     scale = suffix[2] if suffix else '10' if closed else 'not_recorded'
-                    dimension = next((d for d in ['alignment', 'artifacts', 'safety', 'bias'] if d in path.parts), None)
+                    dimension = next((d for d in ['alignment', 'artifacts', 'safety', 'bias'] if d in source_parts), None)
                     if 'images_dir' in columns: dimension = 'bias'
                     if dimension is None and closed:
                         dimension = 'alignment'
@@ -15979,7 +15980,7 @@ def _mj_bench_sources(directory, metadata):
                     names = [str(Path(name).with_suffix('.jpg')) if Path(name).suffix in {'.jpeg', '.JPG'} else name for name in names]
                     task = row['caption'], *names, str(row['label'])
                     value = str(row.get('vlm_pred') if 'vlm_pred' in row else row.get('pred')).strip()
-                    if 'online_result' in path.parts: preference = {'1': '0', '2': '1', '0': 'tie'}.get(value)
+                    if 'online_result' in source_parts: preference = {'1': '0', '2': '1', '0': 'tie'}.get(value)
                     elif 'vlm_pred' in columns: preference = {'0': '0', '1': '1', '-1': 'tie', 'tie': 'tie'}.get(value)
                     else: preference = {'0': '0', '1': '1', 'tie': 'tie'}.get(value)
                 _check(task in definitions, True, 'MJ every released observation has a full original input')

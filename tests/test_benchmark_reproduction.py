@@ -99,6 +99,19 @@ class ChangedBenchmarksTests(RepositoryTest):
         with self.assertRaisesRegex(ValueError, "Invalid benchmark"):
             reproduction.changed_benchmarks(self.root, "workflow_dispatch", {"inputs": {"benchmark": "../alpha"}})
 
+    def test_dispatch_selects_a_deduplicated_comma_separated_subset(self):
+        self.write("benchmarks/gamma/build.py", "# unselected builder\n")
+        event = {"inputs": {"benchmark": " beta, alpha ,beta "}}
+        selected = reproduction.changed_benchmarks(self.root, "workflow_dispatch", event)
+        self.assertEqual(selected, ["alpha", "beta"])
+        self.assertEqual([job["benchmarks"] for job in reproduction.build_matrix(selected)["include"]],
+                         [["alpha"], ["beta"]])
+
+    def test_dispatch_rejects_invalid_entries_in_a_subset(self):
+        for value in ("alpha,../beta", "alpha,", ",", "alpha,,beta", "alpha beta"):
+            with self.subTest(value=value), self.assertRaisesRegex(ValueError, "Invalid benchmark"):
+                reproduction.changed_benchmarks(self.root, "workflow_dispatch", {"inputs": {"benchmark": value}})
+
     def test_large_migration_checks_every_benchmark_within_matrix_limit(self):
         slugs = [f"benchmark_{n}" for n in range(600)]
         matrix = reproduction.build_matrix(slugs)["include"]
@@ -148,6 +161,13 @@ class ReleaseSelectionTests(RepositoryTest):
         self.assertEqual(withheld, {"beta": "Permission pending."})
         self.assertEqual(reproduction.build_matrix(public),
                          {"include": [{"benchmarks": ["alpha"], "python_version": "3.11"}]})
+
+    def test_dispatch_subset_still_obeys_release_policy(self):
+        self.withhold("beta")
+        selected = reproduction.changed_benchmarks(self.root, "workflow_dispatch",
+                                                  {"inputs": {"benchmark": "alpha,beta"}})
+        self.assertEqual(reproduction.select_releases(self.root, selected),
+                         (["alpha"], {"beta": "Permission pending."}))
 
     def test_selection_cli_reports_all_withheld_without_scheduling_jobs(self):
         self.withhold("alpha")

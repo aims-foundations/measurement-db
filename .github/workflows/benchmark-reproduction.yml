@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
     inputs:
       benchmark:
-        description: 'Benchmark folder to rebuild (empty means all benchmarks)'
+        description: 'Benchmark folders to rebuild, comma-separated (empty means all benchmarks)'
         type: string
         required: false
 
@@ -77,7 +77,8 @@ jobs:
     if: needs.changes.outputs.has_benchmarks == 'true'
     name: Reproduce ${{ join(matrix.benchmarks, ', ') }}
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
-    timeout-minutes: 360
+    # Stanford-ORB downloads about 95 GB upstream and 94 GB of reference tables.
+    timeout-minutes: ${{ contains(matrix.benchmarks, 'stanford_orb') && 720 || 360 }}
     env:
       HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
       BENCHMARKS_JSON: ${{ toJSON(matrix.benchmarks) }}

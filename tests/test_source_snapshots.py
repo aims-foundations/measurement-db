@@ -60,7 +60,7 @@ class HTTPSourceRetryTests(unittest.TestCase):
         from urllib.error import HTTPError
         from scripts.build_measurement_tables.load_source_files import open_http_source
 
-        for status, header, expected_calls, pauses in [(503, None, 4, [5, 10, 20]),
+        for status, header, expected_calls, pauses in [(503, None, 8, [5, 10, 20, 40, 60, 60, 60]),
                 (403, None, 1, []), (404, None, 1, []), (429, '120', 1, [])]:
             error = HTTPError('https://provider.example', status, 'HTTP error',
                               {} if header is None else {'Retry-After': header}, None)
@@ -72,6 +72,56 @@ class HTTPSourceRetryTests(unittest.TestCase):
                 self.assertEqual(download.call_count, expected_calls)
                 self.assertEqual([call.args[0] for call in sleep.call_args_list], pauses)
                 error.close()
+
+    def test_transient_connections_recover_without_logging_secret_urls(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason in [socket.gaierror(socket.EAI_NONAME, 'Name or service not known'),
+                       socket.gaierror(socket.EAI_AGAIN, 'Temporary failure'),
+                       TimeoutError('timed out'), ConnectionResetError('reset')]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                       side_effect=[URLError(reason)] * 6 + [io.BytesIO(PAYLOAD)]) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep, \
+                 self.assertLogs('scripts.build_measurement_tables.load_source_files', level='WARNING') as logs:
+                with open_http_source('https://provider.example/file?token=secret', timeout=10) as response:
+                    self.assertEqual(response.read(), PAYLOAD)
+                self.assertEqual(download.call_count, 7)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40, 60, 60])
+                self.assertNotIn('secret', '\n'.join(logs.output))
+
+    def test_dns_exhaustion_and_certificate_failures(self):
+        import socket
+        import ssl
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason, calls in [(socket.gaierror(socket.EAI_AGAIN, 'DNS unavailable'), 8),
+                              (ssl.SSLCertVerificationError('invalid certificate'), 1),
+                              ('unknown URL type', 1)]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=URLError(reason)) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(URLError):
+                    open_http_source('https://provider.example', timeout=10)
+                self.assertEqual(download.call_count, calls)
+                self.assertEqual(sleep.call_count, calls - 1)
+
+    def test_github_inventory_retries_dns_without_changing_pinned_tree(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import github_tree_entries
+
+        entries = [dict(path='source.json', sha='b' * 40, type='blob', size=len(PAYLOAD))]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[URLError(socket.gaierror(-2, 'DNS')), io.BytesIO(json.dumps(dict(tree=entries)).encode())]) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            self.assertEqual(github_tree_entries('author/dataset', 'a' * 40), entries)
+            self.assertEqual(download.call_count, 2)
+            self.assertEqual(download.call_args.args[0].full_url,
+                             'https://api.github.com/repos/author/dataset/git/trees/' + 'a' * 40 + '?recursive=1')
 
     def test_file_download_retries_and_still_rejects_wrong_hash(self):
         from urllib.error import HTTPError
@@ -533,6 +583,25 @@ class SnapshotTests(unittest.TestCase):
         self.assertEqual(download.call_count, 3)
         self.assertFalse(destination.exists())
         self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_range_connections_share_retry_budget_and_stop_on_access_errors(self):
+        import socket
+        from urllib.error import HTTPError, URLError
+
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for error, calls in [(HTTPError('https://example.org/archive', 404, 'Missing', {}, None), 1),
+                             (URLError(socket.gaierror(-2, 'DNS')), 8),
+                             (TimeoutError('timed out'), 8), (ConnectionResetError('reset'), 8)]:
+            destination = self.raw / 'absent.zip'
+            with self.subTest(error=type(error).__name__), \
+                 patch('urllib.request.urlopen', side_effect=error) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+                with self.assertRaises(OSError):
+                    builder._download('https://example.org/archive', destination,
+                                      expected_size=len(PAYLOAD), chunk_size=5)
+                self.assertEqual(download.call_count, calls)
+                self.assertFalse(destination.exists())
+                self.assertFalse(list(self.raw.glob('*.tmp')))
 
     def test_compressed_ranges_retry_whole_file_and_preserve_exact_hash_checks(self):
         builder = DownloadFixture(str(self.folder / 'build.py'))
@@ -1539,8 +1608,8 @@ class SnapshotTests(unittest.TestCase):
                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep):
             with self.assertRaises(HTTPError):
                 google_drive_entries(source)
-        self.assertEqual(fetch.call_count, 4)
-        self.assertEqual(sleep.call_count, 3)
+        self.assertEqual(fetch.call_count, 8)
+        self.assertEqual(sleep.call_count, 7)
 
     def test_public_drive_rejects_incomplete_unsafe_and_cyclic_trees(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts

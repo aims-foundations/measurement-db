@@ -308,8 +308,9 @@ class BenchmarkBuild(ABC):
                         offset = temporary.tell()
                         end = min(offset + chunk_size, expected_size) - 1
                         request = urllib.request.Request(url, headers={**headers, "Range": f"bytes={offset}-{end}"})
+                        response = _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen)
                         try:
-                            with urllib.request.urlopen(request, timeout=timeout) as response:
+                            with response:
                                 if response.status == 206:
                                     expected_range = f"bytes {offset}-{end}/{expected_size}"
                                     if response.headers.get("Content-Range") != expected_range:
@@ -339,7 +340,11 @@ class BenchmarkBuild(ABC):
                             if temporary.tell() != end + 1:
                                 raise OSError("Upstream transfer ended before the requested byte range")
                             failures = 0
-                        except (OSError, URLError, IncompleteRead):
+                        except URLError:
+                            # Connection attempts have already exhausted their retry
+                            # budget, or the server returned a terminal HTTP error.
+                            raise
+                        except (OSError, IncompleteRead):
                             failures += 1
                             if failures >= 3:
                                 raise

@@ -10,15 +10,17 @@ from fnmatch import fnmatchcase
 import hashlib
 from html.parser import HTMLParser
 import json
+import logging
 import os
 from pathlib import Path
 import re
+import socket
 import subprocess
 import struct
 import tempfile
 import threading
 import time
-from urllib.error import HTTPError
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, quote, urlencode, urljoin, urlparse, urlunparse
 from urllib.request import Request, urlopen
 from typing import Any
@@ -30,28 +32,44 @@ class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
 
 
-def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=4):
-    """Bound retries for throttling and temporary server errors; preserve other failures."""
+def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=8):
+    """Retry temporary connection/server failures with bounded exponential pauses.
+
+    Eight attempts allow 255 seconds of backoff, in addition to the caller's
+    per-request timeout. Access denials, absent files and certificate errors
+    remain terminal. Log only the host, never signed URLs or credentials.
+    """
+    if attempts < 1 or max_retry_delay < 0:
+        raise ValueError('Retry attempts must be positive and delay nonnegative')
     opener = urlopen if opener is None else opener
     for attempt in range(attempts):
         try:
             return opener(request, timeout=timeout)
-        except HTTPError as error:
-            if error.code not in (429, 500, 502, 503, 504) or attempt == attempts - 1:
-                raise
-            delay = 5 * 2 ** attempt
-            retry_after = (error.headers or {}).get('Retry-After')
-            if retry_after is not None:
-                try:
-                    delay = max(delay, float(retry_after))
-                except ValueError:
+        except (URLError, OSError) as error:
+            delay = min(5 * 2 ** attempt, max_retry_delay)
+            if isinstance(error, HTTPError):
+                if error.code not in (429, 500, 502, 503, 504):
+                    raise
+                retry_after = (error.headers or {}).get('Retry-After')
+                if retry_after is not None:
                     try:
-                        delay = max(delay, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
-                    except (TypeError, ValueError, OverflowError):
-                        pass
-            if not 0 <= delay <= max_retry_delay:
-                raise  # Leave a long server-requested pause to the caller; do not retry early.
-            error.close()
+                        delay = max(delay, float(retry_after))
+                    except ValueError:
+                        try:
+                            delay = max(delay, (parsedate_to_datetime(retry_after) - datetime.now(timezone.utc)).total_seconds())
+                        except (TypeError, ValueError, OverflowError):
+                            pass
+            else:
+                reason = error.reason if isinstance(error, URLError) else error
+                if not isinstance(reason, (socket.gaierror, TimeoutError, ConnectionError)):
+                    raise
+            if attempt == attempts - 1 or not 0 <= delay <= max_retry_delay:
+                raise  # Never retry earlier than a server's requested pause.
+            if isinstance(error, HTTPError):
+                error.close()
+            host = urlparse(request.full_url if isinstance(request, Request) else request).hostname
+            logging.getLogger(__name__).warning('Source connection to %s failed (%s); retry %d/%d in %ss',
+                host, type(error).__name__, attempt + 2, attempts, delay)
             time.sleep(delay)
 
 
@@ -73,7 +91,7 @@ def github_tree_entries(repository: str, revision: str, paths: list[str] | None 
         if key not in cache:
             url = f"https://api.github.com/repos/{repository}/git/trees/{sha}"
             request = Request(url + ("?recursive=1" if recursive else ""), headers=headers)
-            with urlopen(request, timeout=120) as response:
+            with open_http_source(request, timeout=120) as response:
                 tree = json.load(response)
             if tree.get("truncated"):
                 raise SourceDataError("Upstream GitHub tree is truncated; select smaller tree_paths")
@@ -383,7 +401,7 @@ def osf_entries(source: dict) -> list[dict]:
         if url in visited:
             raise SourceDataError('Repeated OSF folder or pagination link')
         visited.add(url)
-        with urlopen(Request(url, headers={'User-Agent': 'measurement-db'}), timeout=120) as response:
+        with open_http_source(Request(url, headers={'User-Agent': 'measurement-db'}), timeout=120) as response:
             page = json.load(response)
         if page.get('links', {}).get('next'):
             pending.append((page['links']['next'], prefix))
@@ -529,7 +547,7 @@ def wandb_entries(source: dict) -> list[dict]:
         request = Request("https://api.wandb.ai/graphql", data=json.dumps(dict(query=text,
             variables=dict(p=project, e=entity, **variables))).encode(),
             headers={"Content-Type":"application/json", "User-Agent":"measurement-db"})
-        with urlopen(request, timeout=120) as response:
+        with open_http_source(request, timeout=120) as response:
             result = json.load(response)
         if result.get("errors") or not result.get("data", {}).get("project"):
             raise SourceDataError("W&B project query failed or is not publicly accessible")
@@ -846,7 +864,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                     if not {"url", "file", "size", "sha256"} <= index.keys():
                         raise SourceDataError(f"{name}: HELM index must name a pinned HTTP source")
                     request = Request(index["url"], headers={"User-Agent": "Mozilla/5.0"})
-                    with urlopen(request, timeout=120) as response:
+                    with open_http_source(request, timeout=120) as response:
                         payload = response.read()
                     if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
                         raise SourceDataError(f"{name}: HELM release index differs from its declared bytes")
@@ -870,7 +888,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                     while True:
                         request = Request(f"https://storage.googleapis.com/storage/v1/b/{bucket}/o?{urlencode(parameters)}",
                                           headers={"User-Agent": "measurement-db"})
-                        with urlopen(request, timeout=120) as response:
+                        with open_http_source(request, timeout=120) as response:
                             page = json.load(response)
                         for entry in page.get("items", []):
                             relative = entry["name"].removeprefix(prefix)
@@ -953,7 +971,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                         # The commit pins the pointer; its object ID pins the
                         # large file. Verify both, rather than saving the pointer.
                         request = Request(entry["url"], headers={"User-Agent": "measurement-db"})
-                        with urlopen(request, timeout=120) as response:
+                        with open_http_source(request, timeout=120) as response:
                             pointer = response.read(1024)
                         digest = hashlib.sha1(f"blob {len(pointer)}\0".encode() + pointer).hexdigest()
                         if len(pointer) != entry["size"] or digest != entry["digest"]:

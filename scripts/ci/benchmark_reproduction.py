@@ -56,8 +56,10 @@ def all_benchmarks(root: Path) -> list[str]:
 def changed_benchmarks(root: Path, event_name: str, event: dict) -> list[str]:
     """Diff the entire PR or push, including both sides of folder renames."""
     if event_name == "workflow_dispatch":
-        slug = event.get("inputs", {}).get("benchmark", "").strip()
-        return [validate_slug(slug)] if slug else all_benchmarks(root)
+        selection = event.get("inputs", {}).get("benchmark", "").strip()
+        if not selection:
+            return all_benchmarks(root)
+        return sorted({validate_slug(slug.strip()) for slug in selection.split(",")})
     if event_name == "pull_request":
         pr = event["pull_request"]
         head = pr["head"]["sha"]

@@ -5,6 +5,7 @@ from io import BytesIO, StringIO
 import json
 from pathlib import Path
 import runpy
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -102,6 +103,25 @@ class MJBenchBuilderTests(unittest.TestCase):
             self.builder.build_tables()
         with self.assertRaisesRegex(ValueError, 'MJ known legacy source family'):
             _mj_bench_sources(self.directory, self.metadata)
+
+    def test_parent_folder_names_do_not_change_dimensions_or_preferences(self):
+        self.write_json('author/result/safety/example/example_number_scale10.json', [dict(
+            next(iter(self.records.values())), pred=0, output_0='Safety rating')])
+        with contextlib.redirect_stdout(StringIO()):
+            expected = self.builder.build_tables()
+        expected_audit = _mj_bench_sources(self.directory, self.metadata)
+        original = self.raw
+        # These are legitimate workspace names, not fields in an author release.
+        for parent in ['artifacts', 'alignment', 'safety', 'bias', 'online_result']:
+            with self.subTest(parent=parent):
+                directory = self.directory / parent
+                self.builder.raw_dir = directory / 'raw'
+                shutil.copytree(original, self.builder.raw_dir)
+                with contextlib.redirect_stdout(StringIO()):
+                    actual = self.builder.build_tables()
+                for name in expected:
+                    pd.testing.assert_frame_equal(actual[name], expected[name])
+                self.assertEqual(_mj_bench_sources(directory, self.metadata), expected_audit)
 
 
 if __name__ == '__main__':
