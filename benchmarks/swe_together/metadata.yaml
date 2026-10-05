@@ -37,7 +37,14 @@ benchmark:
       '1': published judge score at least 0.85
   categorical: true
   release_date: 2026-06
-  release: public
+  release: withheld
+  release_reason: >-
+    Source reproducibility hold, reviewed 2026-10-04: https://togetherbench.com/metrics.js
+    now serves changed scores rather than the pinned 2026-09-30 snapshot with SHA-256
+    47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5. No immutable
+    author-hosted or author-endorsed copy of that snapshot has been verified. Restore public
+    release after recovering the pinned author snapshot and passing strict table reproduction,
+    or after a separately reviewed version update backed by immutable author inputs.
   granularity: item
   multi_single_turn: multi_turn
   version: metrics-sha256:47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5

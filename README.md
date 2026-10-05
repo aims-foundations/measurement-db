@@ -203,7 +203,8 @@ records all 290 previous values, decisions, reasons, and existing license and
 curation evidence. It is a migration snapshot; `metadata.yaml` remains the
 current source of truth. The repository policy is public unless the reviewed
 evidence identifies a concrete redistribution restriction, unmet source-access
-condition, or sensitive content in the formatted data. A missing or historical
+condition, sensitive content in the formatted data, or unavailable exact author
+inputs needed for reproducibility. A missing or historical
 private flag, an unknown license, and noncommercial or attribution conditions
 alone do not make a benchmark withheld. Unclear licensing remains documented
 in the inventory and source metadata; public is a repository decision, not a
@@ -212,6 +213,15 @@ unclear licensing are superseded explicitly in release_reason. Raw-only holds
 remain in the curation records where the formatted tables exclude that material.
 No private definitions were moved and no publication tooling was changed in
 this migration. Upload review must still respect the original source terms.
+
+Source reproducibility holds record the missing or changed input and the
+conditions for restoring public release in `release_reason` and the curation
+record. Preserve builders, pinned source hashes and historical measurements.
+Restore public release after verified author-source recovery and strict table
+reproduction, or a separately reviewed version update using immutable author
+inputs. Temporary connection failures or long download times alone do not
+justify withholding a benchmark. A reproducibility hold does not change its
+recorded license or imply a redistribution restriction.
 
 Fixed verifier descriptions belong in the optional `grading.verifiers` mapping
 in `metadata.yaml`, exposed to builders through `self.grading`. Each named
