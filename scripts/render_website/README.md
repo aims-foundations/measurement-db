@@ -53,8 +53,31 @@ publishes the singular name, so published snapshots require this compatibility.
 A cold answer request may download the complete traces Parquet before filtering.
 
 Every detail page requires the table service at `GALLERY_DATA_ORIGIN`.
-The website CI validates the build; hosting Next and the Python service is a
-separate deployment step.
+
+## Deployment
+
+`.github/workflows/deploy-website.yml` deploys website-related pushes to `main`
+as production and pushes to `migration/tabular-builders-20260924-build-test`
+as previews. It can also be run manually on either branch. Both reuse the
+existing Vercel project, `measurement-db-private`, with root directory
+`website` and Node.js 22. The preview alias is
+`measurement-db-build-test.vercel.app/measurement-db`.
+
+GitHub Actions uses the repository secrets `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
+and `VERCEL_PROJECT_ID`. Production search sync additionally uses the
+`MEILISEARCH_HOST` repository variable and `MEILISEARCH_ADMIN_KEY` secret.
+Credentials belong in GitHub/Vercel settings, never in this repository.
+
+Vercel needs `HF_TOKEN` and `GALLERY_DATA_ORIGIN` in both Preview and Production.
+The workflow accepts sensitive HF tokens and checks a chart bundle from the
+gallery service before deploying. The service must have a reachable HTTPS URL;
+the loopback server used for local previews cannot serve Vercel requests.
+The repository contains the Python service implementation, but no hosted-service
+configuration or production endpoint. Hosting that service is a separate step.
+
+The workflow builds and uploads Next.js, checks the deployed pages, then updates
+the preview alias or production search indexes. The old repository's production
+workflow remains active until production deployment ownership is switched.
 
 ## Rendering and analysis
 

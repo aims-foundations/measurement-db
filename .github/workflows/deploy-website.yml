@@ -1,0 +1,133 @@
+name: Deploy website to Vercel
+
+on:
+  push:
+    branches: [main, migration/tabular-builders-20260924-build-test]
+    paths:
+      - 'website/**'
+      - 'schema.md'
+      - 'scripts/render_website/**'
+      - 'scripts/analyze_measurements/**'
+      - '.github/workflows/deploy-website.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-measurement-db-${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test'
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      url: ${{ steps.deploy.outputs.url }}
+    env:
+      DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      MEILISEARCH_HOST: ${{ vars.MEILISEARCH_HOST }}
+      MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - name: Check deployment credentials
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+      - run: pnpm --dir website install --frozen-lockfile
+      - run: pnpm --dir website lint
+      - run: pnpm --dir website typecheck
+      - run: pnpm --dir website search:check
+      - name: Pull Vercel environment
+        run: >-
+          pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV"
+          --git-branch="$GITHUB_REF_NAME" --token="$VERCEL_TOKEN"
+      - name: Build Vercel output
+        run: |
+          flags=()
+          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
+          pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
+      - name: Verify runtime configuration and gallery service
+        run: |
+          node --env-file=".vercel/.env.${DEPLOY_ENV}.local" --input-type=module - <<'NODE'
+          const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
+          const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
+          projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
+          const response = await fetch(projectUrl, {
+            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (!response.ok) fail(`Vercel project check returned HTTP ${response.status}.`);
+          const project = await response.json();
+          if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
+            fail('The Vercel project must use the website root directory and Next.js framework.');
+          }
+          const hasToken = project.env?.some((entry) => entry.key === 'HF_TOKEN'
+            && entry.target?.includes(process.env.DEPLOY_ENV)
+            && (!entry.gitBranch || entry.gitBranch === process.env.GITHUB_REF_NAME));
+          if (!hasToken) fail(`Set HF_TOKEN in the Vercel ${process.env.DEPLOY_ENV} environment.`);
+          const origin = process.env.GALLERY_DATA_ORIGIN?.replace(/\/+$/, '');
+          if (!origin) fail(`Set GALLERY_DATA_ORIGIN in the Vercel ${process.env.DEPLOY_ENV} environment to the hosted Python gallery service URL.`);
+          let url;
+          try { url = new URL(origin); } catch { fail('GALLERY_DATA_ORIGIN must be a valid HTTPS URL.'); }
+          if (url.protocol !== 'https:' || /^(localhost|127\.|\[::1\])/.test(url.hostname)
+              || url.username || url.password || url.search || url.hash) {
+            fail('GALLERY_DATA_ORIGIN must be a hosted HTTPS service URL without credentials, query, or fragment.');
+          }
+          const gallery = await fetch(`${origin}/researchcodebench/view`, {
+            signal: AbortSignal.timeout(120_000),
+          });
+          if (!gallery.ok) fail(`Gallery service returned HTTP ${gallery.status}.`);
+          const bundle = await gallery.json();
+          if (bundle.detail?.slug !== 'researchcodebench' || !bundle.axes || !bundle.matrices) {
+            fail('Gallery service returned an invalid chart bundle.');
+          }
+          console.log('Vercel runtime configuration and gallery service verified.');
+          NODE
+      - name: Deploy
+        id: deploy
+        run: |
+          flags=()
+          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
+            --meta githubDeployment=1 --meta githubCommitRef="$GITHUB_REF_NAME" \
+            --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check deployed pages
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench; do
+            pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
+              --token="$VERCEL_TOKEN" -- --fail --silent --show-error --max-time 120 --output /dev/null
+          done
+      - name: Update preview alias
+        if: env.DEPLOY_ENV == 'preview'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          pnpm dlx vercel@62.2.0 alias set "$DEPLOYMENT_URL" measurement-db-build-test.vercel.app --token="$VERCEL_TOKEN"
+          echo "Preview: https://measurement-db-build-test.vercel.app/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Sync production search indexes
+        if: env.DEPLOY_ENV == 'production' && env.MEILISEARCH_HOST != '' && env.MEILISEARCH_ADMIN_KEY != ''
+        run: pnpm --dir website search:sync
+      - name: Report missing production search credentials
+        if: env.DEPLOY_ENV == 'production' && (env.MEILISEARCH_HOST == '' || env.MEILISEARCH_ADMIN_KEY == '')
+        run: echo '::warning::Search sync skipped; configure MEILISEARCH_HOST and MEILISEARCH_ADMIN_KEY.'
