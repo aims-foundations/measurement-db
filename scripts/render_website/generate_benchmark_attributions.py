@@ -683,10 +683,10 @@ def build_manifest(
     )
     visible_slugs = {str(card.get("slug")) for card in visible_cards}
     references_path = repo_root / "website/content/curated/benchmark-references.json"
-    curated_slugs = set(affiliations.get("benchmarks", {})) | (
+    curated_slugs = (
         set(_read_json(references_path)) if references_path.exists() else set()
     )
-    known_slugs = visible_slugs | curated_slugs
+    known_slugs = visible_slugs | curated_slugs | set(affiliations.get("benchmarks", {}))
     aliases = overrides.get("aliases", {})
     reference_overrides = overrides.get("references", {})
     citation_overrides = overrides.get("citations", {})

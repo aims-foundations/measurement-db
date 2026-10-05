@@ -1419,7 +1419,9 @@
   },
   "pku_saferlhf": {
     "image": "/benchmarks/pku_saferlhf.png",
-    "fit": "cover"
+    "fit": "cover",
+    "render": "observations",
+    "note": "Each strip shows the recorded observations for one subject. Positions are not shared item columns across strips; repeated items retain their separate records."
   },
   "planbench": {
     "image": "/benchmarks/planbench.png",
@@ -2539,5 +2541,9 @@
         "over 4 h": "Human baseline over 4 h"
       }
     }
+  },
+  "tumlu": {
+    "render": "observations",
+    "note": "Each strip shows the recorded observations for one subject. Positions are not shared item columns across strips; repeated items retain their separate records."
   }
 }

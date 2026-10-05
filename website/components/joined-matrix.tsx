@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 const PASS: [number, number, number] = [31, 119, 180];
 const FAIL: [number, number, number] = [214, 39, 40];
 const NONE: [number, number, number] = [233, 232, 228];
+const ROWS_PER_PAGE = 200;
 // Unobserved on a GRADED matrix. The binary NONE above is nearly the same value
 // as graded_color()'s fog midpoint (#f2f2f2), so on a graded scale a mid-scale
 // response and an unmeasured cell would look alike. The PNG matrices already
@@ -49,6 +50,7 @@ export type ObservationKey = [
 ];
 
 export type CellKeys = {
+  keyRef?: string;
   key?: ObservationKey;
   key2?: ObservationKey;
   keys?: Record<number, ObservationKey>;
@@ -125,6 +127,8 @@ export type JoinedData = {
 };
 
 export type JoinedPick = {
+  keyRef?: string;
+  keyIndex?: number;
   key?: ObservationKey;
   key2?: ObservationKey;
   subjectId: string;
@@ -502,6 +506,7 @@ export function JoinedMatrix({
   zByItem,
 }: Props) {
   const [selectedTrial, setTrial] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
   const trial =
     selectedTrial ??
     (data
@@ -531,7 +536,17 @@ export function JoinedMatrix({
 
   if (data === undefined || data === null || !trial) return null;
 
-  const list = data.trials[trial] ?? [];
+  const allRows = data.trials[trial] ?? [];
+  const pages =
+    allRows.length > 1000 ? Math.ceil(allRows.length / ROWS_PER_PAGE) : 1;
+  const currentPage = Math.min(page, pages - 1);
+  const list =
+    pages > 1
+      ? allRows.slice(
+          currentPage * ROWS_PER_PAGE,
+          (currentPage + 1) * ROWS_PER_PAGE,
+        )
+      : allRows;
   const trialKeys = Object.keys(data.trials).sort(
     (a, b) => Number(a) - Number(b),
   );
@@ -577,8 +592,8 @@ export function JoinedMatrix({
     row,
     showBand: i === 0 || row.band !== list[i - 1].band,
   }));
-  const bandVarying = varyingDimsByBand(list);
-  const bandDuplicateNames = duplicateNamesByBand(list, label);
+  const bandVarying = varyingDimsByBand(allRows);
+  const bandDuplicateNames = duplicateNamesByBand(allRows, label);
 
   const levels = data.levels ?? null;
   const ramp = levels ? levels.map((l) => hexToRgbTriple(l.color)) : null;
@@ -610,6 +625,7 @@ export function JoinedMatrix({
             value={trial}
             onChange={(e) => {
               setTip(null);
+              setPage(0);
               setTrial(e.target.value);
             }}
             className="rounded border border-[var(--line)] bg-white px-2 py-1 text-[0.8125rem] text-[var(--ink)]"
@@ -621,6 +637,33 @@ export function JoinedMatrix({
             ))}
           </select>
         </label>
+        {pages > 1 ? (
+          <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
+            Page
+            <select
+              aria-label="Matrix page"
+              value={currentPage}
+              onChange={(event) => {
+                setTip(null);
+                setPage(Number(event.target.value));
+              }}
+              className="rounded border border-[var(--line)] bg-white px-2 py-1"
+            >
+              {Array.from({ length: pages }, (_, index) => (
+                <option key={index} value={index}>
+                  {index + 1}
+                </option>
+              ))}
+            </select>
+            of {pages.toLocaleString()} · rows{" "}
+            {(currentPage * ROWS_PER_PAGE + 1).toLocaleString()}–
+            {Math.min(
+              (currentPage + 1) * ROWS_PER_PAGE,
+              allRows.length,
+            ).toLocaleString()}{" "}
+            of {allRows.length.toLocaleString()}
+          </label>
+        ) : null}
       </div>
 
       {/* The figure scrolls in its own box rather than down the page. A
@@ -805,6 +848,8 @@ export function JoinedMatrix({
                           const itemId = row.cols?.[idx] ?? b.colIds[idx];
                           if (!itemId) return;
                           onPick({
+                            keyRef: rb.keyRef,
+                            keyIndex: idx,
                             key: observationKey(rb, idx, itemId),
                             key2: observationKey(rb, idx, itemId, true),
                             subjectId: row.sid,

@@ -8,7 +8,9 @@ import base64
 import gzip
 import hashlib
 import json
+import mimetypes
 import os
+import re
 import shutil
 import sys
 import time
@@ -22,7 +24,8 @@ import numpy as np
 import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
-from huggingface_hub import HfApi, hf_hub_download
+import yaml
+from huggingface_hub import HfApi, RepoFolder, hf_hub_download
 from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
 
 # Paths and source
@@ -81,6 +84,8 @@ MAX_TRIALS_RENDERED = 16
 MAX_SLICES = 600  # condition combinations × trials
 # Advisory size threshold: sparse grids can compress well despite many cells.
 MAX_JOINED_CELLS = 2_000_000
+MAX_DENSE_CELLS = 250_000_000
+MAX_DENSE_ROWS = 10_000
 # Advisory block count before horizontal scrolling is needed.
 MAX_BLOCKS = 17
 # Allow a few multi-valued IDs when identifying item/subject attributes.
@@ -104,23 +109,43 @@ def categories_for(domain) -> list[str]:
 @lru_cache(maxsize=None)
 def source_revision() -> str:
     """Use one repository commit for all tables in a render."""
-    return HF_REVISION or HfApi().dataset_info(HF_REPO).sha
+    return HfApi().dataset_info(HF_REPO, revision=HF_REVISION or "main").sha
+
+
+class TableSource(NamedTuple):
+    directory: str
+    files: frozenset[str]
+
+
+@lru_cache(maxsize=None)
+def source_tables(slug: str) -> TableSource:
+    api = HfApi()
+    directory = slug
+    entries = list(api.list_repo_tree(
+        HF_REPO, repo_type="dataset", revision=source_revision(), path_in_repo=directory))
+    if any(entry.path == f"{slug}/formatted_tables" for entry in entries):
+        directory = f"{slug}/formatted_tables"
+        entries = list(api.list_repo_tree(
+            HF_REPO, repo_type="dataset", revision=source_revision(), path_in_repo=directory))
+    return TableSource(directory, frozenset(Path(entry.path).name for entry in entries
+                                           if entry.path.endswith(".parquet")))
 
 
 def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
-    source = filename
+    slug, name = filename.split("/", 1)
+    source = f"{source_tables(slug).directory}/{name}"
     if source.endswith("/responses.parquet"):
         source = source.removesuffix("responses.parquet") + RESPONSE_FILE
     try:
         downloaded = hf_hub_download(
             HF_REPO, source, repo_type="dataset", revision=source_revision(),
-            cache_dir=cache_dir / ".hub", force_download=refresh,
+            force_download=refresh,
         )
     except LocalEntryNotFoundError:
         raise
     except EntryNotFoundError as exc:
         if source.endswith("/responses.parquet"):
-            downloaded = fetch(source.removesuffix("responses.parquet") + "response.parquet",
+            downloaded = fetch(filename.removesuffix("responses.parquet") + "response.parquet",
                                cache_dir, refresh)
         else:
             raise SystemExit(f"'{source}' not found in {HF_REPO}.") from exc
@@ -138,12 +163,21 @@ def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
 
 
 def list_slugs() -> list[str]:
-    files = HfApi().list_repo_files(
-        HF_REPO, repo_type="dataset", revision=source_revision())
-    available = {path.split("/")[0] for path in files
-                 if path.count("/") == 1 and path.endswith("/benchmarks.parquet")}
     hidden = set(json.loads(HIDDEN_PATH.read_text())) if HIDDEN_PATH.exists() else set()
-    return sorted(available - hidden)
+    roots = HfApi().list_repo_tree(HF_REPO, repo_type="dataset", revision=source_revision())
+    available = []
+    for entry in roots:
+        if not isinstance(entry, RepoFolder) or entry.path in hidden:
+            continue
+        slug = entry.path
+        if "benchmarks.parquet" not in source_tables(slug).files:
+            continue
+        metadata = hf_hub_download(HF_REPO, f"{slug}/metadata.yaml", repo_type="dataset",
+                                   revision=source_revision())
+        if yaml.safe_load(Path(metadata).read_text())["benchmark"].get("release") in {"withheld", "private"}:
+            continue
+        available.append(slug)
+    return sorted(available)
 
 
 def load_overrides(web_dir: Path) -> dict:
@@ -261,12 +295,22 @@ def cmd_cards(slugs: list[str], cache_dir: Path, web_dir: Path, refresh: bool) -
 # Condition parsing and matrix drawing
 
 def parse_to_sel(cond: str) -> dict[str, str]:
-    """Parse dim=value pairs; treat a bare label as the condition dimension."""
-    if "=" not in cond:
+    """Read structured features, legacy dim=value pairs, or a bare label."""
+    if cond.lstrip().startswith("{"):
+        try:
+            payload = json.loads(cond)
+        except json.JSONDecodeError:
+            payload = None
+        if isinstance(payload, dict):
+            return {key: value if isinstance(value, str) else
+                    json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+                    for key, value in payload.items()}
+    parts = [part.partition("=") for part in cond.split(";")]
+    if not all(equal and re.fullmatch(r"[\w.-]+", key.strip())
+               for key, equal, _ in parts):
         return {"condition": cond}
     sel: dict[str, str] = {}
-    for part in cond.split(";"):
-        k, _, v = part.partition("=")
+    for k, _, v in parts:
         sel[k.strip()] = v.strip()
     return sel
 
@@ -419,11 +463,15 @@ def joined_matrix(slug: str, obs, dims: list[str],
     o["_rowcond"] = o["_sel"].map(lambda values: ";".join(
         f"{d}={values.get(d, MISSING_DIM)}" for d in row_dims))
     if o.duplicated(["trial", "subject_id", "item_id", "_rowcond"]).any():
+        if o["test_condition"].nunique() > MAX_DENSE_ROWS:
+            return session_matrix(slug, obs, {}, observation_rows=True)
         sys.stderr.write(f"… {slug}: item dimensions do not define unique cells; using separate matrices\n")
         return None
 
     n_rows = o.groupby(["trial", "subject_id", "_rowcond"]).ngroups
     n_cells = n_rows * sum(len(b["colIds"]) for b in blocks)
+    if n_rows > MAX_DENSE_ROWS or n_cells > MAX_DENSE_CELLS:
+        return session_matrix(slug, obs, {}, observation_rows=True)
     if n_cells > MAX_JOINED_CELLS:
         sys.stderr.write(
             f"… {slug}: joined matrix is {n_cells:,} cells "
@@ -438,8 +486,8 @@ def joined_matrix(slug: str, obs, dims: list[str],
         if len(vals) > len(LEVEL_CHARS):
             sys.stderr.write(
                 f"… {slug}: {len(vals)} distinct response values exceeds the "
-                f"{len(LEVEL_CHARS)}-level cell encoding; skipping joined view\n")
-            return None
+                f"{len(LEVEL_CHARS)}-level cell encoding; using observation strips\n")
+            return session_matrix(slug, obs, {}, observation_rows=True)
         level_index = {v: i for i, v in enumerate(vals)}
         levels = [{"value": v,
                    "label": f"{round(v, 4):g}",
@@ -517,8 +565,27 @@ def joined_matrix(slug: str, obs, dims: list[str],
 # per-developer timelines rather than a shared item axis.
 
 
-def session_matrix(slug: str, obs, id_to_name: dict) -> dict | None:
+def session_matrix(slug: str, obs, id_to_name: dict, *, observation_rows: bool = False) -> dict | None:
     """Build developer rows with aligned item IDs, answer cells, and session lengths."""
+    if observation_rows:
+        selections = [{"agent": "observations", "user": sid, "session": "records", "turn": i}
+                      for i, sid in enumerate(obs["subject_id"])]
+        payload = session_matrix(slug, obs.assign(_selection=selections), id_to_name)
+        if payload:
+            payload["observationRows"] = True
+            payload["bandLabels"] = {"agent": {"observations": "Recorded observations"}}
+            graded = not obs["response"].isin([0.0, 1.0]).all()
+            payload["graded"] = graded
+            groups = dict(tuple(obs.groupby("subject_id", sort=False))) if graded else {}
+            vmin, vmax = float(obs["response"].min()), float(obs["response"].max())
+            for row in payload["trials"]["1"]:
+                row["name"] = id_to_name.get(row["sid"], row["sid"])
+                if graded:
+                    row["values"] = groups[row["sid"]]["response"].tolist()
+                    row["colors"] = ["#%02x%02x%02x" % graded_color(v, vmin, vmax)
+                                     for v in row["values"]]
+                    row["pass"] = sum(row["values"])
+        return payload
     sel = obs["_selection"]
     # Normalized subject registries call the agent scaffold "harness".
     sel = sel.map(lambda s: s | {"agent": s["harness"]}
@@ -941,9 +1008,7 @@ def registry_feature_dims(slug: str, cache_dir: Path, refresh: bool,
                             continue
                         value = str(value)
                         if key in sel and sel[key] != value:
-                            raise SystemExit(
-                                f"{slug}: item {row.item_id!r} carries conflicting "
-                                f"{key!r} values in item_features and verifier")
+                            key = f"verifier.{key}"
                         sel[key] = value
             if sel:
                 item_feats[row.item_id] = sel
@@ -966,20 +1031,20 @@ def reassemble_display_dims(slug: str, frame: pd.DataFrame, cache_dir: Path,
     for i, (sid, iid, cond) in enumerate(zip(
             frame["subject_id"], frame["item_id"], frame["test_condition"])):
         sel = parsed[cond].copy()
-        sources = [subj_feats.get(sid), item_feats.get(iid)]
+        sources = [("subject", subj_feats.get(sid)), ("item", item_feats.get(iid))]
         if inter is not None:
-            sources.append(parsed[inter.iat[i]])
-        for source in sources:
+            sources.append(("interactor", parsed[inter.iat[i]]))
+        for owner, source in sources:
             for key, value in (source or {}).items():
                 if sel.get(key, value) != value:
-                    raise SystemExit(f"{slug}: conflicting {key!r} in condition and registry features")
+                    key = f"{owner}.{key}"
                 sel[key] = value
         if subj_feats or item_feats or inter is not None:
             sel = dict(sorted(sel.items()))
             cond = ";".join(f"{k}={v}" for k, v in sel.items()) or NO_COND
         labels.append(cond)
         features.append(sel)
-    frame["test_condition"] = labels
+    frame["test_condition"] = pd.Series(labels, index=frame.index, dtype=object)
     frame["_features"] = features
     return frame
 
@@ -1152,14 +1217,17 @@ def plan_slices(slug: str, df: pd.DataFrame, sessions_mode: bool = False) -> Sli
             return feature_by_label.get(c, {}).copy()
     dims: list[str] = []
     values: dict[str, list[str]] = {}
+    seen_values: dict[str, set[str]] = {}
     if cond_multi:
         for sel_c in parsed_conds:
             for d, v in sel_c.items():
                 if d not in values:
                     dims.append(d)
                     values[d] = []
-                if v not in values[d]:
+                    seen_values[d] = set()
+                if v not in seen_values[d]:
                     values[d].append(v)
+                    seen_values[d].add(v)
         for d in dims:
             if any(d not in selection for selection in parsed_conds):
                 values[d].append(MISSING_DIM)
@@ -1197,23 +1265,40 @@ def matrix_size(width: int, rows: int) -> list[int]:
     return [width, rows * max(1, round(max(MIN_HEIGHT, width // MAX_ASPECT) / rows))]
 
 
+def rounded_score(value) -> float | None:
+    return round(float(value), 4) if pd.notna(value) else None
+
+
 def prepare_matrix_slices(slug: str, df: pd.DataFrame, plan: SlicePlan,
-                          row_ids: list[str], col_ids: list[str]) -> tuple:
+                          row_ids: list[str], col_ids: list[str],
+                          *, summary_only: bool = False) -> tuple:
     row_pos = {sid: i for i, sid in enumerate(row_ids)}
     col_pos = {iid: i for i, iid in enumerate(col_ids)}
     matrices, metadata, columns = {}, {}, {}
     best = None
     observed = df.dropna(subset=["response"])
+    if observed.empty:
+        observed = df
     group_columns = []
     for column, values in [("test_condition", plan.conditions), ("trial", plan.trials)]:
         if values != [None] and (column != "trial" or plan.dims):
             observed = observed[observed[column].isin(values)]
             group_columns.append(column)
+    conditions, trials = plan.conditions, plan.trials
+    if summary_only and group_columns:
+        largest = observed.groupby(group_columns, sort=True).size().idxmax()
+        chosen = dict(zip(group_columns, largest if isinstance(largest, tuple) else (largest,)))
+        conditions = [chosen.get("test_condition")]
+        trials = [chosen.get("trial")]
+        for column, value in chosen.items():
+            observed = observed[observed[column] == value]
+    elif summary_only:
+        observed = observed.drop_duplicates(["subject_id", "item_id"])
     groups = {key if isinstance(key, tuple) else (key,): frame
               for key, frame in observed.groupby(group_columns, sort=False)} \
         if group_columns else {(): observed}
-    for condition in plan.conditions:
-        for trial in plan.trials:
+    for condition in conditions:
+        for trial in trials:
             key = tuple(value for column, value in [("test_condition", condition), ("trial", trial)]
                         if column in group_columns)
             observed = groups.get(key)
@@ -1236,13 +1321,13 @@ def prepare_matrix_slices(slug: str, df: pd.DataFrame, plan: SlicePlan,
             metadata[key] = {
                 "sel": sel, "matrix": path, "matrixSize": size,
                 "rowIdx": [row_pos[sid] for sid in rows],
-                "rowScores": [round(float(v), 4) for v in row_mean],
+                "rowScores": [rounded_score(v) for v in row_mean],
                 "nItems": len(cols), "colP": None,
-                "observed": round(len(cell) / (len(rows) * len(cols)), 4),
+                "observed": round(cell.notna().sum() / (len(rows) * len(cols)), 4),
             }
             columns[key] = {
                 "colIdx": [col_pos[iid] for iid in cols],
-                "colP": [round(float(v), 4) for v in col_mean],
+                "colP": [rounded_score(v) for v in col_mean],
             }
             if best is None or len(cell) > best[0]:
                 best = (len(cell), sel, path, size)
@@ -1264,6 +1349,7 @@ def prepare_matrix_slices(slug: str, df: pd.DataFrame, plan: SlicePlan,
 
 def build_detail(
     slug: str, cache_dir: Path, web_dir: Path, refresh: bool, overrides: dict,
+    *, compact: bool = False,
 ) -> dict:
     override = overrides.get(slug, {})
     meta = read_meta(slug, cache_dir, refresh)
@@ -1277,7 +1363,7 @@ def build_detail(
     resp = df["response"].dropna()
     uniq = set(resp.unique().tolist())
     is_binary = uniq.issubset({0.0, 1.0})
-    vmin, vmax = (float(resp.min()), float(resp.max()))
+    vmin, vmax = (float(resp.min()), float(resp.max())) if not resp.empty else (0.0, 1.0)
     subj_tbl = pq.read_table(
         fetch(f"{slug}/subjects.parquet", cache_dir, refresh),
         columns=["subject_id", "display_name"],
@@ -1288,13 +1374,14 @@ def build_detail(
         columns=["item_id", "content"],
     ).to_pandas()
     questions_available = items_tbl["content"].notna().any()
-    sessions_mode = override.get("render") == "sessions"
+    sessions_mode = override.get("render") in {"sessions", "observations"}
     plan = plan_slices(slug, df, sessions_mode)
     dims = plan.dims
     trace_src = plan.observations
     obs = trace_src.dropna(subset=["response"])
-    subj_mean = obs.groupby("subject_id")["response"].mean().sort_values(kind="stable")
-    item_solve = obs.groupby("item_id")["response"].mean().sort_values(kind="stable")
+    visible = obs if not obs.empty else trace_src
+    subj_mean = visible.groupby("subject_id")["response"].mean().sort_values(kind="stable")
+    item_solve = visible.groupby("item_id")["response"].mean().sort_values(kind="stable")
     hidden_subj = df["subject_id"].nunique() - len(subj_mean)
     hidden_item = df["item_id"].nunique() - len(item_solve)
     if hidden_subj or hidden_item:
@@ -1304,14 +1391,8 @@ def build_detail(
     row_ids = subj_mean.index.tolist()
     col_ids = item_solve.index.tolist()
     n_rows, n_items = (len(row_ids), len(col_ids))
-    has_traces = HfApi().file_exists(
-        HF_REPO, f"{slug}/traces.parquet", repo_type="dataset", revision=source_revision())
-    col_p = [round(float(item_solve[iid]), 4) for iid in col_ids]
-    matrix_path, size, conditions, attacks, slice_cols, matrices = prepare_matrix_slices(
-        slug, df, plan, row_ids, col_ids)
-    lazy_payload = {"colIds": col_ids, "colP": col_p, "items": {}}
-    if slice_cols:
-        lazy_payload["slices"] = slice_cols
+    has_traces = "traces.parquet" in source_tables(slug).files
+    col_p = [rounded_score(item_solve[iid]) for iid in col_ids]
     faceted_mode = override.get("render") == "faceted"
     declared = override.get("pairwise")
     pair_dim = None
@@ -1319,7 +1400,9 @@ def build_detail(
         pair_dim = declared
         if pair_dim is None:
             pair_dim = detect_pairwise_dim(slug, df, id_to_name)
-    if faceted_mode:
+    if resp.empty:
+        joined = None
+    elif faceted_mode:
         joined = faceted_matrix(
             slug,
             obs,
@@ -1329,7 +1412,8 @@ def build_detail(
             is_binary,
         )
     elif sessions_mode:
-        joined = session_matrix(slug, obs, id_to_name)
+        joined = session_matrix(slug, obs, id_to_name,
+                                observation_rows=override.get("render") == "observations")
     elif pair_dim:
         joined = pairwise_matrix(slug, df, row_ids, id_to_name, pair_dim)
     else:
@@ -1347,6 +1431,14 @@ def build_detail(
             block_order=override.get("blockOrder") or [],
             block_unit=override.get("blockUnit"),
         )
+    if joined and joined.get("observationRows"):
+        for row in joined["trials"]["1"]:
+            row["name"] = id_to_name.get(row["sid"], row["sid"])
+    matrix_path, size, conditions, attacks, slice_cols, matrices = prepare_matrix_slices(
+        slug, df, plan, row_ids, col_ids, summary_only=compact and bool(joined))
+    lazy_payload = {"colIds": col_ids, "colP": col_p, "items": {}}
+    if slice_cols:
+        lazy_payload["slices"] = slice_cols
     grid_cells = n_rows * n_items
     observed_overall = (
         round(obs.drop_duplicates(["subject_id", "item_id"]).shape[0] / grid_cells, 4)
@@ -1359,7 +1451,7 @@ def build_detail(
             "items": int(n_items),
             "subjects": int(n_rows),
             "observed": observed_overall,
-            "meanResponse": round(float(resp.mean()), 4),
+            "meanResponse": rounded_score(resp.mean()),
         },
         "matrix": matrix_path,
         "matrixSize": size,
@@ -1373,7 +1465,7 @@ def build_detail(
         "matrixSampled": False,
         "matrixRows": [id_to_name.get(sid, sid) for sid in row_ids],
         "matrixRowIds": row_ids,
-        "matrixRowScores": [round(float(subj_mean[sid]), 4) for sid in row_ids],
+        "matrixRowScores": [rounded_score(subj_mean[sid]) for sid in row_ids],
         "matrixColIds": None,
         "matrixColP": None,
         "hasTraces": bool(has_traces),
@@ -1383,10 +1475,11 @@ def build_detail(
         "traceChunkPrefix": 0,
         "isBinary": is_binary,
         "valueRange": [vmin, vmax],
-        "scaleLabel": scale_label(is_binary, override, meta.get("response_scale")),
+        "scaleLabel": ("Individual grades unavailable; prompts and recorded answers remain browsable"
+                       if resp.empty else scale_label(is_binary, override, meta.get("response_scale"))),
         "questionsAvailable": bool(questions_available),
         "subjects": [
-            {"name": id_to_name.get(sid, sid), "score": round(float(subj_mean[sid]), 4)}
+            {"name": id_to_name.get(sid, sid), "score": rounded_score(subj_mean[sid])}
             for sid in reversed(row_ids)
         ],
     }
@@ -1435,9 +1528,14 @@ def read_item(slug: str, cache_dir: Path, item_id: str) -> dict:
     return item_content(rows[0], assets)
 
 
-def item_assets(slug: str, cache_dir: Path, manifests) -> dict:
-    ids = {link["asset_id"] for value in manifests if value
-           for link in json.loads(value) if link["role"] == "input_image"}
+def input_images(manifest) -> list[dict]:
+    return [link for link in json.loads(manifest or "[]")
+            if link["role"] in {"input", "input_image"} and link["media_type"].startswith("image/")]
+
+
+def item_assets(slug: str, cache_dir: Path, manifests, output: Path | None = None) -> dict:
+    media = {link["asset_id"]: link["media_type"] for value in manifests for link in input_images(value)}
+    ids = set(media)
     if not ids:
         return {}
     rows = pq.read_table(fetch(f"{slug}/assets.parquet", cache_dir),
@@ -1445,6 +1543,12 @@ def item_assets(slug: str, cache_dir: Path, manifests) -> dict:
     assets = {row["asset_id"]: row["data"] for row in rows}
     if set(assets) != ids or len(assets) != len(rows):
         raise ValueError(f"{slug}: missing or duplicate image assets")
+    if output is not None:
+        (output / "asset").mkdir(parents=True)
+        for index, (asset_id, data) in enumerate(assets.items()):
+            name = f"{index}{mimetypes.guess_extension(media[asset_id]) or '.bin'}"
+            (output / "asset" / name).write_bytes(data)
+            assets[asset_id] = f"/benchmark-data/{slug}/asset/{name}"
     return assets
 
 
@@ -1453,10 +1557,11 @@ def item_content(row: dict, assets: dict | None = None) -> dict:
     if row.get("grading_criterion") is not None:
         answer = json.loads(row["grading_criterion"])["reference_answer"]
     content = row.get("content")
-    for link in json.loads(row.get("asset_manifest") or "[]"):
-        if link["role"] == "input_image":
-            data = base64.b64encode((assets or {})[link["asset_id"]]).decode("ascii")
-            content = (content or "") + f"\n\n![Image {link['ordinal']}](data:{link['media_type']};base64,{data})"
+    for link in input_images(row.get("asset_manifest")):
+        source = (assets or {})[link["asset_id"]]
+        if isinstance(source, bytes):
+            source = f"data:{link['media_type']};base64,{base64.b64encode(source).decode('ascii')}"
+        content = (content or "") + f"\n\n![Image {link['ordinal']}]({source})"
     return {"content": content,
             "answer": str(answer) if answer is not None else None}
 
@@ -1487,6 +1592,11 @@ def read_answer(slug: str, cache_dir: Path, key: list) -> dict:
 def chart_bundle(view: dict) -> dict:
     """Bundle the selected layout and its axes without embedding prompt or answer text."""
     detail = view["detail"]
+    axes = {**view["axes"], "slices": view["axes"].get("slices")}
+    if view["chart"]:
+        axes["slices"] = None
+        if detail.get("conditions"):
+            detail = {**detail, "conditions": {**detail["conditions"], "matrices": {}}}
     matrices = {}
     if not view["chart"]:
         for name, (values, rows, cols, _, keys) in view["matrices"].items():
@@ -1496,14 +1606,14 @@ def chart_bundle(view: dict) -> dict:
             pixels, observations = [], {}
             for (sid, iid), value in values.items():
                 r, c = row_pos[sid], col_pos[iid]
-                color = (RED if value >= 0.5 else BLUE) if detail["isBinary"] else \
+                color = GRAY if pd.isna(value) else (RED if value >= 0.5 else BLUE) if detail["isBinary"] else \
                     graded_color(float(value), *detail["valueRange"])
                 pixels.append([r * width + c * width // len(cols), *color])
                 observations[r * len(cols) + c] = keys.loc[(sid, iid)]
             matrices[name] = {"width": width, "height": len(rows), "pixels": pixels,
                               "keys": observations}
     return {"detail": detail, "chart": view["chart"] or None,
-            "axes": {**view["axes"], "slices": view["axes"].get("slices")},
+            "axes": axes,
             "matrices": matrices}
 
 
@@ -1535,6 +1645,30 @@ def write_lookup(directory: Path, rows) -> int:
     return len(seen)
 
 
+def separate_cell_keys(bundle: dict) -> list:
+    lookups = []
+
+    def visit(node):
+        if isinstance(node, dict):
+            if "bits" in node or "pixels" in node:
+                keys = {name: node.pop(name) for name in ("key", "key2", "keys", "keys2")
+                        if name in node}
+                if keys:
+                    reference = str(len(lookups))
+                    node["keyRef"] = reference
+                    lookups.append((reference, keys))
+            for name, child in node.items():
+                if name != "pixels":
+                    visit(child)
+        elif isinstance(node, list):
+            for child in node:
+                visit(child)
+
+    visit(bundle["chart"])
+    visit(bundle["matrices"])
+    return lookups
+
+
 def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
                        refresh: bool = False) -> dict:
     """Build deployable viewer files; no source tables are copied into the website."""
@@ -1544,10 +1678,14 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
     details = {}
     for slug in slugs:
         start = time.monotonic()
-        bundle = chart_bundle(build_detail(slug, cache_dir, web_dir, refresh, overrides))
-        details[slug] = bundle["detail"]
+        bundle = chart_bundle(build_detail(slug, cache_dir, web_dir, refresh, overrides,
+                                          compact=True))
+        # The catalog needs summaries; selectors stay in the per-benchmark bundle.
+        details[slug] = {key: value for key, value in bundle["detail"].items()
+                         if key != "conditions"}
         with TemporaryDirectory(dir=root, prefix=".build-") as staging:
             output = Path(staging)
+            write_lookup(output / "keys", separate_cell_keys(bundle))
             with gzip.open(output / "view.json.gz", "wt", encoding="utf-8", compresslevel=6) as stream:
                 json.dump(bundle, stream, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
             items = pq.ParquetFile(fetch(f"{slug}/items.parquet", cache_dir, refresh))
@@ -1556,7 +1694,7 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
                        if c in items.schema_arrow.names]
             assets = item_assets(slug, cache_dir, (
                 items.read(columns=["asset_manifest"])["asset_manifest"].to_pylist()
-                if "asset_manifest" in columns else []))
+                if "asset_manifest" in columns else []), output)
             item_count = write_lookup(output / "item", (
                 (row["item_id"], item_content(row, assets))
                 for batch in items.iter_batches(batch_size=128, columns=columns)
@@ -1573,7 +1711,7 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
             if destination.exists():
                 shutil.rmtree(destination)
             output.rename(destination)
-        size = sum(p.stat().st_size for p in destination.rglob("*.gz"))
+        size = sum(p.stat().st_size for p in destination.rglob("*") if p.is_file())
         print(f"{slug}: {item_count:,} items, {answer_count:,} answers, "
               f"{size / 1_000_000:.1f} MB, {time.monotonic() - start:.1f}s", flush=True)
     return details
@@ -1602,12 +1740,13 @@ def main() -> None:
     ap.add_argument("--cache-dir", type=Path,
                     default=SCRIPT_DIR / ".hf-cache")
     ap.add_argument("--refresh", action="store_true", help="force re-download")
-    ap.add_argument("--revision", help="HF source commit (default: current commit)")
+    ap.add_argument("--revision", help="HF branch, tag, or commit (default: main)")
     ap.add_argument("--response-file", choices=["responses.parquet", "response.parquet"],
                     default=RESPONSE_FILE, help="preferred filename (default: responses.parquet)")
     args = ap.parse_args()
     HF_REVISION, RESPONSE_FILE = args.revision or HF_REVISION, args.response_file
     source_revision.cache_clear()
+    source_tables.cache_clear()
     published = list_slugs()
     if args.mode == "build":
         hidden = set(json.loads((args.web_dir / "content/curated/hidden-benchmarks.json").read_text()))

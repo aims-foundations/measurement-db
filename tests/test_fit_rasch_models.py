@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import gzip
 import json
 import unittest
 from pathlib import Path
@@ -110,7 +111,9 @@ class IrtOutputLayoutTests(unittest.TestCase):
                 )
 
             payload = json.loads(web_payload.read_text())
-            self.assertEqual(payload["fixture"]["zByItem"], {"item-a": 0.125})
+            self.assertNotIn("zByItem", payload["fixture"])
+            with gzip.open(repo / "website/public/benchmark-data/fixture/irt.json.gz", "rt") as stream:
+                self.assertEqual(json.load(stream), {"item-a": 0.125})
             self.assertEqual(payload["fixture"]["theta"], {"000123": 1.2346})
 
     def test_explicit_output_routes_rollup_and_web_emission(self) -> None:
@@ -127,7 +130,7 @@ class IrtOutputLayoutTests(unittest.TestCase):
             )
 
             rollup, count = irt.write_summary_rollup(out_root)
-            with patch.object(irt, "WEB_IRT", web_payload):
+            with patch.object(irt, "WEB_IRT", web_payload), patch.object(irt, "REPO", root):
                 pd.DataFrame([{"item_id": "item-a", "z": 0.125}]).to_csv(
                     fit_dir / "items.csv", index=False
                 )
@@ -141,8 +144,15 @@ class IrtOutputLayoutTests(unittest.TestCase):
             self.assertEqual(count, 1)
             self.assertEqual(pd.read_csv(rollup)["slug"].tolist(), ["fixture"])
             payload = json.loads(web_payload.read_text())
-            self.assertEqual(payload["fixture"]["zByItem"], {"item-a": 0.125})
+            self.assertNotIn("zByItem", payload["fixture"])
+            with gzip.open(root / "website/public/benchmark-data/fixture/irt.json.gz", "rt") as stream:
+                self.assertEqual(json.load(stream), {"item-a": 0.125})
             self.assertEqual(payload["fixture"]["theta"], {"model-a": 0.75})
+
+            with patch.object(irt, "WEB_IRT", web_payload), patch.object(irt, "REPO", root):
+                irt.emit_web({}, {"fixture": "no observed responses"}, out_root)
+            self.assertEqual(json.loads(web_payload.read_text()), {})
+            self.assertFalse((root / "website/public/benchmark-data/fixture/irt.json.gz").exists())
 
     def test_current_schema_uses_source_ids_and_interactor_conditions(self) -> None:
         with TemporaryDirectory() as tmp:

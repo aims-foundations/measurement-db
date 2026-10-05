@@ -60,6 +60,7 @@ Requires torch, scikit-learn, pandas, pyarrow, and huggingface_hub.
 from __future__ import annotations
 
 import argparse
+import gzip
 import json
 import sys
 import time
@@ -464,7 +465,9 @@ def item_difficulties(fit_dir: Path) -> dict[str, float]:
 def emit_web(summaries: dict[str, dict], skipped: dict[str, str],
              out_root: Path | None, replace: bool = False) -> None:
     """Merge fitted abilities and item difficulties into the website analysis data."""
-    payload = json.loads(WEB_IRT.read_text()) if WEB_IRT.exists() and not replace else {}
+    previous = json.loads(WEB_IRT.read_text()) if WEB_IRT.exists() else {}
+    payload = {} if replace else previous.copy()
+    data_dir = REPO / "website" / "public" / "benchmark-data"
     for slug, summary in summaries.items():
         fit_dir = fit_output_dir(slug, out_root)
         theta = pd.read_csv(fit_dir / "subjects.csv", dtype={"subject_id": str})
@@ -472,10 +475,15 @@ def emit_web(summaries: dict[str, dict], skipped: dict[str, str],
             **{k: v for k, v in summary.items() if k != "slug"},
             "theta": {r.subject_id: round(float(r.theta), 4)
                       for r in theta.itertuples()},
-            "zByItem": item_difficulties(fit_dir),
         }
+        output = data_dir / slug / "irt.json.gz"
+        output.parent.mkdir(parents=True, exist_ok=True)
+        with gzip.open(output, "wt", encoding="utf-8") as stream:
+            json.dump(item_difficulties(fit_dir), stream, separators=(",", ":"), allow_nan=False)
     for slug, reason in skipped.items():
         payload.pop(slug, None)  # a benchmark that stops qualifying loses its panel
+    for slug in previous.keys() - payload.keys():
+        (data_dir / slug / "irt.json.gz").unlink(missing_ok=True)
     WEB_IRT.parent.mkdir(parents=True, exist_ok=True)
     WEB_IRT.write_text(json.dumps(payload, indent=1, sort_keys=True, allow_nan=False) + "\n")
     sys.stderr.write(f"\nwrote {rel(WEB_IRT)} ({len(payload)} benchmarks)\n")

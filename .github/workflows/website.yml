@@ -42,6 +42,7 @@ jobs:
           tests/test_generate_benchmark_attributions.py
           tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py
           tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py
+          tests/test_gallery_hf_layouts.py
           tests/test_website_deployment.py
       - run: python scripts/render_website/generate_benchmark_attributions.py --check
       - uses: pnpm/action-setup@v4

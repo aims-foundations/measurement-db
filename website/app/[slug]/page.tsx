@@ -1,15 +1,15 @@
-import { getBenchmarkBundle } from "@/lib/benchmark-data";
+import { getBenchmarkDetail } from "@/content/benchmark-details";
+import { getBenchmarkIrt } from "@/content/benchmark-irt";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ActionLink } from "@/components/action-link";
 import { BenchmarkCreditPanel } from "@/components/benchmark-credit-panel";
 import { SaturationTag } from "@/components/saturation-tag";
-import { MatrixViewer } from "@/components/matrix-viewer";
+import { BenchmarkMatrix } from "@/components/matrix-viewer";
 import { PageHero } from "@/components/page-hero";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SectionHeading } from "@/components/section-heading";
 import { getBenchmarkAttribution } from "@/content/benchmark-attributions";
-import { getBenchmarkIrt } from "@/content/benchmark-irt";
 import {
   getBenchmark,
   getBenchmarkCategory,
@@ -67,10 +67,9 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
   const { slug } = await params;
   const benchmark = getBenchmark(slug);
   if (!benchmark) notFound();
-  const { detail, bundle } = await getBenchmarkBundle(slug);
+  const detail = getBenchmarkDetail(slug);
+  const irt = getBenchmarkIrt(slug);
   const attribution = getBenchmarkAttribution(slug);
-  // Absent for graded benchmarks — fit_rasch_models.py only fits native 0/1 responses.
-  const irt = getBenchmarkIrt(slug) ?? null;
 
   if (!detail) {
     notFound();
@@ -81,7 +80,6 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
   const accent = categoryAccent[primaryCategory] ?? "default";
   // Build script link is temporarily hidden — re-enable with the "Build script" ActionLink below.
   // const buildScriptHref = `${measurementDb.repoHref}/blob/main/${slug}/build.py`;
-  const [mw, mh] = detail.matrixSize;
 
   return (
     <main id="main-content">
@@ -190,30 +188,17 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
 
           <ScrollReveal>
             <figure className="rd-card mt-8 p-4 sm:p-6">
-              <MatrixViewer
+              <BenchmarkMatrix
                 key={detail.slug}
-                bundle={bundle}
                 slug={detail.slug}
-                width={mw}
-                height={mh}
-                alt={`${benchmark.name} response matrix: AI models (rows) against items (columns)`}
-                rows={detail.matrixRows}
-                rowIds={detail.matrixRowIds}
-                rowScores={detail.matrixRowScores}
-                colIds={detail.matrixColIds}
-                colP={detail.matrixColP}
-                nItems={detail.stats.items}
-                isBinary={detail.isBinary}
-                hasTraces={detail.hasTraces}
-                audio={detail.audio}
-                conditions={detail.conditions}
-                categories={detail.categories}
-                binaryLabels={detail.binaryLabels}
+                name={benchmark.name}
                 irt={irt}
               />
               <figcaption className="mt-4 space-y-2 text-xs font-light opacity-70">
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                  {detail.categories && detail.categories.length ? (
+                  {detail.stats.meanResponse ===
+                  null ? null : detail.categories &&
+                    detail.categories.length ? (
                     detail.categories.map((c) => (
                       <span
                         key={c.value}
@@ -267,7 +252,9 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
                           : "bg-[#9e9e9e]"
                       }`}
                     />
-                    Unobserved
+                    {detail.stats.meanResponse === null
+                      ? "Grade unavailable"
+                      : "Unobserved"}
                   </span>
                 </div>
                 <p>

@@ -12,6 +12,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import rehypeKatex from "rehype-katex";
 import type {
+  BenchmarkDetail,
   BenchmarkConditions,
   MatrixCategory,
   MatrixCondition,
@@ -24,6 +25,8 @@ import {
   type JoinedPick,
   type JoinedData,
   type ObservationKey,
+  type CellKeys,
+  observationKey,
 } from "./joined-matrix";
 import { FacetedMatrix, type FacetedData } from "./faceted-matrix";
 import { SessionStrip, type SessionData } from "./session-strip";
@@ -61,7 +64,7 @@ const Z_STRIP = 30; // px, item-difficulty strip under the matrix
 
 async function readCellData<T>(
   dataUrl: string,
-  kind: "item" | "answer",
+  kind: "item" | "answer" | "keys",
   key: string | ObservationKey,
   signal: AbortSignal,
 ): Promise<T | undefined> {
@@ -137,6 +140,8 @@ type Hover = {
  *  positional index would resolve to the wrong item. When the ids are present
  *  they win, and the positions are re-derived from them. */
 type Pin = {
+  keyRef?: string;
+  keyIndex?: number;
   row: number;
   col: number;
   value: CellValue;
@@ -173,7 +178,8 @@ export type ChartBundle = {
       width: number;
       height: number;
       pixels: [number, number, number, number][];
-      keys: Record<number, ObservationKey>;
+      keys?: Record<number, ObservationKey>;
+      keyRef?: string;
     }
   >;
 };
@@ -614,6 +620,66 @@ function GutterRow({
   );
 }
 
+export function BenchmarkMatrix({
+  slug,
+  name,
+  irt,
+}: {
+  slug: string;
+  name: string;
+  irt?: Omit<BenchmarkIrt, "zByItem">;
+}) {
+  const [data, setData] = useState<
+    (ChartBundle & { detail: BenchmarkDetail; irt: BenchmarkIrt | null }) | null
+  >(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    const read = async (file: string) => {
+      const response = await fetch(
+        withBase(`/benchmark-data/${slug}/${file}.json.gz`),
+        { signal: controller.signal },
+      );
+      if (!response.ok) throw new Error("Could not load the response matrix.");
+      return response.json();
+    };
+    void Promise.all([read("view"), irt ? read("irt") : Promise.resolve(null)])
+      .then(([view, zByItem]) => {
+        if (!controller.signal.aborted)
+          setData({ ...view, irt: irt ? { ...irt, zByItem } : null });
+      })
+      .catch((error: Error) => {
+        if (!controller.signal.aborted) setError(error.message);
+      });
+    return () => controller.abort();
+  }, [slug, irt]);
+  if (error) return <p role="alert">{error}</p>;
+  if (!data) return <p role="status">Loading response matrix…</p>;
+  const { detail, irt: fitted, ...bundle } = data;
+  return (
+    <MatrixViewer
+      bundle={bundle}
+      slug={slug}
+      width={detail.matrixSize[0]}
+      height={detail.matrixSize[1]}
+      alt={`${name} response matrix: subjects (rows) against items (columns)`}
+      rows={detail.matrixRows}
+      rowIds={detail.matrixRowIds}
+      rowScores={detail.matrixRowScores}
+      colIds={detail.matrixColIds}
+      colP={detail.matrixColP}
+      nItems={detail.stats.items}
+      isBinary={detail.isBinary}
+      hasTraces={detail.hasTraces}
+      audio={detail.audio}
+      conditions={detail.conditions}
+      categories={detail.categories}
+      binaryLabels={detail.binaryLabels}
+      irt={fitted}
+    />
+  );
+}
+
 export function MatrixViewer({
   slug,
   bundle,
@@ -916,6 +982,8 @@ export function MatrixViewer({
       setSel(next);
     }
     setPin({
+      keyRef: pick.keyRef,
+      keyIndex: pick.keyIndex,
       row: -1,
       col: -1,
       subjectId: pick.key?.[0] ?? pick.subjectId,
@@ -964,10 +1032,15 @@ export function MatrixViewer({
   const observation =
     pin?.key ??
     (pin
-      ? bundle.matrices[imageKey]?.keys[pin.row * effNItems + pin.col]
+      ? bundle.matrices[imageKey]?.keys?.[pin.row * effNItems + pin.col]
       : null) ??
     null;
-  const answerQuery = JSON.stringify([observation, pin?.key2 ?? null]);
+  const answerQuery = JSON.stringify({
+    keys: [observation, pin?.key2 ?? null],
+    reference: pin?.keyRef ?? (pin ? bundle.matrices[imageKey]?.keyRef : null),
+    index: pin?.keyIndex ?? (pin ? pin.row * effNItems + pin.col : 0),
+    item: itemId,
+  });
   useEffect(() => {
     if (!itemId) return;
     const controller = new AbortController();
@@ -985,20 +1058,55 @@ export function MatrixViewer({
 
   useEffect(() => {
     if (!hasTraces) return;
-    const keys = JSON.parse(answerQuery) as (ObservationKey | null)[];
+    const query = JSON.parse(answerQuery) as {
+      keys: (ObservationKey | null)[];
+      reference?: string | null;
+      index: number;
+      item: string | null;
+    };
     const controller = new AbortController();
-    void Promise.all(
-      keys.map(async (key) => {
-        if (!key) return null;
-        const answer = await readCellData<{ trace: string | null }>(
-          dataUrl,
-          "answer",
-          key,
-          controller.signal,
+    const resolveKeys = async () => {
+      if (!query.reference || !query.item) return query.keys;
+      const cells = await readCellData<CellKeys>(
+        dataUrl,
+        "keys",
+        query.reference,
+        controller.signal,
+      );
+      if (!cells) throw new Error("Could not load observation keys.");
+      const keys = [
+        observationKey(cells, query.index, query.item),
+        observationKey(cells, query.index, query.item, true),
+      ];
+      if (!controller.signal.aborted)
+        setPin((current) =>
+          current &&
+          current.keyRef === query.reference &&
+          current.keyIndex === query.index
+            ? {
+                ...current,
+                subjectId: keys[0]?.[0] ?? current.subjectId,
+                subjectId2: keys[1]?.[0] ?? current.subjectId2,
+              }
+            : current,
         );
-        return answer?.trace ?? null;
-      }),
-    )
+      return keys;
+    };
+    void resolveKeys()
+      .then((keys) =>
+        Promise.all(
+          keys.map(async (key) => {
+            if (!key) return null;
+            const answer = await readCellData<{ trace: string | null }>(
+              dataUrl,
+              "answer",
+              key,
+              controller.signal,
+            );
+            return answer?.trace ?? null;
+          }),
+        ),
+      )
       .then((texts) => {
         if (!controller.signal.aborted) {
           setDirectAnswers({ key: answerQuery, texts });

@@ -57,8 +57,8 @@ export type BenchmarkIrt = {
   zByItem: Record<string, number>;
 };
 
-const irt = irtJson as unknown as Record<string, BenchmarkIrt>;
+const irt = irtJson as unknown as Record<string, Omit<BenchmarkIrt, "zByItem">>;
 
-export function getBenchmarkIrt(slug: string): BenchmarkIrt | undefined {
+export function getBenchmarkIrt(slug: string) {
   return irt[slug];
 }

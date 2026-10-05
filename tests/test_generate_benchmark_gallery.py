@@ -274,6 +274,12 @@ class GalleryCardDescriptionTests(unittest.TestCase):
 
 
 class GalleryDownloadTests(unittest.TestCase):
+    def setUp(self):
+        source = patch.object(gallery, "source_tables", side_effect=lambda slug:
+                              gallery.TableSource(slug, frozenset()))
+        source.start()
+        self.addCleanup(source.stop)
+
     def test_legacy_fallback_keeps_canonical_path_and_yields_to_current_file(self):
         with TemporaryDirectory() as tmp:
             cache = Path(tmp)
@@ -360,7 +366,7 @@ class GalleryDownloadTests(unittest.TestCase):
                 self.assertEqual(gallery.fetch(filename, cache_dir), dest)
                 download.assert_called_with(
                     gallery.HF_REPO, filename, repo_type="dataset",
-                    revision="pinned-commit", cache_dir=cache_dir / ".hub",
+                    revision="pinned-commit",
                     force_download=False,
                 )
                 self.assertTrue(dest.is_symlink())
@@ -397,41 +403,15 @@ class GalleryDownloadTests(unittest.TestCase):
                         gallery.fetch(filename, cache_dir)
                     self.assertEqual(dest.read_bytes(), b"previous-download")
 
-    def test_listing_and_download_share_one_revision(self) -> None:
-        gallery.source_revision.cache_clear()
-        self.addCleanup(gallery.source_revision.cache_clear)
-        with TemporaryDirectory() as tmp, patch.object(gallery, "HfApi") as api:
-            api.return_value.dataset_info.return_value.sha = "pinned-commit"
-            api.return_value.list_repo_files.return_value = ["fixture/benchmarks.parquet"]
-            with patch.object(gallery, "HIDDEN_PATH", Path(tmp) / "hidden.json"):
-                self.assertEqual(gallery.list_slugs(), ["fixture"])
-            api.return_value.list_repo_files.assert_called_once_with(
-                gallery.HF_REPO, repo_type="dataset", revision="pinned-commit",
-            )
-            sdk_file = Path(tmp) / "sdk-file"
-            sdk_file.write_bytes(b"parquet")
-            with patch.object(gallery, "hf_hub_download", return_value=str(sdk_file)) as download:
-                gallery.fetch("fixture/responses.parquet", Path(tmp))
-                self.assertEqual(download.call_args.kwargs["revision"], "pinned-commit")
-            api.return_value.dataset_info.assert_called_once_with(gallery.HF_REPO)
-
-    def test_new_public_benchmarks_are_discovered_without_an_allowlist(self) -> None:
-        files = ["fixture/benchmarks.parquet", "new_benchmark/benchmarks.parquet",
-                 "hidden/benchmarks.parquet", "assets/image.png", "README.md",
-                 "archive/old/benchmarks.parquet", "unfinished/items.parquet"]
-        with TemporaryDirectory() as tmp:
-            hidden = Path(tmp) / "hidden.json"
-            hidden.write_text(json.dumps(["hidden"]))
-            with (
-                patch.object(gallery, "HfApi") as api,
-                patch.object(gallery, "source_revision", return_value="pinned-commit"),
-                patch.object(gallery, "HIDDEN_PATH", hidden),
-            ):
-                api.return_value.list_repo_files.return_value = files
-                self.assertEqual(gallery.list_slugs(), ["fixture", "new_benchmark"])
 
 
 class GallerySchemaCompatibilityTests(unittest.TestCase):
+    def setUp(self):
+        source = patch.object(gallery, "source_tables", side_effect=lambda slug:
+                              gallery.TableSource(slug, frozenset()))
+        source.start()
+        self.addCleanup(source.stop)
+
     def test_current_criteria_and_legacy_answers_render_consistently(self):
         with TemporaryDirectory() as temporary:
             path = Path(temporary) / "items.parquet"

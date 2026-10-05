@@ -24,6 +24,7 @@ const LINE = 12; // wrapped-line pitch
 const TOP_PAD = 11;
 const BOTTOM_PAD = 5;
 const PAD_X = 4;
+const OBSERVATIONS_PER_PAGE = 5000;
 
 type SessionRow = {
   sid: string;
@@ -36,9 +37,13 @@ type SessionRow = {
   subjects: string[];
   pass: number;
   n: number;
+  values?: number[];
+  colors?: string[];
 };
 
 export type SessionData = {
+  observationRows?: boolean;
+  graded?: boolean;
   bandDims: string[];
   bandLabels?: Record<string, Record<string, string>>;
   blocks: { key: string; colIds: string[] }[];
@@ -118,8 +123,12 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
     return all.filter((r) => r.n >= minCells);
   }, [data, minCells]);
 
-  const oneLabel = binaryLabels?.one ?? "accepted";
-  const zeroLabel = binaryLabels?.zero ?? "pushed back";
+  const oneLabel =
+    binaryLabels?.one ?? (data.observationRows ? "1" : "accepted");
+  const zeroLabel =
+    binaryLabels?.zero ?? (data.observationRows ? "0" : "pushed back");
+  const rowUnit = data.observationRows ? "subject" : "developer";
+  const cellUnit = data.observationRows ? "observations" : "prompts";
 
   if (!data || data.rowKind !== "session" || !rows.length) return null;
 
@@ -137,29 +146,35 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
   return (
     <div className="mb-10">
       <div className="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-          <i
-            aria-hidden="true"
-            className="inline-block h-2.5 w-2.5 rounded-[2px]"
-            style={{ background: PASS }}
-          />
-          {oneLabel}
-        </span>
-        <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
-          <i
-            aria-hidden="true"
-            className="inline-block h-2.5 w-2.5 rounded-[2px]"
-            style={{ background: FAIL }}
-          />
-          {zeroLabel}
-        </span>
+        {!data.graded && (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+            <i
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-[2px]"
+              style={{ background: PASS }}
+            />
+            {oneLabel}
+          </span>
+        )}
+        {!data.graded && (
+          <span className="flex items-center gap-1.5 text-xs text-[var(--muted)]">
+            <i
+              aria-hidden="true"
+              className="inline-block h-2.5 w-2.5 rounded-[2px]"
+              style={{ background: FAIL }}
+            />
+            {zeroLabel}
+          </span>
+        )}
         <span className="text-xs text-[var(--muted)]">
-          {rows.length.toLocaleString()} developers ·{" "}
-          {shownCells.toLocaleString()} prompts ·{" "}
-          {((shownPass / shownCells) * 100).toFixed(1)}% {oneLabel}
+          {rows.length.toLocaleString()} {rowUnit}s ·{" "}
+          {shownCells.toLocaleString()} {cellUnit} ·{" "}
+          {data.graded
+            ? `mean ${(shownPass / shownCells).toFixed(3)}`
+            : `${((shownPass / shownCells) * 100).toFixed(1)}% ${oneLabel}`}
         </span>
         <label className="ml-auto flex items-center gap-2 text-xs text-[var(--muted)]">
-          Min prompts
+          Min {cellUnit}
           <select
             className="rounded border border-[var(--line)] bg-white px-1.5 py-0.5 text-xs"
             onChange={(e) => setMinCells(Number(e.target.value))}
@@ -172,6 +187,12 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
           </select>
         </label>
       </div>
+      {data.observationRows && (
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          Each strip shows one subject’s recorded observations. Positions are
+          local to each subject; repeated items remain separate.
+        </p>
+      )}
 
       {/* Same cap the joined matrix uses: 182 developers is several screens of
           strips, and the cell detail this panel fills sits BELOW them — so the
@@ -185,24 +206,31 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
             <h4 className="sticky top-0 z-10 mb-1 border-b border-[var(--line)] bg-white pt-4 pb-1 text-xs font-semibold">
               {bandLabel(band.key, data.bandDims, data.bandLabels)}
               <span className="ml-2 font-normal text-[var(--muted)]">
-                {band.rows.length} developer{band.rows.length === 1 ? "" : "s"}{" "}
-                · {band.rows.reduce((s, r) => s + r.n, 0).toLocaleString()}{" "}
-                prompts
+                {band.rows.length} {rowUnit}
+                {band.rows.length === 1 ? "" : "s"} ·{" "}
+                {band.rows.reduce((s, r) => s + r.n, 0).toLocaleString()}{" "}
+                {cellUnit}
               </span>
             </h4>
             {band.rows.map((row) => (
               <StripRow
+                observationRows={data.observationRows}
                 key={`${row.band}/${row.name}`}
                 onLeave={() => setTip(null)}
                 onPickCell={(i, passed) => {
                   setSel({ row: `${row.band}/${row.name}`, i });
                   onPick({
+                    keyRef: row.blocks.all.keyRef,
+                    keyIndex: i,
                     key: observationKey(row.blocks.all, i, row.cols[i]),
                     subjectId: row.sid,
                     itemId: row.cols[i],
                     cond: null,
                     trial: "1",
                     passed,
+                    level: row.values
+                      ? { label: String(row.values[i]), color: row.colors![i] }
+                      : null,
                   });
                 }}
                 onTip={setTip}
@@ -231,6 +259,7 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
 }
 
 function StripRow({
+  observationRows,
   row,
   selected,
   onPickCell,
@@ -239,6 +268,7 @@ function StripRow({
   oneLabel,
   zeroLabel,
 }: {
+  observationRows?: boolean;
   row: SessionRow;
   selected: number | null;
   onPickCell: (i: number, passed: boolean) => void;
@@ -248,6 +278,8 @@ function StripRow({
   zeroLabel: string;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const [page, setPage] = useState(0);
+  const start = observationRows ? page * OBSERVATIONS_PER_PAGE : 0;
   const placed = useRef<Placed[]>([]);
   const bits = row.blocks.all?.bits ?? "";
 
@@ -256,7 +288,13 @@ function StripRow({
     if (!cv) return;
     const width = cv.clientWidth;
     if (!width) return;
-    const { cells, height } = layout(row.segs, width);
+    const { cells, height } = layout(
+      observationRows
+        ? [Math.min(OBSERVATIONS_PER_PAGE, row.n - start)]
+        : row.segs,
+      width,
+    );
+    if (observationRows) for (const cell of cells) cell.i += start;
     placed.current = cells;
     const dpr = window.devicePixelRatio || 1;
     cv.width = Math.round(width * dpr);
@@ -268,7 +306,7 @@ function StripRow({
     g.clearRect(0, 0, width, height);
     let cur = "";
     for (const c of cells) {
-      const want = bits[c.i] === "1" ? PASS : FAIL;
+      const want = row.colors?.[c.i] ?? (bits[c.i] === "1" ? PASS : FAIL);
       if (want !== cur) {
         g.fillStyle = want;
         cur = want;
@@ -276,7 +314,7 @@ function StripRow({
       g.fillRect(c.x, c.y, CELL, CELL);
     }
     if (selected != null) {
-      const q = cells[selected];
+      const q = cells.find((cell) => cell.i === selected);
       if (q) {
         // A thin dark ring is the wrong tool at this size: the cell is 6px with
         // a 1px gutter, and black has its LEAST contrast against exactly the two
@@ -316,7 +354,7 @@ function StripRow({
         g.fill();
       }
     }
-  }, [bits, row.segs, selected]);
+  }, [bits, row.segs, row.n, row.colors, selected, observationRows, start]);
 
   useEffect(() => {
     draw();
@@ -343,20 +381,52 @@ function StripRow({
   }
 
   const rate = row.n ? Math.round((row.pass / row.n) * 100) : 0;
+  const score = row.values
+    ? `mean ${(row.pass / row.n).toFixed(3)}`
+    : `${rate}% ${oneLabel}`;
 
   return (
     <div className="flex items-start gap-3 py-[1px]">
-      <div className="flex w-44 flex-none items-baseline gap-2 pt-px font-mono text-[11px]">
-        <span className="flex-1 truncate" title={row.name}>
-          {row.name}
-        </span>
-        <span className="tabular-nums text-[var(--muted)]">{row.n}</span>
-        <span className="w-9 text-right tabular-nums text-[var(--muted)]">
-          {rate}%
-        </span>
+      <div className="w-44 flex-none pt-px font-mono text-[11px]">
+        <div className="flex items-baseline gap-2">
+          <span className="flex-1 truncate" title={row.name}>
+            {row.name}
+          </span>
+          <span className="tabular-nums text-[var(--muted)]">{row.n}</span>
+          <span className="w-9 text-right tabular-nums text-[var(--muted)]">
+            {row.values ? (row.pass / row.n).toFixed(3) : `${rate}%`}
+          </span>
+        </div>
+        {observationRows && row.n > OBSERVATIONS_PER_PAGE && (
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-[var(--muted)]">
+            <button
+              aria-label={`Previous observations for ${row.name}`}
+              disabled={page === 0}
+              onClick={() => setPage(page - 1)}
+              className="disabled:opacity-30"
+            >
+              ←
+            </button>
+            <span>
+              {start + 1}–{Math.min(start + OBSERVATIONS_PER_PAGE, row.n)}
+            </span>
+            <button
+              aria-label={`Next observations for ${row.name}`}
+              disabled={start + OBSERVATIONS_PER_PAGE >= row.n}
+              onClick={() => setPage(page + 1)}
+              className="disabled:opacity-30"
+            >
+              →
+            </button>
+          </div>
+        )}
       </div>
       <canvas
-        aria-label={`${row.name}: ${row.n} prompts across ${row.segs.length} sessions, ${rate}% ${oneLabel}`}
+        aria-label={
+          observationRows
+            ? `${row.name}: ${row.n} recorded observations, ${score}`
+            : `${row.name}: ${row.n} prompts across ${row.segs.length} sessions, ${rate}% ${oneLabel}`
+        }
         className="min-w-0 flex-1 cursor-crosshair"
         onClick={(ev) => {
           const c = hit(ev);
@@ -373,7 +443,9 @@ function StripRow({
             x: ev.clientX,
             y: ev.clientY,
             passed,
-            text: `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
+            text: observationRows
+              ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel}`
+              : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
           });
         }}
         ref={ref}

@@ -50,7 +50,7 @@ jobs:
     concurrency:
       group: vercel-measurement-db-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     environment:
       name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
       url: ${{ steps.deploy.outputs.url }}/measurement-db
@@ -60,6 +60,7 @@ jobs:
       MKL_NUM_THREADS: 2
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
+      HF_SOURCE_REF: ${{ github.ref == 'refs/heads/main' && 'main' || 'migration/tabular-builders-20260924' }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -74,18 +75,21 @@ jobs:
           python-version: '3.11'
       - name: Install rendering dependencies
         run: |
-          pip install numpy pandas pyarrow 'huggingface_hub>=1,<2' scikit-learn PyYAML
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m venv "$RUNNER_TEMP/website-venv"
+          echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/website-venv/bin/pip" install numpy pandas pyarrow 'huggingface_hub>=1,<2' scikit-learn PyYAML
+          "$RUNNER_TEMP/website-venv/bin/pip" install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Resolve the public HF source revision
         run: |
           python - <<'PYTHON'
           import os
           from huggingface_hub import HfApi
-          revision = HfApi().dataset_info('aims-foundations/measurement-db').sha
+          source = os.environ['HF_SOURCE_REF']
+          revision = HfApi().dataset_info('aims-foundations/measurement-db', revision=source).sha
           with open(os.environ['GITHUB_ENV'], 'a') as output:
               output.write(f'HF_REVISION={revision}\n')
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
-              output.write(f'Data source: aims-foundations/measurement-db@{revision}\n')
+              output.write(f'Data source: aims-foundations/measurement-db@{source} ({revision})\n')
           PYTHON
       - name: Build viewer data from the public source tables
         run: |
@@ -95,7 +99,7 @@ jobs:
           python scripts/render_website/generate_benchmark_attributions.py
           python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
           python scripts/render_website/generate_benchmark_gallery.py cards
-          python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --device cpu --out artifacts/website-rasch
+          python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --eval-every 4000 --device cpu --out artifacts/website-rasch
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0

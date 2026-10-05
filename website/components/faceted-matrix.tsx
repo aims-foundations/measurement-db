@@ -282,6 +282,8 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                             const itemId = p.colIds[idx];
                             if (!itemId) return;
                             onPick({
+                              keyRef: rp.keyRef,
+                              keyIndex: idx,
                               key: observationKey(rp, idx, itemId),
                               subjectId: row.sid,
                               itemId,

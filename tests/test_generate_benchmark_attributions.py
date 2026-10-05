@@ -179,7 +179,8 @@ class RepositoryManifestTests(unittest.TestCase):
             cards.write_text(json.dumps([*rows, {"slug": "new_public_benchmark", "name": "New benchmark"}]))
             manifest = generator.build_manifest(cards_path=cards)
         self.assertIsNone(manifest["benchmarks"]["new_public_benchmark"])
-        self.assertEqual(manifest["coverage"]["unreviewed"], ["new_public_benchmark"])
+        self.assertEqual(set(manifest["coverage"]["unreviewed"]),
+                         set(self.generated["coverage"]["unreviewed"]) | {"new_public_benchmark"})
         self.assertNotIn("new_public_benchmark", manifest["coverage"]["withoutProducerCitation"])
         self.assertEqual(manifest["coverage"]["withCitation"], self.generated["coverage"]["withCitation"])
 
@@ -191,6 +192,17 @@ class RepositoryManifestTests(unittest.TestCase):
             path.write_text(json.dumps(overrides))
             with self.assertRaisesRegex(generator.AttributionError, "primary-source count verification"):
                 generator.build_manifest(overrides_path=path)
+
+    def test_affiliation_alone_does_not_imply_reviewed_citation(self):
+        with TemporaryDirectory() as tmp:
+            affiliations = json.loads(generator.DEFAULT_AFFILIATIONS_PATH.read_text())
+            affiliations["benchmarks"]["new_public_benchmark"] = affiliations["benchmarks"]["researchcodebench"]
+            path = Path(tmp) / "affiliations.json"
+            path.write_text(json.dumps(affiliations))
+            cards = Path(tmp) / "cards.json"
+            cards.write_text(json.dumps([{"slug": "new_public_benchmark", "name": "New benchmark"}]))
+            manifest = generator.build_manifest(cards_path=cards, affiliations_path=path)
+        self.assertIsNone(manifest["benchmarks"]["new_public_benchmark"])
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -224,6 +236,8 @@ class RepositoryManifestTests(unittest.TestCase):
             ["tengu"] if "tengu" in records else []
         )
         for slug, record in records.items():
+            if record is None:
+                continue
             citation = record["citation"]
             authors = record["reference"]["authors"]
             if slug == "tengu":
@@ -278,7 +292,7 @@ class RepositoryManifestTests(unittest.TestCase):
         papers = [
             (slug, record)
             for slug, record in self.generated["benchmarks"].items()
-            if record["reference"]["kind"] == "paper"
+            if record is not None and record["reference"]["kind"] == "paper"
         ]
         self.assertTrue(papers)
         for slug, record in papers:
@@ -293,6 +307,8 @@ class RepositoryManifestTests(unittest.TestCase):
 
     def test_short_author_lists_and_corporate_author_are_explicit(self) -> None:
         for slug, record in self.generated["benchmarks"].items():
+            if record is None:
+                continue
             if (
                 record["reference"]["kind"] == "paper"
                 and len(record["reference"]["authors"]) <= 3
@@ -321,6 +337,8 @@ class RepositoryManifestTests(unittest.TestCase):
             self.generated["affiliationScope"], generator.AFFILIATION_SCOPE
         )
         for slug, record in self.generated["benchmarks"].items():
+            if record is None:
+                continue
             if slug in {"arc_agi_3", "tengu"}:
                 self.assertEqual(record["affiliationStatus"], "not_applicable")
                 self.assertIsNone(record["affiliationScope"])

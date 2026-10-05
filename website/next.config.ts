@@ -11,9 +11,6 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   typedRoutes: true,
-  outputFileTracingIncludes: {
-    "/[slug]": ["./public/benchmark-data/*/view.json.gz"],
-  },
   async headers() {
     return [
       {
