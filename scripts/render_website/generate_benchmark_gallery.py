@@ -992,13 +992,14 @@ def load_raw(slug: str, cache_dir: Path, refresh: bool) -> pd.DataFrame:
     key = list(KEY)
     if "interactors" in pq.read_schema(resp_path).names:
         key.append("interactors")
-    resp = pq.read_table(
+    table = pq.read_table(
         resp_path,
         columns=[*key, "response"],
-    ).to_pandas()
+    )
+    resp = table.to_pandas()
     if resp.empty:
         raise SystemExit(f"{slug}/responses.parquet has no rows")
-    resp["_key"] = [list(row) for row in resp[key].itertuples(index=False, name=None)]
+    resp["_key"] = [list(row.values()) for row in table.select(key).to_pylist()]
     for col in key[2:]:
         resp[col] = resp[col].fillna(NO_COND)
 

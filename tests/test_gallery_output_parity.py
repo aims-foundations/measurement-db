@@ -13,6 +13,7 @@ from contextlib import redirect_stderr
 from unittest.mock import patch
 
 import pandas as pd
+import pyarrow.parquet as pq
 
 from scripts.render_website import generate_benchmark_gallery as gallery
 
@@ -233,6 +234,22 @@ def chart_keys(value):
 
 
 class DirectTableTests(unittest.TestCase):
+    def test_nullable_source_keys_survive_pandas_string_conversion(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, "binary")
+            path = root / "binary/responses.parquet"
+            rows = pq.read_table(path).to_pylist()
+            rows[0]["test_condition"] = "protocol=a"
+            for index, row in enumerate(rows):
+                row["interactors"] = "opponent=x" if index == 0 else None
+            pd.DataFrame(rows).to_parquet(path, index=False)
+            with patch.object(gallery, "fetch", side_effect=local_fetch):
+                actual = gallery.load_raw("binary", root, False)["_key"].tolist()
+            expected = [[row[k] for k in [*gallery.KEY, "interactors"]] for row in rows]
+            self.assertEqual(actual, expected)
+            json.dumps(actual, allow_nan=False)
+
     def test_item_attributes_do_not_split_subject_rows(self):
         records = []
         for sid in ["a", "b"]:
@@ -369,7 +386,7 @@ class DirectTableTests(unittest.TestCase):
                 item = gallery.read_item("binary", root, "i0")
                 self.assertIn("data:image/png;base64,cG5nIGJ5dGVz", item["content"])
                 assets = gallery.item_assets("binary", root, items.asset_manifest)
-                self.assertEqual(gallery.item_content(items.iloc[0].to_dict(), assets), item)
+                self.assertEqual(gallery.item_content(pq.read_table(path).to_pylist()[0], assets), item)
 
     def test_answer_queries_match_every_raw_observation(self):
         for case in CASES:
