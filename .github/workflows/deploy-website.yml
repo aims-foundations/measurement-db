@@ -126,7 +126,7 @@ jobs:
         run: |
           for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/view.json.gz; do
             pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
-              --token="$VERCEL_TOKEN" -- --fail --silent --show-error --max-time 120 --output /dev/null
+              -- --fail --silent --show-error --max-time 120 --output /dev/null
           done
       - name: Update preview alias
         if: env.DEPLOY_ENV == 'preview'
