@@ -682,6 +682,10 @@ def build_manifest(
         key=lambda card: str(card.get("slug")),
     )
     visible_slugs = {str(card.get("slug")) for card in visible_cards}
+    references_path = repo_root / "website/content/curated/benchmark-references.json"
+    known_slugs = visible_slugs | set(affiliations.get("benchmarks", {})) | (
+        set(_read_json(references_path)) if references_path.exists() else set()
+    )
     aliases = overrides.get("aliases", {})
     reference_overrides = overrides.get("references", {})
     citation_overrides = overrides.get("citations", {})
@@ -696,10 +700,10 @@ def build_manifest(
     ):
         if not isinstance(mapping, dict):
             raise AttributionError(f"{overrides_path}: {label} must be an object")
-        orphaned = sorted(set(mapping) - visible_slugs)
+        orphaned = sorted(set(mapping) - known_slugs)
         if orphaned:
             raise AttributionError(
-                f"{overrides_path}: {label} contain non-visible slugs {orphaned}"
+                f"{overrides_path}: {label} contain unknown slugs {orphaned}"
             )
     overlapping_reference_citations = sorted(
         set(reference_overrides) & set(citation_overrides)

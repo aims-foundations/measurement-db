@@ -76,7 +76,6 @@ sys.path.insert(0, str(RENDER_WEBSITE_DIR))
 from generate_benchmark_gallery import fetch  # noqa: E402
 import generate_benchmark_gallery as gallery  # noqa: E402
 
-FILTERED = REPO / "website" / "content" / "generated" / "published-benchmarks.json"
 WEB_IRT = REPO / "website" / "content" / "generated" / "benchmark-irt.json"
 RASCH1PL_SUBDIR = Path("model_fits") / "rasch1pl"
 
@@ -173,7 +172,8 @@ def write_summary_rollup(out_root: Path | None) -> tuple[Path, int]:
 
 def website_slugs() -> list[str]:
     """The benchmarks the site actually shows — the curated card list."""
-    return sorted(json.loads(FILTERED.read_text()))
+    cards = REPO / "website/content/generated/benchmark-cards.json"
+    return sorted(entry["slug"] for entry in json.loads(cards.read_text()))
 
 
 def load_responses(slug: str, cache_dir: Path, refresh: bool) -> pd.DataFrame:
@@ -462,9 +462,9 @@ def item_difficulties(fit_dir: Path) -> dict[str, float]:
 
 
 def emit_web(summaries: dict[str, dict], skipped: dict[str, str],
-             out_root: Path | None) -> None:
+             out_root: Path | None, replace: bool = False) -> None:
     """Merge fitted abilities and item difficulties into the website analysis data."""
-    payload = json.loads(WEB_IRT.read_text()) if WEB_IRT.exists() else {}
+    payload = json.loads(WEB_IRT.read_text()) if WEB_IRT.exists() and not replace else {}
     for slug, summary in summaries.items():
         fit_dir = fit_output_dir(slug, out_root)
         theta = pd.read_csv(fit_dir / "subjects.csv", dtype={"subject_id": str})
@@ -493,7 +493,7 @@ def main() -> None:
     )
     ap.add_argument("slugs", nargs="*", help="benchmark slugs; one or many")
     ap.add_argument("--all", action="store_true",
-                    help="every benchmark on the website (published-benchmarks.json)")
+                    help="every benchmark on the website (benchmark-cards.json)")
     ap.add_argument(
         "--out", type=Path, default=None, metavar="DIR",
         help="common output root override (writes DIR/<slug>/ and "
@@ -502,8 +502,7 @@ def main() -> None:
     ap.add_argument("--cache-dir", type=Path,
                     default=RENDER_WEBSITE_DIR / ".hf-cache")
     ap.add_argument("--refresh", action="store_true", help="re-download the parquet")
-    ap.add_argument("--hf-repo", action="append", metavar="REPO[@COMMIT]",
-                    help="same source banks and revisions as the gallery")
+    ap.add_argument("--revision", help="source HF commit; defaults to HF_REVISION or current commit")
     ap.add_argument("--emit-web", action="store_true",
                     help="write website/content/generated/benchmark-irt.json")
     ap.add_argument("--test-size", type=float, default=0.2)
@@ -518,10 +517,7 @@ def main() -> None:
     ap.add_argument("--no-curves", action="store_true")
     args = ap.parse_args()
 
-    gallery.HF_REPOS = {repo: revision or None
-                       for source in args.hf_repo or [gallery.HF_REPO]
-                       for repo, _, revision in [source.partition("@")]}
-    gallery.HF_REPO = next(iter(gallery.HF_REPOS))
+    gallery.HF_REVISION = args.revision or gallery.HF_REVISION
     gallery.source_revision.cache_clear()
     gallery.list_slugs()
 
@@ -532,7 +528,7 @@ def main() -> None:
     if unknown := [s for s in slugs if s not in known]:
         sys.stderr.write(
             f"note: not on the website — {', '.join(unknown)} "
-            f"(fitting anyway; see published-benchmarks.json for the shown set)\n")
+            f"(fitting anyway; see benchmark-cards.json for the shown set)\n")
 
     if args.out is None:
         missing = [s for s in slugs if not (REPO / "benchmarks" / s).is_dir()]
@@ -573,8 +569,7 @@ def main() -> None:
         summary = write_outputs(slug, df, res, names,
                                 fit_output_dir(slug, args.out),
                                 curves=not args.no_curves)
-        repo = gallery.BENCHMARK_REPOS.get(slug, gallery.HF_REPO)
-        summary["source"] = {"repo": repo, "revision": gallery.source_revision(repo)}
+        summary["source"] = {"repo": gallery.HF_REPO, "revision": gallery.source_revision()}
         summary["fit"] = {k: getattr(args, k) for k in
                           ("test_size", "seed", "lr", "max_iter", "tol", "eval_every")}
         (fit_output_dir(slug, args.out) / "summary.json").write_text(
@@ -592,7 +587,7 @@ def main() -> None:
             f"{rollup_count} in rollup → {rel(path)}\n")
 
     if args.emit_web and (summaries or skipped):
-        emit_web(summaries, skipped, args.out)
+        emit_web(summaries, skipped, args.out, replace=args.all)
 
     if skipped:
         sys.stderr.write("\nskipped:\n")

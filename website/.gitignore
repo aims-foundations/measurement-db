@@ -10,6 +10,7 @@
 
 # Legacy generated item images.
 /public/benchmarks/item-images/
+/public/benchmark-data/
 
 # misc
 .DS_Store

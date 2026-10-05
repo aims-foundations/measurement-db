@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BenchmarkSearchClient } from "@/components/benchmark-search-client";
-import { assetUrl } from "@/lib/gallery-assets";
+import { withBase } from "@/lib/base-path";
 import type { LocalBenchmarkSearchDocument } from "@/lib/search-types";
 import {
   type ReactNode,
@@ -176,13 +176,10 @@ function InstitutionBadge({
         className="flex h-[30px] w-[30px] items-center justify-center overflow-hidden"
       >
         <Image
-          src={assetUrl(logo)}
+          src={withBase(logo)}
           alt={name}
           width={30}
           height={30}
-          // Proxied from HuggingFace like the card images above; assetUrl()
-          // applies basePath itself. These are ~7 KB and drawn at 30px, so the
-          // optimizer would cost a round trip to save nothing.
           unoptimized
           // white halo keeps dark marks readable over dark thumbnails
           className="h-full w-full object-contain [filter:drop-shadow(0_0_2px_rgba(255,255,255,0.9))_drop-shadow(0_1px_2px_rgba(0,0,0,0.25))]"
@@ -240,9 +237,7 @@ function BenchmarkCard({
       >
         {benchmark.image ? (
           <Image
-            // Card images are proxied from HuggingFace; assetUrl() applies
-            // basePath itself, which the optimizer's url param still needs.
-            src={assetUrl(benchmark.image)}
+            src={withBase(benchmark.image)}
             alt=""
             fill
             sizes="(min-width: 1280px) 22vw, (min-width: 640px) 45vw, 90vw"

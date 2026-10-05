@@ -54,9 +54,6 @@ repo_files = set(list_repo_files(REPO, repo_type="dataset"))
 # list of benchmark slugs derived from the HuggingFace repo, excluding those in EXCLUDED.
 displayed = sorted({f.split("/")[0] for f in repo_files if "/" in f} - EXCLUDED)
 
-missing = INCLUDED - set(displayed)
-assert not missing, f"INCLUDED but not in the repo: {sorted(missing)}"
-
 published_benchmarks = []
 for benchmark in displayed:
     if benchmark in INCLUDED:

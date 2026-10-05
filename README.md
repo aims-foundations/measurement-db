@@ -19,7 +19,9 @@ and model-fitting outputs are excluded from Git.
 The website lives in [`website/`](website), with its rendering scripts in
 [`scripts/render_website/`](scripts/render_website). See the
 [gallery guide](scripts/render_website/README.md) for installation, local preview,
-data refresh, and validation commands.
+data refresh, and validation commands. Viewer data is built directly from
+`aims-foundations/measurement-db` on Hugging Face and included in the Vercel
+deployment; no private-bank fallback or separate gallery service is used.
 
 ## Contributing
 

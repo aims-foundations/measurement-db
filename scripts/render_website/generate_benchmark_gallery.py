@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Render the gallery from HF tables. See README.md for the local server."""
+"""Render the gallery from HF tables. See README.md for build and preview commands."""
 
 from __future__ import annotations
 
 import argparse
+import base64
 import gzip
+import hashlib
 import json
+import os
+import shutil
 import sys
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlsplit
+import time
+from contextlib import ExitStack
 from functools import lru_cache
 from tempfile import TemporaryDirectory
 from typing import Callable, NamedTuple
@@ -24,9 +28,7 @@ from huggingface_hub.hf_api import RepoFolder
 
 # Paths and source
 HF_REPO = "aims-foundations/measurement-db"
-HF_REVISION = None
-HF_REPOS: dict[str, str | None] = {}
-BENCHMARK_REPOS: dict[str, str] = {}
+HF_REVISION = os.environ.get("HF_REVISION")
 RESPONSE_FILE = "responses.parquet"
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_DIR = SCRIPT_DIR.parents[1]
@@ -92,6 +94,7 @@ PAIRWISE_NAME_MATCH = 0.95
 
 # Answer display
 TRACE_MAX_CHARS = 50000  # cap long execution logs
+LOOKUP_BUCKETS = 256
 
 def categories_for(domain) -> list[str]:
     present = {str(d).strip().lower() for d in (domain or [])}
@@ -101,20 +104,18 @@ def categories_for(domain) -> list[str]:
 # Hugging Face inputs
 
 @lru_cache(maxsize=None)
-def source_revision(repo: str | None = None) -> str:
+def source_revision() -> str:
     """Use one repository commit for all tables in a render."""
-    repo = repo or HF_REPO
-    return HF_REPOS.get(repo) or (HF_REVISION if repo == HF_REPO else None) or HfApi().dataset_info(repo).sha
+    return HF_REVISION or HfApi().dataset_info(HF_REPO).sha
 
 
 def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
-    repo = BENCHMARK_REPOS.get(filename.split("/")[0], HF_REPO)
     source = filename
     if source.endswith("/responses.parquet"):
         source = source.removesuffix("responses.parquet") + RESPONSE_FILE
     try:
         downloaded = hf_hub_download(
-            repo, source, repo_type="dataset", revision=source_revision(repo),
+            HF_REPO, source, repo_type="dataset", revision=source_revision(),
             cache_dir=cache_dir / ".hub", force_download=refresh,
         )
     except LocalEntryNotFoundError:
@@ -124,7 +125,7 @@ def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
             downloaded = fetch(source.removesuffix("responses.parquet") + "response.parquet",
                                cache_dir, refresh)
         else:
-            raise SystemExit(f"'{source}' not found in {repo}.") from exc
+            raise SystemExit(f"'{source}' not found in {HF_REPO}.") from exc
 
     # Local analyses use the requested name, including after a legacy fallback.
     dest = cache_dir / filename
@@ -139,14 +140,12 @@ def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
 
 
 def list_slugs() -> list[str]:
-    BENCHMARK_REPOS.clear()
-    for repo in HF_REPOS or {HF_REPO: HF_REVISION}:
-        entries = HfApi().list_repo_tree(
-            repo, repo_type="dataset", revision=source_revision(repo))
-        for entry in entries:
-            if isinstance(entry, RepoFolder):
-                BENCHMARK_REPOS.setdefault(entry.path, repo)
-    return sorted(BENCHMARK_REPOS.keys() & set(json.loads(FILTERED_PATH.read_text())))
+    entries = HfApi().list_repo_tree(
+        HF_REPO, repo_type="dataset", revision=source_revision())
+    available = {entry.path for entry in entries if isinstance(entry, RepoFolder)}
+    hidden_path = FILTERED_PATH.parent.parent / "curated/hidden-benchmarks.json"
+    hidden = set(json.loads(hidden_path.read_text())) if hidden_path.exists() else set()
+    return sorted(available & set(json.loads(FILTERED_PATH.read_text())) - hidden)
 
 
 def load_overrides(web_dir: Path) -> dict:
@@ -247,6 +246,13 @@ def cmd_cards(slugs: list[str], cache_dir: Path, web_dir: Path, refresh: bool) -
             saturation.get(slug),
         )
         if card:
+            image = card["image"]
+            if image and not (web_dir / "public" / image.lstrip("/")).is_file():
+                card["image"] = None
+            for institution in card["institutions"] or []:
+                logo = institution["logo"]
+                if logo and not (web_dir / "public" / logo.lstrip("/")).is_file():
+                    institution["logo"] = None
             cards.append(card)
     cards.sort(key=lambda c: c["slug"])
     out = web_dir / "content" / "generated" / "benchmark-cards.json"
@@ -410,10 +416,13 @@ def joined_matrix(slug: str, obs, dims: list[str],
     band_dims = [d for d in cond_dims if kinds.get(d) == "condition"]
     o["_band"] = o["_sel"].map(lambda values: ";".join(
         f"{d}={values.get(d, MISSING_DIM)}" for d in band_dims))
-    # Exclude the block dimension from row identity so a row spans every block.
-    row_dims = [d for d in cond_dims if d != block_dim]
+    # Item attributes belong to columns, including those not chosen as blocks.
+    row_dims = [d for d in cond_dims if kinds.get(d) != "item"]
     o["_rowcond"] = o["_sel"].map(lambda values: ";".join(
         f"{d}={values.get(d, MISSING_DIM)}" for d in row_dims))
+    if o.duplicated(["trial", "subject_id", "item_id", "_rowcond"]).any():
+        sys.stderr.write(f"… {slug}: item dimensions do not define unique cells; using separate matrices\n")
+        return None
 
     n_rows = o.groupby(["trial", "subject_id", "_rowcond"]).ngroups
     n_cells = n_rows * sum(len(b["colIds"]) for b in blocks)
@@ -1296,9 +1305,8 @@ def build_detail(
     row_ids = subj_mean.index.tolist()
     col_ids = item_solve.index.tolist()
     n_rows, n_items = (len(row_ids), len(col_ids))
-    repo = BENCHMARK_REPOS.get(slug, HF_REPO)
     has_traces = HfApi().file_exists(
-        repo, f"{slug}/traces.parquet", repo_type="dataset", revision=source_revision(repo))
+        HF_REPO, f"{slug}/traces.parquet", repo_type="dataset", revision=source_revision())
     col_p = [round(float(item_solve[iid]), 4) for iid in col_ids]
     matrix_path, size, conditions, attacks, slice_cols, matrices = prepare_matrix_slices(
         slug, df, plan, row_ids, col_ids)
@@ -1418,16 +1426,39 @@ def render_benchmarks(slugs: list[str], cache_dir: Path, web_dir: Path, refresh:
 
 def read_item(slug: str, cache_dir: Path, item_id: str) -> dict:
     path = fetch(f"{slug}/items.parquet", cache_dir)
-    columns = [c for c in ["content", "grading_criterion", "reference_answer", "correct_answer"]
+    columns = [c for c in ["content", "asset_manifest", "grading_criterion", "reference_answer", "correct_answer"]
                if c in pq.read_schema(path).names]
     rows = pq.read_table(path, columns=columns,
                          filters=[("item_id", "=", item_id)]).to_pylist()
     if len(rows) != 1:
         raise ValueError("Item does not identify exactly one source row")
-    answer = rows[0].get("reference_answer", rows[0].get("correct_answer"))
-    if "grading_criterion" in rows[0]:
-        answer = json.loads(rows[0]["grading_criterion"])["reference_answer"]
-    return {"content": rows[0].get("content"),
+    assets = item_assets(slug, cache_dir, [rows[0].get("asset_manifest")])
+    return item_content(rows[0], assets)
+
+
+def item_assets(slug: str, cache_dir: Path, manifests) -> dict:
+    ids = {link["asset_id"] for value in manifests if value
+           for link in json.loads(value) if link["role"] == "input_image"}
+    if not ids:
+        return {}
+    rows = pq.read_table(fetch(f"{slug}/assets.parquet", cache_dir),
+                         columns=["asset_id", "data"], filters=[("asset_id", "in", sorted(ids))]).to_pylist()
+    assets = {row["asset_id"]: row["data"] for row in rows}
+    if set(assets) != ids or len(assets) != len(rows):
+        raise ValueError(f"{slug}: missing or duplicate image assets")
+    return assets
+
+
+def item_content(row: dict, assets: dict | None = None) -> dict:
+    answer = row.get("reference_answer", row.get("correct_answer"))
+    if row.get("grading_criterion") is not None:
+        answer = json.loads(row["grading_criterion"])["reference_answer"]
+    content = row.get("content")
+    for link in json.loads(row.get("asset_manifest") or "[]"):
+        if link["role"] == "input_image":
+            data = base64.b64encode((assets or {})[link["asset_id"]]).decode("ascii")
+            content = (content or "") + f"\n\n![Image {link['ordinal']}](data:{link['media_type']};base64,{data})"
+    return {"content": content,
             "answer": str(answer) if answer is not None else None}
 
 
@@ -1477,54 +1508,77 @@ def chart_bundle(view: dict) -> dict:
             "matrices": matrices}
 
 
-def serve_benchmarks(slugs: list[str], cache_dir: Path, web_dir: Path, port: int) -> None:
-    allowed = set(slugs)
+def write_lookup(directory: Path, rows) -> int:
+    """Partition exact keys into compressed files that the browser can fetch."""
+    directory.mkdir(parents=True)
+    seen = set()
+    with ExitStack() as stack:
+        files = [stack.enter_context(gzip.open(directory / f"{i:02x}.json.gz", "wt",
+                                               encoding="utf-8", compresslevel=6))
+                 for i in range(LOOKUP_BUCKETS)]
+        counts = [0] * LOOKUP_BUCKETS
+        for output in files:
+            output.write("{")
+        for key, value in rows:
+            encoded = json.dumps(key, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+            if encoded in seen:
+                raise ValueError(f"Duplicate {directory.name} key: {encoded}")
+            seen.add(encoded)
+            bucket = hashlib.sha256(encoded.encode("utf-8")).digest()[0]
+            output = files[bucket]
+            if counts[bucket]:
+                output.write(",")
+            output.write(json.dumps(encoded, ensure_ascii=False) + ":")
+            json.dump(value, output, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+            counts[bucket] += 1
+        for output in files:
+            output.write("}")
+    return len(seen)
+
+
+def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
+                       refresh: bool = False) -> dict:
+    """Build deployable viewer files; no source tables are copied into the website."""
+    root = web_dir / "public" / "benchmark-data"
+    root.mkdir(parents=True, exist_ok=True)
     overrides = load_overrides(web_dir)
-    source_revision()
+    details = {}
+    for slug in slugs:
+        start = time.monotonic()
+        bundle = chart_bundle(build_detail(slug, cache_dir, web_dir, refresh, overrides))
+        details[slug] = bundle["detail"]
+        with TemporaryDirectory(dir=root, prefix=".build-") as staging:
+            output = Path(staging)
+            with gzip.open(output / "view.json.gz", "wt", encoding="utf-8", compresslevel=6) as stream:
+                json.dump(bundle, stream, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+            items = pq.ParquetFile(fetch(f"{slug}/items.parquet", cache_dir, refresh))
+            columns = [c for c in ["item_id", "content", "asset_manifest", "grading_criterion",
+                                   "reference_answer", "correct_answer"]
+                       if c in items.schema_arrow.names]
+            assets = item_assets(slug, cache_dir, (
+                items.read(columns=["asset_manifest"])["asset_manifest"].to_pylist()
+                if "asset_manifest" in columns else []))
+            item_count = write_lookup(output / "item", (
+                (row["item_id"], item_content(row, assets))
+                for batch in items.iter_batches(batch_size=128, columns=columns)
+                for row in batch.to_pylist()))
+            answer_count = 0
+            if bundle["detail"]["hasTraces"]:
+                traces = pq.ParquetFile(fetch(f"{slug}/traces.parquet", cache_dir, refresh))
+                key = [*KEY, *(["interactors"] if "interactors" in traces.schema_arrow.names else [])]
+                answer_count = write_lookup(output / "answer", (
+                    ([row[c] for c in key], {"trace": truncate_trace(row["trace"])})
+                    for batch in traces.iter_batches(batch_size=128, columns=[*key, "trace"])
+                    for row in batch.to_pylist()))
+            destination = root / slug
+            if destination.exists():
+                shutil.rmtree(destination)
+            output.rename(destination)
+        size = sum(p.stat().st_size for p in destination.rglob("*.gz"))
+        print(f"{slug}: {item_count:,} items, {answer_count:,} answers, "
+              f"{size / 1_000_000:.1f} MB, {time.monotonic() - start:.1f}s", flush=True)
+    return details
 
-    class Handler(BaseHTTPRequestHandler):
-        def do_GET(self):
-            url = urlsplit(self.path)
-            parts = url.path.strip("/").split("/")
-            if len(parts) != 2 or parts[0] not in allowed:
-                self.send_error(404)
-                return
-            slug, kind = parts
-            query = {k: v[0] for k, v in parse_qs(url.query, keep_blank_values=True).items()}
-            try:
-                if kind == "item":
-                    payload = read_item(slug, cache_dir, query["item_id"])
-                elif kind == "answer":
-                    payload = read_answer(slug, cache_dir, json.loads(query["key"]))
-                elif kind == "view":
-                    payload = chart_bundle(build_detail(
-                        slug, cache_dir, web_dir, False, overrides))
-                else:
-                    self.send_error(404)
-                    return
-                body = gzip.compress(json.dumps(payload, ensure_ascii=False,
-                                                allow_nan=False).encode("utf-8"))
-                self.send_response(200)
-                self.send_header("Content-Type", "application/json")
-                self.send_header("Content-Encoding", "gzip")
-                self.send_header("Content-Length", str(len(body)))
-                self.send_header("Cache-Control", "no-store")
-                self.end_headers()
-                self.wfile.write(body)
-            except (ValueError, KeyError, TypeError):
-                self.send_error(400, "Invalid or ambiguous data selection")
-            except (Exception, SystemExit) as exc:
-                sys.stderr.write(f"{slug}/{kind}: {type(exc).__name__}\n")
-                self.send_error(502, "Source data could not be loaded")
-
-    server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
-    print(f"Serving {len(slugs)} benchmarks at http://127.0.0.1:{port}", flush=True)
-    try:
-        server.serve_forever()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.server_close()
 
 
 # CLI
@@ -1536,11 +1590,11 @@ def resolve_slugs(arg_slug: str | None, want_all: bool) -> list[str]:
 
 
 def main() -> None:
-    global HF_REPO, HF_REVISION, RESPONSE_FILE, HF_REPOS
+    global HF_REVISION, RESPONSE_FILE
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("mode",
-                    choices=["cards", "details", "all", "list", "serve"])
+                    choices=["cards", "details", "all", "list", "build"])
     ap.add_argument("slug", nargs="?", help="benchmark slug (omit + --all for every benchmark)")
     ap.add_argument("--all", action="store_true", help="apply to every published benchmark")
     ap.add_argument("--web-dir", type=Path,
@@ -1549,24 +1603,31 @@ def main() -> None:
     ap.add_argument("--cache-dir", type=Path,
                     default=SCRIPT_DIR / ".hf-cache")
     ap.add_argument("--refresh", action="store_true", help="force re-download")
-    ap.add_argument("--hf-repo", action="append", metavar="REPO[@COMMIT]",
-                    help="repeat for multiple banks; first bank wins duplicate slugs")
     ap.add_argument("--revision", help="HF source commit (default: current commit)")
     ap.add_argument("--response-file", choices=["responses.parquet", "response.parquet"],
                     default=RESPONSE_FILE, help="preferred filename (default: responses.parquet)")
-    ap.add_argument("--port", type=int, default=3050)
     args = ap.parse_args()
-    HF_REPOS = {repo: revision or None for source in args.hf_repo or [HF_REPO]
-                for repo, _, revision in [source.partition("@")]}
-    HF_REPO, HF_REVISION, RESPONSE_FILE = next(iter(HF_REPOS)), args.revision, args.response_file
+    HF_REVISION, RESPONSE_FILE = args.revision or HF_REVISION, args.response_file
     source_revision.cache_clear()
     published = list_slugs()
-    if args.mode == "serve":
-        serve_benchmarks(args.slug.split(",") if args.slug else published,
-                         args.cache_dir, args.web_dir, args.port)
+    if args.mode == "build":
+        hidden = set(json.loads((args.web_dir / "content/curated/hidden-benchmarks.json").read_text()))
+        expected = set(published) - hidden
+        selected = set(args.slug.split(",")) if args.slug else expected
+        if selected - set(published) or selected & hidden:
+            ap.error(f"Unpublished or unavailable benchmarks: {sorted(selected - set(published) | selected & hidden)}; "
+                     f"only {HF_REPO} is used")
+        print(f"Source: {HF_REPO}@{source_revision()}", flush=True)
+        selected = sorted(selected)
+        details = build_website_data(selected, args.cache_dir, args.web_dir, args.refresh)
+        cmd_cards(selected, args.cache_dir, args.web_dir, args.refresh)
+        (args.web_dir / "content/generated/benchmark-details.json").write_text(
+            json.dumps(details, ensure_ascii=False, indent=1, allow_nan=False) + "\n")
+        root = args.web_dir / "public/benchmark-data"
+        for folder in root.iterdir():
+            if folder.is_dir() and folder.name not in selected:
+                shutil.rmtree(folder)
         return
-
-
     if args.mode == "list":
         for s in list_slugs():
             print(s)

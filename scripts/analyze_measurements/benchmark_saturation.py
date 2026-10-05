@@ -198,14 +198,14 @@ def web_payload(results: pd.DataFrame) -> dict[str, bool | None]:
     return payload
 
 
-def write_web_output(results: pd.DataFrame, path: Path = WEB_OUTPUT) -> None:
+def write_web_output(results: pd.DataFrame, path: Path = WEB_OUTPUT, replace: bool = False) -> None:
     """Merge analyzed slugs into the website artifact.
 
     Retaining entries for slugs outside ``results`` makes a targeted analysis
     run safe: analyzing one benchmark cannot erase every other benchmark's
     previously generated verdict.
     """
-    if path.exists():
+    if path.exists() and not replace:
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict) or any(
             not isinstance(slug, str)
@@ -245,6 +245,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--benchmarks-dir", type=Path, default=BENCHMARKS_DIR)
     parser.add_argument("--web-output", type=Path, default=WEB_OUTPUT)
+    parser.add_argument("--replace", action="store_true", help="replace the website artifact")
     return parser.parse_args(argv)
 
 
@@ -265,7 +266,7 @@ def main(argv: list[str] | None = None) -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     results.to_csv(args.out, index=False)
     if args.emit_web:
-        write_web_output(results, args.web_output)
+        write_web_output(results, args.web_output, replace=args.replace)
 
     saturated = int(results["saturation"].eq(1.0).sum())
     unsaturated = int(results["saturation"].eq(0.0).sum())

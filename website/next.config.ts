@@ -11,6 +11,20 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   poweredByHeader: false,
   typedRoutes: true,
+  outputFileTracingIncludes: {
+    "/[slug]": ["./public/benchmark-data/*/view.json.gz"],
+  },
+  async headers() {
+    return [
+      {
+        source: "/benchmark-data/:path*.json.gz",
+        headers: [
+          { key: "Content-Type", value: "application/json; charset=utf-8" },
+          { key: "Content-Encoding", value: "gzip" },
+        ],
+      },
+    ];
+  },
   images: {
     // 85 for photographic card images where the default 75 shows compression.
     qualities: [75, 85],

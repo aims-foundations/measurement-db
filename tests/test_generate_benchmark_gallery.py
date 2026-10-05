@@ -294,6 +294,7 @@ class GalleryDownloadTests(unittest.TestCase):
                 self.assertEqual([c.args[1] for c in download.call_args_list],
                                  ["fixture/responses.parquet", "fixture/response.parquet"])
                 for call in download.call_args_list:
+                    self.assertEqual(call.args[0], "aims-foundations/measurement-db")
                     self.assertEqual(call.kwargs["revision"], "pinned")
                     self.assertTrue(call.kwargs["force_download"])
 

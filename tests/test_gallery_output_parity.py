@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import gzip
 import io
 import json
 from pathlib import Path
@@ -232,6 +233,21 @@ def chart_keys(value):
 
 
 class DirectTableTests(unittest.TestCase):
+    def test_item_attributes_do_not_split_subject_rows(self):
+        records = []
+        for sid in ["a", "b"]:
+            for i in range(4):
+                condition = f"task={i % 2};difficulty={i // 2}"
+                records.append({"subject_id": sid, "item_id": str(i), "test_condition": condition,
+                                "trial": 1, "response": i % 2,
+                                "_selection": {"task": str(i % 2), "difficulty": str(i // 2)},
+                                "_key": [sid, str(i), condition, 1]})
+        chart = gallery.joined_matrix("fixture", pd.DataFrame(records),
+                                      ["task", "difficulty"], ["a", "b"], {}, [])
+        self.assertEqual(len(chart["trials"]["1"]), 2)
+        self.assertEqual(sum(row["n"] for row in chart["trials"]["1"]), 8)
+        self.assertEqual(sorted(chart_keys(chart)), sorted(row["_key"] for row in records))
+
     def test_older_answer_column_and_embedded_images_remain_readable(self):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -290,6 +306,70 @@ class DirectTableTests(unittest.TestCase):
                         )
                     )
                 self.assertFalse((root / "web").exists())
+
+    def test_build_preserves_bundles_items_and_exact_answer_keys(self):
+        expected = json.loads(EXPECTED.read_text())["cases"]
+        for case in CASES:
+            with self.subTest(case=case), TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                overrides = write_fixture(root / "data", case)
+                with (
+                    patch.object(gallery, "fetch", side_effect=local_fetch),
+                    patch.object(gallery, "load_overrides", return_value=overrides),
+                    patch.object(gallery.HfApi, "file_exists", return_value=case != "item_bank"),
+                    redirect_stderr(io.StringIO()),
+                ):
+                    gallery.build_website_data([case], root / "data", root / "web")
+                    folder = root / "web/public/benchmark-data" / case
+                    bundle = json.loads(gzip.decompress((folder / "view.json.gz").read_bytes()))
+                    self.assertEqual(digest_json(bundle), expected[case]["bundle"])
+
+                    def lookup(kind, key):
+                        encoded = json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+                        bucket = hashlib.sha256(encoded.encode()).hexdigest()[:2]
+                        data = json.loads(gzip.decompress((folder / kind / f"{bucket}.json.gz").read_bytes()))
+                        return data.get(encoded)
+
+                    for row in pd.read_parquet(root / "data" / case / "items.parquet").to_dict("records"):
+                        key = row["item_id"]
+                        self.assertEqual(lookup("item", key), gallery.read_item(case, root / "data", key))
+                    if case != "item_bank":
+                        for key in gallery.load_raw(case, root / "data", False)["_key"]:
+                            self.assertEqual(lookup("answer", key), gallery.read_answer(case, root / "data", key))
+
+    def test_lookup_retains_unicode_nulls_and_distinct_interactors(self):
+        keys = [["模型", "item/😀", None, 1, value] for value in [None, "opponent=a", "opponent=b"]]
+        with TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "answer"
+            gallery.write_lookup(folder, ((key, {"trace": str(i)}) for i, key in enumerate(keys)))
+            for i, key in enumerate(keys):
+                encoded = json.dumps(key, ensure_ascii=False, separators=(",", ":"))
+                bucket = hashlib.sha256(encoded.encode()).hexdigest()[:2]
+                payload = json.loads(gzip.decompress((folder / f"{bucket}.json.gz").read_bytes()))
+                self.assertEqual(payload[encoded], {"trace": str(i)})
+
+    def test_lookup_rejects_duplicate_keys(self):
+        with TemporaryDirectory() as tmp:
+            with self.assertRaisesRegex(ValueError, "Duplicate"):
+                gallery.write_lookup(Path(tmp) / "item", [("same", {}), ("same", {})])
+
+    def test_source_image_assets_are_included_in_item_content(self):
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, "binary")
+            path = root / "binary/items.parquet"
+            items = pd.read_parquet(path)
+            items["asset_manifest"] = None
+            items.loc[0, "asset_manifest"] = json.dumps([
+                {"asset_id": "image", "role": "input_image", "ordinal": 1, "media_type": "image/png"}
+            ])
+            items.to_parquet(path, index=False)
+            pd.DataFrame([{"asset_id": "image", "data": b"png bytes"}]).to_parquet(root / "binary/assets.parquet")
+            with patch.object(gallery, "fetch", side_effect=local_fetch):
+                item = gallery.read_item("binary", root, "i0")
+                self.assertIn("data:image/png;base64,cG5nIGJ5dGVz", item["content"])
+                assets = gallery.item_assets("binary", root, items.asset_manifest)
+                self.assertEqual(gallery.item_content(items.iloc[0].to_dict(), assets), item)
 
     def test_answer_queries_match_every_raw_observation(self):
         for case in CASES:

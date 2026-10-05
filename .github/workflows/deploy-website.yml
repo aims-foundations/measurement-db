@@ -26,6 +26,9 @@ jobs:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       url: ${{ steps.deploy.outputs.url }}
     env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 2
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -34,6 +37,33 @@ jobs:
       MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install rendering dependencies
+        run: |
+          pip install numpy pandas pyarrow 'huggingface_hub>=1,<2' scikit-learn PyYAML
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Resolve the public HF source revision
+        run: |
+          python - <<'PYTHON'
+          import os
+          from huggingface_hub import HfApi
+          revision = HfApi().dataset_info('aims-foundations/measurement-db').sha
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'HF_REVISION={revision}\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
+              output.write(f'Data source: aims-foundations/measurement-db@{revision}\n')
+          PYTHON
+      - name: Build viewer data from the public source tables
+        run: |
+          python scripts/render_website/generate_benchmark_gallery.py build
+          python scripts/render_website/generate_chart_marginals.py
+          python scripts/render_website/generate_model_timeline.py
+          python scripts/render_website/generate_benchmark_attributions.py
+          python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
+          python scripts/render_website/generate_benchmark_gallery.py cards
+          python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --device cpu --out artifacts/website-rasch
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
@@ -63,9 +93,9 @@ jobs:
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
-      - name: Verify runtime configuration and gallery service
+      - name: Verify Vercel project settings
         run: |
-          node --env-file=".vercel/.env.${DEPLOY_ENV}.local" --input-type=module - <<'NODE'
+          node --input-type=module - <<'NODE'
           const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
           const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
           projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
@@ -78,27 +108,7 @@ jobs:
           if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
             fail('The Vercel project must use the website root directory and Next.js framework.');
           }
-          const hasToken = project.env?.some((entry) => entry.key === 'HF_TOKEN'
-            && entry.target?.includes(process.env.DEPLOY_ENV)
-            && (!entry.gitBranch || entry.gitBranch === process.env.GITHUB_REF_NAME));
-          if (!hasToken) fail(`Set HF_TOKEN in the Vercel ${process.env.DEPLOY_ENV} environment.`);
-          const origin = process.env.GALLERY_DATA_ORIGIN?.replace(/\/+$/, '');
-          if (!origin) fail(`Set GALLERY_DATA_ORIGIN in the Vercel ${process.env.DEPLOY_ENV} environment to the hosted Python gallery service URL.`);
-          let url;
-          try { url = new URL(origin); } catch { fail('GALLERY_DATA_ORIGIN must be a valid HTTPS URL.'); }
-          if (url.protocol !== 'https:' || /^(localhost|127\.|\[::1\])/.test(url.hostname)
-              || url.username || url.password || url.search || url.hash) {
-            fail('GALLERY_DATA_ORIGIN must be a hosted HTTPS service URL without credentials, query, or fragment.');
-          }
-          const gallery = await fetch(`${origin}/researchcodebench/view`, {
-            signal: AbortSignal.timeout(120_000),
-          });
-          if (!gallery.ok) fail(`Gallery service returned HTTP ${gallery.status}.`);
-          const bundle = await gallery.json();
-          if (bundle.detail?.slug !== 'researchcodebench' || !bundle.axes || !bundle.matrices) {
-            fail('Gallery service returned an invalid chart bundle.');
-          }
-          console.log('Vercel runtime configuration and gallery service verified.');
+          console.log('Vercel project verified; viewer data is included in the deployment.');
           NODE
       - name: Deploy
         id: deploy
@@ -114,7 +124,7 @@ jobs:
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |
-          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench; do
+          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/view.json.gz; do
             pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
               --token="$VERCEL_TOKEN" -- --fail --silent --show-error --max-time 120 --output /dev/null
           done

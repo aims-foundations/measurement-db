@@ -18,7 +18,6 @@ import type {
 } from "@/content/benchmark-details";
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
 import { withBase } from "@/lib/base-path";
-import { assetUrl } from "@/lib/gallery-assets";
 import { IrtPanel } from "./irt-panel";
 import {
   JoinedMatrix,
@@ -54,11 +53,31 @@ import { MatrixColumnStrip, MatrixGutter } from "./matrix-gutter";
 
    The PNG holds every cell; hover maps the cursor to (row, col)
    and reads the response by sampling the pixel colour. Item
-   prompts and exact model answers are fetched from HF tables on click.
+   prompts and exact model answers are loaded from the build on click.
    ============================================================ */
 
 const STRIP = 30; // px, bottom axis (item)
 const Z_STRIP = 30; // px, item-difficulty strip under the matrix
+
+async function readCellData<T>(
+  dataUrl: string,
+  kind: "item" | "answer",
+  key: string | ObservationKey,
+  signal: AbortSignal,
+): Promise<T | undefined> {
+  const encoded = JSON.stringify(key);
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(encoded),
+  );
+  const bucket = new Uint8Array(digest)[0].toString(16).padStart(2, "0");
+  const response = await fetch(`${dataUrl}/${kind}/${bucket}.json.gz`, {
+    signal,
+  });
+  if (!response.ok) throw new Error(`Could not load ${kind} data.`);
+  const entries = (await response.json()) as Record<string, T>;
+  return entries[encoded];
+}
 /* Display-time colour swap for BINARY matrices, so we can recolour without
    re-rendering any PNG. The matrices bake RED=(214,39,40)=correct(1),
    BLUE=(31,119,180)=incorrect(0), GRAY=(158,158,158)=unobserved. This exact
@@ -402,7 +421,7 @@ const MD_COMPONENTS: Components = {
         typeof src !== "string"
           ? src
           : src.startsWith("/benchmarks/")
-            ? assetUrl(src)
+            ? withBase(src)
             : src.startsWith("/")
               ? withBase(src)
               : src
@@ -617,7 +636,7 @@ export function MatrixViewer({
   binaryLabels,
   irt,
 }: MatrixViewerProps) {
-  const dataUrl = withBase(`/api/benchmark-data/${slug}`);
+  const dataUrl = withBase(`/benchmark-data/${slug}`);
   const hasJoined = Boolean(bundle.chart);
   const axes = bundle.axes;
   const [directImage, setDirectImage] = useState<{
@@ -954,11 +973,9 @@ export function MatrixViewer({
   useEffect(() => {
     if (!itemId) return;
     const controller = new AbortController();
-    const query = new URLSearchParams({ kind: "item", item_id: itemId });
-    void fetch(`${dataUrl}?${query}`, { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Could not load item content.");
-        const item = (await response.json()) as ItemContent;
+    void readCellData<ItemContent>(dataUrl, "item", itemId, controller.signal)
+      .then((item) => {
+        if (!item) throw new Error("Could not load item content.");
         if (!controller.signal.aborted)
           setItems((previous) => ({ ...previous, [itemId]: item }));
       })
@@ -975,16 +992,13 @@ export function MatrixViewer({
     void Promise.all(
       keys.map(async (key) => {
         if (!key) return null;
-        const query = new URLSearchParams({
-          kind: "answer",
-          key: JSON.stringify(key),
-        });
-        const response = await fetch(`${dataUrl}?${query}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok)
-          throw new Error("Could not load the selected answer.");
-        return ((await response.json()) as { trace: string | null }).trace;
+        const answer = await readCellData<{ trace: string | null }>(
+          dataUrl,
+          "answer",
+          key,
+          controller.signal,
+        );
+        return answer?.trace ?? null;
       }),
     )
       .then((texts) => {
@@ -1063,7 +1077,7 @@ export function MatrixViewer({
   };
   const audioSrc =
     audio && audioValues.subject_id && audioValues.item_id
-      ? assetUrl(
+      ? withBase(
           audio.path.replace(/\{(\w+)\}/g, (_, key: string) =>
             (audioValues[key] ?? "").replace(/[;=/]/g, "_"),
           ),
