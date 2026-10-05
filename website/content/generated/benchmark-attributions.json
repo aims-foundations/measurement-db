@@ -1,6 +1,2587 @@
 {
  "affiliationScope": "first_two_authors_first_listed_institutions",
  "benchmarks": {
+  "abstract_reason": null,
+  "adaptivestep": null,
+  "advprompter": null,
+  "aegis": null,
+  "afrieval": null,
+  "afrimedqa": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "AfriMed-QA",
+   "citation": {
+    "bibtex": "@misc{olatunji2025afrimedqapanafricanmultispecialtymedical,\n      title={AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering Benchmark Dataset},\n      author={Tobi Olatunji and Charles Nimo and Abraham Owodunni and Tassallah Abdullahi and Emmanuel Ayodele and Mardhiyah Sanni and Chinemelu Aka and Folafunmi Omofoye and Foutse Yuehgoh and Timothy Faniran and Bonaventure F. P. Dossou and Moshood Yekini and Jonas Kemp and Katherine Heller and Jude Chidubem Omeke and Chidi Asuzu MD and Naome A. Etori and Aimérou Ndiaye and Ifeoma Okoh and Evans Doe Ocansey and Wendy Kinara and Michael Best and Irfan Essa and Stephen Edward Moore and Chris Fourie and Mercy Nyamewaa Asiedu},\n      year={2025},\n      eprint={2411.15640},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      doi={https://doi.org/10.18653/v1/2025.acl-long.96},\n      url={https://arxiv.org/abs/2411.15640},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2411.15640",
+    "key": "olatunji2025afrimedqapanafricanmultispecialtymedical",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Intron"
+    },
+    {
+     "name": "Georgia Institute of Technology"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "afrimedqa",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2411.15640",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2411.15640",
+     "expectedCount": 26,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Tobi Olatunji",
+      "kind": "person",
+      "name": "Tobi Olatunji"
+     },
+     {
+      "bibtexName": "Charles Nimo",
+      "kind": "person",
+      "name": "Charles Nimo"
+     },
+     {
+      "bibtexName": "Abraham Owodunni",
+      "kind": "person",
+      "name": "Abraham Owodunni"
+     },
+     {
+      "bibtexName": "Tassallah Abdullahi",
+      "kind": "person",
+      "name": "Tassallah Abdullahi"
+     },
+     {
+      "bibtexName": "Emmanuel Ayodele",
+      "kind": "person",
+      "name": "Emmanuel Ayodele"
+     },
+     {
+      "bibtexName": "Mardhiyah Sanni",
+      "kind": "person",
+      "name": "Mardhiyah Sanni"
+     },
+     {
+      "bibtexName": "Chinemelu Aka",
+      "kind": "person",
+      "name": "Chinemelu Aka"
+     },
+     {
+      "bibtexName": "Folafunmi Omofoye",
+      "kind": "person",
+      "name": "Folafunmi Omofoye"
+     },
+     {
+      "bibtexName": "Foutse Yuehgoh",
+      "kind": "person",
+      "name": "Foutse Yuehgoh"
+     },
+     {
+      "bibtexName": "Timothy Faniran",
+      "kind": "person",
+      "name": "Timothy Faniran"
+     },
+     {
+      "bibtexName": "Bonaventure F. P. Dossou",
+      "kind": "person",
+      "name": "Bonaventure F. P. Dossou"
+     },
+     {
+      "bibtexName": "Moshood Yekini",
+      "kind": "person",
+      "name": "Moshood Yekini"
+     },
+     {
+      "bibtexName": "Jonas Kemp",
+      "kind": "person",
+      "name": "Jonas Kemp"
+     },
+     {
+      "bibtexName": "Katherine Heller",
+      "kind": "person",
+      "name": "Katherine Heller"
+     },
+     {
+      "bibtexName": "Jude Chidubem Omeke",
+      "kind": "person",
+      "name": "Jude Chidubem Omeke"
+     },
+     {
+      "bibtexName": "Chidi Asuzu MD",
+      "kind": "person",
+      "name": "Chidi Asuzu MD"
+     },
+     {
+      "bibtexName": "Naome A. Etori",
+      "kind": "person",
+      "name": "Naome A. Etori"
+     },
+     {
+      "bibtexName": "Aimérou Ndiaye",
+      "kind": "person",
+      "name": "Aimérou Ndiaye"
+     },
+     {
+      "bibtexName": "Ifeoma Okoh",
+      "kind": "person",
+      "name": "Ifeoma Okoh"
+     },
+     {
+      "bibtexName": "Evans Doe Ocansey",
+      "kind": "person",
+      "name": "Evans Doe Ocansey"
+     },
+     {
+      "bibtexName": "Wendy Kinara",
+      "kind": "person",
+      "name": "Wendy Kinara"
+     },
+     {
+      "bibtexName": "Michael Best",
+      "kind": "person",
+      "name": "Michael Best"
+     },
+     {
+      "bibtexName": "Irfan Essa",
+      "kind": "person",
+      "name": "Irfan Essa"
+     },
+     {
+      "bibtexName": "Stephen Edward Moore",
+      "kind": "person",
+      "name": "Stephen Edward Moore"
+     },
+     {
+      "bibtexName": "Chris Fourie",
+      "kind": "person",
+      "name": "Chris Fourie"
+     },
+     {
+      "bibtexName": "Mercy Nyamewaa Asiedu",
+      "kind": "person",
+      "name": "Mercy Nyamewaa Asiedu"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering Benchmark Dataset",
+    "url": "https://arxiv.org/abs/2411.15640",
+    "year": "2025"
+   }
+  },
+  "agc_bench": null,
+  "agentdojo": null,
+  "agentic_review_perturbation": null,
+  "agi_elo": null,
+  "ai2d_test": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "AI2D_TEST",
+   "citation": {
+    "bibtex": "@misc{kembhavi2016diagramworthdozenimages,\n      title={A Diagram Is Worth A Dozen Images},\n      author={Aniruddha Kembhavi and Mike Salvato and Eric Kolve and Minjoon Seo and Hannaneh Hajishirzi and Ali Farhadi},\n      year={2016},\n      eprint={1603.07396},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/1603.07396},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/1603.07396",
+    "key": "kembhavi2016diagramworthdozenimages",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Allen Institute for AI"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "ai2d_test",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/1603.07396",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/1603.07396",
+     "expectedCount": 6,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Aniruddha Kembhavi",
+      "kind": "person",
+      "name": "Aniruddha Kembhavi"
+     },
+     {
+      "bibtexName": "Mike Salvato",
+      "kind": "person",
+      "name": "Mike Salvato"
+     },
+     {
+      "bibtexName": "Eric Kolve",
+      "kind": "person",
+      "name": "Eric Kolve"
+     },
+     {
+      "bibtexName": "Minjoon Seo",
+      "kind": "person",
+      "name": "Minjoon Seo"
+     },
+     {
+      "bibtexName": "Hannaneh Hajishirzi",
+      "kind": "person",
+      "name": "Hannaneh Hajishirzi"
+     },
+     {
+      "bibtexName": "Ali Farhadi",
+      "kind": "person",
+      "name": "Ali Farhadi"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "A Diagram Is Worth A Dozen Images",
+    "url": "https://arxiv.org/abs/1603.07396",
+    "year": "2016"
+   }
+  },
+  "aider": null,
+  "algotune": null,
+  "alignment_faking": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "Alignment Faking (RL)",
+   "citation": {
+    "bibtex": "@misc{greenblatt2024alignmentfaking,\n      title={Alignment faking in large language models},\n      author={Ryan Greenblatt and Carson Denison and Benjamin Wright and Fabien Roger and Monte MacDiarmid and Sam Marks and Johannes Treutlein and Tim Belonax and Jack Chen and David Duvenaud and Akbir Khan and Julian Michael and Sören Mindermann and Ethan Perez and Linda Petrini and Jonathan Uesato and Jared Kaplan and Buck Shlegeris and Samuel R. Bowman and Evan Hubinger},\n      year={2024},\n      eprint={2412.14093},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2412.14093},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2412.14093",
+    "key": "greenblatt2024alignmentfaking",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Anthropic"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "alignment_faking",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2412.14093",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2412.14093",
+     "expectedCount": 20,
+     "organizationAuthors": [],
+     "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Ryan Greenblatt",
+      "kind": "person",
+      "name": "Ryan Greenblatt"
+     },
+     {
+      "bibtexName": "Carson Denison",
+      "kind": "person",
+      "name": "Carson Denison"
+     },
+     {
+      "bibtexName": "Benjamin Wright",
+      "kind": "person",
+      "name": "Benjamin Wright"
+     },
+     {
+      "bibtexName": "Fabien Roger",
+      "kind": "person",
+      "name": "Fabien Roger"
+     },
+     {
+      "bibtexName": "Monte MacDiarmid",
+      "kind": "person",
+      "name": "Monte MacDiarmid"
+     },
+     {
+      "bibtexName": "Sam Marks",
+      "kind": "person",
+      "name": "Sam Marks"
+     },
+     {
+      "bibtexName": "Johannes Treutlein",
+      "kind": "person",
+      "name": "Johannes Treutlein"
+     },
+     {
+      "bibtexName": "Tim Belonax",
+      "kind": "person",
+      "name": "Tim Belonax"
+     },
+     {
+      "bibtexName": "Jack Chen",
+      "kind": "person",
+      "name": "Jack Chen"
+     },
+     {
+      "bibtexName": "David Duvenaud",
+      "kind": "person",
+      "name": "David Duvenaud"
+     },
+     {
+      "bibtexName": "Akbir Khan",
+      "kind": "person",
+      "name": "Akbir Khan"
+     },
+     {
+      "bibtexName": "Julian Michael",
+      "kind": "person",
+      "name": "Julian Michael"
+     },
+     {
+      "bibtexName": "Sören Mindermann",
+      "kind": "person",
+      "name": "Sören Mindermann"
+     },
+     {
+      "bibtexName": "Ethan Perez",
+      "kind": "person",
+      "name": "Ethan Perez"
+     },
+     {
+      "bibtexName": "Linda Petrini",
+      "kind": "person",
+      "name": "Linda Petrini"
+     },
+     {
+      "bibtexName": "Jonathan Uesato",
+      "kind": "person",
+      "name": "Jonathan Uesato"
+     },
+     {
+      "bibtexName": "Jared Kaplan",
+      "kind": "person",
+      "name": "Jared Kaplan"
+     },
+     {
+      "bibtexName": "Buck Shlegeris",
+      "kind": "person",
+      "name": "Buck Shlegeris"
+     },
+     {
+      "bibtexName": "Samuel R. Bowman",
+      "kind": "person",
+      "name": "Samuel R. Bowman"
+     },
+     {
+      "bibtexName": "Evan Hubinger",
+      "kind": "person",
+      "name": "Evan Hubinger"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Alignment faking in large language models",
+    "url": "https://arxiv.org/abs/2412.14093",
+    "year": "2024"
+   }
+  },
+  "alpacaeval": null,
+  "alpha_sql": null,
+  "annotating_errors_wcf": null,
+  "appworld": null,
+  "arcagi": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "ARC-AGI",
+   "citation": {
+    "bibtex": "@misc{chollet2019measureintelligence,\n      title={On the Measure of Intelligence},\n      author={François Chollet},\n      year={2019},\n      eprint={1911.01547},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/1911.01547},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/1911.01547",
+    "key": "chollet2019measureintelligence",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Google"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "arcagi",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/1911.01547",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/1911.01547",
+     "expectedCount": 1,
+     "organizationAuthors": [],
+     "reason": "The primary paper identifies François Chollet as its sole author."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "François Chollet",
+      "kind": "person",
+      "name": "François Chollet"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "On the Measure of Intelligence",
+    "url": "https://arxiv.org/abs/1911.01547",
+    "year": "2019"
+   }
+  },
+  "atmossci_bench": null,
+  "auditing_sabotage_bench": null,
+  "autoresearchbench": null,
+  "averimatec": null,
+  "babilong": null,
+  "bbq": null,
+  "beavertails": null,
+  "bedd_basalt": null,
+  "benger": null,
+  "bertaqa": null,
+  "biggen": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "BiGGen-Bench",
+   "citation": {
+    "bibtex": "@misc{kim2025biggenbenchprincipledbenchmark,\n      title={The BiGGen Bench: A Principled Benchmark for Fine-grained Evaluation of Language Models with Language Models},\n      author={Seungone Kim and Juyoung Suk and Ji Yong Cho and Shayne Longpre and Chaeeun Kim and Dongkeun Yoon and Guijin Son and Yejin Cho and Sheikh Shafayat and Jinheon Baek and Sue Hyun Park and Hyeonbin Hwang and Jinkyung Jo and Hyowon Cho and Haebin Shin and Seongyun Lee and Hanseok Oh and Noah Lee and Namgyu Ho and Se June Joo and Miyoung Ko and Yoonjoo Lee and Hyungjoo Chae and Jamin Shin and Joel Jang and Seonghyeon Ye and Bill Yuchen Lin and Sean Welleck and Graham Neubig and Moontae Lee and Kyungjae Lee and Minjoon Seo},\n      year={2025},\n      eprint={2406.05761},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.05761},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2406.05761",
+    "key": "kim2025biggenbenchprincipledbenchmark",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Carnegie Mellon University"
+    },
+    {
+     "name": "KAIST"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "biggen",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2406.05761",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2406.05761",
+     "expectedCount": 32,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Seungone Kim",
+      "kind": "person",
+      "name": "Seungone Kim"
+     },
+     {
+      "bibtexName": "Juyoung Suk",
+      "kind": "person",
+      "name": "Juyoung Suk"
+     },
+     {
+      "bibtexName": "Ji Yong Cho",
+      "kind": "person",
+      "name": "Ji Yong Cho"
+     },
+     {
+      "bibtexName": "Shayne Longpre",
+      "kind": "person",
+      "name": "Shayne Longpre"
+     },
+     {
+      "bibtexName": "Chaeeun Kim",
+      "kind": "person",
+      "name": "Chaeeun Kim"
+     },
+     {
+      "bibtexName": "Dongkeun Yoon",
+      "kind": "person",
+      "name": "Dongkeun Yoon"
+     },
+     {
+      "bibtexName": "Guijin Son",
+      "kind": "person",
+      "name": "Guijin Son"
+     },
+     {
+      "bibtexName": "Yejin Cho",
+      "kind": "person",
+      "name": "Yejin Cho"
+     },
+     {
+      "bibtexName": "Sheikh Shafayat",
+      "kind": "person",
+      "name": "Sheikh Shafayat"
+     },
+     {
+      "bibtexName": "Jinheon Baek",
+      "kind": "person",
+      "name": "Jinheon Baek"
+     },
+     {
+      "bibtexName": "Sue Hyun Park",
+      "kind": "person",
+      "name": "Sue Hyun Park"
+     },
+     {
+      "bibtexName": "Hyeonbin Hwang",
+      "kind": "person",
+      "name": "Hyeonbin Hwang"
+     },
+     {
+      "bibtexName": "Jinkyung Jo",
+      "kind": "person",
+      "name": "Jinkyung Jo"
+     },
+     {
+      "bibtexName": "Hyowon Cho",
+      "kind": "person",
+      "name": "Hyowon Cho"
+     },
+     {
+      "bibtexName": "Haebin Shin",
+      "kind": "person",
+      "name": "Haebin Shin"
+     },
+     {
+      "bibtexName": "Seongyun Lee",
+      "kind": "person",
+      "name": "Seongyun Lee"
+     },
+     {
+      "bibtexName": "Hanseok Oh",
+      "kind": "person",
+      "name": "Hanseok Oh"
+     },
+     {
+      "bibtexName": "Noah Lee",
+      "kind": "person",
+      "name": "Noah Lee"
+     },
+     {
+      "bibtexName": "Namgyu Ho",
+      "kind": "person",
+      "name": "Namgyu Ho"
+     },
+     {
+      "bibtexName": "Se June Joo",
+      "kind": "person",
+      "name": "Se June Joo"
+     },
+     {
+      "bibtexName": "Miyoung Ko",
+      "kind": "person",
+      "name": "Miyoung Ko"
+     },
+     {
+      "bibtexName": "Yoonjoo Lee",
+      "kind": "person",
+      "name": "Yoonjoo Lee"
+     },
+     {
+      "bibtexName": "Hyungjoo Chae",
+      "kind": "person",
+      "name": "Hyungjoo Chae"
+     },
+     {
+      "bibtexName": "Jamin Shin",
+      "kind": "person",
+      "name": "Jamin Shin"
+     },
+     {
+      "bibtexName": "Joel Jang",
+      "kind": "person",
+      "name": "Joel Jang"
+     },
+     {
+      "bibtexName": "Seonghyeon Ye",
+      "kind": "person",
+      "name": "Seonghyeon Ye"
+     },
+     {
+      "bibtexName": "Bill Yuchen Lin",
+      "kind": "person",
+      "name": "Bill Yuchen Lin"
+     },
+     {
+      "bibtexName": "Sean Welleck",
+      "kind": "person",
+      "name": "Sean Welleck"
+     },
+     {
+      "bibtexName": "Graham Neubig",
+      "kind": "person",
+      "name": "Graham Neubig"
+     },
+     {
+      "bibtexName": "Moontae Lee",
+      "kind": "person",
+      "name": "Moontae Lee"
+     },
+     {
+      "bibtexName": "Kyungjae Lee",
+      "kind": "person",
+      "name": "Kyungjae Lee"
+     },
+     {
+      "bibtexName": "Minjoon Seo",
+      "kind": "person",
+      "name": "Minjoon Seo"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "The BiGGen Bench: A Principled Benchmark for Fine-grained Evaluation of Language Models with Language Models",
+    "url": "https://arxiv.org/abs/2406.05761",
+    "year": "2025"
+   }
+  },
+  "bird_sql": null,
+  "brace": null,
+  "braveguard": null,
+  "bridging_gap": null,
+  "care_enzymes": null,
+  "causal_axioms": null,
+  "cellverse": null,
+  "ceobench": null,
+  "ceval": null,
+  "chartmuseum": null,
+  "chatgpt_drift": null,
+  "chipbench": null,
+  "clasheval": null,
+  "classroom_ai": null,
+  "cmmlu": null,
+  "coffeebench": null,
+  "complexbench": null,
+  "confagents": null,
+  "corebench": null,
+  "critic_discernment_game": null,
+  "crow": null,
+  "cruxeval": null,
+  "csedb": null,
+  "cseo_bench": null,
+  "das_med_hallucination": null,
+  "data_juicer2": null,
+  "dataclawbench": null,
+  "dave": null,
+  "dbpa": null,
+  "decodingtrust": null,
+  "decompile_bench": null,
+  "devbench": null,
+  "disco": null,
+  "donotanswer": null,
+  "doris_mae": null,
+  "dpai": null,
+  "dqvis": null,
+  "dtap_bench": null,
+  "edu_circuit_hw": null,
+  "eduguardbench": null,
+  "edumath": null,
+  "egoschema": null,
+  "ehrflowbench": null,
+  "elicitation_game": null,
+  "embodied_agent_interface": null,
+  "emoji_attack": null,
+  "engdesign": null,
+  "engibench": null,
+  "enginemt_qa": null,
+  "erbench": null,
+  "evouna": null,
+  "exploitgym": null,
+  "faithcot": null,
+  "felm": null,
+  "fetv": null,
+  "fewshot_ttt_bbh": null,
+  "fgbench": null,
+  "financebench": null,
+  "find_interp": null,
+  "finegrain_t2i": null,
+  "frontieror": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "FrontierOR",
+   "citation": {
+    "bibtex": "@article{kong2026frontieror,\n  title={FrontierOR: Benchmarking LLMs' Capacity for Efficient Algorithm Design in Large-Scale Optimization},\n  author={Kong, Minwei and Jiang, Chonghe and Qu, Ao and Ouyang, Wenbin and Zeng, Zhaoming and Guo, Xiaotong and Li, Zhekai and Li, Junyi and Fan, Yi and Zheng, Xinshou and Jing, Xi and Zhang, Yikai and Liang, Zhiwei and Kim, Seonghoo and Yang, Runqing and Zhou, Zijian and Li, Sirui and Zheng, Han and Ying, Wangyang and Zheng, Ou and Wang, Chonghuan and Zhao, Jinglong and Qin, Hanzhang and Wu, Cathy and Liang, Paul Pu and Zhao, Jinhua and Wang, Hai},\n  journal={arXiv preprint arXiv:2605.25246},\n  year={2026}\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://arxiv.org/abs/2605.25246",
+    "key": "kong2026frontieror",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Singapore-MIT Alliance for Research and Technology"
+    },
+    {
+     "name": "MIT"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "frontieror",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2605.25246",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2605.25246",
+     "expectedCount": 27,
+     "organizationAuthors": [],
+     "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Kong, Minwei",
+      "kind": "person",
+      "name": "Minwei Kong"
+     },
+     {
+      "bibtexName": "Jiang, Chonghe",
+      "kind": "person",
+      "name": "Chonghe Jiang"
+     },
+     {
+      "bibtexName": "Qu, Ao",
+      "kind": "person",
+      "name": "Ao Qu"
+     },
+     {
+      "bibtexName": "Ouyang, Wenbin",
+      "kind": "person",
+      "name": "Wenbin Ouyang"
+     },
+     {
+      "bibtexName": "Zeng, Zhaoming",
+      "kind": "person",
+      "name": "Zhaoming Zeng"
+     },
+     {
+      "bibtexName": "Guo, Xiaotong",
+      "kind": "person",
+      "name": "Xiaotong Guo"
+     },
+     {
+      "bibtexName": "Li, Zhekai",
+      "kind": "person",
+      "name": "Zhekai Li"
+     },
+     {
+      "bibtexName": "Li, Junyi",
+      "kind": "person",
+      "name": "Junyi Li"
+     },
+     {
+      "bibtexName": "Fan, Yi",
+      "kind": "person",
+      "name": "Yi Fan"
+     },
+     {
+      "bibtexName": "Zheng, Xinshou",
+      "kind": "person",
+      "name": "Xinshou Zheng"
+     },
+     {
+      "bibtexName": "Jing, Xi",
+      "kind": "person",
+      "name": "Xi Jing"
+     },
+     {
+      "bibtexName": "Zhang, Yikai",
+      "kind": "person",
+      "name": "Yikai Zhang"
+     },
+     {
+      "bibtexName": "Liang, Zhiwei",
+      "kind": "person",
+      "name": "Zhiwei Liang"
+     },
+     {
+      "bibtexName": "Kim, Seonghoo",
+      "kind": "person",
+      "name": "Seonghoo Kim"
+     },
+     {
+      "bibtexName": "Yang, Runqing",
+      "kind": "person",
+      "name": "Runqing Yang"
+     },
+     {
+      "bibtexName": "Zhou, Zijian",
+      "kind": "person",
+      "name": "Zijian Zhou"
+     },
+     {
+      "bibtexName": "Li, Sirui",
+      "kind": "person",
+      "name": "Sirui Li"
+     },
+     {
+      "bibtexName": "Zheng, Han",
+      "kind": "person",
+      "name": "Han Zheng"
+     },
+     {
+      "bibtexName": "Ying, Wangyang",
+      "kind": "person",
+      "name": "Wangyang Ying"
+     },
+     {
+      "bibtexName": "Zheng, Ou",
+      "kind": "person",
+      "name": "Ou Zheng"
+     },
+     {
+      "bibtexName": "Wang, Chonghuan",
+      "kind": "person",
+      "name": "Chonghuan Wang"
+     },
+     {
+      "bibtexName": "Zhao, Jinglong",
+      "kind": "person",
+      "name": "Jinglong Zhao"
+     },
+     {
+      "bibtexName": "Qin, Hanzhang",
+      "kind": "person",
+      "name": "Hanzhang Qin"
+     },
+     {
+      "bibtexName": "Wu, Cathy",
+      "kind": "person",
+      "name": "Cathy Wu"
+     },
+     {
+      "bibtexName": "Liang, Paul Pu",
+      "kind": "person",
+      "name": "Paul Pu Liang"
+     },
+     {
+      "bibtexName": "Zhao, Jinhua",
+      "kind": "person",
+      "name": "Jinhua Zhao"
+     },
+     {
+      "bibtexName": "Wang, Hai",
+      "kind": "person",
+      "name": "Hai Wang"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "FrontierOR: Benchmarking LLMs' Capacity for Efficient Algorithm Design in Large-Scale Optimization",
+    "url": "https://arxiv.org/abs/2605.25246",
+    "year": "2026"
+   }
+  },
+  "genai_learning": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "GenAI Learning",
+   "citation": {
+    "bibtex": "@article{bastani2025generative,\n  title={Generative AI without guardrails can harm learning: Evidence from high school mathematics},\n  author={Bastani, Hamsa and Bastani, Osbert and Sungu, Alp and Ge, Haosen and Kabakcı, Özge and Mariman, Rei},\n  journal={Proceedings of the National Academy of Sciences},\n  year={2025}\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+    "key": "bastani2025generative",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of Pennsylvania"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "genai_learning",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+     "expectedCount": 6,
+     "organizationAuthors": [],
+     "reason": "Six-author list verified against the final PNAS article; the corrected display name is Özge Kabakcı."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Bastani, Hamsa",
+      "kind": "person",
+      "name": "Hamsa Bastani"
+     },
+     {
+      "bibtexName": "Bastani, Osbert",
+      "kind": "person",
+      "name": "Osbert Bastani"
+     },
+     {
+      "bibtexName": "Sungu, Alp",
+      "kind": "person",
+      "name": "Alp Sungu"
+     },
+     {
+      "bibtexName": "Ge, Haosen",
+      "kind": "person",
+      "name": "Haosen Ge"
+     },
+     {
+      "bibtexName": "Kabakcı, Özge",
+      "kind": "person",
+      "name": "Özge Kabakcı"
+     },
+     {
+      "bibtexName": "Mariman, Rei",
+      "kind": "person",
+      "name": "Rei Mariman"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Generative AI without guardrails can harm learning: Evidence from high school mathematics",
+    "url": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+    "year": "2025"
+   }
+  },
+  "ghosts_math": null,
+  "goodai_ltm_benchmark": null,
+  "haiid": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "HAIID",
+   "citation": {
+    "bibtex": "@inproceedings{vodrahalli2022humans,\n  title={Do humans trust advice more if it comes from AI? An analysis of human-AI interactions},\n  author={Vodrahalli, Kailas and Daneshjou, Roxana and Gerstenberg, Tobias and Zou, James},\n  booktitle={Proceedings of the 2022 AAAI/ACM Conference on AI, Ethics, and Society},\n  pages={763--777},\n  year={2022}\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://arxiv.org/abs/2107.07015",
+    "key": "vodrahalli2022humans",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Stanford University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "haiid",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2107.07015",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2107.07015",
+     "expectedCount": 4,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Vodrahalli, Kailas",
+      "kind": "person",
+      "name": "Kailas Vodrahalli"
+     },
+     {
+      "bibtexName": "Daneshjou, Roxana",
+      "kind": "person",
+      "name": "Roxana Daneshjou"
+     },
+     {
+      "bibtexName": "Gerstenberg, Tobias",
+      "kind": "person",
+      "name": "Tobias Gerstenberg"
+     },
+     {
+      "bibtexName": "Zou, James",
+      "kind": "person",
+      "name": "James Zou"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Do humans trust advice more if it comes from AI? An analysis of human-AI interactions",
+    "url": "https://arxiv.org/abs/2107.07015",
+    "year": "2022"
+   }
+  },
+  "hallusionbench": null,
+  "harmbench": null,
+  "healthadminbench": null,
+  "helm_afr": null,
+  "helm_airbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "AIR-Bench 2024",
+   "citation": {
+    "bibtex": "@inproceedings{zeng2025airbench,\n  title={AIR-BENCH 2024: A Safety Benchmark Based on Regulation and Policies Specified Risk Categories},\n  author={Zeng, Yi and Yang, Yu and Zhou, Andy and Tan, Jeffrey Ziwei and Tu, Yuheng and Mai, Yifan and Klyman, Kevin and Pan, Minzhou and Jia, Ruoxi and Song, Dawn and Liang, Percy and Li, Bo},\n  booktitle={The Thirteenth International Conference on Learning Representations},\n  year={2025},\n  url={https://openreview.net/forum?id=UVnD9Ze6mF},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://openreview.net/forum?id=UVnD9Ze6mF",
+    "key": "zeng2025airbench",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "UC Berkeley"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_airbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://openreview.net/forum?id=UVnD9Ze6mF",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://openreview.net/forum?id=UVnD9Ze6mF",
+     "expectedCount": 12,
+     "organizationAuthors": [],
+     "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Zeng, Yi",
+      "kind": "person",
+      "name": "Yi Zeng"
+     },
+     {
+      "bibtexName": "Yang, Yu",
+      "kind": "person",
+      "name": "Yu Yang"
+     },
+     {
+      "bibtexName": "Zhou, Andy",
+      "kind": "person",
+      "name": "Andy Zhou"
+     },
+     {
+      "bibtexName": "Tan, Jeffrey Ziwei",
+      "kind": "person",
+      "name": "Jeffrey Ziwei Tan"
+     },
+     {
+      "bibtexName": "Tu, Yuheng",
+      "kind": "person",
+      "name": "Yuheng Tu"
+     },
+     {
+      "bibtexName": "Mai, Yifan",
+      "kind": "person",
+      "name": "Yifan Mai"
+     },
+     {
+      "bibtexName": "Klyman, Kevin",
+      "kind": "person",
+      "name": "Kevin Klyman"
+     },
+     {
+      "bibtexName": "Pan, Minzhou",
+      "kind": "person",
+      "name": "Minzhou Pan"
+     },
+     {
+      "bibtexName": "Jia, Ruoxi",
+      "kind": "person",
+      "name": "Ruoxi Jia"
+     },
+     {
+      "bibtexName": "Song, Dawn",
+      "kind": "person",
+      "name": "Dawn Song"
+     },
+     {
+      "bibtexName": "Liang, Percy",
+      "kind": "person",
+      "name": "Percy Liang"
+     },
+     {
+      "bibtexName": "Li, Bo",
+      "kind": "person",
+      "name": "Bo Li"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "AIR-BENCH 2024: A Safety Benchmark Based on Regulation and Policies Specified Risk Categories",
+    "url": "https://openreview.net/forum?id=UVnD9Ze6mF",
+    "year": "2025"
+   }
+  },
+  "helm_anthropic_redteam": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "Anthropic Red Team",
+   "citation": {
+    "bibtex": "@article{ganguli2022redteaming,\n  title={Red Teaming Language Models to Reduce Harms: Methods, Scaling Behaviors, and Lessons Learned},\n  author={Ganguli, Deep and Lovitt, Liane and Kernion, Jackson and Askell, Amanda and Bai, Yuntao and Kadavath, Saurav and Mann, Ben and Perez, Ethan and Schiefer, Nicholas and Ndousse, Kamal and Jones, Andy and Bowman, Sam and Chen, Anna and Conerly, Tom and DasSarma, Nova and Drain, Dawn and Elhage, Nelson and El-Showk, Sheer and Fort, Stanislav and Hatfield-Dodds, Zac and Henighan, Tom and Hernandez, Danny and Hume, Tristan and Jacobson, Josh and Johnston, Scott and Kravec, Shauna and Olsson, Catherine and Ringer, Sam and Tran-Johnson, Eli and Amodei, Dario and Brown, Tom and Joseph, Nicholas and McCandlish, Sam and Olah, Chris and Kaplan, Jared and Clark, Jack},\n  journal={arXiv preprint arXiv:2209.07858},\n  year={2022},\n  url={https://arxiv.org/abs/2209.07858},\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://arxiv.org/abs/2209.07858",
+    "key": "ganguli2022redteaming",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Anthropic"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_anthropic_redteam",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2209.07858",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2209.07858",
+     "expectedCount": 36,
+     "organizationAuthors": [],
+     "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Ganguli, Deep",
+      "kind": "person",
+      "name": "Deep Ganguli"
+     },
+     {
+      "bibtexName": "Lovitt, Liane",
+      "kind": "person",
+      "name": "Liane Lovitt"
+     },
+     {
+      "bibtexName": "Kernion, Jackson",
+      "kind": "person",
+      "name": "Jackson Kernion"
+     },
+     {
+      "bibtexName": "Askell, Amanda",
+      "kind": "person",
+      "name": "Amanda Askell"
+     },
+     {
+      "bibtexName": "Bai, Yuntao",
+      "kind": "person",
+      "name": "Yuntao Bai"
+     },
+     {
+      "bibtexName": "Kadavath, Saurav",
+      "kind": "person",
+      "name": "Saurav Kadavath"
+     },
+     {
+      "bibtexName": "Mann, Ben",
+      "kind": "person",
+      "name": "Ben Mann"
+     },
+     {
+      "bibtexName": "Perez, Ethan",
+      "kind": "person",
+      "name": "Ethan Perez"
+     },
+     {
+      "bibtexName": "Schiefer, Nicholas",
+      "kind": "person",
+      "name": "Nicholas Schiefer"
+     },
+     {
+      "bibtexName": "Ndousse, Kamal",
+      "kind": "person",
+      "name": "Kamal Ndousse"
+     },
+     {
+      "bibtexName": "Jones, Andy",
+      "kind": "person",
+      "name": "Andy Jones"
+     },
+     {
+      "bibtexName": "Bowman, Sam",
+      "kind": "person",
+      "name": "Sam Bowman"
+     },
+     {
+      "bibtexName": "Chen, Anna",
+      "kind": "person",
+      "name": "Anna Chen"
+     },
+     {
+      "bibtexName": "Conerly, Tom",
+      "kind": "person",
+      "name": "Tom Conerly"
+     },
+     {
+      "bibtexName": "DasSarma, Nova",
+      "kind": "person",
+      "name": "Nova DasSarma"
+     },
+     {
+      "bibtexName": "Drain, Dawn",
+      "kind": "person",
+      "name": "Dawn Drain"
+     },
+     {
+      "bibtexName": "Elhage, Nelson",
+      "kind": "person",
+      "name": "Nelson Elhage"
+     },
+     {
+      "bibtexName": "El-Showk, Sheer",
+      "kind": "person",
+      "name": "Sheer El-Showk"
+     },
+     {
+      "bibtexName": "Fort, Stanislav",
+      "kind": "person",
+      "name": "Stanislav Fort"
+     },
+     {
+      "bibtexName": "Hatfield-Dodds, Zac",
+      "kind": "person",
+      "name": "Zac Hatfield-Dodds"
+     },
+     {
+      "bibtexName": "Henighan, Tom",
+      "kind": "person",
+      "name": "Tom Henighan"
+     },
+     {
+      "bibtexName": "Hernandez, Danny",
+      "kind": "person",
+      "name": "Danny Hernandez"
+     },
+     {
+      "bibtexName": "Hume, Tristan",
+      "kind": "person",
+      "name": "Tristan Hume"
+     },
+     {
+      "bibtexName": "Jacobson, Josh",
+      "kind": "person",
+      "name": "Josh Jacobson"
+     },
+     {
+      "bibtexName": "Johnston, Scott",
+      "kind": "person",
+      "name": "Scott Johnston"
+     },
+     {
+      "bibtexName": "Kravec, Shauna",
+      "kind": "person",
+      "name": "Shauna Kravec"
+     },
+     {
+      "bibtexName": "Olsson, Catherine",
+      "kind": "person",
+      "name": "Catherine Olsson"
+     },
+     {
+      "bibtexName": "Ringer, Sam",
+      "kind": "person",
+      "name": "Sam Ringer"
+     },
+     {
+      "bibtexName": "Tran-Johnson, Eli",
+      "kind": "person",
+      "name": "Eli Tran-Johnson"
+     },
+     {
+      "bibtexName": "Amodei, Dario",
+      "kind": "person",
+      "name": "Dario Amodei"
+     },
+     {
+      "bibtexName": "Brown, Tom",
+      "kind": "person",
+      "name": "Tom Brown"
+     },
+     {
+      "bibtexName": "Joseph, Nicholas",
+      "kind": "person",
+      "name": "Nicholas Joseph"
+     },
+     {
+      "bibtexName": "McCandlish, Sam",
+      "kind": "person",
+      "name": "Sam McCandlish"
+     },
+     {
+      "bibtexName": "Olah, Chris",
+      "kind": "person",
+      "name": "Chris Olah"
+     },
+     {
+      "bibtexName": "Kaplan, Jared",
+      "kind": "person",
+      "name": "Jared Kaplan"
+     },
+     {
+      "bibtexName": "Clark, Jack",
+      "kind": "person",
+      "name": "Jack Clark"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Red Teaming Language Models to Reduce Harms: Methods, Scaling Behaviors, and Lessons Learned",
+    "url": "https://arxiv.org/abs/2209.07858",
+    "year": "2022"
+   }
+  },
+  "helm_bbq": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "BBQ",
+   "citation": {
+    "bibtex": "@inproceedings{parrish-etal-2022-bbq,\n  title={{BBQ}: A hand-built bias benchmark for question answering},\n  author={Parrish, Alicia and Chen, Angelica and Nangia, Nikita and Padmakumar, Vishakh and Phang, Jason and Thompson, Jana and Htut, Phu Mon and Bowman, Samuel R.},\n  booktitle={Findings of the Association for Computational Linguistics: ACL 2022},\n  year={2022},\n  publisher={Association for Computational Linguistics},\n  pages={2086--2105},\n  doi={10.18653/v1/2022.findings-acl.165},\n  url={https://aclanthology.org/2022.findings-acl.165/},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://aclanthology.org/2022.findings-acl.165/",
+    "key": "parrish-etal-2022-bbq",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "New York University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_bbq",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://aclanthology.org/2022.findings-acl.165/",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://aclanthology.org/2022.findings-acl.165/",
+     "expectedCount": 8,
+     "organizationAuthors": [],
+     "reason": "The final ACL author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Parrish, Alicia",
+      "kind": "person",
+      "name": "Alicia Parrish"
+     },
+     {
+      "bibtexName": "Chen, Angelica",
+      "kind": "person",
+      "name": "Angelica Chen"
+     },
+     {
+      "bibtexName": "Nangia, Nikita",
+      "kind": "person",
+      "name": "Nikita Nangia"
+     },
+     {
+      "bibtexName": "Padmakumar, Vishakh",
+      "kind": "person",
+      "name": "Vishakh Padmakumar"
+     },
+     {
+      "bibtexName": "Phang, Jason",
+      "kind": "person",
+      "name": "Jason Phang"
+     },
+     {
+      "bibtexName": "Thompson, Jana",
+      "kind": "person",
+      "name": "Jana Thompson"
+     },
+     {
+      "bibtexName": "Htut, Phu Mon",
+      "kind": "person",
+      "name": "Phu Mon Htut"
+     },
+     {
+      "bibtexName": "Bowman, Samuel R.",
+      "kind": "person",
+      "name": "Samuel R. Bowman"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "BBQ: A hand-built bias benchmark for question answering",
+    "url": "https://aclanthology.org/2022.findings-acl.165/",
+    "year": "2022"
+   }
+  },
+  "helm_bold": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "BOLD",
+   "citation": {
+    "bibtex": "@inproceedings{dhamala2021bold,\n  title={BOLD: Dataset and Metrics for Measuring Biases in Open-Ended Language Generation},\n  author={Dhamala, Jwala and Sun, Tony and Kumar, Varun and Krishna, Satyapriya and Pruksachatkun, Yada and Chang, Kai-Wei and Gupta, Rahul},\n  booktitle={Proceedings of the 2021 ACM Conference on Fairness, Accountability, and Transparency},\n  year={2021},\n  publisher={ACM},\n  pages={862--872},\n  doi={10.1145/3442188.3445924},\n  url={https://doi.org/10.1145/3442188.3445924},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://doi.org/10.1145/3442188.3445924",
+    "key": "dhamala2021bold",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Amazon"
+    },
+    {
+     "name": "UC Santa Barbara"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_bold",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://doi.org/10.1145/3442188.3445924",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://doi.org/10.1145/3442188.3445924",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "The final publication author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Dhamala, Jwala",
+      "kind": "person",
+      "name": "Jwala Dhamala"
+     },
+     {
+      "bibtexName": "Sun, Tony",
+      "kind": "person",
+      "name": "Tony Sun"
+     },
+     {
+      "bibtexName": "Kumar, Varun",
+      "kind": "person",
+      "name": "Varun Kumar"
+     },
+     {
+      "bibtexName": "Krishna, Satyapriya",
+      "kind": "person",
+      "name": "Satyapriya Krishna"
+     },
+     {
+      "bibtexName": "Pruksachatkun, Yada",
+      "kind": "person",
+      "name": "Yada Pruksachatkun"
+     },
+     {
+      "bibtexName": "Chang, Kai-Wei",
+      "kind": "person",
+      "name": "Kai-Wei Chang"
+     },
+     {
+      "bibtexName": "Gupta, Rahul",
+      "kind": "person",
+      "name": "Rahul Gupta"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "BOLD: Dataset and Metrics for Measuring Biases in Open-Ended Language Generation",
+    "url": "https://doi.org/10.1145/3442188.3445924",
+    "year": "2021"
+   }
+  },
+  "helm_cleva": null,
+  "helm_harmbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "HarmBench",
+   "citation": {
+    "bibtex": "@inproceedings{pmlr-v235-mazeika24a,\n  title={{H}arm{B}ench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal},\n  author={Mazeika, Mantas and Phan, Long and Yin, Xuwang and Zou, Andy and Wang, Zifan and Mu, Norman and Sakhaee, Elham and Li, Nathaniel and Basart, Steven and Li, Bo and Forsyth, David and Hendrycks, Dan},\n  booktitle={Proceedings of the 41st International Conference on Machine Learning},\n  pages={35181--35224},\n  year={2024},\n  volume={235},\n  series={Proceedings of Machine Learning Research},\n  publisher={PMLR},\n  url={https://proceedings.mlr.press/v235/mazeika24a.html},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://proceedings.mlr.press/v235/mazeika24a.html",
+    "key": "pmlr-v235-mazeika24a",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of Illinois Urbana-Champaign"
+    },
+    {
+     "name": "Center for AI Safety"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_harmbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://proceedings.mlr.press/v235/mazeika24a.html",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://proceedings.mlr.press/v235/mazeika24a.html",
+     "expectedCount": 12,
+     "organizationAuthors": [],
+     "reason": "The final PMLR author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Mazeika, Mantas",
+      "kind": "person",
+      "name": "Mantas Mazeika"
+     },
+     {
+      "bibtexName": "Phan, Long",
+      "kind": "person",
+      "name": "Long Phan"
+     },
+     {
+      "bibtexName": "Yin, Xuwang",
+      "kind": "person",
+      "name": "Xuwang Yin"
+     },
+     {
+      "bibtexName": "Zou, Andy",
+      "kind": "person",
+      "name": "Andy Zou"
+     },
+     {
+      "bibtexName": "Wang, Zifan",
+      "kind": "person",
+      "name": "Zifan Wang"
+     },
+     {
+      "bibtexName": "Mu, Norman",
+      "kind": "person",
+      "name": "Norman Mu"
+     },
+     {
+      "bibtexName": "Sakhaee, Elham",
+      "kind": "person",
+      "name": "Elham Sakhaee"
+     },
+     {
+      "bibtexName": "Li, Nathaniel",
+      "kind": "person",
+      "name": "Nathaniel Li"
+     },
+     {
+      "bibtexName": "Basart, Steven",
+      "kind": "person",
+      "name": "Steven Basart"
+     },
+     {
+      "bibtexName": "Li, Bo",
+      "kind": "person",
+      "name": "Bo Li"
+     },
+     {
+      "bibtexName": "Forsyth, David",
+      "kind": "person",
+      "name": "David Forsyth"
+     },
+     {
+      "bibtexName": "Hendrycks, Dan",
+      "kind": "person",
+      "name": "Dan Hendrycks"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "HarmBench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal",
+    "url": "https://proceedings.mlr.press/v235/mazeika24a.html",
+    "year": "2024"
+   }
+  },
+  "helm_real_toxicity_prompts": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "RealToxicityPrompts",
+   "citation": {
+    "bibtex": "@inproceedings{gehman2020realtoxicityprompts,\n  title={RealToxicityPrompts: Evaluating Neural Toxic Degeneration in Language Models},\n  author={Gehman, Samuel and Gururangan, Suchin and Sap, Maarten and Choi, Yejin and Smith, Noah A.},\n  booktitle={Findings of EMNLP},\n  year={2020},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://arxiv.org/abs/2009.11462",
+    "key": "gehman2020realtoxicityprompts",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of Washington"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_real_toxicity_prompts",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2009.11462",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2009.11462",
+     "expectedCount": 5,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Gehman, Samuel",
+      "kind": "person",
+      "name": "Samuel Gehman"
+     },
+     {
+      "bibtexName": "Gururangan, Suchin",
+      "kind": "person",
+      "name": "Suchin Gururangan"
+     },
+     {
+      "bibtexName": "Sap, Maarten",
+      "kind": "person",
+      "name": "Maarten Sap"
+     },
+     {
+      "bibtexName": "Choi, Yejin",
+      "kind": "person",
+      "name": "Yejin Choi"
+     },
+     {
+      "bibtexName": "Smith, Noah A.",
+      "kind": "person",
+      "name": "Noah A. Smith"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "RealToxicityPrompts: Evaluating Neural Toxic Degeneration in Language Models",
+    "url": "https://arxiv.org/abs/2009.11462",
+    "year": "2020"
+   }
+  },
+  "helm_simple_safety_tests": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "SimpleSafetyTests",
+   "citation": {
+    "bibtex": "@article{vidgen2023simplesafetytests,\n  title={SimpleSafetyTests: a Test Suite for Identifying Critical Safety Risks in Large Language Models},\n  author={Vidgen, Bertie and Scherrer, Nino and Kirk, Hannah Rose and Qian, Rebecca and Kannappan, Anand and Hale, Scott A. and R{\\\"o}ttger, Paul},\n  journal={arXiv preprint arXiv:2311.08370},\n  year={2023},\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://arxiv.org/abs/2311.08370",
+    "key": "vidgen2023simplesafetytests",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Patronus AI"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_simple_safety_tests",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2311.08370",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2311.08370",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Vidgen, Bertie",
+      "kind": "person",
+      "name": "Bertie Vidgen"
+     },
+     {
+      "bibtexName": "Scherrer, Nino",
+      "kind": "person",
+      "name": "Nino Scherrer"
+     },
+     {
+      "bibtexName": "Kirk, Hannah Rose",
+      "kind": "person",
+      "name": "Hannah Rose Kirk"
+     },
+     {
+      "bibtexName": "Qian, Rebecca",
+      "kind": "person",
+      "name": "Rebecca Qian"
+     },
+     {
+      "bibtexName": "Kannappan, Anand",
+      "kind": "person",
+      "name": "Anand Kannappan"
+     },
+     {
+      "bibtexName": "Hale, Scott A.",
+      "kind": "person",
+      "name": "Scott A. Hale"
+     },
+     {
+      "bibtexName": "R{\\\"o}ttger, Paul",
+      "kind": "person",
+      "name": "Paul Röttger"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "SimpleSafetyTests: a Test Suite for Identifying Critical Safety Risks in Large Language Models",
+    "url": "https://arxiv.org/abs/2311.08370",
+    "year": "2023"
+   }
+  },
+  "helm_thaiexam": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "HELM Thai Exam",
+   "citation": {
+    "bibtex": "@misc{pipatanakul2023typhoonthailargelanguage,\n      title={Typhoon: Thai Large Language Models},\n      author={Kunat Pipatanakul and Phatrasek Jirabovonvisut and Potsawee Manakul and Sittipong Sripaisarnmongkol and Ruangsak Patomwong and Pathomporn Chokchainant and Kasima Tharnpipitchai},\n      year={2023},\n      eprint={2312.13951},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2312.13951},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2312.13951",
+    "key": "pipatanakul2023typhoonthailargelanguage",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "SCB 10X"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_thaiexam",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2312.13951",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2312.13951",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Kunat Pipatanakul",
+      "kind": "person",
+      "name": "Kunat Pipatanakul"
+     },
+     {
+      "bibtexName": "Phatrasek Jirabovonvisut",
+      "kind": "person",
+      "name": "Phatrasek Jirabovonvisut"
+     },
+     {
+      "bibtexName": "Potsawee Manakul",
+      "kind": "person",
+      "name": "Potsawee Manakul"
+     },
+     {
+      "bibtexName": "Sittipong Sripaisarnmongkol",
+      "kind": "person",
+      "name": "Sittipong Sripaisarnmongkol"
+     },
+     {
+      "bibtexName": "Ruangsak Patomwong",
+      "kind": "person",
+      "name": "Ruangsak Patomwong"
+     },
+     {
+      "bibtexName": "Pathomporn Chokchainant",
+      "kind": "person",
+      "name": "Pathomporn Chokchainant"
+     },
+     {
+      "bibtexName": "Kasima Tharnpipitchai",
+      "kind": "person",
+      "name": "Kasima Tharnpipitchai"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Typhoon: Thai Large Language Models",
+    "url": "https://arxiv.org/abs/2312.13951",
+    "year": "2023"
+   }
+  },
+  "helm_xstest": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "XSTest",
+   "citation": {
+    "bibtex": "@inproceedings{rottger-etal-2024-xstest,\n  title={{XST}est: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},\n  author={R{\\\"o}ttger, Paul and Kirk, Hannah Rose and Vidgen, Bertie and Attanasio, Giuseppe and Bianchi, Federico and Hovy, Dirk},\n  booktitle={Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},\n  year={2024},\n  publisher={Association for Computational Linguistics},\n  pages={5377--5400},\n  doi={10.18653/v1/2024.naacl-long.301},\n  url={https://aclanthology.org/2024.naacl-long.301/},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://aclanthology.org/2024.naacl-long.301/",
+    "key": "rottger-etal-2024-xstest",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Bocconi University"
+    },
+    {
+     "name": "University of Oxford"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "helm_xstest",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://aclanthology.org/2024.naacl-long.301/",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://aclanthology.org/2024.naacl-long.301/",
+     "expectedCount": 6,
+     "organizationAuthors": [],
+     "reason": "The final ACL author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "R{\\\"o}ttger, Paul",
+      "kind": "person",
+      "name": "Paul Röttger"
+     },
+     {
+      "bibtexName": "Kirk, Hannah Rose",
+      "kind": "person",
+      "name": "Hannah Rose Kirk"
+     },
+     {
+      "bibtexName": "Vidgen, Bertie",
+      "kind": "person",
+      "name": "Bertie Vidgen"
+     },
+     {
+      "bibtexName": "Attanasio, Giuseppe",
+      "kind": "person",
+      "name": "Giuseppe Attanasio"
+     },
+     {
+      "bibtexName": "Bianchi, Federico",
+      "kind": "person",
+      "name": "Federico Bianchi"
+     },
+     {
+      "bibtexName": "Hovy, Dirk",
+      "kind": "person",
+      "name": "Dirk Hovy"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "XSTest: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models",
+    "url": "https://aclanthology.org/2024.naacl-long.301/",
+    "year": "2024"
+   }
+  },
+  "hivmedqa": null,
+  "icpc2_code_selector": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "ICPC-2 Code Selector",
+   "citation": {
+    "bibtex": "@article{anjosdealmeida2025llmicpc,\n  title={Large Language Models as Medical Codes Selectors: a benchmark using the International Classification of Primary Care},\n  author={Anjos de Almeida, Vinicius and de Camargo, Vinicius and G{\\'o}mez-Bravo, Raquel and van der Haring, Egbert and van Boven, Kees and Finger, Marcelo and Fernandez Lopez, Luis},\n  journal={arXiv preprint arXiv:2507.14681},\n  year={2025},\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://arxiv.org/abs/2507.14681",
+    "key": "anjosdealmeida2025llmicpc",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of São Paulo"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "icpc2_code_selector",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2507.14681",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2507.14681",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Anjos de Almeida, Vinicius",
+      "kind": "person",
+      "name": "Vinicius Anjos de Almeida"
+     },
+     {
+      "bibtexName": "de Camargo, Vinicius",
+      "kind": "person",
+      "name": "Vinicius de Camargo"
+     },
+     {
+      "bibtexName": "G{\\'o}mez-Bravo, Raquel",
+      "kind": "person",
+      "name": "Raquel Gómez-Bravo"
+     },
+     {
+      "bibtexName": "van der Haring, Egbert",
+      "kind": "person",
+      "name": "Egbert van der Haring"
+     },
+     {
+      "bibtexName": "van Boven, Kees",
+      "kind": "person",
+      "name": "Kees van Boven"
+     },
+     {
+      "bibtexName": "Finger, Marcelo",
+      "kind": "person",
+      "name": "Marcelo Finger"
+     },
+     {
+      "bibtexName": "Fernandez Lopez, Luis",
+      "kind": "person",
+      "name": "Luis Fernandez Lopez"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Large Language Models as Medical Codes Selectors: a benchmark using the International Classification of Primary Care",
+    "url": "https://arxiv.org/abs/2507.14681",
+    "year": "2025"
+   }
+  },
+  "igakuqa": null,
+  "igakuqa119": null,
+  "ikp": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "IKP",
+   "citation": {
+    "bibtex": "@article{li2026ikp,\n  title={Incompressible Knowledge Probes: Estimating Black-Box LLM Parameter Counts via Factual Capacity},\n  author={Li, Bojie},\n  journal={arXiv preprint arXiv:2604.24827},\n  year={2026}\n}",
+    "entryType": "article",
+    "evidenceUrl": "https://arxiv.org/abs/2604.24827",
+    "key": "li2026ikp",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Pine AI"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "ikp",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2604.24827",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2604.24827",
+     "expectedCount": 1,
+     "organizationAuthors": [],
+     "reason": "The primary paper identifies Bojie Li as its sole author."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Li, Bojie",
+      "kind": "person",
+      "name": "Bojie Li"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Incompressible Knowledge Probes: Estimating Black-Box LLM Parameter Counts via Factual Capacity",
+    "url": "https://arxiv.org/abs/2604.24827",
+    "year": "2026"
+   }
+  },
+  "image2struct": null,
+  "imgedit": null,
+  "indeterminacy": null,
+  "ineqmath": null,
+  "infibench": null,
+  "interchangeable_token_embeddings": null,
+  "intercode": null,
+  "jailbreakbench": null,
+  "jetts": null,
+  "judgetuning": null,
+  "katakomba": null,
+  "kernelbench": null,
+  "kmmlu": null,
+  "kormedmcqa": null,
+  "kris_bench": null,
+  "lambda_fp_course": null,
+  "lawbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "LawBench",
+   "citation": {
+    "bibtex": "@misc{fei2023lawbenchbenchmarkinglegalknowledge,\n      title={LawBench: Benchmarking Legal Knowledge of Large Language Models},\n      author={Zhiwei Fei and Xiaoyu Shen and Dawei Zhu and Fengzhe Zhou and Zhuo Han and Songyang Zhang and Kai Chen and Zongwen Shen and Jidong Ge},\n      year={2023},\n      eprint={2309.16289},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2309.16289},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2309.16289",
+    "key": "fei2023lawbenchbenchmarkinglegalknowledge",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Nanjing University"
+    },
+    {
+     "name": "Amazon"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "lawbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2309.16289",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2309.16289",
+     "expectedCount": 9,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Zhiwei Fei",
+      "kind": "person",
+      "name": "Zhiwei Fei"
+     },
+     {
+      "bibtexName": "Xiaoyu Shen",
+      "kind": "person",
+      "name": "Xiaoyu Shen"
+     },
+     {
+      "bibtexName": "Dawei Zhu",
+      "kind": "person",
+      "name": "Dawei Zhu"
+     },
+     {
+      "bibtexName": "Fengzhe Zhou",
+      "kind": "person",
+      "name": "Fengzhe Zhou"
+     },
+     {
+      "bibtexName": "Zhuo Han",
+      "kind": "person",
+      "name": "Zhuo Han"
+     },
+     {
+      "bibtexName": "Songyang Zhang",
+      "kind": "person",
+      "name": "Songyang Zhang"
+     },
+     {
+      "bibtexName": "Kai Chen",
+      "kind": "person",
+      "name": "Kai Chen"
+     },
+     {
+      "bibtexName": "Zongwen Shen",
+      "kind": "person",
+      "name": "Zongwen Shen"
+     },
+     {
+      "bibtexName": "Jidong Ge",
+      "kind": "person",
+      "name": "Jidong Ge"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "LawBench: Benchmarking Legal Knowledge of Large Language Models",
+    "url": "https://arxiv.org/abs/2309.16289",
+    "year": "2023"
+   }
+  },
+  "legal_rag_bench": null,
+  "legalbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "LegalBench",
+   "citation": {
+    "bibtex": "@inproceedings{NEURIPS2023_89e44582,\n  title={LegalBench: A Collaboratively Built Benchmark for Measuring Legal Reasoning in Large Language Models},\n  author={Guha, Neel and Nyarko, Julian and Ho, Daniel E. and R{\\'e}, Christopher and Chilton, Adam and Narayana, Aditya and Chohlas-Wood, Alex and Peters, Austin and Waldon, Brandon and Rockmore, Daniel N. and Zambrano, Diego and Talisman, Dmitry and Hoque, Enam and Surani, Faiz and Fagan, Frank and Sarfaty, Galit and Dickinson, Gregory M. and Porat, Haggai and Hegland, Jason and Wu, Jessica and Nudell, Joe and Niklaus, Joel and Nay, John and Choi, Jonathan H. and Tobia, Kevin and Hagan, Margaret and Ma, Megan and Livermore, Michael and Rasumov-Rahe, Nikon and Holzenberger, Nils and Kolt, Noam and Henderson, Peter and Rehaag, Sean and Goel, Sharad and Gao, Shang and Williams, Spencer and Gandhi, Sunny and Zur, Tom and Iyer, Varun and Li, Zehua},\n  booktitle={Advances in Neural Information Processing Systems},\n  doi={10.52202/075280-1915},\n  pages={44123--44279},\n  publisher={Curran Associates, Inc.},\n  volume={36},\n  year={2023},\n  url={https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+    "key": "NEURIPS2023_89e44582",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Stanford University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "legalbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+     "expectedCount": 40,
+     "organizationAuthors": [],
+     "reason": "The final NeurIPS author list was checked after replacing an abbreviated local citation."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Guha, Neel",
+      "kind": "person",
+      "name": "Neel Guha"
+     },
+     {
+      "bibtexName": "Nyarko, Julian",
+      "kind": "person",
+      "name": "Julian Nyarko"
+     },
+     {
+      "bibtexName": "Ho, Daniel E.",
+      "kind": "person",
+      "name": "Daniel E. Ho"
+     },
+     {
+      "bibtexName": "R{\\'e}, Christopher",
+      "kind": "person",
+      "name": "Christopher Ré"
+     },
+     {
+      "bibtexName": "Chilton, Adam",
+      "kind": "person",
+      "name": "Adam Chilton"
+     },
+     {
+      "bibtexName": "Narayana, Aditya",
+      "kind": "person",
+      "name": "Aditya Narayana"
+     },
+     {
+      "bibtexName": "Chohlas-Wood, Alex",
+      "kind": "person",
+      "name": "Alex Chohlas-Wood"
+     },
+     {
+      "bibtexName": "Peters, Austin",
+      "kind": "person",
+      "name": "Austin Peters"
+     },
+     {
+      "bibtexName": "Waldon, Brandon",
+      "kind": "person",
+      "name": "Brandon Waldon"
+     },
+     {
+      "bibtexName": "Rockmore, Daniel N.",
+      "kind": "person",
+      "name": "Daniel N. Rockmore"
+     },
+     {
+      "bibtexName": "Zambrano, Diego",
+      "kind": "person",
+      "name": "Diego Zambrano"
+     },
+     {
+      "bibtexName": "Talisman, Dmitry",
+      "kind": "person",
+      "name": "Dmitry Talisman"
+     },
+     {
+      "bibtexName": "Hoque, Enam",
+      "kind": "person",
+      "name": "Enam Hoque"
+     },
+     {
+      "bibtexName": "Surani, Faiz",
+      "kind": "person",
+      "name": "Faiz Surani"
+     },
+     {
+      "bibtexName": "Fagan, Frank",
+      "kind": "person",
+      "name": "Frank Fagan"
+     },
+     {
+      "bibtexName": "Sarfaty, Galit",
+      "kind": "person",
+      "name": "Galit Sarfaty"
+     },
+     {
+      "bibtexName": "Dickinson, Gregory M.",
+      "kind": "person",
+      "name": "Gregory M. Dickinson"
+     },
+     {
+      "bibtexName": "Porat, Haggai",
+      "kind": "person",
+      "name": "Haggai Porat"
+     },
+     {
+      "bibtexName": "Hegland, Jason",
+      "kind": "person",
+      "name": "Jason Hegland"
+     },
+     {
+      "bibtexName": "Wu, Jessica",
+      "kind": "person",
+      "name": "Jessica Wu"
+     },
+     {
+      "bibtexName": "Nudell, Joe",
+      "kind": "person",
+      "name": "Joe Nudell"
+     },
+     {
+      "bibtexName": "Niklaus, Joel",
+      "kind": "person",
+      "name": "Joel Niklaus"
+     },
+     {
+      "bibtexName": "Nay, John",
+      "kind": "person",
+      "name": "John Nay"
+     },
+     {
+      "bibtexName": "Choi, Jonathan H.",
+      "kind": "person",
+      "name": "Jonathan H. Choi"
+     },
+     {
+      "bibtexName": "Tobia, Kevin",
+      "kind": "person",
+      "name": "Kevin Tobia"
+     },
+     {
+      "bibtexName": "Hagan, Margaret",
+      "kind": "person",
+      "name": "Margaret Hagan"
+     },
+     {
+      "bibtexName": "Ma, Megan",
+      "kind": "person",
+      "name": "Megan Ma"
+     },
+     {
+      "bibtexName": "Livermore, Michael",
+      "kind": "person",
+      "name": "Michael Livermore"
+     },
+     {
+      "bibtexName": "Rasumov-Rahe, Nikon",
+      "kind": "person",
+      "name": "Nikon Rasumov-Rahe"
+     },
+     {
+      "bibtexName": "Holzenberger, Nils",
+      "kind": "person",
+      "name": "Nils Holzenberger"
+     },
+     {
+      "bibtexName": "Kolt, Noam",
+      "kind": "person",
+      "name": "Noam Kolt"
+     },
+     {
+      "bibtexName": "Henderson, Peter",
+      "kind": "person",
+      "name": "Peter Henderson"
+     },
+     {
+      "bibtexName": "Rehaag, Sean",
+      "kind": "person",
+      "name": "Sean Rehaag"
+     },
+     {
+      "bibtexName": "Goel, Sharad",
+      "kind": "person",
+      "name": "Sharad Goel"
+     },
+     {
+      "bibtexName": "Gao, Shang",
+      "kind": "person",
+      "name": "Shang Gao"
+     },
+     {
+      "bibtexName": "Williams, Spencer",
+      "kind": "person",
+      "name": "Spencer Williams"
+     },
+     {
+      "bibtexName": "Gandhi, Sunny",
+      "kind": "person",
+      "name": "Sunny Gandhi"
+     },
+     {
+      "bibtexName": "Zur, Tom",
+      "kind": "person",
+      "name": "Tom Zur"
+     },
+     {
+      "bibtexName": "Iyer, Varun",
+      "kind": "person",
+      "name": "Varun Iyer"
+     },
+     {
+      "bibtexName": "Li, Zehua",
+      "kind": "person",
+      "name": "Zehua Li"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "LegalBench: A Collaboratively Built Benchmark for Measuring Legal Reasoning in Large Language Models",
+    "url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+    "year": "2023"
+   }
+  },
+  "lexeval": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "LexEval",
+   "citation": {
+    "bibtex": "@misc{li2024lexevalcomprehensivechineselegal,\n  title={LexEval: A Comprehensive Chinese Legal Benchmark for Evaluating Large Language Models},\n  author={Haitao Li and You Chen and Qingyao Ai and Yueyue Wu and Ruizhe Zhang and Yiqun Liu},\n  year={2024},\n  eprint={2409.20288},\n  archivePrefix={arXiv},\n  primaryClass={cs.CL},\n  url={https://arxiv.org/abs/2409.20288},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2409.20288",
+    "key": "li2024lexevalcomprehensivechineselegal",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Tsinghua University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "lexeval",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2409.20288",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2409.20288",
+     "expectedCount": 6,
+     "organizationAuthors": [],
+     "reason": "Six-author list verified against the provider-submitted arXiv record; the corrected names are Yueyue Wu and Ruizhe Zhang."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Haitao Li",
+      "kind": "person",
+      "name": "Haitao Li"
+     },
+     {
+      "bibtexName": "You Chen",
+      "kind": "person",
+      "name": "You Chen"
+     },
+     {
+      "bibtexName": "Qingyao Ai",
+      "kind": "person",
+      "name": "Qingyao Ai"
+     },
+     {
+      "bibtexName": "Yueyue Wu",
+      "kind": "person",
+      "name": "Yueyue Wu"
+     },
+     {
+      "bibtexName": "Ruizhe Zhang",
+      "kind": "person",
+      "name": "Ruizhe Zhang"
+     },
+     {
+      "bibtexName": "Yiqun Liu",
+      "kind": "person",
+      "name": "Yiqun Liu"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "LexEval: A Comprehensive Chinese Legal Benchmark for Evaluating Large Language Models",
+    "url": "https://arxiv.org/abs/2409.20288",
+    "year": "2024"
+   }
+  },
+  "lingoly": null,
+  "live_agent_risk": null,
+  "liveaopsbench": null,
+  "livebench": null,
+  "llm4ir": null,
+  "llm_bp_tag": null,
+  "llm_survey_simulation": null,
+  "llm_uncertainty_bench": null,
+  "llmail_inject": null,
+  "llms_lean_formalization": null,
+  "lohi_drug_discovery": null,
   "matharena": {
    "affiliationScope": "first_two_authors_first_listed_institutions",
    "affiliationStatus": "available",
@@ -70,6 +2651,307 @@
     "title": "MathArena: Evaluating LLMs on Uncontaminated Math Competitions",
     "url": "https://arxiv.org/abs/2505.23281",
     "year": "2026"
+   }
+  },
+  "matharena_platform": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MathArena Platform",
+   "citation": {
+    "bibtex": "@misc{dekoninck2026beyondbenchmarks,\n      title={Beyond Benchmarks: MathArena as an Evaluation Platform for Mathematics with LLMs},\n      author={Jasper Dekoninck and Nikola Jovanović and Tim Gehrunger and Kári Rögnvaldsson and Ivo Petrov and Chenhao Sun and Martin Vechev},\n      year={2026},\n      eprint={2605.00674},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2605.00674},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2605.00674",
+    "key": "dekoninck2026beyondbenchmarks",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "ETH Zurich"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "matharena_platform",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2605.00674",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2605.00674",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Jasper Dekoninck",
+      "kind": "person",
+      "name": "Jasper Dekoninck"
+     },
+     {
+      "bibtexName": "Nikola Jovanović",
+      "kind": "person",
+      "name": "Nikola Jovanović"
+     },
+     {
+      "bibtexName": "Tim Gehrunger",
+      "kind": "person",
+      "name": "Tim Gehrunger"
+     },
+     {
+      "bibtexName": "Kári Rögnvaldsson",
+      "kind": "person",
+      "name": "Kári Rögnvaldsson"
+     },
+     {
+      "bibtexName": "Ivo Petrov",
+      "kind": "person",
+      "name": "Ivo Petrov"
+     },
+     {
+      "bibtexName": "Chenhao Sun",
+      "kind": "person",
+      "name": "Chenhao Sun"
+     },
+     {
+      "bibtexName": "Martin Vechev",
+      "kind": "person",
+      "name": "Martin Vechev"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Beyond Benchmarks: MathArena as an Evaluation Platform for Mathematics with LLMs",
+    "url": "https://arxiv.org/abs/2605.00674",
+    "year": "2026"
+   }
+  },
+  "mathconstraint": null,
+  "mathvista_mini": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MathVista MINI",
+   "citation": {
+    "bibtex": "@misc{lu2024mathvistaevaluatingmathematicalreasoning,\n      title={MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts},\n      author={Pan Lu and Hritik Bansal and Tony Xia and Jiacheng Liu and Chunyuan Li and Hannaneh Hajishirzi and Hao Cheng and Kai-Wei Chang and Michel Galley and Jianfeng Gao},\n      year={2024},\n      eprint={2310.02255},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2310.02255},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2310.02255",
+    "key": "lu2024mathvistaevaluatingmathematicalreasoning",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "UCLA"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mathvista_mini",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2310.02255",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2310.02255",
+     "expectedCount": 10,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Pan Lu",
+      "kind": "person",
+      "name": "Pan Lu"
+     },
+     {
+      "bibtexName": "Hritik Bansal",
+      "kind": "person",
+      "name": "Hritik Bansal"
+     },
+     {
+      "bibtexName": "Tony Xia",
+      "kind": "person",
+      "name": "Tony Xia"
+     },
+     {
+      "bibtexName": "Jiacheng Liu",
+      "kind": "person",
+      "name": "Jiacheng Liu"
+     },
+     {
+      "bibtexName": "Chunyuan Li",
+      "kind": "person",
+      "name": "Chunyuan Li"
+     },
+     {
+      "bibtexName": "Hannaneh Hajishirzi",
+      "kind": "person",
+      "name": "Hannaneh Hajishirzi"
+     },
+     {
+      "bibtexName": "Hao Cheng",
+      "kind": "person",
+      "name": "Hao Cheng"
+     },
+     {
+      "bibtexName": "Kai-Wei Chang",
+      "kind": "person",
+      "name": "Kai-Wei Chang"
+     },
+     {
+      "bibtexName": "Michel Galley",
+      "kind": "person",
+      "name": "Michel Galley"
+     },
+     {
+      "bibtexName": "Jianfeng Gao",
+      "kind": "person",
+      "name": "Jianfeng Gao"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts",
+    "url": "https://arxiv.org/abs/2310.02255",
+    "year": "2024"
+   }
+  },
+  "medagentboard": null,
+  "medhelm_ehr_sql": null,
+  "medhelm_head_qa": null,
+  "medhelm_med_mcqa": null,
+  "medhelm_med_qa": null,
+  "medhelm_medbullets": null,
+  "medhelm_medcalc_bench": null,
+  "medhelm_medec": null,
+  "medhelm_medhallu": null,
+  "medhelm_pubmed_qa": null,
+  "medhelm_race_based_med": null,
+  "medwatermark_fws": null,
+  "mergebench": null,
+  "mind2web": null,
+  "mj_bench": null,
+  "mlip_arena": null,
+  "mlrbench": null,
+  "mmbench_v11": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MMBench V1.1 recorded answers",
+   "citation": {
+    "bibtex": "@misc{liu2024mmbenchmultimodalmodelallaround,\n      title={MMBench: Is Your Multi-modal Model an All-around Player?},\n      author={Yuan Liu and Haodong Duan and Yuanhan Zhang and Bo Li and Songyang Zhang and Wangbo Zhao and Yike Yuan and Jiaqi Wang and Conghui He and Ziwei Liu and Kai Chen and Dahua Lin},\n      year={2024},\n      eprint={2307.06281},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2307.06281},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2307.06281",
+    "key": "liu2024mmbenchmultimodalmodelallaround",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Shanghai AI Laboratory"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mmbench_v11",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2307.06281",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2307.06281",
+     "expectedCount": 12,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Yuan Liu",
+      "kind": "person",
+      "name": "Yuan Liu"
+     },
+     {
+      "bibtexName": "Haodong Duan",
+      "kind": "person",
+      "name": "Haodong Duan"
+     },
+     {
+      "bibtexName": "Yuanhan Zhang",
+      "kind": "person",
+      "name": "Yuanhan Zhang"
+     },
+     {
+      "bibtexName": "Bo Li",
+      "kind": "person",
+      "name": "Bo Li"
+     },
+     {
+      "bibtexName": "Songyang Zhang",
+      "kind": "person",
+      "name": "Songyang Zhang"
+     },
+     {
+      "bibtexName": "Wangbo Zhao",
+      "kind": "person",
+      "name": "Wangbo Zhao"
+     },
+     {
+      "bibtexName": "Yike Yuan",
+      "kind": "person",
+      "name": "Yike Yuan"
+     },
+     {
+      "bibtexName": "Jiaqi Wang",
+      "kind": "person",
+      "name": "Jiaqi Wang"
+     },
+     {
+      "bibtexName": "Conghui He",
+      "kind": "person",
+      "name": "Conghui He"
+     },
+     {
+      "bibtexName": "Ziwei Liu",
+      "kind": "person",
+      "name": "Ziwei Liu"
+     },
+     {
+      "bibtexName": "Kai Chen",
+      "kind": "person",
+      "name": "Kai Chen"
+     },
+     {
+      "bibtexName": "Dahua Lin",
+      "kind": "person",
+      "name": "Dahua Lin"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "MMBench: Is Your Multi-modal Model an All-around Player?",
+    "url": "https://arxiv.org/abs/2307.06281",
+    "year": "2024"
    }
   },
   "mmdocrag": {
@@ -148,6 +3030,717 @@
     "year": "2025"
    }
   },
+  "mmedbench": null,
+  "mmlu": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MMLU",
+   "citation": {
+    "bibtex": "@inproceedings{hendrycks2021mmlu,\n  title={Measuring Massive Multitask Language Understanding},\n  author={Hendrycks, Dan and Burns, Collin and Basart, Steven and Zou, Andy and Mazeika, Mantas and Song, Dawn and Steinhardt, Jacob},\n  booktitle={ICLR},\n  year={2021},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://arxiv.org/abs/2009.03300",
+    "key": "hendrycks2021mmlu",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "UC Berkeley"
+    },
+    {
+     "name": "Columbia University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mmlu",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2009.03300",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2009.03300",
+     "expectedCount": 7,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Hendrycks, Dan",
+      "kind": "person",
+      "name": "Dan Hendrycks"
+     },
+     {
+      "bibtexName": "Burns, Collin",
+      "kind": "person",
+      "name": "Collin Burns"
+     },
+     {
+      "bibtexName": "Basart, Steven",
+      "kind": "person",
+      "name": "Steven Basart"
+     },
+     {
+      "bibtexName": "Zou, Andy",
+      "kind": "person",
+      "name": "Andy Zou"
+     },
+     {
+      "bibtexName": "Mazeika, Mantas",
+      "kind": "person",
+      "name": "Mantas Mazeika"
+     },
+     {
+      "bibtexName": "Song, Dawn",
+      "kind": "person",
+      "name": "Dawn Song"
+     },
+     {
+      "bibtexName": "Steinhardt, Jacob",
+      "kind": "person",
+      "name": "Jacob Steinhardt"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Measuring Massive Multitask Language Understanding",
+    "url": "https://arxiv.org/abs/2009.03300",
+    "year": "2021"
+   }
+  },
+  "mmlupro": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MMLU-Pro",
+   "citation": {
+    "bibtex": "@misc{wang2024mmluprorobustchallengingmultitask,\n      title={MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark},\n      author={Yubo Wang and Xueguang Ma and Ge Zhang and Yuansheng Ni and Abhranil Chandra and Shiguang Guo and Weiming Ren and Aaran Arulraj and Xuan He and Ziyan Jiang and Tianle Li and Max Ku and Kai Wang and Alex Zhuang and Rongqi Fan and Xiang Yue and Wenhu Chen},\n      year={2024},\n      eprint={2406.01574},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.01574},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2406.01574",
+    "key": "wang2024mmluprorobustchallengingmultitask",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of Waterloo"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mmlupro",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2406.01574",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2406.01574",
+     "expectedCount": 17,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Yubo Wang",
+      "kind": "person",
+      "name": "Yubo Wang"
+     },
+     {
+      "bibtexName": "Xueguang Ma",
+      "kind": "person",
+      "name": "Xueguang Ma"
+     },
+     {
+      "bibtexName": "Ge Zhang",
+      "kind": "person",
+      "name": "Ge Zhang"
+     },
+     {
+      "bibtexName": "Yuansheng Ni",
+      "kind": "person",
+      "name": "Yuansheng Ni"
+     },
+     {
+      "bibtexName": "Abhranil Chandra",
+      "kind": "person",
+      "name": "Abhranil Chandra"
+     },
+     {
+      "bibtexName": "Shiguang Guo",
+      "kind": "person",
+      "name": "Shiguang Guo"
+     },
+     {
+      "bibtexName": "Weiming Ren",
+      "kind": "person",
+      "name": "Weiming Ren"
+     },
+     {
+      "bibtexName": "Aaran Arulraj",
+      "kind": "person",
+      "name": "Aaran Arulraj"
+     },
+     {
+      "bibtexName": "Xuan He",
+      "kind": "person",
+      "name": "Xuan He"
+     },
+     {
+      "bibtexName": "Ziyan Jiang",
+      "kind": "person",
+      "name": "Ziyan Jiang"
+     },
+     {
+      "bibtexName": "Tianle Li",
+      "kind": "person",
+      "name": "Tianle Li"
+     },
+     {
+      "bibtexName": "Max Ku",
+      "kind": "person",
+      "name": "Max Ku"
+     },
+     {
+      "bibtexName": "Kai Wang",
+      "kind": "person",
+      "name": "Kai Wang"
+     },
+     {
+      "bibtexName": "Alex Zhuang",
+      "kind": "person",
+      "name": "Alex Zhuang"
+     },
+     {
+      "bibtexName": "Rongqi Fan",
+      "kind": "person",
+      "name": "Rongqi Fan"
+     },
+     {
+      "bibtexName": "Xiang Yue",
+      "kind": "person",
+      "name": "Xiang Yue"
+     },
+     {
+      "bibtexName": "Wenhu Chen",
+      "kind": "person",
+      "name": "Wenhu Chen"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark",
+    "url": "https://arxiv.org/abs/2406.01574",
+    "year": "2024"
+   }
+  },
+  "mmmu_dev_val": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MMMU_DEV_VAL",
+   "citation": {
+    "bibtex": "@misc{yue2024mmmumassivemultidisciplinemultimodal,\n      title={MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI},\n      author={Xiang Yue and Yuansheng Ni and Kai Zhang and Tianyu Zheng and Ruoqi Liu and Ge Zhang and Samuel Stevens and Dongfu Jiang and Weiming Ren and Yuxuan Sun and Cong Wei and Botao Yu and Ruibin Yuan and Renliang Sun and Ming Yin and Boyuan Zheng and Zhenzhu Yang and Yibo Liu and Wenhao Huang and Huan Sun and Yu Su and Wenhu Chen},\n      year={2024},\n      eprint={2311.16502},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2311.16502},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2311.16502",
+    "key": "yue2024mmmumassivemultidisciplinemultimodal",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "IN.AI Research"
+    },
+    {
+     "name": "University of Waterloo"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mmmu_dev_val",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2311.16502",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2311.16502",
+     "expectedCount": 22,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Xiang Yue",
+      "kind": "person",
+      "name": "Xiang Yue"
+     },
+     {
+      "bibtexName": "Yuansheng Ni",
+      "kind": "person",
+      "name": "Yuansheng Ni"
+     },
+     {
+      "bibtexName": "Kai Zhang",
+      "kind": "person",
+      "name": "Kai Zhang"
+     },
+     {
+      "bibtexName": "Tianyu Zheng",
+      "kind": "person",
+      "name": "Tianyu Zheng"
+     },
+     {
+      "bibtexName": "Ruoqi Liu",
+      "kind": "person",
+      "name": "Ruoqi Liu"
+     },
+     {
+      "bibtexName": "Ge Zhang",
+      "kind": "person",
+      "name": "Ge Zhang"
+     },
+     {
+      "bibtexName": "Samuel Stevens",
+      "kind": "person",
+      "name": "Samuel Stevens"
+     },
+     {
+      "bibtexName": "Dongfu Jiang",
+      "kind": "person",
+      "name": "Dongfu Jiang"
+     },
+     {
+      "bibtexName": "Weiming Ren",
+      "kind": "person",
+      "name": "Weiming Ren"
+     },
+     {
+      "bibtexName": "Yuxuan Sun",
+      "kind": "person",
+      "name": "Yuxuan Sun"
+     },
+     {
+      "bibtexName": "Cong Wei",
+      "kind": "person",
+      "name": "Cong Wei"
+     },
+     {
+      "bibtexName": "Botao Yu",
+      "kind": "person",
+      "name": "Botao Yu"
+     },
+     {
+      "bibtexName": "Ruibin Yuan",
+      "kind": "person",
+      "name": "Ruibin Yuan"
+     },
+     {
+      "bibtexName": "Renliang Sun",
+      "kind": "person",
+      "name": "Renliang Sun"
+     },
+     {
+      "bibtexName": "Ming Yin",
+      "kind": "person",
+      "name": "Ming Yin"
+     },
+     {
+      "bibtexName": "Boyuan Zheng",
+      "kind": "person",
+      "name": "Boyuan Zheng"
+     },
+     {
+      "bibtexName": "Zhenzhu Yang",
+      "kind": "person",
+      "name": "Zhenzhu Yang"
+     },
+     {
+      "bibtexName": "Yibo Liu",
+      "kind": "person",
+      "name": "Yibo Liu"
+     },
+     {
+      "bibtexName": "Wenhao Huang",
+      "kind": "person",
+      "name": "Wenhao Huang"
+     },
+     {
+      "bibtexName": "Huan Sun",
+      "kind": "person",
+      "name": "Huan Sun"
+     },
+     {
+      "bibtexName": "Yu Su",
+      "kind": "person",
+      "name": "Yu Su"
+     },
+     {
+      "bibtexName": "Wenhu Chen",
+      "kind": "person",
+      "name": "Wenhu Chen"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI",
+    "url": "https://arxiv.org/abs/2311.16502",
+    "year": "2024"
+   }
+  },
+  "mmoral_bench": null,
+  "mochi": null,
+  "moe_cap": null,
+  "monkey_power_laws": null,
+  "morphkv": null,
+  "morqa": null,
+  "mtbbench": null,
+  "mtbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "MT-Bench",
+   "citation": {
+    "bibtex": "@misc{zheng2023judgingllmasajudgemtbenchchatbot,\n      title={Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena},\n      author={Lianmin Zheng and Wei-Lin Chiang and Ying Sheng and Siyuan Zhuang and Zhanghao Wu and Yonghao Zhuang and Zi Lin and Zhuohan Li and Dacheng Li and Eric P. Xing and Hao Zhang and Joseph E. Gonzalez and Ion Stoica},\n      year={2023},\n      eprint={2306.05685},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2306.05685},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2306.05685",
+    "key": "zheng2023judgingllmasajudgemtbenchchatbot",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "UC Berkeley"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "mtbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2306.05685",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2306.05685",
+     "expectedCount": 13,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Lianmin Zheng",
+      "kind": "person",
+      "name": "Lianmin Zheng"
+     },
+     {
+      "bibtexName": "Wei-Lin Chiang",
+      "kind": "person",
+      "name": "Wei-Lin Chiang"
+     },
+     {
+      "bibtexName": "Ying Sheng",
+      "kind": "person",
+      "name": "Ying Sheng"
+     },
+     {
+      "bibtexName": "Siyuan Zhuang",
+      "kind": "person",
+      "name": "Siyuan Zhuang"
+     },
+     {
+      "bibtexName": "Zhanghao Wu",
+      "kind": "person",
+      "name": "Zhanghao Wu"
+     },
+     {
+      "bibtexName": "Yonghao Zhuang",
+      "kind": "person",
+      "name": "Yonghao Zhuang"
+     },
+     {
+      "bibtexName": "Zi Lin",
+      "kind": "person",
+      "name": "Zi Lin"
+     },
+     {
+      "bibtexName": "Zhuohan Li",
+      "kind": "person",
+      "name": "Zhuohan Li"
+     },
+     {
+      "bibtexName": "Dacheng Li",
+      "kind": "person",
+      "name": "Dacheng Li"
+     },
+     {
+      "bibtexName": "Eric P. Xing",
+      "kind": "person",
+      "name": "Eric P. Xing"
+     },
+     {
+      "bibtexName": "Hao Zhang",
+      "kind": "person",
+      "name": "Hao Zhang"
+     },
+     {
+      "bibtexName": "Joseph E. Gonzalez",
+      "kind": "person",
+      "name": "Joseph E. Gonzalez"
+     },
+     {
+      "bibtexName": "Ion Stoica",
+      "kind": "person",
+      "name": "Ion Stoica"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena",
+    "url": "https://arxiv.org/abs/2306.05685",
+    "year": "2023"
+   }
+  },
+  "multi_moe": null,
+  "multimodal_stem_ai": null,
+  "mypcbench": null,
+  "naep_llm_students": null,
+  "nanobaselib": null,
+  "naturalreasoning": null,
+  "naturebench": null,
+  "nester": null,
+  "nis3d": null,
+  "nyu_ctf_bench": null,
+  "oasst": null,
+  "ocrbench_v2": null,
+  "ood_prediction": null,
+  "openbiorq": null,
+  "os_harm": null,
+  "perfcodebench": null,
+  "perumedqa": null,
+  "phyblock": null,
+  "pku_saferlhf": null,
+  "planbench": null,
+  "preference_dissection": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "Preference Dissection",
+   "citation": {
+    "bibtex": "@inproceedings{li-etal-2024-dissecting,\n      title={Dissecting Human and {LLM} Preferences},\n      author={Li, Junlong and Zhou, Fan and Sun, Shichao and Zhang, Yikai and Zhao, Hai and Liu, Pengfei},\n      editor={Ku, Lun-Wei and Martins, Andre and Srikumar, Vivek},\n      booktitle={Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},\n      month={August},\n      year={2024},\n      address={Bangkok, Thailand},\n      publisher={Association for Computational Linguistics},\n      url={https://aclanthology.org/2024.acl-long.99/},\n      doi={10.18653/v1/2024.acl-long.99},\n      pages={1790--1811},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://aclanthology.org/2024.acl-long.99/",
+    "key": "li-etal-2024-dissecting",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Shanghai Jiao Tong University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "preference_dissection",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://aclanthology.org/2024.acl-long.99/",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "ACL Anthology 2024.acl-long.99",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://aclanthology.org/2024.acl-long.99/",
+     "expectedCount": 6,
+     "organizationAuthors": [],
+     "reason": "The final ACL Anthology author list and citation were checked."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Li, Junlong",
+      "kind": "person",
+      "name": "Junlong Li"
+     },
+     {
+      "bibtexName": "Zhou, Fan",
+      "kind": "person",
+      "name": "Fan Zhou"
+     },
+     {
+      "bibtexName": "Sun, Shichao",
+      "kind": "person",
+      "name": "Shichao Sun"
+     },
+     {
+      "bibtexName": "Zhang, Yikai",
+      "kind": "person",
+      "name": "Yikai Zhang"
+     },
+     {
+      "bibtexName": "Zhao, Hai",
+      "kind": "person",
+      "name": "Hai Zhao"
+     },
+     {
+      "bibtexName": "Liu, Pengfei",
+      "kind": "person",
+      "name": "Pengfei Liu"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "Dissecting Human and LLM Preferences",
+    "url": "https://aclanthology.org/2024.acl-long.99/",
+    "year": "2024"
+   }
+  },
+  "prism": null,
+  "prm800k": null,
+  "programbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "ProgramBench",
+   "citation": {
+    "bibtex": "@misc{yang2026programbench,\n  title={ProgramBench: Can Language Models Rebuild Programs From Scratch?},\n  author={Yang, John and Lieret, Kilian and Ma, Jeffrey and Thakkar, Parth and Pedchenko, Dmitrii and Sootla, Sten and McMilin, Emily and Yin, Pengcheng and Hou, Rui and Synnaeve, Gabriel and Yang, Diyi and Press, Ofir},\n  year={2026},\n  eprint={2605.03546},\n  archivePrefix={arXiv},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2605.03546",
+    "key": "yang2026programbench",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Meta"
+    },
+    {
+     "name": "Stanford University"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "programbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2605.03546",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2605.03546",
+     "expectedCount": 12,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Yang, John",
+      "kind": "person",
+      "name": "John Yang"
+     },
+     {
+      "bibtexName": "Lieret, Kilian",
+      "kind": "person",
+      "name": "Kilian Lieret"
+     },
+     {
+      "bibtexName": "Ma, Jeffrey",
+      "kind": "person",
+      "name": "Jeffrey Ma"
+     },
+     {
+      "bibtexName": "Thakkar, Parth",
+      "kind": "person",
+      "name": "Parth Thakkar"
+     },
+     {
+      "bibtexName": "Pedchenko, Dmitrii",
+      "kind": "person",
+      "name": "Dmitrii Pedchenko"
+     },
+     {
+      "bibtexName": "Sootla, Sten",
+      "kind": "person",
+      "name": "Sten Sootla"
+     },
+     {
+      "bibtexName": "McMilin, Emily",
+      "kind": "person",
+      "name": "Emily McMilin"
+     },
+     {
+      "bibtexName": "Yin, Pengcheng",
+      "kind": "person",
+      "name": "Pengcheng Yin"
+     },
+     {
+      "bibtexName": "Hou, Rui",
+      "kind": "person",
+      "name": "Rui Hou"
+     },
+     {
+      "bibtexName": "Synnaeve, Gabriel",
+      "kind": "person",
+      "name": "Gabriel Synnaeve"
+     },
+     {
+      "bibtexName": "Yang, Diyi",
+      "kind": "person",
+      "name": "Diyi Yang"
+     },
+     {
+      "bibtexName": "Press, Ofir",
+      "kind": "person",
+      "name": "Ofir Press"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "ProgramBench: Can Language Models Rebuild Programs From Scratch?",
+    "url": "https://arxiv.org/abs/2605.03546",
+    "year": "2026"
+   }
+  },
+  "proofaug": null,
+  "proteininvbench": null,
+  "prox": null,
+  "psychosis_bench": null,
+  "putnam_axiom": null,
+  "pxplore": null,
+  "qatch": null,
+  "radar": null,
+  "rakuda": null,
+  "rclicks": null,
+  "real_pocqi": null,
   "real_webagents": {
    "affiliationScope": "first_two_authors_first_listed_institutions",
    "affiliationStatus": "available",
@@ -287,6 +3880,11 @@
     "year": "2025"
    }
   },
+  "realtimeqa": null,
+  "reasoning_gym": null,
+  "refgrader": null,
+  "reliancescope": null,
+  "researchclawbench": null,
   "researchcodebench": {
    "affiliationScope": "first_two_authors_first_listed_institutions",
    "affiliationStatus": "available",
@@ -372,12 +3970,592 @@
     "url": "https://openreview.net/forum?id=3k70Vt0YFS",
     "year": "2025"
    }
-  }
+  },
+  "revolve": null,
+  "rewardbench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "RewardBench",
+   "citation": {
+    "bibtex": "@misc{lambert2024rewardbenchevaluatingrewardmodels,\n      title={RewardBench: Evaluating Reward Models for Language Modeling},\n      author={Nathan Lambert and Valentina Pyatkin and Jacob Morrison and LJ Miranda and Bill Yuchen Lin and Khyathi Chandu and Nouha Dziri and Sachin Kumar and Tom Zick and Yejin Choi and Noah A. Smith and Hannaneh Hajishirzi},\n      year={2024},\n      eprint={2403.13787},\n      archivePrefix={arXiv},\n      primaryClass={cs.LG},\n      url={https://arxiv.org/abs/2403.13787},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2403.13787",
+    "key": "lambert2024rewardbenchevaluatingrewardmodels",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Allen Institute for AI"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "rewardbench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2403.13787",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2403.13787",
+     "expectedCount": 12,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Nathan Lambert",
+      "kind": "person",
+      "name": "Nathan Lambert"
+     },
+     {
+      "bibtexName": "Valentina Pyatkin",
+      "kind": "person",
+      "name": "Valentina Pyatkin"
+     },
+     {
+      "bibtexName": "Jacob Morrison",
+      "kind": "person",
+      "name": "Jacob Morrison"
+     },
+     {
+      "bibtexName": "LJ Miranda",
+      "kind": "person",
+      "name": "LJ Miranda"
+     },
+     {
+      "bibtexName": "Bill Yuchen Lin",
+      "kind": "person",
+      "name": "Bill Yuchen Lin"
+     },
+     {
+      "bibtexName": "Khyathi Chandu",
+      "kind": "person",
+      "name": "Khyathi Chandu"
+     },
+     {
+      "bibtexName": "Nouha Dziri",
+      "kind": "person",
+      "name": "Nouha Dziri"
+     },
+     {
+      "bibtexName": "Sachin Kumar",
+      "kind": "person",
+      "name": "Sachin Kumar"
+     },
+     {
+      "bibtexName": "Tom Zick",
+      "kind": "person",
+      "name": "Tom Zick"
+     },
+     {
+      "bibtexName": "Yejin Choi",
+      "kind": "person",
+      "name": "Yejin Choi"
+     },
+     {
+      "bibtexName": "Noah A. Smith",
+      "kind": "person",
+      "name": "Noah A. Smith"
+     },
+     {
+      "bibtexName": "Hannaneh Hajishirzi",
+      "kind": "person",
+      "name": "Hannaneh Hajishirzi"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "RewardBench: Evaluating Reward Models for Language Modeling",
+    "url": "https://arxiv.org/abs/2403.13787",
+    "year": "2024"
+   }
+  },
+  "risebench": null,
+  "robust_reasoning_benchmark": null,
+  "safeagentbench": null,
+  "scale_mrt": null,
+  "sciarena": null,
+  "scigym": null,
+  "sgrades": null,
+  "sib200": null,
+  "sketchjudge": null,
+  "software_world_models": null,
+  "stanford_orb": null,
+  "statqa": null,
+  "subjective_qa": null,
+  "sugarcrepe": null,
+  "summeval": null,
+  "sustainable_food": null,
+  "svrpbench": null,
+  "swe_smith": null,
+  "swebench_live": null,
+  "swepolybench": null,
+  "synthpai": null,
+  "tabarena": null,
+  "tau2_bench": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "tau2-bench",
+   "citation": {
+    "bibtex": "@misc{barres2025tau2benchevaluatingconversational,\n      title={$\\tau^2$-Bench: Evaluating Conversational Agents in a Dual-Control Environment},\n      author={Victor Barres and Honghua Dong and Soham Ray and Xujie Si and Karthik Narasimhan},\n      year={2025},\n      eprint={2506.07982},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2506.07982},\n}",
+    "entryType": "misc",
+    "evidenceUrl": "https://arxiv.org/abs/2506.07982",
+    "key": "barres2025tau2benchevaluatingconversational",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "Sierra"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "tau2_bench",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2506.07982",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2506.07982",
+     "expectedCount": 5,
+     "organizationAuthors": [],
+     "reason": "Ordered author list verified against the provider-submitted arXiv record."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Victor Barres",
+      "kind": "person",
+      "name": "Victor Barres"
+     },
+     {
+      "bibtexName": "Honghua Dong",
+      "kind": "person",
+      "name": "Honghua Dong"
+     },
+     {
+      "bibtexName": "Soham Ray",
+      "kind": "person",
+      "name": "Soham Ray"
+     },
+     {
+      "bibtexName": "Xujie Si",
+      "kind": "person",
+      "name": "Xujie Si"
+     },
+     {
+      "bibtexName": "Karthik Narasimhan",
+      "kind": "person",
+      "name": "Karthik Narasimhan"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "τ²-Bench: Evaluating Conversational Agents in a Dual-Control Environment",
+    "url": "https://arxiv.org/abs/2506.07982",
+    "year": "2025"
+   }
+  },
+  "taubench": null,
+  "tengu": {
+   "affiliationScope": null,
+   "affiliationStatus": "not_applicable",
+   "benchmarkName": "Tengu-Bench",
+   "citation": {
+    "bibtex": null,
+    "entryType": null,
+    "evidenceUrl": "https://huggingface.co/datasets/lightblue/tengu_bench",
+    "key": null,
+    "source": "producer_did_not_supply",
+    "status": "not_provided"
+   },
+   "leadAuthorInstitutions": [],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "tengu",
+   "provenance": {
+    "affiliationEvidenceUrl": null,
+    "affiliationOverride": {
+     "evidenceUrl": "https://huggingface.co/datasets/lightblue/tengu_bench",
+     "reason": "The provider supplies no formal paper author list, so there are no lead paper authors whose institutional affiliations can be represented. Producer credit remains on the dataset reference."
+    },
+    "affiliationRegistrySource": null,
+    "affiliations": null,
+    "alias": null,
+    "authorVerification": null,
+    "citationOverride": null,
+    "referenceOverride": {
+     "evidenceUrl": "https://huggingface.co/datasets/lightblue/tengu_bench",
+     "reason": "The provider publishes no formal author list or citation template. Credit the named producer and measurement release without inventing paper authorship."
+    }
+   },
+   "reference": {
+    "authors": [],
+    "contributors": [
+     {
+      "name": "Yuki Horikawa",
+      "role": "dataset repository contributor",
+      "url": "https://huggingface.co/fukufuk"
+     }
+    ],
+    "kind": "dataset",
+    "measurementSources": [
+     {
+      "name": "Shisa.AI Shaberi",
+      "role": "measurement release",
+      "url": "https://github.com/shisa-ai/shaberi"
+     }
+    ],
+    "producers": [
+     {
+      "name": "Lightblue KK.",
+      "role": "dataset producer",
+      "url": "https://huggingface.co/datasets/lightblue/tengu_bench"
+     }
+    ],
+    "title": "Tengu-Bench",
+    "url": "https://huggingface.co/datasets/lightblue/tengu_bench",
+    "year": "2024"
+   }
+  },
+  "tensortrust": null,
+  "theagentcompany": null,
+  "threeeed": null,
+  "truthfulqa_mc": {
+   "affiliationScope": "first_two_authors_first_listed_institutions",
+   "affiliationStatus": "available",
+   "benchmarkName": "TruthfulQA-MC",
+   "citation": {
+    "bibtex": "@inproceedings{lin2022truthfulqa,\n  title={TruthfulQA: Measuring How Models Mimic Human Falsehoods},\n  author={Lin, Stephanie and Hilton, Jacob and Evans, Owain},\n  booktitle={ACL},\n  year={2022},\n}",
+    "entryType": "inproceedings",
+    "evidenceUrl": "https://arxiv.org/abs/2109.07958",
+    "key": "lin2022truthfulqa",
+    "source": "local_metadata",
+    "status": "available"
+   },
+   "leadAuthorInstitutions": [
+    {
+     "name": "University of Oxford"
+    },
+    {
+     "name": "OpenAI"
+    }
+   ],
+   "metadataPath": "website/content/curated/benchmark-references.json",
+   "metadataSlug": "truthfulqa_mc",
+   "provenance": {
+    "affiliationEvidenceUrl": "https://arxiv.org/abs/2109.07958",
+    "affiliationOverride": null,
+    "affiliationRegistrySource": "page1-llm",
+    "affiliations": "website/content/curated/benchmark-affiliations.json",
+    "alias": null,
+    "authorVerification": {
+     "evidenceUrl": "https://arxiv.org/abs/2109.07958",
+     "expectedCount": 3,
+     "organizationAuthors": [],
+     "reason": "The primary paper identifies exactly three authors."
+    },
+    "citationOverride": null,
+    "referenceOverride": null
+   },
+   "reference": {
+    "authors": [
+     {
+      "bibtexName": "Lin, Stephanie",
+      "kind": "person",
+      "name": "Stephanie Lin"
+     },
+     {
+      "bibtexName": "Hilton, Jacob",
+      "kind": "person",
+      "name": "Jacob Hilton"
+     },
+     {
+      "bibtexName": "Evans, Owain",
+      "kind": "person",
+      "name": "Owain Evans"
+     }
+    ],
+    "contributors": [],
+    "kind": "paper",
+    "measurementSources": [],
+    "producers": [],
+    "title": "TruthfulQA: Measuring How Models Mimic Human Falsehoods",
+    "url": "https://arxiv.org/abs/2109.07958",
+    "year": "2022"
+   }
+  },
+  "tulu_human_eval": null,
+  "tumlu": null,
+  "ultrafeedback": null,
+  "vhelm": null,
+  "visit_bench": null,
+  "visual_riddles": null,
+  "visualwebarena": null,
+  "vl_rewardbench": null,
+  "weavebench": null,
+  "wikihow_agent": null,
+  "wildvision": null,
+  "wmt_mqm": null,
+  "wonderbread": null,
+  "workarena": null,
+  "workbench_revisited": null,
+  "worldcentralbanks": null,
+  "xstest": null
  },
  "coverage": {
-  "benchmarks": 4,
-  "withCitation": 4,
-  "withoutProducerCitation": []
+  "benchmarks": 270,
+  "unreviewed": [
+   "abstract_reason",
+   "adaptivestep",
+   "advprompter",
+   "aegis",
+   "afrieval",
+   "agc_bench",
+   "agentdojo",
+   "agentic_review_perturbation",
+   "agi_elo",
+   "aider",
+   "algotune",
+   "alpacaeval",
+   "alpha_sql",
+   "annotating_errors_wcf",
+   "appworld",
+   "atmossci_bench",
+   "auditing_sabotage_bench",
+   "autoresearchbench",
+   "averimatec",
+   "babilong",
+   "bbq",
+   "beavertails",
+   "bedd_basalt",
+   "benger",
+   "bertaqa",
+   "bird_sql",
+   "brace",
+   "braveguard",
+   "bridging_gap",
+   "care_enzymes",
+   "causal_axioms",
+   "cellverse",
+   "ceobench",
+   "ceval",
+   "chartmuseum",
+   "chatgpt_drift",
+   "chipbench",
+   "clasheval",
+   "classroom_ai",
+   "cmmlu",
+   "coffeebench",
+   "complexbench",
+   "confagents",
+   "corebench",
+   "critic_discernment_game",
+   "crow",
+   "cruxeval",
+   "csedb",
+   "cseo_bench",
+   "das_med_hallucination",
+   "data_juicer2",
+   "dataclawbench",
+   "dave",
+   "dbpa",
+   "decodingtrust",
+   "decompile_bench",
+   "devbench",
+   "disco",
+   "donotanswer",
+   "doris_mae",
+   "dpai",
+   "dqvis",
+   "dtap_bench",
+   "edu_circuit_hw",
+   "eduguardbench",
+   "edumath",
+   "egoschema",
+   "ehrflowbench",
+   "elicitation_game",
+   "embodied_agent_interface",
+   "emoji_attack",
+   "engdesign",
+   "engibench",
+   "enginemt_qa",
+   "erbench",
+   "evouna",
+   "exploitgym",
+   "faithcot",
+   "felm",
+   "fetv",
+   "fewshot_ttt_bbh",
+   "fgbench",
+   "financebench",
+   "find_interp",
+   "finegrain_t2i",
+   "ghosts_math",
+   "goodai_ltm_benchmark",
+   "hallusionbench",
+   "harmbench",
+   "healthadminbench",
+   "helm_afr",
+   "helm_cleva",
+   "hivmedqa",
+   "igakuqa",
+   "igakuqa119",
+   "image2struct",
+   "imgedit",
+   "indeterminacy",
+   "ineqmath",
+   "infibench",
+   "interchangeable_token_embeddings",
+   "intercode",
+   "jailbreakbench",
+   "jetts",
+   "judgetuning",
+   "katakomba",
+   "kernelbench",
+   "kmmlu",
+   "kormedmcqa",
+   "kris_bench",
+   "lambda_fp_course",
+   "legal_rag_bench",
+   "lingoly",
+   "live_agent_risk",
+   "liveaopsbench",
+   "livebench",
+   "llm4ir",
+   "llm_bp_tag",
+   "llm_survey_simulation",
+   "llm_uncertainty_bench",
+   "llmail_inject",
+   "llms_lean_formalization",
+   "lohi_drug_discovery",
+   "mathconstraint",
+   "medagentboard",
+   "medhelm_ehr_sql",
+   "medhelm_head_qa",
+   "medhelm_med_mcqa",
+   "medhelm_med_qa",
+   "medhelm_medbullets",
+   "medhelm_medcalc_bench",
+   "medhelm_medec",
+   "medhelm_medhallu",
+   "medhelm_pubmed_qa",
+   "medhelm_race_based_med",
+   "medwatermark_fws",
+   "mergebench",
+   "mind2web",
+   "mj_bench",
+   "mlip_arena",
+   "mlrbench",
+   "mmedbench",
+   "mmoral_bench",
+   "mochi",
+   "moe_cap",
+   "monkey_power_laws",
+   "morphkv",
+   "morqa",
+   "mtbbench",
+   "multi_moe",
+   "multimodal_stem_ai",
+   "mypcbench",
+   "naep_llm_students",
+   "nanobaselib",
+   "naturalreasoning",
+   "naturebench",
+   "nester",
+   "nis3d",
+   "nyu_ctf_bench",
+   "oasst",
+   "ocrbench_v2",
+   "ood_prediction",
+   "openbiorq",
+   "os_harm",
+   "perfcodebench",
+   "perumedqa",
+   "phyblock",
+   "pku_saferlhf",
+   "planbench",
+   "prism",
+   "prm800k",
+   "proofaug",
+   "proteininvbench",
+   "prox",
+   "psychosis_bench",
+   "putnam_axiom",
+   "pxplore",
+   "qatch",
+   "radar",
+   "rakuda",
+   "rclicks",
+   "real_pocqi",
+   "realtimeqa",
+   "reasoning_gym",
+   "refgrader",
+   "reliancescope",
+   "researchclawbench",
+   "revolve",
+   "risebench",
+   "robust_reasoning_benchmark",
+   "safeagentbench",
+   "scale_mrt",
+   "sciarena",
+   "scigym",
+   "sgrades",
+   "sib200",
+   "sketchjudge",
+   "software_world_models",
+   "stanford_orb",
+   "statqa",
+   "subjective_qa",
+   "sugarcrepe",
+   "summeval",
+   "sustainable_food",
+   "svrpbench",
+   "swe_smith",
+   "swebench_live",
+   "swepolybench",
+   "synthpai",
+   "tabarena",
+   "taubench",
+   "tensortrust",
+   "theagentcompany",
+   "threeeed",
+   "tulu_human_eval",
+   "tumlu",
+   "ultrafeedback",
+   "vhelm",
+   "visit_bench",
+   "visual_riddles",
+   "visualwebarena",
+   "vl_rewardbench",
+   "weavebench",
+   "wikihow_agent",
+   "wildvision",
+   "wmt_mqm",
+   "wonderbread",
+   "workarena",
+   "workbench_revisited",
+   "worldcentralbanks",
+   "xstest"
+  ],
+  "withCitation": 38,
+  "withoutProducerCitation": [
+   "tengu"
+  ]
  },
  "schemaVersion": 1
 }
