@@ -157,13 +157,14 @@ export type BenchmarkAttributionCoverage = {
   benchmarks: number;
   withCitation: number;
   withoutProducerCitation: readonly string[];
+  unreviewed?: readonly string[];
 };
 
 type BenchmarkAttributionManifest = {
   schemaVersion: 1;
   affiliationScope: typeof LEAD_AUTHOR_AFFILIATION_SCOPE;
   coverage: BenchmarkAttributionCoverage;
-  benchmarks: Readonly<Record<string, BenchmarkAttribution>>;
+  benchmarks: Readonly<Record<string, BenchmarkAttribution | null>>;
 };
 
 const manifest = attributionJson as unknown as BenchmarkAttributionManifest;
@@ -200,5 +201,5 @@ if (
 export function getBenchmarkAttribution(
   slug: string,
 ): BenchmarkAttribution | undefined {
-  return manifest.benchmarks[slug];
+  return manifest.benchmarks[slug] ?? undefined;
 }

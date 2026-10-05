@@ -1,11 +1,9 @@
 """Response filename compatibility in the gallery's batch scripts."""
 
-import ast
 import json
 import runpy
 import shutil
 from pathlib import Path
-from unittest.mock import patch
 
 import pandas as pd
 import pytest
@@ -47,27 +45,3 @@ def test_model_statistics_accept_both_names_and_prefer_canonical(tmp_path, filen
     result = pd.read_csv(tmp_path / "artifacts/render_website/model_statistics.csv")
     assert result.total_items_asked.tolist() == [2]
     assert result.total_responses.tolist() == [2]
-
-
-def test_publication_filter_recognizes_both_names_but_requires_response_data(tmp_path):
-    script = script_copy(tmp_path, "select_published_benchmarks.py")
-    included = next(ast.literal_eval(node.value) for node in ast.parse(script.read_text()).body
-                    if isinstance(node, ast.Assign)
-                    and any(isinstance(target, ast.Name) and target.id == "INCLUDED"
-                            for target in node.targets))
-    files = [f"{slug}/benchmarks.parquet" for slug in included]
-    files += ["canonical/responses.parquet", "legacy/response.parquet",
-              "no_responses/benchmarks.parquet", "too_small/responses.parquet"]
-
-    def metadata(path):
-        return pd.DataFrame({"n_subjects": [1 if "/too_small/" in path else 30],
-                             "n_items": [50]})
-
-    with (
-        patch("huggingface_hub.list_repo_files", return_value=files),
-        patch("pandas.read_parquet", side_effect=metadata),
-    ):
-        runpy.run_path(str(script), run_name="__main__")
-
-    published = json.loads((tmp_path / "website/content/generated/published-benchmarks.json").read_text())
-    assert set(published) == included | {"canonical", "legacy"}

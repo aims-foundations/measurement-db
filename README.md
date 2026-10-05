@@ -23,6 +23,14 @@ data refresh, and validation commands. Viewer data is built directly from
 `aims-foundations/measurement-db` on Hugging Face and included in the Vercel
 deployment; no private-bank fallback or separate gallery service is used.
 
+Merging changes under `benchmarks/` into `main` automatically refreshes and
+deploys the website using the tables already published on public HF. The workflow
+discovers new HF benchmarks automatically and retains the website's explicit
+hidden-benchmark list. It does not execute benchmark builders or upload tables;
+the benchmark reproducibility workflow remains a separate correctness check.
+If tables are released after the merge, manually run **Deploy website to Vercel**
+on `main` to refresh the website.
+
 ## Contributing
 
 Curating a benchmark is not simply a data-cleaning task. It requires reconstructing what was measured, which systems were evaluated, how the evaluation was conducted, and what each recorded outcome means. Contributors will gain firsthand experience with the structure and limitations of modern AI evaluation data. For participants in the Predictive AI Evaluation Competition, this work can also inform the development of prediction methods and expand the public evidence available for training them. For benchmark authors, curation makes their results easier to discover, compare, and reuse. For measurement researchers and practitioners, it creates a common foundation for studying the validity, reliability, and generalizability of AI evaluations. Under appropriate conditions, contributors will also be eligible for the AI Measurement Data award under the NeurIPS 2026 Predictive AI Evaluation Competition.

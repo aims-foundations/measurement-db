@@ -3,24 +3,45 @@ name: Deploy website to Vercel
 on:
   push:
     branches: [main, migration/tabular-builders-20260924-build-test]
-    paths:
-      - 'website/**'
-      - 'schema.md'
-      - 'scripts/render_website/**'
-      - 'scripts/analyze_measurements/**'
-      - '.github/workflows/deploy-website.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: vercel-measurement-db-${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-  cancel-in-progress: true
-
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the full push for benchmark or website changes
+        id: check
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          website_changed=false
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
+            website_changed=true
+          else
+            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$GITHUB_SHA" -- \
+              benchmarks/ website/ schema.md scripts/render_website/ \
+              scripts/analyze_measurements/ .github/workflows/deploy-website.yml)
+            if [ -n "$changed_paths" ]; then website_changed=true; fi
+          fi
+          echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
+
   deploy:
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test'
+    needs: changes
+    if: >-
+      needs.changes.outputs.deploy == 'true' &&
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test')
+    concurrency:
+      group: vercel-measurement-db-${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -37,6 +58,8 @@ jobs:
       MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'

@@ -172,6 +172,26 @@ class StaticMetadataTests(unittest.TestCase):
 
 
 class RepositoryManifestTests(unittest.TestCase):
+    def test_new_public_benchmark_can_use_its_hf_source_credit(self):
+        with TemporaryDirectory() as tmp:
+            cards = Path(tmp) / "cards.json"
+            rows = json.loads(CARDS_PATH.read_text())
+            cards.write_text(json.dumps([*rows, {"slug": "new_public_benchmark", "name": "New benchmark"}]))
+            manifest = generator.build_manifest(cards_path=cards)
+        self.assertIsNone(manifest["benchmarks"]["new_public_benchmark"])
+        self.assertEqual(manifest["coverage"]["unreviewed"], ["new_public_benchmark"])
+        self.assertNotIn("new_public_benchmark", manifest["coverage"]["withoutProducerCitation"])
+        self.assertEqual(manifest["coverage"]["withCitation"], self.generated["coverage"]["withCitation"])
+
+    def test_incomplete_existing_curated_credit_still_fails(self):
+        with TemporaryDirectory() as tmp:
+            overrides = json.loads(generator.DEFAULT_OVERRIDES_PATH.read_text())
+            overrides["authorVerifications"].pop("researchcodebench")
+            path = Path(tmp) / "overrides.json"
+            path.write_text(json.dumps(overrides))
+            with self.assertRaisesRegex(generator.AttributionError, "primary-source count verification"):
+                generator.build_manifest(overrides_path=path)
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.generated = generator.build_manifest()

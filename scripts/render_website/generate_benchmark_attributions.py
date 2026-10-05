@@ -683,9 +683,10 @@ def build_manifest(
     )
     visible_slugs = {str(card.get("slug")) for card in visible_cards}
     references_path = repo_root / "website/content/curated/benchmark-references.json"
-    known_slugs = visible_slugs | set(affiliations.get("benchmarks", {})) | (
+    curated_slugs = set(affiliations.get("benchmarks", {})) | (
         set(_read_json(references_path)) if references_path.exists() else set()
     )
+    known_slugs = visible_slugs | curated_slugs
     aliases = overrides.get("aliases", {})
     reference_overrides = overrides.get("references", {})
     citation_overrides = overrides.get("citations", {})
@@ -705,6 +706,7 @@ def build_manifest(
             raise AttributionError(
                 f"{overrides_path}: {label} contain unknown slugs {orphaned}"
             )
+        curated_slugs.update(mapping)
     overlapping_reference_citations = sorted(
         set(reference_overrides) & set(citation_overrides)
     )
@@ -725,6 +727,9 @@ def build_manifest(
     errors: list[str] = []
     for card in visible_cards:
         slug = str(card.get("slug"))
+        if slug not in curated_slugs:
+            records[slug] = None  # The page uses the source links from HF.
+            continue
         try:
             alias = aliases.get(slug)
             metadata_slug = slug
@@ -997,15 +1002,17 @@ def build_manifest(
     unavailable = sorted(
         slug
         for slug, record in records.items()
-        if record["citation"]["status"] != "available"
+        if record is not None and record["citation"]["status"] != "available"
     )
+    unreviewed = sorted(slug for slug, record in records.items() if record is None)
     return {
         "schemaVersion": 1,
         "affiliationScope": AFFILIATION_SCOPE,
         "coverage": {
             "benchmarks": len(records),
-            "withCitation": len(records) - len(unavailable),
+            "withCitation": len(records) - len(unavailable) - len(unreviewed),
             "withoutProducerCitation": unavailable,
+            **({"unreviewed": unreviewed} if unreviewed else {}),
         },
         "benchmarks": records,
     }

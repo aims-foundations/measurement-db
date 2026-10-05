@@ -24,7 +24,6 @@ import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 from huggingface_hub import HfApi, hf_hub_download
 from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
-from huggingface_hub.hf_api import RepoFolder
 
 # Paths and source
 HF_REPO = "aims-foundations/measurement-db"
@@ -32,8 +31,7 @@ HF_REVISION = os.environ.get("HF_REVISION")
 RESPONSE_FILE = "responses.parquet"
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_DIR = SCRIPT_DIR.parents[1]
-GENERATED_CONTENT_DIR = REPO_DIR / "website" / "content" / "generated"
-FILTERED_PATH = GENERATED_CONTENT_DIR / "published-benchmarks.json"
+HIDDEN_PATH = REPO_DIR / "website" / "content" / "curated" / "hidden-benchmarks.json"
 
 # Display metadata
 # Keep domain IDs and order aligned with website/content/measurement-db.ts.
@@ -140,12 +138,12 @@ def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
 
 
 def list_slugs() -> list[str]:
-    entries = HfApi().list_repo_tree(
+    files = HfApi().list_repo_files(
         HF_REPO, repo_type="dataset", revision=source_revision())
-    available = {entry.path for entry in entries if isinstance(entry, RepoFolder)}
-    hidden_path = FILTERED_PATH.parent.parent / "curated/hidden-benchmarks.json"
-    hidden = set(json.loads(hidden_path.read_text())) if hidden_path.exists() else set()
-    return sorted(available & set(json.loads(FILTERED_PATH.read_text())) - hidden)
+    available = {path.split("/")[0] for path in files
+                 if path.count("/") == 1 and path.endswith("/benchmarks.parquet")}
+    hidden = set(json.loads(HIDDEN_PATH.read_text())) if HIDDEN_PATH.exists() else set()
+    return sorted(available - hidden)
 
 
 def load_overrides(web_dir: Path) -> dict:
@@ -202,7 +200,7 @@ def card_for(
     affil: dict,
     saturation: bool | None = None,
 ) -> dict | None:
-    """Use the curated publication list for eligibility; ignore metadata release flags."""
+    """Build a card from the published HF metadata and website display settings."""
     one_line_description = str(
         meta.get("one_line_description") or ""
     ).strip()

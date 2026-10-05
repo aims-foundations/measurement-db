@@ -15,7 +15,6 @@ from unittest.mock import patch
 import httpx
 import pandas as pd
 from huggingface_hub.errors import GatedRepoError, RevisionNotFoundError
-from huggingface_hub.hf_api import RepoFile
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -401,15 +400,12 @@ class GalleryDownloadTests(unittest.TestCase):
     def test_listing_and_download_share_one_revision(self) -> None:
         gallery.source_revision.cache_clear()
         self.addCleanup(gallery.source_revision.cache_clear)
-        entry = gallery.RepoFolder(path="fixture", oid="folder")
         with TemporaryDirectory() as tmp, patch.object(gallery, "HfApi") as api:
             api.return_value.dataset_info.return_value.sha = "pinned-commit"
-            api.return_value.list_repo_tree.return_value = iter([entry])
-            curated = Path(tmp) / "published.json"
-            curated.write_text(json.dumps(["fixture"]))
-            with patch.object(gallery, "FILTERED_PATH", curated):
+            api.return_value.list_repo_files.return_value = ["fixture/benchmarks.parquet"]
+            with patch.object(gallery, "HIDDEN_PATH", Path(tmp) / "hidden.json"):
                 self.assertEqual(gallery.list_slugs(), ["fixture"])
-            api.return_value.list_repo_tree.assert_called_once_with(
+            api.return_value.list_repo_files.assert_called_once_with(
                 gallery.HF_REPO, repo_type="dataset", revision="pinned-commit",
             )
             sdk_file = Path(tmp) / "sdk-file"
@@ -419,22 +415,20 @@ class GalleryDownloadTests(unittest.TestCase):
                 self.assertEqual(download.call_args.kwargs["revision"], "pinned-commit")
             api.return_value.dataset_info.assert_called_once_with(gallery.HF_REPO)
 
-    def test_sdk_listing_preserves_curated_slugs(self) -> None:
-        entries = (
-            gallery.RepoFolder(path="fixture", oid="folder"),
-            gallery.RepoFolder(path="unpublished", oid="other-folder"),
-            RepoFile(path="README.md", size=1, oid="root-file"),
-        )
+    def test_new_public_benchmarks_are_discovered_without_an_allowlist(self) -> None:
+        files = ["fixture/benchmarks.parquet", "new_benchmark/benchmarks.parquet",
+                 "hidden/benchmarks.parquet", "assets/image.png", "README.md",
+                 "archive/old/benchmarks.parquet", "unfinished/items.parquet"]
         with TemporaryDirectory() as tmp:
-            curated = Path(tmp) / "published.json"
-            curated.write_text(json.dumps(["fixture", "absent"]))
+            hidden = Path(tmp) / "hidden.json"
+            hidden.write_text(json.dumps(["hidden"]))
             with (
                 patch.object(gallery, "HfApi") as api,
                 patch.object(gallery, "source_revision", return_value="pinned-commit"),
-                patch.object(gallery, "FILTERED_PATH", curated),
+                patch.object(gallery, "HIDDEN_PATH", hidden),
             ):
-                api.return_value.list_repo_tree.return_value = iter(entries)
-                self.assertEqual(gallery.list_slugs(), ["fixture"])
+                api.return_value.list_repo_files.return_value = files
+                self.assertEqual(gallery.list_slugs(), ["fixture", "new_benchmark"])
 
 
 class GallerySchemaCompatibilityTests(unittest.TestCase):

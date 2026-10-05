@@ -32,11 +32,16 @@ Open `http://localhost:3000/measurement-db`. For a remote server, forward port
 3000 over SSH. After generating the data, `pnpm --dir website dev` also works.
 `HF_TOKEN` is optional build authentication; the website does not need it at runtime.
 
-`build` selects available public benchmarks from `published-benchmarks.json`,
-excluding `hidden-benchmarks.json`. It replaces the catalog and removes obsolete
+`build` discovers benchmarks with a top-level `<slug>/benchmarks.parquet` on the
+public HF repository, excluding `hidden-benchmarks.json`. New releases need no
+catalog allowlist update. It replaces the catalog and removes obsolete
 viewer outputs. `build slug1,slug2` makes a smaller preview. Existing visibility
 rules currently select four of the six public benchmarks; no private-bank fallback
 is used to fill the catalog.
+
+Existing reviewed author credits are retained. New benchmarks initially show
+the paper and original source links from their HF metadata. Curated
+author and institution records can be added later without blocking the page.
 
 `--cache-dir` selects the HF SDK download cache. Responses prefer
 `responses.parquet`, with `response.parquet` accepted only when HF reports the
@@ -61,9 +66,18 @@ revision's `assets.parquet` and included with the item.
 
 `.github/workflows/deploy-website.yml` builds data from a single public HF commit,
 then builds and deploys Next.js to the existing Vercel project. Pushes to `main`
-deploy production; pushes to `migration/tabular-builders-20260924-build-test`
+that change `benchmarks/`, website code, or rendering/analysis scripts deploy
+production; equivalent pushes to `migration/tabular-builders-20260924-build-test`
 deploy the preview at `measurement-db-build-test.vercel.app/measurement-db`.
-The workflow can also be run manually. HF updates appear after a new deployment.
+The workflow checks the full push diff, including merges with more than 300
+changed files. Unrelated changes skip deployment. Manual runs refresh the data
+even without code changes. The deployment checks out the latest branch contents
+and pins one public HF revision for the build.
+
+Tables must already be published on HF before the merge. This workflow neither
+executes benchmark builders nor uploads tables; reproduction CI remains separate.
+If the HF release happens later, run **Deploy website to Vercel** manually on
+`main` to refresh production.
 
 GitHub Actions needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
 The reused Vercel project has the historical name `measurement-db-private`;
@@ -78,7 +92,8 @@ ownership is switched. `GALLERY_DATA_ORIGIN` is no longer used.
 python -m pytest -q tests/test_ai_subjects.py tests/test_benchmark_saturation.py \
   tests/test_fit_rasch_models.py tests/test_generate_benchmark_attributions.py \
   tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py \
-  tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py
+  tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py \
+  tests/test_website_deployment.py
 python scripts/render_website/generate_benchmark_attributions.py --check
 pnpm --dir website lint
 pnpm --dir website typecheck

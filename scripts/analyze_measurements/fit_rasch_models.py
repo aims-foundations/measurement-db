@@ -29,7 +29,7 @@ Usage
     # several
     python scripts/analyze_measurements/fit_rasch_models.py helm_harmbench afrimedqa mmlu
 
-    # every benchmark currently on the website (published-benchmarks.json)
+    # Every benchmark currently on the website (benchmark-cards.json).
     python scripts/analyze_measurements/fit_rasch_models.py --all
 
     # ... and refresh the numbers the website shows

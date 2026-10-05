@@ -72,7 +72,7 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
   // Absent for graded benchmarks — fit_rasch_models.py only fits native 0/1 responses.
   const irt = getBenchmarkIrt(slug) ?? null;
 
-  if (!benchmark || !detail || !attribution) {
+  if (!detail) {
     notFound();
   }
 
@@ -91,11 +91,29 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
         title={benchmark.name}
         description={detail.description ?? benchmark.description}
         aside={
-          <BenchmarkCreditPanel
-            attribution={attribution}
-            originalSourceHref={benchmark.code}
-            className="min-w-0 !bg-white/90 !p-5 sm:!p-6"
-          />
+          attribution ? (
+            <BenchmarkCreditPanel
+              attribution={attribution}
+              originalSourceHref={benchmark.code}
+              className="min-w-0 !bg-white/90 !p-5 sm:!p-6"
+            />
+          ) : (
+            <div className="rd-card min-w-0 gap-4 !bg-white/90 !p-5 sm:!p-6">
+              <h2 className="rd-h3">Source</h2>
+              <div className="flex flex-wrap gap-3">
+                {benchmark.paper ? (
+                  <ActionLink href={benchmark.paper} external>
+                    Paper
+                  </ActionLink>
+                ) : null}
+                {benchmark.code ? (
+                  <ActionLink href={benchmark.code} external>
+                    Original source
+                  </ActionLink>
+                ) : null}
+              </div>
+            </div>
+          )
         }
       >
         <div className="flex min-w-0 flex-col gap-6">
