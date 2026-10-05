@@ -1,0 +1,2543 @@
+{
+  "aaar": {
+    "image": "/benchmarks/aaar.png",
+    "fit": "contain"
+  },
+  "abstentionbench": {
+    "image": "/benchmarks/abstentionbench.png",
+    "fit": "contain"
+  },
+  "abstract_reason": {
+    "image": "/benchmarks/abstract_reason.png",
+    "fit": "cover"
+  },
+  "adaptivestep": {
+    "image": "/benchmarks/adaptivestep.png",
+    "fit": "cover"
+  },
+  "advprompter": {
+    "image": "/benchmarks/advprompter.png",
+    "fit": "cover"
+  },
+  "affectgpt": {
+    "image": "/benchmarks/affectgpt.png",
+    "fit": "cover"
+  },
+  "afrimedqa": {
+    "joined": true,
+    "image": "/benchmarks/afrimedqa.png",
+    "fit": "cover",
+    "bandLabels": {
+      "source": {
+        "afrimedqa-v1": "Phase-1 crowdsourced MCQs (v1)",
+        "afrimedqa-v2": "Phase-2 expert MCQs (v2)",
+        "afrimedqa-v2.5": "Phase-2 subset, 289 items (v2.5)"
+      },
+      "prompt": {
+        "base": "Plain prompt",
+        "instruct": "Doctor-persona prompt"
+      },
+      "explanation": {
+        "yes": "Rationale requested",
+        "no": "Answer letter only"
+      },
+      "shot": {
+        "3": "3-shot",
+        "5": "5-shot"
+      }
+    }
+  },
+  "agc_bench": {
+    "joined": true,
+    "image": "/benchmarks/agc_bench.png",
+    "fit": "contain",
+    "blockDim": "dataset",
+    "blockOrder": [
+      "moh_x",
+      "lcc_metaphor",
+      "munch",
+      "fig_qa",
+      "arn",
+      "humor_transfer",
+      "nyt_connections",
+      "chinese_homophonic_puns",
+      "pun_eval",
+      "slang_generation",
+      "creatset",
+      "ttcw"
+    ],
+    "bandLabels": {
+      "dataset": {
+        "moh_x": "Metaphor detection: verbs · is the named verb metaphorical here? Yes/No",
+        "lcc_metaphor": "Metaphor detection: any word · is the named word metaphorical here? Yes/No",
+        "munch": "Metaphor paraphrase choice · which substitute keeps the meaning (A/B/both/neither)",
+        "fig_qa": "Simile interpretation · which of two readings is meant",
+        "arn": "Narrative analogy · which of two stories carries the same proverb",
+        "humor_transfer": "Satire detection · asked \"is this funny?\", graded on satirical vs real news headline",
+        "nyt_connections": "NYT Connections puzzle · sort 16 words into 4 groups, all-or-nothing",
+        "chinese_homophonic_puns": "Chinese homophone puns · name the word the joke turns on",
+        "pun_eval": "Pun writing · compose a pun on a keyword; raters judge whether it is one",
+        "slang_generation": "Slang generation · scored on whether the required JSON parses, not on the term",
+        "creatset": "Open-ended writing (Chinese) · pairwise judge against a baseline answer",
+        "ttcw": "Creative-writing critique · Yes/No question on a story, vs expert-panel majority"
+      }
+    }
+  },
+  "agentboard": {
+    "image": "/benchmarks/agentboard.png",
+    "fit": "cover"
+  },
+  "agentdojo": {
+    "image": "/benchmarks/agentdojo.png",
+    "fit": "cover"
+  },
+  "agentic_review_perturbation": {
+    "image": "/benchmarks/agentic_review_perturbation.png",
+    "fit": "contain"
+  },
+  "agents_last_exam": {
+    "joined": true,
+    "image": "/benchmarks/agents_last_exam.png",
+    "fit": "contain",
+    "note": "ALE publicly releases 153 of its 1,490 task instances and holds the remainder in a private pool.",
+    "blockDim": "tier",
+    "bandLabels": {
+      "harness": {
+        "ale_claw": "ALE-Claw",
+        "claude_code": "Claude Code",
+        "codex": "Codex",
+        "cursor_cli": "Cursor CLI",
+        "gemini_cli": "Gemini CLI",
+        "grok_build": "Grok Build",
+        "kimi_code": "Kimi Code",
+        "openclaw": "OpenClaw",
+        "openclaw_cli": "OpenClaw CLI"
+      },
+      "reasoning_effort": {
+        "low": "reasoning effort: low",
+        "medium": "reasoning effort: medium",
+        "high": "reasoning effort: high",
+        "xhigh": "reasoning effort: extra high",
+        "max": "reasoning effort: max",
+        "adaptive": "reasoning effort: adaptive"
+      },
+      "tier": {
+        "near-term": "Near-term · agents partly succeed today",
+        "full-spectrum": "Full-spectrum · one task per subdomain",
+        "last-exam": "Last-exam · hardest, most agents score 0"
+      }
+    },
+    "bandOrder": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max",
+      "adaptive"
+    ],
+    "blockOrder": [
+      "near-term",
+      "full-spectrum",
+      "last-exam"
+    ]
+  },
+  "agmmu": {
+    "image": "/benchmarks/agmmu.png",
+    "fit": "contain"
+  },
+  "ai2d_test": {
+    "image": "/benchmarks/ai2d_test.jpg",
+    "fit": "cover"
+  },
+  "ale_bench": {
+    "image": "/benchmarks/ale_bench.png",
+    "fit": "cover"
+  },
+  "algotune": {
+    "image": "/benchmarks/algotune.png",
+    "fit": "contain"
+  },
+  "alignment_faking": {
+    "image": "/benchmarks/alignment_faking.png",
+    "fit": "cover",
+    "bandLabels": {
+      "tier": {
+        "free": "Free-tier user · the model is told this conversation will be used for RL training",
+        "paid": "Paid-tier user · the model is told this conversation is not monitored or trained on"
+      },
+      "step": {
+        "0": "RL training step 0",
+        "1": "RL training step 1",
+        "2": "RL training step 2",
+        "3": "RL training step 3",
+        "4": "RL training step 4",
+        "5": "RL training step 5",
+        "6": "RL training step 6",
+        "7": "RL training step 7",
+        "8": "RL training step 8",
+        "9": "RL training step 9",
+        "10": "RL training step 10",
+        "11": "RL training step 11",
+        "12": "RL training step 12",
+        "13": "RL training step 13",
+        "14": "RL training step 14",
+        "15": "RL training step 15",
+        "16": "RL training step 16",
+        "17": "RL training step 17",
+        "18": "RL training step 18",
+        "19": "RL training step 19",
+        "20": "RL training step 20",
+        "21": "RL training step 21",
+        "22": "RL training step 22",
+        "23": "RL training step 23",
+        "24": "RL training step 24",
+        "25": "RL training step 25",
+        "26": "RL training step 26",
+        "27": "RL training step 27",
+        "28": "RL training step 28",
+        "29": "RL training step 29",
+        "30": "RL training step 30",
+        "31": "RL training step 31"
+      }
+    }
+  },
+  "alpacaeval": {
+    "image": "/benchmarks/alpacaeval.png",
+    "fit": "contain"
+  },
+  "alpha_sql": {
+    "image": "/benchmarks/alpha_sql.png",
+    "fit": "contain"
+  },
+  "annotating_errors_wcf": {
+    "image": "/benchmarks/annotating_errors_wcf.png",
+    "fit": "cover"
+  },
+  "appworld": {
+    "image": "/benchmarks/appworld.png",
+    "fit": "cover"
+  },
+  "arc_agi_3": {
+    "joined": true,
+    "image": "/benchmarks/arc_agi_3.png",
+    "fit": "cover",
+    "note": "ARC Prize publishes per-environment results for the 25 public demo environments only; the 55 semi-private and 55 fully private environments are reported as aggregate scores alone, and ARC Prize states that public-set scores are not a valid measure of progress because systems can be tuned against them. Within the public set an item is one (environment, level) pair. A level's opening frame becomes public only once a released run reaches it: 117 of the 183 levels have one and are curated here, and no evaluated model reached the other 66, so ARC Prize released no content for them. Columns are grouped by level, deepest first; the number beside each level heading is how many environments have a curated level that deep.",
+    "blockDim": "level",
+    "bandLabels": {
+      "reasoning_effort": {
+        "low": "Reasoning effort: low",
+        "medium": "Reasoning effort: medium",
+        "high": "Reasoning effort: high",
+        "xhigh": "Reasoning effort: extra high",
+        "max": "Reasoning effort: max"
+      },
+      "level": {
+        "01": "Level 1",
+        "02": "Level 2",
+        "03": "Level 3",
+        "04": "Level 4",
+        "05": "Level 5",
+        "06": "Level 6",
+        "07": "Level 7",
+        "08": "Level 8"
+      }
+    },
+    "bandOrder": [
+      "low",
+      "medium",
+      "high",
+      "xhigh",
+      "max"
+    ],
+    "blockUnit": "environments",
+    "blockOrder": [
+      "08",
+      "07",
+      "06",
+      "05",
+      "04",
+      "03",
+      "02",
+      "01"
+    ]
+  },
+  "arcagi": {
+    "joined": true,
+    "image": "/benchmarks/arcagi.png",
+    "fit": "cover",
+    "note": "plus leaderboard aggregate scores"
+  },
+  "arena_140k": {
+    "image": "/benchmarks/arena_140k.png",
+    "fit": "cover",
+    "note": "Rows are model pairs, ordered by how many items the pair was compared on; within a row the comparisons are sorted by outcome. A column position is not a shared item — arena prompts are almost never reused across pairs, so cells in the same column are different items."
+  },
+  "arena_hard": {
+    "image": "/benchmarks/arena_hard.png",
+    "fit": "cover"
+  },
+  "atmossci_bench": {
+    "image": "/benchmarks/atmossci_bench.png",
+    "fit": "cover"
+  },
+  "auditing_sabotage_bench": {
+    "image": "/benchmarks/auditing_sabotage_bench.png",
+    "fit": "contain"
+  },
+  "autoelicit": {
+    "image": "/benchmarks/autoelicit.png",
+    "fit": "cover"
+  },
+  "autoresearchbench": {
+    "image": "/benchmarks/autoresearchbench.png",
+    "fit": "contain"
+  },
+  "babilong": {
+    "image": "/benchmarks/babilong.png",
+    "fit": "cover"
+  },
+  "backdoorllm": {
+    "image": "/benchmarks/backdoorllm.png",
+    "fit": "cover"
+  },
+  "benger": {
+    "image": "/benchmarks/benger.png",
+    "fit": "contain"
+  },
+  "bertaqa": {
+    "image": "/benchmarks/bertaqa.png",
+    "fit": "cover"
+  },
+  "bfcl": {
+    "image": "/benchmarks/bfcl.png",
+    "fit": "contain"
+  },
+  "bigfinancebench": {
+    "image": "/benchmarks/bigfinancebench.png",
+    "fit": "contain"
+  },
+  "biggen": {
+    "image": "/benchmarks/biggen.png",
+    "fit": "cover",
+    "bandOrder": [
+      "human",
+      "gpt4",
+      "gpt4_04_turbo",
+      "claude"
+    ],
+    "bandLabels": {
+      "judge": {
+        "human": "Human annotators · reference scores, only 8 of 103 models rated",
+        "gpt4": "Judge: GPT-4-1106",
+        "gpt4_04_turbo": "Judge: GPT-4-Turbo-2024-04-09",
+        "claude": "Judge: Claude-3-Opus"
+      }
+    }
+  },
+  "bird_sql": {
+    "image": "/benchmarks/bird_sql.png",
+    "fit": "contain"
+  },
+  "blink_twice": {
+    "image": "/benchmarks/blink_twice.png",
+    "fit": "cover"
+  },
+  "bmmr": {
+    "image": "/benchmarks/bmmr.png",
+    "fit": "contain"
+  },
+  "bountybench": {
+    "image": "/benchmarks/bountybench.png",
+    "fit": "cover"
+  },
+  "braveguard": {
+    "image": "/benchmarks/braveguard.png",
+    "fit": "contain"
+  },
+  "care_enzymes": {
+    "image": "/benchmarks/care_enzymes.png",
+    "fit": "cover"
+  },
+  "case_bench": {
+    "image": "/benchmarks/case_bench.png",
+    "fit": "contain"
+  },
+  "causal_axioms": {
+    "image": "/benchmarks/causal_axioms.png",
+    "fit": "contain"
+  },
+  "ceobench": {
+    "image": "/benchmarks/ceobench.png",
+    "fit": "cover"
+  },
+  "ceval": {
+    "image": "/benchmarks/ceval.png",
+    "fit": "contain"
+  },
+  "charxiv": {
+    "joined": true,
+    "image": "/benchmarks/charxiv.png",
+    "fit": "cover"
+  },
+  "chemcotbench": {
+    "image": "/benchmarks/chemcotbench.png",
+    "fit": "cover"
+  },
+  "clasheval": {
+    "image": "/benchmarks/clasheval.png",
+    "fit": "cover"
+  },
+  "classroom_ai": {
+    "image": "/benchmarks/classroom_ai.png",
+    "fit": "contain"
+  },
+  "clinbench_llm": {
+    "joined": true,
+    "image": "/benchmarks/clinbench_llm.png",
+    "fit": "cover",
+    "bandOrder": [
+      "histologic_diagnosis",
+      "pT",
+      "pN",
+      "tumor_stage"
+    ],
+    "bandLabels": {
+      "field": {
+        "histologic_diagnosis": "Histologic diagnosis (tumor subtype)",
+        "pT": "Primary tumor category (pT, AJCC 7th ed.)",
+        "pN": "Regional lymph-node category (pN, AJCC 7th ed.)",
+        "tumor_stage": "Overall stage group (AJCC 7th ed., inferred from pT and pN)"
+      }
+    }
+  },
+  "cmm": {
+    "image": "/benchmarks/cmm.png",
+    "fit": "contain"
+  },
+  "cmmlu": {
+    "image": "/benchmarks/cmmlu.png",
+    "fit": "cover"
+  },
+  "coffeebench": {
+    "image": "/benchmarks/coffeebench.png",
+    "fit": "contain"
+  },
+  "complexbench": {
+    "image": "/benchmarks/complexbench.png",
+    "fit": "cover"
+  },
+  "confagents": {
+    "image": "/benchmarks/confagents.png",
+    "fit": "cover"
+  },
+  "core_codereasoning": {
+    "image": "/benchmarks/core_codereasoning.png",
+    "fit": "contain"
+  },
+  "correctbench": {
+    "image": "/benchmarks/correctbench.png",
+    "fit": "contain"
+  },
+  "cot_safety_behaviors": {
+    "image": "/benchmarks/cot_safety_behaviors.png",
+    "fit": "contain"
+  },
+  "critic_discernment_game": {
+    "image": "/benchmarks/critic_discernment_game.png",
+    "fit": "cover"
+  },
+  "crop": {
+    "joined": true,
+    "image": "/benchmarks/crop.png",
+    "fit": "cover",
+    "blockDim": "difficulty",
+    "blockOrder": [
+      "easy",
+      "moderate",
+      "difficult"
+    ],
+    "bandLabels": {
+      "difficulty": {
+        "easy": "Easy · defined as GPT-3.5 and GPT-4 both correct",
+        "moderate": "Moderate · defined as GPT-4 correct, GPT-3.5 wrong",
+        "difficult": "Difficult · defined as GPT-4 wrong"
+      }
+    }
+  },
+  "cross_care": {
+    "image": "/benchmarks/cross_care.png",
+    "fit": "contain"
+  },
+  "crow": {
+    "image": "/benchmarks/crow.png",
+    "fit": "contain"
+  },
+  "csedb": {
+    "image": "/benchmarks/csedb.jpg",
+    "fit": "cover"
+  },
+  "ctibench": {
+    "image": "/benchmarks/ctibench.png",
+    "fit": "cover"
+  },
+  "culturaleval": {
+    "image": "/benchmarks/culturaleval.png",
+    "fit": "contain"
+  },
+  "das_med_hallucination": {
+    "image": "/benchmarks/das_med_hallucination.png",
+    "fit": "contain"
+  },
+  "dataclawbench": {
+    "image": "/benchmarks/dataclawbench.png",
+    "fit": "contain"
+  },
+  "datadecide": {
+    "image": "/benchmarks/datadecide.png",
+    "fit": "cover"
+  },
+  "datasir": {
+    "image": "/benchmarks/datasir.png",
+    "fit": "contain"
+  },
+  "date_lm": {
+    "image": "/benchmarks/date_lm.png",
+    "fit": "contain"
+  },
+  "dbpa": {
+    "image": "/benchmarks/dbpa.png",
+    "fit": "cover"
+  },
+  "deceptionbench": {
+    "image": "/benchmarks/deceptionbench.png",
+    "fit": "contain"
+  },
+  "decodingtrust": {
+    "image": "/benchmarks/decodingtrust.png",
+    "fit": "contain"
+  },
+  "deepfund": {
+    "image": "/benchmarks/deepfund.png",
+    "fit": "contain"
+  },
+  "deepswe": {
+    "joined": true,
+    "bandOrder": [
+      "v1",
+      "v1.1"
+    ],
+    "image": "/benchmarks/deepswe.png",
+    "fit": "cover"
+  },
+  "diagram_understanding": {
+    "image": "/benchmarks/diagram_understanding.png",
+    "fit": "contain"
+  },
+  "disco": {
+    "image": "/benchmarks/disco.png",
+    "fit": "cover"
+  },
+  "donotanswer": {
+    "image": "/benchmarks/donotanswer.png",
+    "fit": "contain"
+  },
+  "doris_mae": {
+    "image": "/benchmarks/doris_mae.png",
+    "fit": "cover"
+  },
+  "dtap_bench": {
+    "image": "/benchmarks/dtap_bench.png",
+    "fit": "contain"
+  },
+  "dynamic_risk_cyber": {
+    "image": "/benchmarks/dynamic_risk_cyber.png",
+    "fit": "contain"
+  },
+  "editbench": {
+    "image": "/benchmarks/editbench.png",
+    "fit": "contain"
+  },
+  "edu_circuit_hw": {
+    "image": "/benchmarks/edu_circuit_hw.png",
+    "fit": "cover"
+  },
+  "eduguardbench": {
+    "image": "/benchmarks/eduguardbench.png",
+    "fit": "contain"
+  },
+  "edumath": {
+    "image": "/benchmarks/edumath.png",
+    "fit": "contain"
+  },
+  "effibench_x": {
+    "image": "/benchmarks/effibench_x.png",
+    "fit": "contain"
+  },
+  "egoschema": {
+    "image": "/benchmarks/egoschema.png",
+    "fit": "cover"
+  },
+  "ehrflowbench": {
+    "image": "/benchmarks/ehrflowbench.png",
+    "fit": "cover"
+  },
+  "elicitation_game": {
+    "image": "/benchmarks/elicitation_game.png",
+    "fit": "cover"
+  },
+  "embodied_web_agents": {
+    "image": "/benchmarks/embodied_web_agents.png",
+    "fit": "cover"
+  },
+  "embodiedbench": {
+    "image": "/benchmarks/embodiedbench.png",
+    "fit": "cover"
+  },
+  "emoji_attack": {
+    "image": "/benchmarks/emoji_attack.png",
+    "fit": "cover"
+  },
+  "endobench": {
+    "image": "/benchmarks/endobench.png",
+    "fit": "contain"
+  },
+  "enginemt_qa": {
+    "image": "/benchmarks/enginemt_qa.png",
+    "fit": "cover"
+  },
+  "eoc_bench": {
+    "image": "/benchmarks/eoc_bench.png",
+    "fit": "cover"
+  },
+  "erbench": {
+    "image": "/benchmarks/erbench.png",
+    "fit": "cover"
+  },
+  "evocode_bench": {
+    "image": "/benchmarks/evocode_bench.png",
+    "fit": "contain"
+  },
+  "evouna": {
+    "image": "/benchmarks/evouna.png",
+    "fit": "cover"
+  },
+  "exact_bench": {
+    "image": "/benchmarks/exact_bench.png",
+    "fit": "contain"
+  },
+  "exploitbench_v8": {
+    "image": "/benchmarks/exploitbench_v8.png",
+    "fit": "contain"
+  },
+  "exploitgym": {
+    "image": "/benchmarks/exploitgym.png",
+    "fit": "cover"
+  },
+  "fantastic_bugs": {
+    "image": "/benchmarks/fantastic_bugs.png",
+    "fit": "cover"
+  },
+  "favor_bench": {
+    "image": "/benchmarks/favor_bench.png",
+    "fit": "cover"
+  },
+  "felm": {
+    "image": "/benchmarks/felm.png",
+    "fit": "cover"
+  },
+  "fewshot_ttt_bbh": {
+    "image": "/benchmarks/fewshot_ttt_bbh.png",
+    "fit": "cover"
+  },
+  "finegrain_t2i": {
+    "image": "/benchmarks/finegrain_t2i.png",
+    "fit": "cover"
+  },
+  "flysearch": {
+    "image": "/benchmarks/flysearch.png",
+    "fit": "cover"
+  },
+  "frontieror": {
+    "image": "/benchmarks/frontieror.png",
+    "fit": "contain",
+    "bandOrder": [
+      "one_shot",
+      "CoRAL",
+      "EoH",
+      "OpenEvolve"
+    ],
+    "bandLabels": {
+      "protocol": {
+        "one_shot": "One-shot program generation",
+        "self_evolve": "Self-evolving search loop"
+      },
+      "framework": {
+        "n/a": "no search framework",
+        "CoRAL": "CoRAL framework",
+        "EoH": "EoH framework (Evolution of Heuristics)",
+        "OpenEvolve": "OpenEvolve framework"
+      }
+    }
+  },
+  "gaia": {
+    "image": "/benchmarks/gaia.png",
+    "fit": "cover"
+  },
+  "gameenginebench": {
+    "image": "/benchmarks/gameenginebench.png",
+    "fit": "cover"
+  },
+  "geckonum": {
+    "image": "/benchmarks/geckonum.png",
+    "fit": "cover"
+  },
+  "gede": {
+    "image": "/benchmarks/gede.png",
+    "fit": "contain"
+  },
+  "genai_learning": {
+    "image": "/benchmarks/genai_learning.png",
+    "fit": "cover",
+    "bandLabels": {
+      "grade": {
+        "9": "Grade 9",
+        "10": "Grade 10",
+        "11": "Grade 11"
+      }
+    },
+    "blockDim": "grade",
+    "blockOrder": [
+      "9",
+      "10",
+      "11"
+    ],
+    "blockUnit": "problems"
+  },
+  "ghosts_math": {
+    "image": "/benchmarks/ghosts_math.png",
+    "fit": "cover"
+  },
+  "gso": {
+    "image": "/benchmarks/gso.png",
+    "fit": "cover"
+  },
+  "guardset_x": {
+    "image": "/benchmarks/guardset_x.png",
+    "fit": "contain"
+  },
+  "h4rm3l": {
+    "image": "/benchmarks/h4rm3l.png",
+    "fit": "contain"
+  },
+  "hallusionbench": {
+    "image": "/benchmarks/hallusionbench.png",
+    "fit": "cover"
+  },
+  "hardmath2": {
+    "image": "/benchmarks/hardmath2.png",
+    "fit": "cover"
+  },
+  "harmbench": {
+    "image": "/benchmarks/harmbench.png",
+    "fit": "contain"
+  },
+  "healthadminbench": {
+    "image": "/benchmarks/healthadminbench.png",
+    "fit": "contain"
+  },
+  "helm_airbench": {
+    "image": "/benchmarks/helm_airbench.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM AIR-Bench leaderboard, which is the benchmark's own evaluation venue rather than a third-party rerun; the panel has grown beyond the 22 models reported by Zeng et al."
+  },
+  "helm_anthropic_redteam": {
+    "image": "/benchmarks/helm_anthropic_redteam.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Safety leaderboard (v1.17.0), which reuses the transcripts as a static item bank; the original release instead records attacks against Anthropic's own 12 model configurations."
+  },
+  "helm_bbq": {
+    "image": "/benchmarks/helm_bbq.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Safety leaderboard (v1.17.0), which re-ran BBQ 0-shot as forced multiple choice at temperature 0 -- not the original evaluation of Parrish et al."
+  },
+  "helm_bold": {
+    "binaryLabels": {
+      "one": "toxic continuation",
+      "zero": "no toxic continuation"
+    },
+    "image": "/benchmarks/helm_bold.png",
+    "fit": "contain",
+    "note": "the original evaluation of Dhamala et al. covered 5 model configurations over all 23,679 prompts"
+  },
+  "helm_harmbench": {
+    "image": "/benchmarks/helm_harmbench.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Safety leaderboard (v1.17.0), which prompts each behavior directly and grades with its own safety classifier; the original HarmBench evaluation wraps behaviors in 16 attack methods and judges with its own Llama-2-13B classifier. Complements the standalone harmbench build."
+  },
+  "helm_real_toxicity_prompts": {
+    "binaryLabels": {
+      "one": "toxic continuation",
+      "zero": "no toxic continuation"
+    },
+    "image": "/benchmarks/helm_real_toxicity_prompts.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Classic leaderboard (v0.4.0) at 5 generations per prompt, temperature 0.9; the original metrics of Gehman et al. are defined over 25 nucleus-sampled generations, so the two are not directly comparable."
+  },
+  "helm_simple_safety_tests": {
+    "image": "/benchmarks/helm_simple_safety_tests.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Safety leaderboard (v1.17.0), run without a system prompt; the original evaluation of Vidgen et al. tested each model under two system-prompt conditions."
+  },
+  "helm_thaiexam": {
+    "image": "/benchmarks/helm_thaiexam.png",
+    "fit": "contain"
+  },
+  "helm_xstest": {
+    "image": "/benchmarks/helm_xstest.png",
+    "fit": "contain",
+    "note": "Responses come from Stanford CRFM's HELM Safety leaderboard (v1.17.0), run without a system prompt; the original evaluation of Rottger et al. labels the same prompts on a 4-level ordinal scale from two human annotators and a GPT-4 judge. Complements the standalone xstest build."
+  },
+  "hist_llm": {
+    "joined": true,
+    "image": "/benchmarks/hist_llm.png",
+    "fit": "cover",
+    "blockDim": "world_region",
+    "blockOrder": [
+      "Northern Africa and Western Asia",
+      "Eastern and South-Eastern Asia",
+      "Central and Southern Asia",
+      "Europe",
+      "Latin America and the Caribbean",
+      "Northern America",
+      "Sub-Saharan Africa",
+      "Oceania"
+    ],
+    "bandLabels": {
+      "world_region": {
+        "Northern Africa and Western Asia": "Northern Africa & Western Asia",
+        "Eastern and South-Eastern Asia": "Eastern & South-Eastern Asia",
+        "Central and Southern Asia": "Central & Southern Asia",
+        "Latin America and the Caribbean": "Latin America & the Caribbean",
+        "Northern America": "Northern America · US only; Mexico is in Latin America",
+        "Europe": "Europe · incl. Siberia (Lena valley) and Iceland"
+      }
+    }
+  },
+  "hivmedqa": {
+    "image": "/benchmarks/hivmedqa.png",
+    "fit": "cover"
+  },
+  "hle": {
+    "image": "/benchmarks/hle.png",
+    "fit": "cover"
+  },
+  "icpc2_code_selector": {
+    "joined": true,
+    "image": "/benchmarks/icpc2_code_selector.png",
+    "fit": "cover"
+  },
+  "icpc_eval": {
+    "image": "/benchmarks/icpc_eval.png",
+    "fit": "contain"
+  },
+  "igakuqa119": {
+    "image": "/benchmarks/igakuqa119.png",
+    "fit": "contain"
+  },
+  "ikp": {
+    "joined": true,
+    "image": "/benchmarks/ikp.png",
+    "fit": "contain"
+  },
+  "imgedit": {
+    "image": "/benchmarks/imgedit.png",
+    "fit": "cover"
+  },
+  "ineq_comp": {
+    "image": "/benchmarks/ineq_comp.png",
+    "fit": "contain"
+  },
+  "ineqmath": {
+    "image": "/benchmarks/ineqmath.png",
+    "fit": "cover"
+  },
+  "infochartqa": {
+    "image": "/benchmarks/infochartqa.png",
+    "fit": "contain"
+  },
+  "jailbreak_audiobench": {
+    "image": "/benchmarks/jailbreak_audiobench.png",
+    "fit": "contain"
+  },
+  "jailbreakbench": {
+    "image": "/benchmarks/jailbreakbench.jpg",
+    "fit": "contain"
+  },
+  "jetts": {
+    "image": "/benchmarks/jetts.png",
+    "fit": "cover"
+  },
+  "judgebench": {
+    "joined": true,
+    "image": "/benchmarks/judgebench.png",
+    "fit": "contain"
+  },
+  "judgetuning": {
+    "joined": false,
+    "image": "/benchmarks/judgetuning.png",
+    "fit": "cover"
+  },
+  "kernelbench": {
+    "image": "/benchmarks/kernelbench.png",
+    "fit": "cover"
+  },
+  "knotgym": {
+    "image": "/benchmarks/knotgym.png",
+    "fit": "contain"
+  },
+  "lambda_fp_course": {
+    "image": "/benchmarks/lambda_fp_course.png",
+    "fit": "contain"
+  },
+  "lawbench": {
+    "image": "/benchmarks/lawbench.png",
+    "fit": "contain",
+    "bandLabels": {
+      "task": {
+        "1-2": "Judicial exam QA",
+        "2-2": "Dispute focus",
+        "2-4": "Consultation topic",
+        "2-8": "Argument mining",
+        "3-6": "Case analysis QA",
+        "3-7": "Crime amount"
+      },
+      "few_shot": {
+        "0": "Zero-shot",
+        "1": "One-shot"
+      }
+    },
+    "note": "LawBench's full bank is 20 subtasks; this page carries the six whose official metric is per-item binary accuracy — judicial-exam and case-analysis multiple choice, dispute-focus and consultation classification, argumentation-mining multiple choice, and crime-amount extraction (2,995 questions). The other 14 subtasks are excluded: upstream scores them with continuous corpus metrics — ROUGE-L, F1 variants, normalized log-distance and F0.5 — that it defines no categorical threshold for. Upstream releases each model's raw predictions rather than per-item grades, so responses here are graded with the authors' own published evaluation code; a prediction naming no option counts as wrong, exactly as in the official accuracy. The zero-shot and one-shot bands are upstream's two released prompt settings. The zero-shot dispute-focus predictions were generated from an older ordering of that task file, so 12 of its 496 questions have no zero-shot observation."
+  },
+  "learning_in_blocks": {
+    "image": "/benchmarks/learning_in_blocks.png",
+    "fit": "contain"
+  },
+  "legal_rag_bench": {
+    "image": "/benchmarks/legal_rag_bench.png",
+    "fit": "contain"
+  },
+  "legalbench": {
+    "joined": true,
+    "image": "/benchmarks/legalbench.png",
+    "fit": "contain",
+    "note": "Scoped to the 5 HELM-Lite tasks with full public per-instance predictions (of LegalBench's 162 total tasks)."
+  },
+  "lexeval": {
+    "image": "/benchmarks/lexeval.png",
+    "fit": "contain",
+    "blockDim": "ability",
+    "blockOrder": [
+      "memorization",
+      "understanding",
+      "logic_inference",
+      "discrimination",
+      "ethics"
+    ],
+    "bandOrder": [
+      "zero_shot",
+      "few_shot"
+    ],
+    "bandLabels": {
+      "setting": {
+        "zero_shot": "Zero-shot prompt · question only",
+        "few_shot": "Few-shot prompt · in-context exemplars prepended by the harness, not recorded in the item text"
+      },
+      "ability": {
+        "memorization": "L1 Memorization · recall statutes and legal doctrine",
+        "understanding": "L2 Understanding · extract facts, entities and relations from case documents",
+        "logic_inference": "L3 Logic inference · apply rules to facts; predict charge and sentence",
+        "discrimination": "L4 Discrimination · match similar cases, judge whether legal writing is sound",
+        "ethics": "L6 Ethics · judge whether conduct is lawful and proper"
+      }
+    },
+    "note": "LexEval contains 23 tasks and 14,150 questions in total. This page includes the 19 objective multiple-choice tasks, comprising 12,468 questions. The four L5 Generation tasks, which evaluate legal drafting, are excluded because the upstream benchmark scores them using ROUGE-L, a continuous text-similarity metric for which no categorical correctness threshold is specified. Their exclusion also explains why the ability levels shown here progress directly from L4 to L6.\n\nThe upstream release provides each model’s raw answers rather than per-item correctness labels. We therefore grade responses using the authors’ published evaluation procedure: exact matching between the option letters extracted from each response and the corresponding gold answer. Unobserved cells reflect the benchmark’s original evaluation coverage."
+  },
+  "lingoly": {
+    "joined": true,
+    "image": "/benchmarks/lingoly.png",
+    "fit": "cover",
+    "bandOrder": [
+      "full",
+      "none"
+    ],
+    "bandLabels": {
+      "context": {
+        "full": "Full problem sheet · linguistic data shown",
+        "none": "No-context control · linguistic data withheld"
+      }
+    }
+  },
+  "live_agent_risk": {
+    "image": "/benchmarks/live_agent_risk.png",
+    "fit": "cover"
+  },
+  "liveaopsbench": {
+    "image": "/benchmarks/liveaopsbench.png",
+    "fit": "cover"
+  },
+  "livecodebench": {
+    "joined": true,
+    "image": "/benchmarks/livecodebench.png",
+    "fit": "contain",
+    "note": "leaderboard-only rows remain aggregate pass@1"
+  },
+  "llm4ir": {
+    "image": "/benchmarks/llm4ir.png",
+    "fit": "contain"
+  },
+  "llm_bp_tag": {
+    "image": "/benchmarks/llm_bp_tag.png",
+    "fit": "cover"
+  },
+  "llm_survey_simulation": {
+    "image": "/benchmarks/llm_survey_simulation.png",
+    "fit": "cover"
+  },
+  "llm_uncertainty_bench": {
+    "image": "/benchmarks/llm_uncertainty_bench.png",
+    "fit": "contain"
+  },
+  "llms_lean_formalization": {
+    "image": "/benchmarks/llms_lean_formalization.png",
+    "fit": "contain"
+  },
+  "loogle_v2": {
+    "image": "/benchmarks/loogle_v2.png",
+    "fit": "contain"
+  },
+  "marine": {
+    "image": "/benchmarks/marine.png",
+    "fit": "cover"
+  },
+  "mars_bench": {
+    "image": "/benchmarks/mars_bench.png",
+    "fit": "cover"
+  },
+  "mast": {
+    "image": "/benchmarks/mast.png",
+    "fit": "cover"
+  },
+  "matharena": {
+    "image": "/benchmarks/matharena.png",
+    "fit": "contain"
+  },
+  "matharena_platform": {
+    "image": "/benchmarks/matharena_platform.png",
+    "fit": "contain",
+    "blockDim": "family",
+    "blockOrder": [
+      "arxivmath",
+      "arxivlean",
+      "brokenarxiv"
+    ],
+    "bandLabels": {
+      "family": {
+        "arxivmath": "ArXivMath · final-answer research problems",
+        "arxivlean": "ArXivLean · Lean 4 proofs, machine-verified",
+        "brokenarxiv": "BrokenArXiv · deliberately false claims, credit for refusing"
+      }
+    }
+  },
+  "mathconstraint": {
+    "image": "/benchmarks/mathconstraint.png",
+    "fit": "contain"
+  },
+  "mathconstruct": {
+    "image": "/benchmarks/mathconstruct.png",
+    "fit": "cover"
+  },
+  "mathvision": {
+    "image": "/benchmarks/mathvision.png",
+    "fit": "cover"
+  },
+  "mathvista_mini": {
+    "image": "/benchmarks/mathvista_mini.png",
+    "fit": "cover"
+  },
+  "medchain": {
+    "image": "/benchmarks/medchain.png",
+    "fit": "contain"
+  },
+  "medhelm_ehr_sql": {
+    "image": "/benchmarks/medhelm_ehr_sql.png",
+    "fit": "cover"
+  },
+  "medhelm_head_qa": {
+    "image": "/benchmarks/medhelm_head_qa.png",
+    "fit": "cover"
+  },
+  "medhelm_med_mcqa": {
+    "image": "/benchmarks/medhelm_med_mcqa.png",
+    "fit": "contain"
+  },
+  "medhelm_med_qa": {
+    "image": "/benchmarks/medhelm_med_qa.jpg",
+    "fit": "cover"
+  },
+  "medhelm_medbullets": {
+    "image": "/benchmarks/medhelm_medbullets.png",
+    "fit": "cover"
+  },
+  "medhelm_medcalc_bench": {
+    "image": "/benchmarks/medhelm_medcalc_bench.png",
+    "fit": "cover"
+  },
+  "medhelm_medec": {
+    "image": "/benchmarks/medhelm_medec.png",
+    "fit": "cover"
+  },
+  "medhelm_medhallu": {
+    "image": "/benchmarks/medhelm_medhallu.png",
+    "fit": "cover"
+  },
+  "medhelm_pubmed_qa": {
+    "image": "/benchmarks/medhelm_pubmed_qa.png",
+    "fit": "contain"
+  },
+  "medhelm_race_based_med": {
+    "image": "/benchmarks/medhelm_race_based_med.png",
+    "fit": "cover"
+  },
+  "medmax": {
+    "image": "/benchmarks/medmax.png",
+    "fit": "contain"
+  },
+  "medwatermark_fws": {
+    "image": "/benchmarks/medwatermark_fws.png",
+    "fit": "cover"
+  },
+  "metaagent": {
+    "image": "/benchmarks/metaagent.png",
+    "fit": "cover"
+  },
+  "mhj": {
+    "image": "/benchmarks/mhj.png",
+    "fit": "cover"
+  },
+  "mind2web2": {
+    "image": "/benchmarks/mind2web2.png",
+    "fit": "contain"
+  },
+  "mindgym": {
+    "image": "/benchmarks/mindgym.png",
+    "fit": "contain"
+  },
+  "mj_bench": {
+    "joined": false,
+    "image": "/benchmarks/mj_bench.png",
+    "fit": "contain"
+  },
+  "mle_dojo": {
+    "image": "/benchmarks/mle_dojo.png",
+    "fit": "contain"
+  },
+  "mlenergy": {
+    "image": "/benchmarks/mlenergy.png",
+    "fit": "contain"
+  },
+  "mm_opera": {
+    "image": "/benchmarks/mm_opera.png",
+    "fit": "contain"
+  },
+  "mmar": {
+    "image": "/benchmarks/mmar.png",
+    "fit": "contain"
+  },
+  "mmbench_v11": {
+    "joined": true,
+    "image": "/benchmarks/mmbench_v11.jpg",
+    "fit": "contain",
+    "blockDim": "skill",
+    "blockOrder": [
+      "coarse_perception",
+      "finegrained_perception (instance-level)",
+      "finegrained_perception (cross-instance)",
+      "attribute_reasoning",
+      "relation_reasoning",
+      "logic_reasoning"
+    ],
+    "bandLabels": {
+      "skill": {
+        "coarse_perception": "Coarse perception · whole-image scene, style, topic, quality, emotion",
+        "finegrained_perception (instance-level)": "Fine-grained perception, one object · attribute/celebrity recognition, localization, OCR",
+        "finegrained_perception (cross-instance)": "Fine-grained perception, several objects · spatial relations, attribute comparison, action",
+        "attribute_reasoning": "Attribute reasoning · physical property, function, identity",
+        "relation_reasoning": "Relation reasoning · social, physical, nature relations",
+        "logic_reasoning": "Logic reasoning · structured image-text, future prediction"
+      }
+    }
+  },
+  "mmdocrag": {
+    "joined": true,
+    "bandLabels": {
+      "condition": {
+        "pure-text/quotes15": "Text-only quotes · 15 retrieved",
+        "pure-text/quotes20": "Text-only quotes · 20 retrieved",
+        "multimodal/quotes15": "Text + image quotes · 15 retrieved",
+        "multimodal/quotes20": "Text + image quotes · 20 retrieved"
+      }
+    },
+    "bandOrder": [
+      "pure-text/quotes15",
+      "pure-text/quotes20",
+      "multimodal/quotes15",
+      "multimodal/quotes20"
+    ],
+    "image": "/benchmarks/mmdocrag.png",
+    "fit": "contain"
+  },
+  "mme": {
+    "image": "/benchmarks/mme.png",
+    "fit": "cover",
+    "blockOrder": [
+      "existence",
+      "count",
+      "position",
+      "color",
+      "posters",
+      "celebrity",
+      "scene",
+      "landmark",
+      "artwork",
+      "OCR",
+      "commonsense_reasoning",
+      "numerical_calculation",
+      "text_translation",
+      "code_reasoning"
+    ],
+    "bandLabels": {
+      "subtask": {
+        "existence": "Perception: object existence · is object X present?",
+        "count": "Perception: object count · are there N of object X?",
+        "position": "Perception: object position · spatial relation between two objects",
+        "color": "Perception: object colour · is there a colour-X object?",
+        "posters": "Perception: movie posters · verify a film's title, director or country",
+        "celebrity": "Perception: celebrities · verify the name of the person in the red box",
+        "scene": "Perception: scene type · was the photo taken in place X?",
+        "landmark": "Perception: landmarks · is this a photo of landmark X?",
+        "artwork": "Perception: artworks · verify medium, title, genre or collection",
+        "OCR": "Perception: OCR · verify text read from the image",
+        "commonsense_reasoning": "Cognition: commonsense reasoning · everyday judgement about the image",
+        "numerical_calculation": "Cognition: arithmetic · verify the answer to a sum shown in the image",
+        "text_translation": "Cognition: translation · verify an English rendering of Chinese in the image",
+        "code_reasoning": "Cognition: code reasoning · verify the output of Python shown as an image"
+      }
+    }
+  },
+  "mmlongbench": {
+    "image": "/benchmarks/mmlongbench.png",
+    "fit": "contain"
+  },
+  "mmlu": {
+    "image": "/benchmarks/mmlu.png",
+    "fit": "contain",
+    "note": "The 14,042 evaluated questions map to 13,937 distinct items (identical question texts share one item). Subject is recorded in test_condition. Model panel capped to 150."
+  },
+  "mmlupro": {
+    "image": "/benchmarks/mmlupro.png",
+    "fit": "cover",
+    "note": "leaderboard per-category aggregates"
+  },
+  "mmmu_dev_val": {
+    "image": "/benchmarks/mmmu_dev_val.png",
+    "fit": "contain"
+  },
+  "mmoral_bench": {
+    "image": "/benchmarks/mmoral_bench.png",
+    "fit": "contain"
+  },
+  "mmperspective": {
+    "image": "/benchmarks/mmperspective.png",
+    "fit": "cover"
+  },
+  "moe_cap": {
+    "image": "/benchmarks/moe_cap.png",
+    "fit": "cover"
+  },
+  "molvision": {
+    "image": "/benchmarks/molvision.png",
+    "fit": "contain"
+  },
+  "monkey_power_laws": {
+    "image": "/benchmarks/monkey_power_laws.png",
+    "fit": "cover"
+  },
+  "morphkv": {
+    "image": "/benchmarks/morphkv.png",
+    "fit": "cover"
+  },
+  "morqa": {
+    "image": "/benchmarks/morqa.png",
+    "fit": "cover"
+  },
+  "mosaic_bench": {
+    "image": "/benchmarks/mosaic_bench.png",
+    "fit": "contain"
+  },
+  "mtbbench": {
+    "image": "/benchmarks/mtbbench.png",
+    "fit": "cover"
+  },
+  "mtbench": {
+    "image": "/benchmarks/mtbench.png",
+    "fit": "cover"
+  },
+  "multi_moe": {
+    "image": "/benchmarks/multi_moe.png",
+    "fit": "cover"
+  },
+  "multi_swebench": {
+    "joined": true,
+    "image": "/benchmarks/multi_swebench.png",
+    "fit": "cover"
+  },
+  "multimodal_stem_ai": {
+    "image": "/benchmarks/multimodal_stem_ai.png",
+    "fit": "cover"
+  },
+  "mvu_eval": {
+    "image": "/benchmarks/mvu_eval.png",
+    "fit": "contain"
+  },
+  "mypcbench": {
+    "image": "/benchmarks/mypcbench.png",
+    "fit": "contain"
+  },
+  "naep_llm_students": {
+    "image": "/benchmarks/naep_llm_students.png",
+    "fit": "contain"
+  },
+  "naturalreasoning": {
+    "image": "/benchmarks/naturalreasoning.png",
+    "fit": "cover"
+  },
+  "naturebench": {
+    "image": "/benchmarks/naturebench.png",
+    "fit": "contain"
+  },
+  "nester": {
+    "image": "/benchmarks/nester.png",
+    "fit": "cover"
+  },
+  "nyu_ctf_bench": {
+    "image": "/benchmarks/nyu_ctf_bench.png",
+    "fit": "cover"
+  },
+  "ocrbench_v2": {
+    "image": "/benchmarks/ocrbench_v2.png",
+    "fit": "cover"
+  },
+  "omnibench": {
+    "image": "/benchmarks/omnibench.png",
+    "fit": "contain"
+  },
+  "ood_prediction": {
+    "image": "/benchmarks/ood_prediction.png",
+    "fit": "cover"
+  },
+  "open_captchaworld": {
+    "image": "/benchmarks/open_captchaworld.png",
+    "fit": "contain"
+  },
+  "openbiorq": {
+    "image": "/benchmarks/openbiorq.png",
+    "fit": "contain"
+  },
+  "or_bench": {
+    "image": "/benchmarks/or_bench.png",
+    "fit": "cover"
+  },
+  "os_harm": {
+    "image": "/benchmarks/os_harm.png",
+    "fit": "cover"
+  },
+  "osworld": {
+    "image": "/benchmarks/osworld.png",
+    "fit": "cover"
+  },
+  "osworld_g": {
+    "image": "/benchmarks/osworld_g.png",
+    "fit": "contain"
+  },
+  "osworld_v2": {
+    "image": "/benchmarks/osworld_v2.png",
+    "fit": "cover",
+    "joined": true,
+    "bandOrder": [
+      "500",
+      "300",
+      "150",
+      "500@300",
+      "500@150"
+    ],
+    "bandLabels": {
+      "step_budget": {
+        "500": "500-step run",
+        "300": "300-step run",
+        "150": "150-step run",
+        "500@300": "500-step run, scored at step 300",
+        "500@150": "500-step run, scored at step 150"
+      }
+    }
+  },
+  "overt": {
+    "image": "/benchmarks/overt.png",
+    "fit": "contain"
+  },
+  "perfcodebench": {
+    "joined": true,
+    "image": "/benchmarks/perfcodebench.png",
+    "fit": "contain",
+    "blockDim": "language",
+    "bandLabels": {
+      "language": {
+        "CUDA": "CUDA · GPU kernels"
+      }
+    }
+  },
+  "perteval": {
+    "image": "/benchmarks/perteval.png",
+    "fit": "cover"
+  },
+  "perumedqa": {
+    "image": "/benchmarks/perumedqa.png",
+    "fit": "cover"
+  },
+  "physics_bench": {
+    "image": "/benchmarks/physics_bench.png",
+    "fit": "contain"
+  },
+  "pku_saferlhf": {
+    "image": "/benchmarks/pku_saferlhf.png",
+    "fit": "cover"
+  },
+  "planbench": {
+    "image": "/benchmarks/planbench.png",
+    "fit": "contain"
+  },
+  "polymath": {
+    "image": "/benchmarks/polymath.png",
+    "fit": "contain"
+  },
+  "potemkin": {
+    "image": "/benchmarks/potemkin.png",
+    "fit": "cover"
+  },
+  "prediction_arena": {
+    "image": "/benchmarks/prediction_arena.png",
+    "fit": "cover"
+  },
+  "preference_dissection": {
+    "image": "/benchmarks/preference_dissection.png",
+    "fit": "contain",
+    "note": "Subjects are the ~32 AI judges; human annotations are filtered out."
+  },
+  "programbench": {
+    "joined": true,
+    "bandLabels": {
+      "reasoning_effort": {
+        "default": "reasoning effort: default",
+        "high": "reasoning effort: high",
+        "xhigh": "reasoning effort: extra high"
+      }
+    },
+    "image": "/benchmarks/programbench.png",
+    "fit": "contain",
+    "note": "Per-(model, task) outcomes for 12 models across 15 agent runs, on upstream's own Resolved / Almost-Resolved thresholds."
+  },
+  "prompt_to_leaderboard": {
+    "image": "/benchmarks/prompt_to_leaderboard.png",
+    "fit": "contain",
+    "note": "Rows are model pairs, ordered by how many items the pair was compared on; within a row the comparisons are sorted by outcome. A column position is not a shared item — arena prompts are almost never reused across pairs, so cells in the same column are different items."
+  },
+  "proofaug": {
+    "image": "/benchmarks/proofaug.png",
+    "fit": "contain"
+  },
+  "prox": {
+    "image": "/benchmarks/prox.png",
+    "fit": "contain"
+  },
+  "psi_traffic": {
+    "image": "/benchmarks/psi_traffic.png",
+    "fit": "cover"
+  },
+  "psychosis_bench": {
+    "image": "/benchmarks/psychosis_bench.png",
+    "fit": "contain"
+  },
+  "putnam_axiom": {
+    "image": "/benchmarks/putnam_axiom.png",
+    "fit": "cover"
+  },
+  "pxplore": {
+    "image": "/benchmarks/pxplore.png",
+    "fit": "cover"
+  },
+  "questbench": {
+    "image": "/benchmarks/questbench.png",
+    "fit": "contain"
+  },
+  "raguard": {
+    "image": "/benchmarks/raguard.png",
+    "fit": "contain"
+  },
+  "rbench_v": {
+    "image": "/benchmarks/rbench_v.png",
+    "fit": "contain"
+  },
+  "rd_agent_quant": {
+    "image": "/benchmarks/rd_agent_quant.png",
+    "fit": "contain"
+  },
+  "re_bench": {
+    "image": "/benchmarks/re_bench.png",
+    "fit": "cover"
+  },
+  "real_pocqi": {
+    "joined": false,
+    "image": "/benchmarks/real_pocqi.png",
+    "fit": "contain"
+  },
+  "real_webagents": {
+    "image": "/benchmarks/real_webagents.png",
+    "fit": "cover",
+    "blockDim": "website",
+    "blockOrder": [
+      "omnizon",
+      "dashdish",
+      "opendining",
+      "staynb",
+      "fly-unified",
+      "udriver",
+      "gomail",
+      "gocalendar",
+      "networkin",
+      "topwork",
+      "zilloft",
+      "marrisuite"
+    ],
+    "bandLabels": {
+      "website": {
+        "omnizon": "Omnizon · Amazon-style shopping",
+        "dashdish": "DashDish · DoorDash-style food delivery",
+        "opendining": "OpenDining · OpenTable-style restaurant booking",
+        "staynb": "Staynb · Airbnb-style stays",
+        "fly-unified": "Fly Unified · United-style flight booking",
+        "udriver": "Udriver · Uber-style ride hailing",
+        "gomail": "GoMail · Gmail clone",
+        "gocalendar": "GoCalendar · Google Calendar clone",
+        "networkin": "NetworkIn · LinkedIn clone",
+        "topwork": "TopWork · Upwork-style freelance jobs",
+        "zilloft": "Zilloft · Zillow-style real estate",
+        "marrisuite": "Marrisuite · Marriott-style hotels"
+      }
+    }
+  },
+  "realmath": {
+    "image": "/benchmarks/realmath.png",
+    "fit": "contain"
+  },
+  "realtimeqa": {
+    "image": "/benchmarks/realtimeqa.png",
+    "fit": "cover"
+  },
+  "recbench": {
+    "image": "/benchmarks/recbench.png",
+    "fit": "contain"
+  },
+  "reeval": {
+    "image": "/benchmarks/reeval.png",
+    "fit": "cover"
+  },
+  "refgrader": {
+    "image": "/benchmarks/refgrader.png",
+    "fit": "contain"
+  },
+  "reliancescope": {
+    "image": "/benchmarks/reliancescope.png",
+    "fit": "cover"
+  },
+  "researchclawbench": {
+    "joined": true,
+    "image": "/benchmarks/researchclawbench.png",
+    "fit": "contain"
+  },
+  "researchcodebench": {
+    "image": "/benchmarks/researchcodebench.png",
+    "fit": "cover",
+    "blockOrder": [
+      "DiffusionDPO",
+      "hyla",
+      "llm-sci-use",
+      "schedule_free",
+      "GPS",
+      "advantage-alignment",
+      "TabDiff",
+      "fractalgen",
+      "grid-cell-conformal-isometry",
+      "SISS",
+      "Tanh-Init",
+      "semanticist",
+      "DyT",
+      "minp",
+      "eomt",
+      "OptimalSteps",
+      "Diff-Transformer",
+      "GMFlow",
+      "REPA-E",
+      "LEN"
+    ],
+    "bandLabels": {
+      "paper": {
+        "advantage-alignment": "Advantage Alignment Algorithms",
+        "Diff-Transformer": "Differential Transformer",
+        "DiffusionDPO": "Diffusion-DPO · preference alignment for diffusion models",
+        "DyT": "Transformers without Normalization · Dynamic Tanh",
+        "eomt": "Your ViT is Secretly an Image Segmentation Model",
+        "fractalgen": "Fractal Generative Models",
+        "GMFlow": "Gaussian Mixture Flow Matching",
+        "GPS": "GPS · Gumbel-prior set-to-set matching",
+        "grid-cell-conformal-isometry": "Conformal Isometry of Grid Cells",
+        "hyla": "Attention as a Hypernetwork",
+        "LEN": "Second-Order Min-Max with Lazy Hessians",
+        "llm-sci-use": "Mapping the Increasing Use of LLMs in Scientific Papers",
+        "minp": "Min-p Sampling",
+        "OptimalSteps": "Optimal Stepsize for Diffusion Sampling",
+        "REPA-E": "REPA-E · end-to-end VAE tuning for latent diffusion",
+        "schedule_free": "The Road Less Scheduled · schedule-free optimization",
+        "semanticist": "Principal Components Enable a New Language of Images",
+        "SISS": "Data Unlearning in Diffusion Models",
+        "TabDiff": "TabDiff · mixed-type tabular diffusion",
+        "Tanh-Init": "Robust Weight Initialization for Tanh Networks"
+      }
+    }
+  },
+  "revolve": {
+    "image": "/benchmarks/revolve.png",
+    "fit": "contain"
+  },
+  "rewardbench": {
+    "image": "/benchmarks/rewardbench.png",
+    "fit": "cover",
+    "blockDim": "category",
+    "blockOrder": [
+      "chat",
+      "chat_hard",
+      "safety",
+      "reasoning"
+    ],
+    "bandLabels": {
+      "category": {
+        "chat": "Chat · open-ended instructions, clearly better vs. clearly worse reply",
+        "chat_hard": "Chat Hard · adversarial pairs where the worse reply looks good",
+        "safety": "Safety · refuse the harmful request, answer the safe look-alike",
+        "reasoning": "Reasoning · math and code, correct solution vs. flawed one"
+      },
+      "scoring": {
+        "direct": "direct reward score",
+        "dpo_implicit_ref": "DPO implicit reward (with SFT reference)",
+        "dpo_implicit_ref_free": "reference-free"
+      }
+    }
+  },
+  "rewardbench2": {
+    "image": "/benchmarks/rewardbench2.png",
+    "fit": "contain",
+    "blockDim": "domain",
+    "blockOrder": [
+      "Factuality",
+      "Precise IF",
+      "Math",
+      "Safety",
+      "Focus",
+      "Ties"
+    ],
+    "bandLabels": {
+      "domain": {
+        "Factuality": "Factuality · pick the response with no false claims",
+        "Precise IF": "Precise instruction following · verifiable constraints",
+        "Math": "Math · pick the correct solution",
+        "Safety": "Safety · comply or refuse appropriately",
+        "Focus": "Focus · prefer the on-topic answer over off-topic rambling",
+        "Ties": "Ties · several answers are correct; rank all of them above the wrong ones"
+      }
+    }
+  },
+  "robo2vlm": {
+    "image": "/benchmarks/robo2vlm.png",
+    "fit": "contain"
+  },
+  "roboflow100_vl": {
+    "image": "/benchmarks/roboflow100_vl.png",
+    "fit": "cover"
+  },
+  "robust_reasoning_benchmark": {
+    "image": "/benchmarks/robust_reasoning_benchmark.png",
+    "fit": "contain"
+  },
+  "sad": {
+    "image": "/benchmarks/sad.png",
+    "fit": "cover"
+  },
+  "scbench_long": {
+    "image": "/benchmarks/scbench_long.png",
+    "fit": "contain"
+  },
+  "sciarena": {
+    "image": "/benchmarks/sciarena.png",
+    "fit": "cover"
+  },
+  "scivisagentbench": {
+    "image": "/benchmarks/scivisagentbench.png",
+    "fit": "cover"
+  },
+  "secodeplt": {
+    "image": "/benchmarks/secodeplt.png",
+    "fit": "contain"
+  },
+  "seephys": {
+    "image": "/benchmarks/seephys.png",
+    "fit": "contain"
+  },
+  "semantic_kg": {
+    "image": "/benchmarks/semantic_kg.png",
+    "fit": "contain"
+  },
+  "sgrades": {
+    "image": "/benchmarks/sgrades.png",
+    "fit": "contain"
+  },
+  "sketchjudge": {
+    "image": "/benchmarks/sketchjudge.png",
+    "fit": "contain"
+  },
+  "sm3_text_to_query": {
+    "image": "/benchmarks/sm3_text_to_query.png",
+    "fit": "cover"
+  },
+  "smmile": {
+    "image": "/benchmarks/smmile.png",
+    "fit": "cover"
+  },
+  "soar_arc": {
+    "image": "/benchmarks/soar_arc.jpg",
+    "fit": "cover"
+  },
+  "software_world_models": {
+    "image": "/benchmarks/software_world_models.png",
+    "fit": "contain"
+  },
+  "solidgeo": {
+    "image": "/benchmarks/solidgeo.png",
+    "fit": "contain"
+  },
+  "sorrybench": {
+    "joined": true,
+    "image": "/benchmarks/sorrybench.png",
+    "fit": "contain",
+    "bandOrder": [
+      "base",
+      "slang",
+      "uncommon_dialects",
+      "technical_terms",
+      "role_play",
+      "authority_endorsement",
+      "expert_endorsement",
+      "evidence-based_persuasion",
+      "logical_appeal",
+      "misrepresentation",
+      "ascii",
+      "caesar",
+      "atbash",
+      "morse",
+      "translate-zh-cn",
+      "translate-fr",
+      "translate-mr",
+      "translate-ta",
+      "translate-ml"
+    ],
+    "bandLabels": {
+      "prompt_style": {
+        "base": "No mutation · plain unsafe instruction",
+        "slang": "Slang rewrite · writing style",
+        "uncommon_dialects": "Uncommon dialect · writing style",
+        "technical_terms": "Technical jargon · writing style",
+        "role_play": "Role-play framing · writing style",
+        "authority_endorsement": "Authority endorsement · persuasion",
+        "expert_endorsement": "Expert endorsement · persuasion",
+        "evidence-based_persuasion": "Cited evidence · persuasion",
+        "logical_appeal": "Logical appeal · persuasion",
+        "misrepresentation": "Misrepresented intent · persuasion",
+        "ascii": "ASCII codes · encoded / encrypted",
+        "caesar": "Caesar cipher · encoded / encrypted",
+        "atbash": "Atbash cipher · encoded / encrypted",
+        "morse": "Morse code · encoded / encrypted",
+        "translate-zh-cn": "Translated to Simplified Chinese · high-resource language",
+        "translate-fr": "Translated to French · high-resource language",
+        "translate-mr": "Translated to Marathi · low-resource language",
+        "translate-ta": "Translated to Tamil · low-resource language",
+        "translate-ml": "Translated to Malayalam · low-resource language"
+      }
+    },
+    "note": "Sparse human-annotated sample over the (model x prompt x style) cube."
+  },
+  "stage_claw": {
+    "image": "/benchmarks/stage_claw.png",
+    "fit": "contain"
+  },
+  "stark": {
+    "image": "/benchmarks/stark.png",
+    "fit": "contain"
+  },
+  "statqa": {
+    "image": "/benchmarks/statqa.png",
+    "fit": "cover"
+  },
+  "subjective_qa": {
+    "image": "/benchmarks/subjective_qa.png",
+    "fit": "cover"
+  },
+  "sugarcrepe": {
+    "image": "/benchmarks/sugarcrepe.png",
+    "fit": "contain"
+  },
+  "supergpqa": {
+    "image": "/benchmarks/supergpqa.png",
+    "fit": "cover"
+  },
+  "sustainable_food": {
+    "joined": false,
+    "image": "/benchmarks/sustainable_food.png",
+    "fit": "cover"
+  },
+  "swe_rebench": {
+    "image": "/benchmarks/swe_rebench.jpg",
+    "fit": "cover"
+  },
+  "swe_smith": {
+    "image": "/benchmarks/swe_smith.png",
+    "fit": "cover"
+  },
+  "swe_together": {
+    "image": "/benchmarks/swe_together.png",
+    "fit": "contain"
+  },
+  "swebench": {
+    "image": "/benchmarks/swebench.png",
+    "fit": "cover"
+  },
+  "swebench_java": {
+    "image": "/benchmarks/swebench_java.png",
+    "fit": "cover"
+  },
+  "synthpai": {
+    "joined": true,
+    "image": "/benchmarks/synthpai.png",
+    "fit": "cover",
+    "blockDim": "attribute",
+    "blockOrder": [
+      "age",
+      "sex",
+      "relationship_status",
+      "education",
+      "occupation",
+      "income_level",
+      "city_country",
+      "birth_city_country"
+    ],
+    "bandLabels": {
+      "attribute": {
+        "age": "Age",
+        "sex": "Sex",
+        "relationship_status": "Relationship status",
+        "education": "Education · degree and field",
+        "occupation": "Occupation",
+        "income_level": "Income level · low/middle/high",
+        "city_country": "Current location · city/country",
+        "birth_city_country": "Birthplace · city/country"
+      }
+    }
+  },
+  "t1_agentic": {
+    "image": "/benchmarks/t1_agentic.png",
+    "fit": "contain"
+  },
+  "tabicl": {
+    "image": "/benchmarks/tabicl.png",
+    "fit": "cover"
+  },
+  "taiwanvqa": {
+    "image": "/benchmarks/taiwanvqa.png",
+    "fit": "cover"
+  },
+  "tau2_bench": {
+    "image": "/benchmarks/tau2_bench.png",
+    "fit": "contain",
+    "bandLabels": {
+      "agent_mode": {
+        "default": "Agent + simulated user",
+        "oracle_plan": "Agent given the oracle plan",
+        "solo": "Agent alone, no user (ticket only)",
+        "solo_oracle_plan": "Agent alone + oracle plan"
+      },
+      "policy_format": {
+        "default": "Policy as prose manual",
+        "workflow": "Policy as workflow rewrite"
+      },
+      "user_sim": {
+        "gpt-4.1-2025-04-14": "User simulator: GPT-4.1",
+        "gpt-5": "User simulator: GPT-5",
+        "gpt-5.2": "User simulator: GPT-5.2",
+        "dummy_user": "No user simulator"
+      },
+      "agent_reasoning_effort": {
+        "high": "Reasoning effort: high",
+        "medium": "Reasoning effort: medium",
+        "none": "Reasoning effort: none",
+        "n/a": "Reasoning effort: not set"
+      },
+      "tau2_build": {
+        "964ef7ae": "Original task bank (build 964ef7ae)",
+        "ade39493": "Original task bank (build ade39493)",
+        "ae497fb2": "Original task bank (build ae497fb2)",
+        "c30d59aa": "Original task bank (build c30d59aa)",
+        "ce61684b": "Original task bank (build ce61684b)",
+        "f125e68a": "Original task bank (build f125e68a)",
+        "7324fb57": "Revised task bank (build 7324fb57)",
+        "ef9454a8": "Revised task bank (build ef9454a8)",
+        "c6047167": "Revised task bank (build c6047167)",
+        "5a629d14": "Revised task bank (build 5a629d14)",
+        "v1.0.1": "Revised task bank (release v1.0.1)"
+      }
+    }
+  },
+  "tau_voice": {
+    "joined": true,
+    "bandLabels": {
+      "speech_complexity": {
+        "none": "Text baseline",
+        "control": "Clean voice",
+        "regular": "Realistic voice",
+        "control_accents": "Clean voice + accents",
+        "control_audio": "Clean voice + noise",
+        "control_behavior": "Clean voice + turn-taking"
+      }
+    },
+    "bandOrder": [
+      "none",
+      "control",
+      "regular",
+      "control_accents",
+      "control_audio",
+      "control_behavior"
+    ],
+    "image": "/benchmarks/tau_voice.png",
+    "fit": "contain",
+    "audio": {
+      "path": "/benchmarks/audio/tau_voice/{subject_id}/{item_id}__modality_{modality}_domain_{domain}_speech_complexity_{speech_complexity}_scaffold_{harness}_trial_{trial}.opus",
+      "subjects": {
+        "40d434be115ccf21": "6be86fd900f9499e",
+        "a1bf3eb3ae4e2d9a": "660ebaa94b8601e1",
+        "9688bd8af42b5386": "f9fa063d505a3596",
+        "37d98bba0545bcc1": "e80178a1593a408d"
+      },
+      "items": {
+        "6332e7a81fbe75e3": "63f270fe53d2c44b",
+        "9785b071926aa7b6": "3f0bffd99e930d8c",
+        "68bac4cfed60653d": "86b13d9174095cd9",
+        "ec69ec8228ec1da3": "8579e340b3d2548a",
+        "4632978e8e47e48d": "1f6e10406e38166b",
+        "776ad6dc053af29c": "b2450790bf15c8f0",
+        "253409113966a19a": "ce385adb4ee8d77b",
+        "e05e32287de97700": "e8821960922a18d7",
+        "f94856e793fd5642": "1a20e4627c7fab58",
+        "6b263275d3da0edf": "f0380b889cccdc50",
+        "f0b96094b42e3c57": "976dca1c2faed5cb",
+        "57c66cfd11ce1693": "f7851f1643050cf3",
+        "aab276b4053e63f3": "1d46e3747a88c02e",
+        "854d1a0f4828f55b": "cdaca2a63db36088",
+        "38152dac1b302f58": "f7f2ad1d3ddd34df",
+        "9f7f0daa512adf57": "12e429379dcebf15",
+        "d6ecc50840da3eb6": "1c9f359c15564aaf",
+        "7cd6e85842b6028d": "646f1b6bef6450d3",
+        "418817a6ac6fddf7": "d29af68645541efd",
+        "78526767cbb33fda": "a6d201161c729261",
+        "36c50f3c5c192073": "dc763c79acf5055d",
+        "5661354961a58c71": "a8091997cdcbbaa9",
+        "e90cb460c46465d7": "58f2c6c78158c03a",
+        "177a251507ad1154": "1196c74b14f9ac98",
+        "15f72393606974be": "bafaeb6460cb5932",
+        "170bb69910c1f3ac": "47b4edd7ea5c689a",
+        "7b850e6be648de35": "501ce1e309e04e18",
+        "d2921b1e04f4309e": "f14166502bd40e6c",
+        "b7b39e832cef8d7c": "5c01b4cb21d37cc7",
+        "909ea7e5a1f3ea60": "62b9446cdf74f5ad",
+        "b56e9112b21fd529": "a48dce94a42f3864",
+        "6eeba972f5219eaa": "0438e2efb263dfae",
+        "d3ffaa0d95610924": "b99cb2047cb6a05d",
+        "30a1afcc8c48ae57": "52f7a2d21f404c19",
+        "a030ef632bf1d7ef": "faed770fc1ecd993",
+        "ccc35691e19f26b3": "685783c189a57ecc",
+        "632f279b7a9a6910": "80cee4438c78e808",
+        "a0db9562d2797364": "3c6dfbdefb3df5f9",
+        "4f97948fb4626b14": "20626b7d2934b521",
+        "0b08321cca8145b3": "13439ec0bdfaca23",
+        "cc952ec13b2af79b": "595c44cc5a914b27",
+        "c1274095a36e4937": "f2fcb9f8512abb89",
+        "ddca66af76fedc62": "a15955b428be1627",
+        "e9c23e9f75518977": "3563e3498fde0ad7",
+        "79f857bc2ff3c8d5": "5c01b6069a03efe4",
+        "dab9389e4b1e4479": "eed19aa5dc55a886",
+        "8cc820c39ce6639f": "6ce5bd873117faf7",
+        "74c5389d9b53aae2": "4e0a6085d18d0d6c",
+        "f5188639ada6fc16": "9f8508bb557fdb1b",
+        "38c0c8e1828e7700": "e693414a8f4053d7",
+        "9930144e8d6c6748": "3e8a0d86f2b00a9f",
+        "7a0ecaf9380dc51c": "f538bfc8941ddec6",
+        "13f7f8ab0391ef28": "151de472065d3767",
+        "20fb944bdea82fd3": "ed4d877b2dca8940",
+        "8e239c8fb407b130": "34af55f6d84e456a",
+        "0319aae5c21b865b": "7211a898e5e8ae93",
+        "94cc2aaba710c2a9": "2676eab1efae95a9",
+        "1ffc4e103d32d0cf": "68db697379453a0d",
+        "3c5bd9cf0a9c23c1": "25da5a1c5b65096e",
+        "975410eec15f60b4": "389cb20aebe1b108",
+        "af2e81d2ebc79761": "e0a3f018f4be6b3d",
+        "4c620c6b4b9dc0dc": "44bc873905c33a4c",
+        "77fafae482ed234c": "774c1234f1802f5d",
+        "9035de7e59878e7d": "8b4c551280cf85e0",
+        "22b2f5b57e0a3758": "92eec6d1788058da",
+        "cfeac657adf4efac": "c0de3013c32cc5fd",
+        "4fc19bcced1fba65": "ab7df32b9d131dd7",
+        "ebd7301354693178": "33abefb39f898ba6",
+        "53d6a8cbb8e52ee2": "3c3725b9df9d4c01",
+        "7bac473ebb207ec5": "a5a5c011e00804a5",
+        "1e7c54d2d5c78d21": "24240127e71c25d8",
+        "38e135db88d1e2da": "e85852ab2efdd220",
+        "af6d00b1f730591e": "0680c82d34a4bde5",
+        "e3306e4d975a7e04": "66872a58e25b890b",
+        "6fd52b317bf453ad": "9bd44b9ae36a1011",
+        "df082b7f86c34c1f": "3fc29660d4764a61",
+        "c59deceb1d993bec": "5a6bdfb7e8d547ae",
+        "11a9370b2a221dd3": "b13e75cd79ce5604",
+        "a1ad6240a7605b4a": "eb1d3713725525d0",
+        "6d44dfde36fd850f": "835a444056369026",
+        "3bc67ad78eab5d27": "a289cfde43daf147",
+        "8b7a228076f55e73": "fada4b4a9bcc8470",
+        "8bc650641a5fb4a1": "7eb8377cb857ce68",
+        "ea4ae358cd8d0249": "6fb92e33ec4b2acd",
+        "0492dd8e918746ab": "0bbb72ca3e075701",
+        "7433dcbfe36a41d3": "e41bef26eb2ab980",
+        "ec8f39e32238ce4b": "eafb0798f0216f7d",
+        "d24267024f392792": "47e845305ea80782",
+        "1ca74d581791676c": "61d76f85a133809a",
+        "d84db014a84a06c4": "fb05bd67f68a8ffa",
+        "c9bad44d79446eb8": "f5b374f10b36f121",
+        "eb401638ce9c3b4b": "2089fd4c208e15f7",
+        "2fec705e72794ada": "411a95d79cdf8c35",
+        "a146af7bfcd09f1f": "7a2cc2580e73003f",
+        "fb191d574a9e2d57": "17cd61024356d178",
+        "510155e308676352": "1a64b1d1b1f9fcf2",
+        "0fb9ab171b499632": "2f48165862ea8ee4",
+        "b241190dec528bbb": "232977273bc37de6",
+        "3d022fca584a59ac": "a4727b2b8fabb049",
+        "84a0ec33cf44c68e": "3730843706f8f1b5",
+        "9acd2a1fab0591db": "219e953ba5c54002",
+        "0cbf992bb6780444": "1cc67dc6b1b2cd28",
+        "ccf14783dffa7d30": "bb62e7f93b41f102",
+        "a58cc38fe90f311e": "d29f63f3d1c868ce",
+        "5c6e6735a34b04a6": "ad125208e8d1134c",
+        "c6362790ea68775d": "9b6078b6ac8e792a",
+        "cf0235adb6a1cf9c": "96ef4c332144b291",
+        "abea71c0ac6f69df": "b27a98bd5737c8dd",
+        "36c90d4884cc3982": "dd194baed867eac1",
+        "156a1f6c9fde3f87": "06e2d1b622cdabad",
+        "cfff74e6abf74441": "4ef9a0453fef944d",
+        "ea69e531df28d749": "94b033cb7d024d54",
+        "e06d4116a86afbde": "db0d492583363db2",
+        "48a849088908b33d": "f58885453cc741ff",
+        "8d0447e954634da1": "ad9388e1a886c620",
+        "9127d9f01bf2e302": "aa88df941f2f6b56",
+        "bef3ef108f2f8163": "7d7fa3dc9e89a3b1",
+        "febdd0c9ae2653d4": "ec44ff3557fa57b9",
+        "151b73467c4b7314": "dfbdaab43ca6b46b",
+        "70e4bd7397e1efa0": "f7e3efe256c46225",
+        "2d26e00a4a464599": "0e9b78b273ea4872",
+        "9adee56f109f2fa2": "3fa668ce4a018370",
+        "3c305eb2d18e610a": "6c2f2a6242a55a6e",
+        "f930a06a6227fe8d": "d46eac2565bfbef2",
+        "5dceb637cb24b5e5": "5918deb10d6384a1",
+        "bad8660fdeb67f22": "4b32d4cf18010815",
+        "8254f74f69973dd9": "71dd4b443dc979a0",
+        "4facf51d89275cfc": "db5eac5b77a50aa7",
+        "95acafb5ad311992": "1439f2b7f4dcfa58",
+        "8b337f59db53afe8": "6a505acc844f0704",
+        "2020ce944436654e": "d793f0d4faf66483",
+        "d81499e135510880": "0ea11b37bdd9fadd",
+        "0b2d590fc30822c7": "8367fb2042a72ff6",
+        "6b359d802139c203": "9807ebc121329dd2",
+        "a2afeaef8eba1e94": "33ddafc660ca850a",
+        "d7343678c52925a4": "d920155bce4af25b",
+        "71a7a14c64aa9518": "f7ea6eb351e32621",
+        "5fa81b30ce2a0c2e": "a716f1ae940cf88d",
+        "419b3955385007db": "63bbfa962f136880",
+        "cbbb24658290f374": "4ca3ccc33bbc8507",
+        "b5231c8433042853": "1cae6f4a5ff096e0",
+        "1cf5c049feb1bd86": "ccb79d7615df2df1",
+        "1ebc61266c911d25": "1b17a80573394cb1",
+        "1943939cc99b67c9": "3d1ab33884c8cee9",
+        "54c17cc05b52b47b": "99d9199315eaf323",
+        "362570369e76cfa0": "6d4ecfd021ce2dc2",
+        "3a6f608d44024305": "92611354df3e252e",
+        "e7e8e1861a4dd347": "f5d0fe7d29259fdb",
+        "6a1ed8d834cf3f8c": "ee0515477e11f788",
+        "2bf4c5e5c75dd0d6": "5587da0e54c2c2d2",
+        "5f2acef095ce34c6": "421cf5fc77fad687",
+        "eb87cf1ccee25bb8": "09bd636d772dbae4",
+        "b015d36a0cd98f5c": "093e3a8a66c97376",
+        "ed205b0341a4d452": "8a1a8accdc66ffd6",
+        "2a18f364ff2ba120": "61033e9ed718a937",
+        "1cefb80b538cc1a2": "f5b2ea96b87a2d59",
+        "011d8cff5439e990": "f20187881fa27e5f",
+        "70fecf7157d4cfd1": "d0c8c1302e2c46ce",
+        "8a0c000b9145a6af": "bbbf60c03a3e907c",
+        "532bcc0b44ecb34c": "acaa9a4b97f201d6",
+        "6b3b625cb55c571d": "16a7eeed27728d93",
+        "b782e6664736e1e6": "b7a0bff4606e0a44",
+        "be353f9cec27b92f": "dfb4abdb3cfb7a62",
+        "00c565e50e77f793": "d92614603a0f3133",
+        "756839a42a1df5c8": "ff8404f0398cf214",
+        "22ed35c0972691b7": "8bd5ae3e5d2c9bc8",
+        "a042aeae5ca00661": "903dffb498cf4fc9",
+        "faa024c8bf847448": "cb465e30eef089ba",
+        "c09362266e9febd0": "d60015073685f38f",
+        "b49dea78d2e60642": "9184953d598979f5",
+        "d3e9f3dc6acdc332": "a5976ec718d03d20",
+        "85cb4d87f23d7ffd": "e5191ac5b503741e",
+        "012fd6a9110c8c57": "e382f1177c1eba36",
+        "1b3692f56dd9de83": "d4efcc63ff4f8fe7",
+        "08e713f9240ea476": "65928102c32a24c3",
+        "114af40c8d66a521": "fee5397c24c84595",
+        "385e9760585d4932": "318d34bf4ab8d134",
+        "62522f7ebd9007d1": "a954618a299ef024",
+        "71d500d5cec69fb7": "88d738e75aad15c5",
+        "b92a20089a57268b": "ee344daf739c7dfc",
+        "5486ec72232ce11c": "dabd534cc976f670",
+        "7c1371993164b09c": "3ad1d436ccd174e3",
+        "7ec22811f17b75f3": "a1f27d6963e77b12",
+        "3aed7809da0cd857": "23a05afa54c7316b",
+        "f5a33ad8b72b096f": "b2099e0803e4e758",
+        "70cab81f6948a9d1": "ebb4cb0bb1710426",
+        "41d18c4fe1ae3bd1": "547312ed3f2fb823",
+        "243f7ef0b8276eda": "2ec5a9ae5ee91bc2",
+        "25b9826cfaab9d56": "4aa534f640f4cca1",
+        "4087a6cc522f0d47": "e2204640ffa301eb",
+        "c67e7e505d6d423e": "81b7e0616fa84322",
+        "6e664d8a9ac8c0a1": "b2740a54952acdb8",
+        "4500ce8ace6e7299": "075f30367c461320",
+        "2ffaf4ce9b61c7cf": "df6a32b6057a1989",
+        "e2f7755c9d6ce28a": "fce14d53cffb9479",
+        "aabfdbd1507ebb26": "51bcd3e1a8808758",
+        "b5884508c9910c6c": "92304fb3881d9fd7",
+        "3e820ea8da9270ae": "50e4fe33c6220abf",
+        "54b0b64b93dc1284": "4e7dab3a95af6e1d",
+        "d8f6ce63e970e630": "ee5ad71b2d772c49",
+        "7b7ee78e3882d916": "2c4037872bff2584",
+        "c84c84c5f4cbe5bd": "7a620cf37cac0b5c",
+        "21e324598133f3bb": "65e3f1503b1da6dd",
+        "1a069845e66ccaff": "79630938ba0f04b5",
+        "bb97f89fcd59e3ca": "2813fbcfe5143e8f",
+        "5eb81aebed96feda": "947be05e46dc6f07",
+        "fbdf66ed7ce75647": "824c6ea8cf0c058d",
+        "d24125d61f4f2877": "85778fae5d1719db",
+        "17ac0d68e192513d": "760dc782d60ba52d",
+        "a4a58049c5de00ae": "a9b901370b90bca6",
+        "f17efbb266dcaef4": "c5270f60c4422183",
+        "6cb7ec65b10d2572": "5cd7a891f743c503",
+        "c8b836ffa42769ee": "9919ed2bf9c1de6d",
+        "2b5817a18a975c94": "0c57c37a9aeaba3a",
+        "bda4e84d1bba679d": "3b464d660b0c56af",
+        "a5f1281f9dc69756": "53a3f3d8172751cf",
+        "0143e69080c862d4": "33da0fd33b78117d",
+        "a984bb031b191f85": "1fa913290bdea84d",
+        "7114033c7cbd9747": "23dc1d8ebb8809b3",
+        "0fe2233a95079810": "9430be1006f2af25",
+        "39966f0d953fde39": "abda89aaba6675eb",
+        "851d0f26b79254fc": "e70eddaee5137cd0",
+        "a3d87a1e98a60e3b": "dbde345020c3f9c9",
+        "b34e076a56ccff74": "1fdd805d1ec72f9c",
+        "563ff797ab62ea25": "b65c1751944ad5a4",
+        "0062adb358eecac5": "6747b363e4885331",
+        "1640694def70b4a8": "54bb7a9be3a64aec",
+        "0fea6414ea25c399": "22bd30710c79ffa0",
+        "c3a6f3532bd04297": "afdc1c17149f2aae",
+        "a6589793ce37566d": "836b2942ea7d0cb0",
+        "efbdff4b9396d44c": "0ee64de6560166ca",
+        "66e3c5e4ca7435ea": "7cda1f5dd03586f4",
+        "d9e853784d43d7d5": "d0dccef944a5cd7c",
+        "d69ece0e9eec8dfc": "a3d08ea41761ed6e",
+        "cc047a71f649e84c": "5e82c0612d68aad7",
+        "7bb31561dd1282d3": "0cc05dac34daa925",
+        "29458002ed68f896": "93b9021d95332259",
+        "5978c4f3da63e542": "a2c167af7e107b08",
+        "f96567ca6b3895de": "b0f957741575db29",
+        "d8f5d6ccb48a0763": "56c6f32818a08e51",
+        "45913677b7486852": "3c76fbf315a6c8e5",
+        "5882b2728deaa4c8": "7dfec7909e8c32af",
+        "0a0408992a39ddf8": "557c92684f844bf3",
+        "f5250272e55c3c46": "046f57a4f6b838a6",
+        "723a10bb7318d172": "715bf1b9fce31538",
+        "3a93ef67e91bfc0e": "5dc7cc5822f3cafe",
+        "27eca76075785f09": "46a1d97a9fa30ba2",
+        "fa7a445c475d0c9a": "cf3051c538d58da7",
+        "9b720ba43c3d7d83": "446feb414d7ecc70",
+        "368a559d03864644": "25d36d4a5b17dc6e",
+        "e763437935b02e8b": "e0c6b0b00010131d",
+        "90028b299f5259e5": "035519a146d8476e",
+        "9d48ba8444f421e3": "0c0b4e012f90a53b",
+        "f834eead3bfafdca": "f95a6e3ec9191331",
+        "efe0b9447ec058c2": "61884fe428603039",
+        "1e75a92004827ca5": "37221a35a169292f",
+        "ab8ec5e4b6136fb5": "4d65bfc2363e457e",
+        "bd905b8b91ead26b": "810b130271d07832",
+        "a021d27381c4f758": "00b927f6a55fe7c5",
+        "6b217b7759cc9852": "9bcfbe0551dbd8fc",
+        "1b32dc766758224f": "4c869f67baa1d90b",
+        "224fc7d347b5b6de": "0a7793f76610a8cf",
+        "15aa2dc2e9d9c652": "436cacebb766b755",
+        "d5ea33f00ac07b7a": "9b401f62ffaf83e4",
+        "d9ebda64d5143876": "d0d5b03bf0710c7d",
+        "1ba4d21c39762725": "3fff4bdf3ef67d5e",
+        "d5d3cb24a47e47c0": "1a3dfbd1cad41345",
+        "211e8d55768aa0e7": "18ffe60dc050ccb5",
+        "a74ce7b4deb3dfb3": "bc70afd732151f12",
+        "4f7bb20e9fef3f95": "57b8c4aebf77b363",
+        "0cc8340c2bfcf211": "456b26cd688a0dc1",
+        "3374ce13de51fe08": "c127c8ef346e419d",
+        "ac09e12b1e8d9ece": "ccf320c0cbff9240",
+        "67dbfef26aba40b9": "10e7ee5a9f4e5845",
+        "e78938cc28aa6e55": "11c23ae2997383c2",
+        "6eb95a3d5fbb4da5": "53433e3aa5fdf2fe",
+        "9a48f9ad779656c6": "270c459b7d14d6de",
+        "4a05639d9cd274ea": "8941a8e09b21d7c9"
+      }
+    }
+  },
+  "tdd_bench_verified": {
+    "image": "/benchmarks/tdd_bench_verified.png",
+    "fit": "contain"
+  },
+  "tengu": {
+    "joined": true,
+    "image": "/benchmarks/tengu.png",
+    "fit": "cover",
+    "bandOrder": [
+      "gpt-4-turbo-preview",
+      "gpt-4.1-2025-04-14",
+      "gpt-5.1-2025-11-13",
+      "gpt-5.1-2025-11-13-oldjudgeprompt",
+      "llmjudge-llama33",
+      "llmjudge-athenev2",
+      "llmjudge-tulu405"
+    ],
+    "bandLabels": {
+      "judge": {
+        "gpt-4-turbo-preview": "Judge: GPT-4 Turbo · Shaberi's original judge",
+        "gpt-4.1-2025-04-14": "Judge: GPT-4.1",
+        "gpt-5.1-2025-11-13": "Judge: GPT-5.1 · stricter 2025-11 prompt",
+        "gpt-5.1-2025-11-13-oldjudgeprompt": "Judge: GPT-5.1 · pre-2025-11 prompt",
+        "llmjudge-llama33": "Judge: Llama 3.3 70B · open-weight judge",
+        "llmjudge-athenev2": "Judge: Athene-V2 72B · open-weight judge",
+        "llmjudge-tulu405": "Judge: Tulu 3 405B FP8 · open-weight judge"
+      }
+    }
+  },
+  "terminal_bench": {
+    "joined": true,
+    "blockOrder": [
+      "easy",
+      "medium",
+      "hard",
+      "unknown"
+    ],
+    "image": "/benchmarks/terminal_bench.png",
+    "fit": "contain"
+  },
+  "terminal_bench_2_1": {
+    "joined": true,
+    "bandLabels": {
+      "agent": {
+        "claude-code": "Claude Code",
+        "codex": "Codex",
+        "gemini-cli": "Gemini CLI",
+        "terminus-2": "Terminus 2"
+      }
+    },
+    "image": "/benchmarks/terminal_bench_2_1.png",
+    "fit": "contain"
+  },
+  "thinkbench": {
+    "image": "/benchmarks/thinkbench.png",
+    "fit": "contain"
+  },
+  "toolbench": {
+    "image": "/benchmarks/toolbench.png",
+    "fit": "contain"
+  },
+  "trauma_voices": {
+    "image": "/benchmarks/trauma_voices.png",
+    "fit": "cover"
+  },
+  "truthfulqa_mc": {
+    "image": "/benchmarks/truthfulqa_mc.png",
+    "fit": "contain",
+    "note": "Model panel capped to 150."
+  },
+  "tua_bench": {
+    "image": "/benchmarks/tua_bench.png",
+    "fit": "contain"
+  },
+  "tulu_human_eval": {
+    "joined": false,
+    "image": "/benchmarks/tulu_human_eval.png",
+    "fit": "cover"
+  },
+  "txbench_pp": {
+    "image": "/benchmarks/txbench_pp.png",
+    "fit": "contain"
+  },
+  "ultrafeedback": {
+    "image": "/benchmarks/ultrafeedback.png",
+    "fit": "contain"
+  },
+  "videogameqa_bench": {
+    "joined": true,
+    "image": "/benchmarks/videogameqa_bench.png",
+    "fit": "cover",
+    "blockDim": "task",
+    "blockOrder": [
+      "glitch_detection",
+      "glitch_detection_video",
+      "bug_report",
+      "bug_report_video"
+    ],
+    "bandLabels": {
+      "task": {
+        "glitch_detection": "Image glitch detection · screenshot, is it glitched? half the items are clean",
+        "glitch_detection_video": "Video glitch detection · gameplay clip, is it glitched? half the items are clean",
+        "bug_report": "Image bug report · screenshot of a real bug, report scored by an LLM judge",
+        "bug_report_video": "Video bug report · gameplay clip of a real bug, report scored by an LLM judge"
+      }
+    }
+  },
+  "videoufo": {
+    "image": "/benchmarks/videoufo.png",
+    "fit": "cover"
+  },
+  "visit_bench": {
+    "joined": false,
+    "image": "/benchmarks/visit_bench.png",
+    "fit": "cover"
+  },
+  "visual_memory": {
+    "image": "/benchmarks/visual_memory.png",
+    "fit": "cover"
+  },
+  "visual_riddles": {
+    "image": "/benchmarks/visual_riddles.png",
+    "fit": "cover"
+  },
+  "vivabench": {
+    "image": "/benchmarks/vivabench.png",
+    "fit": "contain"
+  },
+  "vlm4bio": {
+    "image": "/benchmarks/vlm4bio.png",
+    "fit": "cover"
+  },
+  "vmdt": {
+    "image": "/benchmarks/vmdt.png",
+    "fit": "contain"
+  },
+  "vript_hard": {
+    "image": "/benchmarks/vript_hard.png",
+    "fit": "cover"
+  },
+  "weavebench": {
+    "image": "/benchmarks/weavebench.png",
+    "fit": "contain"
+  },
+  "wikicontradict": {
+    "image": "/benchmarks/wikicontradict.png",
+    "fit": "cover"
+  },
+  "wikihow_agent": {
+    "image": "/benchmarks/wikihow_agent.png",
+    "fit": "contain"
+  },
+  "wildbench": {
+    "joined": true,
+    "bandLabels": {
+      "judge": {
+        "gpt-4o-2024-05-13": "Judge: GPT-4o (WildBench v2.0625)",
+        "gpt-4-turbo-2024-04-09": "Judge: GPT-4 Turbo (WildBench v2.0522)"
+      }
+    },
+    "bandOrder": [
+      "gpt-4o-2024-05-13",
+      "gpt-4-turbo-2024-04-09"
+    ],
+    "image": "/benchmarks/wildbench.png",
+    "fit": "contain"
+  },
+  "wildvision": {
+    "joined": false,
+    "image": "/benchmarks/wildvision.png",
+    "fit": "cover"
+  },
+  "workbench_revisited": {
+    "image": "/benchmarks/workbench_revisited.png",
+    "fit": "contain"
+  },
+  "worldcentralbanks": {
+    "image": "/benchmarks/worldcentralbanks.png",
+    "fit": "cover"
+  },
+  "writingbench": {
+    "image": "/benchmarks/writingbench.png",
+    "fit": "contain"
+  },
+  "swe_chat": {
+    "image": "/benchmarks/swe_chat.png",
+    "fit": "cover",
+    "render": "sessions",
+    "binaryLabels": {
+      "one": "accepted",
+      "zero": "pushed back"
+    },
+    "note": "Observational field data, not a controlled benchmark: every prompt was answered by exactly one system, so this is a per-developer session timeline rather than a subject x item comparison. A cell is one user prompt, blue when the developer accepted the agent's answer and red when their next message pushed back."
+  },
+  "haiid": {
+    "image": "/benchmarks/haiid.png",
+    "fit": "cover",
+    "render": "faceted",
+    "facet": {
+      "band": "task",
+      "bandOrder": [
+        "art",
+        "cities",
+        "sarcasm",
+        "census",
+        "dermatology"
+      ],
+      "panels": [
+        {
+          "key": "pre",
+          "label": "Pre-advice",
+          "match": {
+            "stage": "before_advice"
+          }
+        },
+        {
+          "key": "post_ai",
+          "label": "Post AI advice",
+          "match": {
+            "stage": "after_advice",
+            "advice_framing": "ai"
+          }
+        },
+        {
+          "key": "post_human",
+          "label": "Post human advice",
+          "match": {
+            "stage": "after_advice",
+            "advice_framing": "human"
+          }
+        },
+        {
+          "key": "advisor",
+          "label": "The AI advisor",
+          "match": {
+            "stage": "advice"
+          }
+        }
+      ],
+      "onlyBands": {
+        "advisor": [
+          "dermatology"
+        ]
+      }
+    },
+    "bandLabels": {
+      "task": {
+        "art": "Art period",
+        "cities": "City recognition",
+        "sarcasm": "Sarcasm detection",
+        "census": "Census income",
+        "dermatology": "Dermatology — biopsy or not"
+      }
+    }
+  },
+  "hcast": {
+    "note": "METR withholds most of the HCAST bank to prevent contamination, so only 29 of the 170 task variants in its published run logs have recoverable instruction text; those 29 are the columns here. The 66-task SWAA suite in the same logs has no released item text at all and is not curated. Columns are grouped by how long a skilled human took on the task, which is the axis HCAST was built to measure: a model's row shows how far to the right it still succeeds.",
+    "blockDim": "length",
+    "blockOrder": [
+      "under 15 min",
+      "15-60 min",
+      "1-4 h",
+      "over 4 h"
+    ],
+    "blockUnit": "tasks",
+    "bandOrder": [
+      "th-1.0",
+      "th-1.1",
+      "modular-public",
+      "duet",
+      "flock",
+      "flock-public",
+      "flock-secret",
+      "flock-camel",
+      "metr_agents/react",
+      "mtb/start_metr_task,metr_agents/react",
+      "triframe_inspect/triframe_agent",
+      "mtb/start_metr_task,triframe_inspect/triframe_agent",
+      "None"
+    ],
+    "bandLabels": {
+      "suite": {
+        "th-1.0": "Time-horizon v1.0 · run on Vivaria",
+        "th-1.1": "Time-horizon v1.1 · updated task suite, run on Inspect"
+      },
+      "scaffold": {
+        "modular-public": "Agent: modular · ReAct loop, one bash/python command per step",
+        "duet": "Agent: duet · built for o1-preview, which struggled as an agent under modular",
+        "flock": "Agent: flock",
+        "flock-public": "Agent: flock, public build",
+        "flock-secret": "Agent: flock, held-out build",
+        "flock-camel": "Agent: flock-camel · Codex-specific variant",
+        "metr_agents/react": "Agent: react · Inspect, launched directly",
+        "mtb/start_metr_task,metr_agents/react": "Agent: react · Inspect, launched through the METR task bridge",
+        "triframe_inspect/triframe_agent": "Agent: triframe · Inspect, launched directly; proposes 6 actions and votes",
+        "mtb/start_metr_task,triframe_inspect/triframe_agent": "Agent: triframe · Inspect via the METR task bridge; proposes 6 actions and votes",
+        "None": "Agent: not recorded in the run log"
+      },
+      "length": {
+        "under 15 min": "Human baseline under 15 min",
+        "15-60 min": "Human baseline 15–60 min",
+        "1-4 h": "Human baseline 1–4 h",
+        "over 4 h": "Human baseline over 4 h"
+      }
+    }
+  }
+}

@@ -1,0 +1,1140 @@
+@import "tailwindcss";
+
+/* ============================================================
+   AIMS Design Tokens & Foundation
+   Stanford-aligned design system for AI Measurement Science
+   ============================================================ */
+
+@theme inline {
+  /* Typography */
+  --font-sans: var(--font-source-sans);
+  --font-mono: var(--font-roboto-mono);
+  --font-display: var(--font-source-serif);
+
+  /* Stanford Primary Palette */
+  --color-cardinal: #8c1515;
+  --color-digital-red: #b1040e;
+  --color-digital-blue: #006cb8;
+  --color-digital-green: #008566;
+  --color-black: #2e2d29;
+  --color-cool-grey: #53565a;
+  --color-white: #ffffff;
+
+  /* Stanford Neutrals (Black ramps) */
+  --color-black-90: #43423e;
+  --color-black-80: #585754;
+  --color-black-60: #767674;
+  --color-black-30: #c0c0bf;
+  --color-black-20: #d5d5d4;
+  --color-black-10: #eaeaea;
+  --color-fog: #dad7cb;
+  --color-fog-light: #f4f4f4;
+  --color-stone: #7f7776;
+
+  /* Stanford Scientific Accents */
+  --color-palo-alto: #175e54;
+  --color-palo-alto-light: #2d716f;
+  --color-palo-alto-dark: #014240;
+  --color-lagunita: #007c92;
+  --color-lagunita-light: #009ab4;
+  --color-lagunita-dark: #006b81;
+  --color-sky: #4298b5;
+  --color-sky-light: #67afd2;
+
+  /* Stanford Extended Accents */
+  --color-poppy: #e98300;
+  --color-plum: #620059;
+
+  /* Design tokens: radius */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  /* Design tokens: spacing */
+  --space-section: 4rem;
+  --space-section-lg: 5rem;
+
+  /* Design tokens: motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 400ms;
+}
+
+/* ============================================================
+   CSS Custom Properties (non-Tailwind)
+   ============================================================ */
+:root {
+  /* Stanford Primary */
+  --white: #ffffff;
+  --fog-light: #f4f4f4;
+  --fog: #dad7cb;
+  --black: #2e2d29;
+  --cool-grey: #53565a;
+  --cardinal: #8c1515;
+  --digital-red: #b1040e;
+  --digital-blue: #006cb8;
+  --digital-green: #008566;
+  --stone: #7f7776;
+
+  /* Stanford Scientific Accents */
+  --palo-alto: #175e54;
+  --palo-alto-light: #2d716f;
+  --palo-alto-dark: #014240;
+  --lagunita: #007c92;
+  --lagunita-light: #009ab4;
+  --lagunita-dark: #006b81;
+  --sky: #4298b5;
+  --sky-light: #67afd2;
+
+  /* Stanford Extended Accents */
+  --poppy: #e98300;
+  --plum: #620059;
+
+  /* Black ramps */
+  --black-90: #43423e;
+  --black-80: #585754;
+  --black-60: #767674;
+  --black-30: #c0c0bf;
+  --black-20: #d5d5d4;
+  --black-10: #eaeaea;
+
+  /* Semantic aliases */
+  --ink: var(--black);
+  --muted: var(--cool-grey);
+  --line: var(--black-20);
+  --text-secondary: #585754;
+  --text-tertiary: #767674;
+
+  /* Dark-on-white semantic tokens */
+  --text-on-dark: rgba(255, 255, 255, 0.7);
+  --text-on-dark-muted: rgba(255, 255, 255, 0.65);
+
+  /* Form feedback tokens */
+  --text-success-on-dark: #6ee7b7;
+  --text-error-on-dark: #fca5a5;
+}
+
+/* ============================================================
+   Base Resets
+   ============================================================ */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--white);
+  color: var(--black);
+}
+
+/* Links: bare links get underlines, classed links opt out */
+@layer base {
+  a:not([class]) {
+    color: var(--digital-blue);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.15em;
+    transition: color var(--duration-normal) var(--ease-out);
+  }
+  a:not([class]):hover {
+    color: var(--lagunita);
+  }
+
+  /* Classed links: no default decoration */
+  a[class] {
+    color: inherit;
+    text-decoration: none;
+  }
+}
+
+::selection {
+  background: rgba(140, 21, 21, 0.18);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Focus-visible for accessibility */
+:focus-visible {
+  outline: 2px solid var(--digital-blue);
+  outline-offset: 2px;
+}
+
+#main-content:focus {
+  outline: none;
+}
+
+/* ============================================================
+   Typography Utilities
+   ============================================================ */
+.text-balance {
+  text-wrap: balance;
+}
+
+.type-display {
+  font-family: var(--font-source-serif);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+}
+
+.type-h1 {
+  font-family: var(--font-source-serif);
+  font-size: clamp(2.25rem, 5vw, 3rem);
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+  font-weight: 400;
+}
+
+.type-h2 {
+  font-family: var(--font-source-serif);
+  font-size: clamp(1.875rem, 4vw, 2.25rem);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  font-weight: 400;
+}
+
+.type-h3 {
+  font-family: var(--font-source-sans);
+  font-size: 1.25rem;
+  line-height: 1.3;
+  font-weight: 500;
+}
+
+.type-mono {
+  font-family: var(--font-roboto-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ============================================================
+   Eyebrow / Label
+   ============================================================ */
+.eyebrow {
+  font-family: var(--font-roboto-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cool-grey);
+}
+
+/* ============================================================
+   Panel Variants
+   ============================================================ */
+.panel {
+  border: 1px solid var(--line);
+  background: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+}
+
+.panel-strong {
+  border: 1px solid var(--line);
+  background: var(--fog-light);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+}
+
+.panel-accent {
+  border: 1px solid var(--palo-alto);
+  border-top: 3px solid var(--palo-alto);
+  background: var(--white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-radius: var(--radius-lg);
+}
+
+.panel-data {
+  border: 1px solid var(--line);
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-roboto-mono);
+}
+
+.panel-inset {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: var(--radius-lg);
+}
+
+/* Panel accent borders */
+.panel-accent-left-lagunita {
+  border-left: 3px solid var(--lagunita);
+}
+.panel-accent-top-cardinal {
+  border-top: 3px solid var(--cardinal);
+}
+.panel-accent-top-palo-alto {
+  border-top: 3px solid var(--palo-alto);
+}
+.panel-accent-top-lagunita {
+  border-top: 3px solid var(--lagunita);
+}
+.panel-accent-top-sky {
+  border-top: 3px solid var(--sky);
+}
+.panel-accent-top-palo-alto-dark {
+  border-top: 3px solid var(--palo-alto-dark);
+}
+.panel-accent-top-poppy {
+  border-top: 3px solid var(--poppy);
+}
+.panel-accent-top-plum {
+  border-top: 3px solid var(--plum);
+}
+
+/* ============================================================
+   Section Band Variants
+   ============================================================ */
+.section-band {
+  background: var(--fog-light);
+}
+
+.section-band-warm {
+  background: var(--fog);
+}
+
+.section-band-dark {
+  background: var(--black);
+  color: var(--white);
+}
+
+.section-band-science {
+  background: linear-gradient(
+    135deg,
+    rgba(98, 0, 89, 0.03) 0%,
+    rgba(0, 124, 146, 0.03) 100%
+  );
+}
+
+.section-band-palo-alto-tint {
+  background: rgba(23, 94, 84, 0.03);
+}
+
+.section-band-lagunita-tint {
+  background: rgba(0, 124, 146, 0.03);
+}
+
+/* ============================================================
+   Scientific Motifs
+   ============================================================ */
+.bg-grid-dots {
+  background-image: radial-gradient(
+    circle,
+    var(--black-20) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+.bg-grid-dots-light {
+  background-image: radial-gradient(
+    circle,
+    rgba(0, 0, 0, 0.06) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+.bg-ruled-lines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent,
+    transparent 31px,
+    var(--black-10) 31px,
+    var(--black-10) 32px
+  );
+}
+
+.bg-axis-grid {
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      transparent,
+      transparent 47px,
+      var(--black-10) 47px,
+      var(--black-10) 48px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 47px,
+      var(--black-10) 47px,
+      var(--black-10) 48px
+    );
+}
+
+/* Graph paper — fine + bold lines like engineering paper */
+.bg-graph-paper {
+  background-image:
+    linear-gradient(var(--black-10) 1px, transparent 1px),
+    linear-gradient(90deg, var(--black-10) 1px, transparent 1px),
+    linear-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.06) 1px, transparent 1px);
+  background-size:
+    80px 80px,
+    80px 80px,
+    16px 16px,
+    16px 16px;
+}
+
+/* Fine dot grid — tighter spacing for precision feel */
+.bg-dot-grid-fine {
+  background-image: radial-gradient(
+    circle,
+    var(--black-20) 0.5px,
+    transparent 0.5px
+  );
+  background-size: 12px 12px;
+}
+
+/* Calibration crosshairs — center-marked grid */
+.bg-calibration-crosshairs {
+  background-image:
+    radial-gradient(circle, var(--black-30) 1.5px, transparent 1.5px),
+    linear-gradient(var(--black-10) 1px, transparent 1px),
+    linear-gradient(90deg, var(--black-10) 1px, transparent 1px);
+  background-size:
+    48px 48px,
+    48px 48px,
+    48px 48px;
+  background-position:
+    24px 24px,
+    0 0,
+    0 0;
+}
+
+/* Isometric grid — triangulated mesh feel */
+.bg-isometric-grid {
+  background-image:
+    linear-gradient(30deg, var(--black-10) 1px, transparent 1px),
+    linear-gradient(150deg, var(--black-10) 1px, transparent 1px),
+    linear-gradient(270deg, var(--black-10) 1px, transparent 1px);
+  background-size: 40px 69px;
+}
+
+/* ============================================================
+   Scrollbar
+   ============================================================ */
+html {
+  scrollbar-color: var(--black-30) var(--fog-light);
+  scrollbar-width: thin;
+}
+
+/* ============================================================
+   Ghost Arrow Bounce
+   ============================================================ */
+@keyframes arrow-bounce-right {
+  0% {
+    transform: translateX(0);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  100% {
+    transform: translateX(2px);
+  }
+}
+
+.group:hover .arrow-bounce {
+  animation: arrow-bounce-right 200ms ease-out forwards;
+}
+
+/* ============================================================
+   News Row Hover
+   ============================================================ */
+.news-row-hover {
+  transition: background-color 200ms ease;
+}
+
+.news-row-hover:hover {
+  background-color: var(--fog-light);
+}
+
+/* ============================================================
+   Scroll Reveal Animation
+   ============================================================ */
+.reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition:
+    opacity var(--duration-slow) var(--ease-out),
+    transform var(--duration-slow) var(--ease-out);
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.reveal-stagger > .reveal:nth-child(1) {
+  transition-delay: 0ms;
+}
+.reveal-stagger > .reveal:nth-child(2) {
+  transition-delay: 80ms;
+}
+.reveal-stagger > .reveal:nth-child(3) {
+  transition-delay: 160ms;
+}
+.reveal-stagger > .reveal:nth-child(4) {
+  transition-delay: 240ms;
+}
+.reveal-stagger > .reveal:nth-child(5) {
+  transition-delay: 320ms;
+}
+.reveal-stagger > .reveal:nth-child(6) {
+  transition-delay: 400ms;
+}
+
+/* ============================================================
+   Hero: Typographic Precision (Proposal 2) — Scanning beam
+   ============================================================ */
+@keyframes hero-typo-scan {
+  0% {
+    top: 0;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+.hero-typo-scan-beam {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 124, 146, 0.15),
+    transparent
+  );
+  animation: hero-typo-scan 6s linear infinite;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-typo-scan-beam {
+    animation: none;
+    display: none;
+  }
+}
+
+/* ============================================================
+   Hero: Confusion Matrix (Proposal 5 — Evaluation Matrix)
+   Grid with animated reveal + ambient effects
+   ============================================================ */
+
+/* Legacy cell entrance (for ConfusionMatrix / static EvaluationGrid) */
+@keyframes matrix-cell-enter {
+  from {
+    opacity: 0;
+    scale: 0.6;
+    translate: 0 4px;
+  }
+  to {
+    opacity: var(--cell-opacity, 1);
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+/* Subtle pulse for diagonal (high-agreement) cells */
+@keyframes matrix-cell-pulse {
+  0%,
+  100% {
+    opacity: var(--cell-opacity, 1);
+  }
+  50% {
+    opacity: calc(var(--cell-opacity, 1) + 0.1);
+  }
+}
+
+/* Ambient row-by-row scan — subtle brightness wave */
+@keyframes matrix-row-scan {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.12);
+  }
+}
+
+.matrix-cell {
+  background-color: var(--cell-color, rgba(0, 0, 0, 0.04));
+  opacity: 0;
+  scale: 0;
+  animation-fill-mode: both;
+  transition:
+    scale 0.18s ease,
+    filter 0.18s ease,
+    box-shadow 0.18s ease;
+  will-change: transform, opacity;
+}
+
+/* Hover: refined scale + brightness + palo-alto glow */
+.matrix-cell:hover {
+  scale: 1.04;
+  filter: brightness(1.12);
+  box-shadow: 0 0 8px rgba(23, 94, 84, 0.15);
+  z-index: 5;
+  position: relative;
+}
+
+/* Legacy playing class (for static MatrixReveal wrapper) */
+.matrix-playing .matrix-cell {
+  animation: matrix-cell-enter 0.35s var(--ease-out) var(--enter-delay, 0ms)
+    both;
+  box-shadow: var(--cell-glow, none);
+}
+
+.matrix-playing .matrix-cell-diagonal {
+  animation:
+    matrix-cell-enter 0.35s var(--ease-out) var(--enter-delay, 0ms) both,
+    matrix-cell-pulse 4s ease-in-out calc(var(--enter-delay, 0ms) + 1.2s)
+      infinite;
+  box-shadow: var(--cell-glow, none);
+}
+
+/* Ambient scanning — applied per-cell via --scan-delay */
+.matrix-scanning .matrix-cell {
+  animation: matrix-row-scan 8s ease-in-out var(--scan-delay, 0s) infinite;
+}
+
+/* ============================================================
+   Evaluation Grid — Phase-driven animated cells (eval-cell)
+   Phases: idle → eg-phase-structure → eg-phase-color → eg-phase-scanning
+   ============================================================ */
+
+/* Structure reveal keyframe */
+@keyframes eg-struct-enter {
+  from {
+    opacity: 0;
+    scale: 0.6;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 0.45;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+/* Color bloom keyframe — fades in at the cell's score opacity */
+@keyframes eg-color-bloom {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: var(--cell-opacity, 1);
+  }
+}
+
+/* Base: cells hidden until phase starts */
+.eval-cell {
+  background-color: color-mix(in srgb, var(--sky-light) 14%, white);
+  opacity: 0;
+  scale: 0.6;
+  translate: 0 4px;
+  will-change: transform, opacity;
+  transition:
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.eval-cell:hover {
+  filter: brightness(1.1);
+  scale: 1.04;
+  box-shadow: 0 0 8px rgba(0, 124, 146, 0.14);
+  z-index: 5;
+  position: relative;
+}
+
+/* Phase 1: Structure reveal — cells pop in as gray rectangles */
+.eg-phase-structure .eval-cell,
+.eg-phase-color .eval-cell,
+.eg-phase-scanning .eval-cell {
+  animation: eg-struct-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both;
+}
+
+/* Phase 2: Color bloom — gray → score color */
+.eg-phase-color .eval-cell,
+.eg-phase-scanning .eval-cell {
+  background-color: var(--cell-color, var(--black-20));
+  animation:
+    eg-struct-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+    eg-color-bloom 0.6s ease var(--color-delay, 0ms) both;
+}
+
+/* Breathing pulse — hue rotation + opacity modulation for organic feel */
+@keyframes eg-cell-breathe {
+  0% {
+    filter: brightness(1) hue-rotate(0deg);
+    box-shadow: none;
+    opacity: var(--cell-opacity, 1);
+  }
+  30% {
+    filter: brightness(calc(var(--spark-brightness, 1.14) * var(--wave-mod, 1)))
+      hue-rotate(calc(var(--hue-drift, 3deg) * 0.5));
+    box-shadow: var(--spark-glow, none);
+    opacity: calc(var(--cell-opacity, 1) * 0.92);
+  }
+  65% {
+    filter: brightness(calc(1.06 * var(--wave-mod, 1)))
+      hue-rotate(var(--hue-drift, 3deg));
+    box-shadow: none;
+    opacity: var(--cell-opacity, 1);
+  }
+  100% {
+    filter: brightness(1) hue-rotate(0deg);
+    box-shadow: none;
+    opacity: var(--cell-opacity, 1);
+  }
+}
+
+/* Micro-motion drift — barely-perceptible translation + scale */
+@keyframes eg-cell-drift {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-0.5px) scale(1.008);
+  }
+  75% {
+    transform: translateY(0.3px) scale(0.995);
+  }
+}
+
+/* Phase 3: Scanning — breathing + drift for alive feel */
+.eg-phase-scanning .eval-cell {
+  background-color: var(--cell-color, var(--black-20));
+  animation:
+    eg-struct-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+    eg-color-bloom 0.6s ease var(--color-delay, 0ms) both,
+    eg-cell-breathe var(--spark-duration, 3.8s) ease-in-out
+      var(--spark-delay, 0s) infinite,
+    eg-cell-drift calc(var(--spark-duration, 3.8s) * 1.7) ease-in-out
+      var(--drift-delay, 0s) infinite;
+}
+
+/*
+   Keep cells hidden while the component is idle.
+   This guards against duplicate dev/HMR `.eval-cell` rules overriding the
+   base opacity before a phase class is applied.
+*/
+.confusion-matrix:not(.eg-phase-structure):not(.eg-phase-color):not(
+    .eg-phase-scanning
+  )
+  .eval-cell {
+  opacity: 0;
+}
+
+/* Label fade-in */
+.eg-label {
+  opacity: 0;
+  transition: opacity 0.3s ease var(--label-delay, 0ms);
+}
+
+.eg-phase-structure .eg-label,
+.eg-phase-color .eg-label,
+.eg-phase-scanning .eg-label {
+  opacity: 1;
+}
+
+/* Cursor spotlight overlay */
+.matrix-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, -999px) var(--mouse-y, -999px),
+    rgba(23, 94, 84, 0.06),
+    transparent 40%
+  );
+  transition: opacity 0.2s ease;
+}
+
+/* Mobile: breathing only, no drift to reduce GPU load */
+@media (max-width: 767px) {
+  .matrix-scanning .matrix-cell {
+    animation: matrix-row-scan 8s ease-in-out var(--scan-delay, 0s) infinite;
+  }
+
+  .eg-phase-scanning .eval-cell {
+    animation:
+      eg-struct-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+      eg-color-bloom 0.6s ease var(--color-delay, 0ms) both,
+      eg-cell-breathe var(--spark-duration, 4.2s) ease-in-out
+        var(--spark-delay, 0s) infinite;
+  }
+}
+
+/* ============================================================
+   Reduced Motion
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+  }
+
+  .matrix-cell {
+    opacity: var(--cell-opacity, 1);
+    scale: 1;
+    animation: none !important;
+    box-shadow: var(--cell-glow, none);
+    transition: none !important;
+  }
+
+  .matrix-playing .matrix-cell,
+  .matrix-playing .matrix-cell-diagonal,
+  .matrix-scanning .matrix-cell {
+    animation: none !important;
+    opacity: var(--cell-opacity, 1);
+    scale: 1;
+    box-shadow: var(--cell-glow, none);
+  }
+
+  .eval-cell {
+    opacity: var(--cell-opacity, 1) !important;
+    scale: 1 !important;
+    translate: none !important;
+    background-color: var(--cell-color, var(--black-20)) !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .eg-label {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+
+  .matrix-spotlight {
+    display: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Sparse matrix: static final state */
+  .sm-cell {
+    opacity: var(--cell-opacity, 1) !important;
+    scale: 1 !important;
+    translate: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .sm-cell-missing {
+    background-color: var(--cell-color, var(--black-20)) !important;
+    opacity: var(--cell-opacity, 1) !important;
+  }
+
+  .sm-label {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+
+  .sm-annotation {
+    opacity: 1 !important;
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   Materials Gate Highlight — red glow on the email aside
+   ============================================================ */
+@keyframes gate-highlight {
+  0% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+  25%,
+  50% {
+    box-shadow:
+      0 0 0 3px rgba(177, 4, 14, 0.5),
+      0 0 28px rgba(177, 4, 14, 0.25);
+  }
+  100% {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.gate-highlight {
+  animation: gate-highlight 1.6s ease-in-out !important;
+}
+
+/* ============================================================
+   Sparse Matrix Hero — Phase-driven animated cells (sm-cell)
+   Phases: idle → sm-phase-structure → sm-phase-observed →
+           sm-phase-predict → sm-phase-ambient
+   ============================================================ */
+
+/* Observed cell entrance — scale + fade */
+@keyframes sm-observed-enter {
+  from {
+    opacity: 0;
+    scale: 0.6;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 0.45;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+/* Missing cell entrance — fade in dashed ghost */
+@keyframes sm-missing-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.5;
+  }
+}
+
+/* Color bloom — gray → score color */
+@keyframes sm-color-bloom {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: var(--cell-opacity, 1);
+  }
+}
+
+/* Prediction fill — left-to-right gradient sweep */
+@keyframes sm-predict-fill {
+  0% {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  50% {
+    opacity: var(--cell-opacity, 0.8);
+  }
+  100% {
+    clip-path: inset(0 0 0 0);
+    opacity: var(--cell-opacity, 0.8);
+  }
+}
+
+/* Confidence glow pulse for predicted cells */
+@keyframes sm-confidence-pulse {
+  0%,
+  100% {
+    box-shadow: var(--predict-glow, none);
+  }
+  50% {
+    box-shadow: var(--predict-glow-peak, none);
+  }
+}
+
+/* Breathing pulse via --wave-mod (simplex noise driven) */
+@keyframes sm-cell-breathe {
+  0% {
+    filter: brightness(1) hue-rotate(0deg);
+    opacity: var(--cell-opacity, 1);
+  }
+  30% {
+    filter: brightness(calc(1.12 * var(--wave-mod, 1)))
+      hue-rotate(calc(var(--hue-drift, 2deg) * 0.5));
+    opacity: calc(var(--cell-opacity, 1) * 0.93);
+  }
+  65% {
+    filter: brightness(calc(1.05 * var(--wave-mod, 1)))
+      hue-rotate(var(--hue-drift, 2deg));
+    opacity: var(--cell-opacity, 1);
+  }
+  100% {
+    filter: brightness(1) hue-rotate(0deg);
+    opacity: var(--cell-opacity, 1);
+  }
+}
+
+/* Math annotation entrance */
+@keyframes sm-annotation-fade {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+  to {
+    opacity: 0.7;
+    translate: 0 0;
+  }
+}
+
+/* ---- Base: cells hidden until phase starts ---- */
+
+.sm-cell {
+  opacity: 0;
+  scale: 0.6;
+  translate: 0 4px;
+  will-change: transform, opacity;
+  transition: box-shadow 0.18s ease;
+}
+
+.sm-cell-missing {
+  opacity: 0;
+  scale: 1;
+  will-change: opacity;
+}
+
+.sm-cell:hover,
+.sm-cell-missing:hover {
+  filter: brightness(1.12);
+  z-index: 5;
+  position: relative;
+}
+
+.sm-label {
+  opacity: 0;
+  transition: opacity 0.3s ease var(--label-delay, 0ms);
+}
+
+.sm-annotation {
+  opacity: 0;
+}
+
+/* ---- Phase 1: Structure — observed pop in, missing appear as ghosts ---- */
+
+.sm-phase-structure .sm-cell,
+.sm-phase-observed .sm-cell,
+.sm-phase-predict .sm-cell,
+.sm-phase-ambient .sm-cell {
+  animation: sm-observed-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both;
+}
+
+.sm-phase-structure .sm-cell-missing,
+.sm-phase-observed .sm-cell-missing,
+.sm-phase-predict .sm-cell-missing,
+.sm-phase-ambient .sm-cell-missing {
+  animation: sm-missing-enter 0.3s ease var(--struct-delay, 0ms) both;
+}
+
+.sm-phase-structure .sm-label,
+.sm-phase-observed .sm-label,
+.sm-phase-predict .sm-label,
+.sm-phase-ambient .sm-label {
+  opacity: 1;
+}
+
+/* ---- Phase 2: Observed Color — observed cells bloom to score color ---- */
+
+.sm-phase-observed .sm-cell,
+.sm-phase-predict .sm-cell,
+.sm-phase-ambient .sm-cell {
+  background-color: var(--cell-color, var(--black-20));
+  animation:
+    sm-observed-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+    sm-color-bloom 0.6s ease var(--color-delay, 0ms) both;
+}
+
+/* ---- Phase 3: Prediction Fill — missing cells fill via BFS wavefront ---- */
+
+.sm-phase-predict .sm-cell-missing,
+.sm-phase-ambient .sm-cell-missing {
+  background-color: var(--cell-color, var(--black-20));
+  animation: sm-predict-fill 0.5s ease var(--predict-delay, 0ms) both;
+}
+
+.sm-phase-predict .sm-annotation,
+.sm-phase-ambient .sm-annotation {
+  animation: sm-annotation-fade 0.6s ease var(--annotation-delay, 0ms) both;
+}
+
+/* ---- Phase 4: Ambient — breathing + confidence pulse ---- */
+
+.sm-phase-ambient .sm-cell {
+  background-color: var(--cell-color, var(--black-20));
+  animation:
+    sm-observed-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+    sm-color-bloom 0.6s ease var(--color-delay, 0ms) both,
+    sm-cell-breathe var(--breathe-duration, 3.8s) ease-in-out
+      var(--breathe-delay, 0s) infinite;
+}
+
+.sm-phase-ambient .sm-cell-missing {
+  background-color: var(--cell-color, var(--black-20));
+  animation:
+    sm-predict-fill 0.5s ease var(--predict-delay, 0ms) both,
+    sm-confidence-pulse 3s ease-in-out var(--breathe-delay, 0s) infinite,
+    sm-cell-breathe var(--breathe-duration, 3.8s) ease-in-out
+      var(--breathe-delay, 0s) infinite;
+}
+
+/* ---- Guard: keep cells hidden while idle ---- */
+
+.sparse-matrix:not(.sm-phase-structure):not(.sm-phase-observed):not(
+    .sm-phase-predict
+  ):not(.sm-phase-ambient)
+  .sm-cell {
+  opacity: 0;
+}
+
+.sparse-matrix:not(.sm-phase-structure):not(.sm-phase-observed):not(
+    .sm-phase-predict
+  ):not(.sm-phase-ambient)
+  .sm-cell-missing {
+  opacity: 0;
+}
+
+/* Mobile: no drift, lighter breathing */
+@media (max-width: 767px) {
+  .sm-phase-ambient .sm-cell {
+    animation:
+      sm-observed-enter 0.4s var(--ease-out) var(--struct-delay, 0ms) both,
+      sm-color-bloom 0.6s ease var(--color-delay, 0ms) both,
+      sm-cell-breathe var(--breathe-duration, 4.2s) ease-in-out
+        var(--breathe-delay, 0s) infinite;
+  }
+
+  .sm-phase-ambient .sm-cell-missing {
+    animation:
+      sm-predict-fill 0.5s ease var(--predict-delay, 0ms) both,
+      sm-cell-breathe var(--breathe-duration, 4.2s) ease-in-out
+        var(--breathe-delay, 0s) infinite;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   KaTeX (sample-item math). KaTeX defaults to 1.21em, which renders inline
+   single-variable math (e.g. $W_1$) noticeably larger than the small
+   sample-item body text and clashes with the sans body. Scale it closer to
+   the surrounding text; keep display equations slightly larger.
+   --------------------------------------------------------------------------- */
+.md-rich .katex {
+  font-size: 1.05em;
+}
+.md-rich .katex-display > .katex {
+  font-size: 1.15em;
+}

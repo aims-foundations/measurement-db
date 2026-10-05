@@ -14,6 +14,13 @@ metadata, a reviewed characterization, and a curation record. Publishing a build
 here does not imply a Hugging Face data release. Raw inputs, generated tables,
 and model-fitting outputs are excluded from Git.
 
+## Website
+
+The website lives in [`website/`](website), with its rendering scripts in
+[`scripts/render_website/`](scripts/render_website). See the
+[gallery guide](scripts/render_website/README.md) for installation, local preview,
+data refresh, and validation commands.
+
 ## Contributing
 
 Curating a benchmark is not simply a data-cleaning task. It requires reconstructing what was measured, which systems were evaluated, how the evaluation was conducted, and what each recorded outcome means. Contributors will gain firsthand experience with the structure and limitations of modern AI evaluation data. For participants in the Predictive AI Evaluation Competition, this work can also inform the development of prediction methods and expand the public evidence available for training them. For benchmark authors, curation makes their results easier to discover, compare, and reuse. For measurement researchers and practitioners, it creates a common foundation for studying the validity, reliability, and generalizability of AI evaluations. Under appropriate conditions, contributors will also be eligible for the AI Measurement Data award under the NeurIPS 2026 Predictive AI Evaluation Competition.

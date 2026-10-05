@@ -1,0 +1,3084 @@
+{
+ "benchmarks": {
+  "aaar": {
+   "institutions": [
+    "Pennsylvania State University",
+    "Netflix"
+   ],
+   "source": "page1-llm"
+  },
+  "abstentionbench": {
+   "institutions": [
+    "Meta"
+   ],
+   "source": "arxiv-search"
+  },
+  "abstract_reason": {
+   "institutions": [
+    "Xiamen University"
+   ],
+   "source": "page1-llm"
+  },
+  "adaptivestep": {
+   "institutions": [
+    "Nanjing University",
+    "University of Technology Sydney"
+   ],
+   "source": "page1-llm"
+  },
+  "advprompter": {
+   "institutions": [
+    "University of Tübingen",
+    "Meta"
+   ],
+   "source": "page1-llm"
+  },
+  "affectgpt": {
+   "institutions": [
+    "Chinese Academy of Sciences",
+    "University of Oulu"
+   ],
+   "source": "page1-llm"
+  },
+  "afrimedqa": {
+   "institutions": [
+    "Intron",
+    "Georgia Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "agc_bench": {
+   "institutions": [
+    "Pennsylvania State University",
+    "University of Massachusetts Lowell"
+   ],
+   "source": "page1-llm"
+  },
+  "agentboard": {
+   "institutions": [
+    "University of Hong Kong",
+    "Zhejiang University"
+   ],
+   "source": "page1-llm"
+  },
+  "agentdojo": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "agentic_review_perturbation": {
+   "institutions": [
+    "University of Chicago"
+   ],
+   "source": "page1-llm"
+  },
+  "agents_last_exam": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "agmmu": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign"
+   ],
+   "source": "arxiv-search"
+  },
+  "ai2d_test": {
+   "institutions": [
+    "Allen Institute for AI"
+   ],
+   "source": "page1-llm"
+  },
+  "ale_bench": {
+   "institutions": [
+    "Sakana AI"
+   ],
+   "source": "arxiv-search"
+  },
+  "algotune": {
+   "institutions": [
+    "University of Tübingen",
+    "Meta"
+   ],
+   "source": "arxiv-search"
+  },
+  "alignment_faking": {
+   "institutions": [
+    "Anthropic"
+   ],
+   "source": "page1-llm"
+  },
+  "alpacaeval": {
+   "institutions": [
+    "Stanford University",
+    "Independent"
+   ],
+   "source": "page1-llm"
+  },
+  "alpha_sql": {
+   "institutions": [
+    "Hong Kong University of Science and Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "annotating_errors_wcf": {
+   "institutions": [
+    "Tohoku University",
+    "University of Cambridge"
+   ],
+   "source": "page1-llm"
+  },
+  "appworld": {
+   "institutions": [
+    "Stony Brook University",
+    "Allen Institute for AI"
+   ],
+   "source": "page1-llm"
+  },
+  "arc_agi_3": {
+   "institutions": [
+    "ARC Prize Foundation"
+   ],
+   "source": "page1-llm"
+  },
+  "arcagi": {
+   "institutions": [
+    "Google"
+   ],
+   "source": "page1-llm"
+  },
+  "arena_140k": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "arena_hard": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "atmossci_bench": {
+   "institutions": [
+    "Hong Kong University of Science and Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "auditing_sabotage_bench": {
+   "institutions": [
+    "Redwood Research"
+   ],
+   "source": "page1-llm"
+  },
+  "autoelicit": {
+   "institutions": [
+    "Imperial College London",
+    "Vector Institute"
+   ],
+   "source": "page1-llm"
+  },
+  "autoresearchbench": {
+   "institutions": [
+    "Renmin University of China"
+   ],
+   "source": "page1-llm"
+  },
+  "babilong": {
+   "institutions": [
+    "AIRI",
+    "Moscow Institute of Physics and Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "backdoorllm": {
+   "institutions": [
+    "Singapore Management University",
+    "University of Melbourne"
+   ],
+   "source": "arxiv-search"
+  },
+  "benger": {
+   "institutions": [
+    "Technical University of Munich",
+    "Ludwig Maximilian University of Munich"
+   ],
+   "source": "page1-llm"
+  },
+  "bertaqa": {
+   "institutions": [
+    "University of the Basque Country"
+   ],
+   "source": "page1-llm"
+  },
+  "bfcl": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "bigfinancebench": {
+   "institutions": [
+    "Rogo"
+   ],
+   "source": "page1-llm"
+  },
+  "biggen": {
+   "institutions": [
+    "Carnegie Mellon University",
+    "KAIST"
+   ],
+   "source": "page1-llm"
+  },
+  "bird_sql": {
+   "institutions": [
+    "University of Hong Kong",
+    "Alibaba"
+   ],
+   "source": "page1-llm"
+  },
+  "blink_twice": {
+   "institutions": [
+    "Sun Yat-sen University",
+    "Chinese University of Hong Kong"
+   ],
+   "source": "arxiv-search"
+  },
+  "bmmr": {
+   "institutions": [
+    "Fudan University"
+   ],
+   "source": "arxiv-search"
+  },
+  "bountybench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "arxiv-search"
+  },
+  "braveguard": {
+   "institutions": [
+    "Fudan University",
+    "Ant Group"
+   ],
+   "source": "page1-llm"
+  },
+  "care_enzymes": {
+   "institutions": [
+    "Caltech"
+   ],
+   "source": "page1-llm"
+  },
+  "case_bench": {
+   "institutions": [
+    "University of Cambridge",
+    "King's College London"
+   ],
+   "source": "page1-llm"
+  },
+  "causal_axioms": {
+   "institutions": [
+    "Microsoft Research",
+    "MIT"
+   ],
+   "source": "page1-llm"
+  },
+  "ceobench": {
+   "institutions": [
+    "Princeton University"
+   ],
+   "source": "page1-llm"
+  },
+  "ceval": {
+   "institutions": [
+    "Shanghai Jiao Tong University",
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "charxiv": {
+   "institutions": [
+    "Princeton University"
+   ],
+   "source": "page1-llm"
+  },
+  "chemcotbench": {
+   "institutions": [
+    "Pengcheng Laboratory",
+    "International Digital Economy Academy"
+   ],
+   "source": "arxiv-search"
+  },
+  "clasheval": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "classroom_ai": {
+   "institutions": [
+    "KAIST"
+   ],
+   "source": "page1-llm"
+  },
+  "clinbench_llm": {
+   "institutions": [
+    "UT Southwestern Medical Center"
+   ],
+   "source": "arxiv-search"
+  },
+  "cmm": {
+   "institutions": [
+    "Alibaba",
+    "Nanyang Technological University"
+   ],
+   "source": "arxiv-search"
+  },
+  "cmmlu": {
+   "institutions": [
+    "MBZUAI"
+   ],
+   "source": "page1-llm"
+  },
+  "coffeebench": {
+   "institutions": [
+    "Sakana AI",
+    "KPMG AZSA LLC"
+   ],
+   "source": "page1-llm"
+  },
+  "complexbench": {
+   "institutions": [
+    "Tsinghua University",
+    "University of Electronic Science and Technology of China"
+   ],
+   "source": "page1-llm"
+  },
+  "confagents": {
+   "institutions": [
+    "Peking University"
+   ],
+   "source": "page1-llm"
+  },
+  "core_codereasoning": {
+   "institutions": [
+    "Purdue University"
+   ],
+   "source": "arxiv-search"
+  },
+  "correctbench": {
+   "institutions": [
+    "Huazhong University of Science and Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "cot_safety_behaviors": {
+   "institutions": [
+    "Hochschule Kempten",
+    "Shibaura Institute of Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "critic_discernment_game": {
+   "institutions": [
+    "Soochow University"
+   ],
+   "source": "page1-llm"
+  },
+  "crop": {
+   "institutions": [
+    "Shanghai AI Laboratory"
+   ],
+   "source": "arxiv-search"
+  },
+  "cross_care": {
+   "institutions": [
+    "Harvard University",
+    "MIT"
+   ],
+   "source": "page1-llm"
+  },
+  "crow": {
+   "institutions": [
+    "Singapore Management University"
+   ],
+   "source": "page1-llm"
+  },
+  "csedb": {
+   "institutions": [
+    "Medlinker",
+    "Peking University"
+   ],
+   "source": "page1-llm"
+  },
+  "ctibench": {
+   "institutions": [
+    "Rochester Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "culturaleval": {
+   "institutions": [
+    "University of Washington"
+   ],
+   "source": "page1-llm"
+  },
+  "das_med_hallucination": {
+   "institutions": [
+    "Technical University of Munich"
+   ],
+   "source": "page1-llm"
+  },
+  "dataclawbench": {
+   "institutions": [
+    "Sun Yat-sen University"
+   ],
+   "source": "page1-llm"
+  },
+  "datadecide": {
+   "institutions": [
+    "Allen Institute for AI",
+    "University of Pennsylvania"
+   ],
+   "source": "page1-llm"
+  },
+  "datasir": {
+   "institutions": [
+    "Zhejiang University",
+    "DBAPPSecurity"
+   ],
+   "source": "arxiv-search"
+  },
+  "date_lm": {
+   "institutions": [
+    "Carnegie Mellon University",
+    "University of Michigan"
+   ],
+   "source": "arxiv-search"
+  },
+  "dbpa": {
+   "institutions": [
+    "University of Cambridge"
+   ],
+   "source": "page1-llm"
+  },
+  "deceptionbench": {
+   "institutions": [
+    "Beihang University"
+   ],
+   "source": "arxiv-search"
+  },
+  "decodingtrust": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign"
+   ],
+   "source": "page1-llm"
+  },
+  "deepfund": {
+   "institutions": [
+    "Hong Kong University of Science and Technology (Guangzhou)"
+   ],
+   "source": "arxiv-search"
+  },
+  "deepswe": {
+   "institutions": [
+    "Datacurve"
+   ],
+   "source": "page1-llm"
+  },
+  "diagram_understanding": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "disco": {
+   "institutions": [
+    "Carnegie Mellon University",
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "donotanswer": {
+   "institutions": [
+    "LibrAI",
+    "MBZUAI"
+   ],
+   "source": "page1-llm"
+  },
+  "doris_mae": {
+   "institutions": [
+    "UC San Diego"
+   ],
+   "source": "page1-llm"
+  },
+  "dtap_bench": {
+   "institutions": [
+    "Virtue AI",
+    "University of Illinois Urbana-Champaign"
+   ],
+   "source": "page1-llm"
+  },
+  "dynamic_risk_cyber": {
+   "institutions": [
+    "Princeton University"
+   ],
+   "source": "arxiv-search"
+  },
+  "editbench": {
+   "institutions": [
+    "Carnegie Mellon University"
+   ],
+   "source": "page1-llm"
+  },
+  "edu_circuit_hw": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "eduguardbench": {
+   "institutions": [
+    "Zhejiang University of Technology",
+    "East China Normal University"
+   ],
+   "source": "page1-llm"
+  },
+  "edumath": {
+   "institutions": [
+    "University of Virginia"
+   ],
+   "source": "page1-llm"
+  },
+  "effibench_x": {
+   "institutions": [
+    "University of Hong Kong",
+    "University College London"
+   ],
+   "source": "arxiv-search"
+  },
+  "egoschema": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "ehrflowbench": {
+   "institutions": [
+    "Peking University"
+   ],
+   "source": "page1-llm"
+  },
+  "elicitation_game": {
+   "institutions": [
+    "Independent"
+   ],
+   "source": "page1-llm"
+  },
+  "embodied_web_agents": {
+   "institutions": [
+    "UCLA"
+   ],
+   "source": "arxiv-search"
+  },
+  "embodiedbench": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign"
+   ],
+   "source": "page1-llm"
+  },
+  "emoji_attack": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "endobench": {
+   "institutions": [
+    "Chinese University of Hong Kong"
+   ],
+   "source": "arxiv-search"
+  },
+  "enginemt_qa": {
+   "institutions": [
+    "Shanghai Jiao Tong University"
+   ],
+   "source": "page1-llm"
+  },
+  "eoc_bench": {
+   "institutions": [
+    "Zhejiang University",
+    "Alibaba"
+   ],
+   "source": "arxiv-search"
+  },
+  "erbench": {
+   "institutions": [
+    "KAIST",
+    "Microsoft Research"
+   ],
+   "source": "page1-llm"
+  },
+  "evocode_bench": {
+   "institutions": [
+    "UniPat AI",
+    "Peking University"
+   ],
+   "source": "page1-llm"
+  },
+  "evouna": {
+   "institutions": [
+    "Westlake University",
+    "Northeastern University"
+   ],
+   "source": "page1-llm"
+  },
+  "exact_bench": {
+   "institutions": [
+    "UNC Chapel Hill"
+   ],
+   "source": "arxiv-search"
+  },
+  "exploitbench_v8": {
+   "institutions": [
+    "Carnegie Mellon University"
+   ],
+   "source": "page1-llm"
+  },
+  "exploitgym": {
+   "institutions": [
+    "UC Berkeley",
+    "Max Planck Institute for Security and Privacy"
+   ],
+   "source": "page1-llm"
+  },
+  "fantastic_bugs": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "arxiv-search"
+  },
+  "favor_bench": {
+   "institutions": [
+    "Fudan University"
+   ],
+   "source": "arxiv-search"
+  },
+  "felm": {
+   "institutions": [
+    "City University of Hong Kong",
+    "National University of Singapore"
+   ],
+   "source": "page1-llm"
+  },
+  "fewshot_ttt_bbh": {
+   "institutions": [
+    "MIT"
+   ],
+   "source": "page1-llm"
+  },
+  "finegrain_t2i": {
+   "institutions": [
+    "University of Maryland",
+    "Columbia University"
+   ],
+   "source": "arxiv-search"
+  },
+  "flysearch": {
+   "institutions": [
+    "IDEAS NCBR"
+   ],
+   "source": "arxiv-search"
+  },
+  "frontieror": {
+   "institutions": [
+    "Singapore-MIT Alliance for Research and Technology",
+    "MIT"
+   ],
+   "source": "page1-llm"
+  },
+  "gaia": {
+   "institutions": [
+    "Meta",
+    "Hugging Face"
+   ],
+   "source": "page1-llm"
+  },
+  "gameenginebench": {
+   "institutions": [
+    "Nitrode"
+   ],
+   "source": "page1-llm"
+  },
+  "geckonum": {
+   "institutions": [
+    "Google DeepMind"
+   ],
+   "source": "page1-llm"
+  },
+  "gede": {
+   "institutions": [
+    "Bielefeld University"
+   ],
+   "source": "page1-llm"
+  },
+  "genai_learning": {
+   "institutions": [
+    "University of Pennsylvania"
+   ],
+   "source": "page1-llm"
+  },
+  "ghosts_math": {
+   "institutions": [
+    "University of Oxford"
+   ],
+   "source": "page1-llm"
+  },
+  "gso": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "guardset_x": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign",
+    "University of Chicago"
+   ],
+   "source": "arxiv-search"
+  },
+  "h4rm3l": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "haiid": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "hallusionbench": {
+   "institutions": [
+    "University of Maryland"
+   ],
+   "source": "page1-llm"
+  },
+  "hardmath2": {
+   "institutions": [
+    "Harvard University"
+   ],
+   "source": "arxiv-search"
+  },
+  "harmbench": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign",
+    "Center for AI Safety"
+   ],
+   "source": "page1-llm"
+  },
+  "healthadminbench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_airbench": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_anthropic_redteam": {
+   "institutions": [
+    "Anthropic"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_bbq": {
+   "institutions": [
+    "New York University"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_bold": {
+   "institutions": [
+    "Amazon",
+    "UC Santa Barbara"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_harmbench": {
+   "institutions": [
+    "University of Illinois Urbana-Champaign",
+    "Center for AI Safety"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_real_toxicity_prompts": {
+   "institutions": [
+    "University of Washington"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_simple_safety_tests": {
+   "institutions": [
+    "Patronus AI"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_thaiexam": {
+   "institutions": [
+    "SCB 10X"
+   ],
+   "source": "page1-llm"
+  },
+  "helm_xstest": {
+   "institutions": [
+    "Bocconi University",
+    "University of Oxford"
+   ],
+   "source": "page1-llm"
+  },
+  "hist_llm": {
+   "institutions": [
+    "Complexity Science Hub"
+   ],
+   "source": "neurips-proceedings (recheck; paper_url in HF metadata points to unrelated arXiv id)"
+  },
+  "hivmedqa": {
+   "institutions": [
+    "ETH Zurich",
+    "EPFL"
+   ],
+   "source": "page1-llm"
+  },
+  "hle": {
+   "institutions": [
+    "Center for AI Safety",
+    "Scale AI"
+   ],
+   "source": "page1-llm"
+  },
+  "icpc2_code_selector": {
+   "institutions": [
+    "University of São Paulo"
+   ],
+   "source": "page1-llm"
+  },
+  "icpc_eval": {
+   "institutions": [
+    "Renmin University of China"
+   ],
+   "source": "arxiv-search"
+  },
+  "igakuqa119": {
+   "institutions": [
+    "University of Washington",
+    "Sapporo Cardiovascular Clinic"
+   ],
+   "source": "page1-llm"
+  },
+  "ikp": {
+   "institutions": [
+    "Pine AI"
+   ],
+   "source": "page1-llm"
+  },
+  "imgedit": {
+   "institutions": [
+    "Peking University"
+   ],
+   "source": "arxiv-search"
+  },
+  "ineq_comp": {
+   "institutions": [
+    "Princeton University",
+    "Peking University"
+   ],
+   "source": "arxiv-search"
+  },
+  "ineqmath": {
+   "institutions": [
+    "Stanford University",
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "infochartqa": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "arxiv-search"
+  },
+  "jailbreak_audiobench": {
+   "institutions": [
+    "Hong Kong University of Science and Technology (Guangzhou)"
+   ],
+   "source": "arxiv-search"
+  },
+  "jailbreakbench": {
+   "institutions": [
+    "University of Pennsylvania",
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "jetts": {
+   "institutions": [
+    "Salesforce"
+   ],
+   "source": "page1-llm"
+  },
+  "judgebench": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "judgetuning": {
+   "institutions": [
+    "University of Freiburg"
+   ],
+   "source": "page1-llm"
+  },
+  "kernelbench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "knotgym": {
+   "institutions": [
+    "Cornell University"
+   ],
+   "source": "arxiv-search"
+  },
+  "lambda_fp_course": {
+   "institutions": [
+    "McGill University"
+   ],
+   "source": "page1-llm"
+  },
+  "lawbench": {
+   "institutions": [
+    "Nanjing University",
+    "Amazon"
+   ],
+   "source": "page1-llm"
+  },
+  "learning_in_blocks": {
+   "institutions": [
+    "Indian Institute of Science"
+   ],
+   "source": "page1-llm"
+  },
+  "legal_rag_bench": {
+   "institutions": [
+    "Isaacus"
+   ],
+   "source": "page1-llm"
+  },
+  "legalbench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "legaleval": {
+   "institutions": [
+    "Nanjing University",
+    "Tsinghua University"
+   ],
+   "source": "composite of LawBench + LexEval (recheck; paper_url is LawBench's)"
+  },
+  "lexeval": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "lingoly": {
+   "institutions": [
+    "University of Oxford"
+   ],
+   "source": "page1-llm"
+  },
+  "live_agent_risk": {
+   "institutions": [
+    "Independent"
+   ],
+   "source": "recheck: no affiliation anywhere; independent consultant"
+  },
+  "liveaopsbench": {
+   "institutions": [
+    "University of British Columbia"
+   ],
+   "source": "page1-llm"
+  },
+  "livecodebench": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "llm4ir": {
+   "institutions": [
+    "Kent State University"
+   ],
+   "source": "page1-llm (recheck)"
+  },
+  "llm_bp_tag": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "llm_survey_simulation": {
+   "institutions": [
+    "Columbia University"
+   ],
+   "source": "page1-llm"
+  },
+  "llm_uncertainty_bench": {
+   "institutions": [
+    "Tencent"
+   ],
+   "source": "arxiv-search"
+  },
+  "llms_lean_formalization": {
+   "institutions": [
+    "University of Washington"
+   ],
+   "source": "page1-llm"
+  },
+  "loogle_v2": {
+   "institutions": [
+    "Peking University",
+    "Beijing Institute of Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "marine": {
+   "institutions": [
+    "Cornell University",
+    "UCLA"
+   ],
+   "source": "page1-llm"
+  },
+  "mars_bench": {
+   "institutions": [
+    "Arizona State University"
+   ],
+   "source": "arxiv-search"
+  },
+  "mast": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "matharena": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "matharena_platform": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "mathconstraint": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "mathconstruct": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "mathvision": {
+   "institutions": [
+    "Chinese University of Hong Kong"
+   ],
+   "source": "page1-llm"
+  },
+  "mathvista_mini": {
+   "institutions": [
+    "UCLA"
+   ],
+   "source": "page1-llm"
+  },
+  "medchain": {
+   "institutions": [
+    "City University of Hong Kong",
+    "Renmin University of China"
+   ],
+   "source": "arxiv-search"
+  },
+  "medhelm_ehr_sql": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_head_qa": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_med_mcqa": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_med_qa": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_medbullets": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_medcalc_bench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_medec": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_medhallu": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_pubmed_qa": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medhelm_race_based_med": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "medmax": {
+   "institutions": [
+    "UCLA"
+   ],
+   "source": "arxiv-search"
+  },
+  "medwatermark_fws": {
+   "institutions": [
+    "University of Central Florida"
+   ],
+   "source": "page1-llm"
+  },
+  "metaagent": {
+   "institutions": [
+    "University of Wisconsin-Madison"
+   ],
+   "source": "page1-llm"
+  },
+  "mhj": {
+   "institutions": [
+    "Scale AI",
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "mind2web2": {
+   "institutions": [
+    "Ohio State University"
+   ],
+   "source": "page1-llm"
+  },
+  "mindgym": {
+   "institutions": [
+    "Sun Yat-sen University",
+    "Alibaba"
+   ],
+   "source": "arxiv-search"
+  },
+  "mj_bench": {
+   "institutions": [
+    "UNC Chapel Hill",
+    "University of Science and Technology of China"
+   ],
+   "source": "arxiv-search"
+  },
+  "mle_dojo": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "mlenergy": {
+   "institutions": [
+    "University of Michigan"
+   ],
+   "source": "arxiv-search"
+  },
+  "mm_opera": {
+   "institutions": [
+    "Sun Yat-sen University"
+   ],
+   "source": "arxiv-search"
+  },
+  "mmar": {
+   "institutions": [
+    "Shanghai Jiao Tong University",
+    "Queen Mary University of London"
+   ],
+   "source": "arxiv-search"
+  },
+  "mmbench_v11": {
+   "institutions": [
+    "Shanghai AI Laboratory"
+   ],
+   "source": "page1-llm"
+  },
+  "mmdocrag": {
+   "institutions": [
+    "Huawei"
+   ],
+   "source": "arxiv-html (2505.16470; page text not cached)"
+  },
+  "mme": {
+   "institutions": [
+    "Nanjing University",
+    "Tencent"
+   ],
+   "source": "page1-llm"
+  },
+  "mmlongbench": {
+   "institutions": [
+    "Hong Kong University of Science and Technology",
+    "Tencent"
+   ],
+   "source": "page1-llm"
+  },
+  "mmlu": {
+   "institutions": [
+    "UC Berkeley",
+    "Columbia University"
+   ],
+   "source": "page1-llm"
+  },
+  "mmlupro": {
+   "institutions": [
+    "University of Waterloo"
+   ],
+   "source": "page1-llm"
+  },
+  "mmmu_dev_val": {
+   "institutions": [
+    "IN.AI Research",
+    "University of Waterloo"
+   ],
+   "source": "page1-llm"
+  },
+  "mmoral_bench": {
+   "institutions": [
+    "University of Hong Kong",
+    "Hong Kong University of Science and Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "mmperspective": {
+   "institutions": [
+    "University of Rochester"
+   ],
+   "source": "arxiv-search"
+  },
+  "moe_cap": {
+   "institutions": [
+    "University of Edinburgh"
+   ],
+   "source": "arxiv-search"
+  },
+  "molvision": {
+   "institutions": [
+    "NIT Kurukshetra",
+    "University of Central Florida"
+   ],
+   "source": "arxiv-search"
+  },
+  "monkey_power_laws": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "pmlr-pdf (recheck; arXiv v1 omits footnote)"
+  },
+  "morphkv": {
+   "institutions": [
+    "UT Austin"
+   ],
+   "source": "page1-llm"
+  },
+  "morqa": {
+   "institutions": [
+    "Microsoft Research"
+   ],
+   "source": "page1-llm"
+  },
+  "mosaic_bench": {
+   "institutions": [
+    "University of Haifa"
+   ],
+   "source": "page1-llm"
+  },
+  "mtbbench": {
+   "institutions": [
+    "ETH Zurich",
+    "EPFL"
+   ],
+   "source": "arxiv-search"
+  },
+  "mtbench": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "multi_moe": {
+   "institutions": [
+    "George Washington University"
+   ],
+   "source": "page1-llm"
+  },
+  "multi_swebench": {
+   "institutions": [
+    "ByteDance"
+   ],
+   "source": "arxiv-search"
+  },
+  "multimodal_stem_ai": {
+   "institutions": [
+    "EPFL"
+   ],
+   "source": "page1-llm"
+  },
+  "mvu_eval": {
+   "institutions": [
+    "Nanjing University",
+    "Chinese Academy of Sciences"
+   ],
+   "source": "page1-llm"
+  },
+  "mypcbench": {
+   "institutions": [
+    "Carnegie Mellon University"
+   ],
+   "source": "page1-llm"
+  },
+  "naep_llm_students": {
+   "institutions": [
+    "MBZUAI"
+   ],
+   "source": "page1-llm"
+  },
+  "naturalreasoning": {
+   "institutions": [
+    "Meta"
+   ],
+   "source": "arxiv-search"
+  },
+  "naturebench": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "nester": {
+   "institutions": [
+    "Huazhong University of Science and Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "nyu_ctf_bench": {
+   "institutions": [
+    "New York University"
+   ],
+   "source": "page1-llm"
+  },
+  "ocrbench_v2": {
+   "institutions": [
+    "Huazhong University of Science and Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "omnibench": {
+   "institutions": [
+    "Multimodal Art Projection (M-A-P)"
+   ],
+   "source": "arxiv-search"
+  },
+  "ood_prediction": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "open_captchaworld": {
+   "institutions": [
+    "MBZUAI"
+   ],
+   "source": "arxiv-search"
+  },
+  "openbiorq": {
+   "institutions": [
+    "Upstage AI"
+   ],
+   "source": "page1-llm"
+  },
+  "or_bench": {
+   "institutions": [
+    "UCLA",
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "os_harm": {
+   "institutions": [
+    "EPFL"
+   ],
+   "source": "arxiv-search"
+  },
+  "osworld": {
+   "institutions": [
+    "University of Hong Kong"
+   ],
+   "source": "page1-llm"
+  },
+  "osworld_g": {
+   "institutions": [
+    "University of Hong Kong"
+   ],
+   "source": "arxiv-search"
+  },
+  "osworld_v2": {
+   "institutions": [
+    "University of Hong Kong"
+   ],
+   "source": "OSWorld 2.0 Appendix A: https://arxiv.org/pdf/2606.29537#page=26"
+  },
+  "overt": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "perfcodebench": {
+   "institutions": [
+    "Hong Kong University of Science and Technology",
+    "New York University"
+   ],
+   "source": "page1-llm"
+  },
+  "perteval": {
+   "institutions": [
+    "University of Science and Technology of China",
+    "Alibaba"
+   ],
+   "source": "page1-llm"
+  },
+  "perumedqa": {
+   "institutions": [
+    "Emory University",
+    "Institut de Recherche en Informatique de Toulouse"
+   ],
+   "source": "page1-llm"
+  },
+  "physics_bench": {
+   "institutions": [
+    "Shanghai AI Laboratory"
+   ],
+   "source": "arxiv-search"
+  },
+  "pku_saferlhf": {
+   "institutions": [
+    "Peking University"
+   ],
+   "source": "page1-llm"
+  },
+  "planbench": {
+   "institutions": [
+    "Arizona State University"
+   ],
+   "source": "page1-llm"
+  },
+  "polymath": {
+   "institutions": [
+    "Alibaba"
+   ],
+   "source": "arxiv-search"
+  },
+  "potemkin": {
+   "institutions": [
+    "MIT",
+    "Harvard University"
+   ],
+   "source": "page1-llm"
+  },
+  "prediction_arena": {
+   "institutions": [
+    "Arcada Labs"
+   ],
+   "source": "page1-llm"
+  },
+  "preference_dissection": {
+   "institutions": [
+    "Shanghai Jiao Tong University"
+   ],
+   "source": "ACL Anthology 2024.acl-long.99"
+  },
+  "programbench": {
+   "institutions": [
+    "Meta",
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "prompt_to_leaderboard": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "proofaug": {
+   "institutions": [
+    "Tsinghua University",
+    "Huawei"
+   ],
+   "source": "page1-llm"
+  },
+  "prox": {
+   "institutions": [
+    "Shanghai Jiao Tong University"
+   ],
+   "source": "page1-llm"
+  },
+  "psi_traffic": {
+   "institutions": [
+    "Tulane University",
+    "Purdue University"
+   ],
+   "source": "arxiv-search"
+  },
+  "psychosis_bench": {
+   "institutions": [
+    "University College London",
+    "Nuraxi AI"
+   ],
+   "source": "page1-llm"
+  },
+  "putnam_axiom": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "pxplore": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "questbench": {
+   "institutions": [
+    "MIT",
+    "Google DeepMind"
+   ],
+   "source": "arxiv-search"
+  },
+  "raguard": {
+   "institutions": [
+    "The Harker School",
+    "Irvington High School"
+   ],
+   "source": "arxiv-search"
+  },
+  "rbench_v": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "arxiv-search"
+  },
+  "rd_agent_quant": {
+   "institutions": [
+    "Carnegie Mellon University",
+    "Microsoft Research"
+   ],
+   "source": "arxiv-search"
+  },
+  "re_bench": {
+   "institutions": [
+    "METR"
+   ],
+   "source": "page1-llm"
+  },
+  "real_pocqi": {
+   "institutions": [
+    "UC San Francisco",
+    "Harvard Medical School"
+   ],
+   "source": "page1-llm"
+  },
+  "real_webagents": {
+   "institutions": [
+    "The AGI Company",
+    "Mercor"
+   ],
+   "source": "arxiv-search"
+  },
+  "realmath": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "arxiv-search"
+  },
+  "realtimeqa": {
+   "institutions": [
+    "Toyota Technological Institute at Chicago",
+    "Tohoku University"
+   ],
+   "source": "page1-llm"
+  },
+  "recbench": {
+   "institutions": [
+    "Hong Kong Polytechnic University",
+    "Huawei"
+   ],
+   "source": "arxiv-search"
+  },
+  "reeval": {
+   "institutions": [
+    "Stanford University",
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "refgrader": {
+   "institutions": [
+    "Pennsylvania State University"
+   ],
+   "source": "page1-llm"
+  },
+  "reliancescope": {
+   "institutions": [
+    "University of Michigan",
+    "KAIST"
+   ],
+   "source": "page1-llm"
+  },
+  "researchclawbench": {
+   "institutions": [
+    "Shanghai AI Laboratory"
+   ],
+   "source": "page1-llm"
+  },
+  "researchcodebench": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "arxiv-search"
+  },
+  "revolve": {
+   "institutions": [
+    "Hong Kong University of Science and Technology",
+    "University of Illinois Urbana-Champaign"
+   ],
+   "source": "page1-llm"
+  },
+  "rewardbench": {
+   "institutions": [
+    "Allen Institute for AI"
+   ],
+   "source": "page1-llm"
+  },
+  "rewardbench2": {
+   "institutions": [
+    "Allen Institute for AI"
+   ],
+   "source": "page1-llm"
+  },
+  "robo2vlm": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "page1-llm"
+  },
+  "roboflow100_vl": {
+   "institutions": [
+    "Roboflow"
+   ],
+   "source": "arxiv-search"
+  },
+  "robust_reasoning_benchmark": {
+   "institutions": [
+    "University of Toronto"
+   ],
+   "source": "page1-llm"
+  },
+  "sad": {
+   "institutions": [
+    "Independent"
+   ],
+   "source": "page1-llm"
+  },
+  "scbench_long": {
+   "institutions": [
+    "LatchBio"
+   ],
+   "source": "page1-llm"
+  },
+  "sciarena": {
+   "institutions": [
+    "Yale University"
+   ],
+   "source": "arxiv-search"
+  },
+  "scivisagentbench": {
+   "institutions": [
+    "University of Notre Dame",
+    "Lawrence Livermore National Laboratory"
+   ],
+   "source": "page1-llm"
+  },
+  "secodeplt": {
+   "institutions": [
+    "UC Santa Barbara",
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "seephys": {
+   "institutions": [
+    "Sun Yat-sen University"
+   ],
+   "source": "arxiv-search"
+  },
+  "semantic_kg": {
+   "institutions": [
+    "University of Cambridge",
+    "GSK"
+   ],
+   "source": "arxiv-search"
+  },
+  "sgrades": {
+   "institutions": [
+    "University of North Texas"
+   ],
+   "source": "page1-llm"
+  },
+  "sketchjudge": {
+   "institutions": [
+    "Beijing Normal University"
+   ],
+   "source": "page1-llm"
+  },
+  "sm3_text_to_query": {
+   "institutions": [
+    "Zurich University of Applied Sciences"
+   ],
+   "source": "page1-llm"
+  },
+  "smmile": {
+   "institutions": [
+    "ETH Zurich",
+    "Stanford University"
+   ],
+   "source": "arxiv-search"
+  },
+  "soar_arc": {
+   "institutions": [
+    "Inria"
+   ],
+   "source": "arxiv-search"
+  },
+  "software_world_models": {
+   "institutions": [
+    "JetBrains Research"
+   ],
+   "source": "page1-llm"
+  },
+  "solidgeo": {
+   "institutions": [
+    "Chinese Academy of Sciences",
+    "University of Electronic Science and Technology of China"
+   ],
+   "source": "arxiv-search"
+  },
+  "sorrybench": {
+   "institutions": [
+    "Princeton University"
+   ],
+   "source": "page1-llm"
+  },
+  "stage_claw": {
+   "institutions": [
+    "Chinese Academy of Sciences"
+   ],
+   "source": "page1-llm"
+  },
+  "stark": {
+   "institutions": [
+    "UCLA"
+   ],
+   "source": "page1-llm"
+  },
+  "statqa": {
+   "institutions": [
+    "Hong Kong University of Science and Technology (Guangzhou)"
+   ],
+   "source": "arxiv-search"
+  },
+  "subjective_qa": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "page1-llm"
+  },
+  "sugarcrepe": {
+   "institutions": [
+    "University of Washington"
+   ],
+   "source": "page1-llm"
+  },
+  "supergpqa": {
+   "institutions": [
+    "Multimodal Art Projection (M-A-P)"
+   ],
+   "source": "NeurIPS 2025 final paper, Contributions: https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf#page=19"
+  },
+  "sustainable_food": {
+   "institutions": [
+    "Stanford University",
+    "Umai Works"
+   ],
+   "source": "page1-llm"
+  },
+  "swe_chat": {
+   "institutions": [
+    "Stanford University"
+   ],
+   "source": "page1-llm"
+  },
+  "swe_rebench": {
+   "institutions": [
+    "Nebius"
+   ],
+   "source": "arxiv-search"
+  },
+  "swe_smith": {
+   "institutions": [
+    "Stanford University",
+    "Princeton University"
+   ],
+   "source": "arxiv-search"
+  },
+  "swe_together": {
+   "institutions": [
+    "Meta"
+   ],
+   "source": "page1-llm"
+  },
+  "swebench": {
+   "institutions": [
+    "Princeton University"
+   ],
+   "source": "page1-llm"
+  },
+  "swebench_java": {
+   "institutions": [
+    "Chinese Academy of Sciences"
+   ],
+   "source": "page1-llm"
+  },
+  "synthpai": {
+   "institutions": [
+    "ETH Zurich"
+   ],
+   "source": "page1-llm"
+  },
+  "t1_agentic": {
+   "institutions": [
+    "Capital One"
+   ],
+   "source": "arxiv-search"
+  },
+  "tabicl": {
+   "institutions": [
+    "Inria"
+   ],
+   "source": "page1-llm"
+  },
+  "taiwanvqa": {
+   "institutions": [
+    "National Center for High-performance Computing"
+   ],
+   "source": "arxiv-search"
+  },
+  "tau2_bench": {
+   "institutions": [
+    "Sierra"
+   ],
+   "source": "page1-llm"
+  },
+  "tau_voice": {
+   "institutions": [
+    "Sierra"
+   ],
+   "source": "page1-llm"
+  },
+  "tdd_bench_verified": {
+   "institutions": [
+    "IBM Research"
+   ],
+   "source": "page1-llm"
+  },
+  "tengu": {
+   "institutions": [
+    "Lightblue"
+   ],
+   "source": "dataset-release (lightblue/tengu_bench; no paper)"
+  },
+  "terminal_bench": {
+   "institutions": [
+    "Stanford University",
+    "Laude Institute"
+   ],
+   "source": "page1-llm"
+  },
+  "terminal_bench_2_1": {
+   "institutions": [
+    "Stanford University",
+    "Laude Institute"
+   ],
+   "source": "page1-llm"
+  },
+  "thinkbench": {
+   "institutions": [
+    "Zhejiang University",
+    "University College London"
+   ],
+   "source": "page1-llm"
+  },
+  "toolbench": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "trauma_voices": {
+   "institutions": [
+    "Pennsylvania State University",
+    "Emory University"
+   ],
+   "source": "arxiv-search"
+  },
+  "truthfulqa_mc": {
+   "institutions": [
+    "University of Oxford",
+    "OpenAI"
+   ],
+   "source": "page1-llm"
+  },
+  "tua_bench": {
+   "institutions": [
+    "Meta"
+   ],
+   "source": "page1-llm"
+  },
+  "tulu_human_eval": {
+   "institutions": [
+    "Allen Institute for AI"
+   ],
+   "source": "arxiv-search"
+  },
+  "txbench_pp": {
+   "institutions": [
+    "LatchBio"
+   ],
+   "source": "page1-llm"
+  },
+  "ultrafeedback": {
+   "institutions": [
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "videogameqa_bench": {
+   "institutions": [
+    "University of Alberta",
+    "Sony"
+   ],
+   "source": "arxiv-search"
+  },
+  "videoufo": {
+   "institutions": [
+    "University of Technology Sydney",
+    "Zhejiang University"
+   ],
+   "source": "arxiv-search"
+  },
+  "visit_bench": {
+   "institutions": [
+    "Hebrew University",
+    "UCLA"
+   ],
+   "source": "page1-llm"
+  },
+  "visual_memory": {
+   "institutions": [
+    "Google DeepMind"
+   ],
+   "source": "page1-llm"
+  },
+  "visual_riddles": {
+   "institutions": [
+    "Ben-Gurion University",
+    "Bar-Ilan University"
+   ],
+   "source": "page1-llm"
+  },
+  "vivabench": {
+   "institutions": [
+    "Georgia Institute of Technology",
+    "University of Toronto"
+   ],
+   "source": "arxiv-search"
+  },
+  "vlm4bio": {
+   "institutions": [
+    "Virginia Tech",
+    "Oak Ridge National Laboratory"
+   ],
+   "source": "page1-llm"
+  },
+  "vmdt": {
+   "institutions": [
+    "UC Berkeley"
+   ],
+   "source": "arxiv-search"
+  },
+  "vript_hard": {
+   "institutions": [
+    "Shanghai Jiao Tong University",
+    "Beihang University"
+   ],
+   "source": "page1-llm"
+  },
+  "weavebench": {
+   "institutions": [
+    "Microsoft Research",
+    "Tsinghua University"
+   ],
+   "source": "page1-llm"
+  },
+  "wikicontradict": {
+   "institutions": [
+    "IBM Research"
+   ],
+   "source": "page1-llm"
+  },
+  "wikihow_agent": {
+   "institutions": [
+    "Vrije Universiteit Amsterdam",
+    "University College London"
+   ],
+   "source": "page1-llm"
+  },
+  "wildbench": {
+   "institutions": [
+    "Allen Institute for AI"
+   ],
+   "source": "page1-llm"
+  },
+  "wildvision": {
+   "institutions": [
+    "UC Santa Barbara",
+    "University of Waterloo"
+   ],
+   "source": "page1-llm"
+  },
+  "workbench_revisited": {
+   "institutions": [
+    "Independent"
+   ],
+   "source": "page1-llm"
+  },
+  "worldcentralbanks": {
+   "institutions": [
+    "Georgia Institute of Technology"
+   ],
+   "source": "arxiv-search"
+  },
+  "writingbench": {
+   "institutions": [
+    "Alibaba"
+   ],
+   "source": "arxiv-html (2503.05244; page text not cached)"
+  }
+ },
+ "institutions": {
+  "AIRI": {
+   "logo": "/institutions/airi.jpg",
+   "type": "other",
+   "canonical": "Associazione Italiana per la Ricerca Industriale"
+  },
+  "ARC Prize Foundation": {
+   "logo": null,
+   "type": "other",
+   "canonical": "ARC Prize Foundation"
+  },
+  "Alibaba": {
+   "logo": "/institutions/alibaba.png",
+   "type": "company",
+   "canonical": "Alibaba Group (China)"
+  },
+  "Allen Institute for AI": {
+   "logo": "/institutions/allen-institute-for-ai.png",
+   "type": "nonprofit",
+   "canonical": "Allen Institute for Artificial Intelligence"
+  },
+  "Amazon": {
+   "logo": "/institutions/amazon.png",
+   "type": "company",
+   "canonical": "Amazon (Germany)"
+  },
+  "Ant Group": {
+   "logo": "/institutions/ant-group.png",
+   "type": "nonprofit",
+   "canonical": "ANT Foundation Italy Onlus"
+  },
+  "Anthropic": {
+   "logo": "/institutions/anthropic.png",
+   "type": "company",
+   "canonical": "Anthropic (United States)"
+  },
+  "Arcada Labs": {
+   "logo": "/institutions/arcada-labs.png",
+   "type": "education",
+   "canonical": "Arcada University of Applied Sciences"
+  },
+  "Arizona State University": {
+   "logo": "/institutions/arizona-state-university.png",
+   "type": "education",
+   "canonical": "Arizona State University"
+  },
+  "Bar-Ilan University": {
+   "logo": "/institutions/bar-ilan-university.png",
+   "type": "education",
+   "canonical": "Bar-Ilan University"
+  },
+  "Beihang University": {
+   "logo": "/institutions/beihang-university.jpg",
+   "type": "education",
+   "canonical": "Beihang University"
+  },
+  "Beijing Institute of Technology": {
+   "logo": "/institutions/beijing-institute-of-technology.png",
+   "type": "education",
+   "canonical": "Beijing Institute of Technology"
+  },
+  "Beijing Normal University": {
+   "logo": "/institutions/beijing-normal-university.png",
+   "type": "education",
+   "canonical": "Beijing Normal University"
+  },
+  "Ben-Gurion University": {
+   "logo": "/institutions/ben-gurion-university.png",
+   "type": "education",
+   "canonical": "Ben-Gurion University of the Negev"
+  },
+  "Bielefeld University": {
+   "logo": "/institutions/bielefeld-university.png",
+   "type": "education",
+   "canonical": "Bielefeld University"
+  },
+  "Bocconi University": {
+   "logo": "/institutions/bocconi-university.jpg",
+   "type": "education",
+   "canonical": "Bocconi University"
+  },
+  "ByteDance": {
+   "logo": "/institutions/bytedance.png",
+   "type": "company",
+   "canonical": "ByteDance (China)"
+  },
+  "Caltech": {
+   "logo": "/institutions/caltech.png",
+   "type": "education",
+   "canonical": "California Institute of Technology"
+  },
+  "Capital One": {
+   "logo": "/institutions/capital-one.png",
+   "type": "company",
+   "canonical": "Capital One (United States)"
+  },
+  "Carnegie Mellon University": {
+   "logo": "/institutions/carnegie-mellon-university.png",
+   "type": "education",
+   "canonical": "Carnegie Mellon University"
+  },
+  "Center for AI Safety": {
+   "logo": "/institutions/center-for-ai-safety.png",
+   "type": "facility",
+   "canonical": "Finnish Center for Artificial Intelligence"
+  },
+  "Chinese Academy of Sciences": {
+   "logo": "/institutions/chinese-academy-of-sciences.png",
+   "type": "government",
+   "canonical": "Chinese Academy of Sciences"
+  },
+  "Chinese University of Hong Kong": {
+   "logo": "/institutions/chinese-university-of-hong-kong.png",
+   "type": "education",
+   "canonical": "Chinese University of Hong Kong"
+  },
+  "City University of Hong Kong": {
+   "logo": "/institutions/city-university-of-hong-kong.png",
+   "type": "education",
+   "canonical": "City University of Hong Kong"
+  },
+  "Columbia University": {
+   "logo": "/institutions/columbia-university.png",
+   "type": "education",
+   "canonical": "Columbia University"
+  },
+  "Complexity Science Hub": {
+   "logo": "/institutions/complexity-science-hub.png",
+   "type": "nonprofit",
+   "canonical": "Complexity Science Hub"
+  },
+  "Cornell University": {
+   "logo": "/institutions/cornell-university.png",
+   "type": "education",
+   "canonical": "Cornell University"
+  },
+  "DBAPPSecurity": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "Datacurve": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "EPFL": {
+   "logo": "/institutions/epfl.png",
+   "type": "education",
+   "canonical": "École Polytechnique Fédérale de Lausanne"
+  },
+  "ETH Zurich": {
+   "logo": "/institutions/eth-zurich.png",
+   "type": "education",
+   "canonical": "ETH Zurich"
+  },
+  "East China Normal University": {
+   "logo": "/institutions/east-china-normal-university.png",
+   "type": "education",
+   "canonical": "East China Normal University"
+  },
+  "Emory University": {
+   "logo": "/institutions/emory-university.png",
+   "type": "education",
+   "canonical": "Emory University"
+  },
+  "Fudan University": {
+   "logo": "/institutions/fudan-university.png",
+   "type": "education",
+   "canonical": "Fudan University"
+  },
+  "GSK": {
+   "logo": "/institutions/gsk.png",
+   "type": "company",
+   "canonical": "Glaxosmithkline (Finland)"
+  },
+  "George Washington University": {
+   "logo": "/institutions/george-washington-university.png",
+   "type": "education",
+   "canonical": "George Washington University"
+  },
+  "Georgia Institute of Technology": {
+   "logo": "/institutions/georgia-institute-of-technology.png",
+   "type": "education",
+   "canonical": "Georgia Institute of Technology"
+  },
+  "Google": {
+   "logo": "/institutions/google.png",
+   "type": "company",
+   "canonical": "Google (Ireland)"
+  },
+  "Google DeepMind": {
+   "logo": "/institutions/google-deepmind.png",
+   "type": "company",
+   "canonical": "Google DeepMind (United Kingdom)"
+  },
+  "Harvard Medical School": {
+   "logo": "/institutions/harvard-medical-school.jpg",
+   "type": "nonprofit",
+   "canonical": "Harvard Vanguard Medical Associates"
+  },
+  "Harvard University": {
+   "logo": "/institutions/harvard-university.png",
+   "type": "education",
+   "canonical": "Harvard University"
+  },
+  "Hebrew University": {
+   "logo": "/institutions/hebrew-university.png",
+   "type": "education",
+   "canonical": "Hebrew University of Jerusalem"
+  },
+  "Hochschule Kempten": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Kempten University of Applied Sciences"
+  },
+  "Hong Kong Polytechnic University": {
+   "logo": "/institutions/hong-kong-polytechnic-university.png",
+   "type": "education",
+   "canonical": "Hong Kong Polytechnic University"
+  },
+  "Hong Kong University of Science and Technology": {
+   "logo": "/institutions/hong-kong-university-of-science-and-technology.png",
+   "type": "education",
+   "canonical": "Hong Kong University of Science and Technology"
+  },
+  "Hong Kong University of Science and Technology (Guangzhou)": {
+   "logo": "/institutions/hong-kong-university-of-science-and-technology-guangzhou.png",
+   "type": "education",
+   "canonical": "The Hong Kong University of Science and Technology (Guangzhou)"
+  },
+  "Huawei": {
+   "logo": "/institutions/huawei.png",
+   "type": "company",
+   "canonical": "Huawei Technologies (Poland)"
+  },
+  "Huazhong University of Science and Technology": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Huazhong University of Science and Technology"
+  },
+  "Hugging Face": {
+   "logo": "/institutions/hugging-face.png",
+   "type": "company",
+   "canonical": "Hugging Face"
+  },
+  "IBM Research": {
+   "logo": "/institutions/ibm-research.png",
+   "type": "facility",
+   "canonical": "IBM Research - Ireland"
+  },
+  "IDEAS NCBR": {
+   "logo": "/institutions/ideas-ncbr.png",
+   "type": "company",
+   "canonical": "Integrated Detector Electronics AS (Norway)"
+  },
+  "IN.AI Research": {
+   "logo": null,
+   "type": "company",
+   "canonical": "Research Research (South Africa)"
+  },
+  "Imperial College London": {
+   "logo": "/institutions/imperial-college-london.png",
+   "type": "education",
+   "canonical": "Imperial College London"
+  },
+  "Independent": {
+   "logo": null,
+   "type": null,
+   "canonical": "Independent"
+  },
+  "Indian Institute of Science": {
+   "logo": "/institutions/indian-institute-of-science.png",
+   "type": "facility",
+   "canonical": "Indian Institute of Soil Science"
+  },
+  "Inria": {
+   "logo": null,
+   "type": "government",
+   "canonical": "Institut national de recherche en sciences et technologies du numérique"
+  },
+  "Institut de Recherche en Informatique de Toulouse": {
+   "logo": "/institutions/institut-de-recherche-en-informatique-de-toulouse.png",
+   "type": "facility",
+   "canonical": "Institut de Recherche en Informatique de Toulouse"
+  },
+  "International Digital Economy Academy": {
+   "logo": null,
+   "type": "facility",
+   "canonical": "Beijing Academy of Smart Economy"
+  },
+  "Intron": {
+   "logo": null,
+   "type": "company",
+   "canonical": "iNtRON (South Korea)"
+  },
+  "Irvington High School": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Machakos School"
+  },
+  "Isaacus": {
+   "logo": "/institutions/isaacus.png",
+   "type": null,
+   "canonical": null
+  },
+  "JetBrains Research": {
+   "logo": "/institutions/jetbrains-research.png",
+   "type": "company",
+   "canonical": "Research Research (South Africa)"
+  },
+  "KAIST": {
+   "logo": "/institutions/kaist.png",
+   "type": "education",
+   "canonical": "Korea Advanced Institute of Science and Technology"
+  },
+  "KPMG AZSA LLC": {
+   "logo": "/institutions/kpmg-azsa-llc.png",
+   "type": "company",
+   "canonical": "KPMG (Australia)"
+  },
+  "Kent State University": {
+   "logo": "/institutions/kent-state-university.png",
+   "type": "education",
+   "canonical": "Kent State University"
+  },
+  "King's College London": {
+   "logo": "/institutions/king-s-college-london.png",
+   "type": "education",
+   "canonical": "King's College London"
+  },
+  "LatchBio": {
+   "logo": "/institutions/latchbio.png",
+   "type": null,
+   "canonical": null
+  },
+  "Laude Institute": {
+   "logo": "/institutions/laude-institute.jpg",
+   "type": null,
+   "canonical": "Laude Institute"
+  },
+  "Lawrence Livermore National Laboratory": {
+   "logo": null,
+   "type": "facility",
+   "canonical": "Lawrence Livermore National Laboratory"
+  },
+  "LibrAI": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "Lightblue": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "Ludwig Maximilian University of Munich": {
+   "logo": "/institutions/ludwig-maximilian-university-of-munich.png",
+   "type": "education",
+   "canonical": "Ludwig-Maximilians-Universität München"
+  },
+  "Multimodal Art Projection (M-A-P)": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "MBZUAI": {
+   "logo": "/institutions/mbzuai.png",
+   "type": "education",
+   "canonical": "Mohamed bin Zayed University of Artificial Intelligence"
+  },
+  "METR": {
+   "logo": "/institutions/metr.png",
+   "type": null,
+   "canonical": null
+  },
+  "MIT": {
+   "logo": "/institutions/mit.png",
+   "type": "education",
+   "canonical": "Massachusetts Institute of Technology"
+  },
+  "Max Planck Institute for Security and Privacy": {
+   "logo": "/institutions/max-planck-institute-for-security-and-privacy.png",
+   "type": "facility",
+   "canonical": "Max Planck Institute for Security and Privacy"
+  },
+  "McGill University": {
+   "logo": "/institutions/mcgill-university.png",
+   "type": "education",
+   "canonical": "McGill University"
+  },
+  "Medlinker": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "Mercor": {
+   "logo": "/institutions/mercor.png",
+   "type": null,
+   "canonical": null
+  },
+  "Meta": {
+   "logo": "/institutions/meta.jpg",
+   "type": "company",
+   "canonical": "Meta (United States)"
+  },
+  "Microsoft Research": {
+   "logo": "/institutions/microsoft-research.png",
+   "type": "company",
+   "canonical": "Microsoft Research (India)"
+  },
+  "Moscow Institute of Physics and Technology": {
+   "logo": "/institutions/moscow-institute-of-physics-and-technology.png",
+   "type": "education",
+   "canonical": "Moscow Institute of Physics and Technology"
+  },
+  "NIT Kurukshetra": {
+   "logo": null,
+   "type": "education",
+   "canonical": "National Institute of Technology Kurukshetra"
+  },
+  "Nanjing University": {
+   "logo": "/institutions/nanjing-university.png",
+   "type": "education",
+   "canonical": "Nanjing University"
+  },
+  "Nanyang Technological University": {
+   "logo": "/institutions/nanyang-technological-university.png",
+   "type": "education",
+   "canonical": "Nanyang Technological University"
+  },
+  "National Center for High-performance Computing": {
+   "logo": null,
+   "type": "facility",
+   "canonical": "National Center for High-Performance Computing"
+  },
+  "National University of Singapore": {
+   "logo": null,
+   "type": "education",
+   "canonical": "National University of Singapore"
+  },
+  "Nebius": {
+   "logo": "/institutions/nebius.png",
+   "type": null,
+   "canonical": null
+  },
+  "Netflix": {
+   "logo": "/institutions/netflix.png",
+   "type": "company",
+   "canonical": "Netflix (United States)"
+  },
+  "New York University": {
+   "logo": "/institutions/new-york-university.png",
+   "type": "education",
+   "canonical": "New York University"
+  },
+  "Nitrode": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "Northeastern University": {
+   "logo": "/institutions/northeastern-university.png",
+   "type": "education",
+   "canonical": "Universidad del Noreste"
+  },
+  "Nuraxi AI": {
+   "logo": null,
+   "type": "nonprofit",
+   "canonical": "Amnesty International Ireland"
+  },
+  "Oak Ridge National Laboratory": {
+   "logo": "/institutions/oak-ridge-national-laboratory.png",
+   "type": "facility",
+   "canonical": "Oak Ridge National Laboratory"
+  },
+  "Ohio State University": {
+   "logo": "/institutions/ohio-state-university.png",
+   "type": "healthcare",
+   "canonical": "Ohio State University Hospital"
+  },
+  "OpenAI": {
+   "logo": "/institutions/openai.png",
+   "type": "company",
+   "canonical": "OpenAI (United States)"
+  },
+  "Patronus AI": {
+   "logo": "/institutions/patronus-ai.png",
+   "type": "nonprofit",
+   "canonical": "Amnesty International Ireland"
+  },
+  "Peking University": {
+   "logo": "/institutions/peking-university.png",
+   "type": "education",
+   "canonical": "Peking University"
+  },
+  "Pengcheng Laboratory": {
+   "logo": null,
+   "type": "facility",
+   "canonical": "Carlsberg Laboratory"
+  },
+  "Pennsylvania State University": {
+   "logo": "/institutions/pennsylvania-state-university.png",
+   "type": "education",
+   "canonical": "Pennsylvania State University"
+  },
+  "Pine AI": {
+   "logo": null,
+   "type": "nonprofit",
+   "canonical": "Amnesty International Ireland"
+  },
+  "Princeton University": {
+   "logo": "/institutions/princeton-university.png",
+   "type": "education",
+   "canonical": "Princeton University"
+  },
+  "Purdue University": {
+   "logo": "/institutions/purdue-university.png",
+   "type": "education",
+   "canonical": "Purdue University Northwest"
+  },
+  "Queen Mary University of London": {
+   "logo": "/institutions/queen-mary-university-of-london.png",
+   "type": "education",
+   "canonical": "Queen Mary University of London"
+  },
+  "Redwood Research": {
+   "logo": "/institutions/redwood-research.png",
+   "type": "company",
+   "canonical": "Redwood Pharma (Sweden)"
+  },
+  "Renmin University of China": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Renmin University of China"
+  },
+  "Roboflow": {
+   "logo": "/institutions/roboflow.png",
+   "type": null,
+   "canonical": null
+  },
+  "Rochester Institute of Technology": {
+   "logo": "/institutions/rochester-institute-of-technology.png",
+   "type": "education",
+   "canonical": "Rochester Institute of Technology"
+  },
+  "Rogo": {
+   "logo": null,
+   "type": null,
+   "canonical": null
+  },
+  "SCB 10X": {
+   "logo": "/institutions/scb-10x.png",
+   "type": "nonprofit",
+   "canonical": "Society for Conservation Biology"
+  },
+  "Sakana AI": {
+   "logo": "/institutions/sakana-ai.png",
+   "type": "company",
+   "canonical": "Sakana AI (Japan)"
+  },
+  "Salesforce": {
+   "logo": "/institutions/salesforce.png",
+   "type": "company",
+   "canonical": "Salesforce (United States)"
+  },
+  "Sapporo Cardiovascular Clinic": {
+   "logo": "/institutions/sapporo-cardiovascular-clinic.png",
+   "type": "education",
+   "canonical": "Sapporo University"
+  },
+  "Scale AI": {
+   "logo": "/institutions/scale-ai.png",
+   "type": "company",
+   "canonical": "Kamacho Scale Co., Ltd. (Japan)"
+  },
+  "Shanghai AI Laboratory": {
+   "logo": null,
+   "type": "facility",
+   "canonical": "Shanghai Artificial Intelligence Laboratory"
+  },
+  "Shanghai Jiao Tong University": {
+   "logo": "/institutions/shanghai-jiao-tong-university.jpg",
+   "type": "education",
+   "canonical": "Shanghai Jiao Tong University"
+  },
+  "Shibaura Institute of Technology": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Shibaura Institute of Technology"
+  },
+  "Sierra": {
+   "logo": "/institutions/sierra.png",
+   "type": "company",
+   "canonical": "Sierra"
+  },
+  "Singapore Management University": {
+   "logo": "/institutions/singapore-management-university.png",
+   "type": "education",
+   "canonical": "Singapore Management University"
+  },
+  "Singapore-MIT Alliance for Research and Technology": {
+   "logo": "/institutions/singapore-mit-alliance-for-research-and-technology.png",
+   "type": "education",
+   "canonical": "Singapore-MIT Alliance for Research and Technology"
+  },
+  "Sony": {
+   "logo": "/institutions/sony.png",
+   "type": "company",
+   "canonical": "Sony (Japan)"
+  },
+  "Soochow University": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Soochow University"
+  },
+  "Stanford University": {
+   "logo": "/institutions/stanford-university.png",
+   "type": "education",
+   "canonical": "Stanford University"
+  },
+  "Stony Brook University": {
+   "logo": "/institutions/stony-brook-university.png",
+   "type": "education",
+   "canonical": "Stony Brook University"
+  },
+  "Sun Yat-sen University": {
+   "logo": "/institutions/sun-yat-sen-university.jpg",
+   "type": "education",
+   "canonical": "Sun Yat-sen University"
+  },
+  "Technical University of Munich": {
+   "logo": "/institutions/technical-university-of-munich.png",
+   "type": "education",
+   "canonical": "Technical University of Munich"
+  },
+  "Tencent": {
+   "logo": "/institutions/tencent.png",
+   "type": "company",
+   "canonical": "Tencent (China)"
+  },
+  "The AGI Company": {
+   "logo": "/institutions/the-agi-company.png",
+   "type": "company",
+   "canonical": "Aeronautical and General Instruments"
+  },
+  "The Harker School": {
+   "logo": "/institutions/the-harker-school.png",
+   "type": "education",
+   "canonical": "Dwight School"
+  },
+  "Tohoku University": {
+   "logo": "/institutions/tohoku-university.png",
+   "type": "education",
+   "canonical": "Tohoku University"
+  },
+  "Toyota Technological Institute at Chicago": {
+   "logo": "/institutions/toyota-technological-institute-at-chicago.png",
+   "type": "education",
+   "canonical": "Toyota Technological Institute at Chicago"
+  },
+  "Tsinghua University": {
+   "logo": "/institutions/tsinghua-university.png",
+   "type": "education",
+   "canonical": "Tsinghua University"
+  },
+  "Tulane University": {
+   "logo": "/institutions/tulane-university.png",
+   "type": "education",
+   "canonical": "Tulane University"
+  },
+  "UC Berkeley": {
+   "logo": "/institutions/uc-berkeley.png",
+   "type": "education",
+   "canonical": "University of California, Berkeley"
+  },
+  "UC San Diego": {
+   "logo": "/institutions/uc-san-diego.png",
+   "type": "education",
+   "canonical": "University of California San Diego"
+  },
+  "UC San Francisco": {
+   "logo": "/institutions/uc-san-francisco.png",
+   "type": "education",
+   "canonical": "University of California, San Francisco"
+  },
+  "UC Santa Barbara": {
+   "logo": "/institutions/uc-santa-barbara.png",
+   "type": "education",
+   "canonical": "University of California, Santa Barbara"
+  },
+  "UCLA": {
+   "logo": "/institutions/ucla.png",
+   "type": "education",
+   "canonical": "University of California, Los Angeles"
+  },
+  "UNC Chapel Hill": {
+   "logo": "/institutions/unc-chapel-hill.jpg",
+   "type": "education",
+   "canonical": "University of North Carolina at Chapel Hill"
+  },
+  "UT Austin": {
+   "logo": "/institutions/ut-austin.png",
+   "type": "education",
+   "canonical": "The University of Texas at Austin"
+  },
+  "UT Southwestern Medical Center": {
+   "logo": "/institutions/ut-southwestern-medical-center.png",
+   "type": "education",
+   "canonical": "The University of Texas Southwestern Medical Center"
+  },
+  "Umai Works": {
+   "logo": null,
+   "type": "company",
+   "canonical": "Family Works"
+  },
+  "UniPat AI": {
+   "logo": null,
+   "type": "nonprofit",
+   "canonical": "Amnesty International Ireland"
+  },
+  "University College London": {
+   "logo": "/institutions/university-college-london.png",
+   "type": "education",
+   "canonical": "University College London"
+  },
+  "University of Alberta": {
+   "logo": "/institutions/university-of-alberta.png",
+   "type": "education",
+   "canonical": "University of Alberta"
+  },
+  "University of British Columbia": {
+   "logo": "/institutions/university-of-british-columbia.png",
+   "type": "education",
+   "canonical": "University of British Columbia"
+  },
+  "University of Cambridge": {
+   "logo": "/institutions/university-of-cambridge.png",
+   "type": "education",
+   "canonical": "University of Cambridge"
+  },
+  "University of Central Florida": {
+   "logo": "/institutions/university-of-central-florida.jpg",
+   "type": "education",
+   "canonical": "University of Central Florida"
+  },
+  "University of Chicago": {
+   "logo": "/institutions/university-of-chicago.png",
+   "type": "education",
+   "canonical": "University of Chicago"
+  },
+  "University of Edinburgh": {
+   "logo": "/institutions/university-of-edinburgh.png",
+   "type": "education",
+   "canonical": "University of Edinburgh"
+  },
+  "University of Electronic Science and Technology of China": {
+   "logo": null,
+   "type": "education",
+   "canonical": "University of Electronic Science and Technology of China"
+  },
+  "University of Freiburg": {
+   "logo": "/institutions/university-of-freiburg.png",
+   "type": "education",
+   "canonical": "University of Freiburg"
+  },
+  "University of Haifa": {
+   "logo": "/institutions/university-of-haifa.png",
+   "type": "education",
+   "canonical": "University of Haifa"
+  },
+  "University of Hong Kong": {
+   "logo": "/institutions/university-of-hong-kong.png",
+   "type": "education",
+   "canonical": "University of Hong Kong"
+  },
+  "University of Illinois Urbana-Champaign": {
+   "logo": "/institutions/university-of-illinois-urbana-champaign.png",
+   "type": "education",
+   "canonical": "University of Illinois Urbana-Champaign"
+  },
+  "University of Maryland": {
+   "logo": "/institutions/university-of-maryland.png",
+   "type": "education",
+   "canonical": "University of Maryland Extension"
+  },
+  "University of Massachusetts Lowell": {
+   "logo": "/institutions/university-of-massachusetts-lowell.png",
+   "type": "education",
+   "canonical": "University of Massachusetts Lowell"
+  },
+  "University of Melbourne": {
+   "logo": "/institutions/university-of-melbourne.png",
+   "type": "education",
+   "canonical": "The University of Melbourne"
+  },
+  "University of Michigan": {
+   "logo": "/institutions/university-of-michigan.png",
+   "type": "education",
+   "canonical": "University of Michigan"
+  },
+  "University of North Texas": {
+   "logo": "/institutions/university-of-north-texas.png",
+   "type": "education",
+   "canonical": "University of North Texas"
+  },
+  "University of Notre Dame": {
+   "logo": "/institutions/university-of-notre-dame.png",
+   "type": "education",
+   "canonical": "University of Notre Dame"
+  },
+  "University of Oulu": {
+   "logo": "/institutions/university-of-oulu.png",
+   "type": "education",
+   "canonical": "University of Oulu"
+  },
+  "University of Oxford": {
+   "logo": "/institutions/university-of-oxford.png",
+   "type": "education",
+   "canonical": "University of Oxford"
+  },
+  "University of Pennsylvania": {
+   "logo": "/institutions/university-of-pennsylvania.png",
+   "type": "education",
+   "canonical": "University of Pennsylvania"
+  },
+  "University of Rochester": {
+   "logo": "/institutions/university-of-rochester.png",
+   "type": "education",
+   "canonical": "University of Rochester"
+  },
+  "University of Science and Technology of China": {
+   "logo": null,
+   "type": "education",
+   "canonical": "University of Science and Technology of China"
+  },
+  "University of São Paulo": {
+   "logo": "/institutions/university-of-sao-paulo.png",
+   "type": "education",
+   "canonical": "Universidade de São Paulo"
+  },
+  "University of Technology Sydney": {
+   "logo": null,
+   "type": "education",
+   "canonical": "University of Technology Sydney"
+  },
+  "University of Toronto": {
+   "logo": "/institutions/university-of-toronto.png",
+   "type": "education",
+   "canonical": "University of Toronto"
+  },
+  "University of Tübingen": {
+   "logo": "/institutions/university-of-tubingen.png",
+   "type": "education",
+   "canonical": "University of Tübingen"
+  },
+  "University of Virginia": {
+   "logo": "/institutions/university-of-virginia.png",
+   "type": "education",
+   "canonical": "University of Virginia"
+  },
+  "University of Washington": {
+   "logo": "/institutions/university-of-washington.png",
+   "type": "education",
+   "canonical": "University of Washington"
+  },
+  "University of Waterloo": {
+   "logo": "/institutions/university-of-waterloo.png",
+   "type": "education",
+   "canonical": "University of Waterloo"
+  },
+  "University of Wisconsin-Madison": {
+   "logo": "/institutions/university-of-wisconsin-madison.png",
+   "type": "education",
+   "canonical": "University of Wisconsin–Madison"
+  },
+  "University of the Basque Country": {
+   "logo": "/institutions/university-of-the-basque-country.jpg",
+   "type": "education",
+   "canonical": "University of the Basque Country"
+  },
+  "Upstage AI": {
+   "logo": "/institutions/upstage-ai.png",
+   "type": "company",
+   "canonical": "UpStage (South Korea)"
+  },
+  "Vector Institute": {
+   "logo": "/institutions/vector-institute.png",
+   "type": "facility",
+   "canonical": "State Research Center of Virology and Biotechnology VECTOR"
+  },
+  "Virginia Tech": {
+   "logo": "/institutions/virginia-tech.png",
+   "type": "education",
+   "canonical": "Virginia Tech"
+  },
+  "Virtue AI": {
+   "logo": null,
+   "type": "nonprofit",
+   "canonical": "Amnesty International Ireland"
+  },
+  "Vrije Universiteit Amsterdam": {
+   "logo": "/institutions/vrije-universiteit-amsterdam.jpg",
+   "type": "education",
+   "canonical": "Vrije Universiteit Amsterdam"
+  },
+  "Westlake University": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Westlake University"
+  },
+  "Xiamen University": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Xiamen University"
+  },
+  "Yale University": {
+   "logo": "/institutions/yale-university.png",
+   "type": "education",
+   "canonical": "Yale University"
+  },
+  "Zhejiang University": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Zhejiang University"
+  },
+  "Zhejiang University of Technology": {
+   "logo": null,
+   "type": "education",
+   "canonical": "Zhejiang University of Technology"
+  },
+  "Zurich University of Applied Sciences": {
+   "logo": "/institutions/zurich-university-of-applied-sciences.png",
+   "type": "education",
+   "canonical": "ZHAW Zurich University of Applied Sciences"
+  }
+ }
+}

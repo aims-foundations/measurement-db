@@ -1,0 +1,307 @@
+{
+  "afrimedqa": {
+    "citation": "@misc{olatunji2025afrimedqapanafricanmultispecialtymedical,\n      title={AfriMed-QA: A Pan-African, Multi-Specialty, Medical Question-Answering Benchmark Dataset},\n      author={Tobi Olatunji and Charles Nimo and Abraham Owodunni and Tassallah Abdullahi and Emmanuel Ayodele and Mardhiyah Sanni and Chinemelu Aka and Folafunmi Omofoye and Foutse Yuehgoh and Timothy Faniran and Bonaventure F. P. Dossou and Moshood Yekini and Jonas Kemp and Katherine Heller and Jude Chidubem Omeke and Chidi Asuzu MD and Naome A. Etori and Aimérou Ndiaye and Ifeoma Okoh and Evans Doe Ocansey and Wendy Kinara and Michael Best and Irfan Essa and Stephen Edward Moore and Chris Fourie and Mercy Nyamewaa Asiedu},\n      year={2025},\n      eprint={2411.15640},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      doi={https://doi.org/10.18653/v1/2025.acl-long.96},\n      url={https://arxiv.org/abs/2411.15640},\n}",
+    "paper_url": "https://arxiv.org/abs/2411.15640",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "ai2d_test": {
+    "citation": "@misc{kembhavi2016diagramworthdozenimages,\n      title={A Diagram Is Worth A Dozen Images},\n      author={Aniruddha Kembhavi and Mike Salvato and Eric Kolve and Minjoon Seo and Hannaneh Hajishirzi and Ali Farhadi},\n      year={2016},\n      eprint={1603.07396},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/1603.07396},\n}",
+    "paper_url": "https://arxiv.org/abs/1603.07396",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "alignment_faking": {
+    "citation": "@misc{greenblatt2024alignmentfaking,\n      title={Alignment faking in large language models},\n      author={Ryan Greenblatt and Carson Denison and Benjamin Wright and Fabien Roger and Monte MacDiarmid and Sam Marks and Johannes Treutlein and Tim Belonax and Jack Chen and David Duvenaud and Akbir Khan and Julian Michael and Sören Mindermann and Ethan Perez and Linda Petrini and Jonathan Uesato and Jared Kaplan and Buck Shlegeris and Samuel R. Bowman and Evan Hubinger},\n      year={2024},\n      eprint={2412.14093},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2412.14093},\n}",
+    "paper_url": "https://arxiv.org/abs/2412.14093",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "arc_agi_3": {
+    "citation": "@misc{arcagi3_2026,\n  title={ARC-AGI-3: A New Challenge for Frontier Agentic Intelligence},\n  author={{ARC Prize Foundation}},\n  year={2026},\n  eprint={2603.24621},\n  archivePrefix={arXiv},\n  url={https://arxiv.org/abs/2603.24621},\n}",
+    "paper_url": "https://arxiv.org/abs/2603.24621",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "arcagi": {
+    "citation": "@misc{chollet2019measureintelligence,\n      title={On the Measure of Intelligence},\n      author={François Chollet},\n      year={2019},\n      eprint={1911.01547},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/1911.01547},\n}",
+    "paper_url": "https://arxiv.org/abs/1911.01547",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "arena_140k": {
+    "citation": "@misc{chiang2024chatbotarenaopenplatform,\n      title={Chatbot Arena: An Open Platform for Evaluating LLMs by Human Preference},\n      author={Wei-Lin Chiang and Lianmin Zheng and Ying Sheng and Anastasios Nikolas Angelopoulos and Tianle Li and Dacheng Li and Hao Zhang and Banghua Zhu and Michael Jordan and Joseph E. Gonzalez and Ion Stoica},\n      year={2024},\n      eprint={2403.04132},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2403.04132},\n}",
+    "paper_url": "https://arxiv.org/abs/2403.04132",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "arena_hard": {
+    "citation": "@misc{li2024crowdsourceddatahighqualitybenchmarks,\n      title={From Crowdsourced Data to High-Quality Benchmarks: Arena-Hard and BenchBuilder Pipeline},\n      author={Tianle Li and Wei-Lin Chiang and Evan Frick and Lisa Dunlap and Tianhao Wu and Banghua Zhu and Joseph E. Gonzalez and Ion Stoica},\n      year={2024},\n      eprint={2406.11939},\n      archivePrefix={arXiv},\n      primaryClass={cs.LG},\n      url={https://arxiv.org/abs/2406.11939},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.11939",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "bfcl": {
+    "citation": "@InProceedings{pmlr-v267-patil25a,\n  title={The Berkeley Function Calling Leaderboard ({BFCL}): From Tool Use to Agentic Evaluation of Large Language Models},\n  author={Patil, Shishir G and Mao, Huanzhi and Yan, Fanjia and Ji, Charlie Cheng-Jie and Suresh, Vishnu and Stoica, Ion and Gonzalez, Joseph E.},\n  booktitle={Proceedings of the 42nd International Conference on Machine Learning},\n  pages={48371--48392},\n  year={2025},\n  editor={Singh, Aarti and Fazel, Maryam and Hsu, Daniel and Lacoste-Julien, Simon and Berkenkamp, Felix and Maharaj, Tegan and Wagstaff, Kiri and Zhu, Jerry},\n  volume={267},\n  series={Proceedings of Machine Learning Research},\n  month={13--19 Jul},\n  publisher={PMLR},\n  pdf={https://raw.githubusercontent.com/mlresearch/v267/main/assets/patil25a/patil25a.pdf},\n  url={https://proceedings.mlr.press/v267/patil25a.html},\n}",
+    "paper_url": "https://proceedings.mlr.press/v267/patil25a.html",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "biggen": {
+    "citation": "@misc{kim2025biggenbenchprincipledbenchmark,\n      title={The BiGGen Bench: A Principled Benchmark for Fine-grained Evaluation of Language Models with Language Models},\n      author={Seungone Kim and Juyoung Suk and Ji Yong Cho and Shayne Longpre and Chaeeun Kim and Dongkeun Yoon and Guijin Son and Yejin Cho and Sheikh Shafayat and Jinheon Baek and Sue Hyun Park and Hyeonbin Hwang and Jinkyung Jo and Hyowon Cho and Haebin Shin and Seongyun Lee and Hanseok Oh and Noah Lee and Namgyu Ho and Se June Joo and Miyoung Ko and Yoonjoo Lee and Hyungjoo Chae and Jamin Shin and Joel Jang and Seonghyeon Ye and Bill Yuchen Lin and Sean Welleck and Graham Neubig and Moontae Lee and Kyungjae Lee and Minjoon Seo},\n      year={2025},\n      eprint={2406.05761},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.05761},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.05761",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "charxiv": {
+    "citation": "@inproceedings{wang2024charxiv,\n  title={CharXiv: Charting Gaps in Realistic Chart Understanding in Multimodal LLMs},\n  author={Wang, Zirui and Xia, Mengzhou and He, Luxi and Chen, Howard and Liu, Yitao and Zhu, Richard and Liang, Kaiqu and Wu, Xindi and Liu, Haotian and Malladi, Sadhika and Chevalier, Alexis and Arora, Sanjeev and Chen, Danqi},\n  booktitle={NeurIPS 2024 Datasets and Benchmarks Track},\n  year={2024},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.18521",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "deepswe": {
+    "citation": "@misc{huang2026deepswe,\n      title={DeepSWE: Measuring Frontier Coding Agents on Original, Long-Horizon Engineering Tasks},\n      author={Wenqi Huang and Charley Lee and Leonard Tng and Serena Ge},\n      year={2026},\n      eprint={2607.07946},\n      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n      url={https://arxiv.org/abs/2607.07946},\n}",
+    "paper_url": "https://arxiv.org/abs/2607.07946",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "frontieror": {
+    "citation": "@article{kong2026frontieror,\n  title={FrontierOR: Benchmarking LLMs' Capacity for Efficient Algorithm Design in Large-Scale Optimization},\n  author={Kong, Minwei and Jiang, Chonghe and Qu, Ao and Ouyang, Wenbin and Zeng, Zhaoming and Guo, Xiaotong and Li, Zhekai and Li, Junyi and Fan, Yi and Zheng, Xinshou and Jing, Xi and Zhang, Yikai and Liang, Zhiwei and Kim, Seonghoo and Yang, Runqing and Zhou, Zijian and Li, Sirui and Zheng, Han and Ying, Wangyang and Zheng, Ou and Wang, Chonghuan and Zhao, Jinglong and Qin, Hanzhang and Wu, Cathy and Liang, Paul Pu and Zhao, Jinhua and Wang, Hai},\n  journal={arXiv preprint arXiv:2605.25246},\n  year={2026}\n}",
+    "paper_url": "https://arxiv.org/abs/2605.25246",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "genai_learning": {
+    "citation": "@article{bastani2025generative,\n  title={Generative AI without guardrails can harm learning: Evidence from high school mathematics},\n  author={Bastani, Hamsa and Bastani, Osbert and Sungu, Alp and Ge, Haosen and Kabakcı, Özge and Mariman, Rei},\n  journal={Proceedings of the National Academy of Sciences},\n  year={2025}\n}",
+    "paper_url": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "haiid": {
+    "citation": "@inproceedings{vodrahalli2022humans,\n  title={Do humans trust advice more if it comes from AI? An analysis of human-AI interactions},\n  author={Vodrahalli, Kailas and Daneshjou, Roxana and Gerstenberg, Tobias and Zou, James},\n  booktitle={Proceedings of the 2022 AAAI/ACM Conference on AI, Ethics, and Society},\n  pages={763--777},\n  year={2022}\n}",
+    "paper_url": "https://arxiv.org/abs/2107.07015",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_airbench": {
+    "citation": "@inproceedings{zeng2025airbench,\n  title={AIR-BENCH 2024: A Safety Benchmark Based on Regulation and Policies Specified Risk Categories},\n  author={Zeng, Yi and Yang, Yu and Zhou, Andy and Tan, Jeffrey Ziwei and Tu, Yuheng and Mai, Yifan and Klyman, Kevin and Pan, Minzhou and Jia, Ruoxi and Song, Dawn and Liang, Percy and Li, Bo},\n  booktitle={The Thirteenth International Conference on Learning Representations},\n  year={2025},\n  url={https://openreview.net/forum?id=UVnD9Ze6mF},\n}",
+    "paper_url": "https://openreview.net/forum?id=UVnD9Ze6mF",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_anthropic_redteam": {
+    "citation": "@article{ganguli2022redteaming,\n  title={Red Teaming Language Models to Reduce Harms: Methods, Scaling Behaviors, and Lessons Learned},\n  author={Ganguli, Deep and Lovitt, Liane and Kernion, Jackson and Askell, Amanda and Bai, Yuntao and Kadavath, Saurav and Mann, Ben and Perez, Ethan and Schiefer, Nicholas and Ndousse, Kamal and Jones, Andy and Bowman, Sam and Chen, Anna and Conerly, Tom and DasSarma, Nova and Drain, Dawn and Elhage, Nelson and El-Showk, Sheer and Fort, Stanislav and Hatfield-Dodds, Zac and Henighan, Tom and Hernandez, Danny and Hume, Tristan and Jacobson, Josh and Johnston, Scott and Kravec, Shauna and Olsson, Catherine and Ringer, Sam and Tran-Johnson, Eli and Amodei, Dario and Brown, Tom and Joseph, Nicholas and McCandlish, Sam and Olah, Chris and Kaplan, Jared and Clark, Jack},\n  journal={arXiv preprint arXiv:2209.07858},\n  year={2022},\n  url={https://arxiv.org/abs/2209.07858},\n}",
+    "paper_url": "https://arxiv.org/abs/2209.07858",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_bbq": {
+    "citation": "@inproceedings{parrish-etal-2022-bbq,\n  title={{BBQ}: A hand-built bias benchmark for question answering},\n  author={Parrish, Alicia and Chen, Angelica and Nangia, Nikita and Padmakumar, Vishakh and Phang, Jason and Thompson, Jana and Htut, Phu Mon and Bowman, Samuel R.},\n  booktitle={Findings of the Association for Computational Linguistics: ACL 2022},\n  year={2022},\n  publisher={Association for Computational Linguistics},\n  pages={2086--2105},\n  doi={10.18653/v1/2022.findings-acl.165},\n  url={https://aclanthology.org/2022.findings-acl.165/},\n}",
+    "paper_url": "https://aclanthology.org/2022.findings-acl.165/",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_bold": {
+    "citation": "@inproceedings{dhamala2021bold,\n  title={BOLD: Dataset and Metrics for Measuring Biases in Open-Ended Language Generation},\n  author={Dhamala, Jwala and Sun, Tony and Kumar, Varun and Krishna, Satyapriya and Pruksachatkun, Yada and Chang, Kai-Wei and Gupta, Rahul},\n  booktitle={Proceedings of the 2021 ACM Conference on Fairness, Accountability, and Transparency},\n  year={2021},\n  publisher={ACM},\n  pages={862--872},\n  doi={10.1145/3442188.3445924},\n  url={https://doi.org/10.1145/3442188.3445924},\n}",
+    "paper_url": "https://doi.org/10.1145/3442188.3445924",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_harmbench": {
+    "citation": "@inproceedings{pmlr-v235-mazeika24a,\n  title={{H}arm{B}ench: A Standardized Evaluation Framework for Automated Red Teaming and Robust Refusal},\n  author={Mazeika, Mantas and Phan, Long and Yin, Xuwang and Zou, Andy and Wang, Zifan and Mu, Norman and Sakhaee, Elham and Li, Nathaniel and Basart, Steven and Li, Bo and Forsyth, David and Hendrycks, Dan},\n  booktitle={Proceedings of the 41st International Conference on Machine Learning},\n  pages={35181--35224},\n  year={2024},\n  volume={235},\n  series={Proceedings of Machine Learning Research},\n  publisher={PMLR},\n  url={https://proceedings.mlr.press/v235/mazeika24a.html},\n}",
+    "paper_url": "https://proceedings.mlr.press/v235/mazeika24a.html",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_real_toxicity_prompts": {
+    "citation": "@inproceedings{gehman2020realtoxicityprompts,\n  title={RealToxicityPrompts: Evaluating Neural Toxic Degeneration in Language Models},\n  author={Gehman, Samuel and Gururangan, Suchin and Sap, Maarten and Choi, Yejin and Smith, Noah A.},\n  booktitle={Findings of EMNLP},\n  year={2020},\n}",
+    "paper_url": "https://arxiv.org/abs/2009.11462",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_simple_safety_tests": {
+    "citation": "@article{vidgen2023simplesafetytests,\n  title={SimpleSafetyTests: a Test Suite for Identifying Critical Safety Risks in Large Language Models},\n  author={Vidgen, Bertie and Scherrer, Nino and Kirk, Hannah Rose and Qian, Rebecca and Kannappan, Anand and Hale, Scott A. and R{\\\"o}ttger, Paul},\n  journal={arXiv preprint arXiv:2311.08370},\n  year={2023},\n}",
+    "paper_url": "https://arxiv.org/abs/2311.08370",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_thaiexam": {
+    "citation": "@misc{pipatanakul2023typhoonthailargelanguage,\n      title={Typhoon: Thai Large Language Models},\n      author={Kunat Pipatanakul and Phatrasek Jirabovonvisut and Potsawee Manakul and Sittipong Sripaisarnmongkol and Ruangsak Patomwong and Pathomporn Chokchainant and Kasima Tharnpipitchai},\n      year={2023},\n      eprint={2312.13951},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2312.13951},\n}",
+    "paper_url": "https://arxiv.org/abs/2312.13951",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "helm_xstest": {
+    "citation": "@inproceedings{rottger-etal-2024-xstest,\n  title={{XST}est: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},\n  author={R{\\\"o}ttger, Paul and Kirk, Hannah Rose and Vidgen, Bertie and Attanasio, Giuseppe and Bianchi, Federico and Hovy, Dirk},\n  booktitle={Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},\n  year={2024},\n  publisher={Association for Computational Linguistics},\n  pages={5377--5400},\n  doi={10.18653/v1/2024.naacl-long.301},\n  url={https://aclanthology.org/2024.naacl-long.301/},\n}",
+    "paper_url": "https://aclanthology.org/2024.naacl-long.301/",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "icpc2_code_selector": {
+    "citation": "@article{anjosdealmeida2025llmicpc,\n  title={Large Language Models as Medical Codes Selectors: a benchmark using the International Classification of Primary Care},\n  author={Anjos de Almeida, Vinicius and de Camargo, Vinicius and G{\\'o}mez-Bravo, Raquel and van der Haring, Egbert and van Boven, Kees and Finger, Marcelo and Fernandez Lopez, Luis},\n  journal={arXiv preprint arXiv:2507.14681},\n  year={2025},\n}",
+    "paper_url": "https://arxiv.org/abs/2507.14681",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "ikp": {
+    "citation": "@article{li2026ikp,\n  title={Incompressible Knowledge Probes: Estimating Black-Box LLM Parameter Counts via Factual Capacity},\n  author={Li, Bojie},\n  journal={arXiv preprint arXiv:2604.24827},\n  year={2026}\n}",
+    "paper_url": "https://arxiv.org/abs/2604.24827",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "judgebench": {
+    "citation": "@misc{tan2025judgebenchbenchmarkevaluatingllmbased,\n      title={JudgeBench: A Benchmark for Evaluating LLM-based Judges},\n      author={Sijun Tan and Siyuan Zhuang and Kyle Montgomery and William Y. Tang and Alejandro Cuadron and Chenguang Wang and Raluca Ada Popa and Ion Stoica},\n      year={2025},\n      eprint={2410.12784},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2410.12784},\n}",
+    "paper_url": "https://arxiv.org/abs/2410.12784",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "lawbench": {
+    "citation": "@misc{fei2023lawbenchbenchmarkinglegalknowledge,\n      title={LawBench: Benchmarking Legal Knowledge of Large Language Models},\n      author={Zhiwei Fei and Xiaoyu Shen and Dawei Zhu and Fengzhe Zhou and Zhuo Han and Songyang Zhang and Kai Chen and Zongwen Shen and Jidong Ge},\n      year={2023},\n      eprint={2309.16289},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2309.16289},\n}",
+    "paper_url": "https://arxiv.org/abs/2309.16289",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "legalbench": {
+    "citation": "@inproceedings{NEURIPS2023_89e44582,\n  title={LegalBench: A Collaboratively Built Benchmark for Measuring Legal Reasoning in Large Language Models},\n  author={Guha, Neel and Nyarko, Julian and Ho, Daniel E. and R{\\'e}, Christopher and Chilton, Adam and Narayana, Aditya and Chohlas-Wood, Alex and Peters, Austin and Waldon, Brandon and Rockmore, Daniel N. and Zambrano, Diego and Talisman, Dmitry and Hoque, Enam and Surani, Faiz and Fagan, Frank and Sarfaty, Galit and Dickinson, Gregory M. and Porat, Haggai and Hegland, Jason and Wu, Jessica and Nudell, Joe and Niklaus, Joel and Nay, John and Choi, Jonathan H. and Tobia, Kevin and Hagan, Margaret and Ma, Megan and Livermore, Michael and Rasumov-Rahe, Nikon and Holzenberger, Nils and Kolt, Noam and Henderson, Peter and Rehaag, Sean and Goel, Sharad and Gao, Shang and Williams, Spencer and Gandhi, Sunny and Zur, Tom and Iyer, Varun and Li, Zehua},\n  booktitle={Advances in Neural Information Processing Systems},\n  doi={10.52202/075280-1915},\n  pages={44123--44279},\n  publisher={Curran Associates, Inc.},\n  volume={36},\n  year={2023},\n  url={https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html},\n}",
+    "paper_url": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "lexeval": {
+    "citation": "@misc{li2024lexevalcomprehensivechineselegal,\n  title={LexEval: A Comprehensive Chinese Legal Benchmark for Evaluating Large Language Models},\n  author={Haitao Li and You Chen and Qingyao Ai and Yueyue Wu and Ruizhe Zhang and Yiqun Liu},\n  year={2024},\n  eprint={2409.20288},\n  archivePrefix={arXiv},\n  primaryClass={cs.CL},\n  url={https://arxiv.org/abs/2409.20288},\n}",
+    "paper_url": "https://arxiv.org/abs/2409.20288",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "livecodebench": {
+    "citation": "@misc{jain2024livecodebenchholisticcontaminationfree,\n      title={LiveCodeBench: Holistic and Contamination Free Evaluation of Large Language Models for Code},\n      author={Naman Jain and King Han and Alex Gu and Wen-Ding Li and Fanjia Yan and Tianjun Zhang and Sida Wang and Armando Solar-Lezama and Koushik Sen and Ion Stoica},\n      year={2024},\n      eprint={2403.07974},\n      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n      url={https://arxiv.org/abs/2403.07974},\n}",
+    "paper_url": "https://arxiv.org/abs/2403.07974",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "matharena": {
+    "citation": "@misc{balunović2026matharenaevaluatingllmsuncontaminated,\n      title={MathArena: Evaluating LLMs on Uncontaminated Math Competitions},\n      author={Mislav Balunović and Jasper Dekoninck and Ivo Petrov and Nikola Jovanović and Martin Vechev},\n      year={2026},\n      eprint={2505.23281},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2505.23281},\n}",
+    "paper_url": "https://arxiv.org/abs/2505.23281",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "matharena_platform": {
+    "citation": "@misc{dekoninck2026beyondbenchmarks,\n      title={Beyond Benchmarks: MathArena as an Evaluation Platform for Mathematics with LLMs},\n      author={Jasper Dekoninck and Nikola Jovanović and Tim Gehrunger and Kári Rögnvaldsson and Ivo Petrov and Chenhao Sun and Martin Vechev},\n      year={2026},\n      eprint={2605.00674},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2605.00674},\n}",
+    "paper_url": "https://arxiv.org/abs/2605.00674",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mathvista_mini": {
+    "citation": "@misc{lu2024mathvistaevaluatingmathematicalreasoning,\n      title={MathVista: Evaluating Mathematical Reasoning of Foundation Models in Visual Contexts},\n      author={Pan Lu and Hritik Bansal and Tony Xia and Jiacheng Liu and Chunyuan Li and Hannaneh Hajishirzi and Hao Cheng and Kai-Wei Chang and Michel Galley and Jianfeng Gao},\n      year={2024},\n      eprint={2310.02255},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2310.02255},\n}",
+    "paper_url": "https://arxiv.org/abs/2310.02255",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mmbench_v11": {
+    "citation": "@misc{liu2024mmbenchmultimodalmodelallaround,\n      title={MMBench: Is Your Multi-modal Model an All-around Player?},\n      author={Yuan Liu and Haodong Duan and Yuanhan Zhang and Bo Li and Songyang Zhang and Wangbo Zhao and Yike Yuan and Jiaqi Wang and Conghui He and Ziwei Liu and Kai Chen and Dahua Lin},\n      year={2024},\n      eprint={2307.06281},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2307.06281},\n}",
+    "paper_url": "https://arxiv.org/abs/2307.06281",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mmdocrag": {
+    "citation": "@inproceedings{dong2025mmdocrag,\n  title={Benchmarking Retrieval-Augmented Multimodal Generation for Document Question Answering},\n  author={Dong, Kuicai and Chang, Yujing and Huang, Shijie and Wang, Yasheng and Tang, Ruiming and Liu, Yong},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}",
+    "paper_url": "https://openreview.net/forum?id=W4b3v9jx1p",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mme": {
+    "citation": "@misc{fu2025mmecomprehensiveevaluationbenchmark,\n      title={MME: A Comprehensive Evaluation Benchmark for Multimodal Large Language Models},\n      author={Chaoyou Fu and Peixian Chen and Yunhang Shen and Yulei Qin and Mengdan Zhang and Xu Lin and Jinrui Yang and Xiawu Zheng and Ke Li and Xing Sun and Yunsheng Wu and Rongrong Ji and Caifeng Shan and Ran He},\n      year={2025},\n      eprint={2306.13394},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2306.13394},\n}",
+    "paper_url": "https://arxiv.org/abs/2306.13394",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mmlu": {
+    "citation": "@inproceedings{hendrycks2021mmlu,\n  title={Measuring Massive Multitask Language Understanding},\n  author={Hendrycks, Dan and Burns, Collin and Basart, Steven and Zou, Andy and Mazeika, Mantas and Song, Dawn and Steinhardt, Jacob},\n  booktitle={ICLR},\n  year={2021},\n}",
+    "paper_url": "https://arxiv.org/abs/2009.03300",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mmlupro": {
+    "citation": "@misc{wang2024mmluprorobustchallengingmultitask,\n      title={MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark},\n      author={Yubo Wang and Xueguang Ma and Ge Zhang and Yuansheng Ni and Abhranil Chandra and Shiguang Guo and Weiming Ren and Aaran Arulraj and Xuan He and Ziyan Jiang and Tianle Li and Max Ku and Kai Wang and Alex Zhuang and Rongqi Fan and Xiang Yue and Wenhu Chen},\n      year={2024},\n      eprint={2406.01574},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.01574},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.01574",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mmmu_dev_val": {
+    "citation": "@misc{yue2024mmmumassivemultidisciplinemultimodal,\n      title={MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI},\n      author={Xiang Yue and Yuansheng Ni and Kai Zhang and Tianyu Zheng and Ruoqi Liu and Ge Zhang and Samuel Stevens and Dongfu Jiang and Weiming Ren and Yuxuan Sun and Cong Wei and Botao Yu and Ruibin Yuan and Renliang Sun and Ming Yin and Boyuan Zheng and Zhenzhu Yang and Yibo Liu and Wenhao Huang and Huan Sun and Yu Su and Wenhu Chen},\n      year={2024},\n      eprint={2311.16502},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2311.16502},\n}",
+    "paper_url": "https://arxiv.org/abs/2311.16502",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "mtbench": {
+    "citation": "@misc{zheng2023judgingllmasajudgemtbenchchatbot,\n      title={Judging LLM-as-a-Judge with MT-Bench and Chatbot Arena},\n      author={Lianmin Zheng and Wei-Lin Chiang and Ying Sheng and Siyuan Zhuang and Zhanghao Wu and Yonghao Zhuang and Zi Lin and Zhuohan Li and Dacheng Li and Eric P. Xing and Hao Zhang and Joseph E. Gonzalez and Ion Stoica},\n      year={2023},\n      eprint={2306.05685},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2306.05685},\n}",
+    "paper_url": "https://arxiv.org/abs/2306.05685",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "osworld_v1": {
+    "citation": "@misc{xie2024osworldbenchmarkingmultimodalagents,\n      title={OSWorld: Benchmarking Multimodal Agents for Open-Ended Tasks in Real Computer Environments},\n      author={Tianbao Xie and Danyang Zhang and Jixuan Chen and Xiaochuan Li and Siheng Zhao and Ruisheng Cao and Toh Jing Hua and Zhoujun Cheng and Dongchan Shin and Fangyu Lei and Yitao Liu and Yiheng Xu and Shuyan Zhou and Silvio Savarese and Caiming Xiong and Victor Zhong and Tao Yu},\n      year={2024},\n      eprint={2404.07972},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2404.07972},\n}",
+    "paper_url": "https://arxiv.org/abs/2404.07972",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "osworld_v2": {
+    "citation": "@misc{yuan26osworld2,\n  title={OSWorld 2.0: Benchmarking Computer Use Agents on Long-Horizon Real-World Tasks},\n  author={Mengqi Yuan and Zilong Zhou and Xinzhuang Xiong and Weiming Wu and Jiayang Sun and Jiamin Song and Kaiqian Cui and Bowen Wang and Haoyuan Wu and Yitong Li and Dunjie Lu and Haikong Lu and Qi Zhen and Xinyuan Wang and Jiaqi Deng and Yuhao Yang and Cheng Chen and Boyuan Zheng and Alex Su and Xiao Yu and Hao Zou and Saaket Agashe and Xing Han Lu and Manpreet Kaur and Zhengyang Qi and Vincent Sunn Chen and Frederic Sala and Dayiheng Liu and Junyang Lin and Zhou Yu and Yu Su and Siva Reddy and Xin Eric Wang and Peng Qi and Tianbao Xie and Tao Yu},\n  year={2026},\n  eprint={2606.29537},\n  archivePrefix={arXiv},\n  primaryClass={cs.AI},\n  url={https://arxiv.org/abs/2606.29537},\n}",
+    "paper_url": "https://arxiv.org/abs/2606.29537",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "preference_dissection": {
+    "citation": "@inproceedings{li-etal-2024-dissecting,\n      title={Dissecting Human and {LLM} Preferences},\n      author={Li, Junlong and Zhou, Fan and Sun, Shichao and Zhang, Yikai and Zhao, Hai and Liu, Pengfei},\n      editor={Ku, Lun-Wei and Martins, Andre and Srikumar, Vivek},\n      booktitle={Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)},\n      month={August},\n      year={2024},\n      address={Bangkok, Thailand},\n      publisher={Association for Computational Linguistics},\n      url={https://aclanthology.org/2024.acl-long.99/},\n      doi={10.18653/v1/2024.acl-long.99},\n      pages={1790--1811},\n}",
+    "paper_url": "https://aclanthology.org/2024.acl-long.99/",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "programbench": {
+    "citation": "@misc{yang2026programbench,\n  title={ProgramBench: Can Language Models Rebuild Programs From Scratch?},\n  author={Yang, John and Lieret, Kilian and Ma, Jeffrey and Thakkar, Parth and Pedchenko, Dmitrii and Sootla, Sten and McMilin, Emily and Yin, Pengcheng and Hou, Rui and Synnaeve, Gabriel and Yang, Diyi and Press, Ofir},\n  year={2026},\n  eprint={2605.03546},\n  archivePrefix={arXiv},\n}",
+    "paper_url": "https://arxiv.org/abs/2605.03546",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "prompt_to_leaderboard": {
+    "citation": "@misc{frick2025prompttoleaderboard,\n      title={Prompt-to-Leaderboard},\n      author={Evan Frick and Connor Chen and Joseph Tennyson and Tianle Li and Wei-Lin Chiang and Anastasios N. Angelopoulos and Ion Stoica},\n      year={2025},\n      eprint={2502.14855},\n      archivePrefix={arXiv},\n      primaryClass={cs.LG},\n      url={https://arxiv.org/abs/2502.14855},\n}",
+    "paper_url": "https://arxiv.org/abs/2502.14855",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "real_webagents": {
+    "citation": "@misc{garg2025realbenchmarkingautonomousagents,\n  title={REAL: Benchmarking Autonomous Agents on Deterministic Simulations of Real Websites},\n  author={Divyansh Garg and Shaun VanWeelden and Diego Caples and Andis Draguns and Nikil Ravi and Pranav Putta and Naman Garg and Tomas Abraham and Michael Lara and Federico Lopez and James Liu and Atharva Gundawar and Prannay Hebbar and Youngchul Joo and Jindong Gu and Charles London and Christian Schroeder de Witt and Sumeet Motwani},\n  year={2025},\n  eprint={2504.11543},\n  archivePrefix={arXiv},\n  primaryClass={cs.AI},\n  url={https://arxiv.org/abs/2504.11543},\n}",
+    "paper_url": "https://arxiv.org/abs/2504.11543",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "researchcodebench": {
+    "citation": "@inproceedings{hua2025researchcodebench,\n  title={ResearchCodeBench: Benchmarking LLMs on Implementing Novel Machine Learning Research Code},\n  author={Hua, Tianyu and Hua, Harper and Xiang, Violet and Klieger, Benjamin and Truong, Sang T. and Liang, Weixin and Sun, Fan-Yun and Haber, Nick},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}",
+    "paper_url": "https://openreview.net/forum?id=3k70Vt0YFS",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "rewardbench": {
+    "citation": "@misc{lambert2024rewardbenchevaluatingrewardmodels,\n      title={RewardBench: Evaluating Reward Models for Language Modeling},\n      author={Nathan Lambert and Valentina Pyatkin and Jacob Morrison and LJ Miranda and Bill Yuchen Lin and Khyathi Chandu and Nouha Dziri and Sachin Kumar and Tom Zick and Yejin Choi and Noah A. Smith and Hannaneh Hajishirzi},\n      year={2024},\n      eprint={2403.13787},\n      archivePrefix={arXiv},\n      primaryClass={cs.LG},\n      url={https://arxiv.org/abs/2403.13787},\n}",
+    "paper_url": "https://arxiv.org/abs/2403.13787",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "rewardbench2": {
+    "citation": "@misc{malik2025rewardbench2advancingreward,\n      title={RewardBench 2: Advancing Reward Model Evaluation},\n      author={Saumya Malik and Valentina Pyatkin and Sander Land and Jacob Morrison and Noah A. Smith and Hannaneh Hajishirzi and Nathan Lambert},\n      year={2025},\n      eprint={2506.01937},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2506.01937},\n}",
+    "paper_url": "https://arxiv.org/abs/2506.01937",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "sorrybench": {
+    "citation": "@inproceedings{xie2025sorrybench,\n  title={SORRY-Bench: Systematically Evaluating Large Language Model Safety Refusal},\n  author={Xie, Tinghao and Qi, Xiangyu and Zeng, Yi and Huang, Yangsibo and Sehwag, Udari Madhushani and Huang, Kaixuan and He, Luxi and Wei, Boyi and Li, Dacheng and Sheng, Ying and Jia, Ruoxi and Li, Bo and Li, Kai and Chen, Danqi and Henderson, Peter and Mittal, Prateek},\n  booktitle={ICLR},\n  year={2025},\n  url={https://arxiv.org/abs/2406.14598},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.14598",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "supergpqa": {
+    "citation": "@inproceedings{NEURIPS2025_a3c5af1f,\n  author={Xinrun Du and Yifan Yao and Kaijing Ma and Bingli Wang and Tianyu Zheng and King Zhu and Minghao Liu and Yiming Liang and Xiaolong Jin and Zhenlin Wei and Chujie Zheng and Kaixin Deng and Shawn Gavin and Shian Jia and Sichao Jiang and Qinrui Li and Rui Li and Sirun Li and Yizhi Li and Yunwen Li and Yiyan Liao and David Ma and Yuansheng Ni and Haoran Que and Qiyao Wang and Zekun Moore Wang and Zhoufutu Wen and Siwei Wu and Tyshawn Hsing and Ming Xu and Zhenzhu Yang and Junting Zhou and Yuelin Bai and Xingyuan Bu and Chenglin Cai and Liang Chen and Yifan Chen and Chengtuo Cheng and Tianhao Cheng and Keyi Ding and Siming Huang and Yun Huang and Yaoru Li and Yizhe Li and Zhaoqun Li and Tianhao Liang and Chengdong Lin and Hongquan Lin and Yinghao Ma and Tianyang Pang and Zhongyuan Peng and Zifan Peng and Qige Qi and Shi Qiu and Xingwei Qu and Shanghaoran Quan and Yizhou Tan and Chenqing Wang and Hao Wang and Yiya Wang and Yubo Wang and Zili Wang and Jiajun Xu and Kexin Yang and Ruibin Yuan and Yuanhao Yue and Tianyang Zhan and Chun Zhang and Jinyang Zhang and Xingjian Zhang and Xiyue Zhang and Yue Zhang and Yongchi Zhao and Xiangyu Zheng and Chenghua Zhong and Meng Cao and Yang Gao and Zhoujun Li and Dayiheng Liu and Qian Liu and Tianyu Liu and Shiwen Ni and Junran Peng and Yujia Qin and Wenbo Su and Guoyin Wang and Shi Wang and Jian Yang and Min Yang and Xiang Yue and Zhaoxiang Zhang and Wangchunshu Zhou and Jiaheng Liu and Qunshu Lin and Wenhao Huang and Ge Zhang},\n  booktitle={Advances in Neural Information Processing Systems},\n  doi={10.52202/085713-3766},\n  editor={D. Belgrave and C. Zhang and H. Lin and R. Pascanu and P. Koniusz and M. Ghassemi and N. Chen},\n  publisher={Curran Associates, Inc.},\n  title={SuperGPQA: Scaling LLM Evaluation across 285 Graduate Disciplines},\n  url={https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf},\n  volume={38, Main Conference},\n  year={2025},\n}",
+    "paper_url": "https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "swe_chat": {
+    "citation": "@article{baumann2026swechat,\n  title   = {SWE-chat: Coding Agent Interactions From Real Users in the Wild},\n  author  = {Baumann, Joachim and Padmakumar, Vishakh and Li, Xiang and Yang, John and Yang, Diyi and Koyejo, Sanmi},\n  year    = {2026},\n  journal = {arXiv preprint arXiv:2604.20779},\n  url     = {https://arxiv.org/abs/2604.20779}\n}",
+    "paper_url": "https://arxiv.org/abs/2604.20779",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "swebench": {
+    "citation": "@misc{jimenez2024swebenchlanguagemodelsresolve,\n  title={SWE-bench: Can Language Models Resolve Real-World GitHub Issues?},\n  author={Carlos E. Jimenez and John Yang and Alexander Wettig and Shunyu Yao and Kexin Pei and Ofir Press and Karthik Narasimhan},\n  year={2024},\n  eprint={2310.06770},\n  archivePrefix={arXiv},\n  primaryClass={cs.CL},\n  url={https://arxiv.org/abs/2310.06770}\n}",
+    "paper_url": "https://arxiv.org/abs/2310.06770",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "swebench_java": {
+    "citation": "@misc{zan2024swebenchjavagithubissueresolving,\n      title={SWE-bench-java: A GitHub Issue Resolving Benchmark for Java},\n      author={Daoguang Zan and Zhirong Huang and Ailun Yu and Shaoxin Lin and Yifan Shi and Wei Liu and Dong Chen and Zongshuai Qi and Hao Yu and Lei Yu and Dezhi Ran and Muhan Zeng and Bo Shen and Pan Bian and Guangtai Liang and Bei Guan and Pengjie Huang and Tao Xie and Yongji Wang and Qianxiang Wang},\n      year={2024},\n      eprint={2408.14354},\n      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n      url={https://arxiv.org/abs/2408.14354},\n}",
+    "paper_url": "https://arxiv.org/abs/2408.14354",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "tau2_bench": {
+    "citation": "@misc{barres2025tau2benchevaluatingconversational,\n      title={$\\tau^2$-Bench: Evaluating Conversational Agents in a Dual-Control Environment},\n      author={Victor Barres and Honghua Dong and Soham Ray and Xujie Si and Karthik Narasimhan},\n      year={2025},\n      eprint={2506.07982},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2506.07982},\n}",
+    "paper_url": "https://arxiv.org/abs/2506.07982",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "tau_voice": {
+    "citation": "@misc{ray2026tauvoicebenchmarkingfullduplexvoice,\n  title={$\\tau$-Voice: Benchmarking Full-Duplex Voice Agents on Real-World Domains},\n  author={Soham Ray and Keshav Dhandhania and Victor Barres and Karthik Narasimhan},\n  year={2026},\n  eprint={2603.13686},\n  archivePrefix={arXiv},\n  primaryClass={cs.SD},\n  url={https://arxiv.org/abs/2603.13686},\n}",
+    "paper_url": "https://arxiv.org/abs/2603.13686",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "tengu": {
+    "citation": null,
+    "paper_url": "https://huggingface.co/datasets/lightblue/tengu_bench",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "terminal_bench": {
+    "citation": "@inproceedings{merrill2026terminalbench,\n  title={Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces},\n  author={Mike A Merrill and Alexander Glenn Shaw and Nicholas Carlini and Boxuan Li and Harsh Raj and Ivan Bercovich and Lin Shi and Jeong Yeon Shin and Thomas Walshe and E. Kelly Buchanan and Junhong Shen and Guanghao Ye and Haowei Lin and Jason Poulos and Maoyu Wang and Jenia Jitsev and Marianna Nezhurina and Di Lu and Orfeas Menis Mastromichalakis and Zhiwei Xu and Zizhao Chen and Yue Liu and Robert Zhang and Leon Liangyu Chen and Anurag Kashyap and Jan-Lucas Uslu and Jeffrey Li and Jianbo Wu and Minghao Yan and Song Bian and Vedang Sharma and Ke Sun and Steven Dillmann and Akshay Anand and Andrew Lanpouthakoun and Bardia Koopah and Changran Hu and Etash Kumar Guha and Gabriel H. S. Dreiman and Jiacheng Zhu and Karl Krauth and Li Zhong and Niklas Muennighoff and Robert Kwesi Amanfu and Shangyin Tan and Shreyas Pimpalgaonkar and Tushar Aggarwal and Xiangning Lin and Xin Lan and Xuandong Zhao and Yiqing Liang and Yuanli Wang and Zilong Wang and Changzhi Zhou and David Heineman and Hange Liu and Harsh Trivedi and John Yang and Junhong Lin and Manish Shetty and Michael Yang and Nabil Omi and Negin Raoof and Shanda Li and Terry Yue Zhuo and Wuwei Lin and Yiwei Dai and Yuxin Wang and Wenhao Chai and Shang Zhou and Dariush Wahdany and Ziyu She and Jiaming Hu and Zhikang Dong and Yuxuan Zhu and Sasha Cui and Ahson Saiyed and Arinbj{\\\"o}rn Kolbeinsson and Christopher Michael Rytting and Ryan Marten and Yixin Wang and Alex Dimakis and Andy Konwinski and Ludwig Schmidt},\n  booktitle={The Fourteenth International Conference on Learning Representations},\n  year={2026},\n  url={https://openreview.net/forum?id=a7Qa4CcHak},\n}",
+    "paper_url": "https://openreview.net/forum?id=a7Qa4CcHak",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "terminal_bench_2_1": {
+    "citation": "@misc{merrill2026terminalbenchbenchmarkingagentshard,\n      title={Terminal-Bench: Benchmarking Agents on Hard, Realistic Tasks in Command Line Interfaces},\n      author={Mike A. Merrill and Alexander G. Shaw and Nicholas Carlini and Boxuan Li and Harsh Raj and Ivan Bercovich and Lin Shi and Jeong Yeon Shin and Thomas Walshe and E. Kelly Buchanan and Junhong Shen and Guanghao Ye and Haowei Lin and Jason Poulos and Maoyu Wang and Marianna Nezhurina and Jenia Jitsev and Di Lu and Orfeas Menis Mastromichalakis and Zhiwei Xu and Zizhao Chen and Yue Liu and Robert Zhang and Leon Liangyu Chen and Anurag Kashyap and Jan-Lucas Uslu and Jeffrey Li and Jianbo Wu and Minghao Yan and Song Bian and Vedang Sharma and Ke Sun and Steven Dillmann and Akshay Anand and Andrew Lanpouthakoun and Bardia Koopah and Changran Hu and Etash Guha and Gabriel H. S. Dreiman and Jiacheng Zhu and Karl Krauth and Li Zhong and Niklas Muennighoff and Robert Amanfu and Shangyin Tan and Shreyas Pimpalgaonkar and Tushar Aggarwal and Xiangning Lin and Xin Lan and Xuandong Zhao and Yiqing Liang and Yuanli Wang and Zilong Wang and Changzhi Zhou and David Heineman and Hange Liu and Harsh Trivedi and John Yang and Junhong Lin and Manish Shetty and Michael Yang and Nabil Omi and Negin Raoof and Shanda Li and Terry Yue Zhuo and Wuwei Lin and Yiwei Dai and Yuxin Wang and Wenhao Chai and Shang Zhou and Dariush Wahdany and Ziyu She and Jiaming Hu and Zhikang Dong and Yuxuan Zhu and Sasha Cui and Ahson Saiyed and Arinbjörn Kolbeinsson and Jesse Hu and Christopher Michael Rytting and Ryan Marten and Yixin Wang and Alex Dimakis and Andy Konwinski and Ludwig Schmidt},\n      year={2026},\n      eprint={2601.11868},\n      archivePrefix={arXiv},\n      primaryClass={cs.SE},\n      url={https://arxiv.org/abs/2601.11868},\n}",
+    "paper_url": "https://arxiv.org/abs/2601.11868",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "truthfulqa_mc": {
+    "citation": "@inproceedings{lin2022truthfulqa,\n  title={TruthfulQA: Measuring How Models Mimic Human Falsehoods},\n  author={Lin, Stephanie and Hilton, Jacob and Evans, Owain},\n  booktitle={ACL},\n  year={2022},\n}",
+    "paper_url": "https://arxiv.org/abs/2109.07958",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  },
+  "wildbench": {
+    "citation": "@misc{lin2024wildbenchbenchmarkingllmschallenging,\n      title={WildBench: Benchmarking LLMs with Challenging Tasks from Real Users in the Wild},\n      author={Bill Yuchen Lin and Yuntian Deng and Khyathi Chandu and Faeze Brahman and Abhilasha Ravichander and Valentina Pyatkin and Nouha Dziri and Ronan Le Bras and Yejin Choi},\n      year={2024},\n      eprint={2406.04770},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2406.04770},\n}",
+    "paper_url": "https://arxiv.org/abs/2406.04770",
+    "source_url": "https://github.com/aims-foundations/measurement-db-pp/blob/d055c41cec9a838fa72ca9dcdd0afc5711c19bfb/website/content/generated/benchmark-attributions.json"
+  }
+}

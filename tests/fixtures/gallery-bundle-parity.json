@@ -1,0 +1,35 @@
+{
+  "source": "Pre-consolidation bundle; all ten cases first verified against original renderer snapshots at 5fcbafd13.",
+  "cases": {
+    "binary": {
+      "bundle": "2c300d172332eb65590e07ac31120dd54093eb41219ad8c407bc856c461ad19a"
+    },
+    "continuous": {
+      "bundle": "84e125a3f91cb007856a9239b67fdb2861fbd40739873588675f34d952b831f9"
+    },
+    "ragged": {
+      "bundle": "ee4b99b6c6c8aae434bf8c71e7eeefa7ec4dc6a125bb1818759466fbe9f526ec"
+    },
+    "collapsed": {
+      "bundle": "350e5556d20e5a324562a9057d7173527e40d40b4af400366c0ee18c70a23a1e"
+    },
+    "trial_cap": {
+      "bundle": "74d310b71ef0f91f82d788e591ff2e9a9d9c1eb483e499f8b2efb03b49d6379f"
+    },
+    "normalized": {
+      "bundle": "560d092bcc3082ebaf55c31952bcaf3eae254577bb8d8b6625d4d92def346dc8"
+    },
+    "pairwise": {
+      "bundle": "e5c0726c9a04638b02c5865776a0b7379f6c7f218661286813f526a0c812f0b6"
+    },
+    "sessions": {
+      "bundle": "065722aa7d2cb51976ce1737863d7e5e13be1620fdf10e48e8416712178ace9c"
+    },
+    "faceted": {
+      "bundle": "938ec4568fc52773c0c325b0c51aab5fb3f4bb881532dfe5d2c896ab2b91c172"
+    },
+    "item_bank": {
+      "bundle": "041c7c0bdb91893e649fdea41af857700d47519dda6443bcdbbeb94a195e7ba3"
+    }
+  }
+}
