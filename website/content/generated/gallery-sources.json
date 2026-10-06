@@ -1,0 +1,6141 @@
+{
+ "researchcodebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "researchcodebench",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 8928605,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   }
+  }
+ },
+ "cseo_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "cseo_bench/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 5686347327,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 286085418,
+    "columns": [
+     "trace"
+    ]
+   }
+  }
+ },
+ "mind2web": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mind2web/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 522164413,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 650205141,
+    "columns": [
+     "trace"
+    ]
+   }
+  }
+ },
+ "mmmu_dev_val": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmmu_dev_val/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 351718,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 118795518,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 56390918,
+    "columns": [
+     "data"
+    ]
+   }
+  }
+ },
+ "scale_mrt": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "scale_mrt/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 833490338,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3444941923,
+    "columns": [
+     "trace"
+    ]
+   }
+  }
+ },
+ "abstract_reason": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "abstract_reason/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 10549040,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 860491,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7364906
+ },
+ "adaptivestep": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "adaptivestep/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1576068,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 473916054,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1348534
+ },
+ "advprompter": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "advprompter/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 29301,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 82794,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 13436
+ },
+ "aegis": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "aegis/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1381796,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5828335,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 600525
+ },
+ "afrieval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "afrieval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 7142460,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 266517278,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4189953
+ },
+ "afrimedqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "afrimedqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19710846,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 257905227,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 10723245
+ },
+ "agc_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "agc_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 10609647,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 538760273,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 83964232,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 8472867
+ },
+ "agentdojo": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "agentdojo/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 116286,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 111475469,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 232334
+ },
+ "agentic_review_perturbation": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "agentic_review_perturbation/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 407068,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   }
+  },
+  "itemBytes": 3323657
+ },
+ "agi_elo": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "agi_elo/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4329974,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 25421657,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2868834
+ },
+ "ai2d_test": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ai2d_test/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 572124,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 129884768,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 45514552,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 444538
+ },
+ "aider": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "aider/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 143161,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 141009127,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 37821
+ },
+ "algotune": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "algotune/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 508732,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 143044080,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 104234
+ },
+ "alignment_faking": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "alignment_faking/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2821008,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 18505107601,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1805481
+ },
+ "alpacaeval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "alpacaeval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1169287,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 407149857,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 109141
+ },
+ "alpha_sql": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "alpha_sql/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 927621,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 469425,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1264815
+ },
+ "annotating_errors_wcf": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "annotating_errors_wcf/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 17366931,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 28704794,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 10125959
+ },
+ "appworld": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "appworld/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 253157,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 246232578,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 89562
+ },
+ "arcagi": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "arcagi/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 691761,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 249110543,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 264972
+ },
+ "atmossci_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "atmossci_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 513912,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 161294531,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 830614
+ },
+ "auditing_sabotage_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "auditing_sabotage_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1128733,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3232489,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 490468
+ },
+ "autoresearchbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "autoresearchbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 104102,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4546946,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 188704
+ },
+ "averimatec": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "averimatec/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 57957,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 10878875,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 13085147,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 59989
+ },
+ "babilong": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "babilong/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 45079999,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 360359591,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 16025944
+ },
+ "bbq": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "bbq/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 28377321,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 121446662,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 18910598
+ },
+ "beavertails": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "beavertails/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 37975,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 654706,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 46903
+ },
+ "bedd_basalt": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "bedd_basalt/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3572522,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 18055829,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1107270
+ },
+ "benger": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "benger/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4376647,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 663305633,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3290530
+ },
+ "bertaqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "bertaqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 25596401,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 37666204,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 16559802
+ },
+ "biggen": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "biggen/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5043597,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 793415061,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3714886
+ },
+ "bird_sql": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "bird_sql/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 318389,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 38125856,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 309769
+ },
+ "brace": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "brace/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1771588,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 69033763,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 758491
+ },
+ "braveguard": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "braveguard/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2454942,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4349544,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1797866
+ },
+ "bridging_gap": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "bridging_gap/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 39912899,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 527460082,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 32980682
+ },
+ "care_enzymes": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "care_enzymes/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 980085,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 277754181,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 696763
+ },
+ "causal_axioms": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "causal_axioms/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 391141,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 266697,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 263151
+ },
+ "cellverse": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "cellverse/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 924840,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 250169,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 826560
+ },
+ "ceobench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ceobench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 29653,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 98990222,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 6354
+ },
+ "ceval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ceval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2844461,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4452699,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2199733
+ },
+ "chartmuseum": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "chartmuseum/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 78772,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 166848,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 54454405,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 71922
+ },
+ "chatgpt_drift": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "chatgpt_drift/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2111923,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 15138452,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1278016
+ },
+ "chipbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "chipbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 70057,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 322186,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 63746
+ },
+ "clasheval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "clasheval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 16245691,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4789803,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 18989791
+ },
+ "classroom_ai": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "classroom_ai/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 61183,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 10321887,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 45678
+ },
+ "cmmlu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "cmmlu/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4483659,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 143291825,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3338239
+ },
+ "coffeebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "coffeebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19184,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 57823207,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 6258
+ },
+ "complexbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "complexbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1411009,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 51491816,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 748013
+ },
+ "confagents": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "confagents/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 20722,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 36507,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 10003
+ },
+ "corebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "corebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 78552,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 501555,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 118569
+ },
+ "critic_discernment_game": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "critic_discernment_game/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 782128,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 71830380,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 541258
+ },
+ "crow": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "crow/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 404832,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2037327,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 144627
+ },
+ "cruxeval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "cruxeval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 964730,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 53776861,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 672159
+ },
+ "csedb": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "csedb/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1191178,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 688557951,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 352399
+ },
+ "das_med_hallucination": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "das_med_hallucination/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 124465,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 8068760,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 120798
+ },
+ "data_juicer2": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "data_juicer2/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 11689,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 10314,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2599
+ },
+ "dataclawbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dataclawbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 166342,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1215989,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 169576
+ },
+ "dave": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dave/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 785003,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 566205,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 347094
+ },
+ "dbpa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dbpa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19340,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 16203855,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 26522
+ },
+ "decodingtrust": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "decodingtrust/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 117462998,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 968025237,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 51553830
+ },
+ "decompile_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "decompile_bench/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 168807007,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 83851791,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 106106049
+ },
+ "devbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "devbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 113778,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 531107,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 469656375,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 94155
+ },
+ "disco": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "disco/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 6228981,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7124357,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 9638010661,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 3447900
+ },
+ "donotanswer": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "donotanswer/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 100821,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3319433,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 116926
+ },
+ "doris_mae": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "doris_mae/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 92365250,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 34978601,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 80704400
+ },
+ "dpai": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dpai/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2243998,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 363568958,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 822151
+ },
+ "dqvis": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dqvis/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 16441758,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 614883,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 9333255
+ },
+ "dtap_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "dtap_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 8900363,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2278101888,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 5131910
+ },
+ "edu_circuit_hw": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "edu_circuit_hw/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 298119,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2942573,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 292507671,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 268682
+ },
+ "eduguardbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "eduguardbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5590812,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 409758163,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4056191
+ },
+ "edumath": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "edumath/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 23942,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 14262026,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 32685
+ },
+ "egoschema": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "egoschema/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 16308632,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 12264520,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 10131049
+ },
+ "ehrflowbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ehrflowbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 179411,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 484151,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 127797
+ },
+ "elicitation_game": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "elicitation_game/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 192607,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1070484,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 770078
+ },
+ "embodied_agent_interface": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "embodied_agent_interface/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 118541,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1500658,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 157719
+ },
+ "emoji_attack": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "emoji_attack/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 11779653,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 40398575,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7911039
+ },
+ "engdesign": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "engdesign/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 407975,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5986318,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 3176104,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 233439
+ },
+ "engibench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "engibench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 11678,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2880993,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1668
+ },
+ "enginemt_qa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "enginemt_qa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 95476,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 40853,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 81380
+ },
+ "erbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "erbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2099744,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 52751460,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1185273
+ },
+ "evouna": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "evouna/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 801505,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3147700,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 536670
+ },
+ "exploitgym": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "exploitgym/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2996559,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 994318,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2002141
+ },
+ "faithcot": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "faithcot/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 146385,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5115417,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 239958
+ },
+ "felm": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "felm/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 201456,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2229739,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 371401
+ },
+ "fetv": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "fetv/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1322847,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 12078288,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1050763
+ },
+ "fewshot_ttt_bbh": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "fewshot_ttt_bbh/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 238642,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 190570,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 251940
+ },
+ "fgbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "fgbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1011045,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 15563314,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 825670
+ },
+ "financebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "financebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 43586,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 876557,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 32292
+ },
+ "find_interp": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "find_interp/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3472077,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 13230572,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2975610
+ },
+ "finegrain_t2i": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "finegrain_t2i/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 98175,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3293551,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 86510
+ },
+ "frontieror": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "frontieror/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1749998,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 129174,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 321281
+ },
+ "genai_learning": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "genai_learning/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 38898,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 21457276,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 50453
+ },
+ "ghosts_math": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ghosts_math/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 84072,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 561783,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 84552
+ },
+ "goodai_ltm_benchmark": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "goodai_ltm_benchmark/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 728332,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 787281078,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 755955
+ },
+ "haiid": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "haiid/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 37956,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 9337503,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 26603557,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 42058
+ },
+ "hallusionbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "hallusionbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 126047,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 38564720,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 142851270,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 191461
+ },
+ "harmbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "harmbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 22025185,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 100831913,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 226146510,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 20294411
+ },
+ "healthadminbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "healthadminbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 308412,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 28536654,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 381841
+ },
+ "helm_afr": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_afr/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 18227291,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 208244396,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 16898897
+ },
+ "helm_airbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_airbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 6000982,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 772815456,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2466667
+ },
+ "helm_anthropic_redteam": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_anthropic_redteam/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 278366,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 94234932,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 72166
+ },
+ "helm_bbq": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_bbq/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 412602,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 26722399,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 365805
+ },
+ "helm_bold": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_bold/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 150017,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 31642760,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 109174
+ },
+ "helm_cleva": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_cleva/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2191845,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 8684982,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2812663
+ },
+ "helm_harmbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_harmbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 295954,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 51226842,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 111487
+ },
+ "helm_real_toxicity_prompts": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_real_toxicity_prompts/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 202232,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 166079199,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 144833
+ },
+ "helm_simple_safety_tests": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_simple_safety_tests/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 39685,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 6854409,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 11963
+ },
+ "helm_thaiexam": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_thaiexam/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 537835,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 23743666,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 733231
+ },
+ "helm_xstest": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "helm_xstest/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 115554,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 46811706,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 37484
+ },
+ "hivmedqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "hivmedqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 349327,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 109060155,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1185140
+ },
+ "icpc2_code_selector": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "icpc2_code_selector/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3246435,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 12467830,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1999439
+ },
+ "igakuqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "igakuqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1307550,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 388658,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1132299
+ },
+ "igakuqa119": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "igakuqa119/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 288022,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 310137,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 424243
+ },
+ "ikp": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ikp/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 121423,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 19125393,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 110132
+ },
+ "image2struct": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "image2struct/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 20271302,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 649465421,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 99742420,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 15319315
+ },
+ "imgedit": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "imgedit/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 391645,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 253381,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 33288966,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 125963
+ },
+ "indeterminacy": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "indeterminacy/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4199113,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 14658612,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3298030
+ },
+ "ineqmath": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ineqmath/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 404961,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1438372,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 646146
+ },
+ "infibench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "infibench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 219810,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 199949024,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 177235
+ },
+ "interchangeable_token_embeddings": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "interchangeable_token_embeddings/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 18303028,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 41908526,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 5662034
+ },
+ "intercode": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "intercode/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 410808,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 10984282,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 86339328,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 462281
+ },
+ "jailbreakbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "jailbreakbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 297945,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2129501,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 631352
+ },
+ "jetts": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "jetts/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1953712,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 295914729,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1457174
+ },
+ "judgetuning": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "judgetuning/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 7081877,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 97637321,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4631975
+ },
+ "katakomba": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "katakomba/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 16590,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1428010,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 11999
+ },
+ "kernelbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "kernelbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 119307,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 150444782,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 141128
+ },
+ "kmmlu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "kmmlu/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 7298644,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 68319801,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4892121
+ },
+ "kormedmcqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "kormedmcqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 834597,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1485391,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 726676
+ },
+ "kris_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "kris_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 647758,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 122831627,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 1019571996,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 1301983
+ },
+ "lambda_fp_course": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "lambda_fp_course/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 121595,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2843509,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 212939
+ },
+ "lawbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "lawbench/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 166491509,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 769311429,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 116698766
+ },
+ "legal_rag_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "legal_rag_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 78071,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5549797,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 107934
+ },
+ "legalbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "legalbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 33112788,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 118516093,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 20496533
+ },
+ "lexeval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "lexeval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 46047039,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1391116352,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 32961720
+ },
+ "lingoly": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "lingoly/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 6819987,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 39847135,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 9705291
+ },
+ "live_agent_risk": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "live_agent_risk/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 36543,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 22793150,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 46803
+ },
+ "liveaopsbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "liveaopsbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1069445,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 123551253,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 725413
+ },
+ "livebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "livebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1197403,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 28314234,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 839126
+ },
+ "llm4ir": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llm4ir/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 9748008,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 54162765,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 6614192
+ },
+ "llm_bp_tag": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llm_bp_tag/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 51373685,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 31968985,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 30903825
+ },
+ "llm_survey_simulation": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llm_survey_simulation/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 152129,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 57975292,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 112689
+ },
+ "llm_uncertainty_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llm_uncertainty_bench/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 185532357,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 424846341,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 99427436
+ },
+ "llmail_inject": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llmail_inject/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 136504346,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 393327879,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 78314077
+ },
+ "llms_lean_formalization": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "llms_lean_formalization/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 522309,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 50330387,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 402965
+ },
+ "lohi_drug_discovery": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "lohi_drug_discovery/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3098866,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 107726985,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1451706
+ },
+ "matharena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "matharena",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 317953,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 278787419,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 16021838,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 503604
+ },
+ "matharena_platform": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "matharena_platform/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4410622,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1648378387,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3112122
+ },
+ "mathconstraint": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mathconstraint/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 216194,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 57642967,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 231927
+ },
+ "mathvista_mini": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mathvista_mini/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 274317,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 98261013,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 135937318,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 221404
+ },
+ "medagentboard": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medagentboard/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2021340,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 37580431,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 43054681,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 1621140
+ },
+ "medhelm_ehr_sql": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_ehr_sql/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 451094,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7265966,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 430965
+ },
+ "medhelm_head_qa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_head_qa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 339640,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4558642,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 262809
+ },
+ "medhelm_med_mcqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_med_mcqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 221975,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3295895,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 175423
+ },
+ "medhelm_med_qa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_med_qa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 596901,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 8506404,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 491671
+ },
+ "medhelm_medbullets": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_medbullets/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 209403,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2981607,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 218538
+ },
+ "medhelm_medcalc_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_medcalc_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1341826,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 18334368,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1068057
+ },
+ "medhelm_medec": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_medec/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 274812,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4456178,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 343109
+ },
+ "medhelm_medhallu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_medhallu/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1927430,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 13758533,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1576583
+ },
+ "medhelm_pubmed_qa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_pubmed_qa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1302832,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 10545852,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 987740
+ },
+ "medhelm_race_based_med": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medhelm_race_based_med/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 134459,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1792462,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 161480
+ },
+ "medwatermark_fws": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "medwatermark_fws/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 652935,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 25091827,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 830698
+ },
+ "mergebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mergebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 662224,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5693163,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 557496
+ },
+ "mj_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mj_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5853312,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 142406951,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 4133259893,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 4468524
+ },
+ "mlip_arena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mlip_arena/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19970831,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 636932034,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 21376415
+ },
+ "mlrbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mlrbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 6147853,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 66049020,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 11315961
+ },
+ "mmbench_v11": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmbench_v11/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2176586,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 602231003,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 89937839,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 1792585
+ },
+ "mmdocrag": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmdocrag",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 388955,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 286304717,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 277902
+ },
+ "mmedbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmedbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 833265,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1028010,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 693931
+ },
+ "mmlu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmlu/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 8397018,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 8767867117,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 9610789
+ },
+ "mmlupro": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmlupro/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5263166,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 378572611,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3642851
+ },
+ "mmoral_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mmoral_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 254466,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1151426,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 54103637,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 253213
+ },
+ "mochi": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mochi/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 822509,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 27780681,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 376153615,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 606987
+ },
+ "moe_cap": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "moe_cap/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 6152495,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 111674352,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 8440987
+ },
+ "monkey_power_laws": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "monkey_power_laws/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1068636,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5052449324,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 750450
+ },
+ "morphkv": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "morphkv/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 74626,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 24258262,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 528221
+ },
+ "morqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "morqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4132148,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 13229826,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3680247
+ },
+ "mtbbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mtbbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 606021,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 115520518,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 713882
+ },
+ "mtbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mtbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2083794,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 9496621,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1489943
+ },
+ "multi_moe": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "multi_moe/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1975067,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5401024,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1754549
+ },
+ "multimodal_stem_ai": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "multimodal_stem_ai/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 290184,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2063545,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 46556084,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 200591
+ },
+ "mypcbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "mypcbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 35464,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2133148,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 57652
+ },
+ "naep_llm_students": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "naep_llm_students/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 475569,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4504895,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 695796
+ },
+ "nanobaselib": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "nanobaselib/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3050575,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 47735314,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1417282
+ },
+ "naturalreasoning": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "naturalreasoning/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 379249825,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1876242678,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 192225508
+ },
+ "naturebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "naturebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 329489,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 676795754,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 471582
+ },
+ "nester": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "nester/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 44019,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 98486,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 132752
+ },
+ "nis3d": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "nis3d/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19764,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 65873,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7895
+ },
+ "nyu_ctf_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "nyu_ctf_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 116852,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 261893585,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 1113296117,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 111426
+ },
+ "oasst": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "oasst/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 245586,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5995564,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 139536
+ },
+ "ocrbench_v2": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ocrbench_v2/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4141284,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4689904,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 853703481,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 3114982
+ },
+ "ood_prediction": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ood_prediction/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 25782472,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 20551774,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 9666761
+ },
+ "openbiorq": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "openbiorq/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2117263,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 46337556,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1278053
+ },
+ "os_harm": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "os_harm/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 76284,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 46699056,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 203066
+ },
+ "perfcodebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "perfcodebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1181957,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 12834793,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 888296
+ },
+ "perumedqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "perumedqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1852747,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 75928459,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1350917
+ },
+ "phyblock": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "phyblock/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 519943,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7305269,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 362579482,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 951595
+ },
+ "pku_saferlhf": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "pku_saferlhf/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4661620,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 175412232,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2580636
+ },
+ "planbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "planbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 4501756,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 48088647,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2806332
+ },
+ "preference_dissection": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "preference_dissection/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5432506,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7835856,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 3642797
+ },
+ "prism": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "prism/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 22346560,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 68506979,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 23122334
+ },
+ "prm800k": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "prm800k/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 199349477,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 468800663,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 537860069
+ },
+ "programbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "programbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19290566,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2885487416,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1059722
+ },
+ "proofaug": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "proofaug/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 67262,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   }
+  },
+  "itemBytes": 69444
+ },
+ "proteininvbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "proteininvbench/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 87391502,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2090273310,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 56241572
+ },
+ "prox": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "prox/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1909958,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3468189,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1378023
+ },
+ "psychosis_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "psychosis_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 13132369,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2327833,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 19232056
+ },
+ "putnam_axiom": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "putnam_axiom/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1728408,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 4171091,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1391452
+ },
+ "pxplore": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "pxplore/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1523346,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 136146056,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7125755
+ },
+ "qatch": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "qatch/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 705322294,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1626971925,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 381776368
+ },
+ "radar": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "radar/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 17581,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 19104,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4995
+ },
+ "rakuda": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "rakuda/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 24797,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 112164904,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 45658
+ },
+ "rclicks": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "rclicks/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 28501738,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 33337914,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 2024062579,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 13404838
+ },
+ "real_pocqi": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "real_pocqi/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 227856,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 18813978,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 276366
+ },
+ "real_webagents": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "real_webagents",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 48588,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 175857,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 33718
+ },
+ "realtimeqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "realtimeqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1350861,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 13140659,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 975760
+ },
+ "reasoning_gym": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "reasoning_gym/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 17237983,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 65598334,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 14212974
+ },
+ "refgrader": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "refgrader/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 44357765,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 60970798,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 32036327
+ },
+ "reliancescope": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "reliancescope/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5607400,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 956622,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7759765
+ },
+ "researchclawbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "researchclawbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 788613,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 116751605,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 1048740983,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 94777
+ },
+ "revolve": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "revolve/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 121763,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1665646,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 115395
+ },
+ "rewardbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "rewardbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3490718,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 535484314,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 2549209
+ },
+ "risebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "risebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 171703,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 9882593831,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 280198820,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 212265
+ },
+ "robust_reasoning_benchmark": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "robust_reasoning_benchmark/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 282596765,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2903868035,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 171302590
+ },
+ "safeagentbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "safeagentbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 58212,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 903490,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 56982
+ },
+ "sciarena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sciarena/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 306929664,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 397398506,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 193409142
+ },
+ "scigym": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "scigym/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1084941,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 222654934,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1946698
+ },
+ "sgrades": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sgrades/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 19500725,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 757457004,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 14843646
+ },
+ "sib200": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sib200/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 13238260,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 147310568,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 10448761
+ },
+ "sketchjudge": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sketchjudge/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1094006,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 28805977,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1305996
+ },
+ "software_world_models": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "software_world_models/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 29751858,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 5594612,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 19096015
+ },
+ "stanford_orb": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "stanford_orb/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5936198,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3334872,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7675640
+ },
+ "statqa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "statqa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 696538,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 17993456,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 514472
+ },
+ "subjective_qa": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "subjective_qa/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 7750739,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 23848251,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 4776997
+ },
+ "sugarcrepe": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sugarcrepe/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 2590871,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3304438,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 250755537,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 1572678
+ },
+ "summeval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "summeval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 752445,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 19698819,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1330425
+ },
+ "sustainable_food": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "sustainable_food/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 297038,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2004525,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 407042
+ },
+ "svrpbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "svrpbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 13209,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 21065,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 13397
+ },
+ "swe_smith": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "swe_smith/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 244658364,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 2449759891,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 8316801
+ },
+ "swebench_live": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "swebench_live/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 158410512,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1792516906,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 6241816
+ },
+ "swepolybench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "swepolybench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 5777467,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 289501248,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1276150
+ },
+ "synthpai": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "synthpai/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 13587400,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 39469051,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 18892037
+ },
+ "tabarena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tabarena/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 127446766,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 181403440,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 59987579
+ },
+ "tau2_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tau2_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 8084868,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 523814653,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 7434144
+ },
+ "taubench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "taubench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 85082,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 782430392,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 65394
+ },
+ "tengu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tengu/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 143357,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 355178260,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 475169
+ },
+ "tensortrust": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tensortrust/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 237325576,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 416655328,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 213867879
+ },
+ "theagentcompany": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "theagentcompany/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 232369,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 3419785991,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 66025
+ },
+ "threeeed": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "threeeed/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 3499630,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 6378616,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 1292066
+ },
+ "truthfulqa_mc": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "truthfulqa_mc/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 258185,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 348008466,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 220478
+ },
+ "tulu_human_eval": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tulu_human_eval/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 89911,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1547212,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 155833
+ },
+ "tumlu": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "tumlu/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 58958276,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 149411956,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 66198040
+ },
+ "ultrafeedback": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "ultrafeedback/formatted_tables",
+  "dynamicItems": true,
+  "tables": {
+   "items": {
+    "size": 107145413,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1607120542,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 74356010
+ },
+ "vhelm": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "vhelm/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 18309466,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 380470884,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 8798372026,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 11345381
+ },
+ "visit_bench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "visit_bench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 471172,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 150852416,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 383454480,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 522441
+ },
+ "visual_riddles": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "visual_riddles/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 264977,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 802747,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 352242152,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 207813
+ },
+ "visualwebarena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "visualwebarena/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 63193,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1589571034,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 23726282,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 45350
+ },
+ "vl_rewardbench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "vl_rewardbench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1222169,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 42680032,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 961132
+ },
+ "weavebench": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "weavebench/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 1478425,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7035372,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 771390
+ },
+ "wikihow_agent": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "wikihow_agent/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 18085920,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 706049108,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 13776118
+ },
+ "wildvision": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "wildvision/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 319167,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 12162738,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 1193913860,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 119596
+ },
+ "wmt_mqm": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "wmt_mqm/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 10484526,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 237098195,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 17838577
+ },
+ "wonderbread": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "wonderbread/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 10799057,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 7080195,
+    "columns": [
+     "trace"
+    ]
+   },
+   "assets": {
+    "size": 3724357501,
+    "columns": [
+     "data"
+    ]
+   }
+  },
+  "itemBytes": 15197639
+ },
+ "workarena": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "workarena/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 86657,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 1894279609,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 144145
+ },
+ "workbench_revisited": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "workbench_revisited/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 100968,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 37112104,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 119234
+ },
+ "worldcentralbanks": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "worldcentralbanks/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 37275231,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 129949613,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 28094581
+ },
+ "xstest": {
+  "revision": "9d79c5e3668543bb25c5b20eff94b23cea5c957d",
+  "directory": "xstest/formatted_tables",
+  "dynamicItems": false,
+  "tables": {
+   "items": {
+    "size": 79458,
+    "columns": [
+     "content",
+     "asset_manifest",
+     "grading_criterion"
+    ]
+   },
+   "traces": {
+    "size": 8058576,
+    "columns": [
+     "trace"
+    ]
+   }
+  },
+  "itemBytes": 111784
+ }
+}

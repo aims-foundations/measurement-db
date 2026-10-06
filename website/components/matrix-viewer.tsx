@@ -19,6 +19,7 @@ import type {
 } from "@/content/benchmark-details";
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
 import { withBase } from "@/lib/base-path";
+import { readGallerySource } from "@/lib/gallery-source";
 import { IrtPanel } from "./irt-panel";
 import {
   JoinedMatrix,
@@ -56,7 +57,7 @@ import { MatrixColumnStrip, MatrixGutter } from "./matrix-gutter";
 
    The PNG holds every cell; hover maps the cursor to (row, col)
    and reads the response by sampling the pixel colour. Item
-   prompts and exact model answers are loaded from the build on click.
+   content is mostly static; large items, traces, and images load from HF on click.
    ============================================================ */
 
 const STRIP = 30; // px, bottom axis (item)
@@ -68,6 +69,15 @@ async function readCellData<T>(
   key: string | ObservationKey,
   signal: AbortSignal,
 ): Promise<T | undefined> {
+  if (kind === "answer")
+    return readGallerySource<T>(dataUrl, kind, key, signal);
+  if (kind === "item") {
+    const response = await fetch(`${dataUrl}/source.json.gz`, { signal });
+    if (!response.ok) throw new Error("Could not load item information.");
+    const source = (await response.json()) as { dynamicItems: boolean };
+    if (source.dynamicItems)
+      return readGallerySource<T>(dataUrl, kind, key, signal);
+  }
   const encoded = JSON.stringify(key);
   const digest = await crypto.subtle.digest(
     "SHA-256",
@@ -77,6 +87,7 @@ async function readCellData<T>(
   const response = await fetch(`${dataUrl}/${kind}/${bucket}.json.gz`, {
     signal,
   });
+  if (response.status === 404) return undefined;
   if (!response.ok) throw new Error(`Could not load ${kind} data.`);
   const entries = (await response.json()) as Record<string, T>;
   return entries[encoded];
@@ -423,6 +434,8 @@ const MD_COMPONENTS: Components = {
         </span>
       );
     }
+    if (src.startsWith("/benchmark-data/") && src.includes("/image/"))
+      return <SourceImage src={src} alt={alt ?? "item image"} />;
     return (
       // Source images have unknown dimensions and may be embedded data URLs.
       // eslint-disable-next-line @next/next/no-img-element
@@ -451,6 +464,51 @@ const MD_COMPONENTS: Components = {
   ),
   td: (p) => <td className="border border-[var(--line)] px-2 py-1" {...p} />,
 };
+
+function SourceImage({ src, alt }: { src: string; alt: string }) {
+  const [image, setImage] = useState<{ source: string; url: string } | null>(
+    null,
+  );
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    let objectUrl: string | undefined;
+    void readGallerySource<{ data: Uint8Array<ArrayBuffer>; type: string }>(
+      withBase(src.split("/image/")[0]),
+      "image",
+      src,
+      controller.signal,
+    )
+      .then(({ data, type }) => {
+        if (controller.signal.aborted) return;
+        objectUrl = URL.createObjectURL(new Blob([data], { type }));
+        setImage({ source: src, url: objectUrl });
+        setError(null);
+      })
+      .catch((error: Error) => {
+        if (!controller.signal.aborted) setError(error.message);
+      });
+    return () => {
+      controller.abort();
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [src]);
+  if (error)
+    return (
+      <span role="alert">
+        {alt}: {error}
+      </span>
+    );
+  if (image?.source !== src) return <span role="status">Loading image…</span>;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      className="my-2 max-h-[24rem] max-w-full rounded border border-[var(--line)]"
+      src={image.url}
+      alt={alt}
+    />
+  );
+}
 
 /** What an item's trailing aside is, which decides the box it gets. */
 type AsideKind = "preview" | "meta";

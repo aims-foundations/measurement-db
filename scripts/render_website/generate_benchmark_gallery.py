@@ -12,6 +12,7 @@ import mimetypes
 import os
 import re
 import shutil
+import struct
 import sys
 import time
 from contextlib import ExitStack
@@ -19,12 +20,14 @@ from functools import lru_cache
 from tempfile import TemporaryDirectory
 from typing import Callable, NamedTuple
 from pathlib import Path
+from urllib.parse import quote
 
 import numpy as np
 import pandas as pd
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 import yaml
+from fastparquet.cencoding import NumpyIO, ThriftObject
 from huggingface_hub import HfApi, RepoFolder, hf_hub_download
 from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
 
@@ -98,6 +101,8 @@ PAIRWISE_NAME_MATCH = 0.95
 # Answer display
 TRACE_MAX_CHARS = 50000  # cap long execution logs
 LOOKUP_BUCKETS = 256
+DYNAMIC_ITEM_COUNT = 20
+INLINE_IMAGE = re.compile(r"data:image/[\w.+-]+;base64,[A-Za-z0-9+/=]+")
 
 def categories_for(domain) -> list[str]:
     present = {str(d).strip().lower() for d in (domain or [])}
@@ -1642,7 +1647,138 @@ def write_lookup(directory: Path, rows) -> int:
             counts[bucket] += 1
         for output in files:
             output.write("}")
+    for index, count in enumerate(counts):
+        if not count:
+            (directory / f"{index:02x}.json.gz").unlink()
     return len(seen)
+
+
+def source_row_keys(path: Path, columns: list[str]):
+    table = pq.ParquetFile(path)
+    for group in range(table.num_row_groups):
+        offset = 0
+        for batch in table.iter_batches(row_groups=[group], columns=columns):
+            for row in batch.to_pylist():
+                key = row[columns[0]] if len(columns) == 1 else [row[c] for c in columns]
+                yield key, [group, offset]
+                offset += 1
+
+
+def write_source_pages(path: Path, columns: list[str], output: Path, name: str) -> dict:
+    """Index original Parquet pages so a click need not download a whole column chunk."""
+    with path.open("rb") as stream:
+        stream.seek(-8, 2)
+        length = struct.unpack("<I", stream.read(4))[0]
+        stream.seek(-length - 8, 2)
+        metadata = ThriftObject.from_buffer(stream.read(length), "FileMetaData")
+
+        def groups():
+            for number, group in enumerate(metadata.row_groups):
+                pages = {}
+                for chunk in group.columns:
+                    column = chunk.meta_data
+                    field = ".".join(p.decode() if isinstance(p, bytes) else p
+                                     for p in column.path_in_schema)
+                    if field not in columns:
+                        continue
+                    offset = column.dictionary_page_offset or column.data_page_offset
+                    end = offset + column.total_compressed_size
+                    row, locations = 0, []
+                    while offset < end:
+                        stream.seek(offset)
+                        reader = NumpyIO(stream.read(min(65536, end - offset)))
+                        header = ThriftObject.from_buffer(reader, "PageHeader")
+                        size = reader.tell() + header.compressed_page_size
+                        if header.type in (0, 3):
+                            data = header.data_page_header if header.type == 0 else header.data_page_header_v2
+                            locations.append([offset, size, row])
+                            row += data.num_values
+                        offset += size
+                    if row != group.num_rows or offset != end:
+                        raise ValueError(f"{path}: unsupported page layout for {field}")
+                    pages[field] = locations
+                footer = ThriftObject.from_fields(
+                    "FileMetaData", version=metadata.version, schema=metadata.schema,
+                    num_rows=group.num_rows, row_groups=[group], key_value_metadata=[]).to_bytes()
+                footer = bytes(footer) + struct.pack("<I", len(footer)) + b"PAR1"
+                yield str(number), {"footer": base64.b64encode(footer).decode(), "pages": pages}
+
+        write_lookup(output / f"{name}-pages", groups())
+    return {"size": path.stat().st_size, "columns": columns}
+
+
+def static_item(slug: str, row: dict) -> dict:
+    assets = {link["asset_id"]: f"/benchmark-data/{slug}/image/asset/"
+              f"{quote(link['asset_id'], safe='')}?type={quote(link['media_type'], safe='')}"
+              for link in input_images(row.get("asset_manifest"))}
+    item = item_content(row, assets)
+    for field, value in item.items():
+        if value is not None:
+            index = iter(range(len(INLINE_IMAGE.findall(value))))
+            item[field] = INLINE_IMAGE.sub(
+                lambda _: f"/benchmark-data/{slug}/image/item/{quote(row['item_id'], safe='')}/"
+                          f"{field}/{next(index)}", value)
+    return item
+
+
+def write_website_lookups(slug: str, cache_dir: Path, output: Path, has_traces: bool) -> int:
+    source = source_tables(slug)
+    descriptor = {"revision": source_revision(), "directory": source.directory,
+                  "dynamicItems": False, "tables": {}}
+    items_path = fetch(f"{slug}/items.parquet", cache_dir)
+    items = pq.ParquetFile(items_path)
+    columns = [c for c in ["content", "asset_manifest", "grading_criterion",
+                          "reference_answer", "correct_answer"] if c in items.schema_arrow.names]
+    descriptor["tables"]["items"] = write_source_pages(items_path, columns, output, "items")
+    image_ids = set()
+
+    def item_rows():
+        for batch in items.iter_batches(batch_size=128, columns=["item_id", *columns]):
+            for row in batch.to_pylist():
+                image_ids.update(link["asset_id"] for link in input_images(row.get("asset_manifest")))
+                yield row["item_id"], static_item(slug, row)
+
+    write_lookup(output / "item", item_rows())
+    # Inline images need an item row even when its text is shipped statically.
+    write_lookup(output / "item-rows", source_row_keys(items_path, ["item_id"]))
+    if has_traces:
+        path = fetch(f"{slug}/traces.parquet", cache_dir)
+        descriptor["tables"]["traces"] = write_source_pages(path, ["trace"], output, "traces")
+        key = [*KEY, *(["interactors"] if "interactors" in pq.read_schema(path).names else [])]
+        write_lookup(output / "answer", source_row_keys(path, key))
+    if image_ids:
+        path = fetch(f"{slug}/assets.parquet", cache_dir)
+        descriptor["tables"]["assets"] = write_source_pages(path, ["data"], output, "assets")
+        assets = [(key, position) for key, position in source_row_keys(path, ["asset_id"])
+                  if key in image_ids]
+        if {key for key, _ in assets} != image_ids:
+            raise ValueError(f"{slug}: missing image assets")
+        write_lookup(output / "asset-rows", assets)
+    descriptor["itemBytes"] = sum(p.stat().st_size for p in (output / "item").iterdir())
+    with gzip.open(output / "source.json.gz", "wt", encoding="utf-8") as stream:
+        json.dump(descriptor, stream, separators=(",", ":"))
+    return descriptor["itemBytes"]
+
+
+def select_dynamic_items(root: Path, sizes: dict[str, int]) -> list[str]:
+    selected = sorted(sizes, key=lambda slug: (-sizes[slug], slug))[:DYNAMIC_ITEM_COUNT]
+    for slug in selected:
+        output = root / slug
+        with gzip.open(output / "source.json.gz", "rt", encoding="utf-8") as stream:
+            source = json.load(stream)
+        source["dynamicItems"] = True
+        with gzip.open(output / "source.json.gz", "wt", encoding="utf-8") as stream:
+            json.dump(source, stream, separators=(",", ":"))
+        shutil.rmtree(output / "item")
+    print(f"Dynamic item content ({len(selected)}): {', '.join(selected)}", flush=True)
+    catalog = {}
+    for slug in sizes:
+        with gzip.open(root / slug / "source.json.gz", "rt", encoding="utf-8") as stream:
+            catalog[slug] = json.load(stream)
+    target = root.parent.parent / "content/generated/gallery-sources.json"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(json.dumps(catalog, indent=1) + "\n")
+    return selected
 
 
 def separate_cell_keys(bundle: dict) -> list:
@@ -1676,6 +1812,7 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
     root.mkdir(parents=True, exist_ok=True)
     overrides = load_overrides(web_dir)
     details = {}
+    item_sizes = {}
     for slug in slugs:
         start = time.monotonic()
         bundle = chart_bundle(build_detail(slug, cache_dir, web_dir, refresh, overrides,
@@ -1688,32 +1825,15 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
             write_lookup(output / "keys", separate_cell_keys(bundle))
             with gzip.open(output / "view.json.gz", "wt", encoding="utf-8", compresslevel=6) as stream:
                 json.dump(bundle, stream, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
-            items = pq.ParquetFile(fetch(f"{slug}/items.parquet", cache_dir, refresh))
-            columns = [c for c in ["item_id", "content", "asset_manifest", "grading_criterion",
-                                   "reference_answer", "correct_answer"]
-                       if c in items.schema_arrow.names]
-            assets = item_assets(slug, cache_dir, (
-                items.read(columns=["asset_manifest"])["asset_manifest"].to_pylist()
-                if "asset_manifest" in columns else []), output)
-            item_count = write_lookup(output / "item", (
-                (row["item_id"], item_content(row, assets))
-                for batch in items.iter_batches(batch_size=128, columns=columns)
-                for row in batch.to_pylist()))
-            answer_count = 0
-            if bundle["detail"]["hasTraces"]:
-                traces = pq.ParquetFile(fetch(f"{slug}/traces.parquet", cache_dir, refresh))
-                key = [*KEY, *(["interactors"] if "interactors" in traces.schema_arrow.names else [])]
-                answer_count = write_lookup(output / "answer", (
-                    ([row[c] for c in key], {"trace": truncate_trace(row["trace"])})
-                    for batch in traces.iter_batches(batch_size=128, columns=[*key, "trace"])
-                    for row in batch.to_pylist()))
+            item_sizes[slug] = write_website_lookups(
+                slug, cache_dir, output, bundle["detail"]["hasTraces"])
             destination = root / slug
             if destination.exists():
                 shutil.rmtree(destination)
             output.rename(destination)
         size = sum(p.stat().st_size for p in destination.rglob("*") if p.is_file())
-        print(f"{slug}: {item_count:,} items, {answer_count:,} answers, "
-              f"{size / 1_000_000:.1f} MB, {time.monotonic() - start:.1f}s", flush=True)
+        print(f"{slug}: {size / 1_000_000:.1f} MB, {time.monotonic() - start:.1f}s", flush=True)
+    select_dynamic_items(root, item_sizes)
     return details
 
 

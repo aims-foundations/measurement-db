@@ -2,15 +2,16 @@
 
 The website reads only `aims-foundations/measurement-db` on Hugging Face.
 All Python chart rendering stays in `generate_benchmark_gallery.py`.
-The build packages chart bundles, prompts, and answers with Next.js; visitors
-need neither a Python service nor a separate gallery dataset repository.
+The build packages charts, identities, and most item content with Next.js.
+The 20 largest item bundles, all traces, and all item images load from the
+same HF revision on demand. No separate Python service or gallery repository is needed.
 
 ## Build and preview
 
 Use Python 3.11+, Node.js 22.12+ (or 24), and pnpm 10.33.0. From the repository root:
 
 ```bash
-python -m pip install numpy pandas pyarrow 'huggingface_hub>=1,<2' scikit-learn PyYAML
+python -m pip install numpy pandas pyarrow fastparquet 'huggingface_hub>=1,<2' scikit-learn PyYAML
 python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
 pnpm --dir website install --frozen-lockfile
 
@@ -30,7 +31,10 @@ pnpm --dir website start
 
 Open `http://localhost:3000/measurement-db`. For a remote server, forward port
 3000 over SSH. After generating the data, `pnpm --dir website dev` also works.
-`HF_TOKEN` is optional build authentication; the website does not need it at runtime.
+For gated HF downloads, set `HF_TOKEN` in the build environment and in the
+Next.js server environment (`website/.env.local` for local previews).
+The token stays on the server. A route restricted to the generated source
+catalog authorizes byte-range downloads and redirects to HF's signed file URL.
 
 `build` discovers benchmarks with `benchmarks.parquet` under either
 `<slug>/formatted_tables/` or `<slug>/` on the public HF repository. It excludes
@@ -53,9 +57,17 @@ Generated viewer files live in ignored `website/public/benchmark-data/`.
 Rasch summaries stay in the catalog; item difficulties are compressed alongside
 each benchmark's viewer data so a page loads only its own fitted values.
 The browser loads the selected benchmark's chart as a static file. Compressed
-cell-key, item, and answer dictionaries use exact source keys, divided into
-256 buckets so a click downloads a small part of the benchmark. The browser
-selects a bucket with SHA-256; this is an index, not cache-version tracking.
+cell-key and item dictionaries use exact source keys, divided into up to
+256 nonempty buckets. Trace and dynamic-item indexes map those keys to physical
+Parquet rows. Page indexes let the browser read the required source pages,
+with decoding in a worker so the chart remains responsive. Some source pages
+and dictionaries are large, so an individual lookup can still transfer tens of MB.
+
+Each build ranks compressed item bundles after removing inline image bytes and
+loads the largest 20 dynamically (or all of them for a build with fewer than 20).
+The remaining benchmarks keep their full prompt and reference-answer text static.
+`gallery-sources.json` records the pinned source revision and allowed tables;
+it contains no data credentials and is generated with the viewer files.
 
 Pairwise, session, faceted, and basic layouts share the same chart functions.
 Answer keys preserve subject, item, condition, trial, and interactors. Missing
@@ -71,8 +83,9 @@ strips, preserving native grades and exact keys. Large strips page through
 Card images and institution logos must exist under `website/public/`; otherwise
 the existing generated thumbnail and institution-initial fallbacks are used.
 The old HF gallery host is no longer queried. Embedded images remain available;
-input images referenced by `asset_manifest` are read from the same source
-revision's `assets.parquet` and saved once as static files referenced by the item.
+input images referenced by `asset_manifest` are read on demand from the same
+revision's `assets.parquet`. Embedded image bytes are also loaded on demand
+from their original item row.
 
 ## Deployment
 
@@ -116,7 +129,9 @@ executes benchmark builders nor uploads tables; reproduction CI remains separate
 If the HF release happens later, run **Deploy website to Vercel** manually on
 `main` to refresh production.
 
-GitHub Actions needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, and `VERCEL_PROJECT_ID`.
+GitHub Actions needs `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID`, and
+`HF_TOKEN` for gated downloads. Deployment passes `HF_TOKEN` to the Vercel
+server environment; it is never included in client code.
 The deployment job uses the existing `measurement-db-reproduction` self-hosted
 runners: the migrated tables exceed a standard hosted runner's disk capacity.
 Full rendering and analysis can take hours, so the job allows up to 24 hours.
@@ -135,11 +150,15 @@ python -m pytest -q tests/test_ai_subjects.py tests/test_benchmark_saturation.py
   tests/test_fit_rasch_models.py tests/test_generate_benchmark_attributions.py \
   tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py \
   tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py \
+  tests/test_gallery_hybrid_data.py \
   tests/test_website_deployment.py
 python scripts/render_website/generate_benchmark_attributions.py --check
 pnpm --dir website lint
 pnpm --dir website typecheck
 pnpm --dir website search:check
+python tests/test_gallery_hybrid_data.py --export /tmp/gallery-fixture
+node website/scripts/test-gallery-source.mjs /tmp/gallery-fixture
+node website/scripts/test-gallery-source-route.mjs
 ```
 
 The fixture tests compare all ten chart layouts with the previously verified

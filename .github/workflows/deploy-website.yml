@@ -78,7 +78,7 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/website-venv"
           echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/website-venv/bin/pip" install numpy pandas pyarrow 'huggingface_hub>=1,<2' scikit-learn PyYAML
+          "$RUNNER_TEMP/website-venv/bin/pip" install numpy pandas pyarrow fastparquet 'huggingface_hub>=1,<2' scikit-learn PyYAML
           "$RUNNER_TEMP/website-venv/bin/pip" install torch --index-url https://download.pytorch.org/whl/cpu
       - name: Resolve the public HF source revision
         run: |
@@ -153,6 +153,7 @@ jobs:
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
+            --env HF_TOKEN="$HF_TOKEN" \
             --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
             --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
@@ -165,6 +166,11 @@ jobs:
             pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
               -- --fail --silent --show-error --max-time 120 --output /dev/null
           done
+          status=$(pnpm dlx vercel@62.2.0 curl /measurement-db/api/gallery-source/researchcodebench/items \
+            --deployment "$DEPLOYMENT_URL" -- --fail --silent --show-error --max-time 120 \
+            --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
+            --output /dev/null --write-out '%{http_code}')
+          [[ "$status" = 307 || "$status" = 206 ]]
       - name: Update preview alias
         if: github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test'
         env:

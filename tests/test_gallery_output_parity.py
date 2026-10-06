@@ -456,6 +456,8 @@ class DirectTableTests(unittest.TestCase):
                 with (
                     patch.object(gallery, "fetch", side_effect=local_fetch),
                     patch.object(gallery, "load_overrides", return_value=overrides),
+                    patch.object(gallery, "source_revision", return_value="fixture-revision"),
+                    patch.object(gallery, "DYNAMIC_ITEM_COUNT", 0),
                     redirect_stderr(io.StringIO()),
                 ):
                     summaries = gallery.build_website_data([case], root / "data", root / "web")
@@ -488,7 +490,11 @@ class DirectTableTests(unittest.TestCase):
                         self.assertEqual(lookup("item", key), gallery.read_item(case, root / "data", key))
                     if case != "item_bank":
                         for key in gallery.load_raw(case, root / "data", False)["_key"]:
-                            self.assertEqual(lookup("answer", key), gallery.read_answer(case, root / "data", key))
+                            group, offset = lookup("answer", key)
+                            trace = pq.ParquetFile(root / "data" / case / "traces.parquet").read_row_group(
+                                group, columns=["trace"])["trace"][offset].as_py()
+                            self.assertEqual({"trace": gallery.truncate_trace(trace)},
+                                             gallery.read_answer(case, root / "data", key))
 
     def test_lookup_retains_unicode_nulls_and_distinct_interactors(self):
         keys = [["模型", "item/😀", None, 1, value] for value in [None, "opponent=a", "opponent=b"]]
