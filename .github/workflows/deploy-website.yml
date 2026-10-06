@@ -2,7 +2,7 @@ name: Deploy website to Vercel
 
 on:
   push:
-    branches: [main, migration/tabular-builders-20260924-build-test]
+    branches: [main, migration/tabular-builders-20260924]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -61,7 +61,7 @@ jobs:
       MKL_NUM_THREADS: 2
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
-      HF_SOURCE_REF: ${{ github.ref == 'refs/heads/main' && 'main' || 'migration/tabular-builders-20260924' }}
+      HF_SOURCE_REF: main
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -174,7 +174,7 @@ jobs:
             --output /dev/null --write-out '%{http_code}')
           [[ "$status" = 307 || "$status" = 206 ]]
       - name: Update preview alias
-        if: github.ref == 'refs/heads/migration/tabular-builders-20260924-build-test'
+        if: github.ref == 'refs/heads/migration/tabular-builders-20260924'
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |

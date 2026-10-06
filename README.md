@@ -352,7 +352,7 @@ An all-withheld selection runs no reproduction jobs and does not resolve HF.
 Missing, invalid, duplicate, or private release declarations fail selection.
 Direct `verify` commands apply the same release check before executing a builder.
 
-Each run with public benchmarks attempts to resolve the HF `migration/tabular-builders-20260924` branch
+Each run with public benchmarks attempts to resolve the HF `main` branch
 to one immutable commit shared by all jobs. If that preparation fails, upstream
 builds still run and successful builds report **REFERENCE ERROR**. Jobs never
 fall back to independently resolving a moving HF branch.

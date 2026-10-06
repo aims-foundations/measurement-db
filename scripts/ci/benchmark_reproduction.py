@@ -26,7 +26,7 @@ else:
 
 ROOT = Path(__file__).resolve().parents[2]
 HF_REPOSITORY = "aims-foundations/measurement-db"
-HF_BRANCH = "migration/tabular-builders-20260924"
+HF_BRANCH = "main"
 ZERO_SHA = "0" * 40
 
 
