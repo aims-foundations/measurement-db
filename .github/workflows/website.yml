@@ -61,5 +61,5 @@ jobs:
           node website/scripts/test-gallery-source.mjs "$RUNNER_TEMP/gallery-fixture"
           node website/scripts/test-gallery-source-route.mjs
       - run: pnpm --dir website lint
-      - run: pnpm --dir website build --webpack
+      - run: pnpm --dir website build
       - run: pnpm --dir website search:check
