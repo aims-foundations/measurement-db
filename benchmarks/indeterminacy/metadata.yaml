@@ -1,0 +1,106 @@
+benchmark:
+  name: Indeterminacy Experiments
+  version: d009e71909eb242952bea8bd5475d6c27d22a1ff
+  description: Native forced-choice and response-set judgments from nine LLM raters on eleven published tasks, with
+    complete prompt and input-order associations.
+  testing_condition: The original tensor axes are item, forced-choice category, response-set category and trial.
+    Each active cell records one paired trial containing two separately elicited judgments. Preserve each FC and
+    RS category as its own observation, using the original unordered token index, not correctness or agreement with
+    human consensus. Invalid-parser categories remain explicitly ungraded with their native index in traces. All-zero
+    trial positions contain no released paired observation and are not invented as failures. The original output
+    strings and unpaired responses are unavailable. Inputs use the exact saved ratings.csv order and verbatim prompt
+    templates. The old first-active-axis readout misinterpreted FC categories as scales and discarded trials. No
+    new model or judge calls.
+  paper_url: https://arxiv.org/abs/2503.05965
+  data_source_url: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments
+  subject_type: llm_rater
+  item_type: prompt_and_elicitation_format
+  license: The input-collection HF card declares MIT. The pinned code and experiment repositories contain no explicit
+    license grant; underlying corpora retain their respective source terms. The legacy CC-BY-4.0 label is unsupported.
+  citation: "@inproceedings{guerdan2025indeterminacy,\n  title={Validating LLM-as-a-Judge Systems under Rating Indeterminacy},\n\
+    \  author={Guerdan, Luke and Barocas, Solon and Holstein, Kenneth and Wallach, Hanna and Wu, Zhiwei Steven and\
+    \ Chouldechova, Alexandra},\n  booktitle={Advances in Neural Information Processing Systems},\n  year={2025}\n\
+    }"
+  tags:
+  - llm_as_a_judge
+  - rating_indeterminacy
+  modality:
+  - text
+  domain:
+  - classification
+  - summarization
+  - dialogue
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: true
+  release_date: null
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      runs: experiments/runs/main-run/*/*.json
+      ratings: experiments/runs/main-run/*/ratings.csv
+      tasks: experiments/runs/main-run/task_config.json
+      prompts: code/config/prompts.py
+    formats:
+      fc_index: FC
+      rs_index: RS
+    labels:
+      input_scope: verbatim_prompt_formatted_with_recorded_input_row
+      harness: Indeterminacy ModelAPIClient
+      historical_configuration: Model and provider are recorded in each native log. Exact request timestamps, endpoint
+        revisions and executed inference settings are unavailable. Code defaults are not asserted as historical
+        configuration.
+grading:
+  rule: Record the released parsed token index for this elicitation format. The scale is unordered and its meanings
+    are the original response tokens. This measures which category the rater selected, not prediction correctness.
+    The parser-invalid sentinel remains in the trace with an unavailable response.
+  verifiers:
+    FC:
+      kind: released_parsed_category
+      elicitation_format: FC
+      source: https://github.com/lguerdan/indeterminacy/blob/efdb3a2792369e2f98b86dd1d25c2f9c477c115a/core/response_parser.py
+      tensor_source: https://github.com/lguerdan/indeterminacy/blob/efdb3a2792369e2f98b86dd1d25c2f9c477c115a/core/client.py
+      parser: ResponseParser.parse_fc_response
+      logic: FC uses the first sanitized character. RS sorts all sanitized characters and exact-matches a valid
+        token combination. The last category index is the invalid-response sentinel. Read existing tensor indices
+        without rerunning the parser on unavailable text.
+      interpretation: Record the released parsed token index for this elicitation format. The scale is unordered
+        and its meanings are the original response tokens. This measures which category the rater selected, not
+        prediction correctness. The parser-invalid sentinel remains in the trace with an unavailable response.
+    RS:
+      kind: released_parsed_category
+      elicitation_format: RS
+      source: https://github.com/lguerdan/indeterminacy/blob/efdb3a2792369e2f98b86dd1d25c2f9c477c115a/core/response_parser.py
+      tensor_source: https://github.com/lguerdan/indeterminacy/blob/efdb3a2792369e2f98b86dd1d25c2f9c477c115a/core/client.py
+      parser: ResponseParser.parse_rs_response
+      logic: FC uses the first sanitized character. RS sorts all sanitized characters and exact-matches a valid
+        token combination. The last category index is the invalid-response sentinel. Read existing tensor indices
+        without rerunning the parser on unavailable text.
+      interpretation: Record the released parsed token index for this elicitation format. The scale is unordered
+        and its meanings are the original response tokens. This measures which category the rater selected, not
+        prediction correctness. The parser-invalid sentinel remains in the trace with an unavailable response.
+sources:
+  upstream:
+  - name: experiment_logs
+    url: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments
+    revision: d009e71909eb242952bea8bd5475d6c27d22a1ff
+    files:
+    - match: .*
+      path: experiments/{path}
+  - name: input_corpora
+    url: https://huggingface.co/datasets/lguerdan/indeterminacy-datasets
+    revision: 37b8d7863430ec3433d6a73da08408b064643b8b
+    files:
+    - match: .*
+      path: datasets/{path}
+  - name: original_code
+    url: https://github.com/lguerdan/indeterminacy
+    revision: efdb3a2792369e2f98b86dd1d25c2f9c477c115a
+    files:
+    - match: .*
+      path: code/{path}

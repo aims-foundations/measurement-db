@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2457106
+    logical_sha256: 68c54563843d0d8cca0469107f2060d5a93b156891d819da6c427bffcc1033ce
+  subjects:
+    rows: 384
+    logical_sha256: 9add40deaef6195e62b8c17c61d6428be48b0b0cc1854d4406387128bb21b506
+  responses:
+    rows: 2457106
+    logical_sha256: caad37f18bfe59f85b7fa8fcf30d661d9ea8a1cff2c974e7168cf293668b1348
+  items:
+    rows: 346195
+    logical_sha256: 0360bedc8595aa60694989fd628a13a8c37f5aff4454500bc6dd18bea9236731
+  benchmarks:
+    rows: 1
+    logical_sha256: e9f184469ece529c5ed0cc1040039d88c85370df2f1f402d4798567845e8feef
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 2457106
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 384
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 346195
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 2457106
+  source_datasets:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 51
+  source_methods:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 8
+  source_classification_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 1938301
+  source_regression_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/
+    locator: Original c1 configuration, fold-zero metadata/pred-test.dat/label-test.csv.zip from each of the eight
+      named method archives; pinned OpenML study 457 test rows.
+    scope: Individual test-row observations, with independent CSV/Arrow source reconciliation. Unobserved method/dataset
+      combinations remain absent. Per-row metrics are explicitly derived, not official aggregate leaderboard scores.
+    expected: 518805

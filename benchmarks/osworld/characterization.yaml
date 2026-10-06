@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 28228
+    logical_sha256: 7f72e217dcbcba5a3eeffae7dc70230a9840f0b3b4ce44522ce34f3e93c4beed
+  subjects:
+    rows: 79
+    logical_sha256: 89df26eedf91ec19c9041450a20adeba1d3eb2e0e97974cb8019fa213ee36814
+  responses:
+    rows: 28588
+    logical_sha256: 34f87f5f939a9f1a12b52e7773f6ee15fcc2042587998e2d8509a708b29d0c8f
+  items:
+    rows: 392
+    logical_sha256: 66e1b13cffae9eb443d7336cd61a511bba4fa6f2d2581d217f0a0ce5204aabe2
+  benchmarks:
+    rows: 1
+    logical_sha256: 49eca0dd065de137ea4f590f38838373503b260529f145e09fd330883afeafde
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 28588
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 28458
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 130
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 392
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 79
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 28228
+  source_archives:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 67
+  source_partial_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 440
+  source_nonempty_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 28224
+  source_nonempty_runtime_logs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 21287
+  source_task_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 369
+  source_recorded_instructions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 359
+  source_changed_instructions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs/tree/5473c39e42a538a187a9b2c2b499db59d560fd8c
+    locator: 'The 67 metadata-declared ZIP archives: original result.txt, traj.jsonl, runtime.log, instruction.txt
+      and args.json; independent native-file reconciliation.'
+    scope: One attempt per original archive/run/task directory. Preserve partial credit and missing grades; distinguish
+      recorded configurations and historical instruction variants.
+    expected: 23

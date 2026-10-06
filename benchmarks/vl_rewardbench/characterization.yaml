@@ -1,0 +1,53 @@
+format_version: 1
+tables:
+  traces:
+    rows: 111452
+    logical_sha256: be9c0c5b754499df9a0397f84f45bdf8072dfe1589932c207ae12cee8b8f008c
+  subjects:
+    rows: 16
+    logical_sha256: 2bb7b1f3c4b8544e7ee6cc9ede828942498a9dac9e59684849e888eff27a51ed
+  responses:
+    rows: 111452
+    logical_sha256: 960218015571a65b575df20c397192daffe8a617fcbaa9d08b78ae38efeab983
+  assets:
+    rows: 736
+    logical_sha256: d99de360b4bcd48c1f75c8d738f940c4c4bd13dbfe40df01fea77b3e25eeb1cb
+  items:
+    rows: 1532
+    logical_sha256: 8104bd2bf30a6147a589a636df6bf8c213f426838e1c9ae4f3f40a37ea0c9547
+  benchmarks:
+    rows: 1
+    logical_sha256: 93e3977c68e29732fcb247ea61944df8dc4b316b1389e1a681097b26bfcd2cc1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/MMInstruction/VL-RewardBench
+    locator: inference_results.zip joined to data/test-00000-of-00001.parquet
+    scope: Match complete question, candidates and human preference; preserve all matching attempts, including
+      unparsed judgments.
+    expected: 111452
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/MMInstruction/VL-RewardBench
+    locator: inference_results.zip joined to data/test-00000-of-00001.parquet
+    scope: Match complete question, candidates and human preference; preserve all matching attempts, including
+      unparsed judgments.
+    expected: 47403
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/MMInstruction/VL-RewardBench
+    locator: inference_results.zip joined to data/test-00000-of-00001.parquet
+    scope: Match complete question, candidates and human preference; preserve all matching attempts, including
+      unparsed judgments.
+    expected: 5755
+  source_bank_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/MMInstruction/VL-RewardBench
+    locator: inference_results.zip joined to data/test-00000-of-00001.parquet
+    scope: Match complete question, candidates and human preference; preserve all matching attempts, including
+      unparsed judgments.
+    expected: 1247

@@ -1,0 +1,91 @@
+benchmark:
+  description: 'HELM evaluation on five Thai standardized examination sets: A-Level, IC, ONET, TGAT and
+    TPAT1. Preserve native multiple-choice prompts and exact-match grades.'
+  testing_condition: Published HELM requests. Preserve native task/language/exam definitions, actual generation
+    settings, all accepted references and every observed attempt; no best-score deduplication.
+  paper_url: https://arxiv.org/abs/2312.13951
+  data_source_url: https://crfm.stanford.edu/helm/thaiexam/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @misc{pipatanakul2023typhoonthailargelanguage,
+          title={Typhoon: Thai Large Language Models},
+          author={Kunat Pipatanakul and Phatrasek Jirabovonvisut and Potsawee Manakul and Sittipong Sripaisarnmongkol and Ruangsak Patomwong and Pathomporn Chokchainant and Kasima Tharnpipitchai},
+          year={2023},
+          eprint={2312.13951},
+          archivePrefix={arXiv},
+          primaryClass={cs.CL},
+          url={https://arxiv.org/abs/2312.13951},
+    }
+  tags:
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  multi_single_turn: single_turn
+  release_date: 2023-12
+  release: public
+  name: HELM Thai Exam
+  version: HELM thaiexam v1.2.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: thai_exam
+      release: v1.2.0
+      metric: exact_match
+      item_features: scenario_spec
+grading:
+  rule: Import the published task metric unchanged. reference_answer is a JSON array containing every
+    correct-tagged reference, in native order; repeated choices remain represented.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/thaiexam/benchmark_output/releases/v1.2.0/runs.json
+    revision: v1.2.0
+    file: release_index.json
+    size: 7877316
+    sha256: f5daf7e51e5d9da019344e01b5ee629dd546cff2472141c0010f727d9c2dfbd6
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.2.0
+    prefix: thaiexam/
+    helm_index:
+      source: release
+      group: thai_exam
+    tree_sha256: 1cb12b64ef93583956260e2ec4b0629ac71b7a863ff3b6df3cb236620f8dcaf7
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py|evaluate_reference_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/scenarios/(?:thai_exam_scenario\.py)
+      path: harness/{path}

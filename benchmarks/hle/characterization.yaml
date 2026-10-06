@@ -1,0 +1,210 @@
+format_version: 1
+tables:
+  traces:
+    rows: 14588
+    logical_sha256: 639150ad68b35668df4e39b1b2e6a00d9daf6d8dc30a85e33400b79e43f98d88
+  subjects:
+    rows: 20
+    logical_sha256: 77a90f2530a032bf062a2436ff307924ae1e8c2d31246740925df58ab6eb21f4
+  responses:
+    rows: 14588
+    logical_sha256: e2370823b065a52cd31c0d714483e63a2209f8461ec3ed2e61578cb218520f6e
+  assets:
+    rows: 176
+    logical_sha256: 3682faeb6760f19cd529be3725c4bc366149d80c50c8c5ec6fad579f208b1742
+  items:
+    rows: 2249
+    logical_sha256: d378e99fd2a16a1d1e4ac67bdab50b4368ff9b235eaef92b20be16b1313dde3d
+  benchmarks:
+    rows: 1
+    logical_sha256: 6f579095d146d265b83015b641038cd5a70a82af2669cd62786c1f6907394a57
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 14588
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 20
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 2249
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 176
+  supai_episodes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 13710
+  supai_published_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 12899
+  supai_correct_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 3987
+  supai_no_grade:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 811
+  supai_ungraded_full_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 11
+  supai_ungraded_without_output:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 800
+  supai_graded_without_full_answer:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 6
+  supai_completion_metadata_only:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 42
+  source_stream_events:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 54786013
+  source_shared_events:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 4004
+  supai_question_streams:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 1371
+  source_image_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kenmueller/supai-hle
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 180
+  deepwriter_episodes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/deepwriter-ai/hle-gemini-3-0
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 878
+  deepwriter_correct_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/deepwriter-ai/hle-gemini-3-0
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 447
+  deepwriter_score_result_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/deepwriter-ai/hle-gemini-3-0
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 1
+  deepwriter_overlaps_supai_gemini:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/deepwriter-ai/hle-gemini-3-0
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 438
+  deepwriter_questions_absent_current_bank:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/deepwriter-ai/hle-gemini-3-0
+    locator: Independent traversal of all pinned Sup AI streams and judgments, plus csv.DictReader of the complete
+      export at https://github.com/deepwriter-ai/hle-gemini-3-0. Archive revisions and hashes are declared in metadata.yaml.
+    scope: 1371 Sup AI question streams, including recorded ungraded actor episodes, and 878 separate DeepWriter
+      episodes. Internal retries remain within a trial. No new model calls or grading.
+    expected: 111

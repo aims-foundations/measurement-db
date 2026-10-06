@@ -1,0 +1,123 @@
+benchmark:
+  name: 'MasakhaNER 1.0 and 2.0: released NER predictions'
+  description: Complete published named-entity tag predictions for African-language test sentences and their historical
+    reference annotations.
+  testing_condition: 'Import all 948 identified prediction exports: five v1 model families over ten languages and
+    seven v2 families over nineteen released language directories, preserving all available run labels. Each model/language/run
+    export identifies a separate recorded configuration; the release does not establish exact checkpoint identity,
+    all training settings, or independent executions for identical outputs. Align to the gold versions released
+    alongside the predictions, before later Amharic and Fon changes. The v1 BiLSTM files contain digit-to-zero input
+    normalization and embedded gold tags; preserve their actual tokens and verify every embedded tag against the
+    historical annotation. No sentence, reference or output is clipped. The unqualified XLM-R/test_predictions.txt
+    export is kept raw-only: 68 sentences contain shortened token sequences, and its exact run configuration is
+    not documented. The afrieval slug is retained for repository continuity; these are MasakhaNER releases, not
+    a separate AfriEval task suite. No model training, inference, or external judge runs during curation.'
+  paper_url: https://doi.org/10.1162/tacl_a_00416
+  data_source_url: https://github.com/masakhane-io/masakhane-ner
+  subject_type: model
+  item_type: sentence
+  license: CC-BY-NC-4.0 for the NER dataset; underlying news text retains its source terms. Author code is Apache-2.0.
+  citation: 'Adelani, David Ifeoluwa et al. (2021). MasakhaNER: Named Entity Recognition for African Languages.
+    TACL 9:1116–1131, doi:10.1162/tacl_a_00416. Adelani et al. (2022). MasakhaNER 2.0: Africa-centric Transfer Learning
+    for Named Entity Recognition. EMNLP, https://aclanthology.org/2022.emnlp-main.298/.'
+  tags:
+  - named_entity_recognition
+  - multilingual
+  - african_languages
+  modality:
+  - text
+  domain:
+  - natural_language_processing
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': At least one predicted BIO tag differs from the original reference.
+      '1': All predicted BIO tags exactly match the original reference.
+  categorical: true
+  release_date: 2021-03
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    table_v1_transformers:
+      glob: upstream/entity_analysis/*/*_test_predictions.txt
+      pattern: upstream/entity_analysis/(?P<model>[^/]+)/(?P<language>[a-z]{3})_[^/]+_test_predictions\.txt
+      columns: token predicted
+      kind: prediction
+      version: v1
+      run: released_single_export
+    table_v1_bilstm:
+      glob: upstream/entity_analysis/biLSTM_CRF/test.*_model
+      pattern: upstream/entity_analysis/(?P<model>biLSTM_CRF)/test\.(?P<language>[a-z]{3})_model
+      columns: token embedded_gold predicted
+      kind: prediction
+      version: v1
+      run: released_single_export
+    table_v2:
+      glob: upstream/MasakhaNER2.0/baseline_models_results/*/test_predictions*.txt
+      pattern: upstream/MasakhaNER2\.0/baseline_models_results/(?P<language>[a-z]{3})_(?P<model>[^/]+)/test_predictions(?P<run>[1-9][0-9]*)\.txt
+      columns: token predicted
+      kind: prediction
+      version: v2
+    table_reference_v1:
+      glob: references/v1/data/*/test.txt
+      pattern: references/v1/data/(?P<language>[a-z]{3})/test\.txt
+      columns: token gold
+      kind: reference
+      version: v1
+    table_reference_v2:
+      glob: references/v2/MasakhaNER2.0/data/*/test.txt
+      pattern: references/v2/MasakhaNER2\.0/data/(?P<language>[a-z]{3})/test\.txt
+      columns: token gold
+      kind: reference
+      version: v2
+    protocol:
+      digit_normalized_model: biLSTM_CRF
+      harness: MasakhaNER released token-classification predictions
+      instruction: Assign the original MasakhaNER BIO named-entity tag to each token in this test sentence.
+grading:
+  rule: 'Sentence-level exact BIO-tag correctness derived from the released predictions: 1 if every predicted tag
+    equals the corresponding historical reference tag, otherwise 0. Preserve the complete token and label sequences.
+    This strict sentence-level readout is not the entity-level F1 reported in the MasakhaNER papers; aggregate F1
+    values are not assigned to individual sentences. A source/reference alignment change requires review rather
+    than truncation, positional guessing or silently skipped observations.'
+  verifiers:
+    native:
+      kind: derived_sentence_tag_exact_match
+      rule: 'Sentence-level exact BIO-tag correctness derived from the released predictions: 1 if every predicted
+        tag equals the corresponding historical reference tag, otherwise 0. Preserve the complete token and label
+        sequences. This strict sentence-level readout is not the entity-level F1 reported in the MasakhaNER papers;
+        aggregate F1 values are not assigned to individual sentences. A source/reference alignment change requires
+        review rather than truncation, positional guessing or silently skipped observations.'
+      source: https://github.com/masakhane-io/masakhane-ner/blob/ba5843cd08aa491d5f96a5e809e71eb9ec461391/code/train_ner.py
+      implementation: Strict equality of the entire predicted BIO sequence and the historical reference sequence.
+      distinction: The author evaluate() function reports corpus-level seqeval entity metrics; sentence exact-match
+        is an explicitly curated readout.
+sources:
+  upstream:
+  - name: original_predictions_and_protocol
+    url: https://github.com/masakhane-io/masakhane-ner
+    revision: ba5843cd08aa491d5f96a5e809e71eb9ec461391
+    files:
+    - match: entity_analysis/.*|MasakhaNER2\.0/(?:baseline_models_results/.*|README\.md|scripts/.*|data/[^/]+/test\.txt|ranking_languages/[^/]+\.(?:py|sh))|data/[^/]+/test\.txt|code/.*|analysis_scripts/.*|LICENSE|README\.md|MasakhaNER
+        Annotation Guideline\.pdf
+      path: upstream/{path}
+  - name: historical_references_v1
+    url: https://github.com/masakhane-io/masakhane-ner
+    revision: 1649a506c0ff21db67865c0c40b2384fba0e9334
+    files:
+    - match: data/(?:amh|hau|ibo|kin|lug|luo|pcm|swa|wol|yor)/test\.txt
+      path: references/v1/{path}
+  - name: historical_references_v2
+    url: https://github.com/masakhane-io/masakhane-ner
+    revision: 44598570801181850bd4aaa9f54965e5a0795615
+    files:
+    - match: MasakhaNER2\.0/data/(?:bam|bbj|ewe|fon|hau|ibo|kin|lug|mos|nya|pcm|sna|swa|tsn|twi|wol|xho|yor|zul)/test\.txt
+      path: references/v2/{path}

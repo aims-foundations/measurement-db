@@ -1,0 +1,3 @@
+- Import all 15 official showcase runs and their 118 rubric judgments. Preserve original task versions; one recorded 12-rubric task differs from the current 10-rubric definition. Requirements belong in grading, not actor inputs.
+- Keep every released viewer field and all 1,053 screenshots in raw/, with paths and hashes in traces. Signature entries are aliases. Explicit computer-only variants remain distinct; historical model and judge revisions are unknown.
+- Independently check every judgment, task, actor and screenshot association. This selected showcase does not reconstruct the full leaderboard or later rescores. No benchmark executions or new judgments were performed.

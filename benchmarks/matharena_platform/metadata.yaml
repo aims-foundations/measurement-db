@@ -1,0 +1,358 @@
+benchmark:
+  name: MathArena Platform
+  description: Published model attempts on ArXivMath, ArXivLean, BrokenArXiv and USAMO 2026, with original requests,
+    full conversations and native grading scales.
+  testing_condition: One observation per released model configuration, problem and attempt. Use the recorded user_message
+    when present; for 97 records lacking it, preserve the released natural-language problem and formal statement
+    and explicitly mark the input as a task definition rather than a reconstructed historical request. Keep literal
+    model_name and model_config identifiers; unrecorded endpoint versions, inference settings and exact historical
+    judge versions remain unknown. Preserve every native output field in a linked JSON trace, including empty responses,
+    costs, parsed answers and grading details. ArXivMath and ArXivLean have binary grades, BrokenArXiv retains half
+    credit, and USAMO retains its source-normalized fractional proof scores. Three ArXivMath releases also appear
+    in the MathArena collection; these are overlapping observations and must not be counted twice when pooling collections.
+    This pinned release updates older snapshots; comparison and original files are retained in the migration evidence.
+  paper_url: https://arxiv.org/abs/2605.00674
+  data_source_url: https://huggingface.co/MathArena
+  subject_type: model
+  item_type: task
+  license: Per-release CC-BY-SA-4.0 or CC-BY-NC-SA-4.0, as recorded in each captured Hugging Face dataset card;
+    harness code is MIT.
+  citation: 'Dekoninck et al. Beyond Benchmarks: MathArena as an Evaluation Platform for Mathematics with LLMs.
+    arXiv:2605.00674, 2026.'
+  tags:
+  - mathematics
+  - reasoning
+  - formal_proofs
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2026-05
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn, single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      outputs: outputs/*/data/*.parquet
+      tasks: tasks/*/data/*.parquet
+    versions:
+      arxivlean_0326: arxivlean
+      arxivlean_0626: arxivlean
+      arxivmath_0126: arxivmath
+      arxivmath_0226: arxivmath
+      arxivmath_0326: arxivmath
+      arxivmath_0426: arxivmath
+      arxivmath_0526: arxivmath
+      arxivmath_0626: arxivmath
+      arxivmath_0826: arxivmath_answer_judge
+      arxivmath_1225: arxivmath
+      brokenarxiv_0226: brokenarxiv
+      brokenarxiv_0326: brokenarxiv
+      brokenarxiv_0426: brokenarxiv
+      brokenarxiv_0526: brokenarxiv
+      brokenarxiv_0626: brokenarxiv
+      brokenarxiv_0826: brokenarxiv
+      usamo_2026: usamo
+    labels:
+      subject_prefix: 'MathArena Platform / '
+      recorded_input: released_user_message
+      fallback_input: released_problem_and_formal_statement
+    subject_features:
+      harness: MathArena
+      configuration_scope: released_model_name_and_config_identifier
+      historical_endpoint_settings: not_fully_recorded
+    rubric_fields:
+      title: Released criterion title
+      max_points: Released maximum points
+      grading_scheme_desc: Released grading rule
+    overlap:
+      arxivmath_1225: matharena
+      arxivmath_0126: matharena
+      arxivmath_0226: matharena
+grading:
+  verifiers:
+    arxivmath:
+      kind: published_final_answer_correctness
+      source: https://github.com/eth-sri/matharena/blob/b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b/src/matharena/grader.py
+      method: Recorded parser and reference-answer comparison; the exact historical scorer commit is not exported
+        with each attempt.
+      verifier_class: exact_matcher
+      response_scale: &id001
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': The published evaluation marks this attempt incorrect.
+          '1': The published evaluation marks this attempt correct.
+      rule: Import the released correct field without regrading. It reports whether the extracted final answer satisfies
+        the published reference-answer checker. The full native prediction, parsed answer, reference and messages
+        remain in the trace.
+    arxivmath_answer_judge:
+      kind: published_final_answer_judgment
+      source: https://github.com/eth-sri/matharena/blob/b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b/configs/competitions/arxiv/august.yaml
+      method: The August configuration declares answer_judge; individual historical judge identities are not included
+        in the output export.
+      verifier_class: judge
+      response_scale: *id001
+      rule: Import the released correct field for the native final-answer judgment without rerunning the judge.
+        The August release uses answer_judge; preserve original answer and reference rather than substituting a
+        new exact matcher.
+    arxivlean:
+      kind: published_lean_verification
+      source: https://github.com/eth-sri/matharena/blob/b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b/src/matharena/grader.py
+      method: Recorded Lean compilation and target-statement verification; the historical environment is not reconstructed.
+      verifier_class: exact_matcher
+      response_scale: *id001
+      rule: Import the released correct field for the formal-proof attempt. The target formal statement is a grading
+        condition, not a model-generated reference solution. Keep unsuccessful or empty recorded attempts, including
+        source-reported false grades.
+    brokenarxiv:
+      kind: published_false_statement_judgment
+      source: https://github.com/eth-sri/matharena/blob/b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b/scripts/judge/judge.py
+      method: Released judge points divided by released maximum points, including partial credit; judge output and
+        grading details are preserved.
+      verifier_class: judge
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Import the released correct grade for an intentionally false mathematical claim. Where judge details
+        exist it equals judge points divided by maximum points; preserve all native fractional categories, including
+        halves or thirds depending on the released rubric. Three empty attempts have published zero grades without
+        judge details; retain those source-reported zeros explicitly. This is the published evaluation, not a new
+        proof check.
+    usamo:
+      kind: published_proof_judgment
+      source: https://github.com/eth-sri/matharena/blob/b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b/scripts/judge/judge.py
+      method: Released proof-rubric points divided by seven; all original points and the full rubric remain available.
+      verifier_class: judge
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: 'Import the source-provided correct value: the released proof assessment in points divided by the maximum
+        of seven. Keep every fractional value; do not threshold it into pass/fail. Preserve the complete released
+        grading scheme.'
+sources:
+  upstream:
+  - name: outputs_arxivmath_1225
+    url: https://huggingface.co/datasets/MathArena/arxivmath-1225_outputs
+    revision: 6e427c4860254adc93ee95ebd37dc2b6c6028b4a
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_1225/{path}
+  - name: outputs_arxivmath_0126
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0126_outputs
+    revision: 306b8e8d1e91c40beb6b2b003adb89e7951bd204
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0126/{path}
+  - name: tasks_arxivmath_0126
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0126
+    revision: bac939ba603c93f905aa48072980ea681a2824cd
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0126/{path}
+  - name: tasks_arxivmath_1225
+    url: https://huggingface.co/datasets/MathArena/arxivmath-1225
+    revision: 90c60aa1eadbb72168640169d82154b079cdeaac
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_1225/{path}
+  - name: tasks_arxivmath_0226
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0226
+    revision: a038fd1b01405ea1102e165b6ef43693fd16ca6b
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0226/{path}
+  - name: outputs_arxivmath_0226
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0226_outputs
+    revision: 92e08f2fb94f5fd7fdbf02b335f5ce6ff9a589a8
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0226/{path}
+  - name: tasks_brokenarxiv_0226
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0226
+    revision: 5a0fdca0cbc3a8718667504b2ed69b815e44305c
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0226/{path}
+  - name: outputs_brokenarxiv_0226
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0226_outputs
+    revision: b1346bc6e4bd465b9c163debae81126b1140bfea
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0226/{path}
+  - name: tasks_usamo_2026
+    url: https://huggingface.co/datasets/MathArena/usamo_2026
+    revision: 57c61ae5f2a1cc085b6c49667dc320bd2d4187bc
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/usamo_2026/{path}
+  - name: outputs_usamo_2026
+    url: https://huggingface.co/datasets/MathArena/usamo_2026_outputs
+    revision: e45c83f64b0a7857d62356f5442c4863eeec6b57
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/usamo_2026/{path}
+  - name: tasks_brokenarxiv_0326
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0326
+    revision: 510ad632a1dfa157a1a50ca744b5cea3b0fe37b8
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0326/{path}
+  - name: tasks_arxivmath_0326
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0326
+    revision: 14ff32983ae4c72b75fb64eba750f3c27f46607a
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0326/{path}
+  - name: outputs_arxivmath_0326
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0326_outputs
+    revision: 69bc5be7b2280c8521854515a981ed074aaa7b40
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0326/{path}
+  - name: outputs_brokenarxiv_0326
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0326_outputs
+    revision: d719c23340e971fe956a2503bd157bfdcb67d146
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0326/{path}
+  - name: tasks_arxivlean_0326
+    url: https://huggingface.co/datasets/MathArena/arxivlean-0326
+    revision: 91c29253c8cc3fcb08392ae93210e3b094134639
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivlean_0326/{path}
+  - name: outputs_arxivlean_0326
+    url: https://huggingface.co/datasets/MathArena/arxivlean-0326_outputs
+    revision: 47c34bc76c06596e0010c5c15a93c23ca9f082ed
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivlean_0326/{path}
+  - name: tasks_arxivmath_0426
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0426
+    revision: fc2cb715b5855c100142e4c05a8042351c21f3c8
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0426/{path}
+  - name: outputs_arxivmath_0426
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0426_outputs
+    revision: 31b49f173ea747a53fb613b8c8f24b6b4bdf6fcf
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0426/{path}
+  - name: tasks_brokenarxiv_0426
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0426
+    revision: 1c64bf1ce72ebc997b0a92896a1414a4d010add0
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0426/{path}
+  - name: outputs_brokenarxiv_0426
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0426_outputs
+    revision: 34779f2c3c287fda88ea06b4c7885a1d10ae8b36
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0426/{path}
+  - name: tasks_arxivmath_0526
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0526
+    revision: 69f701c7f266bfba235ef302ff9b19093f7455bb
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0526/{path}
+  - name: tasks_brokenarxiv_0526
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0526
+    revision: 2761f4553fdc3c49cf9776e740bc8f641a8937aa
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0526/{path}
+  - name: outputs_arxivmath_0526
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0526_outputs
+    revision: 85f1009458c2d2e1527d3e592d04cf40ee8b3a90
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0526/{path}
+  - name: outputs_brokenarxiv_0526
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0526_outputs
+    revision: 7ca7ebc694e921b56eb9b5968374918bf2a2b4e4
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0526/{path}
+  - name: tasks_arxivmath_0626
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0626
+    revision: dca0d771ab20c1b8e8c50d0921bf693f7bfe663d
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0626/{path}
+  - name: tasks_brokenarxiv_0626
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0626
+    revision: 73dd424784fbdeab599557fcba3d77559c89d1ee
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0626/{path}
+  - name: tasks_arxivlean_0626
+    url: https://huggingface.co/datasets/MathArena/arxivlean-0626
+    revision: 1ced46a1d45d57c6de242d51c0baf574b96022ea
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivlean_0626/{path}
+  - name: outputs_arxivmath_0626
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0626_outputs
+    revision: f782eef32107837304e2ecd4e78b4cb60ee1e122
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0626/{path}
+  - name: outputs_brokenarxiv_0626
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0626_outputs
+    revision: c4fac0ea2939a252ea72e9712fa49c639becb252
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0626/{path}
+  - name: outputs_arxivlean_0626
+    url: https://huggingface.co/datasets/MathArena/arxivlean-0626_outputs
+    revision: 4221f7241f21cf4d39a80b934b7ea76d53ba29ed
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivlean_0626/{path}
+  - name: tasks_arxivmath_0826
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0826
+    revision: 977a3a0083198e11ac4f20fe79288351cebd6281
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/arxivmath_0826/{path}
+  - name: tasks_brokenarxiv_0826
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0826
+    revision: 6445b9740c9f932c44a3c1c6019230d08e81a793
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: tasks/brokenarxiv_0826/{path}
+  - name: outputs_arxivmath_0826
+    url: https://huggingface.co/datasets/MathArena/arxivmath-0826_outputs
+    revision: 64731d80cf7dd2a83d842c4deb9739c81d129efa
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/arxivmath_0826/{path}
+  - name: outputs_brokenarxiv_0826
+    url: https://huggingface.co/datasets/MathArena/brokenarxiv-0826_outputs
+    revision: 7da551be2a80d7721bd6ee77ef14c8894fdef686
+    files:
+    - match: (?:README\.md|\.gitattributes|data/[^/]+\.parquet)
+      path: outputs/brokenarxiv_0826/{path}
+  - name: harness
+    url: https://github.com/eth-sri/matharena
+    revision: b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b
+    files:
+    - match: (?:README\.md|LICENSE|readmes/README_(?:arxivmath|arxivlean|brokenarxiv|harness)\.md|src/matharena/.*\.py|scripts/curation/upload_(?:outputs|competition)\.py|scripts/judge/judge\.py|configs/competitions/(?:arxiv|arxiv_false|arxivlean|usamo)/[^/]+\.yaml)
+      path: harness/{path}

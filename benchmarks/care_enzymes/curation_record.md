@@ -1,0 +1,3 @@
+- Captured 109 files from pinned upstream revisions. The five table stages retain all 16,817 observations, original input-bank links, and complete rankings of up to 4,960 predictions.
+- Restored 245 missing-prediction failures. Grades follow the released k=1, EC-level-4 rule, including fractional credit for multiple reference labels; every final method/split mean matches the authors' 45 saved summaries.
+- Kept task, training-bank and text-augmentation conditions distinct. One historical export remains a separate collection with unresolved prompt mode and reordered ranks. Full model messages, resolved weight/API snapshots and historical Foldseek structures are unavailable.

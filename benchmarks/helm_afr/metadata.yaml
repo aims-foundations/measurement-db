@@ -1,0 +1,90 @@
+benchmark:
+  description: HELM evaluation of clinical MMLU and Winogrande in 11 African languages, preserving published
+    per-request exact-match grades.
+  testing_condition: Published HELM requests. Preserve native task/language/exam definitions, actual generation
+    settings, all accepted references and every observed attempt; no best-score deduplication.
+  paper_url: https://arxiv.org/abs/2412.12417
+  data_source_url: https://crfm.stanford.edu/helm/mmlu-winogrande-afr/latest/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @misc{alhanai2024bridginggap,
+          title={Bridging the Gap: Enhancing LLM Performance for Low-Resource African Languages with New Benchmarks, Fine-Tuning, and Cultural Adjustments},
+          author={Tuka Alhanai and Adam Kasumovic and Mohammad Ghassemi and Aven Zitzelberger and Jessica Lundin and Guillaume Chabot-Couture},
+          year={2024},
+          eprint={2412.12417},
+          archivePrefix={arXiv},
+          primaryClass={cs.CL},
+          url={https://arxiv.org/abs/2412.12417},
+    }
+  tags:
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  release_date: null
+  release: public
+  name: HELM African MMLU + Winogrande
+  version: HELM mmlu-winogrande-afr v1.1.0
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: afrihelm
+      release: v1.1.0
+      metric: exact_match
+      item_features: scenario_spec
+grading:
+  rule: Import the published task metric unchanged. reference_answer is a JSON array containing every
+    correct-tagged reference, in native order; repeated choices remain represented.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: not recorded in the published run spec; linked source is an inspected reference
+        implementation
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/mmlu-winogrande-afr/benchmark_output/releases/v1.1.0/runs.json
+    revision: v1.1.0
+    file: release_index.json
+    size: 70234003
+    sha256: f6c1c95f824e1c55704e4ab299455a461c47f103fbfd208529d871e49dca1d1a
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.1.0
+    prefix: mmlu-winogrande-afr/
+    helm_index:
+      source: release
+    tree_sha256: 0f3cf7fabfd83172012302b941ae92943f192b35f60bea80ab238268b484c5b5
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py|evaluate_reference_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/scenarios/(?:mmlu_clinical_afr_scenario\.py|winogrande_afr_scenario\.py)
+      path: harness/{path}

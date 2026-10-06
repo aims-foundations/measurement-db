@@ -1,0 +1,118 @@
+format_version: 1
+tables:
+  traces:
+    rows: 75216
+    logical_sha256: 65f06e2c07ff36d764d5e7cbca853f33ee9bb4b326c956a10698a6d328915759
+  subjects:
+    rows: 6
+    logical_sha256: 03f1cbd89ba6343897ec19eea835c1bfaf37fc1479dfa933e196728a89211251
+  responses:
+    rows: 75216
+    logical_sha256: fd71e674914f44c0c0171e83191ad9067991076081359a24ef80655fc2a3634d
+  items:
+    rows: 12495
+    logical_sha256: 353a99ee951bec227101b42ccc8cd7fd8babd097ba82670531b237cc1a64803c
+  benchmarks:
+    rows: 1
+    logical_sha256: 9895ab6474539858712452071e2990a73aa6ea305e44a1615995634431951965
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 75216
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 23772
+  source_prior_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 7668
+  source_post_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 67548
+  source_reused_prior_copies_excluded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 59880
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 12495
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 6
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 75216
+  source_missing_output_text:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 19
+  source_empty_output_text:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/kevinwu23/StanfordClashEval
+    locator: Six native data/model_responses/*.pqt files and literal prompts at GitHub revision 56e7e0834b8cff17bb53eccd21f04ae916d78254;
+      compute_metrics.ipynb calculate_prior_accuracy counts one prior answer per question.
+    scope: All contextual source rows plus one completely agreeing repeated closed-book answer per model/question.
+      Published correctness retained; no new grading. Full output and log-probability strings, including
+      unavailable output text, preserved.
+    expected: 268

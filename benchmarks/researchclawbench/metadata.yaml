@@ -1,0 +1,113 @@
+benchmark:
+  name: ResearchClawBench
+  description: Recorded autonomous scientific research attempts, graded against expert-weighted task rubrics.
+  testing_condition: 'Preserve every published run-index observation and its native continuous 0–100 score, including
+    attempts omitted by the best-run leaderboard. Retain the earlier Qiushi Engine / GPT-5.5 batch from its original
+    Git revision; a later refresh replaced it with another model. Subjects distinguish the recorded agent and model.
+    Item text is the source instruction template: every available recorded instruction matches it after replacing
+    only its workspace path and normalizing whitespace. Exact instructions remain in each detailed trace. Summary-only
+    runs lack individual instructions, reports and trajectories; their task association follows the native index.
+    Original task data and related literature are captured separately from hidden grading references. Current published
+    assets and rubrics are pinned, but their complete historical hashes and the historical judge configuration were
+    not recorded. Recorded criterion prefixes and weights match the exported rubric; this does not establish full
+    historical rubric identity. The source exporter retains at most 500 log lines and selects JSON lines when available.
+    Preserve all exported lines without claiming complete trajectories. Native cost_usd is an estimate from duration,
+    not actual API billing. No agent or judge is executed.'
+  paper_url: https://arxiv.org/abs/2606.07591
+  data_source_url: https://github.com/InternScience/ResearchClawBench-Home
+  subject_type: agent
+  item_type: scientific_research_task
+  license: MIT (captured project and dataset licenses); retain attribution for original scientific inputs and papers.
+  citation: 'Shanghai Artificial Intelligence Laboratory. ResearchClawBench: A Benchmark for End-to-End Autonomous
+    Scientific Research. 2026. arXiv:2606.07591.'
+  tags:
+  - science
+  - research
+  - agents
+  modality:
+  - text
+  - image
+  - tabular
+  domain:
+  - science
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: 0
+    max: 100
+    direction: higher_is_better
+  categorical: false
+  release_date: 2026-05
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+  version: 5d63ab64b6d22e5669f58b7aa49be433c853b629
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      index: home/data/runs_index.json
+      runs: home/data/runs
+      tasks: home/data/tasks
+      original_tasks: original/tasks
+      historical_index: history/data/runs_index.json
+    historical_configuration:
+      agent_name: Qiushi Engine
+      model: gpt-5.5
+    patterns:
+      workspace: '(?m)^Your workspace is: `[^`]+`$'
+      filename_escape: _x([0-9a-f]{2,6})_
+    labels:
+      workspace: 'Your workspace is: `<workspace>`'
+      harness: ResearchClawBench
+      historical_settings: not_recorded
+      input_scope: published_template_and_pinned_task_assets
+      default_media_type: application/octet-stream
+    media_types:
+      .pdf: application/pdf
+      .json: application/json
+      .jsonl: application/x-ndjson
+      .csv: text/csv
+      .txt: text/plain
+      .md: text/markdown
+      .png: image/png
+      .jpg: image/jpeg
+      .jpeg: image/jpeg
+      .py: text/x-python
+grading:
+  rule: Preserve the released total_score on its continuous 0–100 scale. The source judge scores each weighted text
+    or image criterion and reports their weighted average. The published rubric is associated by task ID; original
+    per-run criterion prefixes and weights are retained in traces. Historical judge model and full historical rubric
+    hashes are unknown. Do not bin scores or select only the best attempt.
+  verifiers:
+    reported:
+      kind: source_reported_multimodal_rubric_score
+      source: https://github.com/InternScience/ResearchClawBench/blob/01bc2371f698f755892935ef2965a95a790ff0db/evaluation/score.py
+      execution: import_native_total_score_only
+      historical_judge_model: not_recorded
+sources:
+  upstream:
+  - name: historical_configuration
+    url: https://github.com/InternScience/ResearchClawBench-Home
+    revision: 1faec852092243d63fbdc5bdb181237b2f8a08d1
+    files:
+    - match: data/(?:runs_index|leaderboard_only_runs|leaderboard)\.json
+      path: history/{path}
+  - name: recorded_results
+    url: https://github.com/InternScience/ResearchClawBench-Home
+    revision: 5d63ab64b6d22e5669f58b7aa49be433c853b629
+    files:
+    - match: (?:LICENSE|README\.md|export_static\.py|check_consistency\.py|data/(?:runs_index|leaderboard|leaderboard_only_runs|pass5_leaderboard)\.json|data/tasks/.*|data/runs/[^/]+/(?:data\.json|output\.json|files\.json|workspace/INSTRUCTIONS\.md))
+      path: home/{path}
+  - name: original_tasks
+    url: https://huggingface.co/datasets/InternScience/ResearchClawBench
+    revision: fa82414b2ead64ea3a4df2c0688512198c42ba59
+    files:
+    - match: (?:LICENSE|README\.md|viewer/tasks\.jsonl|tasks/[^/]+_00[0-3]/(?:task_info\.json|(?:data|related_work|target_study)/.*))
+      path: original/{path}
+  - name: grading_implementation
+    url: https://github.com/InternScience/ResearchClawBench
+    revision: 01bc2371f698f755892935ef2965a95a790ff0db
+    files:
+    - match: (?:LICENSE|README\.md|evaluation/[^/]+\.(?:py|json))
+      path: harness/{path}

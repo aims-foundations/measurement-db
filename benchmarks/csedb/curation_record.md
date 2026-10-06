@@ -1,0 +1,3 @@
+- Import all 41,922 native assessments from the three released panels, including 9,515 partial-credit scores; preserve full clinical inputs, weighted rubrics, model answers and judge text.
+- Distinguish repeated grading from new generations and map the prompt-optimization panel’s `mg` field to structured-prompt DeepSeek-R1. Eleven parser-fallback zeros become null; their original values remain in the traces.
+- Pin upstream code, results and supplementary templates. Reconcile every observation with the native record and grader; retain all 22,680 previous binary grades. Historical request settings remain unknown; no model inference or new judging is performed.

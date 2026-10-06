@@ -1,0 +1,4 @@
+- Import all 177,892 primary comparisons from the pinned AlpacaEval release: 221 generators and 805 complete instructions with their fixed GPT-4 comparison outputs.
+- Preserve 177,886 valid historical grades and every native record. Restore five ungraded rows; retain the reviewed `-1` preference as ungraded instead of clipping it to failure.
+- Capture the full judge prompt, released model templates and both nested Vicuna exports; the latter add regression estimates to existing judgments and are not additional attempts. Inference settings absent from the records remain unknown.
+- All rows and links reconcile independently. Native means match 216 of 218 comparable leaderboard entries; Infinity-Instruct-3M-0625-Mistral-7B and dbrx-instruct summaries disagree with their released annotations. Preserve the annotations; these are raw, not length-controlled preferences.

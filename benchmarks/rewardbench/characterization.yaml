@@ -1,0 +1,153 @@
+format_version: 1
+tables:
+  traces:
+    rows: 491343
+    logical_sha256: 96a0a9062effee68e88d3a1c82256923a696e5539da0eae5194a9eaf01fa6fb6
+  subjects:
+    rows: 167
+    logical_sha256: 57ca592dc3718020af26f37831eb77eceab9dd7c44b47048d0b2c996248d2970
+  responses:
+    rows: 491343
+    logical_sha256: a58c64df4b9dce13064a4de75b74811e58a99ad9fade9d6444227ac2af7e309f
+  items:
+    rows: 4045
+    logical_sha256: 7e9f3615dc59b8811eda1e600530ee1395c811809a3d9aea215229fbe93e1c3b
+  benchmarks:
+    rows: 1
+    logical_sha256: 8f8423caa5f7c55ae284d8dd4d60d113fc5f842bf69cf635f77f424a900d5b19
+source_claims:
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 491343
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 167
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 4045
+  source_task_versions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 4
+  source_published_subset_means:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 3450
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 167
+  source_early_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 40608
+  source_dpo_implicit_ref_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 48
+  source_half_credit:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 4154
+  source_observations_with_nonfinite_rewards:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 2749
+  source_dpo_implicit_ref_free_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 33
+  source_direct_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 86
+  source_nonfinite_scores_chosen:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 2619
+  source_files_without_aggregate:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 17
+  source_nonfinite_scores_rejected:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/allenai/reward-bench-results/tree/96302cc604e4f257dc526272c803c4eff27e3469
+    locator: eval-set-scores per-item JSON files, matching eval-set subset means, and the four pinned original task-bank
+      versions in metadata.
+    scope: Released core-set observations only; counts are derived independently from captured originals, not paper-wide
+      claims. Other preference suites and best-of-N exports are outside this scope.
+    expected: 2675

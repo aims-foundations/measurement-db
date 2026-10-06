@@ -1,0 +1,78 @@
+benchmark:
+  description: ICPC-2 Code Selector tests whether models can pick the primary care code that best matches
+    a short clinical expression in Brazilian Portuguese from candidates returned by a search engine, or
+    correctly abstain when none match.
+  testing_condition: Each item is the full model-facing prompt (system instruction + query + the first
+    top_k semantic-search candidate codes), reconstructed as upstream built it; each (query, top_k) is
+    a distinct item. The retriever top-K cutoff (10/20/50/100/200) is an item feature, e.g. "top_k=10".
+  paper_url: https://arxiv.org/abs/2507.14681
+  data_source_url: https://github.com/almeidava93/llm-as-code-selectors-paper
+  subject_type: model
+  item_type: task
+  license: MIT
+  citation: "@article{anjosdealmeida2025llmicpc,\n  title={Large Language Models as Medical Codes Selectors:\
+    \ a benchmark using the International Classification of Primary Care},\n  author={Anjos de Almeida,\
+    \ Vinicius and de Camargo, Vinicius and G{\\'o}mez-Bravo, Raquel and van der Haring, Egbert and van\
+    \ Boven, Kees and Finger, Marcelo and Fernandez Lopez, Luis},\n  journal={arXiv preprint arXiv:2507.14681},\n\
+    \  year={2025},\n}"
+  tags:
+  - medical
+  - clinical
+  - icpc-2
+  - medical-coding
+  - primary-care
+  - portuguese
+  modality:
+  - text
+  domain:
+  - medicine
+  - multilingual
+  - knowledge
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect selection or abstention
+      '1': correct selection or abstention
+  categorical: true
+  release_date: 2025-07
+  release: public
+  name: ICPC-2 Code Selector
+  one_line_description: Evaluates whether models can select a primary-care code for a Brazilian-Portuguese
+    clinical expression from retrieved candidates, or correctly abstain.
+build:
+  contract_version: 2
+  parameters:
+    prompt:
+      system: 'You are a helpful medical coder and expert in the International Classification of Primary
+        Care. You will receive a query and a list of results from an ICPC search engine. Your  task is
+        to select the result that best matches the query. Your response should be a single ICPC code between
+        the XML tags <answer>selected_code</answer>. If there is no result good enough to match the given
+        query, return an empty answer: <answer></answer>.'
+sources:
+  upstream:
+  - name: predictions
+    url: https://raw.githubusercontent.com/almeidava93/llm-as-code-selectors-paper/30f621aa2555ac8e10fa1962cf3d74113620b685/metrics/predictions_data.csv
+    revision: 30f621aa2555ac8e10fa1962cf3d74113620b685
+    file: predictions_data.csv
+    size: 39455207
+    sha256: 32a03c81fb2142e5549812e96b3a275f5489d26503aaf4fe4111f9ee9c476eb9
+  - name: questions
+    url: https://raw.githubusercontent.com/almeidava93/llm-as-code-selectors-paper/30f621aa2555ac8e10fa1962cf3d74113620b685/data/eval_dataset.csv
+    revision: 30f621aa2555ac8e10fa1962cf3d74113620b685
+    file: eval_dataset.csv
+    size: 5360543
+    sha256: 8cdd877fa7aedf979255eaca0fadf21060b339bea9c05c9ac46cc9883060bc4c
+grading:
+  rule: A correct decision is either a true-positive code selection or a true-negative abstention in the
+    released provider grading.
+  verifiers:
+    provider:
+      kind: provider_result_mapping
+      source: https://github.com/almeidava93/llm-as-code-selectors-paper/tree/30f621aa2555ac8e10fa1962cf3d74113620b685
+      logic: response = 1 iff true_positive or true_negative; false_positive and false_negative are failures.

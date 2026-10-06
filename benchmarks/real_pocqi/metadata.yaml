@@ -1,0 +1,103 @@
+benchmark:
+  description: 'Real-POCQi: blinded specialty-matched physician pairwise evaluation of clinical AI systems (GPT-5.5,
+    Gemini 3.1 Pro, Claude Opus 4.8, OpenEvidence) on 620 real point-of-care queries, rated on five dimensions.'
+  testing_condition: 'Preserve all 5780 released physician rating rows as two coupled subject-perspective records
+    each. This is not 11560 independent model calls. The response retains the existing win/tie/loss credit encoding
+    (1, 0.5, 0), which is not the paper strict win rate: ties count as zero wins there. Full five-level preference
+    labels remain in every trace. A distinct item is the original clinical query plus its grading dimension. Preserve
+    both displayed slots, the opponent, render mode, complete released answers and native row positions. The 81
+    exactly repeated rating rows remain separate observations because rater/assignment IDs are not released. No
+    rater identities, comparison groups or exact historical request payloads are inferred. The paper reports temperature
+    0, seed 42, automatic thinking and web search for frontier-model generation; OpenEvidence was queried in its
+    June 15, 2026 version without a version number. These are paper-level declarations, not captured per-request
+    configuration records. The released raw answer Markdown is preserved; the exact blinded/rendered survey display
+    and internal generation/tool trajectories are not provided. All released queries are Real-POCQi; the paper HealthBench
+    condition is outside scope. No model, judge, physician or statistical analysis is executed.'
+  paper_url: https://arxiv.org/abs/2606.28960
+  data_source_url: https://huggingface.co/datasets/jjfenglab/Real-POCQi
+  subject_type: model
+  item_type: clinical_query
+  license: CC-BY-4.0 (dataset); MIT (analysis code)
+  citation: "@misc{feng2026realpocqi,\n      title={Expert Evaluation of Clinical AI Tools on Real Point-of-Care\
+    \ Clinical Queries},\n      author={Jean Feng and Vishal Patel and Patrick Heagerty and Yifan Mai and Venkatesh\
+    \ Sivaraman and Patrick Vossler and Jialin Ouyang and Anupam B. Jena},\n      year={2026},\n      eprint={2606.28960},\n\
+    \      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n      url={https://arxiv.org/abs/2606.28960},\n}"
+  tags:
+  - preference
+  - pairwise
+  - clinical
+  - medicine
+  - point-of-care
+  modality:
+  - text
+  domain:
+  - medicine
+  - preference
+  response_type: win_rate
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 0.5
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Physician prefers the opponent
+      '0.5': Physician rates the pair equally
+      '1': Physician prefers this system
+  categorical: true
+  release_date: 2026-06
+  release: public
+  name: Real-POCQi
+  version: 98034255fbfd53b7ca1a4ffad775700db33ac900
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      questions: questions.parquet
+      answers: answers.parquet
+      ratings: ratings.parquet
+    labels:
+      subject_prefix: 'Real-POCQi / '
+      harness: Real-POCQi physician pairwise evaluation
+    axes:
+      accuracy: Factual accuracy
+      clinical_utility: Clinical usefulness
+      source_quality: Authority of cited sources
+      verifiability: Ease of verification
+      completeness: Coverage of the clinical query
+    slot_a_scores:
+      strongly_a: '1'
+      slightly_a: '1'
+      tie: '0.5'
+      slightly_b: '0'
+      strongly_b: '0'
+sources:
+  upstream:
+  - name: release
+    url: https://huggingface.co/datasets/jjfenglab/Real-POCQi
+    revision: 98034255fbfd53b7ca1a4ffad775700db33ac900
+    files:
+    - match: .+
+      path: release/{path}
+  - name: analysis
+    url: https://github.com/jjfenglab/Real-POCQi-statistics
+    revision: b76c8db75e66ec5606685034743d9fa7518c8ac3
+    files:
+    - match: .+
+      path: analysis/{path}
+grading:
+  rule: 'Encode the original physician preference from this subject perspective: win=1, tie=0.5, loss=0. Preserve
+    preference strength in the native record; unknown choices are not ties. The two perspectives are complementary
+    encodings of one rating. This is preference credit, not absolute clinical correctness or strict win rate.'
+  verifiers:
+    physician:
+      kind: released_blinded_specialty_matched_human_preference
+      source: https://huggingface.co/datasets/jjfenglab/Real-POCQi/blob/98034255fbfd53b7ca1a4ffad775700db33ac900/README.md
+      analysis_source: https://github.com/jjfenglab/Real-POCQi-statistics/blob/b76c8db75e66ec5606685034743d9fa7518c8ac3/data_helpers.R
+      field: ratings.choice
+      rater_identity: not released
+      limitation: Original five-level labels, source row, display slot and render mode remain in the trace.

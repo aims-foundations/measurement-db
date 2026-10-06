@@ -1,0 +1,3 @@
+- Curate all 50,951 accepted human ratings of 660 saved AI episodes across 15 agents, retaining 4,583 ungraded ratings. Apply the author's six-worker exclusion; human demonstration videos remain comparison references.
+- Keep full task goals and world seeds separate from the question, worker and comparison video used for grading. Preserve adverse-question direction and exact win/draw/loss meanings; repeated ratings are not new agent runs.
+- Preserve complete annotations and links to the checksum-verified 748-video archive. Historical pixel observations and full agent configurations are unavailable. Shared schema checks and independent source audits cover every rating; no evaluations are rerun.

@@ -1,0 +1,284 @@
+benchmark:
+  description: Released model predictions for student-response assessment across the S-GRADES dataset families.
+  testing_condition: Original CSV and JSON prediction records, including ungraded attempts. Associate JSON results
+    with unambiguous captured target-input definitions; unresolved associations remain in raw. Repeated progress
+    snapshots of the same recorded run are not independent observations. Reconstruct categorical correctness only
+    from exact original SemEval annotations; absent numeric references and unparsed explanations remain ungraded.
+    CSV prediction positions compact valid outputs and do not establish original call order. All source records
+    and full available generated text are preserved. Original historical API requests and chosen few-shot examples
+    are unavailable. Captured data remain local pending clarification of upstream redistribution terms.
+  paper_url: https://arxiv.org/abs/2603.10233
+  data_source_url: https://github.com/nlpatunt/sgrades-experiments
+  subject_type: model
+  item_type: task
+  license: The original experiment repository has no declared license. The original SemEval reference release declares
+    CC-BY-SA.
+  citation: "@article{seuti2026sgrades,\n  title={S-GRADES: Studying Generalization of Student Response Assessments\
+    \ in Diverse Evaluative Settings},\n  author={Seuti, Tasfia and Ray Choudhury, Sagnik},\n  journal={arXiv preprint\
+    \ arXiv:2603.10233},\n  year={2026}\n}"
+  tags:
+  - education
+  - grading
+  - automatic-short-answer-grading
+  - asag
+  - assessment
+  - llm-as-grader
+  - science
+  - reasoning-strategies
+  modality:
+  - text
+  domain:
+  - education
+  - science
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Recorded predicted category differs from original reference
+      '1': Recorded predicted category matches original reference
+  categorical: true
+  release_date: 2026-03
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  name: S-GRADES
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      release: release
+      references: semeval/semeval-3way.zip
+    model_codes:
+      gpt4_mini: openai/gpt-4o-mini
+      gemini_flash: google/gemini-2.5-flash
+      generalization/lama_exp: meta-llama/llama-4-scout
+    model_names:
+      openai/gpt-4o-mini: gpt-4o-mini
+      google/gemini-2.5-flash: gemini-2.5-flash
+      meta-llama/llama-4-scout: llama-4-scout
+    corpus_names:
+      beetle: BEEtlE
+      sciEntsBank: SciEntSBank
+    id_columns:
+      ASAP-AES: essay_id
+      ASAP2: essay_id
+      ASAP-SAS: Id
+      ASAP_plus_plus: essay_id
+      BEEtlE_2way: ID
+      BEEtlE_3way: ID
+      SciEntSBank_2way: ID
+      SciEntSBank_3way: ID
+      CSEE: index
+      Mohlar: ID
+      Ielts_Writing_Dataset: ID
+      Ielts_Writing_Task_2_Dataset: ID
+      persuade_2: essay_id_comp
+      Regrading_Dataset_J2C: ID
+      OS_Dataset_q1: ID
+      OS_Dataset_q2: ID
+      OS_Dataset_q3: ID
+      OS_Dataset_q4: ID
+      OS_Dataset_q5: ID
+      Rice_Chem_Q1: sis_id
+      Rice_Chem_Q2: sis_id
+      Rice_Chem_Q3: sis_id
+      Rice_Chem_Q4: sis_id
+    text_columns:
+      ASAP-AES: essay
+      ASAP2: full_text
+      ASAP-SAS: essay_text
+      ASAP_plus_plus: essay
+      BEEtlE_2way: student_answer
+      BEEtlE_3way: student_answer
+      SciEntSBank_2way: student_answer
+      SciEntSBank_3way: student_answer
+      CSEE: essay
+      Mohlar: student_answer
+      Ielts_Writing_Dataset: Essay
+      Ielts_Writing_Task_2_Dataset: essay
+      persuade_2: full_text
+      Regrading_Dataset_J2C: student_answer
+      OS_Dataset_q1: answer
+      OS_Dataset_q2: answer
+      OS_Dataset_q3: answer
+      OS_Dataset_q4: answer
+      OS_Dataset_q5: answer
+      Rice_Chem_Q1: student_response
+      Rice_Chem_Q2: student_response
+      Rice_Chem_Q3: student_response
+      Rice_Chem_Q4: student_response
+    question_columns:
+      ASAP-AES: prompt
+      ASAP2: assignment
+      ASAP-SAS: prompt
+      ASAP_plus_plus: prompt
+      BEEtlE_2way: question_text
+      BEEtlE_3way: question_text
+      SciEntSBank_2way: question_text
+      SciEntSBank_3way: question_text
+      CSEE: prompt
+      Mohlar: Question
+      Ielts_Writing_Dataset: Question
+      Ielts_Writing_Task_2_Dataset: prompt
+      persuade_2: assignment
+      Regrading_Dataset_J2C: Question
+      OS_Dataset_q1: question
+      OS_Dataset_q2: question
+      OS_Dataset_q3: question
+      OS_Dataset_q4: question
+      OS_Dataset_q5: question
+      Rice_Chem_Q1: Prompt
+      Rice_Chem_Q2: Prompt
+      Rice_Chem_Q3: Prompt
+      Rice_Chem_Q4: Prompt
+    labels:
+      trial_order: Retained valid-output position. Missing slots have no recorded prediction. Original call ordering
+        is unavailable.
+      input_scope: Known question and student-answer fields. Exact historical API messages and chosen training examples
+        are unavailable.
+      csv_harness: S-GRADES released three-call prediction experiment
+      json_harness: S-GRADES released native JSON prediction experiment
+      json_configuration: Historical API requests and selected training examples are unavailable. Retain the recorded
+        provider model identifier and run settings.
+    dataset_aliases:
+      Ielst_Writing_Task_2_Dataset: Ielts_Writing_Task_2_Dataset
+      grade_like_a_human_dataset_os_q1: OS_Dataset_q1
+      grade_like_a_human_dataset_os_q2: OS_Dataset_q2
+      grade_like_a_human_dataset_os_q3: OS_Dataset_q3
+      grade_like_a_human_dataset_os_q4: OS_Dataset_q4
+      grade_like_a_human_dataset_os_q5: OS_Dataset_q5
+    corrupt_input_files:
+      gpt4_mini/deductive_gpt-4o-mini_predictions_csv/laptop/ASAP-SAS.csv: Original captured file contains non-UTF8
+        corrupted bytes.
+      gemini_flash/abductive_gemini-2.5-flash_predictions_csv/laptop/ASAP2.csv: Original captured file has malformed
+        CSV quoting.
+      gemini_flash/deductive_gemini-2.5-flash_predictions_csv/laptop/ASAP2.csv: Original captured file contains
+        long blocks of 0xff bytes.
+      generalization/lama_exp/deductive_llama-4-scout_predictions_csv/deductive_llama-4-scout_predictions_csv/ASAP2.csv: Original
+        captured file contains long blocks of 0xff bytes.
+    category_labels:
+      correct: Correct answer
+      incorrect: Incorrect or incomplete answer
+      contradictory: Answer contradicts the reference
+    json_run_identity_fields:
+      model_code: Recorded provider model identifier
+      reasoning_approach: Recorded reasoning strategy
+      timestamp: Native run start timestamp
+      num_training_examples: Recorded example count, when provided
+      random_seed: Recorded sampling seed, when provided
+    training_input_markers:
+      examples: Exclude training-example definitions from target item ID lookup
+      training: Exclude training-example definitions from target item ID lookup
+      train.csv: Exclude training-example definitions from target item ID lookup
+    score_columns:
+      ASAP-AES: domain1_score
+      ASAP2: score
+      ASAP-SAS: Score1
+      ASAP_plus_plus: overall_score
+      BEEtlE_2way: label
+      BEEtlE_3way: label
+      SciEntSBank_2way: label
+      SciEntSBank_3way: label
+      CSEE: overall_score
+      Mohlar: grade
+      Ielts_Writing_Dataset: Overall_Score
+      Ielts_Writing_Task_2_Dataset: band_score
+      persuade_2: holistic_essay_score
+      Regrading_Dataset_J2C: grade
+      OS_Dataset_q1: score_1
+      OS_Dataset_q2: score_1
+      OS_Dataset_q3: score_1
+      OS_Dataset_q4: score_1
+      OS_Dataset_q5: score_1
+      Rice_Chem_Q1: Score
+      Rice_Chem_Q2: Score
+      Rice_Chem_Q3: Score
+      Rice_Chem_Q4: Score
+    author_input_tables:
+      historical_inputs/scient_old/test_2way.csv: SciEntSBank_2way
+      historical_inputs/scient_old/test_3way.csv: SciEntSBank_3way
+      historical_inputs/scient_current/test_2way.csv: SciEntSBank_2way
+      historical_inputs/scient_current/test_3way.csv: SciEntSBank_3way
+      author_inputs/D_Mohlar/test.csv: Mohlar
+      author_inputs/D_Ielts_Writing_Task_2_Dataset/test.csv: Ielts_Writing_Task_2_Dataset
+      author_inputs/D_OS_Dataset/q1/test.csv: OS_Dataset_q1
+      author_inputs/D_OS_Dataset/q2/test.csv: OS_Dataset_q2
+      author_inputs/D_OS_Dataset/q3/test.csv: OS_Dataset_q3
+      author_inputs/D_OS_Dataset/q4/test.csv: OS_Dataset_q4
+      author_inputs/D_OS_Dataset/q5/test.csv: OS_Dataset_q5
+      author_inputs/D_Rice_Chem/Q1/test.csv: Rice_Chem_Q1
+      author_inputs/D_Rice_Chem/Q2/test.csv: Rice_Chem_Q2
+      author_inputs/D_Rice_Chem/Q3/test.csv: Rice_Chem_Q3
+      author_inputs/D_Rice_Chem/Q4/test.csv: Rice_Chem_Q4
+grading:
+  rule: Use the dataset-specific original reference when verified; unavailable grades remain null.
+  verifiers:
+    2way:
+      kind: reconstructed_category_match
+      source: https://github.com/nlpatunt/sgrades-experiments/blob/e342b9e450253fedac756dfec5557fb63825c27e/utils/evaluation_engine.py
+      rule: Exact match to the original SemEval 2way human category, joined by question and answer text and original
+        answer ID where retained. No grade when the association is unavailable.
+    3way:
+      kind: reconstructed_category_match
+      source: https://github.com/nlpatunt/sgrades-experiments/blob/e342b9e450253fedac756dfec5557fb63825c27e/utils/evaluation_engine.py
+      rule: Exact match to the original SemEval 3way human category, joined by question and answer text and original
+        answer ID where retained. No grade when the association is unavailable.
+    numeric:
+      kind: unavailable_original_reference
+      source: https://github.com/nlpatunt/sgrades-experiments/blob/e342b9e450253fedac756dfec5557fb63825c27e/utils/evaluation_engine.py
+      rule: The original evaluator compares the predicted numeric grade with a human reference. A verified reference
+        is unavailable for this candidate, so retain response=null.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/nlpatunt/sgrades-experiments
+    revision: e342b9e450253fedac756dfec5557fb63825c27e
+    files:
+    - match: .*
+      path: release/{path}
+  - name: semeval
+    url: https://github.com/myrosia/semeval-2013-task7
+    revision: 5157c69f914e8c581045c03e98f96398d40a91b8
+    files:
+    - match: .*
+      path: semeval/{path}
+  - name: scient_old
+    url: https://huggingface.co/datasets/nlpatunt/D_SciEntSBank
+    revision: 1a6249213e42f331965e645220c4216628cc1eb4
+    files:
+    - match: (?:\.gitattributes|README\.md|D_SciEntSBank\.py|test_[23]way\.csv)
+      path: historical_inputs/scient_old/{path}
+  - name: scient_current
+    url: https://huggingface.co/datasets/nlpatunt/D_SciEntSBank
+    revision: 60a33aa45f4497d3ec4aca0f4e54f7a7fd5f2dcf
+    files:
+    - match: (?:\.gitattributes|README\.md|D_SciEntSBank\.py|test_[23]way\.csv)
+      path: historical_inputs/scient_current/{path}
+  - name: author_d_mohlar
+    url: https://huggingface.co/datasets/nlpatunt/D_Mohlar
+    revision: 1a3f2970798ec79c607bd328538cb2c48f449a5a
+    files:
+    - match: (?:.*test\.csv|.*\.py|README\.md|\.gitattributes)
+      path: author_inputs/D_Mohlar/{path}
+  - name: author_d_ielts_writing_task_2_dataset
+    url: https://huggingface.co/datasets/nlpatunt/D_Ielts_Writing_Task_2_Dataset
+    revision: 96c1dbee1ccce064f3a04d67fb410bcd8c8382cf
+    files:
+    - match: (?:.*test\.csv|.*\.py|README\.md|\.gitattributes)
+      path: author_inputs/D_Ielts_Writing_Task_2_Dataset/{path}
+  - name: author_d_os_dataset
+    url: https://huggingface.co/datasets/nlpatunt/D_OS_Dataset
+    revision: d7b223546dcc7cb99d7414e7a1637a147a991f56
+    files:
+    - match: (?:.*test\.csv|.*\.py|README\.md|\.gitattributes)
+      path: author_inputs/D_OS_Dataset/{path}
+  - name: author_d_rice_chem
+    url: https://huggingface.co/datasets/nlpatunt/D_Rice_Chem
+    revision: 2e442b408c299e027f935cae1387a420f1a5b9d2
+    files:
+    - match: (?:.*test\.csv|.*\.py|README\.md|\.gitattributes)
+      path: author_inputs/D_Rice_Chem/{path}

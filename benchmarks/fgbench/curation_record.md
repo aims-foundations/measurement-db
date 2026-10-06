@@ -1,0 +1,3 @@
+- Recovers 57,168 predictions from eight model exports on 7,146 test questions. Every prompt, full answer, and grade was checked independently against the authors' parser; no new model or judge calls were made.
+- Boolean grades are correctness. Numeric grades are squared error, whose mean square root reproduces the published RMSE; the historical exclusions for zero or unparsed values remain null (3,096 attempts). These two scales are explicit on their respective items.
+- The malformed Llama-3.1-70B export remains in raw for review: its supplied parser may include the reference label in the parsed prediction. It is excluded from the tables; the other exports and their native input bytes are unchanged.

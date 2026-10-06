@@ -1,0 +1,105 @@
+benchmark:
+  description: Released LongGenBench constraint judgments and generated outputs for KV-cache interventions studied
+    in MorphKV; these are measurements on LongGenBench, not a new task bank.
+  testing_condition: Retain every released generated-block constraint from the eleven paper_results JSON files.
+    Nine configurations have binary judgments; two Qwen30B files provide generated outputs without judgments, retained
+    as null grades. A distinct item combines the complete generation prompt with one block-specific constraint and
+    the declared grading protocol. Constraints whose required blocks were not generated are excluded by the original
+    conditional-accuracy convention; completion rate is a separate statistic. All native output blocks and fields
+    are preserved; full raw judge completions and historical command lines are not released. The paper describes
+    greedy decoding capped at 8K tokens for the nine graded configurations. Source filenames preserve cache-method/configuration
+    labels, without inferring exact weight revisions, extra Qwen30B model identities, or settings for the ungraded
+    files. No model, cache implementation or LLM judge is executed during curation. LongWriter, LongBench and other
+    result directories remain outside this paper_results migration scope.
+  paper_url: https://arxiv.org/abs/2503.00979
+  data_source_url: https://github.com/ghadiaravi13/MorphKV
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: 'Ghadia et al. Dialogue Without Limits: Constant-Sized KV Caches for Extended Response in LLMs. ICML
+    2025.'
+  tags:
+  - kv_cache
+  - long_generation
+  - longgenbench
+  - constraint_following
+  - inference_efficiency
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Released judge verdict is no
+      '1': Released judge verdict is yes
+  categorical: true
+  release_date: 2025-03
+  release: public
+  name: MorphKV results on LongGenBench
+  version: de62fc8c49d36644fcd77872a3762c2afd840ef1
+  multi_single_turn: single_turn
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: LongGenBench/Evalution/paper_results
+      bank: LongGenBench/Dataset/Dataset_short.json
+    runs:
+      Llama_1000_snapkv: Released configuration label
+      Llama_200_4000_max_greedy: Released configuration label
+      Llama_4000_h2o: Released configuration label
+      Mistral_1000_snapkv: Released configuration label
+      Mistral_200_4000_max_greedy: Released configuration label
+      Mistral_4000_h2o: Released configuration label
+      Qwen30B_1000_snapkv: Released configuration label
+      Qwen30B_200_4000_h2o: Released configuration label
+      Qwen_1000_snapkv: Released configuration label
+      Qwen_200_4000_max_greedy: Released configuration label
+      Qwen_4000_h2o: Released configuration label
+    labels:
+      subject_prefix: 'MorphKV / '
+      harness: MorphKV/LongGenBench
+      benchmark: LongGenBench
+    block_patterns:
+      Week: Week ([0-9]+)
+      Floor: Floor ([0-9]+)
+      Menu Week: Menu\ Week ([0-9]+)
+      Block: Block ([0-9]+)
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/ghadiaravi13/MorphKV
+    revision: de62fc8c49d36644fcd77872a3762c2afd840ef1
+    files:
+    - match: (?:LICENSE|README[.]md|model2path[.]json|LongGenBench/.+)
+      path: '{path}'
+grading:
+  rule: 'For the specified check kind and block identifier, use the original judge verdict: yes is 1 and no is 0.
+    An available generated block without a released verdict is an ungraded observation (null). Blocks absent from
+    the output are not part of this conditional-accuracy score.'
+  verifiers:
+    published_judge:
+      kind: released_llm_constraint_judgment
+      source: https://github.com/ghadiaravi13/MorphKV/blob/de62fc8c49d36644fcd77872a3762c2afd840ef1/LongGenBench/Evalution/eval.py
+      implementation: parse_blocks, create_prompts and evaluate_accuracy
+      block_selection: First matching output block for the task type and numeric identifier.
+      prompt: Three fixed examples followed by the selected output block and its required event; exact template
+        and examples are preserved in the pinned evaluator.
+      interpretation: The evaluator strips and lowercases its completion; any occurrence of yes yields yes, otherwise
+        no.
+      declared_judge: meta-llama/Llama-3.1-8B-Instruct
+      declared_checkpoint: 0e9e39f249a16976918f6564b8830bc894c89659
+      declared_sampling:
+        temperature: 0.95
+        top_p: 0.95
+        max_tokens: 50
+        seed: 42
+      evidence: Evaluator declarations; individual judge requests and completions are not released. Preserve the
+        recorded verdicts without rerunning the judge.

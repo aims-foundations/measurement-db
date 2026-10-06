@@ -1,0 +1,141 @@
+benchmark:
+  description: Individual completions and their original algorithmic rewards from the released easy and hard zero-shot
+    experiments. Retain repeated attempts, partial credit and complete prompts and outputs.
+  testing_condition: 'One response per released completion, not per-item Acc@N or best-of-N. Preserve the recorded
+    model, provider, inference settings and evaluator commit. The original system prompt and question form the item
+    stimulus; grader identity also includes the dataset, configuration and recorded source revision. A recorded
+    grading exception is an ungraded attempt, even when the source runner writes zero. Preserve those original zeros
+    and exception messages in traces. Normalize the one reward exactly one float64 ULP above 1 to 1, preserving
+    its original value in the trace. The hard run named x-ai_grok-3-mini-beta_20250413_235101 is retained in raw
+    only: its summary identifies openai/o3-mini with provider OpenAI, so model attribution is unresolved. Run/dataset
+    aggregate summaries are not observations and can differ from the completion scores. No model inference or grading
+    is rerun.'
+  paper_url: https://openreview.net/forum?id=GqYSunGmp7
+  data_source_url: https://github.com/open-thought/reasoning-gym-eval
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: "@inproceedings{stojanovski2025reasoninggym,\n  title={Reasoning Gym: Reasoning Environments for Reinforcement\
+    \ Learning with Verifiable Rewards},\n  author={Stojanovski, Zafir and Stanley, Oliver and Sharratt, Joe and\
+    \ Jones, Richard and Adefioye, Abdulhakeem and Kaddour, Jean and K{\\\"o}pf, Andreas},\n  booktitle={NeurIPS\
+    \ 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - reasoning
+  - rlvr
+  - procedural
+  - verifiable_rewards
+  - reinforcement_learning
+  modality:
+  - text
+  domain:
+  - reasoning
+  - mathematics
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: null
+  release: public
+  name: 'Reasoning Gym: original zero-shot completions'
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results/reasoninggym-paper-experiments/zero-shot
+    exclusions:
+      ambiguous_identity_run: hard/x-ai_grok-3-mini-beta_20250413_235101
+    labels:
+      harness: Reasoning Gym zero-shot evaluator
+      source_library: https://github.com/open-thought/reasoning-gym
+    subject_fields:
+      provider: provider
+      max_tokens: max_tokens
+    condition_fields:
+      temperature: temperature
+      top_p: top_p
+      completions_per_prompt: completions_per_prompt
+grading:
+  rule: Preserve the completion score returned by the task dataset score_answer method at the recorded evaluator
+    commit, including fractional rewards. The expected answer and generator configuration are released alongside
+    each question. Grade is unavailable when the runner records an exception while extracting or grading the completion.
+    One positive float64 ULP of boundary roundoff is normalized to 1 and retains its native value in the trace.
+  verifiers:
+    algorithmic:
+      kind: released_algorithmic_reward
+      source: https://github.com/open-thought/reasoning-gym
+      entry_point: eval/eval.py:process_entry
+      stored_field: results[].completions[].score
+      execution: Read the original recorded reward; do not rerun the evaluator.
+sources:
+  upstream:
+  - name: results
+    url: https://github.com/open-thought/reasoning-gym-eval
+    revision: 5f09fecc342a25d693895b7304a9dec43b47f436
+    files:
+    - match: reasoninggym-paper-experiments/zero-shot/.*[.]json|README[.]md|LICENSE
+      path: results/{path}
+  - name: protocol_27cdd255
+    url: https://github.com/open-thought/reasoning-gym
+    revision: 27cdd25548fbe013934e1c4921debedf81cd85e9
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/27cdd25548fbe013934e1c4921debedf81cd85e9/{path}
+  - name: protocol_2ad86a92
+    url: https://github.com/open-thought/reasoning-gym
+    revision: 2ad86a9237b1b9fa810985d00753f0ac0a6e3a5a
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/2ad86a9237b1b9fa810985d00753f0ac0a6e3a5a/{path}
+  - name: protocol_71787c6a
+    url: https://github.com/open-thought/reasoning-gym
+    revision: 71787c6a0e2fc46b67fcb7c50af7ad0aa43b6439
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/71787c6a0e2fc46b67fcb7c50af7ad0aa43b6439/{path}
+  - name: protocol_b69c3581
+    url: https://github.com/open-thought/reasoning-gym
+    revision: b69c35818ab551a0a3b150ca02de3e9b01e23a4a
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/b69c35818ab551a0a3b150ca02de3e9b01e23a4a/{path}
+  - name: protocol_cd1a9ea5
+    url: https://github.com/open-thought/reasoning-gym
+    revision: cd1a9ea58b7104ce4c39cd0852a5134d72b5d199
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/cd1a9ea58b7104ce4c39cd0852a5134d72b5d199/{path}
+  - name: protocol_dced3bfc
+    url: https://github.com/open-thought/reasoning-gym
+    revision: dced3bfc45c26fd956c1c95c33b7b349785ae3f8
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/dced3bfc45c26fd956c1c95c33b7b349785ae3f8/{path}
+  - name: protocol_ea737491
+    url: https://github.com/open-thought/reasoning-gym
+    revision: ea737491d337d8b1e34bb638af13183aedc92d39
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/ea737491d337d8b1e34bb638af13183aedc92d39/{path}
+  - name: protocol_eb69916c
+    url: https://github.com/open-thought/reasoning-gym
+    revision: eb69916c1b0c1eecbfb0aacacb8057ca3dc19526
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/eb69916c1b0c1eecbfb0aacacb8057ca3dc19526/{path}
+  - name: protocol_f373881c
+    url: https://github.com/open-thought/reasoning-gym
+    revision: f373881c069ae71a4dfc36890482063d6ac64eb1
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/f373881c069ae71a4dfc36890482063d6ac64eb1/{path}
+  - name: protocol_f5176992
+    url: https://github.com/open-thought/reasoning-gym
+    revision: f51769927e0211a41772bd57c5ad2edd69d8b42c
+    files:
+    - match: eval/.*[.](?:py|yaml|md)|reasoning_gym/dataset[.]py|LICENSE|pyproject[.]toml
+      path: protocol/f51769927e0211a41772bd57c5ad2edd69d8b42c/{path}

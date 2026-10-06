@@ -708,12 +708,10 @@ def get_benchmark_id(
         data at all; items may be registered as an item bank but no response
         matrix exists.
 
-    ``release`` is the public/private publish gate — ``"public"`` makes the
-    benchmark eligible for the public repo/HuggingFace mirror, ``"private"``
-    keeps it private. It is a deliberate decision, not inferable from the data,
-    declared per-benchmark in build.py's ``INFO`` dict. It is the single source
-    of truth for the two-repo split (this replaced the old ``manifest.yaml``).
-    Omitting it defaults to ``"private"``; mark publishable datasets ``"public"``.
+    ``release`` is the publication decision: ``"public"`` permits public
+    publication, ``"private"`` belongs to the separate private repository,
+    and ``"withheld"`` prevents publication. Modern metadata requires an
+    explicit decision; legacy inline callers default to ``"withheld"``.
 
     Modern ``BenchmarkBuild`` callers register the benchmark only after all
     subject, item, and response rows are known. They pass the seven completed
@@ -806,12 +804,8 @@ def get_benchmark_id(
             "paper_url": paper_url,
             "release_date": release_date,
             "granularity": granularity or "item",
-            # Publish gate. ``release`` is the publish-to-public decision,
-            # declared in build.py's INFO dict. It is NOT inferable from the
-            # data, so a build that omits it defaults to "private" (nothing is
-            # published without an explicit decision); mark publishable
-            # datasets "public" explicitly.
-            "release": release or "private",
+            # Missing legacy decisions never authorize publication.
+            "release": release or "withheld",
             "n_response_values": n_response_values,
             "benchmark_features": benchmark_features,
         }

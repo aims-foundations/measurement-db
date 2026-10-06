@@ -1,0 +1,120 @@
+format_version: 1
+tables:
+  traces:
+    rows: 29013
+    logical_sha256: 1ffe9ab03bebc718ce106e60ed73a907df5200e232d1db53a7a29a7ab80b1810
+  subjects:
+    rows: 944
+    logical_sha256: 4e44edb02cf16a332215f5fe5a3e51696f9b9ea4da23e0ca8ef8eae119424e64
+  responses:
+    rows: 29013
+    logical_sha256: 13780721e864ebb98ce8d1b64ea25cdb9a7f0d97135e4e34d4bac698d1b633db
+  assets:
+    rows: 12
+    logical_sha256: 63f0924cca2b4c2a2461186eae78b01b6110a553e531147f1042b62d48c6ef51
+  items:
+    rows: 162
+    logical_sha256: 4e1819bebc706c8ed6ae6dd379f500de4b8376fea44a2ff44e751c2cbac16209
+  benchmarks:
+    rows: 1
+    logical_sha256: 5b85e20ff6b534039ad8c81646f90f301ccb36f86f20b5524bc382578f161691
+source_claims:
+  source_practice_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 15423
+  source_exam_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 13020
+  source_gpt_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 570
+  source_student_participants:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 943
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 29013
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 162
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 944
+  source_worksheets:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 12
+  source_chat_grade_matches:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 6765
+  source_unmatched_chat_keys:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 144
+  source_preserved_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://codeload.github.com/obastani/GenAICanHarmLearning/tar.gz/2f63dae1a01d51453826fe07ef5cf6678e339588
+    locator: Independent csv.DictReader reconciliation of every practice grade, exam grade and GPT annotation. Verify
+      worksheet page pixels/text against Appendix D and preserve original timestamped chat records.
+    scope: All released per-problem grades, including honors students. The published paper uses narrower regression
+      subsets. Raw-only chats without matching grades are not treated as graded attempts.
+    expected: 63319

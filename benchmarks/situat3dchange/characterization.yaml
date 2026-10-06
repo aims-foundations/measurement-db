@@ -1,0 +1,183 @@
+format_version: 1
+tables:
+  traces:
+    rows: 21697
+    logical_sha256: 8dd2df2e1752f11a15228c9f0977be43c17a01652654f3b990f7894d44a001ca
+  subjects:
+    rows: 1
+    logical_sha256: c880920e8feb9fcd6152960b8d919040f373afcbc6d9cd69e7fdd544712ecceb
+  responses:
+    rows: 21697
+    logical_sha256: 82ea8cef8e7ff0a0751828d2fd314d05686bca51cf855b693c75c8194c509092
+  assets:
+    rows: 1103
+    logical_sha256: 1736f3c52d07ad030d981148b530c8e2d29cfac158f01083e87f3af46a0e859c
+  items:
+    rows: 21697
+    logical_sha256: 71242d924f4d4f65d1686a033f3deb0d5c02cdd1ef389cac48acee158d502628
+  benchmarks:
+    rows: 1
+    logical_sha256: 45e581bfc023f07908efde6bb238a9d68c9baf8639d83b79b8a1d57ef6d1df41
+source_claims:
+  source_formatted_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 506
+  source_qa_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 14714
+  source_direction_prefixes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 1858
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 21682
+  source_qa_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 10793
+  source_distance_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 3906
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 15
+  source_caption_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 4729
+  source_longform_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 6983
+  source_instruction_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 2254
+  source_points:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 7603567
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 21697
+  source_scenes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 157
+  source_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 1003
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 1103
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 21697
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 21697
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RuipingL/Situat3DChange/tree/54c18d21a903c017eacfe784774e675ced318357
+    locator: SCReasoner validation results, original v2 annotations and poses, ego-view images, and the pinned documented
+      LEO 3RScan scene archive.
+    scope: Original item-level observations and unchanged stimulus bytes; judge ratings normalized with the released
+      formula, unavailable grades remain null. No model or judge execution.
+    expected: 1

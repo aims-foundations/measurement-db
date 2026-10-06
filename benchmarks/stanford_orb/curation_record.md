@@ -1,0 +1,3 @@
+- Preserve 5,670 published capture/metric values across 13 method workflows, complete camera metadata and original evaluation records. Restore 420 SI-SVBRDF/SIRFS values; keep 12 unsupported pseudo-GT shape zeros in raw.
+- Preserve exact captured LDR/HDR images, masks and metric-specific reference bytes. Capture observations are context; each method's training/evaluation access differs. Released output renders are linked only at method/capture level.
+- Interpret fields using the historical evaluator, retaining its scales and missing-output fallbacks. Source-path agreement does not establish byte identity to inaccessible historical machine files; no evaluation is rerun.

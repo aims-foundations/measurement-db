@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 319289
+    logical_sha256: 33b1e028607adb964a4e1dbeebaa46078e24743dbcb81eb1fb86127fdfe450d1
+  subjects:
+    rows: 10
+    logical_sha256: 339f8d3e77c337697beea18c4b2eec0a9e92849adbe3a32021008f055e6d7f78
+  responses:
+    rows: 319289
+    logical_sha256: 6ff9aae7cccd8b2e48993417e0ef6552c2698d7b89d2d44817b4470e5d1e0231
+  items:
+    rows: 45970
+    logical_sha256: c6e8a9c9928ba77f5a1f877ae9562dfe30d4deecd2ff21ab360e104d283f71b0
+  benchmarks:
+    rows: 1
+    logical_sha256: c79c5e39aede88cda883238ff320e87c53bf9ef70cc28e538a15d75ae3eec5ea
+source_claims:
+  source_m6a_sites:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 45437
+  source_disagreeing_assay_sites:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 8776
+  source_m6a_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 318059
+  source_m5c_sites:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 533
+  source_m5c_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 1230
+  source_empty_prediction_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 369
+  source_sites:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 45970
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 319289
+  source_methods:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 10
+  source_graded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 0
+  source_captured_author_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nanobaselib/NanoBaseLib/tree/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection
+    locator: Complete m6A.benchmark.csv and m5C.benchmark.csv; original plot_m6A.py and plot_m5C.py.
+    scope: Every nonempty native modification-prediction cell, with each original site annotation and separate reference
+      assay. Empty cells do not imply attempts; aggregate metrics do not define individual grades.
+    expected: 28

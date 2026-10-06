@@ -1,0 +1,160 @@
+benchmark:
+  name: MedArabiQ
+  version: QIMMA curated task release; recorded runs March–May 2026
+  description: Recorded QIMMA evaluations of five curated Arabic medical question-answering tasks, with original
+    prompts, outputs, primary scores and historical model configurations.
+  testing_condition: 'One response per released model/run and task: normalized log-likelihood accuracy for multiple-choice
+    tasks, and the cached Arabic BERTScore F1 for open-ended tasks. These are QIMMA evaluations on its curated task
+    version, not the original MedArabiQ paper results. Full per-sample records retain auxiliary BERTScore precision/recall
+    and BLEU/chrf++ corpus inputs; those corpus inputs are not per-item scores. Preserve the two IBM Granite runs,
+    which have different harness revisions and settings. Model configurations record revision=main rather than historical
+    weight commit hashes; do not invent missing versions. No model, embedding scorer or judge is run.'
+  paper_url: https://arxiv.org/abs/2505.03427
+  data_source_url: https://huggingface.co/datasets/qimma/leaderboard-details
+  subject_type: model
+  item_type: question
+  license: The original MedArabiQ repository carries an NYU internal non-commercial research license restricting
+    modification and further distribution; the old CC-BY-NC-SA label was incorrect. QIMMA links the Falcon LLM license,
+    while its captured task/result dataset cards provide no separate license grant. Captured inputs and formatted
+    data remain local pending redistribution clarification; this metadata is not a license grant.
+  citation: 'Abu Daoud et al. MedArabiQ: Benchmarking Large Language Models on Arabic Medical Tasks (2025); QIMMA:
+    Are Arabic Benchmarks Reliable? A Quality-First Approach to LLM Evaluation (2026).'
+  tags:
+  - medical_qa
+  - arabic
+  - multiple_choice
+  - generative_qa
+  modality:
+  - text
+  domain:
+  - medicine
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-05
+  release: withheld
+  release_reason: "The captured NYU license withholds further distribution and modification rights; clarification is required before data publication."
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      details: details
+      configurations: configurations
+      bank: mcq_bank
+      detail_pattern: ^(?P<model>.+)/(?P<subset>[^/]+)/(?P<run>[^/]+)\.parquet$
+      configuration_prefix: results_
+    task_protocols:
+      fib_with_choices: multiple_choice
+      mcq_bias: multiple_choice
+      mcq_knowledge: multiple_choice
+      fib_no_choices: open_ended
+      qa_with_llm_mods: open_ended
+    primary_metrics:
+      multiple_choice: acc:logprob_normalization=LogProbCharNorm(name='norm', ignore_first_space=False)
+      open_ended: BERTScore-F
+    choice_letters:
+      a: أ
+      b: ب
+      c: ج
+      d: د
+      e: هـ
+      f: و
+    labels:
+      subject_prefix: 'QIMMA / '
+    subject_features:
+      harness: QIMMA_LightEval
+      version_scope: recorded_configuration_only
+    item_features:
+      source_curator: QIMMA
+      input_scope: complete_native_query_with_chat_rendering_retained_in_trace
+grading:
+  verifiers:
+    multiple_choice:
+      kind: native_log_likelihood_accuracy
+      source: https://github.com/tiiuae/lighteval_qimma/blob/477a666e327b0fa50107c54dde70ce7d765cdb31/src/lighteval/metrics/metrics_sample.py
+      function: LoglikelihoodAcc.compute
+      rule: 'Use the released character-normalized log-likelihood accuracy: divide each recorded continuation log-probability
+        by its option-label character count, take the first maximum, and compare with the recorded reference index.
+        The table copies the native scalar; an independent audit verifies every stored grade. Historical harness
+        code is captured at all three recorded revisions.'
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': The native highest-scoring option does not match the reference.
+          '1': The native highest-scoring option matches the reference.
+    open_ended:
+      kind: cached_arabic_bertscore_f1
+      source: https://github.com/tiiuae/lighteval_qimma/blob/477a666e327b0fa50107c54dde70ce7d765cdb31/src/lighteval/metrics/metrics.py
+      function: BertArScore.compute
+      rule: Copy the published per-sample BERTScore-F value. The native evaluator uses aubmindlab/bert-large-arabertv2
+        after remove_braces on the reference and remove_braces_and_strip on the final prediction. Preserve the unrescaled
+        floating-point value without clipping or imposing a binary threshold. Auxiliary P/R scores and corpus-metric
+        input pairs remain in the full trace; no scorer is rerun.
+      response_scale:
+        kind: interval
+        min: null
+        max: null
+        direction: higher_is_better
+sources:
+  upstream:
+  - name: recorded_results
+    url: https://huggingface.co/datasets/qimma/leaderboard-details
+    revision: 13092e701c5be2d0e8d643b726f8d8502a396987
+    files:
+    - match: (?P<model>.+)/details_qimma-MedArabi[c]?Q(?:-QA)?:(?P<subset>[^|]+)[|]0_(?P<run>[^/]+)\.parquet
+      path: details/{model}/{subset}/{run}.parquet
+  - name: run_configurations
+    url: https://huggingface.co/datasets/qimma/leaderboard-results
+    revision: 4d284e5f3b2bed1ad98246741e86d004d9f380fc
+    files:
+    - match: .*/results_20[0-9-]+T.*\.json
+      path: configurations/{path}
+  - name: mcq_bank
+    url: https://huggingface.co/datasets/qimma/MCQ_MedArabiQ
+    revision: 96cf9c2c051caa3252d45d8c084d9144d31af7e5
+    files:
+    - match: .*
+      path: mcq_bank/{path}
+  - name: qa_bank
+    url: https://huggingface.co/datasets/qimma/QA_MedArabiQ
+    revision: 1ef71c1c227710b8a184f39589e17170ad9337f2
+    files:
+    - match: .*
+      path: qa_bank/{path}
+  - name: original_tasks
+    url: https://github.com/nyuad-cai/MedArabiQ
+    revision: 1d3d77a0f692a75f842e9ba909fb05d11d1f54ad
+    files:
+    - match: (?:datasets/.*\.csv|README\.md|LICENSE)
+      path: original/{path}
+  - name: qimma_documentation
+    url: https://github.com/tiiuae/QIMMA-leaderboard
+    revision: 6b80d2bb46f8d9b4098dcb075fd5b3a682f7b409
+    files:
+    - match: (?:README\.md|\.gitmodules|configs/lighteval\.yaml|eval_functs\.py|run_evals\.sh)
+      path: qimma/{path}
+  - name: historical_harness_1
+    url: https://github.com/tiiuae/lighteval_qimma
+    revision: 79c32e1a11040259e99e36793e7c75058c559886
+    files:
+    - match: (?:src/lighteval/tasks/multilingual/tasks/qimma\.py|src/lighteval/metrics/metrics\.py|src/lighteval/metrics/metrics_sample\.py|src/lighteval/metrics/metrics_corpus\.py|src/lighteval/metrics/normalizations\.py|src/lighteval/metrics/imports/bert_scorer\.py|src/lighteval/models/model_output\.py|src/lighteval/tasks/requests\.py)
+      path: historical-code/79c32e1a11040259e99e36793e7c75058c559886/{path}
+  - name: historical_harness_2
+    url: https://github.com/tiiuae/lighteval_qimma
+    revision: 477a666e327b0fa50107c54dde70ce7d765cdb31
+    files:
+    - match: (?:src/lighteval/tasks/multilingual/tasks/qimma\.py|src/lighteval/metrics/metrics\.py|src/lighteval/metrics/metrics_sample\.py|src/lighteval/metrics/metrics_corpus\.py|src/lighteval/metrics/normalizations\.py|src/lighteval/metrics/imports/bert_scorer\.py|src/lighteval/models/model_output\.py|src/lighteval/tasks/requests\.py)
+      path: historical-code/477a666e327b0fa50107c54dde70ce7d765cdb31/{path}
+  - name: historical_harness_3
+    url: https://github.com/tiiuae/lighteval_qimma
+    revision: c159ed887462d70932dfd84ce8cbfeecc311369f
+    files:
+    - match: (?:src/lighteval/tasks/multilingual/tasks/qimma\.py|src/lighteval/metrics/metrics\.py|src/lighteval/metrics/metrics_sample\.py|src/lighteval/metrics/metrics_corpus\.py|src/lighteval/metrics/normalizations\.py|src/lighteval/metrics/imports/bert_scorer\.py|src/lighteval/models/model_output\.py|src/lighteval/tasks/requests\.py)
+      path: historical-code/c159ed887462d70932dfd84ce8cbfeecc311369f/{path}

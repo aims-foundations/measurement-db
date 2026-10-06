@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 4330
+    logical_sha256: 53eeec5c1e254eb1a5f0ecc8c3eeceb6d278dd12108322d4c5bde1a43602e78f
+  subjects:
+    rows: 49
+    logical_sha256: 8f9142c9e2bee94ecf761e860d5b5630208405403cbdc1e997c2e161016073f6
+  responses:
+    rows: 4330
+    logical_sha256: 55c493d10e651a973b0db8d3266cc1dffc8dccc6f53a6eb75bfdb0424aecd74d
+  items:
+    rows: 201
+    logical_sha256: dd4a5a9c8b3f5ae8376b0db45d18f6ccc9a2d6cb4b7802496170758f3402cd98
+  benchmarks:
+    rows: 1
+    logical_sha256: 9b27e644737fced025be88dadd1ecaedb9b81e9f07bf27fa5df08136b5087b5d
+source_claims:
+  sierra_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 1980
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 2143
+  source_log_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 87622
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 2171
+  hal_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 2350
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 16
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 4330
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 4330
+  source_run_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/sierra-research/tau-bench/tree/59a200c6d575d595120f1cb70fea53cef0632f6b/historical_trajectories
+    locator: All four Sierra historical_trajectories JSON files and 47 HAL exports at https://huggingface.co/datasets/agent-evals/hal_traces/tree/e7dcedc82b4f4bc819a170fd6616bdb44841c71e.
+      Every attempt and log is reconciled against its native record.
+    scope: Original Sierra attempts and attributed HAL airline runs. Errors without grades remain null. Withdrawn
+      few-shot runs are flagged. tau2-bench is not included.
+    expected: 51

@@ -1,0 +1,3 @@
+- Preserve 111,906 saved movie-title outputs from all 1,600 released spreadsheets. Retain five literal `null` predictions previously dropped by NA parsing; all 111,901 previous grades remain unchanged. The 94 empty cells do not establish attempted responses.
+- Use four pandas stages, separate image and caption questions, and embed the original 14,000 frames (13,999 distinct byte sequences). Apply the author’s exact-title rule; keep every native source-cell and input association.
+- Prompts are reconstructed from published harness code. Released titles are postprocessed outputs; complete API transcripts and per-run cleaning/configuration logs are unavailable. No model inference or additional judging.

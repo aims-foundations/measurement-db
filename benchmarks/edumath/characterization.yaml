@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 16720
+    logical_sha256: a738c576c3623509ecdf47e2c0abf24f039e151acab7c1b799f163176b5c3adb
+  subjects:
+    rows: 11
+    logical_sha256: d82d7e79d910d90520df4a46e0265b0771d675c2b1abd62dcad80bb163b10915
+  responses:
+    rows: 16720
+    logical_sha256: 95178ddef0a7a9d25aeeb8374f2b8a53345341bc11436c87e5bd4f1f97f83142
+  items:
+    rows: 76
+    logical_sha256: 4db32de5041d119d1ada1faedf93e3a43524cb2141a129d6422d1c50462059a8
+  benchmarks:
+    rows: 1
+    logical_sha256: c55473db4f7ade5998245f88346bce7dbdb9719605605abe2418f004ad51344f
+source_claims:
+  source_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 8360
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 16720
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 11
+  source_conditions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 38
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 76
+  source_llm_high_quality:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 6857
+  source_classifier_high_quality:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/bryanchrist/EDUMATH/blob/640ba01e31b210063f7ac838befb7a77fb5906fa/data/all_model_samples.csv
+    locator: All original CSV rows. LLM interpretation is documented in annotate.py; classifier id2label is documented
+      in train_classifier.py.
+    scope: Published model generations and both automatic judgments. Conditions exclude unavailable per-row few-shot
+      prompts. Preserve original numerical labels with opposite documented directions.
+    expected: 6395

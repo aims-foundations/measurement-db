@@ -1,0 +1,135 @@
+format_version: 1
+tables:
+  traces:
+    rows: 146160
+    logical_sha256: 0680d842d4b2fe0ecf6103e8de03485dc8e274e2397baa695f0e5b040ca5c570
+  subjects:
+    rows: 31
+    logical_sha256: 2461289289964da432f5fbb27d41decaf6aa21a64007ae950078c8df28b14b7b
+  responses:
+    rows: 146160
+    logical_sha256: 8cf03511d7df8dbbc06ab3f12782ebaeec962489cde655d234d4a9f6c8f5af27
+  items:
+    rows: 4895
+    logical_sha256: 9cc82cec605c7c4ccf29ba1da3d58f11e47ac11ceb87d8b4c2e90cafd69cefae
+  benchmarks:
+    rows: 1
+    logical_sha256: d4319355ccba546a179d9d9436052ecde56d8c3a237ead3d2b74c8f814ed87c4
+source_claims:
+  source_duplicate_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 5
+  source_summary_checks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 2209
+  source_duplicate_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 720
+  source_math_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 111600
+  source_api_errors:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 120
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 1
+  source_refusals:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 3007
+  source_recovery_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 34560
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 146160
+  source_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 387
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 4895
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 31
+  source_model_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/tree/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments
+    locator: Every experiments/*/results/**/*.json native record and trailing run summary, after byte-verified aliases
+      of named runs are counted once.
+    scope: Current published experiments, including nested baseline controls, mathematical reasoning, text reconstruction
+      and passive context. Historical old/ folders are captured but outside this suite.
+    expected: 8

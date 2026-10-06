@@ -1,0 +1,121 @@
+benchmark:
+  description: Published multiplayer Risk games with per-seat win/loss outcomes, recorded player configurations
+    and full available interaction logs.
+  testing_condition: 'One completed game is an item, and each evaluated player seat supplies an observation. Preserve
+    all 73 AI games; exclude the placeholder-only calibration game. Repeated seats and opposing players have dependent
+    outcomes, not independent trial samples. Join manifests, linked run summaries, turn summaries and model-call
+    records without guessing absent settings. Keep post-placement turn-zero boards in traces. The reported Git revision
+    does not establish the executed source snapshot: that revision lacks the logging code present in the released
+    records. Attached code describes a later released reference. No agents or graders are run.'
+  paper_url: https://arxiv.org/abs/2605.22238
+  data_source_url: https://github.com/hcekne/risk-game
+  subject_type: model
+  item_type: task
+  license: The official code repository declares Apache-2.0. Original notices and author-published runtime-artifact
+    provenance are retained; no additional rights are implied.
+  citation: "@misc{ekne2026liveagentrisk,\n  title={Evaluating Large Language Models as Live Strategic Agents: Provider\
+    \ Performance, Hybrid Decomposition, and Operational Gaps in Timed Risk Play},\n  author={Ekne, H. C.},\n  year={2026},\n\
+    \  eprint={2605.22238},\n  archivePrefix={arXiv},\n  primaryClass={cs.AI},\n  url={https://arxiv.org/abs/2605.22238},\n\
+    }"
+  tags:
+  - agents
+  - game
+  - risk
+  - strategic-reasoning
+  - live-agent
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  - reasoning
+  multi_single_turn: multi_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The evaluated seat is not the recorded winner.
+      '1': The evaluated seat is the recorded winner.
+  categorical: true
+  release_date: 2026-05
+  release: public
+  name: Live-Agent Risk
+  version: '2026-05-01T07:23:08Z'
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results.tar.gz
+      source: upstream-source.tar.gz
+      source_prefix: risk-game-a1bd0e3b63e0142eed3badf39a3be56d8ef8b348/
+      game_root: game_results/
+    labels:
+      harness: Live-Agent Risk released games
+      reference_revision: a1bd0e3b63e0142eed3badf39a3be56d8ef8b348
+      task: Play multiplayer Risk against the recorded opponents and attempt to win under the configured game rules.
+      context_scope: The item describes available setup and the released roster. Unknown settings remain unknown.
+        Evaluated seat identity is recorded with each response. Turn-zero states follow agent-controlled troop placement
+        and remain in traces. Attached code is a released reference, not a verified historical runtime.
+    placeholder_seats:
+      alpha: Non-model calibration seat
+      bravo: Non-model calibration seat
+      charlie: Non-model calibration seat
+      delta: Non-model calibration seat
+      echo: Non-model calibration seat
+    supplements:
+      openai_4way_gpt55_gpt54_gpt54mini_gpt41_2026-04-27_10-29-26.json: players
+      openai_4way_normal_thinking_2026-04-26_21-42-43.json: agents
+    patterns:
+      turn: /turn_summary_turn_\d+\.json$
+      interaction_game: ^(?P<parent>(?:.*/)?)llm_interactions/(?P<game_name>[^/]+)/
+    resources:
+      rules: risk_game/rules.py
+      map: risk_game/game_constants.py
+      configuration: risk_game/game_config.py
+      game: risk_game/game_master.py
+      agent: risk_game/player_agent.py
+      logging: risk_game/utils/game_admin.py
+      prompts: risk_game/llm_clients/system_prompts.py
+grading:
+  rule: 'Import the released completed-game outcome: 1 if the evaluated seat name equals end_game_results.winner,
+    and 0 for the other recorded seats. Retain the original victory condition and all result fields in the trace;
+    do not recompute the winner from final territory totals.'
+  verifiers:
+    win:
+      kind: released_winner_comparison
+      rule: 'Import the released completed-game outcome: 1 if the evaluated seat name equals end_game_results.winner,
+        and 0 for the other recorded seats. Retain the original victory condition and all result fields in the trace;
+        do not recompute the winner from final territory totals.'
+      source: https://github.com/hcekne/risk-game/blob/a1bd0e3b63e0142eed3badf39a3be56d8ef8b348/risk_game/utils/game_admin.py
+      scope: Use the author-published winner without executing the game or a new judge. Exact historical code and
+        unrecorded player settings are not inferred from the current reference.
+sources:
+  upstream:
+  - name: results_manifest
+    url: https://www.dropbox.com/scl/fi/ogu0vyzp9lih533sr4c79/latest_game_results.manifest.txt?rlkey=1rp5izal7kuyhkwrfbm4mvveg&raw=1
+    file: results.manifest.txt
+    size: 311
+    sha256: 1168e8930d70611d3ce50726a8ad771585532e39c50e9cf06db181c3ca338e55
+    revision: '2026-05-01T07:23:08Z'
+  - name: results
+    url: https://www.dropbox.com/scl/fi/x9d9n2unx1w9y0iqgs27y/latest_game_results.tar.gz?rlkey=kq1sihflk49shc5cr33y1yzq7&dl=1
+    file: results.tar.gz
+    size: 13679317
+    sha256: d09dd54e01802561fbf8841c10c87ef8dc5f17660e7bf6403888f92e950d8cda
+    revision: '2026-05-01T07:23:08Z'
+  - name: released_code_reference
+    url: https://codeload.github.com/hcekne/risk-game/tar.gz/a1bd0e3b63e0142eed3badf39a3be56d8ef8b348
+    revision: a1bd0e3b63e0142eed3badf39a3be56d8ef8b348
+    file: upstream-source.tar.gz
+    size: 3673427
+    sha256: e2b683d9de93f8a4d915e7ae73d9e18d9613eeb837d5f6577cbeb39a5fd83294
+  - name: reported_code_revision
+    url: https://codeload.github.com/hcekne/risk-game/tar.gz/5551e5ec8b08c125a6313fa1a2d029b84ba89b2e
+    revision: 5551e5ec8b08c125a6313fa1a2d029b84ba89b2e
+    file: reported-revision.tar.gz
+    size: 2083016
+    sha256: 202edd2a3ab5dd3d4435963a13fa59b3c432fe9c6a0a2ebf2d31d6f7cd5405a2

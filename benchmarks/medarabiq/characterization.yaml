@@ -1,0 +1,128 @@
+format_version: 1
+tables:
+  traces:
+    rows: 40419
+    logical_sha256: 8b3b60aefdc03b9f10332883bdb770d2b399859bb05d0201deef81eba17c139f
+  subjects:
+    rows: 81
+    logical_sha256: 8dcd9d7f526e365b876bf884817320fa2a36ad6e2ea55d097434715d6b36cb45
+  responses:
+    rows: 40419
+    logical_sha256: ca86e6591ee11add3c715544bb02cf6aad8e5704023a42dd0b3f828f055f8ba1
+  items:
+    rows: 497
+    logical_sha256: af21f2bc8f72ef265209c305e098cfa35b9ad894f27835fc3a39a1e1de1b8ab5
+  benchmarks:
+    rows: 1
+    logical_sha256: 5cf5ebcc48dee049db50c2b48b8543afd80f0a4a15f23edc1910e3d1b7470927
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 40419
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 81
+  source_model_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 80
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 497
+  source_task_positions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 499
+  source_duplicated_bank_positions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 2
+  source_repeated_task_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 162
+  source_multiple_choice_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 24219
+  source_multiple_choice_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 8830
+  source_cached_bertscore_f1:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 16200
+  source_verified_metric_means:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qimma/leaderboard-details
+    locator: All 405 MedArabiQ/MedArabicQ-QA per-sample Parquet files at revision 13092e701c5be2d0e8d643b726f8d8502a396987,
+      joined to pinned QIMMA task banks and run summaries.
+    scope: Read original source rows independently of the builder. Verify exact prompts, references, recorded configurations,
+      first-argmax MCQ grades, cached BERTScore F1, and all numeric metric means. Repeated identical task definitions
+      share one item while every source occurrence is preserved.
+    expected: 729

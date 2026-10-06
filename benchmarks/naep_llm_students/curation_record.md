@@ -1,0 +1,3 @@
+- Preserve all 53,680 released choices and grades for 488 questions, 11 model labels and ten prompting conditions; do not invent the paper's additional 489th question. Check every native record and all 488 official answer keys.
+- Retain exact NAEP HTML and every linked source-document image. Historical text rendering and full generations were not released; source images do not establish image delivery to the models.
+- Keep shortened LLaMA labels without inferred Chat/Instruct variants. Record the follow-up choice-extraction protocol; human aggregate scores remain source statistics. No models or judges were run.

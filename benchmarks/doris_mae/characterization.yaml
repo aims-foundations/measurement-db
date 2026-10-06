@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 165144
+    logical_sha256: 61baecfb3ff5cc5d0801202801978d423dfb8c8a76507ddb8299abf20a71cbb7
+  subjects:
+    rows: 1
+    logical_sha256: b001b3a5620db78ec34dd785c571816386f764168e78cb0f394ede4186fba072
+  responses:
+    rows: 165144
+    logical_sha256: 145ade784cefeb43a605462dae71eb7757b0c3fbaaf5f3218abe8ceed5251e65
+  items:
+    rows: 165104
+    logical_sha256: c8229abd97f5cfdd59029f5070968b04e993860bc1664db98b8e68802efc31e5
+  benchmarks:
+    rows: 1
+    logical_sha256: c7d10aabff2227250781dbf4211f366addb6926e61016382d4743d89938b258e
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 165144
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 165104
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 1
+  source_repeated_pair_records:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 40
+  source_corpus_abstracts:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 363133
+  source_human_test_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 250
+  source_matching_human_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 7
+  source_label_0:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 88868
+  source_label_1:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 56956
+  source_label_2:
+    kind: count
+    origin: derived_from_data
+    source: https://zenodo.org/records/8299749
+    locator: Complete Annotation, Corpus, aspect mappings and Test_set in DORIS-MAE_dataset_v1.json.
+    scope: Released ordinal relevance judgments, not accuracy scores. Repeated source records remain distinct occurrences;
+      only explicit matching human-test IDs supply supplementary references.
+    expected: 19320

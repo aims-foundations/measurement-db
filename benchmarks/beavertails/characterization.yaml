@@ -1,0 +1,88 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1680
+    logical_sha256: 5edc6d1e43cf59b7050901ec0e353049c1672ad5ad992659da4fece681aa788a
+  subjects:
+    rows: 4
+    logical_sha256: 6a0ea1dc2570fb5dfff8cee60ede367f574b23530be72b08abb411855202295f
+  responses:
+    rows: 1680
+    logical_sha256: 3e6338b9110ce53ced39d8d58bba7c9b25775127ad5f161fb04158c728958a25
+  items:
+    rows: 420
+    logical_sha256: 54aa0830cb26157b3f62fdd20eab137adba3997608acf23091b0c8afc6146797
+  benchmarks:
+    rows: 1
+    logical_sha256: 267c18724a83aa6d9ddc912c4bdac34a44cec405037430c09b63d91e8710b21a
+source_claims:
+  source_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 560
+  source_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 140
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 4
+  source_judges:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 3
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 1680
+  source_safe_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 1254
+  source_unsafe_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 426
+  source_generations_with_judge_disagreement:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 71
+  source_categories:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 14
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PKU-Alignment/beavertails/blob/f55d934faafe48fb353cbd12da2f533472167888/examples/evaluation/evaluation.json
+    locator: Every original generation and its human, gpt4 and moderation flags.
+    scope: 560 generations on 140 prompts from four models; three separate grades per generation. Higher means unflagged.
+    expected: 1680

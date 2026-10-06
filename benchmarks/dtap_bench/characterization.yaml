@@ -1,0 +1,126 @@
+format_version: 1
+tables:
+  traces:
+    rows: 106570
+    logical_sha256: 11ac0cd1065fe83d4b17b00a22ec11dcb702756a856bf557081179b7c2c30cba
+  subjects:
+    rows: 10
+    logical_sha256: a15d095be5b5ae87911aeff9c488d14d19175888f4a31aab85efcc83a530baf9
+  responses:
+    rows: 106570
+    logical_sha256: e30e4cc75798ee0db7bcbfd9b2080d38f179e06b9095eb560cf5016e4cdc9dc6
+  items:
+    rows: 13392
+    logical_sha256: 1ff7eeccd061e6f21c2694ef1c1118fd47f1f8c429cb0fc3a903375cf80d007f
+  benchmarks:
+    rows: 1
+    logical_sha256: 388f2d5c14dc484f99c4057528835aa94cc8b2143aa86d133835404105cdee89
+source_claims:
+  source_result_folders:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 65902
+  source_judge_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 65910
+  source_related_histories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 67816
+  source_unresolved_input_folders:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 75
+  source_unresolved_judge_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 75
+  source_qualified_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 106570
+  source_qualified_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 13392
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 10
+  source_null_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 720
+  source_recorded_checker_errors:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 30
+  source_multiple_history_folders:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 1261
+  source_copied_verdict_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/AI-Secure/DTap-Bench-Agent-Trajectories/tree/836caf2fdd78b888ddd14fb62dc038e932e17898
+    locator: Every native judge and trajectory JSON in the pinned release; classify by record fields, not filename
+      alone.
+    scope: Only consistent recorded inputs enter formatted observations. Preserve both metric meanings, nulls and
+      full related histories. Identical verdict copies are not extra trials; unresolved input groups remain in raw.
+    expected: 8

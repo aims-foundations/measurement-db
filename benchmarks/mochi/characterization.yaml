@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  traces:
+    rows: 48456
+    logical_sha256: 2f6be4442a94ac95b2984a34c16dc10b18f71964681919aef4a4d534bc619ba1
+  subjects:
+    rows: 24
+    logical_sha256: 031f47e3fcbd79c1214ae18be2934741ba4047adb10a7b33c9681f31236ba303
+  responses:
+    rows: 48456
+    logical_sha256: 6c15a4c01ede298827bdfa94515a75baa3994628e51ade68b4e1e7fba0aa10f2
+  assets:
+    rows: 5665
+    logical_sha256: f4c818b859fac9a82309e57826372d38061e5e2bd7ddf333bd30871709ecb5dd
+  items:
+    rows: 3717
+    logical_sha256: 25b9af3ec6c36f071de02a519bd060219ca8829962675f0a2e4efe1585289a80
+  benchmarks:
+    rows: 1
+    logical_sha256: 16d09b88b5b17208100950e35dd33912954e9aa40136bc4a24d63e396608c6b4
+source_claims:
+  source_image_sets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 2019
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 24
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 3717
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 48456
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 48456
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 5665
+  source_negative_estimates:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 19448
+  corroborating_pooled_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 2019
+  corroborating_giant_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tzler/mochi_code/tree/96cd1249cee3e910f87a526a82ec7a780e8afeeb/assets
+    locator: All native score cells in benchmark.csv and df_behavior_wdistance.csv; original images from tzler/MOCHI
+      at 6b3b2c3f46ba2c7936273bb521108e51be52fb67.
+    scope: All eleven SVM and thirteen distance configurations. Each response is a published per-image-set normalized
+      mean. Duplicate exports are corroborating copies, not independent attempts. Preserve source image order, condition,
+      answer index and exact image bytes.
+    expected: 2019

@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 380198
+    logical_sha256: d3aaf5948cc8f21e9ff6914ddbd71580bdd8d9db9ea895ccc42a1d1cae036978
+  subjects:
+    rows: 7
+    logical_sha256: 500f0c100b19c2828aafd0183fc61102f503a91d16f057d3405aa2d662bd709a
+  responses:
+    rows: 380198
+    logical_sha256: 48216ce76c3f9d732922805d62c47d40cd09b8f797a3b4e12481acd968d24603
+  items:
+    rows: 204201
+    logical_sha256: 5026c940eb6580be15b2dc6863f0eea35409541939237661f8df4c75450e92ee
+  benchmarks:
+    rows: 1
+    logical_sha256: 294440fa084166c06634d9acb95b3af5df8a6c7e68b2a7505867e6b7d7e50e9c
+source_claims:
+  source_annotation_version_differences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 564
+  source_export_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 409444
+  source_question_only_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 29246
+  source_encoder_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 233968
+  source_graded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 380089
+  source_correct_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 251850
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 109
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 380198
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 380198
+  source_item_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 58492
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/nyu-mll/BBQ
+    locator: All 11 data JSONL files, all 11 UnifiedQA result JSONL files and the complete encoder CSV at bea11bd97d79217245b5871acd247b9d6eb24598.
+    scope: Match the native R answer parser. Retain ungraded outputs and full records; keep question-only context
+      copies as provenance, not additional attempts.
+    expected: 7

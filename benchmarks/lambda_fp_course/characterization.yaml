@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 6798
+    logical_sha256: ab51c441c22e2372efb1aa9ea9844723630aff49445517b6dbddca198bd3c183
+  subjects:
+    rows: 9
+    logical_sha256: d591eac281ac6509b35ef085841bd655799510dd2f8a5992705ba8b132db9643
+  responses:
+    rows: 6798
+    logical_sha256: 4f8340595adbf590745d2e380e79536d9ed81a203f96202d8ac5237922d48191
+  items:
+    rows: 152
+    logical_sha256: 0bd760142134dc4531cc791c365148c427b045b6470661bea65466429b574852
+  benchmarks:
+    rows: 1
+    logical_sha256: b5b567cca91faf5aa1bc3b4b1b8ec259985270bc5aea198c581b04221e7f1982
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 6798
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 9
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 152
+  source_codegen_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 2257
+  source_associated_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 2957
+  source_missing_attempt_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 2257
+  source_explain_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 1121
+  source_syntax_true_with_recorded_error:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 102
+  source_repair_syntax_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 1620
+  source_repair_type_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 1800
+  source_excluded_copied_logical_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jaylene-zhang/ArtifactProgramming2025
+    locator: Pinned original task metadata, text files, four supported result CSVs and explicitly named saved outputs.
+    scope: Preserve source labels and literal assessments. CodeGen attempt IDs are absent. Exclude the logical CSV
+      copied from syntax repair; no new grading occurs.
+    expected: 1620

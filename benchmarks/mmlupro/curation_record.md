@@ -1,0 +1,3 @@
+- Import all question-level JSON records from the pinned official result archives, including every category file. Preserve original bytes and complete outputs under all four native field names.
+- Use released predicted letters and references; leave unrecorded random fallback outcomes null. Preserve source occurrences, original task variants, one-option questions and inconsistent reference indices without inventing repairs.
+- Keep category aggregates and stray category-name entries in raw inputs only. Nominal shot counts come from filenames; exact historical prompts and inference settings remain unknown. The legacy folder is archived locally.

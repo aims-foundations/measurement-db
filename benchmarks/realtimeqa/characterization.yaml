@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  traces:
+    rows: 64822
+    logical_sha256: 92615782aed0ff2caaac4240b101d29eaffd2e958b5117d9fdd8ee4c8b3cfdc0
+  subjects:
+    rows: 94
+    logical_sha256: 8a3e2ea6381a595e8157e93cda9941e577a09a2a06016f136b79f009910530dd
+  responses:
+    rows: 64822
+    logical_sha256: 965a9e4fede6861079eb92716965894ed6b342b2e74d5a5b654dcd6559b9cf8e
+  items:
+    rows: 7954
+    logical_sha256: 9ca2eec82d6613d416e31fcf57915606283686b23489a6ba5629f56f2ab7661f
+  benchmarks:
+    rows: 1
+    logical_sha256: 9b0b93a0ff037e83ac029e0c7b9059262d9312dbe49c16ecdd31246398f45751
+source_claims:
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 64822
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 94
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 7954
+  source_multiple_choice:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 43216
+  source_generation:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 21606
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 63620
+  source_missing_reference:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 1080
+  source_excluded_by_grader:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 93
+  source_invalid_generation:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 29
+  source_cumulative_raw_only:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 24372
+  source_missing_question_raw_only:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/realtimeqa/realtimeqa_public/tree/ceca0397bfb2f1075a5d51124c24cbaf048d9cb3
+    locator: baseline_results weekly JSONL files, corresponding past/latest/backnumber question files and original
+      scripts/evaluate_main.py.
+    scope: Single-week released predictions, including ungraded attempts. Cumulative exports and questionless demonstrations
+      are raw-only. Counts are derived from the captured original files, not paper-wide claims.
+    expected: 42

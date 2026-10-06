@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 115
+    logical_sha256: 40096c628291b1a3b503f766ed58925a97ee9585ab29f6b6b34bb925c8d47641
+  subjects:
+    rows: 1
+    logical_sha256: 841086da0bb54acc6d47bff2b5e51c3e3915f0fe01ea2450f2e2c6e43de2fcf5
+  responses:
+    rows: 115
+    logical_sha256: 605e529b400b3a788e7ced224bf2ad7cf24072008321358b981b308f3b9f1e3f
+  items:
+    rows: 60
+    logical_sha256: 524ecab249392938e8c93fea268f83b9ff16ee6044095983e33ce56892dd6643
+  benchmarks:
+    rows: 1
+    logical_sha256: 0f4c90a4f32ea671c789957d262771eb007fd355e62d739fb0a1d0e05222dbea
+source_claims:
+  source_candidate_metadata_simplified_by_grader:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 39
+  source_deep_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 110
+  source_wide_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 5
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 115
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 115
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 60
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CherYou/AutoResearchBench
+    locator: Every original inference JSONL record and matching Deep/Wide evaluation record in release 48bf934cc131968311434aa37649cbf32ca53bc0,
+      independently decoded.
+    scope: Released example attempts for the filename-labelled Gemini model. Retain original Deep judgments;
+      independently check recorded Wide IoU. No inference or judging.
+    expected: 1

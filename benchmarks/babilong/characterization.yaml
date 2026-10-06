@@ -1,0 +1,120 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2020951
+    logical_sha256: d50c1385207396d22bd554dfd15ccf8c3dbf861280598f0a17f19ae4d3b25de4
+  subjects:
+    rows: 83
+    logical_sha256: a6b9d073b86f584e367cc63f8f7dc1bb8e8bfe947b106b3f84c7818fc1e6a690
+  responses:
+    rows: 2020951
+    logical_sha256: 6401a4db1c06ac9f93bb9c7c4ae7f1033768855b56c48e645aaab465119a7c93
+  assets:
+    rows: 49045
+    logical_sha256: c96c3a3fbbc758063a921d37b000c4570f3bacf04bdcb22d14e38986915c4a68
+  items:
+    rows: 526202
+    logical_sha256: 698b97e5d13340abb1a680b34eb9c42456b9b86f8b853b9113d705f0b45b28e7
+  benchmarks:
+    rows: 1
+    logical_sha256: ce243b630f52d5d1b585a858c8072b99edc848d45924f932d10a384a6d447eb4
+source_claims:
+  source_export_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 2120614
+  source_correct_answers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 987931
+  source_unresolved_context_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 700
+  source_explicit_refusals:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 347
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 2020951
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 2020951
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 49045
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 83
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 2694
+  source_original_run_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 2544
+  source_copied_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/RMT-team/babilong_evals
+    locator: Every CSV and configuration in HF 0121bf563ee62de9e75ecb4eb0fe4eaebab2b357 and GitHub 7a6efee29f5cac03c3c410e6799c80fd2ffe3610,
+      checked against both pinned input banks.
+    scope: All released attempts, preserving refusals. Count overlapping and filtered copies once. Mark all 700
+      unresolved context associations without inventing passages. Use the original deterministic label comparison.
+    expected: 99663

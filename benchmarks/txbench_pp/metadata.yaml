@@ -1,0 +1,97 @@
+benchmark:
+  name: TxBench-PP
+  description: Published endpoint assessments for the 12 TxBench-PP tasks with released instructions, covering 16
+    model-harness configurations and three trials.
+  testing_condition: Import original Boolean endpoint verdicts. The other 88 tasks lack released instructions and
+    remain raw-only. The 12 released tasks reference 52 Latch input nodes whose biological tables and images are
+    not captured. The 60 explicitly linked example records include saved answers and trajectory previews with original
+    truncation flags. Their verdicts and costs agree with the panel, but recorded durations differ and both values
+    are retained. The 48 separate full GitHub trajectories remain raw-only because filename correspondence does
+    not verify identical executions. Historical model snapshots and full per-run inference settings are unavailable.
+    No model or grader is executed.
+  paper_url: https://latch.bio/txbench-pp
+  data_source_url: https://benchmarks.bio/data/txbench/index.json
+  subject_type: model
+  item_type: scientific_analysis_task
+  license: Not stated for the GitHub release or separate website result export. Upstream issue 9 requests clarification.
+    Captured data and derived tables remain local pending redistribution terms.
+  citation: 'Le et al. TxBench-PP: Analyzing AI Agent Performance on Small-Molecule Preclinical Pharmacology. 2026.'
+  tags:
+  - agent
+  - pharmacology
+  - scientific_analysis
+  modality:
+  - text
+  - tabular
+  - image
+  domain:
+  - science
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Published endpoint failure
+      '1': Published endpoint success
+  categorical: true
+  multi_single_turn: multi_turn
+  release_date: 2026-06
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  granularity: item
+  version: GitHub a4e0913d76c3dbc433ecf39903afbe7711a6a807 and original website panel generated 2026-06-17T05:30:49.889Z
+  one_line_description: Measures agents performing preclinical pharmacology analysis on released task definitions.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      index: results/index.json
+      tasks: release/evals
+      previews: web_trajectories
+      preview_prefix: txbench/trajectories/
+    labels:
+      historical_settings: Exact historical model snapshots and full per-run inference settings are not recorded.
+      input_scope: Released instructions and source data-node references. Biological tables and images are not captured.
+      trace_scope: Original verdict record. Saved answer and upstream-truncated preview only where explicitly linked.
+        Separate full GitHub examples are not silently linked.
+grading:
+  rule: Use the original passed Boolean as the endpoint grade. The task-specific grader object contains the published
+    checks and references. Auxiliary score is not the pass/fail response. Do not reconstruct verdicts from partial
+    trajectories or execute a grader.
+  verifiers:
+    reported:
+      kind: published_deterministic_endpoint
+      source: https://benchmarks.bio/data/txbench/index.json
+      implementation: Original task grader configurations and recorded passed verdicts.
+      execution: read_recorded_verdict_only
+sources:
+  upstream:
+  - name: results
+    url: https://benchmarks.bio/data/txbench/index.json
+    revision: null
+    file: results/index.json
+    size: 1784667
+    sha256: 77fa62bbdd495882b4d4d7d93da7f200aef676e1754cd503b7b7897f07cfbf56
+  - name: release
+    url: https://github.com/latchbio/txbench-pp
+    revision: a4e0913d76c3dbc433ecf39903afbe7711a6a807
+    files:
+    - match: .*
+      path: release/{path}
+  - name: previews
+    url: https://benchmarks.bio/data
+    revision: null
+    json_index:
+      source: results
+      records:
+      - evals
+      - runs
+      path: '{trajectoryFile}'
+    tree_sha256: bf2814d569a8fea7954443e4f759970ed5ed156c1e49b41b11e9bc16c6fe7fb6
+    files:
+    - match: txbench/trajectories/(?P<filename>[^/]+\.json)
+      path: web_trajectories/{filename}

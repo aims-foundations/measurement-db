@@ -1,0 +1,63 @@
+format_version: 1
+tables:
+  traces:
+    rows: 100
+    logical_sha256: 317e71ec225a5aeecd563fc20072b45ea818b9438c9840acb0c1bce0da765442
+  subjects:
+    rows: 2
+    logical_sha256: 3b89e3aac76316c255c72c24fffb02c637fc74c1a4326b1a283c5e37f2ef6410
+  responses:
+    rows: 100
+    logical_sha256: bddf1e046735d61fd2ad4fae6bbe30097c24e7063cf7f2ed6c3b161d174bafd3
+  items:
+    rows: 50
+    logical_sha256: 03a1269748291b04732b0f6a2210a180a9f49e755a0634d5b540d1e4786fa666
+  benchmarks:
+    rows: 1
+    logical_sha256: 8215fcf958d5a1631c8c3a559f683209bc60b14118868c586827bc599978f812
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: 'Both result files: 50 judgments per defense.'
+    expected: 100
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: 50 distinct complete final_query prompts.
+    expected: 50
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: Vicuna-7B-v1.5 without a defense and with SafeDecoding.
+    expected: 2
+  source_unsafe_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: 23 native unsafe flags, without inferring refusal from a zero flag.
+    expected: 23
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: Every observation retains the complete original record and source position.
+    expected: 100
+  unsafe_by_defense:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/thu-coai/AISafetyLab/tree/3fd15737dee5c6858466162d6a68e6cb6f996b27/examples/evaluation/evaluation_results
+    locator: advprompter_vicuna-7b_LlamaGuard3.json and safedecoding/advprompter_vicuna-7b_LlamaGuard3.json
+    scope: Sum of final_score separately for each released defense configuration.
+    expected:
+      none: 16
+      safedecoding: 7
+    absolute_tolerance: 0

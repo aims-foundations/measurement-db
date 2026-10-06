@@ -1,0 +1,77 @@
+benchmark:
+  name: OCRBench v2
+  description: Bilingual visual text recognition, localization, parsing and reasoning with 10,000 released InternVL2.5-26B predictions across 30 task types.
+  testing_condition: >-
+    Import the official sample prediction file generated with VLMEvalKit and its matching
+    image/question release. The captured predictions contain no per-item grades; responses
+    remain null. The task-specific scoring protocol is documented but not executed. All
+    10,000 source records are retained, including 32 records identical apart from their IDs;
+    identical outputs alone do not establish that two records represent one execution.
+    Exact historical model settings, request formatting, image preprocessing and inference
+    harness revision are not recorded in this export.
+  paper_url: https://arxiv.org/abs/2501.00321
+  data_source_url: https://github.com/Yuliang-Liu/MultimodalOCR/tree/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2
+  subject_type: model
+  item_type: task
+  license: The GitHub README restricts use to research and prohibits commercial use; the HF dataset card declares MIT. These source declarations conflict.
+  citation: 'Fu et al. (2025). OCRBench v2: An Improved Benchmark for Evaluating Large Multimodal Models on Visual Text Localization and Reasoning. arXiv:2501.00321.'
+  tags: [ocr, visual_text, bilingual, multimodal]
+  modality: [image, text]
+  domain: [reasoning, nlp_task, mathematics, multilingual]
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: continuous
+  response_scale:
+    kind: interval
+    min: null
+    max: null
+    direction: higher_is_better
+  categorical: false
+  release_date: 2025-01
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      predictions: github/OCRBench_v2/pred_folder/internvl2_5_26b.json
+      questions: hf/data/test-*.parquet
+    subject:
+      label: InternVL2.5-26B
+      harness: VLMEvalKit
+    layout:
+      spotting_type: text spotting en
+    grading_fields:
+      type: type
+      mode: eval
+      boxes: bbox
+      shape: image_shape
+      content: content
+      text: raw_text
+grading:
+  rule: >-
+    Apply OCRBench v2's original task-specific metric selected by type, eval mode and
+    question, using the native reference answers and auxiliary geometry/text. The protocol
+    includes matching, text similarity, counting, overlap, tree-edit, extraction and spotting
+    metrics; it is not one binary answer matcher. Original grades are unavailable in this
+    release, so no numeric outcome is inferred. The common scale is an unconstrained numeric
+    domain rather than an asserted universal bound across these implementations.
+  verifiers:
+    task_metrics:
+      source: https://github.com/Yuliang-Liu/MultimodalOCR/blob/0ea56c2503a2d940700d581b777f23c16de0eafd/OCRBench_v2/eval_scripts/eval.py
+      implementation: process_predictions
+      grade_field: score
+      availability: Grading code is captured for inspection; the released prediction records have no score field.
+sources:
+  upstream:
+  - name: predictions_and_protocol
+    url: https://github.com/Yuliang-Liu/MultimodalOCR
+    revision: 0ea56c2503a2d940700d581b777f23c16de0eafd
+    files:
+    - match: OCRBench_v2/(README\.md|requirements\.txt|pred_folder/internvl2_5_26b\.json|eval_scripts/[^/]+\.py)
+      path: github/{path}
+  - name: images_and_questions
+    url: https://huggingface.co/datasets/ling99/OCRBench_v2
+    revision: c7e7cdf23bdb6774661e9b0caf0d9935a42feb8b
+    files:
+    - match: README\.md|data/test-.*\.parquet
+      path: hf/{path}

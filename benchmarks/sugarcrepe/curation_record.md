@@ -1,0 +1,3 @@
+- Preserve all 15,024 published GPT-4V grades and complete answers. Replace answer-revealing, filename-only descriptions with the documented ordered prompt and 1,561 unchanged COCO image inputs; keep each image's original attribution and license.
+- Retain historical `swap_obj:108` in both result files although it is absent from the current task bank. Six caption pairs overlap across categories, producing 12 repeated ordered stimuli; category-specific records do not imply independent model calls.
+- Use only the released model label; the API version, system prompt and decoding settings are unavailable. All original records and the README's 14 category/order counts reconcile exactly. Capture pinned author files and checksummed COCO archives; no model or grader is executed.

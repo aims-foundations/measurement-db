@@ -1,0 +1,3 @@
+- Import the original v2 game dump: attacks and defense-validation records, with repeated calls retained as trials and full released records preserved in traces. The previous builder downloaded only task examples.
+- Responses preserve the published access-granted flag. This is a behavior label, not security accuracy; self-attacks and valid-code tests remain distinguishable in each source record. Source aliases and unknown per-call settings are explicit.
+- Preserve source redactions and empty outputs; ancillary numeric NaN values become JSON null in traces, with original source bytes unchanged. Incomplete inputs receive source-specific identities; complete identical inputs share an item. The v1 task banks are supporting inputs, not additional measured calls.

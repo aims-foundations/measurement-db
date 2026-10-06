@@ -1,0 +1,158 @@
+format_version: 1
+tables:
+  traces:
+    rows: 24200
+    logical_sha256: f803461e258d481c815ea36f1ac7ff0e67ca198c6de100cf614d8235dba6ed05
+  subjects:
+    rows: 72
+    logical_sha256: 9b8925185c551c49bf7948be47a245e68a2c1b44ff4015536c9bc4484d14b239
+  responses:
+    rows: 24200
+    logical_sha256: 7be1c5b160250aa8f6d870fede147040bbe2fe2896ebde392734ba07f1567bcb
+  items:
+    rows: 2376
+    logical_sha256: 95d6a5efb254932968d2a777482d67b990e03be2098a5b6eb04f1af8b16f7676
+  benchmarks:
+    rows: 1
+    logical_sha256: c904716e42fef383c4934471e1fc436215131b73ab1a5fd74823099c34e03777
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 24200
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 72
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 2376
+  source_generation_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 14400
+  source_linked_generation_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 4600
+  source_graded_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 14400
+  source_ungraded_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 9800
+  source_json_alias_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 27
+  source_watermarked_detector_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 7189
+  source_reference_detector_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 7200
+  source_omitted_empty_detector_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 11
+  source_reused_control_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 200
+  source_cached_parser_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 1
+  source_generation_prompt_prefix_mismatches:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/rochanaph/fact-eval-wllm
+    locator: All 36 generation triples, 36 detector arrays, 27 JSON aliases and 12 paired-judgment files at faf94610eedd1e208500c32e829ba6201f671b41,
+      with the released task banks, notebook and native rubric.
+    scope: Read source containers independently of the builder, verify every original input/output/reference/rating
+      association, source-occurrence coverage, cross-method control reuse, native parser disagreement and ordered
+      detector skip-empty mapping. No model or evaluator is rerun.
+    expected: 3328

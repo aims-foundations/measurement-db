@@ -1,10 +1,16 @@
 """Named upstream downloads and explicit snapshot restoration, without network access."""
 import copy
+import base64
+import gzip
 import hashlib
+from http.client import IncompleteRead
 import json
 import io
+import shutil
+import subprocess
 import tempfile
 import unittest
+import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -32,6 +38,542 @@ ROOT = Path(__file__).resolve().parents[1]
 PAYLOAD = b'{"released":true}\n'
 
 
+class DownloadFixture(BenchmarkBuild):
+    def build_tables(self):
+        return {}
+
+
+class HTTPSourceRetryTests(unittest.TestCase):
+    def test_github_and_index_body_interruptions_recover_and_close_responses(self):
+        from scripts.build_measurement_tables.load_source_files import _read_index_source, github_tree_entries
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                raise IncompleteRead(b'{"tree":', 100)
+
+        entries = [dict(path='source.json', sha='b' * 40, type='blob', size=len(PAYLOAD))]
+        cases = [
+            (lambda: _read_index_source('https://provider.example/index', 'index.json', None), PAYLOAD, PAYLOAD),
+            (lambda: github_tree_entries('author/dataset', 'a' * 40),
+             json.dumps(dict(tree=entries)).encode(), entries),
+        ]
+        for read, payload, expected in cases:
+            responses = [Interrupted(), io.BytesIO(payload)]
+            with self.subTest(expected=expected), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=responses) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                self.assertEqual(read(), expected)
+                self.assertEqual(download.call_count, 2)
+                sleep.assert_called_once_with(5)
+                self.assertTrue(all(response.closed for response in responses))
+
+    def test_connections_and_body_reads_share_one_retry_budget(self):
+        from scripts.build_measurement_tables.load_source_files import read_http_source
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                raise IncompleteRead(b'partial', 100)
+
+        responses = [Interrupted() for _ in range(4)]
+        outcomes = [part for response in responses for part in (TimeoutError('connect'), response)]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=outcomes) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            with self.assertRaises(IncompleteRead):
+                read_http_source('https://provider.example/index', timeout=10)
+            self.assertEqual(download.call_count, 8)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40, 60, 60, 60])
+            self.assertTrue(all(response.closed for response in responses))
+
+    def test_pinned_missing_files_have_short_retries_and_safe_source_context(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import _read_index_source
+
+        url = 'https://provider.example/path?token=secret'
+        for status, recover, expected_calls in [(404, True, 3), (404, False, 3), (403, False, 1)]:
+            errors = [HTTPError(url, status, 'HTTP error', {}, None) for _ in range(3)]
+            outcomes = errors[:2] + [io.BytesIO(PAYLOAD)] if recover else errors
+            with self.subTest(status=status, recover=recover), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=outcomes) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep, \
+                 patch('scripts.build_measurement_tables.load_source_files.logging.getLogger') as logger:
+                if recover:
+                    self.assertEqual(_read_index_source(url, 'sources/release.json', None), PAYLOAD)
+                else:
+                    with self.assertRaises(HTTPError) as caught:
+                        _read_index_source(url, 'sources/release.json', None)
+                    self.assertEqual(caught.exception.__notes__, ["Source 'sources/release.json' on provider.example"])
+                self.assertEqual(download.call_count, expected_calls)
+                self.assertEqual(sleep.call_count, expected_calls - 1)
+                self.assertNotIn('secret', str(logger.mock_calls))
+            for error in errors:
+                error.close()
+
+    def test_disk_errors_and_invalid_json_are_not_retried(self):
+        import errno
+        from scripts.build_measurement_tables.load_source_files import read_http_source
+
+        def disk_full(response):
+            raise OSError(errno.ENOSPC, 'Disk full')
+
+        for consume, error_type in [(disk_full, OSError), (json.load, json.JSONDecodeError)]:
+            response = io.BytesIO(b'not json')
+            with self.subTest(consume=consume), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=response) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(error_type):
+                    read_http_source('https://provider.example/index', timeout=10, consume=consume)
+                download.assert_called_once()
+                sleep.assert_not_called()
+                self.assertTrue(response.closed)
+
+    def test_index_retries_rate_limit_and_keeps_original_bytes(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import _read_index_source
+
+        url = 'https://provider.example/original.json'
+        error = HTTPError(url, 429, 'Limited', {'Retry-After': '2'}, None)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[error, io.BytesIO(PAYLOAD)]) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            self.assertEqual(_read_index_source(url, 'original.json', None), PAYLOAD)
+            self.assertEqual(download.call_count, 2)
+            sleep.assert_called_once_with(5.)
+
+    def test_retries_are_bounded_and_do_not_retry_access_denials(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for status, header, expected_calls, pauses in [(503, None, 8, [5, 10, 20, 40, 60, 60, 60]),
+                (403, None, 1, []), (404, None, 1, []), (429, '120', 1, [])]:
+            error = HTTPError('https://provider.example', status, 'HTTP error',
+                              {} if header is None else {'Retry-After': header}, None)
+            with self.subTest(status=status, header=header), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=error) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(HTTPError):
+                    open_http_source('https://provider.example', timeout=10)
+                self.assertEqual(download.call_count, expected_calls)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], pauses)
+                error.close()
+
+    def test_transient_connections_recover_without_logging_secret_urls(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason in [socket.gaierror(socket.EAI_NONAME, 'Name or service not known'),
+                       socket.gaierror(socket.EAI_AGAIN, 'Temporary failure'),
+                       TimeoutError('timed out'), ConnectionResetError('reset')]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                       side_effect=[URLError(reason)] * 6 + [io.BytesIO(PAYLOAD)]) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep, \
+                 self.assertLogs('scripts.build_measurement_tables.load_source_files', level='WARNING') as logs:
+                with open_http_source('https://provider.example/file?token=secret', timeout=10) as response:
+                    self.assertEqual(response.read(), PAYLOAD)
+                self.assertEqual(download.call_count, 7)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40, 60, 60])
+                self.assertNotIn('secret', '\n'.join(logs.output))
+
+    def test_dns_exhaustion_and_certificate_failures(self):
+        import socket
+        import ssl
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason, calls in [(socket.gaierror(socket.EAI_AGAIN, 'DNS unavailable'), 8),
+                              (ssl.SSLCertVerificationError('invalid certificate'), 1),
+                              ('unknown URL type', 1)]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=URLError(reason)) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(URLError):
+                    open_http_source('https://provider.example', timeout=10)
+                self.assertEqual(download.call_count, calls)
+                self.assertEqual(sleep.call_count, calls - 1)
+
+    def test_github_inventory_retries_dns_without_changing_pinned_tree(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import github_tree_entries
+
+        entries = [dict(path='source.json', sha='b' * 40, type='blob', size=len(PAYLOAD))]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[URLError(socket.gaierror(-2, 'DNS')), io.BytesIO(json.dumps(dict(tree=entries)).encode())]) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            self.assertEqual(github_tree_entries('author/dataset', 'a' * 40), entries)
+            self.assertEqual(download.call_count, 2)
+            self.assertEqual(download.call_args.args[0].full_url,
+                             'https://api.github.com/repos/author/dataset/git/trees/' + 'a' * 40 + '?recursive=1')
+
+    def test_file_download_retries_and_still_rejects_wrong_hash(self):
+        from urllib.error import HTTPError
+
+        with tempfile.TemporaryDirectory() as folder:
+            destination = Path(folder) / 'source.json'
+            builder = object.__new__(DownloadFixture)
+            builder.slug = 'fixture'
+            for payload, should_pass in [(PAYLOAD, True), (b'x' * len(PAYLOAD), False)]:
+                error = HTTPError('https://provider.example', 429, 'Limited', {'Retry-After': '0'}, None)
+                with self.subTest(should_pass=should_pass), \
+                     patch('build_base.urllib.request.urlopen', side_effect=[error, io.BytesIO(payload)]) as download, \
+                     patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+                    if should_pass:
+                        builder._download('https://provider.example', destination, expected_size=len(PAYLOAD),
+                                          expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                        destination.unlink()
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://provider.example', destination, expected_size=len(PAYLOAD),
+                                              expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+                        self.assertFalse(destination.exists())
+                    self.assertEqual(download.call_count, 2)
+
+
+class DVCSourceTests(unittest.TestCase):
+    """Original pointers pin downloads without copying each artifact into YAML."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name) / 'fixture'
+        self.raw = self.folder / 'raw'
+        self.raw.mkdir(parents=True)
+        self.pointer_path = 'results/field.nc.dvc'
+        self.registry = dict(name='registry', url='https://github.com/example/results', revision='a' * 40,
+                             files=[dict(match=r'results/.*[.]dvc', path='registry/{path}')])
+        self.source = dict(name='fields', url='https://provider.example/dvc', revision='a' * 40,
+                           dvc_index='registry', files=[dict(match=r'results/.*[.]nc', path='fields/{path}')])
+        self.output = dict(path='field.nc', size=len(PAYLOAD), md5=hashlib.md5(PAYLOAD).hexdigest())
+        self.set_pointer()
+
+    def set_pointer(self):
+        self.pointer = yaml.safe_dump(dict(outs=[self.output])).encode()
+        self.entry = dict(path=self.pointer_path, size=len(self.pointer), type='blob',
+                          sha=hashlib.sha1(f'blob {len(self.pointer)}\0'.encode() + self.pointer).hexdigest())
+        identity = [dict(path='results/field.nc', size=self.output['size'], digest=self.output['md5'])]
+        self.source['tree_sha256'] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+
+    def resolve(self, *, payload=None):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        with patch('scripts.build_measurement_tables.load_source_files.github_tree_entries', return_value=[self.entry]), \
+                patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                      return_value=io.BytesIO(self.pointer if payload is None else payload)):
+            return upstream_artifacts([self.registry, self.source], ('fields',), raw_dir=self.raw)
+
+    def test_fetch_preserves_original_pointer_and_file_and_verifies_cache(self):
+        metadata = yaml.safe_load((ROOT / 'benchmarks/real_webagents/metadata.yaml').read_text())
+        metadata['sources'] = dict(upstream=[self.registry, self.source])
+        (self.folder / 'metadata.yaml').write_text(yaml.safe_dump(metadata))
+        pointer_url = 'https://raw.githubusercontent.com/example/results/' + 'a' * 40 + '/' + self.pointer_path
+        field_url = self.source['url'] + '/' + self.output['md5'][:2] + '/' + self.output['md5'][2:]
+        payloads = {pointer_url: self.pointer, field_url: PAYLOAD}
+
+        def fetch(request, **kwargs):
+            return io.BytesIO(payloads[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.github_tree_entries', return_value=[self.entry]), \
+                patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+                patch('build_base.urllib.request.urlopen', side_effect=fetch):
+            builder = DownloadFixture(str(self.folder / 'build.py'))
+            builder.fetch_sources('registry', 'fields')
+            self.assertEqual((self.raw / 'registry' / self.pointer_path).read_bytes(), self.pointer)
+            target = self.raw / 'fields/results/field.nc'
+            self.assertEqual(target.read_bytes(), PAYLOAD)
+            with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('cached')), \
+                    patch('build_base.urllib.request.urlopen', side_effect=AssertionError('cached')):
+                builder.fetch_sources('registry', 'fields')
+                target.write_bytes(b'x' * len(PAYLOAD))
+                with self.assertRaises(SourceDataError):
+                    builder.fetch_sources('registry', 'fields')
+            self.assertEqual(target.read_bytes(), b'x' * len(PAYLOAD))
+
+    def test_changed_pointer_and_tree_are_rejected(self):
+        with self.assertRaisesRegex(SourceDataError, 'pinned Git blob'):
+            self.resolve(payload=b' ' * len(self.pointer))
+        self.source['tree_sha256'] = '0' * 64
+        with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+            self.resolve()
+
+    def test_directory_pointers_invalid_sizes_and_mismatched_paths_are_rejected(self):
+        for change in [dict(md5='a' * 32 + '.dir'), dict(size=True), dict(size=-1),
+                       dict(path='../field.nc'), dict(path='different.nc')]:
+            with self.subTest(change=change):
+                original = self.output.copy()
+                self.output.update(change)
+                self.set_pointer()
+                with self.assertRaises(SourceDataError):
+                    self.resolve()
+                self.output = original
+        self.set_pointer()
+        self.pointer_path = '../results/field.nc.dvc'
+        self.set_pointer()
+        self.registry['files'][0]['match'] = r'.*[.]dvc'
+        self.source['files'][0]['match'] = r'.*[.]nc'
+        with self.assertRaises(SourceDataError):
+            self.resolve()
+
+    def test_source_revision_must_match_and_index_cannot_be_recursive(self):
+        self.source['revision'] = 'b' * 40
+        with self.assertRaisesRegex(SourceDataError, 'same pinned commit'):
+            self.resolve()
+        self.source['revision'] = 'a' * 40
+        self.registry['dvc_index'] = 'fields'
+        with self.assertRaisesRegex(SourceDataError, 'same pinned commit'):
+            self.resolve()
+
+
+class ZIPMemberTests(unittest.TestCase):
+    """Original ZIP slices preserve bytes and require the full content-tree pin."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.folder = Path(self.temp.name) / "fixture"
+        self.folder.mkdir()
+        self.raw = self.folder / "raw"
+        self.source = dict(name="release", url="https://huggingface.co/datasets/example/original",
+            revision="a" * 40, zip_members=["original.zip"],
+            files=[dict(match=r"original[.]zip/(?P<member>.*[.]txt)", path="members/{member}")])
+        self.members = {"task/result.txt": b"0.75\n", "task/transcript.txt": b"unaltered text\n\n"}
+        self.make_archive()
+
+    def make_archive(self, compression=zipfile.ZIP_STORED):
+        archive = io.BytesIO()
+        with zipfile.ZipFile(archive, "w", compression=compression) as output:
+            for name, content in self.members.items():
+                output.writestr(name, content)
+            output.writestr("task/recording.mp4", b"unselected media")
+        self.archive = archive.getvalue()
+        self.entries = [dict(path="original.zip", url="https://example.org/original.zip", size=len(self.archive))]
+        identity = [dict(path="original.zip/" + name, size=len(content), digest=hashlib.sha256(content).hexdigest())
+                    for name, content in sorted(self.members.items())]
+        self.source["tree_sha256"] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def inspect(self, *, source=None, payload=None, status=206, integration=False, head_overrides=None, range_etag=None):
+        from scripts.build_measurement_tables.load_source_files import zip_member_entries
+        payload = self.archive if payload is None else payload
+        opened = []
+
+        def request(url, headers, **kwargs):
+            start, end = map(int, headers["Range"].removeprefix("bytes=").split("-"))
+            opened.append((start, end))
+            response = io.BytesIO(payload[start:end + 1])
+            response.status_code, response.raw = status, response
+            response.headers = {"Content-Range": f"bytes {start}-{end}/{len(payload)}"}
+            if self.source["url"].startswith("https://example.org/"):
+                self.assertEqual(headers.get("If-Match"), self.source["revision"])
+                response.headers["ETag"] = range_etag or self.source["revision"]
+            return response
+
+        head = io.BytesIO()
+        head.url = "https://example.org/public-redirect"
+        head.status_code = 200
+        head.headers = {"ETag": self.source["revision"], "Content-Length": str(len(self.archive)), **(head_overrides or {})}
+        head.raise_for_status = lambda: None
+        filesystem = SimpleNamespace(open=lambda *args, **kwargs: io.BytesIO(self.archive))
+        session = SimpleNamespace(get=request, close=lambda: None)
+        with patch("fsspec.filesystem", return_value=filesystem), patch("requests.head", return_value=head), \
+                patch("requests.Session", return_value=session):
+            if integration:
+                metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+                metadata["sources"] = {"upstream": [self.source]}
+                (self.folder / "metadata.yaml").write_text(yaml.safe_dump(metadata))
+                native = SimpleNamespace(path="original.zip", size=len(self.archive), blob_id="b" * 40,
+                    lfs={"sha256": hashlib.sha256(self.archive).hexdigest()})
+                api = SimpleNamespace(list_repo_tree=lambda *args, **kwargs: [native])
+                with patch("huggingface_hub.HfApi", return_value=api), \
+                        patch("huggingface_hub.hf_hub_url", return_value=self.entries[0]["url"]):
+                    builder = DownloadFixture(str(self.folder / "build.py"))
+                    result = builder.fetch_sources("release")
+                    self.assertEqual(len(builder._source_artifacts), 2)
+            else:
+                result = zip_member_entries(source or self.source, self.entries, self.raw)
+        self.assertTrue(all(end < len(self.archive) for _, end in opened))
+        return result
+
+    def test_original_bytes_and_partial_credit_survive_stored_and_deflated_archives(self):
+        for compression in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            with self.subTest(compression=compression):
+                self.make_archive(compression)
+                result = self.inspect()
+                self.assertEqual(len(result), 2)
+                for name, content in self.members.items():
+                    self.assertEqual((self.raw / "members" / name).read_bytes(), content)
+                self.assertFalse((self.raw / "members/task/recording.mp4").exists())
+                shutil.rmtree(self.raw)
+
+    def test_shared_fetch_sources_uses_original_members_and_source_locators(self):
+        urls = self.inspect(integration=True)
+        self.assertEqual(set(urls), {"https://example.org/original.zip#member=" + name for name in self.members})
+        self.assertEqual(self.inspect(integration=True), urls)
+        self.assertEqual((self.raw / "members/task/transcript.txt").read_bytes(), self.members["task/transcript.txt"])
+
+    def test_zip_range_retries_throttling_without_skipping_byte_checks(self):
+        from scripts.build_measurement_tables.load_source_files import read_zip_member
+
+        with zipfile.ZipFile(io.BytesIO(self.archive)) as archive:
+            member = archive.infolist()[0]
+        for final_status, retry_after, expected_pause, succeeds in [
+                (206, '61', 61., True), (206, '0', 5., True), (200, '61', 61., False), (403, '61', 61., False)]:
+            statuses = iter([429, final_status])
+            replies = []
+
+            def request(url, headers, **kwargs):
+                start, end = map(int, headers['Range'].removeprefix('bytes=').split('-'))
+                reply = io.BytesIO(self.archive[start:end + 1])
+                reply.status_code, reply.raw = next(statuses), reply
+                reply.headers = {'Retry-After': retry_after, 'Content-Range': f'bytes {start}-{end}/{len(self.archive)}'}
+                replies.append(reply)
+                return reply
+
+            with self.subTest(final_status=final_status, retry_after=retry_after), \
+                    patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                session = SimpleNamespace(get=request)
+                if succeeds:
+                    self.assertEqual(read_zip_member('https://example.org/original.zip', len(self.archive), member, session),
+                                     self.members[member.filename])
+                else:
+                    with self.assertRaisesRegex(SourceDataError, 'requested byte range'):
+                        read_zip_member('https://example.org/original.zip', len(self.archive), member, session)
+                sleep.assert_called_once_with(expected_pause)
+                self.assertTrue(all(reply.closed for reply in replies))
+
+        calls = []
+
+        def always_limited(*args, **kwargs):
+            reply = io.BytesIO()
+            reply.status_code, reply.headers = 429, {'Retry-After': '0'}
+            calls.append(reply)
+            return reply
+
+        with patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            with self.assertRaisesRegex(SourceDataError, 'remains unavailable'):
+                read_zip_member('https://example.org/original.zip', len(self.archive), member,
+                                SimpleNamespace(get=always_limited))
+            self.assertEqual(len(calls), 5)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40])
+            self.assertTrue(all(reply.closed for reply in calls))
+
+    def test_https_archive_requires_version_and_complete_content_pin(self):
+        self.source.update(url="https://example.org/original.zip", revision='"original-version"', size=len(self.archive))
+        urls = self.inspect(integration=True)
+        self.assertEqual(set(urls), {"https://example.org/original.zip#member=" + name for name in self.members})
+        for name, body in self.members.items():
+            self.assertEqual((self.raw / "members" / name).read_bytes(), body)
+        # A stale source must fail even when every selected member is already cached.
+        with self.assertRaisesRegex(SourceDataError, "pinned size/ETag"):
+            self.inspect(integration=True, head_overrides={"ETag": '"changed-version"'})
+        with self.assertRaisesRegex(SourceDataError, "pinned size/ETag"):
+            self.inspect(integration=True, head_overrides={"Content-Length": str(len(self.archive) + 1)})
+        shutil.rmtree(self.raw)
+        with self.assertRaisesRegex(SourceDataError, "pinned ETag"):
+            self.inspect(integration=True, range_etag='"changed-during-download"')
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob("*")))
+        self.source["tree_sha256"] = "0" * 64
+        with self.assertRaisesRegex(SourceDataError, "pinned tree"):
+            self.inspect(integration=True)
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob("*")))
+
+    def test_https_archive_metadata_and_filename_are_validated(self):
+        self.source.update(url="https://example.org/original.zip", revision='"original-version"', size=len(self.archive))
+        metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+        metadata["sources"] = {"upstream": [self.source]}
+        validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        for change in ({"revision": "unversioned"}, {"revision": 'W/"weak-version"'}, {"revision": '"line\nbreak"'},
+                       {"size": None}, {"tree_sha256": None}, {"zip_members": ["one.zip", "two.zip"]}):
+            metadata["sources"]["upstream"] = [{**self.source, **change}]
+            with self.subTest(change=change), self.assertRaises(BenchmarkMetadataError):
+                validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        self.source["zip_members"] = ["different-name.zip"]
+        with self.assertRaisesRegex(SourceDataError, "exact filename"):
+            self.inspect(integration=True)
+
+    def test_zenodo_versioned_members_preserve_bytes_without_http_etags(self):
+        self.source.update(url='https://zenodo.org/records/123/files/original.zip?download=1',
+                           revision='123', size=len(self.archive))
+        record = dict(id=123, files=[dict(key='original.zip', size=len(self.archive), checksum='md5:' + 'a' * 32)])
+        def record_response(request, **kwargs):
+            self.assertEqual(request.full_url, 'https://zenodo.org/api/records/123')
+            return io.BytesIO(json.dumps(record).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=record_response):
+            self.inspect(integration=True)
+            for name, body in self.members.items():
+                self.assertEqual((self.raw / 'members' / name).read_bytes(), body)
+            self.inspect(integration=True)  # The same source remains verifiable with cached bytes.
+            record['id'] = 124
+            with self.assertRaisesRegex(SourceDataError, 'pinned record/size'):
+                self.inspect(integration=True)
+            record['id'] = 123
+            record['files'][0]['size'] += 1
+            with self.assertRaisesRegex(SourceDataError, 'pinned record/size'):
+                self.inspect(integration=True)
+
+    def test_zenodo_requires_matching_record_and_full_member_digest(self):
+        self.source.update(url='https://zenodo.org/records/123/files/original.zip',
+                           revision='124', size=len(self.archive))
+        with self.assertRaisesRegex(SourceDataError, 'versioned record ID'):
+            self.inspect(integration=True)
+        self.source['revision'] = '123'
+        self.source['tree_sha256'] = '0' * 64
+        record = dict(id=123, files=[dict(key='original.zip', size=len(self.archive), checksum='md5:' + 'a' * 32)])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(record).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                self.inspect(integration=True)
+        self.assertFalse(any(path.is_file() for path in self.raw.rglob('*')))
+
+    def test_pinned_tree_rejects_changed_selection_before_installing_files(self):
+        self.source["tree_sha256"] = "0" * 64
+        with self.assertRaisesRegex(SourceDataError, "pinned tree"):
+            self.inspect()
+        self.assertFalse(self.raw.exists())
+        self.assertFalse(list(self.folder.glob(".zip-download-*")))
+
+    def test_existing_raw_is_verified_and_never_replaced(self):
+        self.inspect()
+        target = self.raw / "members/task/result.txt"
+        target.write_bytes(b"0.00\n")
+        with self.assertRaisesRegex(SourceDataError, "size/CRC"):
+            self.inspect()
+        self.assertEqual(target.read_bytes(), b"0.00\n")
+
+    def test_corrupt_payload_and_ignored_range_are_rejected(self):
+        with self.assertRaisesRegex(SourceDataError, "size/CRC"):
+            self.inspect(payload=self.archive.replace(b"0.75\n", b"0.00\n"))
+        with self.assertRaisesRegex(SourceDataError, "requested byte range"):
+            self.inspect(status=200)
+        self.assertFalse(self.raw.exists())
+
+    def test_unsafe_members_duplicate_targets_and_missing_archives_are_rejected(self):
+        for member in ("../escape.txt", "/absolute.txt", "folder\\escape.txt"):
+            with self.subTest(member=member):
+                self.members = {member: b"original"}
+                self.make_archive()
+                with self.assertRaisesRegex(SourceDataError, "unsafe member"):
+                    self.inspect()
+        self.members = {"one.txt": b"one", "two.txt": b"two"}
+        self.make_archive()
+        self.source["files"][0]["path"] = "members/same.txt"
+        with self.assertRaisesRegex(SourceDataError, "Duplicate"):
+            self.inspect()
+        self.source["zip_members"] = ["absent.zip"]
+        with self.assertRaisesRegex(SourceDataError, "absent"):
+            self.inspect()
+        self.assertFalse(self.raw.exists())
+
+    def test_metadata_requires_immutable_archive_and_content_tree(self):
+        metadata = yaml.safe_load((ROOT / "benchmarks/real_webagents/metadata.yaml").read_text())
+        metadata["sources"] = {"upstream": [self.source]}
+        validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+        for change in ({"revision": "main"}, {"tree_sha256": None}, {"zip_members": ["../outside.zip"]},
+                       {"url": "https://example.org/results"}, {"html_index": "another"}):
+            metadata["sources"]["upstream"] = [{**self.source, **change}]
+            with self.subTest(change=change), self.assertRaises(BenchmarkMetadataError):
+                validate_benchmark_metadata(metadata, path=self.folder / "metadata.yaml")
+
+
 class SnapshotTests(unittest.TestCase):
     def setUp(self):
         self.metadata = yaml.safe_load((ROOT / 'benchmarks/real_webagents/metadata.yaml').read_text())
@@ -46,8 +588,220 @@ class SnapshotTests(unittest.TestCase):
         self.artifact = dict(file='source.json', size=len(PAYLOAD), hash_kind='sha256',
                              digest=hashlib.sha256(PAYLOAD).hexdigest(), url='https://example.org/source')
 
+    def test_complete_transfers_restart_after_interruption_including_range_fallback(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for ranged in (False, True):
+            for failure in (ConnectionResetError('reset'), IncompleteRead(b'partial', 100), None):
+                class Interrupted(io.BytesIO):
+                    def read(self, size=-1):
+                        if self.tell():
+                            if failure is not None:
+                                raise failure
+                            return b''
+                        return super().read(2)
+
+                responses = ([io.BytesIO()] if ranged else []) + [Interrupted(PAYLOAD), io.BytesIO(PAYLOAD)]
+                for response in responses:
+                    response.status, response.headers = 200, {'Content-Length': str(len(PAYLOAD))}
+                destination = self.raw / 'release.json'
+                destination.write_bytes(b'previous bytes')
+                with self.subTest(ranged=ranged, failure=type(failure).__name__), \
+                     patch('urllib.request.urlopen', side_effect=responses) as download, \
+                     patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                    builder._download('https://provider.example/release', destination,
+                        expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(),
+                        chunk_size=5 if ranged else 1024)
+                    self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    self.assertEqual(download.call_count, 3 if ranged else 2)
+                    sleep.assert_called_once_with(5)
+                    self.assertTrue(all(response.closed for response in responses))
+                    self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_complete_transfer_exhaustion_preserves_existing_file(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'release.json'
+        destination.write_bytes(b'previous bytes')
+        with patch('urllib.request.urlopen', side_effect=lambda *a, **k: io.BytesIO(PAYLOAD[:2])) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            with self.assertRaises(IncompleteRead):
+                builder._download('https://provider.example/release', destination, expected_size=len(PAYLOAD))
+            self.assertEqual(download.call_count, 8)
+            self.assertEqual(destination.read_bytes(), b'previous bytes')
+            self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_large_transfer_can_resume_more_than_three_partial_responses(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        payload = b'abcdefghijklm'
+        requested = []
+
+        def fetch(request, **kwargs):
+            start, end = map(int, request.get_header('Range').removeprefix('bytes=').split('-'))
+            requested.append((start, end))
+            response = io.BytesIO(payload[start:start + 1] if len(requested) <= 4 else payload[start:end + 1])
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes {start}-{end}/{len(payload)}'}
+            return response
+
+        destination = self.raw / 'archive.zip'
+        with patch('urllib.request.urlopen', side_effect=fetch), \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            builder._download('https://example.org/archive', destination,
+                expected_size=len(payload), expected_sha256=hashlib.sha256(payload).hexdigest(), chunk_size=5)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40])
+        self.assertEqual(destination.read_bytes(), payload)
+        self.assertEqual(requested, [(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 9), (10, 12)])
+        self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_large_pinned_download_resumes_interrupted_ranges(self):
+        payload = b'abcdefghijklm'
+        requested = []
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                if self.tell():
+                    raise ConnectionError('interrupted upstream transfer')
+                return super().read(2)
+
+        def fetch(request, **kwargs):
+            start, end = map(int, request.get_header('Range').removeprefix('bytes=').split('-'))
+            requested.append((start, end))
+            response = (Interrupted if len(requested) == 1 else io.BytesIO)(payload[start:end + 1])
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes {start}-{end}/{len(payload)}'}
+            return response
+
+        destination = self.raw / 'archive.zip'
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        with patch('urllib.request.urlopen', side_effect=fetch), \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            builder._download('https://example.org/archive', destination,
+                expected_size=len(payload), expected_sha256=hashlib.sha256(payload).hexdigest(), chunk_size=5)
+        self.assertEqual(destination.read_bytes(), payload)
+        self.assertEqual(requested, [(0, 4), (2, 4), (5, 9), (10, 12)])
+        self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_resumed_download_rejects_wrong_ranges_and_preserves_existing_file(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for status, content_range in [(206, 'bytes 1-5/13'), (206, 'bytes 0-4/99')]:
+            with self.subTest(status=status, content_range=content_range):
+                destination = self.raw / 'archive.zip'
+                destination.write_bytes(b'previous bytes')
+                response = io.BytesIO(b'abcde')
+                response.status = status
+                response.headers = {'Content-Range': content_range}
+                with patch('urllib.request.urlopen', return_value=response):
+                    with self.assertRaisesRegex(SourceDataError, 'unexpected byte range'):
+                        builder._download('https://example.org/archive', destination,
+                            expected_size=13, expected_sha256='0' * 64, chunk_size=5)
+                self.assertEqual(destination.read_bytes(), b'previous bytes')
+                self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_large_download_accepts_complete_response_but_still_checks_hash(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for valid in [True, False]:
+            with self.subTest(valid=valid):
+                destination = self.raw / ('valid.zip' if valid else 'corrupt.zip')
+                responses = [io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD)) for _ in range(2)]
+                for response in responses:
+                    response.status, response.headers = 200, {}
+                with patch('urllib.request.urlopen', side_effect=responses):
+                    arguments = dict(expected_size=len(PAYLOAD),
+                        expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=5)
+                    if valid:
+                        builder._download('https://example.org/archive', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://example.org/archive', destination, **arguments)
+                        self.assertFalse(destination.exists())
+
+    def test_large_download_stops_after_repeated_empty_transfers(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'absent.zip'
+
+        def fetch(*args, **kwargs):
+            response = io.BytesIO()
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes 0-4/{len(PAYLOAD)}'}
+            return response
+
+        with patch('urllib.request.urlopen', side_effect=fetch) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            with self.assertRaises(IncompleteRead):
+                builder._download('https://example.org/archive', destination,
+                    expected_size=len(PAYLOAD), chunk_size=5)
+        self.assertEqual(download.call_count, 8)
+        self.assertFalse(destination.exists())
+        self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_range_connections_share_retry_budget_and_stop_on_access_errors(self):
+        import socket
+        from urllib.error import HTTPError, URLError
+
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for error, calls in [(HTTPError('https://example.org/archive', 404, 'Missing', {}, None), 1),
+                             (URLError(socket.gaierror(-2, 'DNS')), 8),
+                             (TimeoutError('timed out'), 8), (ConnectionResetError('reset'), 8)]:
+            destination = self.raw / 'absent.zip'
+            with self.subTest(error=type(error).__name__), \
+                 patch('urllib.request.urlopen', side_effect=error) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+                with self.assertRaises(OSError):
+                    builder._download('https://example.org/archive', destination,
+                                      expected_size=len(PAYLOAD), chunk_size=5)
+                self.assertEqual(download.call_count, calls)
+                self.assertFalse(destination.exists())
+                self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_compressed_ranges_retry_whole_file_and_preserve_exact_hash_checks(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for valid in (True, False):
+            with self.subTest(valid=valid):
+                destination = self.raw / 'release.json'
+                destination.write_bytes(b'previous bytes')
+                compressed = io.BytesIO(b'compressed HTTP representation')
+                compressed.status = 206
+                compressed.headers = {'Content-Encoding': 'gzip', 'Content-Range': 'bytes 0-2/3'}
+                whole = io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD))
+                whole.status, whole.headers = 200, {}
+                with patch('urllib.request.urlopen', side_effect=[compressed, whole]) as download:
+                    arguments = dict(expected_size=len(PAYLOAD),
+                                     expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=5)
+                    if valid:
+                        builder._download('https://provider.example/release.json', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    else:
+                        with self.assertRaises(SourceDataError):
+                            builder._download('https://provider.example/release.json', destination, **arguments)
+                        self.assertEqual(destination.read_bytes(), b'previous bytes')
+                requests = [call.args[0] for call in download.call_args_list]
+                self.assertEqual(len(requests), 2)
+                self.assertIsNone(requests[1].get_header('Range'))
+                self.assertEqual(requests[1].get_header('Accept-encoding'), 'identity')
+                self.assertFalse(list(self.raw.glob('*.tmp')))
+
     def test_compact_metadata_and_unknown_upstream_revision(self):
         load_benchmark_metadata(self.metadata_path)
+
+    @unittest.skipUnless(shutil.which("gpg"), "GnuPG is required for encrypted upstream releases")
+    def test_gpg_json_preserves_raw_and_rejects_wrong_password(self):
+        from scripts.build_measurement_tables.load_source_files import read_gpg_json
+        with tempfile.TemporaryDirectory(dir=self.folder) as home:
+            encrypted = subprocess.run(
+                ["gpg", "--no-options", "--homedir", home, "--batch", "--no-tty",
+                 "--pinentry-mode", "loopback", "--passphrase", "public-test-password",
+                 "--symmetric", "--output", "-"],
+                input=PAYLOAD, capture_output=True, check=True,
+            ).stdout
+        source = self.raw / "bank.json.gpg"
+        source.write_bytes(encrypted)
+        self.assertEqual(read_gpg_json(source, password="public-test-password", scratch_dir=self.folder),
+                         json.loads(PAYLOAD))
+        with self.assertRaisesRegex(SourceDataError, "Cannot decrypt"):
+            read_gpg_json(source, password="wrong-password", scratch_dir=self.folder)
+        self.assertEqual(source.read_bytes(), encrypted)
+        self.assertEqual(list(self.raw.iterdir()), [source])
+        self.assertFalse(list(self.folder.glob(".gpg-*")))
 
     def test_local_unpublished_snapshot_is_verified_without_network(self):
         manifest = self.folder / 'inputs.json'
@@ -267,6 +1021,769 @@ class SnapshotTests(unittest.TestCase):
             self.metadata['sources']['upstream'] = [entry]
             with self.assertRaises(BenchmarkMetadataError):
                 validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_huggingface_repositories_keep_type_and_original_hashes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        entries = [SimpleNamespace(path='results/small.jsonl', size=12, blob_id='b' * 40, lfs=None),
+                   SimpleNamespace(path='results/large.jsonl', size=100, blob_id='c' * 40,
+                                   lfs=dict(sha256='d' * 64)), SimpleNamespace(path='results')]
+        for prefix, repo_type in [('spaces/', 'space'), ('datasets/', 'dataset'), ('', 'model')]:
+            source = dict(name='release', url='https://huggingface.co/' + prefix + 'provider/evaluation', revision='a' * 40,
+                          files=[dict(match=r'results/.*\.jsonl', path='{path}')])
+            with self.subTest(repo_type=repo_type), patch('huggingface_hub.HfApi.list_repo_tree', return_value=entries) as tree:
+                artifacts = upstream_artifacts([source], ('release',))
+                tree.assert_called_once_with('provider/evaluation', repo_type=repo_type, revision='a' * 40, recursive=True)
+                by_path = {row['file']: row for row in artifacts}
+                self.assertEqual(by_path['results/small.jsonl']['digest'], 'b' * 40)
+                self.assertEqual(by_path['results/large.jsonl']['digest'], 'd' * 64)
+                for artifact in artifacts:
+                    self.assertEqual(artifact['hf_repo_type'], repo_type)
+                    self.assertIn('/' + prefix + 'provider/evaluation/resolve/' + 'a' * 40, artifact['url'])
+
+    def test_scoped_github_trees_keep_hashes_and_skip_unselected_assets(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        source = dict(name='results', url='https://github.com/provider/benchmark', revision='a'*40,
+                      tree_paths=['runs/*/results', 'runs/one/results/item.json'],
+                      files=[dict(match=r'runs/(?P<run>[^/]+)/results/(?P<file>.+)', path='{run}/{file}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        tree = lambda path, sha: dict(type='tree', path=path, sha=sha)
+        blob = dict(type='blob', path='item.json', sha='f'*40, size=12)
+        payloads = {
+            'a'*40: [tree('runs', 'b'*40), tree('large-assets', '0'*40)],
+            'b'*40: [tree('one', 'c'*40)],
+            'c'*40: [tree('results', 'd'*40), tree('screenshots', 'e'*40)],
+            'd'*40: [blob], 'd'*40+'?recursive=1': [blob],
+        }
+        calls = []
+        def respond(request, **kwargs):
+            key = request.full_url.rsplit('/', 1)[-1]
+            calls.append(key)
+            return io.BytesIO(json.dumps(dict(tree=payloads[key], truncated=False)).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=respond):
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertEqual([a['file'] for a in artifacts], ['one/item.json'])
+        self.assertEqual(artifacts[0]['digest'], 'f'*40)
+        self.assertIn('/'+'a'*40+'/runs/one/results/item.json', artifacts[0]['url'])
+        self.assertEqual(calls.count('a'*40), 1)
+        self.assertNotIn('e'*40, calls)
+        for paths in (['../outside'], ['/absolute'], ['runs/**'], ['runs/missing']):
+            with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=respond):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([dict(source, tree_paths=paths)], ('results',))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(dict(tree=[], truncated=True)).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'truncated'):
+                upstream_artifacts([source], ('results',))
+
+    def test_github_lfs_verifies_pointer_and_downloaded_content(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        pointer = (f'version https://git-lfs.github.com/spec/v1\noid sha256:{hashlib.sha256(PAYLOAD).hexdigest()}\n'
+                   f'size {len(PAYLOAD)}\n').encode()
+        pointer_hash = hashlib.sha1(f'blob {len(pointer)}\0'.encode() + pointer).hexdigest()
+        source = dict(name='bundles', url='https://github.com/provider/benchmark', revision='a'*40,
+                      git_lfs=True, files=[dict(match=r'outputs/one\.bundle', path='one.bundle')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        tree = dict(tree=[dict(type='blob', path='outputs/one.bundle', size=len(pointer), sha=pointer_hash)], truncated=False)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(tree).encode()), io.BytesIO(pointer)]):
+            artifact, = upstream_artifacts([source], ('bundles',))
+        self.assertEqual(artifact['size'], len(PAYLOAD))
+        self.assertEqual(artifact['hash_kind'], 'sha256')
+        self.assertEqual(artifact['digest'], hashlib.sha256(PAYLOAD).hexdigest())
+        self.assertEqual(artifact['url'], 'https://media.githubusercontent.com/media/provider/benchmark/' + 'a'*40 + '/outputs/one.bundle')
+        target = self.raw / 'one.bundle'
+        target.write_bytes(PAYLOAD)
+        verify_snapshot_file(target, artifact)
+        target.write_bytes(pointer)
+        with self.assertRaises(SourceDataError):
+            verify_snapshot_file(target, artifact)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(tree).encode()), io.BytesIO(pointer.replace(b'size ', b'Size '))]):
+            with self.assertRaisesRegex(SourceDataError, 'pointer differs'):
+                upstream_artifacts([source], ('bundles',))
+
+    def test_public_gcs_selection_pins_versions_and_keeps_encoded_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        encoded = gzip.compress(PAYLOAD, mtime=0)
+        checksum = hashlib.md5(encoded).hexdigest()
+        entry = dict(name='release/run:one/source.json', generation='123', size=str(len(encoded)),
+                     md5Hash=base64.b64encode(bytes.fromhex(checksum)).decode(), contentEncoding='gzip')
+        identity = [dict(path='run:one/source.json', generation='123', size=len(encoded),
+                         digest=checksum, content_encoding='gzip')]
+        fingerprint = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        source = dict(name='results', url='https://storage.googleapis.com/provider-bucket', revision='v1',
+                      prefix='release/', tree_sha256=fingerprint,
+                      files=[dict(match=r'[^/]+/source\.json', path='{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        pages = [dict(items=[], nextPageToken='next'), dict(items=[entry])]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(json.dumps(page).encode()) for page in pages]) as fetch:
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertIn('pageToken=next', fetch.call_args_list[1].args[0].full_url)
+        self.assertEqual(artifacts[0]['file'], 'run_x3a_one/source.json.gz')
+        self.assertTrue(artifacts[0]['url'].endswith('?generation=123'))
+        target = self.raw / 'captured.json.gz'
+        target.write_bytes(encoded)
+        verify_snapshot_file(target, artifacts[0])
+        target.write_bytes(b'x' * len(encoded))
+        with self.assertRaisesRegex(SourceDataError, 'content differs'):
+            verify_snapshot_file(target, artifacts[0])
+        changed = {**entry, 'generation': '124'}
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   return_value=io.BytesIO(json.dumps(dict(items=[changed])).encode())):
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('results',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_osf_folder_versions_pagination_and_native_hashes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        root_url = 'https://api.osf.io/v2/nodes/abc12/files/osfstorage/root/?view_only=published-link'
+        child_url = root_url.replace('/root/', '/child/')
+        next_url = child_url + '&page=2'
+        digest = hashlib.sha256(PAYLOAD).hexdigest()
+        file = dict(id='file1', attributes=dict(name='model:one.jsonl', kind='file', size=len(PAYLOAD),
+            current_version=3, extra=dict(hashes=dict(sha256=digest))),
+            links=dict(download='https://osf.io/download/xyz34/?view_only=published-link'))
+        folder = dict(attributes=dict(name='outputs', kind='folder'),
+            relationships=dict(files=dict(links=dict(related=dict(href=child_url)))))
+        pages = [dict(data=[folder]), dict(data=[], links=dict(next=next_url)), dict(data=[file])]
+        identity = [dict(path='outputs/model:one.jsonl', osf_id='file1', version=3, size=len(PAYLOAD), digest=digest)]
+        source = dict(name='observations', url=root_url, revision=None,
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'outputs/.*\.jsonl', path='{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        def replies(values):
+            return [io.BytesIO(json.dumps(page).encode()) for page in values]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(pages)) as fetch:
+            artifacts = upstream_artifacts([source], ('observations',))
+        self.assertEqual([call.args[0].full_url for call in fetch.call_args_list], [root_url, child_url, next_url])
+        self.assertEqual(artifacts[0]['file'], 'outputs/model_x3a_one.jsonl')
+        self.assertEqual(artifacts[0]['url'], 'https://osf.io/download/xyz34/?view_only=published-link&version=3')
+        target = self.raw / 'captured.jsonl'
+        target.write_bytes(PAYLOAD)
+        verify_snapshot_file(target, artifacts[0])
+        target.write_bytes(b'x' * len(PAYLOAD))
+        with self.assertRaises(SourceDataError):
+            verify_snapshot_file(target, artifacts[0])
+        for field, value in [('current_version', 4), ('size', len(PAYLOAD) + 1), ('name', '../escape.jsonl')]:
+            changed = copy.deepcopy(pages)
+            changed[-1]['data'][0]['attributes'][field] = value
+            with self.subTest(field=field), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(changed)):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([source], ('observations',))
+        for label, modify in [
+            ('missing hash', lambda p: p[-1]['data'][0]['attributes']['extra']['hashes'].clear()),
+            ('duplicate file', lambda p: p[-1]['data'].append(copy.deepcopy(file))),
+            ('external pagination', lambda p: p[1]['links'].update(next='https://other.example/files')),
+            ('cycle', lambda p: p[1]['links'].update(next=root_url)),
+            ('external download', lambda p: p[-1]['data'][0]['links'].update(download='https://other.example/file')),
+        ]:
+            changed = copy.deepcopy(pages)
+            modify(changed)
+            with self.subTest(label=label), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=replies(changed)):
+                with self.assertRaises(SourceDataError):
+                    upstream_artifacts([source], ('observations',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_public_wandb_pagination_latest_checkpoint_and_content_pin(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        digest = hashlib.md5(PAYLOAD).hexdigest()
+        def entry(name):
+            return dict(name=name, sizeBytes=len(PAYLOAD), md5=base64.b64encode(bytes.fromhex(digest)).decode())
+        files = [entry('10_normalized_scores.npy'), entry('10_returns.npy'), entry('20_normalized_scores.npy'),
+                 entry('20_returns.npy'), entry('config.yaml')]
+        selected = ['run1/20_normalized_scores.npy', 'run1/20_returns.npy', 'run1/config.yaml']
+        identity = [dict(path=path, size=len(PAYLOAD), digest=digest) for path in selected]
+        source = dict(name='results', url='https://wandb.ai/team/project', revision=None,
+            wandb_runs=dict(state='finished', latest_step=r'(?P<step>[0-9]+)_normalized_scores\.npy',
+                            step_files=r'(?P<step>[0-9]+)_(normalized_scores|returns)\.npy'),
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'[^/]+/(config\.yaml|[0-9]+_(normalized_scores|returns)\.npy)', path='runs/{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        requests = []
+        def fetch(request, **kwargs):
+            query = json.loads(request.data); variables=query['variables']; requests.append(variables)
+            if 'r' not in variables:
+                first = variables['c'] is None
+                nodes = [dict(name='run1', state='finished')] if first else [dict(name='run2', state='failed')]
+                data = dict(runs=dict(edges=[dict(node=node) for node in nodes],
+                    pageInfo=dict(hasNextPage=first, endCursor='run-next' if first else None)))
+            else:
+                self.assertEqual(variables['r'], 'run1')
+                first = variables['c'] is None
+                data = dict(run=dict(files=dict(edges=[dict(node=node) for node in (files[:2] if first else files[2:])],
+                    pageInfo=dict(hasNextPage=first, endCursor='file-next' if first else None))))
+            return io.BytesIO(json.dumps(dict(data=dict(project=data))).encode())
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts([source], ('results',))
+        self.assertEqual([row['file'] for row in artifacts], ['runs/'+path for path in selected])
+        self.assertEqual(len(requests), 4)
+        self.assertTrue(all(row['url'].startswith('https://api.wandb.ai/files/team/project/run1/') for row in artifacts))
+        self.assertTrue(all('?' not in row['url'] for row in artifacts))
+        target=self.raw/'source.bin';target.write_bytes(PAYLOAD);verify_snapshot_file(target,artifacts[0])
+        target.write_bytes(b'x'*len(PAYLOAD))
+        with self.assertRaisesRegex(SourceDataError,'content differs'):verify_snapshot_file(target,artifacts[0])
+        files[2]['md5']=base64.b64encode(b'x'*16).decode()
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            with self.assertRaisesRegex(SourceDataError,'pinned tree'):upstream_artifacts([source],('results',))
+        for changed in [dict(source,tree_sha256=None),dict(source,url='https://other.example/project'),
+                        dict(source,wandb_runs=dict(state='finished',latest_step='.*')),
+                        dict(source,file='input.json',size=1,sha256='a'*64)]:
+            self.metadata['sources']['upstream']=[changed]
+            with self.assertRaises(BenchmarkMetadataError):validate_benchmark_metadata(self.metadata,path=self.metadata_path)
+
+    def test_public_wandb_does_not_accept_access_errors_or_invalid_checkpoint_patterns(self):
+        from scripts.build_measurement_tables.load_source_files import wandb_entries
+        source=dict(url='https://wandb.ai/team/project',wandb_runs=dict(state='finished'),files=[dict(match='.*',path='{path}')],tree_sha256='a'*64)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',return_value=io.BytesIO(b'{"errors":[{"message":"denied"}]}')):
+            with self.assertRaisesRegex(SourceDataError,'not publicly accessible'):wandb_entries(source)
+        source['wandb_runs'].update(latest_step='([0-9]+).npy',step_files='([0-9]+).npy')
+        with self.assertRaisesRegex(SourceDataError,'named step'):wandb_entries(source)
+
+    def test_gcs_download_requests_original_gzip_representation(self):
+        encoded = gzip.compress(PAYLOAD, mtime=0)
+        class FixtureBuild(BenchmarkBuild):
+            def build_tables(self):
+                raise AssertionError('No table build is needed for this transport check')
+        self.metadata_path.write_text(yaml.safe_dump(self.metadata))
+        builder = FixtureBuild(str(self.folder / 'build.py'))
+        artifact = dict(file='new.json.gz', size=len(encoded), hash_kind='md5',
+                        digest=hashlib.md5(encoded).hexdigest(), content_encoding='gzip',
+                        url='https://storage.googleapis.com/bucket/object?generation=123')
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('build_base.urllib.request.urlopen', return_value=io.BytesIO(encoded)) as fetch:
+            builder.fetch_sources('results')
+        self.assertEqual(fetch.call_args.args[0].get_header('Accept-encoding'), 'gzip')
+        self.assertEqual(fetch.call_args.args[0].get_header('User-agent'), 'measurement-db')
+        self.assertEqual((self.raw/'new.json.gz').read_bytes(), encoded)
+
+    def test_pinned_hf_cache_avoids_per_file_network_requests(self):
+        cached = Path(self.temp.name) / 'hub-cached'
+        cached.write_bytes(PAYLOAD)
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=str(cached)) as lookup, \
+             patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+            DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        lookup.assert_called_once_with('example/data', 'source.json', repo_type='dataset', revision='a' * 40)
+        self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+
+    def test_corrupt_hf_cache_is_not_installed_or_overwritten(self):
+        cached = Path(self.temp.name) / 'hub-cached'
+        cached.write_bytes(b'x' * len(PAYLOAD))
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=str(cached)), \
+             patch('huggingface_hub.hf_hub_download', side_effect=AssertionError('network')):
+            with self.assertRaisesRegex(SourceDataError, 'content differs'):
+                DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        self.assertFalse((self.raw / 'source.json').exists())
+        self.assertEqual(cached.read_bytes(), b'x' * len(PAYLOAD))
+
+    def test_missing_hf_cache_downloads_the_pinned_revision(self):
+        downloaded = Path(self.temp.name) / 'downloaded'
+        downloaded.write_bytes(PAYLOAD)
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40)
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=None), \
+             patch('huggingface_hub.hf_hub_download', return_value=str(downloaded)) as download:
+            DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        download.assert_called_once_with('example/data', 'source.json', repo_type='dataset', revision='a' * 40,
+                                        headers={'Accept-Encoding': 'identity'})
+        self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+
+    def test_space_download_does_not_use_a_same_named_dataset_cache(self):
+        downloaded = Path(self.temp.name) / 'downloaded-space-file'
+        downloaded.write_bytes(PAYLOAD)
+        artifact = dict(self.artifact, hf_repo='example/data', hf_path='source.json', hf_revision='a' * 40,
+                        hf_repo_type='space')
+        with patch('build_base._source_files.upstream_artifacts', return_value=[artifact]), \
+             patch('huggingface_hub.try_to_load_from_cache', return_value=None) as lookup, \
+             patch('huggingface_hub.hf_hub_download', return_value=str(downloaded)) as download:
+            DownloadFixture(str(self.folder / 'build.py')).fetch_sources('results')
+        lookup.assert_called_once_with('example/data', 'source.json', repo_type='space', revision='a' * 40)
+        download.assert_called_once_with('example/data', 'source.json', repo_type='space', revision='a' * 40,
+                                        headers={'Accept-Encoding': 'identity'})
+        self.assertEqual((self.raw / 'source.json').read_bytes(), PAYLOAD)
+
+    def test_helm_release_index_selects_versioned_runs_and_checks_its_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        payload = json.dumps([
+            {'run_spec': {'groups': ['chosen']},
+             'run_path': '/old/machine/benchmark_output/runs/v1/scenario:model=a'},
+            {'run_spec': {'groups': ['other']},
+             'run_path': 'benchmark_output/runs/v2/other:model=b'},
+        ]).encode()
+        index = dict(name='release', url='https://provider.example/runs.json', revision='v2',
+                     file='release.json', size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+        relative = 'benchmark_output/runs/v1/scenario:model=a/instances.json'
+        entry = dict(name='safety/'+relative, generation='123', size='2',
+                     md5Hash=base64.b64encode(hashlib.md5(b'[]').digest()).decode())
+        identity = [dict(path=relative, generation='123', size=2,
+                         digest=hashlib.md5(b'[]').hexdigest(), content_encoding='')]
+        source = dict(name='runs', url='https://storage.googleapis.com/provider-bucket', revision='v2',
+                      prefix='safety/', helm_index={'source': 'release', 'group': 'chosen'},
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/instances\.json',
+                                  path='runs/{version}/{run}/instances.json')])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[io.BytesIO(payload), io.BytesIO(json.dumps({'items': [entry]}).encode())]) as fetch:
+            artifacts = upstream_artifacts([index, source], ('release', 'runs'))
+        self.assertEqual([a['file'] for a in artifacts], ['release.json', 'runs/v1/scenario_x3a_model_x3d_a/instances.json'])
+        self.assertIn('scenario%3Amodel%3Da%2F', fetch.call_args.args[0].full_url)
+        # With no group restriction, a multi-task release selects both runs.
+        source['helm_index'].pop('group')
+        other = dict(entry, name='safety/benchmark_output/runs/v2/other:model=b/instances.json')
+        identity.append(dict(identity[0], path=other['name'].removeprefix('safety/')))
+        source['tree_sha256'] = hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=[
+                io.BytesIO(payload), io.BytesIO(json.dumps({'items': [entry]}).encode()),
+                io.BytesIO(json.dumps({'items': [other]}).encode())]):
+            artifacts = upstream_artifacts([index, source], ('runs',))
+        self.assertEqual(len(artifacts), 2)
+        index['sha256'] = '0'*64
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=io.BytesIO(payload)):
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('runs',))
+
+    def test_html_index_pins_linked_contents_and_reuses_verified_raw_files(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        page = b'<div class="message">Original &amp; complete transcript</div>'
+        index_bytes = (b'<a href="run.html">Run</a><a href="run.html">Duplicate link</a>'
+                       b'<a href="https://elsewhere.example/run.html">External</a>'
+                       b'<a href="../run.html">Outside prefix</a><a href="style.css">Style</a>')
+        index = dict(name='index', url='https://provider.example/release/index.html', revision=None,
+                     file='site/index.html', size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path='run.html', size=len(page), digest=hashlib.sha256(page).hexdigest())]
+        source = dict(name='logs', url='https://provider.example/release/', revision=None, html_index='index',
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[^/]+\.html', path='site/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_header('Accept-encoding'), 'identity')
+            return io.BytesIO({index['url']: index_bytes, 'https://provider.example/release/run.html': page}[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch) as download:
+            artifacts = upstream_artifacts([index, source], ('index', 'logs'))
+        self.assertEqual(download.call_count, 2)
+        self.assertEqual([a['file'] for a in artifacts], ['site/index.html', 'site/run.html'])
+        (self.raw/'site').mkdir()
+        (self.raw/'site/index.html').write_bytes(index_bytes)
+        target = self.raw/'site/run.html'
+        target.write_bytes(page)
+        verify_snapshot_file(target, artifacts[1])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts([index, source], ('index', 'logs'), raw_dir=self.raw), artifacts)
+            target.write_bytes(page.replace(b'Original', b'Modified'))
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('logs',), raw_dir=self.raw)
+            target.write_bytes(page)
+            (self.raw/'site/index.html').write_bytes(index_bytes+b' ')
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('logs',), raw_dir=self.raw)
+        source['files'][0]['path'] = '../outside.html'
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            with self.assertRaisesRegex(SourceDataError, 'unsafe raw destination'):
+                upstream_artifacts([index, source], ('logs',))
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+
+    def test_json_index_verifies_nested_records_and_complete_cached_contents(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        index_bytes = b'{"models":[{"runs":[{"run_id":"a"},{"run_id":"b"}]}]}'
+        pages = {'a.json': b'{"result":0}', 'b.json': b'{"result":1}'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='site/manifest.json', size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path=name, size=len(data), digest=hashlib.sha256(data).hexdigest()) for name, data in pages.items()]
+        source = dict(name='runs', url='https://provider.example/runs/', revision=None,
+                      json_index=dict(source='manifest', records=['models', 'runs'], path='{run_id}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[ab]\.json', path='site/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            content = {index['url']: index_bytes, **{'https://provider.example/runs/' + name: data for name, data in pages.items()}}
+            return io.BytesIO(content[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch) as download:
+            artifacts = upstream_artifacts([index, source], ('manifest', 'runs'))
+        self.assertEqual(download.call_count, 3)
+        self.assertEqual([row['file'] for row in artifacts], ['site/a.json', 'site/b.json', 'site/manifest.json'])
+        (self.raw / 'site').mkdir()
+        (self.raw / 'site/manifest.json').write_bytes(index_bytes)
+        for name, data in pages.items():
+            (self.raw / 'site' / name).write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts([index, source], ('manifest', 'runs'), raw_dir=self.raw), artifacts)
+            (self.raw / 'site/b.json').write_bytes(b'{"result":0}')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('runs',), raw_dir=self.raw)
+            (self.raw / 'site/b.json').write_bytes(pages['b.json'])
+            (self.raw / 'site/manifest.json').write_bytes(index_bytes + b' ')
+            with self.assertRaisesRegex(SourceDataError, 'index differs'):
+                upstream_artifacts([index, source], ('runs',), raw_dir=self.raw)
+        del source['tree_sha256']
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_json_index_root_array_is_pinned_and_duplicate_paths_are_rejected(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+
+        body = b'[{"id":"a"},{"id":"b"}]'
+        pages = {'a.json': b'{"score":0}', 'b.json': b'{"score":1}'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='manifest.json', size=len(body), sha256=hashlib.sha256(body).hexdigest())
+        identity = [dict(path=name, size=len(data), digest=hashlib.sha256(data).hexdigest())
+                    for name, data in pages.items()]
+        source = dict(name='results', url='https://provider.example/results', revision=None,
+                      json_index=dict(source='manifest', records=[], path='{id}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'[ab]\.json', path='results/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        (self.raw / 'manifest.json').write_bytes(body)
+        (self.raw / 'results').mkdir()
+        for name, data in pages.items():
+            (self.raw / 'results' / name).write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            artifacts = upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+            self.assertEqual([row['file'] for row in artifacts], ['results/a.json', 'results/b.json'])
+            (self.raw / 'results/b.json').write_bytes(b'{"score":0}')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+            body = b'[{"id":"a"},{"id":"a"}]'
+            (self.raw / 'manifest.json').write_bytes(body)
+            index.update(size=len(body), sha256=hashlib.sha256(body).hexdigest())
+            with self.assertRaisesRegex(SourceDataError, 'duplicate indexed source path'):
+                upstream_artifacts([index, source], ('results',), raw_dir=self.raw)
+
+    def test_json_index_accepts_original_scalar_ids_without_an_intermediate_manifest(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+
+        contents = {'1.json': b'{"label":0}', '2.json': b'{"label":1}'}
+        identity = [dict(path=name, size=len(body), digest=hashlib.sha256(body).hexdigest())
+                    for name, body in contents.items()]
+        source = dict(name='tasks', url='https://provider.example/task', revision=None,
+                      json_index=dict(source='suite', records=['study', 'tasks'], path='{value}.json'),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='tasks/{path}')])
+        for values, error in [([1, '2'], None), ([1, '1'], 'duplicate indexed source path'),
+                              (['../outside'], 'unsafe indexed source path'),
+                              ([True], 'records must be objects'), ([None], 'records must be objects'),
+                              ([1.5], 'records must be objects')]:
+            body = json.dumps({'study': {'tasks': values}}).encode()
+            index = dict(name='suite', url='https://provider.example/suite.json', revision=None,
+                         file='suite.json', size=len(body), sha256=hashlib.sha256(body).hexdigest())
+            pages = {index['url']: body, **{'https://provider.example/task/' + k: v for k, v in contents.items()}}
+            with self.subTest(values=values), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                    side_effect=lambda request, **kwargs: io.BytesIO(pages[request.full_url])):
+                if error:
+                    with self.assertRaisesRegex(SourceDataError, error):
+                        upstream_artifacts([index, source], ('tasks',))
+                else:
+                    self.metadata['sources']['upstream'] = [index, source]
+                    validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+                    artifacts = upstream_artifacts([index, source], ('tasks',))
+                    self.assertEqual([entry['file'] for entry in artifacts], ['tasks/1.json', 'tasks/2.json'])
+
+    def test_json_index_collection_preserves_every_manifest_and_referenced_asset(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        manifest = b'{"runs":[{"id":"a"},{"id":"b"}]}'
+        pages = {'a.json': b'{"steps":[{"image":"images/a.jpg"}]}',
+                 'b.json': b'{"steps":[{"image":"images/b.jpg"}]}'}
+        images = {'images/a.jpg': b'first image', 'images/b.jpg': b'second image'}
+        index = dict(name='manifest', url='https://provider.example/manifest.json', revision=None,
+                     file='site/manifest.json', size=len(manifest), sha256=hashlib.sha256(manifest).hexdigest())
+        sources = [index]
+        for name, parent, records, template, contents in [
+                ('runs', 'manifest', ['runs'], '{id}.json', pages),
+                ('images', 'runs', ['steps'], '{image}', images)]:
+            identity = [dict(path=path, size=len(data), digest=hashlib.sha256(data).hexdigest())
+                        for path, data in sorted(contents.items())]
+            sources.append(dict(name=name, url='https://provider.example/', revision=None,
+                json_index=dict(source=parent, records=records, path=template),
+                tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                files=[dict(match=r'.*', path='site/{path}')]))
+        self.metadata['sources']['upstream'] = sources
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        content = {'manifest.json': manifest, **pages, **images}
+
+        def fetch(request, **kwargs):
+            return io.BytesIO(content[request.full_url.removeprefix('https://provider.example/')])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts(sources, ('images',))
+        self.assertEqual([row['file'] for row in artifacts], ['site/images/a.jpg', 'site/images/b.jpg'])
+        for path, data in content.items():
+            destination = self.raw / 'site' / path
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(data)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            self.assertEqual(upstream_artifacts(sources, ('images',), raw_dir=self.raw), artifacts)
+            (self.raw / 'site/images/b.jpg').write_bytes(b'wrong image')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+            (self.raw / 'site/images/b.jpg').write_bytes(images['images/b.jpg'])
+            (self.raw / 'site/b.json').write_bytes(pages['a.json'])
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+
+    def test_json_index_collection_rejects_dependency_cycles(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        sources = [dict(name=name, url='https://provider.example/', revision=None,
+                   json_index=dict(source=parent, records=['files'], path='{path}'),
+                   tree_sha256='0' * 64, files=[dict(match=r'.*', path='site/{path}')])
+                   for name, parent in [('runs', 'images'), ('images', 'runs')]]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')):
+            with self.assertRaisesRegex(SourceDataError, 'cyclic JSON index'):
+                upstream_artifacts(sources, ('images',))
+
+    def test_public_api_query_and_embedded_html_preserve_all_pinned_bytes(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        manifest = b'{"entries":[{"id":"1","query":"A&B"},{"id":"2","query":"C/D"}]}'
+        pages = {key: json.dumps({'html': value}).encode() for key, value in {
+            '1.json': '<img src="image?key=a"><img src="https://other.example/private">',
+            '2.json': '<img src="image?key=b"><img src="image?key=a">'}.items()}
+        images = {'image?key=a': b'GIF89a-original-a', 'image?key=b': b'GIF89a-original-b'}
+        body = {'SubjectCode': 'MAT', 'filters': [1, 2]}
+        index = dict(name='index', url='https://provider.example/release/search', revision=None,
+            file='index.json', size=len(manifest), sha256=hashlib.sha256(manifest).hexdigest(), request_json=body)
+        sources = [index]
+        for name, selector, contents, rules in [
+            ('items', dict(json_index=dict(source='index', records=['entries'], path='{id}.json', query={'tableID': '{query}'})),
+             pages, [dict(match=r'.*\.json', path='items/{path}')]),
+            ('images', dict(html_index=dict(source='items', field='html', tag='img', attribute='src')),
+             images, [dict(match=r'image\?key=(?P<key>[ab])', path='images/{key}.gif')])]:
+            identity = [dict(path=path, size=len(data), digest=hashlib.sha256(data).hexdigest()) for path, data in sorted(contents.items())]
+            sources.append(dict(name=name, url='https://provider.example/release/' + ('item' if name == 'items' else ''), revision=None,
+                **selector, files=rules, tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest()))
+        self.metadata['sources']['upstream'] = sources
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        self.metadata_path.write_text(yaml.safe_dump(self.metadata))
+        payloads = {'https://provider.example/release/item?tableID=A%26B': pages['1.json'],
+                    'https://provider.example/release/item?tableID=C%2FD': pages['2.json'],
+                    **{'https://provider.example/release/' + key: value for key, value in images.items()}}
+        requests = []
+
+        def fetch(request, **kwargs):
+            requests.append(request.full_url)
+            if request.full_url == index['url']:
+                self.assertEqual(request.get_method(), 'POST')
+                self.assertEqual(json.loads(request.data), body)
+                self.assertEqual(request.get_header('Content-type'), 'application/json')
+                return io.BytesIO(manifest)
+            self.assertEqual(request.get_method(), 'GET')
+            return io.BytesIO(payloads[request.full_url])
+
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+             patch('urllib.request.urlopen', side_effect=fetch):
+            builder.fetch_sources('*')
+        self.assertEqual((self.raw / 'index.json').read_bytes(), manifest)
+        self.assertEqual((self.raw / 'items/1.json').read_bytes(), pages['1.json'])
+        self.assertEqual((self.raw / 'images/b.gif').read_bytes(), images['image?key=b'])
+        self.assertFalse(any('other.example' in url for url in requests))
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=AssertionError('network')), \
+             patch('urllib.request.urlopen', side_effect=AssertionError('network')):
+            builder.fetch_sources('*')
+            (self.raw / 'images/a.gif').write_bytes(b'changed source image')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                builder.fetch_sources('*')
+            (self.raw / 'images/a.gif').write_bytes(images['image?key=a'])
+            (self.raw / 'items/1.json').write_bytes(pages['2.json'])
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts(sources, ('images',), raw_dir=self.raw)
+        sources[0].pop('sha256')
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_data_post_does_not_resume_by_range_and_checks_the_complete_response(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'response.json'
+        body = {'selected': [1, 2]}
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_method(), 'POST')
+            self.assertIsNone(request.get_header('Range'))
+            self.assertEqual(json.loads(request.data), body)
+            return io.BytesIO(PAYLOAD)
+
+        with patch('urllib.request.urlopen', side_effect=fetch):
+            builder._download('https://provider.example/search', destination, request_json=body,
+                expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=1)
+        self.assertEqual(destination.read_bytes(), PAYLOAD)
+        destination.unlink()
+        with patch('urllib.request.urlopen', return_value=io.BytesIO(b'x' * len(PAYLOAD))):
+            with self.assertRaises(SourceDataError):
+                builder._download('https://provider.example/search', destination, request_json=body,
+                    expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
+        self.assertFalse(destination.exists())
+
+    def test_json_index_optional_artifact_links_remain_pinned_and_validated(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        index_bytes = b'{"runs":[{"trace":"a.json"},{"id":"unreleased"}]}'
+        trace = b'{"output":"complete"}'
+        index = dict(name='manifest', url='https://provider.example/index.json', revision=None, file='index.json',
+                     size=len(index_bytes), sha256=hashlib.sha256(index_bytes).hexdigest())
+        identity = [dict(path='a.json', size=len(trace), digest=hashlib.sha256(trace).hexdigest())]
+        source = dict(name='traces', url='https://provider.example/', revision=None,
+                      json_index=dict(source='manifest', records=['runs'], path='{trace}', skip_missing_path=True),
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='traces/{path}')])
+        self.metadata['sources']['upstream'] = [index, source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+        pages = {index['url']: index_bytes, 'https://provider.example/a.json': trace}
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=lambda request, **kwargs: io.BytesIO(pages[request.full_url])):
+            artifacts = upstream_artifacts([index, source], ('traces',))
+        self.assertEqual([row['file'] for row in artifacts], ['traces/a.json'])
+        for rows, message in [([{'trace': '../outside.json'}], 'unsafe indexed source path'),
+                              ([{'trace': 'a.json'}, {'trace': 'a.json'}], 'duplicate indexed source path')]:
+            payload = json.dumps({'runs': rows}).encode()
+            changed = dict(index, size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+            with self.subTest(rows=rows), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                                               return_value=io.BytesIO(payload)):
+                with self.assertRaisesRegex(SourceDataError, message):
+                    upstream_artifacts([changed, source], ('traces',))
+        source['json_index']['skip_missing_path'] = False
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=io.BytesIO(index_bytes)):
+            with self.assertRaisesRegex(SourceDataError, 'invalid JSON index path template'):
+                upstream_artifacts([index, source], ('traces',))
+
+    def test_json_index_rejects_unsafe_duplicate_and_missing_paths(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        source = dict(name='runs', url='https://provider.example/runs/',
+                      json_index=dict(source='manifest', records=['runs'], path='{id}.json'),
+                      tree_sha256='0' * 64, files=[dict(match=r'.*', path='site/{path}')])
+        for records, message in [([{'id': '../outside'}], 'unsafe indexed source path'),
+                                 ([{'id': 'https://elsewhere.example/a'}], 'unsafe indexed source path'),
+                                 ([{'id': 'same'}, {'id': 'same'}], 'duplicate indexed source path'),
+                                 ([{}], 'invalid JSON index path template'),
+                                 ([None], 'records must be objects')]:
+            payload = json.dumps({'runs': records}).encode()
+            index = dict(name='manifest', url='https://provider.example/manifest.json', file='index.json',
+                         size=len(payload), sha256=hashlib.sha256(payload).hexdigest())
+            with self.subTest(records=records), patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                    return_value=io.BytesIO(payload)) as download:
+                with self.assertRaisesRegex(SourceDataError, message):
+                    upstream_artifacts([index, source], ('runs',))
+                self.assertEqual(download.call_count, 1)
+
+    def test_public_drive_folder_pins_membership_contents_and_cached_inputs(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        child = 'https://drive.google.com/embeddedfolderview?id=child456'
+        download = 'https://drive.usercontent.google.com/download?id=file789&export=download'
+        pages = {root: b'<a href="https://drive.google.com/drive/folders/child456">task &amp; run</a>',
+                 child: b'<a href="https://drive.google.com/file/d/file789/view?usp=drive_web">result.json</a>',
+                 download: PAYLOAD}
+        identity = [dict(path='task & run/result.json', drive_id='file789', size=len(PAYLOAD),
+                         digest=hashlib.sha256(PAYLOAD).hexdigest())]
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+                      tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+                      files=[dict(match=r'.*\.json', path='drive/{path}')])
+        self.metadata['sources']['upstream'] = [source]
+        validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+        def fetch(request, **kwargs):
+            self.assertEqual(request.get_header('Accept-encoding'), 'identity')
+            return io.BytesIO(pages[request.full_url])
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            artifacts = upstream_artifacts([source], ('runs',))
+        self.assertEqual(len(artifacts), 1)
+        artifact = artifacts[0]
+        self.assertEqual(artifact['file'], 'drive/task_x20__x26__x20_run/result.json')
+        self.assertEqual(artifact['url'], download)
+        target = self.raw / artifact['file']
+        target.parent.mkdir(parents=True)
+        target.write_bytes(PAYLOAD)
+        pages.pop(download)
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch):
+            self.assertEqual(upstream_artifacts([source], ('runs',), raw_dir=self.raw), artifacts)
+            target.write_bytes(PAYLOAD + b' ')
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('runs',), raw_dir=self.raw)
+            target.write_bytes(PAYLOAD)
+            pages[child] = b'<a href="https://drive.google.com/file/d/otherID/view">result.json</a>'
+            with self.assertRaisesRegex(SourceDataError, 'pinned tree'):
+                upstream_artifacts([source], ('runs',), raw_dir=self.raw)
+        del source['tree_sha256']
+        self.metadata['sources']['upstream'] = [source]
+        with self.assertRaises(BenchmarkMetadataError):
+            validate_benchmark_metadata(self.metadata, path=self.metadata_path)
+
+    def test_public_drive_retries_transient_errors_without_relaxing_content_pins(self):
+        from scripts.build_measurement_tables.load_source_files import google_drive_entries
+        from urllib.error import HTTPError
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        download = 'https://drive.usercontent.google.com/download?id=file789&export=download'
+        page = b'<a href="https://drive.google.com/file/d/file789/view">result.json</a>'
+        identity = [dict(path='result.json', drive_id='file789', size=len(PAYLOAD),
+            digest=hashlib.sha256(PAYLOAD).hexdigest())]
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+            tree_sha256=hashlib.sha256(json.dumps(identity, sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+            files=[dict(match=r'.*\.json', path='drive/{path}')])
+        calls = []
+
+        def fetch(request, **kwargs):
+            url = request.full_url
+            calls.append(url)
+            if calls.count(url) == 1:
+                raise HTTPError(url, 500 if url == root else 502, 'Temporary source failure', None, None)
+            return io.BytesIO(page if url == root else PAYLOAD)
+
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=fetch), \
+                patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            entries = google_drive_entries(source)
+        self.assertEqual([{key: row[key] for key in identity[0]} for row in entries], identity)
+        self.assertEqual(calls, [root, root, download, download])
+        self.assertEqual(sleep.call_count, 2)
+        with (patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                side_effect=HTTPError(root, 504, 'Gateway timeout', None, None)) as fetch,
+                patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep):
+            with self.assertRaises(HTTPError):
+                google_drive_entries(source)
+        self.assertEqual(fetch.call_count, 8)
+        self.assertEqual(sleep.call_count, 7)
+
+    def test_public_drive_rejects_incomplete_unsafe_and_cyclic_trees(self):
+        from scripts.build_measurement_tables.load_source_files import upstream_artifacts
+        from urllib.error import HTTPError
+        root = 'https://drive.google.com/embeddedfolderview?id=root123'
+        source = dict(name='runs', url='https://drive.google.com/drive/folders/root123', revision=None,
+                      tree_sha256='0'*64, files=[dict(match='.*', path='drive/{path}')])
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=HTTPError(root, 403, 'Forbidden', None, None)):
+            with self.assertRaises(HTTPError):
+                upstream_artifacts([source], ('runs',))
+        for page, error in [
+            (b'<a href="https://drive.google.com/drive/folders/root123">loop</a>', 'cycle'),
+            (b'<a href="https://drive.google.com/file/d/file789/view">../outside.json</a>', 'unsafe Drive filename'),
+            (b'<a href="https://drive.google.com/file/d/file789/view">same.json</a><a href="https://drive.google.com/file/d/file123/view">same.json</a>', 'duplicate Drive path'),
+            (b'<html>Login page instead of a file listing</html>', 'pinned tree'),
+        ]:
+            with self.subTest(error=error), patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=lambda *a, **k: io.BytesIO(page)):
+                with self.assertRaisesRegex(SourceDataError, error):
+                    upstream_artifacts([source], ('runs',))
+        source['files'][0]['path'] = '../outside.json'
+        page = b'<a href="https://drive.google.com/file/d/file789/view">result.json</a>'
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=lambda *a, **k: io.BytesIO(page)):
+            with self.assertRaisesRegex(SourceDataError, 'unsafe raw destination'):
+                upstream_artifacts([source], ('runs',))
 
 
 if __name__=='__main__': unittest.main()

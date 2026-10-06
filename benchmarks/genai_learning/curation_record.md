@@ -1,0 +1,3 @@
+- Source: pinned author release and Appendix D worksheets. Retain the captured CSV/PDF bytes; preserve all 943 students, including honors classes, and the separate GPT-4 run.
+- Mapping: retain 15,423 binary practice grades, add 13,020 fractional exam grades, and preserve 570 GPT judgments. Attach the published worksheets; keep GPT-script input variants distinct and exams unassisted.
+- Review: reconcile every grade, participant, question and transcript record independently. Preserve system messages, timestamps and conversation boundaries; damaged source strings, unmatched chats, missing handwritten work and unavailable detailed rubrics remain explicit limitations.

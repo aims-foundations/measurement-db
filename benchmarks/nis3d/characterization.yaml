@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  traces:
+    rows: 180
+    logical_sha256: d930b6960a6aad5047bb277c4eac72a6a1b07d6326a4684034d0ff8b7451361a
+  subjects:
+    rows: 6
+    logical_sha256: d10b07f85149f29bcc96a2015c11f2bc4cb2a78353432f5083f8202b4bf4250b
+  responses:
+    rows: 180
+    logical_sha256: c67a65c918b0bf8f91971367479f3dd662937e56e0b303d908994c66812b4c1f
+  assets:
+    rows: 6
+    logical_sha256: 2d792c8045496a15be163ca914ef1f09022efc73253b97645dce8756e7dbb97b
+  items:
+    rows: 30
+    logical_sha256: 8f8d306db6bba71635d32ee67c45f55c09adbe5dc0bcddf673de128fe6084244
+  benchmarks:
+    rows: 1
+    logical_sha256: 0c7ea0d85efb612d7a314a5053805b96e500dc7e4afe0a29c19941180759c295
+source_claims:
+  source_volumes:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 6
+  source_methods:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 6
+  source_segmentation_results:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 36
+  source_quality_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 180
+  source_recorded_runtimes:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 36
+  source_input_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 6
+  source_released_prediction_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 30
+  source_missing_prediction_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 6
+  source_human_reference_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 6
+  source_human_output_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://proceedings.neurips.cc/paper_files/paper/2023/hash/0f2cd3d09a132757555b602e2dd43784-Abstract-Datasets_and_Benchmarks.html
+    locator: Paper Table 3; the six full-volume inputs in Zenodo 11456029; the original method-output archive in
+      Zenodo 11457793.
+    scope: Six source volumes and 36 AI segmentation results assessed by five separate quality metrics. Human rows,
+      runtime values and absent output files are distinguished explicitly.
+    expected: 5

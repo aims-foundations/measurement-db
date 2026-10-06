@@ -1,0 +1,252 @@
+benchmark:
+  description: Individual test-row predictions from eight published TabArena methods, with derived classification
+    correctness or regression squared error.
+  testing_condition: 'Preserve the original c1 default bagged configuration, outer fold 0 and repeat 0. Each subject
+    identifies a method fitted for a specific OpenML task, including released hyperparameters. These per-row grades
+    are derived curation metrics, not TabArena leaderboard errors: classification uses argmax (binary probability
+    ties select class 0); regression uses squared error against the released test target. Retain full original predictions,
+    labels, row associations and published dataset-level metrics. Unobserved method/dataset combinations are absent;
+    no training or model inference is run. The released float32 predictions need not exactly reproduce metrics computed
+    before serialization. Recorded configuration dictionaries are preserved without inventing unrecorded historical
+    library versions or seeds.'
+  paper_url: https://openreview.net/forum?id=jZqCqpCLdU
+  data_source_url: https://data.tabarena.ai/
+  subject_type: model
+  item_type: tabular_row
+  license: The framework is Apache-2.0. Each OpenML dataset has its own license and attribution in its captured
+    data description and item features. These include CC BY, CC BY-SA, CC BY-NC-SA, public-domain, MIT and DbCL
+    notices; some source descriptions state only Public. No blanket framework license applies to the data.
+  citation: "@inproceedings{erickson2025tabarena,\n  title={TabArena: A Living Benchmark for Machine Learning on\
+    \ Tabular Data},\n  author={Erickson, Nick and Purucker, Lennart and Tschalzev, Andrej and Holzm{\\\"u}ller,\
+    \ David and Mutalik Desai, Prateek and Salinas, David and Hutter, Frank},\n  booktitle={NeurIPS 2025 Datasets\
+    \ and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - tabular
+  - living_benchmark
+  - automl
+  - leaderboard
+  - per_row
+  modality:
+  - tabular
+  domain:
+  - general
+  - ml_engineering
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-06
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  name: TabArena
+  multi_single_turn: single_turn
+  granularity: item
+  version: tabarena-2025-06-12
+build:
+  contract_version: 2
+  parameters:
+    methods:
+      CatBoost: CatBoost
+      LightGBM: LightGBM
+      XGBoost: XGBoost
+      RandomForest: RandomForest
+      KNeighbors: KNeighbors
+      TabM_GPU: TabM_GPU
+      RealMLP_GPU: RealMLP_GPU
+      TabPFNv2_GPU: TabPFNv2_GPU
+    paths:
+      methods: methods
+      inputs: openml
+      fold: '0'
+      repeat: '0'
+      config_suffix: _c1_BAG_L1
+    labels:
+      subject_prefix: 'TabArena / '
+      configuration_scope: One released default configuration fitted for one OpenML task and outer test split.
+      binary: binary
+      multiclass: multiclass
+      regression: regression
+sources:
+  upstream:
+  - name: catboost
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/CatBoost/processed.zip
+    revision: '"da75fc0fcbc50af08858b46cd1d7b7fb-1017"'
+    size: 8527316511
+    zip_members:
+    - processed.zip
+    tree_sha256: 10d71a988f0233b02cbd36d1390cf4b70dc0cfb0b17ccd1a19704a0bcdfd0271
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/CatBoost/{member}
+  - name: lightgbm
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/LightGBM/processed.zip
+    revision: '"9d96be96599214cb67e0aad89396c1b2-1018"'
+    size: 8534377463
+    zip_members:
+    - processed.zip
+    tree_sha256: 4975e6defcb31d9c53b57731e72647d240a66a9e0fe228f5c9e71225c946f1d6
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/LightGBM/{member}
+  - name: xgboost
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/XGBoost/processed.zip
+    revision: '"8ccf53b5c5ed472d86b724c0e5d0ba24-1024"'
+    size: 8581677706
+    zip_members:
+    - processed.zip
+    tree_sha256: e23eaf7b390d439dd4433c908ca3065be25c5a3fa87770afce3a986edb3283e1
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/XGBoost/{member}
+  - name: randomforest
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/RandomForest/processed.zip
+    revision: '"fbed7721bb3549597ddeb0f8aecc118d-706"'
+    size: 5916039474
+    zip_members:
+    - processed.zip
+    tree_sha256: b469cdde848cc854bfe622b42313ebb089d5d30ad3022a3b5ca82f597885d462
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/RandomForest/{member}
+  - name: kneighbors
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/KNeighbors/processed.zip
+    revision: '"e65e7cd7ff5123412ecabd54dba4e2fb-108"'
+    size: 901617894
+    zip_members:
+    - processed.zip
+    tree_sha256: 33bcddad831db7f598947044217fc29a81fbe10adefe0492d8cbf6d18ba1bab5
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/KNeighbors/{member}
+  - name: tabm_gpu
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/TabM_GPU/processed.zip
+    revision: '"bd9a64e71443efe58cbfdf456cd9717d-1010"'
+    size: 8471424163
+    zip_members:
+    - processed.zip
+    tree_sha256: a78de32ed3c61635a71e76890de4407d6920866340d60a40dff675e73aa3914a
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/TabM_GPU/{member}
+  - name: realmlp_gpu
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/RealMLP_GPU/processed.zip
+    revision: '"07c5af25453b67b9fe0a0e277d7e1aaa-1000"'
+    size: 8381897126
+    zip_members:
+    - processed.zip
+    tree_sha256: e8c7d27ddcd3c599b8fd33b1da30606403328e953d3c16e66f1e704f5d10e5e3
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/RealMLP_GPU/{member}
+  - name: tabpfnv2_gpu
+    url: https://tabarena.s3.amazonaws.com/cache/artifacts/tabarena-2025-06-12/methods/TabPFNv2_GPU/processed.zip
+    revision: '"ca0a3439772e1fa07514cc560e92a2d6-224"'
+    size: 1876057243
+    zip_members:
+    - processed.zip
+    tree_sha256: 783b73d78b91de28ab6ab1122a8ccf566503052292d484987b08ffe29890f936
+    files:
+    - match: processed[.]zip/(?P<member>(?:configs[.]parquet|baselines[.]parquet|task_metadata[.]parquet|context[.]json|metadata[.]json|configs_hyperparameters[.]json|model_predictions/[^/]+/0/(?:metadata[.]json|pred-test[.]dat|label-test[.]csv[.]zip)))
+      path: methods/TabPFNv2_GPU/{member}
+  - name: suite
+    url: https://www.openml.org/api/v1/json/study/457
+    revision: null
+    file: openml/study-457.json
+    size: 1588
+    sha256: 0421355639e8b804023c569c92ce0159057cd54067de9e3f7b3a2a6ace974d15
+  - name: data_descriptions
+    url: https://www.openml.org/api/v1/json/data
+    revision: null
+    json_index:
+      source: suite
+      records:
+      - study
+      - data
+      - data_id
+      path: '{value}'
+    tree_sha256: 20b05c4021c8262c9a3a27c17cf4f039e5c69dc8491e7770d74b79281620d834
+    files:
+    - match: (?P<id>[0-9]+)
+      path: openml/data-{id}.json
+  - name: tasks
+    url: https://www.openml.org/api/v1/json/task
+    revision: null
+    json_index:
+      source: suite
+      records:
+      - study
+      - tasks
+      - task_id
+      path: '{value}'
+    tree_sha256: 8e72c5d96e57a6ac83db350dd83e06c264ea9bef41b6882d63c317f50cbb789d
+    files:
+    - match: (?P<id>[0-9]+)
+      path: openml/task-{id}.json
+  - name: inputs
+    url: https://data.openml.org/datasets/0004
+    revision: null
+    json_index:
+      source: suite
+      records:
+      - study
+      - data
+      - data_id
+      path: '{value}/dataset_{value}.pq'
+    tree_sha256: 93c7771917d7d03d388859817084d406d261038b3cdcc61778fd074c5c903a55
+    files:
+    - match: (?P<id>[0-9]+)/dataset_[0-9]+[.]pq
+      path: openml/data-{id}.parquet
+  - name: splits
+    url: https://www.openml.org/api_splits/get
+    revision: null
+    json_index:
+      source: suite
+      records:
+      - study
+      - tasks
+      - task_id
+      path: '{value}/Task_{value}_splits.arff'
+    tree_sha256: 41ee354ff1957f3adf86495510c6613ba967acdcda5d464319b0066a4972e3d8
+    files:
+    - match: (?P<id>[0-9]+)/Task_[0-9]+_splits[.]arff
+      path: openml/splits-{id}.arff
+  - name: release
+    url: https://github.com/autogluon/tabarena
+    revision: 52dac56df3504774ffb273f923e31cc28f955291
+    tree_paths:
+    - README.md
+    - LICENSE
+    - packages/tabarena/src/tabarena/predictions/tabular_predictions.py
+    files:
+    - match: (?P<file>README\.md|LICENSE|packages/tabarena/src/tabarena/predictions/tabular_predictions\.py)
+      path: release/{file}
+grading:
+  verifiers:
+    classification:
+      kind: derived_classification_correctness
+      logic: For multiclass, select the smallest index attaining the maximum probability. For binary, select class
+        1 only when its probability exceeds 0.5. Match the released encoded test label.
+      source: Released pred-test.dat and label-test.csv.zip; this is a per-row curation metric, not official ROC-AUC
+        or log loss.
+      rule: Derived per-row correctness using the released class encoding and probability vector.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        meanings:
+          '0': Incorrect predicted class.
+          '1': Correct predicted class.
+        direction: higher_is_better
+    regression:
+      kind: derived_squared_error
+      logic: Square the difference between the released float32 prediction (promoted to float64) and the original
+        released test target.
+      source: Released pred-test.dat and label-test.csv.zip; individual squared errors correspond to the mean squared
+        error underlying dataset RMSE.
+      rule: Derived squared prediction error in the dataset target units squared; lower is better.
+      response_scale:
+        kind: interval
+        min: 0
+        max: null
+        direction: lower_is_better

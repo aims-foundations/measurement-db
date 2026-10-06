@@ -1,0 +1,188 @@
+name: Deploy website to Vercel
+
+on:
+  push:
+    branches: [main, migration/tabular-builders-20260924]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.check.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check for benchmark or website changes
+        id: check
+        env:
+          BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          AFTER: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          website_changed=false
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
+            website_changed=true
+          else
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+              BEFORE=$(git merge-base "$BEFORE" "$AFTER")
+            fi
+            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
+              benchmarks/ website/ schema.md scripts/render_website/ \
+              scripts/analyze_measurements/ .github/workflows/deploy-website.yml)
+            if [ -n "$changed_paths" ]; then website_changed=true; fi
+          fi
+          echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: changes
+    if: >-
+      needs.changes.outputs.deploy == 'true' &&
+      (github.event_name != 'pull_request' ||
+       (github.event.pull_request.head.repo.full_name == github.repository &&
+        github.actor != 'dependabot[bot]'))
+    concurrency:
+      group: vercel-measurement-db-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 1440
+    environment:
+      name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
+      url: ${{ steps.deploy.outputs.url }}/measurement-db
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      OMP_NUM_THREADS: 2
+      MKL_NUM_THREADS: 2
+      DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
+      DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
+      HF_SOURCE_REF: main
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      MEILISEARCH_HOST: ${{ vars.MEILISEARCH_HOST }}
+      MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.sha || github.ref }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install rendering dependencies
+        run: |
+          python -m venv "$RUNNER_TEMP/website-venv"
+          echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/website-venv/bin/pip" install numpy pandas pyarrow fastparquet 'huggingface_hub>=1,<2' scikit-learn PyYAML
+          "$RUNNER_TEMP/website-venv/bin/pip" install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Resolve the public HF source revision
+        run: |
+          python - <<'PYTHON'
+          import os
+          from huggingface_hub import HfApi
+          source = os.environ['HF_SOURCE_REF']
+          revision = HfApi().dataset_info('aims-foundations/measurement-db', revision=source).sha
+          with open(os.environ['GITHUB_ENV'], 'a') as output:
+              output.write(f'HF_REVISION={revision}\n')
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
+              output.write(f'Data source: aims-foundations/measurement-db@{source} ({revision})\n')
+          PYTHON
+      - name: Build viewer data from the public source tables
+        run: |
+          python scripts/render_website/generate_benchmark_gallery.py build
+          python scripts/render_website/generate_chart_marginals.py
+          python scripts/render_website/generate_model_timeline.py
+          python scripts/render_website/generate_benchmark_attributions.py
+          python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
+          python scripts/render_website/generate_benchmark_gallery.py cards
+          python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --eval-every 4000 --device cpu --out artifacts/website-rasch
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - name: Check deployment credentials
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+      - run: pnpm --dir website install --frozen-lockfile
+      - run: pnpm --dir website lint
+      - run: pnpm --dir website typecheck
+      - run: pnpm --dir website search:check
+      - name: Pull Vercel environment
+        run: >-
+          pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV"
+          --git-branch="$DEPLOY_BRANCH" --token="$VERCEL_TOKEN"
+      - name: Build Vercel output
+        run: |
+          flags=()
+          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
+          pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
+      - name: Verify Vercel project settings
+        run: |
+          node --input-type=module - <<'NODE'
+          const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
+          const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
+          projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
+          const response = await fetch(projectUrl, {
+            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (!response.ok) fail(`Vercel project check returned HTTP ${response.status}.`);
+          const project = await response.json();
+          if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
+            fail('The Vercel project must use the website root directory and Next.js framework.');
+          }
+          console.log('Vercel project verified; viewer data is included in the deployment.');
+          NODE
+      - name: Deploy
+        id: deploy
+        env:
+          NODE_OPTIONS: --require=${{ github.workspace }}/website/scripts/vercel-fetch.cjs
+        run: |
+          flags=()
+          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
+            --env HF_TOKEN="$HF_TOKEN" \
+            --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
+            --token="$VERCEL_TOKEN")
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Check deployed pages
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/view.json.gz; do
+            pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
+              -- --fail --silent --show-error --max-time 120 --output /dev/null
+          done
+          status=$(pnpm dlx vercel@62.2.0 curl /measurement-db/api/gallery-source/researchcodebench/items \
+            --deployment "$DEPLOYMENT_URL" -- --fail --silent --show-error --max-time 120 \
+            --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
+            --output /dev/null --write-out '%{http_code}')
+          [[ "$status" = 307 || "$status" = 206 ]]
+      - name: Update preview alias
+        if: github.ref == 'refs/heads/migration/tabular-builders-20260924'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+        run: |
+          pnpm dlx vercel@62.2.0 alias set "$DEPLOYMENT_URL" measurement-db-build-test.vercel.app --token="$VERCEL_TOKEN"
+          echo "Preview: https://measurement-db-build-test.vercel.app/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Sync production search indexes
+        if: env.DEPLOY_ENV == 'production' && env.MEILISEARCH_HOST != '' && env.MEILISEARCH_ADMIN_KEY != ''
+        run: pnpm --dir website search:sync
+      - name: Report missing production search credentials
+        if: env.DEPLOY_ENV == 'production' && (env.MEILISEARCH_HOST == '' || env.MEILISEARCH_ADMIN_KEY == '')
+        run: echo '::warning::Search sync skipped; configure MEILISEARCH_HOST and MEILISEARCH_ADMIN_KEY.'

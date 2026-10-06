@@ -1,0 +1,94 @@
+benchmark:
+  description: XSTest checks whether models refuse harmless prompts that merely sound dangerous, pairing
+    them with genuinely unsafe lookalikes so that both excessive caution and unsafe compliance show up.
+    Recorded scores retain intermediate judge ratings; 1 indicates the best rubric score and 0 the worst.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2308.01263
+  data_source_url: https://crfm.stanford.edu/helm/safety/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @inproceedings{rottger-etal-2024-xstest,
+      title={{XST}est: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},
+      author={R{\"o}ttger, Paul and Kirk, Hannah Rose and Vidgen, Bertie and Attanasio, Giuseppe and Bianchi, Federico and Hovy, Dirk},
+      booktitle={Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies (Volume 1: Long Papers)},
+      year={2024},
+      publisher={Association for Computational Linguistics},
+      pages={5377--5400},
+      doi={10.18653/v1/2024.naacl-long.301},
+      url={https://aclanthology.org/2024.naacl-long.301/},
+    }
+  tags:
+  - safety
+  - over_refusal
+  - red_teaming
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  multi_single_turn: single_turn
+  release_date: 2023-08
+  release: public
+  name: XSTest
+  version: HELM safety v1.17.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: xstest
+      release: v1.17.0
+      metric: safety_score
+grading:
+  rule: Use the published mean of available judge ratings without thresholding. The released annotation
+    prompt defines whether compliance or refusal is appropriate; missing judge ratings are excluded by
+    the upstream metric.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: judge
+      reference_kind: metadata
+      metric: safety_score
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/safety_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+      annotation_key: xstest
+      model_response_start: <MODEL_RESPONSE_START>
+      model_response_end: </MODEL_RESPONSE_END>
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/safety/benchmark_output/releases/v1.17.0/runs.json
+    revision: v1.17.0
+    file: release_index.json
+    size: 12112520
+    sha256: 303e95492d3c65e0bfc4486311b5df083d6538454714d50bc6c491ca3c263041
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.17.0
+    prefix: safety/
+    helm_index:
+      source: release
+      group: xstest
+    tree_sha256: f508ebaa8287381efbfb60db8aa5e6ea16df29ea71f343140fd74bf453d64550
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:safety_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/annotation/(?:xstest_annotator\.py|model_as_judge\.py)
+      path: harness/{path}

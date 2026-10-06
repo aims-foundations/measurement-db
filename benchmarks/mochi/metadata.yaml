@@ -1,0 +1,89 @@
+benchmark:
+  name: MOCHI
+  description: Published per-image-set accuracy estimates for vision models identifying the different object among multiple views.
+  testing_condition: >-
+    Import the released SVM and distance-readout estimates, retaining exact image bytes and each result file's
+    recorded image order, condition and reference index. Scores are average accuracy normalized so that zero
+    denotes chance and one denotes ceiling; negative values indicate below-chance performance. They are not SVM
+    decision values or individual binary attempts. Each published model/readout column defines a subject
+    configuration. The dino_distance column pools twelve distance metrics and is not a separate cosine result.
+    Its duplicate in benchmark.csv and the DINOv2-G copy in the image bank are corroborating exports, not new trials.
+    Historical per-repetition choices, seeds, rotated stimuli, exact checkpoints and feature vectors are not
+    released. The literal dino label is retained without inferring its checkpoint. Task text is a neutral description
+    of the released odd-one-out task, not a historical language-model prompt. Human statistics remain in source
+    records; humans are not added as AI subjects. No model, classifier or grader is executed during curation.
+  paper_url: https://arxiv.org/abs/2409.05862
+  data_source_url: https://github.com/tzler/mochi_code
+  subject_type: model
+  item_type: task
+  license: CC-BY-NC-SA-4.0 for benchmark assets (paper section 2.2); no separate code license is stated in the captured repository.
+  citation: >-
+    Bonnen, Tyler; Fu, Stephanie; Bai, Yutong; O'Connell, Thomas; Friedman, Yoni; Kanwisher, Nancy;
+    Tenenbaum, Joshua B.; Efros, Alexei A. (2024). Evaluating Multiview Object Consistency in Humans
+    and Image Models. NeurIPS Datasets and Benchmarks. arXiv:2409.05862.
+  tags: [vision, odd_one_out, object_recognition]
+  modality: [image]
+  domain: [vision]
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: -0.5
+    max: 1.0
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-09
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    result_files:
+      svm: github/assets/benchmark.csv
+      distance: github/assets/df_behavior_wdistance.csv
+    paths:
+      images: hf/data/train-00000-of-00001.parquet
+    score_patterns:
+      svm: .+_svm_avg
+      distance: dino_.+_avg
+    dataset_aliases:
+      majaj: hvm
+    condition_aliases:
+      familiar_objects_complex: familiar_hisim
+      familiar_objects_simple: familiar_lowsim
+      greebles_complex: abstract_hisim
+      greebles_simple: abstract_lowsim
+    labels:
+      instruction: Identify the image showing a different object from the other images. Images are indexed from 0 in their displayed order.
+      harness: MOCHI
+      statistic: normalized_average_accuracy
+grading:
+  rule: >-
+    Correctness compares the selected image's zero-based index with oddity_index in the corresponding source order.
+    Import the published per-image-set average accuracy without clipping or recalculating it. Scores are normalized
+    relative to chance (0) and ceiling (1). The paper describes 100 repeated train/test partitions for SVM estimates
+    and averaging over random in-plane rotations for distance estimates. The distance pooled column averages twelve
+    metric estimates. The released notebook uses SVC without an explicit kernel; the paper's linear-probe description
+    does not establish the exact historical classifier settings. Individual repetition outcomes are unavailable.
+  verifiers:
+    native:
+      kind: released_average_accuracy
+      source: https://github.com/tzler/mochi_code/blob/96cd1249cee3e910f87a526a82ec7a780e8afeeb/scripts/model_evaluation.ipynb
+      protocol: https://arxiv.org/html/2409.05862v2#S2.SS4
+      comparison: Selected oddity index equals the released reference index.
+      stored_statistic: Original normalized per-image-set mean, including negative values.
+      trace_scope: Complete native assessment record and image-bank coordinates, not unreleased model trajectories.
+sources:
+  upstream:
+  - name: published_results_and_protocol
+    url: https://github.com/tzler/mochi_code
+    revision: 96cd1249cee3e910f87a526a82ec7a780e8afeeb
+    files:
+    - match: assets/(?:benchmark|df_behavior_wdistance)\.csv|scripts/(?:model_evaluation|results|visualize_data_and_singletrial)\.ipynb|README\.md
+      path: github/{path}
+  - name: original_images
+    url: https://huggingface.co/datasets/tzler/MOCHI
+    revision: 6b3b2c3f46ba2c7936273bb521108e51be52fb67
+    files:
+    - match: data/.*\.parquet|README\.md
+      path: hf/{path}

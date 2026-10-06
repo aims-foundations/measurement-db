@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  assets:
+    rows: 47437
+    logical_sha256: 5b49841c569c22882d8b43ecce5b8b47ee43f4beecafbbff90437940c6b5c506
+  benchmarks:
+    rows: 1
+    logical_sha256: be754e31b927c875b5364ad5ae250d5dcd45f223531a93487455bb2f459db67a
+  items:
+    rows: 47500
+    logical_sha256: 66df413f73c66114cc97c6011e4004f0428725414be9310bb7efd519051cfbfa
+  responses:
+    rows: 237500
+    logical_sha256: 736cdbcc934455f0848e1adc80432371238fac006371ad02ccf068f00d0ec368
+  subjects:
+    rows: 5
+    logical_sha256: c9515e12b2d5326cc9f598876cb9c2c62dc66ab5b48c7f172dbfd9bcebb52633
+  traces:
+    rows: 237500
+    logical_sha256: eb393be7fd64104a71fa612a9f139ae24b3205c59c81a6d4409a90770e2f1798
+source_claims:
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 15
+  source_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 47500
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 47500
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 47437
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 5
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 237500
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 237500
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 106179
+  source_neighbor_entries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/google-deepmind/visual-memory/tree/d379c1065399a139f0add441dd947571e5d36b2f
+    locator: The 15 original full-memory neighbor-info exports for ImageNet-A, ImageNet-R and ImageNetV2, with five
+      featurizers; original query images are independently matched to author-linked archives.
+    scope: Every original query image, reference class, model association and all 100 released neighbors. Binary
+      correctness uses the authors' explicit k=1 class comparison; no embedding model or retrieval job is run.
+    expected: 23750000

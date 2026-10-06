@@ -1,0 +1,118 @@
+benchmark:
+  release: public
+  name: KRIS-Bench
+  description: Released image-editing attempts and their individual consistency, instruction-following, quality
+    and knowledge-plausibility ratings.
+  testing_condition: 'Each observation is one saved judge/dimension rating for an image-editing model and task.
+    The original task images and reference-only images are embedded with distinct roles. Historical instructions
+    and explanations come from each judge record: later task-card wording is not substituted. Original and HF-converted
+    image banks are captured; a full comparison establishes that the latter is a JPEG-85 encoding of the same original
+    pixels. The exact image encoding supplied in each historical run, model API identifiers, inference settings
+    and judge snapshots are not recorded. Generated images remain in intact source archives and are linked by member
+    name and SHA-256 in complete traces. 149 Step-3o multi-image outputs use the first input-frame filename; the
+    task-ID prefix is validated against that annotation. The source task named multi-instruction_execution/53 has
+    a pen image but a bear-poster instruction in its HF card and Step-3o record; this inconsistency is preserved,
+    not corrected or reassigned. Missing dimensions do not imply attempted ratings.'
+  paper_url: https://arxiv.org/abs/2505.16707
+  data_source_url: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+  subject_type: model
+  item_type: image_editing_task
+  license: 'HF task bank: CC-BY-4.0. Original GitHub release: Apache-2.0. No separate license declaration was found
+    in the captured result repository.'
+  citation: 'Wu et al. KRIS-Bench: Benchmarking Next-Level Intelligent Image Editing Models. NeurIPS Datasets and
+    Benchmarks, 2025.'
+  tags:
+  - image_editing
+  - multimodal
+  - reasoning
+  - llm_judge
+  modality:
+  - image
+  - text
+  domain:
+  - general
+  - reasoning
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+  categorical: true
+  release_date: 2025-05
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      annotations: source/KRIS_Bench/*/annotation.json
+      results: results/*.tar.gz
+      task_bank: tasks/kris_bench.parquet
+    score_fields:
+      consistency_score: Visual consistency
+      instruction_score: Instruction following
+      quality_score: Visual quality
+      knowledge_score: Knowledge plausibility
+    judge_files:
+      metrics.json: gpt
+      metrics_qwen.json: qwen
+    image_signatures:
+      89504e470d0a1a0a: image/png
+      ffd8ff: image/jpeg
+      '52494646': image/webp
+    labels:
+      subject_prefix: 'KRIS-Bench / '
+      input_scope: Original released image bytes and the instruction recorded by the judge. The surrounding generation
+        prompt and exact historical image encoding are not recorded.
+    subject_features:
+      harness: KRIS-Bench
+      historical_configuration: not_recorded
+      model_identifier_status: source_archive_label
+sources:
+  upstream:
+  - name: source
+    url: https://github.com/mercurystraw/Kris_Bench
+    revision: cf1475253a13f5e5666826c10d8967e38917468a
+    files:
+    - match: KRIS_Bench/[^/]+/(?:annotation\.json|[^/]+\.(?i:jpg|jpeg|png|webp))|metrics[^/]*\.py|utils/prompts\.py|README\.md|LICENSE
+      path: source/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/Liang0223/KRIS_Bench
+    revision: 0748003488a5d39a81d2f40290a86d787824b92d
+    files:
+    - match: .*
+      path: tasks/{path}
+  - name: results
+    url: https://huggingface.co/datasets/Liang0223/KRIS_Bench_Results
+    revision: 3acde5989a083cf352b436e3a864acb597aa7699
+    files:
+    - match: .*
+      path: results/{path}
+grading:
+  rule: Preserve the released per-dimension judge rating on its original 1–5 ordinal scale; higher is better. No
+    new judging or normalization is performed. Explicit nulls are ungraded. An out-of-scale numeric rating is retained
+    in its complete native trace, flagged invalid_upstream_score and represented by an unavailable response, not
+    a success or failure.
+  verifiers:
+    gpt:
+      kind: released_llm_judgement
+      family: gpt
+      source_file: metrics.json
+      documentation: https://github.com/mercurystraw/Kris_Bench/tree/cf1475253a13f5e5666826c10d8967e38917468a
+      historical_snapshot: not_recorded
+      protocol: Published GPT-4o code and prompts are captured as documentation; the saved ratings are authoritative
+        and are not regenerated. The Qwen filename identifies its family but not a version or matching historical
+        grader commit.
+    qwen:
+      kind: released_llm_judgement
+      family: qwen
+      source_file: metrics_qwen.json
+      documentation: https://github.com/mercurystraw/Kris_Bench/tree/cf1475253a13f5e5666826c10d8967e38917468a
+      historical_snapshot: not_recorded
+      protocol: Published GPT-4o code and prompts are captured as documentation; the saved ratings are authoritative
+        and are not regenerated. The Qwen filename identifies its family but not a version or matching historical
+        grader commit.

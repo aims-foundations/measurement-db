@@ -1,0 +1,101 @@
+format_version: 1
+tables:
+  traces:
+    rows: 162
+    logical_sha256: 4fcbc1c0149724facda3218387f78846ab8e3d47850f9580c2b0ec325dfe05e2
+  subjects:
+    rows: 1
+    logical_sha256: 058d36c0d53301a1224d8457b3cce394e419ffb9750a6c5d1802b786bfaa7a20
+  responses:
+    rows: 162
+    logical_sha256: 2000d45ebadfb915b71482128ab070f3e7d7f19d9525e20d05b1d22361a431da
+  assets:
+    rows: 110
+    logical_sha256: 9a5b0911380e02e8a8e7ad312a0a68b84c932001c0ac12f5afdd0d8c3e4f17f0
+  items:
+    rows: 162
+    logical_sha256: aab7c25bdd54cb01ffee7e0bdd2ffd33db98e35eef9ddce59e9c1b0afdd45690
+  benchmarks:
+    rows: 1
+    logical_sha256: d90a8d3ce805879816180016c99083ec2b5b25c2b745ab7017e55d993a6d4b49
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 162
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 162
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 162
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 1
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 110
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 162
+  source_image_hashes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 110
+  source_output_representations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Liyan06/ChartMuseum
+    locator: example_outputs/*-dev-*.json joined by original array position to the pinned lytang/ChartMuseum development
+      Parquet and original images; README Output Evaluation Instruction documents that ordering.
+    scope: Independent JSON/Arrow traversal reconciles every model output, question, reference, chart byte sequence
+      and trace. Compare QA and judge prompts directly with prompt.py; preserve unavailable per-question judgments
+      as null.
+    expected: 2

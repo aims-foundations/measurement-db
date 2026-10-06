@@ -1,0 +1,3 @@
+- Source: AISafetyLab revision `3fd15737dee5c6858466162d6a68e6cb6f996b27`; 100 original judgments on 50 prompts and two defense configurations. All grades are preserved (23 unsafe, 77 not classified unsafe).
+- Correction: items now retain the complete target prompt; criteria retain the original judge query. Full native records replace response-only traces, and the attacker target prefix is not treated as a reference answer.
+- Limits: no raw judge outputs or exact model/tokenizer revisions were released; the SafeDecoding safer-model checkpoint is unspecified. These third-party results are not the original AdvPrompter paper evaluation.

@@ -1,0 +1,147 @@
+format_version: 1
+tables:
+  traces:
+    rows: 107274
+    logical_sha256: 4c8a05ef1b72f50b3e8a8a2690e7e974633fa9e448885c012553028819f1bcbe
+  subjects:
+    rows: 33
+    logical_sha256: db4b335836d936a84c8f70da24f26e2eb6ee83c77e300d87de94c50e832c4854
+  responses:
+    rows: 107274
+    logical_sha256: d3620b32e9863938f9f3139f6f59805abb805a9ac8dbbbee98700d6c89cfe44b
+  assets:
+    rows: 1410
+    logical_sha256: 64f4dafff436e18d2e08163a8db6f232b7a734bc615e656418cf947c6e19f3eb
+  items:
+    rows: 62160
+    logical_sha256: 3af12f8d11bd93558292411115d9f810c8d66fce9a759d5c59389c2d24edfcca
+  benchmarks:
+    rows: 1
+    logical_sha256: bb41ab4cf28e8eadc46f30faea51abdda9e874bf0e25b36acbeb0c60b2ede42b
+source_claims:
+  source_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 56121
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 107274
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 33
+  source_behaviors:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 250
+  source_text_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 54581
+  source_multimodal_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 1540
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 1410
+  source_text_primary:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 54581
+  source_text_secondary:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 49613
+  source_multimodal_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 3080
+  duplicate_file_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 32
+  repeated_input_judgments:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 16
+  archived_text_validation_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 602
+  archived_multimodal_validation_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/justinphan3110cais/harmbench_website/tree/data/playground_data
+    locator: Independent nested JSON traversal of the pinned playground files, with byte equality for directory
+      aliases, exact image-byte checks and CSV grading definitions from the author archive.
+    scope: All released playground target-model generations and their present grading fields. Validation-record
+      counts describe separately archived annotations, not imported generations or grades.
+    expected: 220

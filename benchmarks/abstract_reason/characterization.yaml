@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 9095
+    logical_sha256: 099336b99fcbfb380104ab160ccce8ad2430f9cc7b8170ec75e62c2cb149bd8d
+  subjects:
+    rows: 1
+    logical_sha256: d61bdc92276618a3088e2d851280553251d695408a4577fc3f9bf966c1d1d5ff
+  responses:
+    rows: 9095
+    logical_sha256: c2000e81377908980e18542425eb3ad27cd22bbadf5cd1e17227f33ffbecfc93
+  items:
+    rows: 9089
+    logical_sha256: b6987f2bca1b9632e4552dbb58961f82dc8bf2569ccfe77686e018e67116e01e
+  benchmarks:
+    rows: 1
+    logical_sha256: ec6057f195d778466761b372a3b20de5fa2e0acc7827c9d1d96e7dfd21affa16
+source_claims:
+  source_result_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAC-AutoML/abstract-reason-benchmark
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 82
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAC-AutoML/abstract-reason-benchmark
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 9095
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/MAC-AutoML/abstract-reason-benchmark
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 4255

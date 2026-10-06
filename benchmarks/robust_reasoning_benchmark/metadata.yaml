@@ -1,0 +1,108 @@
+benchmark:
+  name: Robust Reasoning Benchmark
+  description: Recorded mathematical reasoning and text-reconstruction attempts under deterministic prompt transformations.
+  testing_condition: Import the original individual records in every current experiments/*/results directory, including
+    nested baseline controls, compound problems, passive context and decode-only reconstruction. Keep complete recorded
+    system and user prompts and every output. Five identical baseline files are aliases of the same named runs,
+    not additional attempts. Subjects distinguish literal model directory labels and explicitly recorded inference
+    settings; missing historical settings remain unknown. Summary min_output_tokens and max_output_tokens are observed
+    lengths, not inference limits. Keep original native grading flags in traces; ERROR-prefixed non-refusal failures
+    become null grades; recorded safety refusals stay false. Text recovery is a distinct grading protocol. Historical
+    old/ experiments and analysis summaries remain captured raw references outside the current evaluation suite.
+    Pinned code documents the released grading implementation but does not establish each historical run used that
+    exact revision. No model calls, training, simulations or grading reruns are performed.
+  paper_url: https://arxiv.org/abs/2604.08571
+  data_source_url: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark
+  subject_type: model
+  item_type: recorded_reasoning_request
+  license: No redistribution license found in the pinned upstream repository; local research only pending clarification.
+  citation: Golikov, Opryshko, Pekhimenko and Jeffrey. Robust Reasoning Benchmark. 2026. arXiv:2604.08571.
+  tags:
+  - mathematics
+  - reasoning
+  - robustness
+  - text_reconstruction
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The native task-specific verifier recorded failure
+      '1': The native task-specific verifier recorded success
+  categorical: true
+  release_date: 2026-04
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  granularity: item
+  multi_single_turn: single_turn
+  version: b715f505b569a4d8bded804d4ec9f9cec16b2ed9
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: experiments/*/results/**/*.json
+    inference_fields:
+      max_model_length: Recorded context-length limit
+      max_tokens: Recorded generation-token limit
+      temperature: Recorded sampling temperature
+      top_p: Recorded nucleus-sampling parameter
+    labels:
+      harness: Robust Reasoning Benchmark
+      system: 'System:
+
+        '
+      user: '
+
+
+        User:
+
+        '
+      recovery: decode_recovery
+      api_error_prefix: ERROR
+      historical_settings: not_recorded
+grading:
+  rule: Preserve each recorded task-specific assessment without rerunning a judge. Explicit API failures have null
+    grades.
+  verifiers:
+    math:
+      kind: source_reported_math_correctness
+      response_field: correct
+      rule: Preserve the source correct flag from mathematical answer extraction and equivalence checking. The released
+        implementation tries boxed answers, bold answers and full-output Math-Verify parsing; compound prompts can
+        pass if any extracted boxed answer matches the target. This is the native assessment, not an independently
+        rerun grader. Refusals remain failures; missing or unparsable API responses have no observed grade.
+      source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/blob/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments/util.py
+      execution: import_native_grade_only
+    recovery:
+      kind: source_reported_text_recovery
+      response_field: recovered
+      rule: Preserve the source recovered flag for text reconstruction, not mathematical problem solving. The source
+        passes exact normalized text or normalized character error rate at most 0.02. Reference text is canonical_original,
+        not the mathematical ground_truth answer. The source can estimate edit distance for long strings; preserve
+        this flag and its native error rate.
+      source: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark/blob/b715f505b569a4d8bded804d4ec9f9cec16b2ed9/experiments/evaluate_decode_recovery.py
+      char_error_threshold: 0.02
+      execution: import_native_grade_only
+sources:
+  upstream:
+  - name: original_files
+    url: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark
+    revision: b715f505b569a4d8bded804d4ec9f9cec16b2ed9
+    files:
+    - match: (?!experiments/(?:decode_recovery|passive_context)/results/)(?:\.gitattributes|\.gitignore|.*\.(?:json|jsonl|py|md|txt|sh|yaml|yml|csv))
+      path: '{path}'
+  - name: original_lfs_results
+    url: https://github.com/pavelgolikov/Robust-Reasoning-Benchmark
+    revision: b715f505b569a4d8bded804d4ec9f9cec16b2ed9
+    git_lfs: true
+    files:
+    - match: experiments/(?:decode_recovery|passive_context)/results/.*\.json
+      path: '{path}'

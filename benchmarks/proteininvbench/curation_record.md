@@ -1,0 +1,3 @@
+- Match every saved unperturbed CATH4.2/CATH4.3 prediction to the original backbone, sequence, preprocessing and recorded model configuration. Keep complete probability matrices and native vocabularies.
+- Follow the author notebook's recovery over all saved positions, including its padding convention. Remove the legacy extra confidence responses, sequence-as-input representation and trace clipping.
+- Preserve all 55 original prediction collections in raw. Keep noisy-coordinate runs and PDB assemblies raw-only until their exact inputs can be established; do not replace them with unperturbed or newly sampled structures.

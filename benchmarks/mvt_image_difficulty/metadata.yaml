@@ -1,0 +1,92 @@
+benchmark:
+  description: Recorded 50-class object-recognition predictions on the cropped ImageNet and ObjectNet stimuli from
+    the MVT study.
+  testing_condition: Import all 276,718 released model-image predictions for 4,771 stimuli and 58 model configurations.
+    Recompute correctness by comparing the recorded class index with its released reference index. Preserve exact
+    original cropped image bytes; no reference class is placed in item content or features. Paper section 6.10 describes
+    fine-tuning and inference on these stimuli; table 2 describes percentage-suffixed ResNets as training on the
+    indicated fraction of ImageNet-1k. Keep original model labels and do not infer unavailable checkpoint hashes.
+    Human responses and derived image-difficulty proxies in the source archives are outside this model-observation
+    scope. No models were executed.
+  paper_url: https://papers.nips.cc/paper/2023/file/2432e9646556f3a98dc78c1f4a10481b-Paper-Datasets_and_Benchmarks.pdf
+  data_source_url: https://objectnet.dev/mvt/download.html
+  subject_type: model
+  item_type: image
+  license: Annotations are CC BY-SA; source image rights remain with ImageNet and ObjectNet. ObjectNet prohibits
+    model-parameter tuning and requires a red border for individually posted images. The original cropped stimuli
+    are preserved locally without alteration; image redistribution requires review.
+  citation: "@inproceedings{mayo2023mvt,\n  title={How hard are computer vision datasets? Calibrating dataset difficulty\
+    \ to viewing time},\n  author={Mayo, David and Cummings, Jesse and Lin, Xinyu and Gutfreund, Dan and Katz, Boris\
+    \ and Barbu, Andrei},\n  booktitle={NeurIPS 2023 Datasets and Benchmarks Track},\n  year={2023},\n}"
+  tags:
+  - vision
+  - image_classification
+  - dataset_difficulty
+  - imagenet
+  - objectnet
+  - per_image
+  modality:
+  - image
+  domain:
+  - general
+  - computer_vision
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The recorded predicted class differs from the reference class.
+      '1': The recorded predicted class equals the reference class.
+  categorical: true
+  release_date: 2023-12
+  release: withheld
+  release_reason: "ObjectNet requires red borders for individually posted images and ImageNet requires recipients to accept its access terms; unrestricted mirroring of the unchanged cropped assets is unresolved."
+  name: MVT Image Difficulty
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results_archive: reproduce_results_2023.zip
+      images_archive: flash_data_release_2023.zip
+      prediction_matrix: reproduce_results_2023/model_predictions_dataframe.csv
+      reference_classes: reproduce_results_2023/label_to_idx.json
+      nested_images: data_release_2023/cropped_images.zip
+    media_types:
+      .png: image/png
+      .jpeg: image/jpeg
+    labels:
+      image_role: input_image
+      condition: task=image_classification;choice_set=50
+    subject_features:
+      protocol: MVT model evaluation, paper section 6.10
+      model_checkpoint_revision: not_recorded
+      historical_harness_revision: not_recorded
+      percentage_variant_meaning: ImageNet-1k training fraction, paper table 2
+grading:
+  rule: The original recorded predicted class index must equal the released reference index in the 50-class task.
+  verifiers:
+    classification:
+      kind: exact_class_index_match
+      source: https://papers.nips.cc/paper/2023/file/2432e9646556f3a98dc78c1f4a10481b-Paper-Datasets_and_Benchmarks.pdf
+      prediction: model column in model_predictions_dataframe.csv
+      reference: label column and label_to_idx.json
+      execution: recorded predictions only
+sources:
+  upstream:
+  - name: predictions
+    url: https://objectnet.dev/mvt/data_release/reproduce_results_2023.zip
+    revision: null
+    file: reproduce_results_2023.zip
+    size: 7935991
+    sha256: 766dd66bc72a4e9c58975bd2b589994ea3f009e6d871f2daf70f0d3900276696
+  - name: stimuli
+    url: https://objectnet.dev/mvt/data_release/flash_data_release_2023.zip
+    revision: null
+    file: flash_data_release_2023.zip
+    size: 212867430
+    sha256: f759997f2f62be6a65f330e2e430cbc8347fad60a17787d9fa7df06407c50dad

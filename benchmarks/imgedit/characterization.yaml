@@ -1,0 +1,121 @@
+format_version: 1
+tables:
+  assets:
+    rows: 167
+    logical_sha256: e6c79679ebae3b08e75d4904bf55b1e6cc9d0e437464ba51b63487f55c3281d1
+  benchmarks:
+    rows: 1
+    logical_sha256: 276bb709b8d25c8ceced7519bf63cefe8cd3602a75028b54d532592e3ecd3cd8
+  items:
+    rows: 737
+    logical_sha256: 12fff33377022fa186d90ad417b723b4f2a16288b8ecb45753c42319989e488d
+  responses:
+    rows: 737
+    logical_sha256: 4756965cd2cec7bba50d087c3ebe6fc691283e0184e14a0783d67aa25ccdd419
+  subjects:
+    rows: 1
+    logical_sha256: 02229885b2b287aa9b9d673239c7fbaf046822f9e0e8bb7d7ad6f17e8586c7dc
+  traces:
+    rows: 737
+    logical_sha256: f738f3f64245f5fe6b297d44e68bd6d67b2002f0792df2d33cf003c14dea0bcd
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 737
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 737
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 737
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 167
+  source_input_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 171
+  source_generated_images:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 737
+  source_saved_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 454
+  source_ungraded_attempts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 283
+  source_aggregate_scores_reconciled:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ByteDance-Seed/Bagel/blob/a2fa77dd8caeefc41e6607ae0ec17408d3f4ee9f/EVAL.md
+    locator: ImgEdit section links the unchanged BAGEL_results imgedit_t4_i1.5.zip and the original sysuyy/ImgEdit
+      Benchmark.tar. Verify result.json, result.jsonl, average_score.json, typescore.json, each output PNG and every
+      original single-turn task image and rubric.
+    scope: The original single-turn BAGEL release. Keep every attempt, the native saved grades and native parser
+      omissions. No aggregate cells or new judge calls become observations.
+    expected: 10

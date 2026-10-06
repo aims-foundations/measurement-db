@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 177892
+    logical_sha256: 95e3c480663bc0989f47cb565ae422b355a084b6c7792c70826d10ebe0b777d6
+  subjects:
+    rows: 221
+    logical_sha256: 4745585b211b8a8f930413e008f731e4a29a4be0191771eccd7a5e55ad5a3c0c
+  responses:
+    rows: 177892
+    logical_sha256: 307668cb9e2f4a11f8adba6789f334fdbe9db46aea29e606766cb2951c7900d5
+  items:
+    rows: 805
+    logical_sha256: 5ae21815db1e50099797e89e4ac707124c6ccc1307091fd337dffa7d02ece271
+  benchmarks:
+    rows: 1
+    logical_sha256: 3858dac5a8375d7e90295b159d0fd533a1d577a82cda8903e146ad7e5c5014a2
+source_claims:
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 177886
+  source_identical_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 1416
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 6
+  source_invalid_preferences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 1
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 177892
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 177892
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 221
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 805
+  source_derived_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/tatsu-lab/alpaca_eval/tree/cd543a149df89434d8a54582c0151c0b945c3d20
+    locator: results/*/weighted_alpaca_eval_gpt4_turbo/annotations.json and the fixed gpt4_1106_preview reference
+      bank
+    scope: All primary annotations; the two nested Vicuna regression exports do not add observations.
+    expected: 2

@@ -1,0 +1,174 @@
+benchmark:
+  name: NatureBench
+  description: Published Match-SOTA outcomes for 23 coding-agent configurations on 90 scientific ML tasks, with
+    complete available native run files and recorded validity judgments.
+  testing_condition: 'Import all 2070 explicitly published full-track cells, including scores embedded separately
+    in five leaderboard rows; the 25-task view is not another run. Retain the published model/harness, compute,
+    time allowance and access conditions; they differ for third-party configurations. Sixteen configurations have
+    a native run index and 1439 released conversations. The remaining seven have published scores but no conversation
+    files in this captured release. The legacy Sonnet-4.6 and current GPT-5.5 verdicts are preserved; current HELIX
+    outcomes declare Claude Opus 5 as their validity judge. Current reported grades supersede 79 older Match-SOTA
+    labels; all historical cells and verdicts remain in traces. Two saved submission histories do not reach the
+    index-reported best score, and 21 scored index rows have no saved numeric submission. Preserve both records
+    rather than recomputing their grades. Item text is the published task brief, not the complete scientific input
+    data or historical system prompt. The approximately 1.26TB task-data collection and agent workspaces are not
+    embedded. One task brief changed on 2026-08-24: retain the older text where original conversations or pre-change
+    publication establish it; other rows use the current published description without claiming an exact historical
+    task snapshot. Preserve all 26 malformed original JSON log lines inside complete text carriers. No evaluation,
+    model call, judge call or generated code is executed. Compact subject features percent-escape separators; complete
+    original configuration strings remain in every trace.'
+  paper_url: https://arxiv.org/abs/2606.24530
+  data_source_url: https://huggingface.co/datasets/FrontisAI/NatureBench-traces
+  subject_type: model
+  item_type: task
+  license: CC-BY-4.0 for the released process traces and original result metadata; MIT for original task/code contributions.
+    Task-specific third-party data retain their own licenses and are not mirrored here.
+  citation: 'Wang, Yuru, et al. NatureBench: Can Coding Agents Match the Published SOTA of Nature-Family Papers?
+    (2026), arXiv:2606.24530.'
+  tags:
+  - scientific_ml
+  - coding_agents
+  - recorded_evaluations
+  modality:
+  - text
+  domain:
+  - science
+  - ml_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The published result does not meet Match-SOTA, including invalid or no-score results.
+      '1': A valid reported result has aggregate improvement g >= 0.
+  categorical: true
+  release_date: 2026-06
+  release: public
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      current_page: code/page/naturebench-data.js
+      historical_page: historical/page/naturebench-data.js
+      trace_index: traces/metadata/index.parquet
+      trajectories: traces/trajectories
+    task_roots:
+      current: tasks/tasks
+      historical: historical/tasks/tasks
+    trace_configurations:
+      claude-code__deepseek-v4-pro: deepseek-v4-pro-claude-code
+      claude-code__glm-5.1: glm-5-1-claude-code
+      claude-code__glm-5.2: glm-5-2-claude-code
+      claude-code__glm-5.3: glm-5-3-claude-code
+      claude-code__kimi-k2.6: kimi-k2-6-claude-code
+      claude-code__kimi-k3: kimi-k3-claude-code
+      claude-code__minimax-m2.7: minimax-m2-7-claude-code
+      claude-code__minimax-m3: minimax-m3-claude-code
+      claude-code__opus-4.6: opus-4-6-claude-code
+      claude-code__opus-4.7: opus-4-7-claude-code
+      claude-code__opus-5: claude-opus-5-claude-code
+      claude-code__qwen-3.7-max: qwen-3-7-max-claude-code
+      claude-code__qwen-3.8-max: qwen-3-8-max-claude-code
+      codex__gpt-5.4: gpt-5-4-codex
+      codex__gpt-5.5: gpt-5-5-codex
+      gemini-cli__gemini-3.5-flash: gemini-3-5-flash-gemini-cli
+    revised_briefs:
+      s43588-024-00765-7: The primary-metric description was clarified on 2026-08-24.
+    legacy_brief_configurations:
+      deepseek-v4-pro-claude-code: Older task wording is present in the original released conversation.
+      glm-5-1-claude-code: Older task wording is present in the original released conversation.
+      glm-5-2-claude-code: Older task wording is present in the original released conversation.
+      kimi-k2-6-claude-code: Older task wording is present in the original released conversation.
+      kimi-k3-claude-code: Older task wording is present in the original released conversation.
+      minimax-m2-7-claude-code: Older task wording is present in the original released conversation.
+      minimax-m3-claude-code: Older task wording is present in the original released conversation.
+      opus-4-6-claude-code: Older task wording is present in the original released conversation.
+      opus-4-7-claude-code: Older task wording is present in the original released conversation.
+      claude-opus-5-claude-code: Older task wording is present in the original released conversation.
+      qwen-3-7-max-claude-code: Older task wording is present in the original released conversation.
+      qwen-3-8-max-claude-code: Older task wording is present in the original released conversation.
+      gpt-5-4-codex: Older task wording is present in the original released conversation.
+      gpt-5-5-codex: Older task wording is present in the original released conversation.
+      gemini-3-5-flash-gemini-cli: Older task wording is present in the original released conversation.
+      claude-opus-5-aibuildai-2-5: This result was first published on 2026-08-07, before the 2026-08-24 task-description
+        revision.
+    subject_columns:
+      subject_key: configuration_id
+      agent: harness
+      solvingBudget: solving_budget
+      compute: declared_compute
+      externalAccess: external_access
+      notes: configuration_notes
+    item_columns:
+      domain: domain
+      mlTaskType: scientific_task_type
+    labels:
+      input_scope: published_task_brief_only
+grading:
+  rule: Match-SOTA is 1 exactly when the reported solution passes its declared validity judge and its best SOTA-normalized
+    aggregate improvement g is at least zero; otherwise it is 0. No-score cells receive the upstream failure grade,
+    not an invented numeric g. Preserve full-precision native index values when available, and the published leaderboard
+    precision otherwise. The native evaluator takes the first primary metric of each dataset instance, chooses the
+    strongest reported SOTA value for its direction, and computes direction*(score-SOTA)/abs(SOTA). Missing/nonfinite
+    instance scores receive -1 before averaging. The best submission is followed by a validity judgment. Import
+    the recorded results; do not rerun evaluators or judges.
+  verifiers:
+    published_match_sota:
+      kind: recorded_scientific_score_and_validity_judgment
+      score_source: https://github.com/FrontisAI/NatureBench/blob/57f6f511d9e0a09321a110ad7b47b32213890d9b/eval_service.py
+      metric_source: https://github.com/FrontisAI/NatureBench/blob/57f6f511d9e0a09321a110ad7b47b32213890d9b/submit-results/compute_scores.py
+      judge_policy_source: https://github.com/FrontisAI/NatureBench/blob/57f6f511d9e0a09321a110ad7b47b32213890d9b/judge_core/policy.py
+      task_evaluators: https://huggingface.co/datasets/FrontisAI/NatureBench/tree/27e2dc304464257d2884fa6996bc8ca5d4a2256b/tasks
+      rule: Match-SOTA is 1 exactly when the reported solution passes its declared validity judge and its best SOTA-normalized
+        aggregate improvement g is at least zero; otherwise it is 0. No-score cells receive the upstream failure
+        grade, not an invented numeric g. Preserve full-precision native index values when available, and the published
+        leaderboard precision otherwise. The native evaluator takes the first primary metric of each dataset instance,
+        chooses the strongest reported SOTA value for its direction, and computes direction*(score-SOTA)/abs(SOTA).
+        Missing/nonfinite instance scores receive -1 before averaging. The best submission is followed by a validity
+        judgment. Import the recorded results; do not rerun evaluators or judges.
+      execution: Only import published scores and verdicts. Exact historical evaluator/judge-code revisions and
+        the third-party judging prompts are not recorded per run. The captured current code documents the public
+        protocol.
+sources:
+  upstream:
+  - name: native_code
+    url: https://github.com/FrontisAI/NatureBench
+    revision: 57f6f511d9e0a09321a110ad7b47b32213890d9b
+    files:
+    - match: .*
+      path: code/main/{path}
+  - name: current_leaderboard
+    url: https://github.com/FrontisAI/NatureBench
+    revision: 7b9055a7c6f38d11ffa707017adb9c8eacad014b
+    files:
+    - match: .*
+      path: code/page/{path}
+  - name: historical_leaderboard
+    url: https://github.com/FrontisAI/NatureBench
+    revision: 5ab26d4bf8505835b9179e6b865c1032c6eb88da
+    files:
+    - match: naturebench-data\.js
+      path: historical/page/{path}
+  - name: native_traces
+    url: https://huggingface.co/datasets/FrontisAI/NatureBench-traces
+    revision: 40beb74d21412655a5471b1032ec91256b40e55b
+    files:
+    - match: .*
+      path: traces/{path}
+  - name: task_documents
+    url: https://huggingface.co/datasets/FrontisAI/NatureBench
+    revision: 27e2dc304464257d2884fa6996bc8ca5d4a2256b
+    files:
+    - match: (?:[^/]+|tasks/[^/]+/(?:metadata\.json|problem/README\.md|(?:licenses|environment)/.*|evaluation/.*\.py))
+      path: tasks/{path}
+  - name: historical_task_brief
+    url: https://huggingface.co/datasets/FrontisAI/NatureBench
+    revision: ee848844b68de031fad462ccdf9a8f579e5e4bd6
+    files:
+    - match: tasks/s43588-024-00765-7/(?:metadata\.json|problem/README\.md)
+      path: historical/tasks/{path}

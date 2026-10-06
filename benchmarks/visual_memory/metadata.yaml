@@ -1,0 +1,143 @@
+benchmark:
+  name: 'Visual Memory: ImageNet-A, ImageNet-R and ImageNetV2 retrieval results'
+  description: Released nearest-neighbor outputs for five embedding models and their original query images on three
+    ImageNet test sets.
+  testing_condition: Preserve the existing three-dataset, five-featurizer scope at k=1 using the full ImageNet-2012
+    training memory. The original public bucket includes other experiments outside this curated slice; no claim
+    of complete bucket coverage is made. Actual query images are supplied as attachments, with neutral classification
+    instructions and reference classes kept in grading_criterion. Original image identities and labels are checked
+    against the author-linked archives. Preserve every original neighbor array. The captured notebooks describe
+    preprocessing and retrieval, but exact executed model checkpoints and runtime versions are not recorded in the
+    result files. The base and normalized model registry names do not replace the literal source featurizer. No
+    neural model, retrieval job or grader is executed during curation.
+  paper_url: https://arxiv.org/abs/2408.08172
+  data_source_url: https://github.com/google-deepmind/visual-memory
+  subject_type: model
+  item_type: image
+  license: CC-BY-4.0 for released visual-memory evaluation materials; Apache-2.0 for author code. Original query
+    images retain their source terms.
+  citation: Geirhos, Robert et al. (2025). Towards flexible perception with visual memory. ICML, PMLR 267:19056–19081.
+    Original ImageNet-A, ImageNet-R and ImageNetV2 sources are also identified in metadata.
+  tags:
+  - image_classification
+  - nearest_neighbors
+  - distribution_shift
+  modality:
+  - image
+  domain:
+  - computer_vision
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The recorded nearest neighbor belongs to a different class.
+      '1': The recorded nearest neighbor belongs to the reference class.
+  categorical: true
+  release_date: 2024-08
+  release: withheld
+  release_reason: >-
+    Source reproducibility hold, reviewed 2026-10-04: the required ImageNet-A and ImageNet-R
+    archives at https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar and
+    https://people.eecs.berkeley.edu/~hendrycks/imagenet-r.tar return HTTP 404, and no
+    author-hosted or author-endorsed replacements matching the pinned inputs have been verified.
+    Restore public release when those sources are available and strict table reproduction passes.
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results/*.json
+    archives:
+      imagenet-a: images/imagenet-a.tar
+      imagenet-r: images/imagenet-r.tar
+      imagenet-v2: images/imagenetv2-matched-frequency.tar.gz
+    image_key_parts:
+      imagenet-a: '1'
+      imagenet-r: '2'
+      imagenet-v2: '2'
+    image_suffixes:
+      .jpg: JPEG
+      .jpeg: JPEG
+      .png: PNG
+    models:
+      dinov2_vits14: DinoV2 ViT-S/14
+      dinov2_vitb14: DinoV2 ViT-B/14
+      dinov2_vitl14: DinoV2 ViT-L/14
+      clip-vit_b16: CLIP ViT-B/16
+      clip-vit_l14: CLIP ViT-L/14
+    subject:
+      harness: Visual Memory nearest-neighbor classifier
+    protocol:
+      neighbors_saved: '100'
+      instruction: Classify the attached query image into its ImageNet-1k category.
+grading:
+  rule: Compare the recorded first neighbor class with the query image_class, exactly as the author notebook's print_accuracy
+    function defines k=1 accuracy. This is a deterministic comparison of released retrieval outputs, not a fresh
+    model evaluation or an optimized multi-neighbor score. All 100 released neighbor identifiers, classes and distances
+    remain in the trace.
+  verifiers:
+    native:
+      kind: recorded_neighbor_class_comparison
+      source: https://github.com/google-deepmind/visual-memory/blob/d379c1065399a139f0add441dd947571e5d36b2f/code/nearest_neighbor_evaluation.ipynb
+      implementation: 'print_accuracy: neighbor_classes[0] == image_class'
+      rule: Compare the recorded first neighbor class with the query image_class, exactly as the author notebook's
+        print_accuracy function defines k=1 accuracy. This is a deterministic comparison of released retrieval outputs,
+        not a fresh model evaluation or an optimized multi-neighbor score. All 100 released neighbor identifiers,
+        classes and distances remain in the trace.
+sources:
+  upstream:
+  - name: original_retrievals
+    url: https://storage.googleapis.com/visual_memory_v01
+    prefix: memory-imagenet2012_msplit-train_query-
+    revision: GCS object generations pinned by tree_sha256
+    tree_sha256: fde909fc1ae02cc129b3c8b873818ae7b27ff8160a3b466bc729167ea52a461f
+    files:
+    - match: imagenet-(?:a|r|v2)_qsplit-test_(?:dinov2_vit[slb]14|clip-vit_[bl]1[46])_full_neighbor_info\.json
+      path: results/memory-imagenet2012_msplit-train_query-{path}
+  - name: original_protocol
+    url: https://github.com/google-deepmind/visual-memory
+    revision: d379c1065399a139f0add441dd947571e5d36b2f
+    files:
+    - match: .*
+      path: protocol/{path}
+  - name: original_images_imagenet_a
+    url: https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar
+    revision: '"28fb3800-59e7a8839fd5c"'
+    file: images/imagenet-a.tar
+    size: 687552512
+    sha256: 3bb3632277e6ba6392ea64c02ddbf4dd2266c9caffd6bc09c9656d28f012589e
+  - name: original_images_imagenet_r
+    url: https://people.eecs.berkeley.edu/~hendrycks/imagenet-r.tar
+    revision: '"82993a00-5ac287b6d8e40"'
+    file: images/imagenet-r.tar
+    size: 2191079936
+    sha256: 18c6bf493b39a0d975d48e587437f562caab9c52ae6327dcfa9dd8eb54aa1b52
+  - name: original_images_v2
+    url: https://huggingface.co/datasets/vaishaal/ImageNetV2
+    revision: d626240be2538720e83103a0e1178d24aca8b12c
+    files:
+    - match: imagenetv2-matched-frequency\.tar\.gz
+      path: images/{path}
+  - name: original_documentation_imagenet_a
+    url: https://github.com/hendrycks/natural-adv-examples
+    revision: 07770705658c3a1c8acce31fd9dbd68f06e297c3
+    files:
+    - match: README\.md
+      path: image_sources/imagenet-a-README.md
+  - name: original_documentation_imagenet_r
+    url: https://github.com/hendrycks/imagenet-r
+    revision: 3131cacee97c407bd2ecea15846a67817a64f924
+    files:
+    - match: README\.md
+      path: image_sources/imagenet-r-README.md
+  - name: original_documentation_imagenet_v2
+    url: https://github.com/modestyachts/ImageNetV2
+    revision: 0b0c3fe89058e4c7ee2348938b3f4f706a931bf3
+    files:
+    - match: README\.md
+      path: image_sources/imagenet-v2-README.md

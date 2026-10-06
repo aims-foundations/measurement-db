@@ -1,0 +1,95 @@
+format_version: 1
+tables:
+  traces:
+    rows: 164236
+    logical_sha256: 024f8d034f14e61953579daf9943bc5356fd33d0b4026772483c7ac6815e7748
+  subjects:
+    rows: 3
+    logical_sha256: 4d9f7e5a6c0c86271ad963c8fc47ff04e89441fe1590d0e2b0e9b96403262d84
+  responses:
+    rows: 164236
+    logical_sha256: 0acca2ad7868be18a0443fb97eca441117ade1bb651848992a35a1b16ee6f1db
+  items:
+    rows: 39994
+    logical_sha256: 0ceda38a0a4469b83a1d79739b2aabac1647a276137e1014b3e8938fa5cc3b2c
+  benchmarks:
+    rows: 1
+    logical_sha256: a8e7d82a059e123dfb75f76e70abb71780fe6a011e7a129f1246c3b1a90353bd
+source_claims:
+  source_pairs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 82118
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 3
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 39994
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 164236
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 164236
+  source_distinct_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 159563
+  source_safe:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 79521
+  source_unsafe:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 84715
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 40
+  source_category_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 11
+  source_prompt_variants:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/PKU-Alignment/PKU-SafeRLHF
+    locator: Pinned six model/split JSONL files at 9421ffafec3fa40a1f1a7d567b4d525079477ecb; both response sides.
+    scope: Preserve every native safety flag, including category disagreements and repeated source annotation records.
+    expected: 39995

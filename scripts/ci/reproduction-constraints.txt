@@ -1,0 +1,5 @@
+# Parquet writer versions read from the migration branch's published file metadata.
+# Changing these can change bytes even when the logical tables are identical.
+pandas==3.0.5
+pyarrow==25.0.0
+numpy==2.4.2

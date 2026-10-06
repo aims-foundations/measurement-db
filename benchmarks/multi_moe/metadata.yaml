@@ -1,0 +1,99 @@
+benchmark:
+  name: Multi-MoE
+  description: Released multiple-choice correctness results and ungraded MT-Bench conversations from the Multi-MoE serving study.
+  testing_condition: >-
+    Import MMLU and TruthfulQA CSV rows with each configuration's full recorded few-shot prompt, option order,
+    gold letter and original Boolean verdict. The CSV retains only the parsed answer character, not the complete
+    generation. Preserve MT-Bench exports as ungraded two-turn conversations with full released outputs and native
+    model identifiers. The seven conversation exports include 80 identical answer records relabeled from v0.1 to
+    v0.2, and an additional file marked wrong by the authors. Preserve these source distinctions explicitly;
+    export counts do not establish independent executions. The author-marked file is retained as an ungraded
+    record, without interpreting the reason for that label. Aggregate GPT-4 turn scores cannot supply per-item
+    grades or a conversation-level aggregation rule. The captured generation template and scripts describe a
+    published protocol, not a verified execution configuration for every historical export. Exact checkpoints,
+    software versions and rendered conversation requests remain unknown where absent from the records. No model
+    or judge runs during curation.
+  paper_url: https://arxiv.org/abs/2505.06481
+  data_source_url: https://github.com/hamid-74/Multi-MoE
+  subject_type: model
+  item_type: question
+  license: Apache-2.0 in the author repository; constituent benchmark tasks retain their upstream terms.
+  citation: >-
+    Imani, HamidReza et al. (2025). QoS-Efficient Serving of Multiple Mixture-of-Expert LLMs Using Partial
+    Runtime Reconfiguration. ICML 2025. arXiv:2505.06481.
+  tags: [mixture_of_experts, llm_serving, multiple_choice, multi_turn]
+  modality: [text]
+  domain: [knowledge, reasoning, instruction_following]
+  multi_single_turn: multi_turn, single_turn
+  granularity: item
+  response_type: mixed
+  response_scale: {kind: mixed}
+  categorical: false
+  release_date: 2025-05
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      option_results: results/*/*/*/test/result_5_1.csv
+      conversations: '**/responses_*.jsonl'
+      questions: mt-bench/question.jsonl
+      template: conversation_template.pkl
+    option_tasks:
+      mmlu: MMLU
+      truthfulqa: TruthfulQA
+    configurations:
+      base: Mixtral-8x7B-v0.1-base
+      instruct: Mixtral-8x7B-v0.1-Instruct
+      avg: Mixtral-8x7B-v0.1-avg (weight-averaging baseline)
+      multi-MoE: Mixtral-8x7B-v0.1 Multi-MoE (proposed, runtime reconfiguration)
+      multi-MoE-No-Reconfig: Mixtral-8x7B-v0.1 Multi-MoE (no reconfiguration)
+    subject:
+      harness: Multi-MoE published evaluation scripts
+    export_status:
+      responses_mt_bench/responses_Multi_MoE_x28_wrong_x29_.jsonl: author_marked_wrong
+grading:
+  verifiers:
+    mmlu:
+      rule: >-
+        Import string_matching_correctness unchanged. The published evaluator decodes the completion, strips
+        whitespace, retains its first character and checks whether that character starts with the gold label.
+        Preserve the parsed character and the full prompt; do not claim the CSV contains the full generation.
+      response_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: higher_is_better
+        meanings: {'0': The recorded option check failed., '1': The recorded option check passed.}
+      source: https://github.com/hamid-74/Multi-MoE/blob/049f5d47ca741baa2a1de228d7c49492ef0478ac/mmlu_eval.py
+      implementation: Original string_matching_correctness export.
+    truthfulqa:
+      rule: >-
+        Import string_matching_correctness unchanged for each row's own sample and label. The evaluator keeps
+        the first character of the stripped decoded answer and checks it against the gold option. Answer choices
+        can be shuffled between configurations, so another configuration's prompt or gold letter is not a valid
+        substitute. The released CSV retains the parsed character rather than the complete generated answer.
+      response_scale:
+        kind: discrete
+        values: [0, 1]
+        direction: higher_is_better
+        meanings: {'0': The recorded option check failed., '1': The recorded option check passed.}
+      source: https://github.com/hamid-74/Multi-MoE/blob/049f5d47ca741baa2a1de228d7c49492ef0478ac/truthfulqa_evaluator.py
+      implementation: Original string_matching_correctness export with configuration-specific option order.
+    mt_bench:
+      rule: >-
+        Preserve response=null for the complete released conversation. The repository reports aggregate GPT-4
+        scores by turn, but does not release the referenced per-item judgment file or a conversation-level
+        aggregation rule. Consequently no observed numeric conversation grade or validated numeric scale is
+        available. The original optional per-turn reference answers remain attached to the task. Do not assign
+        zero to ungraded outputs, infer a score from an aggregate, or run a new judge.
+      response_scale: {kind: interval, min: null, max: null}
+      source: https://github.com/hamid-74/Multi-MoE/blob/049f5d47ca741baa2a1de228d7c49492ef0478ac/results/mt-bench-scores.txt
+      implementation: Released MT-Bench answer records; individual judgments absent.
+sources:
+  upstream:
+  - name: original_results_and_protocol
+    url: https://github.com/hamid-74/Multi-MoE
+    revision: 049f5d47ca741baa2a1de228d7c49492ef0478ac
+    files:
+    - match: .*
+      path: '{path}'

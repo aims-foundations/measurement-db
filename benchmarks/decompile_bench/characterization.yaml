@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 205010cebcb718f6568133beee57b38b03aebe1c960a345f4c0e172cdc29792f
+  items:
+    rows: 72059
+    logical_sha256: 0ca12436cf6a63ec06c52adcebfdad2104de52e4fd074622762cc6e4b0180dbc
+  responses:
+    rows: 141131
+    logical_sha256: b0d2080bb0e789b36c84b6d736e43e5118ee18ab892c99600b5534d9caceb3dc
+  subjects:
+    rows: 2
+    logical_sha256: 663a4a41808e20696d27aac2b614339bcd6a8cb8ddbd4b4d910c6e3112f78dd9
+  traces:
+    rows: 141131
+    logical_sha256: debbfa1be06fc15b66b1462ec0f7b3e636bb087a3784d984100cea8e6b5bb29f
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 2
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 72059
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 141131
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 141131
+  source_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 75610
+  source_unique_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 72157
+  source_duplicate_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 3453
+  source_blank_output_slots:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 3286
+  source_missing_input_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 12
+  source_recomputed_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/LLM4Binary/decompile-eval/tree/b9271fae3c556e46948559f4176ffa6f8b4f9491
+    locator: All four original Arrow shards, source row aliases and the authors' cal_edit_sim.py:compute_ES metric.
+    scope: All nonempty released IDA/Ghidra outputs with original assembly stimuli, after exact native-record deduplication.
+      Edit similarities are deterministically recomputed from captured output and reference, not supplied correctness
+      grades. No model, compiler or generated code is executed.
+    expected: 141131

@@ -1,0 +1,107 @@
+benchmark:
+  description: Released Chinese legal predictions across 23 tasks and two prompting settings, using native accuracy
+    or ROUGE-L without thresholding.
+  testing_condition: Preserve every source input, output and reference. Recorded input text omits task instructions,
+    few-shot demonstrations and model-specific chat wrapping or context truncation; it is not a complete historical
+    API request. Prompting setting and task remain distinct grading conditions. Native accuracy uses the released
+    option parser; generation uses the released normalization, Jieba tokenization and ROUGE-L. Grades are deterministically
+    reconstructed with declared dependencies rather than asserted to be original released per-item scores. Exact
+    model revisions, historical generation configuration and scorer versions are not recorded. No new model or judge
+    evaluations occur. ROUGE exceptions use the native zero fallback and retain their exception type; these reconstructed
+    values depend on the declared runtime.
+  paper_url: https://arxiv.org/abs/2409.20288
+  data_source_url: https://github.com/CSHaitao/LexEval
+  subject_type: model
+  item_type: question
+  license: MIT
+  citation: "@misc{li2024lexevalcomprehensivechineselegal,\n  title={LexEval: A Comprehensive Chinese Legal Benchmark\
+    \ for Evaluating Large Language Models},\n  author={Haitao Li and You Chen and Qingyao Ai and Yueyue Wu and\
+    \ Ruizhe Zhang and Yiqun Liu},\n  year={2024},\n  eprint={2409.20288},\n  archivePrefix={arXiv},\n  primaryClass={cs.CL},\n\
+    \  url={https://arxiv.org/abs/2409.20288},\n}"
+  tags:
+  - legal
+  - chinese
+  - multiple_choice
+  - generation
+  modality:
+  - text
+  domain:
+  - law
+  multi_single_turn: single_turn
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-09
+  release: public
+  name: LexEval
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.zip
+      prefix: LexEval-044c695f62894deef41ad9a30797e1da0404945c/
+      process_code: code/evaluation/process.py
+    native_functions:
+      extraction: find_valid_substrings
+      normalization: normalize_zh_answer
+    packages:
+      jieba: 0.42.1
+      rouge: 1.0.1
+    labels:
+      subject_prefix: 'LexEval / '
+      input_scope: Released input field with original suffix, without unsaved instructions, demonstrations or context
+        truncation
+    subject_features:
+      harness: LexEval released predictions
+      historical_configuration: numeric_settings_not_recorded
+      model_identifier_status: released_directory_label
+    runtime:
+      python_version: '3.14.6'
+      workers: '8'
+grading:
+  rule: Preserve the original records and reconstruct native per-item deterministic scores using the explicitly
+    declared grading protocol.
+  verifiers:
+    accuracy:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/CSHaitao/LexEval/blob/044c695f62894deef41ad9a30797e1da0404945c/code/evaluation/evaluate.py
+      function: Evaluator.eval_accuracy
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native option extraction differs from reference
+          '1': Native extracted answer exactly matches reference
+      rule: Use the native option-letter extraction and exact equality against the original answer. Task {task},
+        released {setting} condition. reference_answer is a JSON string preserving the exact reference, including
+        empty strings. The item contains only the released input field; unsaved instructions, demonstrations and
+        applied context truncation are not reconstructed.
+    rouge_l:
+      kind: reconstructed_native_deterministic_metric
+      metric: rouge_l
+      source: https://github.com/CSHaitao/LexEval/blob/044c695f62894deef41ad9a30797e1da0404945c/code/evaluation/evaluate.py
+      function: Evaluator.eval_rougel
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the native Chinese normalization, Jieba segmentation and ROUGE-L F score, including the original
+        zero fallback for scorer exceptions. The exception type is retained in each trace. Task {task}, released
+        {setting} condition. reference_answer is a JSON string preserving the exact reference, including empty strings.
+        The item contains only the released input field; unsaved instructions, demonstrations and applied context
+        truncation are not reconstructed.
+sources:
+  upstream:
+  - name: upstream
+    url: https://codeload.github.com/CSHaitao/LexEval/zip/044c695f62894deef41ad9a30797e1da0404945c
+    revision: 044c695f62894deef41ad9a30797e1da0404945c
+    file: upstream.zip
+    size: 839509551
+    sha256: e1e2224c2ccb1034abd8acc57087b52a01b1f95822cd7fe211c1bfb3fde991f5

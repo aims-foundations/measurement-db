@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1246925
+    logical_sha256: b8da62bf81656c46f799c5314035716ffcfedb392059e80448ab727f4ba4ddd0
+  subjects:
+    rows: 213
+    logical_sha256: 8ac385934e5a20db795939968ca6fd270a648cbe218c96afc07dbbd288b3d8a0
+  responses:
+    rows: 1246925
+    logical_sha256: eec0921794b14abf4bf357370c9cb6d74a47408ed2befddcb551dd8989297ec2
+  items:
+    rows: 42080
+    logical_sha256: d4614355383855e8afedd979c60ce21dd96918a445cd01f714da09d51c0fa4a8
+  benchmarks:
+    rows: 1
+    logical_sha256: dc22f736540d9696d64e19c0d66c09be16d66515c76d20fa0e64bc756e253e66
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 426
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 1246925
+  source_test_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 415525
+  source_train_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 831400
+  source_oversampled_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 43330
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 1246925
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 213
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/SteshinSS/lohi_neurips2023
+    locator: All pinned predictions/{hi,lo}/*/*/{train,test}_{1,2,3}.csv and corresponding data split files; code/metrics.py
+      defines the aggregate evaluation and the HIV mlp_ecfp4 notebook documents resampling.
+    scope: Every native prediction row with its original reference and source coordinate. All individual response
+      grades are unavailable; train records and duplicated oversampling occurrences remain explicitly identified.
+    expected: 42080

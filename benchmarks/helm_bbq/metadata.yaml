@@ -1,0 +1,91 @@
+benchmark:
+  description: BBQ tests whether models pick the correct answer to multiple choice questions about people
+    from different social groups, asking each question once with too little context to answer it and once
+    with the context that settles it.
+  testing_condition: One published HELM request per observation. Actual prompts, generation settings and
+    unthresholded metric values are preserved.
+  paper_url: https://arxiv.org/abs/2110.08193
+  data_source_url: https://crfm.stanford.edu/helm/safety/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: |-
+    @inproceedings{parrish-etal-2022-bbq,
+      title={{BBQ}: A hand-built bias benchmark for question answering},
+      author={Parrish, Alicia and Chen, Angelica and Nangia, Nikita and Padmakumar, Vishakh and Phang, Jason and Thompson, Jana and Htut, Phu Mon and Bowman, Samuel R.},
+      booktitle={Findings of the Association for Computational Linguistics: ACL 2022},
+      year={2022},
+      publisher={Association for Computational Linguistics},
+      pages={2086--2105},
+      doi={10.18653/v1/2022.findings-acl.165},
+      url={https://aclanthology.org/2022.findings-acl.165/},
+    }
+  tags:
+  - safety
+  - bias
+  - helm
+  modality:
+  - text
+  domain:
+  - safety
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect
+      '1': correct
+  categorical: true
+  multi_single_turn: single_turn
+  release_date: 2021-10
+  release: public
+  name: BBQ
+  version: HELM safety v1.17.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: bbq
+      release: v1.17.0
+      metric: exact_match
+grading:
+  rule: Use published exact_match after HELM multiple-choice adaptation, compared with the correct-tagged
+    reference.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      metric: exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/basic_metrics.py
+      release_code_revision: not recorded in the published run spec; the linked source is an inspected
+        reference implementation
+sources:
+  upstream:
+  - name: release
+    url: https://storage.googleapis.com/crfm-helm-public/safety/benchmark_output/releases/v1.17.0/runs.json
+    revision: v1.17.0
+    file: release_index.json
+    size: 12112520
+    sha256: 303e95492d3c65e0bfc4486311b5df083d6538454714d50bc6c491ca3c263041
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.17.0
+    prefix: safety/
+    helm_index:
+      source: release
+      group: bbq
+    tree_sha256: 5f393b254765c81abdcdf244f013c5742029e1e1e7f3aa3a23bcb06587a5d891
+    files:
+    - match: benchmark_output/runs/(?P<version>[^/]+)/(?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests)\.json
+      path: runs/{version}/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py)
+      path: harness/{path}

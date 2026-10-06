@@ -1,0 +1,101 @@
+benchmark:
+  name: MMLU-Pro
+  description: Released model predictions on multiple-choice questions across fourteen academic domains.
+  testing_condition: Import every original question record from the published result archives. Compare the released
+    extracted letter with its released reference; preserve unparsed outputs as ungraded because the historical scorer
+    sometimes sampled an unrecorded random answer. Source filenames identify model/run configurations and nominal
+    shot counts, not verified per-question prompt lengths. Target questions and options are available, but complete
+    historical rendered prompts, endpoint versions and inference settings are not. Retain repeated source occurrences
+    without claiming independent trials. Original category summaries remain raw-only. No model or answer extractor
+    is executed during curation.
+  paper_url: https://arxiv.org/abs/2406.01574
+  data_source_url: https://github.com/TIGER-AI-Lab/MMLU-Pro
+  subject_type: model
+  item_type: question
+  license: Apache-2.0 (captured upstream repository LICENSE).
+  citation: 'Wang et al. (2024). MMLU-Pro: A More Robust and Challenging Multi-Task Language Understanding Benchmark.
+    arXiv:2406.01574.'
+  tags:
+  - reasoning
+  - multiple_choice
+  modality:
+  - text
+  domain:
+  - knowledge
+  - reasoning
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    meanings:
+      '0': Released predicted letter differs from the reference
+      '1': Released predicted letter matches the reference
+    direction: higher_is_better
+    values:
+    - 0
+    - 1
+  categorical: true
+  release_date: 2024-06
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: github/eval_results/*.zip
+    parsing:
+      run_filename: ^model_outputs_(?P<raw_label>.+)_(?P<nominal_shots>[0-9]+)-?shots(?:_[0-9]+_[0-9]+_[0-9]+)?(?:\.json)?\.zip$
+    labels:
+      answer_letters: ABCDEFGHIJ
+      harness: MMLU-Pro
+    nonrecord_labels:
+      biology: biology
+      business: business
+      chemistry: chemistry
+      computer science: computer science
+      economics: economics
+      engineering: engineering
+      health: health
+      history: history
+      law: law
+      math: math
+      other: other
+      philosophy: philosophy
+      physics: physics
+      psychology: psychology
+      total: total
+    output_fields:
+      model_outputs: model_outputs
+      generated_text: generated_text
+      response: response
+      rationale: rationale
+    grade_fields:
+      correct: correct
+      score: score
+      is_correct: is_correct
+      acc: acc
+      accuracy: accuracy
+      result: result
+    source_filenames:
+      model_outputs_gpt4o_x28_2024-05-13_x29__5shots.zip: model_outputs_gpt4o(2024-05-13)_5shots.zip
+grading:
+  rule: 'For a released non-null pred letter, import the original deterministic comparison pred == answer as 1 or
+    0. Use the stored letter directly, without parsing the generation again. A null pred remains ungraded: the original
+    save_res/update_result routines can draw a random option, but do not save that choice or its per-question result.
+    Preserve original answer_index inconsistencies and one-option tasks in the native record; do not silently repair
+    the reference or options.'
+  verifiers:
+    native:
+      source: https://github.com/TIGER-AI-Lab/MMLU-Pro/blob/f418b116db00b065c2aea046518d8fcf74d39872/evaluate_from_local.py
+      implementation: save_res; evaluate_from_api.py:update_result
+      prediction_field: pred
+      reference_field: answer
+      unavailable_grade: Null extracted prediction with no recorded random fallback outcome.
+sources:
+  upstream:
+  - name: published_predictions_and_protocol
+    url: https://github.com/TIGER-AI-Lab/MMLU-Pro
+    revision: f418b116db00b065c2aea046518d8fcf74d39872
+    files:
+    - match: eval_results/[^/]+\.zip|[^/]+\.py|cot_prompt_lib/[^/]+|scripts/examples/[^/]+|LICENSE|README\.md|requirements\.txt
+      path: github/{path}

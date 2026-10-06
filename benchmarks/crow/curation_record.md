@@ -1,0 +1,3 @@
+- Preserve 5,900 attempts from 34 distinct historical exports: 4,976 reconstructed keyword grades and 924 ungraded empty outputs. Deduplicate identical file copies while retaining all source aliases, full outputs and source context.
+- Recover the earlier code-injection grader and two overwritten file versions. Keep exact prompts, including whitespace variants; preserve every previous graded observation. Grading-rule matches do not establish checkpoint or defense identity, so exports remain separately identified with those settings unknown.
+- Pin four upstream Git snapshots and the native graders. Independently reconcile all records, verify the shared table schema and reproduce the tables from a fresh download; no model inference or new judging is performed.

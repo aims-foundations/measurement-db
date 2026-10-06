@@ -1,0 +1,111 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5670
+    logical_sha256: ca08066a3bdbdef1551fa9383614b4056567c699400591a3277e5995cd1e456f
+  subjects:
+    rows: 13
+    logical_sha256: a1a590dbe4426bb805a78b850503bc0b4c2ec707552b754ddf6baf0d0a358c6a
+  responses:
+    rows: 5670
+    logical_sha256: 402da5911ed481c11e6956c914faba2f2d7f40d0b6f18765fe925432d41ef6e8
+  assets:
+    rows: 10221
+    logical_sha256: eea516ecd3ce56bd4aae134a610fa71d1cb9800d9a2cd3652f784f6a27cf5e60
+  items:
+    rows: 630
+    logical_sha256: 51652e7b3554ce271781d4201073cb7cded79d75b98773b5ad62517004cdb67e
+  benchmarks:
+    rows: 1
+    logical_sha256: 901ea84c9471c6ed77cf8224cbe22a72522b6d65623b7078124648900ab03e08
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 5670
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 5670
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 13
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 630
+  source_captures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 42
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 10221
+  source_asset_bytes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 119138224261
+  source_unsupported_shape_placeholders:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 12
+  source_rendered_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 6589
+  source_camera_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/StanfordORB/Stanford-ORB/tree/8a3bdaeaaf00b5d4768b11e2950090eba73a3ac7
+    locator: All thirteen visualize/methods JSON files, original capture camera metadata, image/reference archives
+      and released rendered outputs.
+    scope: Native capture/metric values. Twelve unsupported shape placeholders remain raw-only. All captured asset
+      bytes are checked independently; no model fitting or metric recomputation.
+    expected: 126

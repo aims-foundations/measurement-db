@@ -1,0 +1,100 @@
+benchmark:
+  description: Selected hybrid computer-use trajectories from the original WeaveBench gallery, with complete published
+    task prompts, grading evidence and linked screenshots.
+  testing_condition: One author-selected best hybrid rollout per task, not an unbiased model comparison or the full
+    evaluation sweep. Preserve native model/runtime combinations, published final scores, all gallery steps and
+    screenshots. The gallery lists produced files but does not include their contents or the historical VM/workspace
+    state. Exact model snapshots, inference settings and judge identity are not recorded for each gallery entry;
+    paper and current harness descriptions are references, not reconstructed historical configurations. No model,
+    environment or judge is executed.
+  paper_url: https://arxiv.org/abs/2606.09426
+  data_source_url: https://weavebench.github.io/trajectories/
+  subject_type: model
+  item_type: task
+  license: 'MIT: WeaveBench''s author repository and dataset card. Preserve LICENSE, NOTICE and original source
+    attribution.'
+  citation: "@article{weavebench2026,\n  title={WeaveBench: A Long-Horizon, Real-World Benchmark for Computer-Use\
+    \ Agents with Hybrid Interfaces},\n  author={Li, Wanli and Zhou, Bowen and Yu, Yunyao and Xu, Zhou and Yang,\
+    \ Yifan and Li, Dongsheng and Shan, Caihua},\n  year={2026},\n  journal={arXiv preprint arXiv:2606.09426},\n\
+    }"
+  tags:
+  - computer_use
+  - gui_agent
+  - cli_agent
+  - hybrid_interface
+  - long_horizon
+  - agent
+  modality:
+  - text
+  - image
+  - gui_screenshot
+  domain:
+  - agents_and_tool_use
+  - software_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': published final score below 0.80
+      '1': published final score at least 0.80
+  categorical: true
+  release_date: 2026-06
+  release: public
+  name: WeaveBench
+  version: 9a3c55c1f767c58c539a7520d3b80da4fdc34912
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: gallery.tar.gz
+      root: weavebench.github.io-9a3c55c1f767c58c539a7520d3b80da4fdc34912
+      manifest: trajectories/manifest.json
+      records: trajectories/data/
+      screenshots: trajectories/shots/{task_id}/{shot}
+    labels:
+      subject_prefix: 'WeaveBench / '
+      selection: author_selected_best_hybrid_rollout_per_task
+      settings_status: historical_inference_settings_not_recorded
+grading:
+  rule: Pass if the original gallery's final score is at least 0.80, the paper's PassRate threshold. Preserve the
+    exact fractional score, dimensional evidence and fabrication flags in the native trace. Embedded task checks
+    are grading evidence; the final score comes from the trajectory-aware agent judge and is not just the check
+    script's return value.
+  verifiers:
+    published_judge:
+      kind: published_trajectory_aware_agent_judge
+      pass_threshold: 0.8
+      source: https://github.com/weavebench/WeaveBench/blob/acf203ae24386aa9bcc0da950c533c8c796dc38e/docs/AGENT_JUDGE.md
+      paper: https://arxiv.org/abs/2606.09426v3
+      native_score_field: score
+      judgment: Inspect task deliverables, screenshots, tool actions and evidence; apply the published anti-fabrication
+        rule before the final score. This builder does not recompute any judgment.
+      historical_judge_configuration: not_recorded_in_gallery
+      current_reference_revision: acf203ae24386aa9bcc0da950c533c8c796dc38e
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: gallery
+    url: https://codeload.github.com/weavebench/weavebench.github.io/tar.gz/9a3c55c1f767c58c539a7520d3b80da4fdc34912
+    revision: 9a3c55c1f767c58c539a7520d3b80da4fdc34912
+    file: gallery.tar.gz
+    size: 166810176
+    sha256: 8eef286dc1c27aa1a47629c2f968386c81878b68d85f773afdb735262110d2d5
+  - name: harness
+    url: https://github.com/weavebench/WeaveBench
+    revision: acf203ae24386aa9bcc0da950c533c8c796dc38e
+    files:
+    - match: LICENSE|NOTICE|README\.md|docs/AGENT_JUDGE\.md|docs/REPRODUCE\.md|weavebench/eval/agent_judge/judge_runner\.py|weavebench/eval/agent_judge/prompt_template\.txt|weavebench/eval/agent_judge/run_one_aj\.py|weavebench/eval/agent_judge/vm_llm_judge\.py
+      path: harness/{path}
+  - name: dataset_notice
+    url: https://huggingface.co/datasets/wanlilll/WeaveBench
+    revision: ec498fc530b685d2fea5823a64a0f7538c8bbf6a
+    files:
+    - match: README\.md
+      path: dataset_notice/{path}

@@ -1,0 +1,165 @@
+benchmark:
+  description: Released GPT-4o text-only node-classification attempts on eleven existing text-attributed graph datasets
+    in the LLM-BP study.
+  testing_condition: 'One released response per test-node position. Reconstruct classification grades with the original
+    category parser and graph labels; no new inference or judging. The prompt contains the published system message,
+    ordered category list and at most 10,000 characters of node text. This is the documented template, not a retained
+    historical request log: the sole published run_gpt.py revision has an inference filename inconsistency, while
+    evaluation reads the released response_0.pkl files. Exact historical endpoint versions and sampling settings
+    are unknown. Native node order and response counts are checked exactly. Homogeneous graph labels and test IDs
+    are read from the released graph objects; all four heterogeneous CSV label arrays and row orders were independently
+    verified against their original DGL graphs. Repeated identical input/grading definitions share a canonical item,
+    with occurrence-number trials; node IDs and source positions remain in traces. The 5,500 GPT-4o-mini homophily-estimation
+    messages remain raw-only because the sampled edge/node IDs were not released. Encoder embeddings and derived
+    BP/NA aggregate analyses are outside the imported observation scope.'
+  paper_url: https://arxiv.org/abs/2502.11836
+  data_source_url: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: "@inproceedings{wang2025generalization,\n  title={Generalization Principles for Inference over Text-Attributed\
+    \ Graphs with Large Language Models},\n  author={Wang, Haoyu and Liu, Shikun and Wei, Rongzhe and Li, Pan},\n\
+    \  booktitle={International Conference on Machine Learning},\n  year={2025}\n}"
+  tags:
+  - text-attributed-graphs
+  - node-classification
+  - zero-shot
+  - graph
+  modality:
+  - text
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The native parser did not select the reference category.
+      '1': The native parser selected the reference category.
+  categorical: true
+  release_date: 2025-02
+  release: public
+  name: LLM-BP TAG node-classification results
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results/nc_{dataset}/4o/llm_baseline/response_0.pkl
+      categories: '{dataset}/categories.csv'
+      graph: '{dataset}/processed_data.pt'
+      texts: '{dataset}/raw_texts.pt'
+    prompt:
+      system: You are a chatbot who is an expert in text classification
+      user: 'We have {description} from the following {n_classes} categories: {labels}
+
+        The text is as follows:
+
+        {text}
+
+        Please tell which category the text belongs to:'
+      max_chars: '10000'
+    subject:
+      key: 4o
+      label: LLM-BP / gpt-4o / node classification
+    subject_features:
+      harness: LLM-BP run_gpt.py
+      model_identifier: gpt-4o
+      model_identifier_status: source_engine_alias_without_dated_endpoint
+      inference_settings: historical_request_settings_not_recorded
+      prompt_provenance: published_template_not_historical_request_log
+    bookchild:
+      role: dataset
+      format: pyg
+      description: description or title of the child literature
+      nodes: ''
+      test_field: test_id
+    bookhis:
+      role: dataset
+      format: pyg
+      description: description or title of the book
+      nodes: ''
+      test_field: test_id
+    citeseer:
+      role: dataset
+      format: pyg
+      description: description or opening text of scientific publications
+      nodes: ''
+      test_field: test_id
+    cora:
+      role: dataset
+      format: pyg
+      description: opening text of machine learning papers
+      nodes: ''
+      test_field: test_id
+    cornell:
+      role: dataset
+      format: csv
+      description: webpage text
+      nodes: cornell/Cornell.csv
+      test_field: test_id
+    pubmed:
+      role: dataset
+      format: pyg
+      description: title and abstract of scientific publications
+      nodes: ''
+      test_field: test_id
+    sportsfit:
+      role: dataset
+      format: pyg
+      description: the title of a good in sports & fitness
+      nodes: ''
+      test_field: test_id
+    texas:
+      role: dataset
+      format: csv
+      description: webpage text
+      nodes: texas/Texas.csv
+      test_field: test_id
+    washington:
+      role: dataset
+      format: csv
+      description: webpage text
+      nodes: washington/Washington.csv
+      test_field: test_id
+    wikics:
+      role: dataset
+      format: pyg
+      description: entry and content of wikipedia
+      nodes: ''
+      test_field: test_mask
+    wisconsin:
+      role: dataset
+      format: csv
+      description: webpage text
+      nodes: wisconsin/Wisconsin.csv
+      test_field: test_id
+sources:
+  upstream:
+  - name: published_data
+    url: https://huggingface.co/datasets/Graph-COM/Text-Attributed-Graphs
+    revision: c9fc08d286d11f164ea8cb61ded3179d23037f05
+    files:
+    - match: '[^/]+/(?:categories\.csv|processed_data\.pt|raw_texts\.pt|(?:Cornell|Texas|Wisconsin|Washington)\.(?:csv|pt))|results/[^/]+/(?:4o/llm_baseline/response_0\.pkl|4o_mini/agenth/response_[0-4]\.pkl)|README\.md|\.gitattributes'
+      path: '{path}'
+  - name: published_code
+    file: upstream-code.zip
+    url: https://codeload.github.com/Graph-COM/LLM_BP/zip/64dd5783622b5b21d6239429013e826f9791f01b
+    revision: 64dd5783622b5b21d6239429013e826f9791f01b
+    size: 316956
+    sha256: e5f1b47136d81e401970971849bd18416fac2c7724fc960a1c7cdff2bcfde60f
+grading:
+  verifiers:
+    classification:
+      kind: parser
+      source: https://github.com/Graph-COM/LLM_BP/blob/64dd5783622b5b21d6239429013e826f9791f01b/run_gpt.py
+      entrypoint: Runner.catch_answer
+      rule: Remove parenthesized substrings from each category label, then apply the remaining label as an unescaped
+        case-insensitive regular expression to the full assistant output. Exactly one matching category selects
+        its zero-based index; no match is -1 and multiple matches are -2. A response is 1 exactly when this parsed
+        index equals the released node label, otherwise 0. Do not infer semantic correctness or change the native
+        matching rule.

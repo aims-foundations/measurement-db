@@ -1,0 +1,156 @@
+benchmark:
+  name: RefGrader
+  description: Recorded grading of Olympiad mathematical proofs by reference-aided language-model workflows.
+  testing_condition: The subject is the grader configuration, not the system that wrote the student proof. Import
+    all released absolute, three-stage and five-stage final grading calls, including each separately recorded additional
+    sample. The response is assigned proof credit from 0 to 7, not the correctness of the grader; compare it with
+    the separate human reference when studying grading accuracy. Additional sampling may override temperature, so
+    initial and additional calls remain separate subject configurations. Source configuration names are literal;
+    the released presets declare Gemini 2.5 Pro, but exact historical API snapshots and effective inference settings
+    were not recorded per call. Item text is reconstructed from the released prompt templates and cached stage inputs
+    using the original formatter, including its behavior on nested or malformed error-annotation spans. This is
+    a source-based reconstruction, not a recorded wire-format API request. Workflows that retain human error annotations
+    are distinguished from those that remove them. Full references and generated rubrics that the final grader used
+    are retained in its input. Valid native JSON-string results are decoded; unparseable outputs remain observed
+    attempts with null grades and their original text. When a cached student proof differs from the current human-rated
+    solution, retain the actual cached input and withhold the unmatched human reference. Both versions and their
+    association status remain in provenance. Auxiliary error analyses, reference clustering and rubric-generation
+    caches are preserved in raw but are not counted as independent final grades. No upstream evaluation, model or
+    judge is executed.
+  paper_url: https://arxiv.org/abs/2510.09021
+  data_source_url: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs
+  subject_type: model
+  item_type: proof_grading_request
+  license: 'Dataset: Apache-2.0 in the original HF card; code: MIT as stated in the original GitHub README.'
+  citation: 'Mahdavi et al. RefGrader: Automated Grading of Mathematical Competition Proofs using Agentic Workflows.
+    2025. arXiv:2510.09021.'
+  tags:
+  - mathematics
+  - proof_grading
+  - llm_as_judge
+  - partial_credit
+  modality:
+  - text
+  domain:
+  - mathematics
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    direction: null
+    meanings:
+      '0': Grader assigned 0 of 7 proof-credit points; this is not a measure of grader accuracy
+      '1': Grader assigned 1 of 7 proof-credit points; this is not a measure of grader accuracy
+      '2': Grader assigned 2 of 7 proof-credit points; this is not a measure of grader accuracy
+      '3': Grader assigned 3 of 7 proof-credit points; this is not a measure of grader accuracy
+      '4': Grader assigned 4 of 7 proof-credit points; this is not a measure of grader accuracy
+      '5': Grader assigned 5 of 7 proof-credit points; this is not a measure of grader accuracy
+      '6': Grader assigned 6 of 7 proof-credit points; this is not a measure of grader accuracy
+      '7': Grader assigned 7 of 7 proof-credit points; this is not a measure of grader accuracy
+  categorical: true
+  release_date: 2025-10
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+  version: 8b2a97c1c86e57474964afff03978ffa7cda68ee
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: data/*.json
+    datasets:
+      imo-shortlist.json: imo_shortlist
+      math_arena_results.json: matharena
+    patterns:
+      grading_workflows: ^(?:absolute_grade_|stage3_grade_|stage5_(?!error_analysis_))
+      student_id: ^S\d+$
+      span_token: <span[^>]*>|</span>
+      span_class: class\s*=\s*"([^"]*)"
+      json_fence: \s*```(?:json)?\s*\n(.*?)\n```\s*
+    human_references:
+      incorrect: '1'
+      some correct: '3'
+      some correct information: '3'
+      almost correct: '5'
+      correct: '7'
+    prompts:
+      absolute: code/prompts/graders/absolute_grader.MD
+      three_stage: code/prompts/graders/relative_grader_without_rubrics.MD
+      FLEXIBLE: code/prompts/graders/relative_grader.MD
+      FLEXIBLE_ORGANIZED: code/prompts/graders/relative_grader_organized.MD
+      EXPLICIT_ERROR_ANALYSIS: code/prompts/graders/relative_grader_with_explicit_error_analysis.MD
+    labels:
+      subject_prefix: 'RefGrader / '
+      input_header: '
+
+
+        --- INPUT DATA ---
+
+
+        [Problem Statement]:
+
+        '
+      student_header: '
+
+        [Given Student Solution]:
+
+        '
+      three_stage_student_header: '
+
+        [Contestant''s proposed solution]:
+
+        '
+      reference_header: '
+
+        [Reference correct solution]:
+
+        '
+      model_solution_header: '
+
+        [Correct Model Solution]:
+
+        '
+      rubric_header: '
+
+        [Detailed Rubric (out of 7 points)]:
+
+        '
+    subject_features:
+      harness: RefGrader
+      historical_api_revision: not_recorded
+      historical_inference_settings: not_recorded
+grading:
+  rule: 'Record the final grader-assigned credit on the original 0-7 Olympiad scale. This is a rating of the student
+    proof, not a binary success signal or grading-accuracy metric. Preserve each native judgment, including repeated
+    samples and unavailable grades. Human references are held separately: the IMO Shortlist correctness categories
+    use the authors'' mapping m(x)=2x-1 to 1,3,5,7, while MathArena uses its recorded 0-7 human grade. Do not round
+    scores, infer failed grades from malformed output or invoke a new judge.'
+  verifiers:
+    reported:
+      kind: source_reported_grader_rating
+      response_field: overall_assessment.score
+      source: https://github.com/ref-grader/ref-grader/blob/1479e350557e94c63fea0b4edb808ee0d0008db5/src/core/grader.py
+      human_reference: Separate source human judgment; no automatic correctness comparison is applied to the recorded
+        rating.
+sources:
+  upstream:
+  - name: native_results
+    url: https://huggingface.co/datasets/hmdmahdavi/ref-grader-data-and-logs
+    revision: 8b2a97c1c86e57474964afff03978ffa7cda68ee
+    files:
+    - match: (?:README\.md|imo-shortlist\.json|math_arena_results\.json)
+      path: data/{path}
+  - name: workflow_code
+    url: https://github.com/ref-grader/ref-grader
+    revision: 1479e350557e94c63fea0b4edb808ee0d0008db5
+    files:
+    - match: (?:LICENSE|.*\.(?:py|md|MD|yaml|yml|txt|xlsx))
+      path: code/{path}

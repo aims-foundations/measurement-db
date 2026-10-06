@@ -11,7 +11,7 @@ import sys
 
 
 _DIRECTIONS = {"higher_is_better", "lower_is_better", "unordered"}
-_CATEGORICAL_TYPES = {"binary", "error_presence", "likert_5", "likert_10", "ordinal"}
+_CATEGORICAL_TYPES = {"binary", "error_presence", "likert_5", "likert_10", "ordinal", "nominal"}
 _CONTINUOUS_TYPES = {"continuous", "continuous_bounded", "continuous_unbounded"}
 _NUMBER_KEY = re.compile(r"-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?")
 
@@ -146,6 +146,9 @@ def validate_scale_type(response_type: str, scale: Mapping | str) -> None:
             problem = f"requires exactly {size} declared discrete categories"
     elif response_type == "ordinal" and kind != "discrete":
         problem = "requires declared discrete categories"
+    elif response_type == "nominal":
+        if kind != "discrete" or domain.get("direction") != "unordered":
+            problem = "requires declared discrete categories with direction=unordered"
     elif response_type == "continuous" and kind != "interval":
         problem = "requires an explicit interval"
     elif response_type == "continuous_bounded":

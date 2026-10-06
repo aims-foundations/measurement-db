@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1023456
+    logical_sha256: 6256d73de74e91d63796c700a491f5d1b0c601d6fecdf2bf25ffd65678d59e46
+  subjects:
+    rows: 743
+    logical_sha256: c356306129dedc9884904c2ef127c25c4cf02490cc4f51409018fa77a7b8df56
+  responses:
+    rows: 1023456
+    logical_sha256: 5b41a2e1e44d66c6c25decbdbcfd32ce1fb0a2c0b49eb3aa62a7e4bda79d22c1
+  items:
+    rows: 255820
+    logical_sha256: b03954c28cf40c1a0c41276a075024e53931c3afce6b5b3a7e6f58d439c77e7e
+  benchmarks:
+    rows: 1
+    logical_sha256: e00317c52b478ddccf6340ca1232b677a968a3d526719dcb8398755ba89c5cdf
+source_claims:
+  source_instruction_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 63967
+  source_empty_completion_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 1
+  source_completions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 255864
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 1023456
+  source_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 1009730
+  source_not_applicable:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 13723
+  source_invalid_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 3
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 743
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 17
+  source_system_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 45
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 255820
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/openbmb/UltraFeedback
+    locator: 'All six original JSONL files: instruction, completions and four annotations per completion.'
+    scope: All recorded annotation slots, including N/A and invalid zero ratings. No model or judge execution.
+    expected: 1023456

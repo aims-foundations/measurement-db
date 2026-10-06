@@ -1,0 +1,4 @@
+- Preserve 110 Deep Research attempts and restore five Wide Research attempts from the historical public exports. Import native scores without thresholding; all five recorded Wide IoU scores are zero.
+- Use actual initial messages as inputs and full original inference passes as traces. Retain the richer candidate metadata that the Deep evaluation export simplifies, plus the complete recorded evaluation context.
+- The example results identify one model by filename. Historical runtime settings, search-index state and Deep judge identity are unrecorded; this subset does not establish full-benchmark performance.
+- Verify every attempt against both source exports, compare all previous Deep grades and trace text, and exercise the shared downloader, validators and normal build command. No inference or new judging.

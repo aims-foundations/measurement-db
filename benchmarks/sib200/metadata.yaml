@@ -1,0 +1,109 @@
+benchmark:
+  description: Original topic-classification outputs in 205 languages, with recorded language-specific classifier
+    runs and zero-shot LLM replies.
+  testing_condition: Reconstruct classifier correctness by exact comparison of each released prediction with its
+    original test category, following the author code. Preserve the native run summary and flag disagreements with
+    the saved predictions. LLM replies remain ungraded because the release has no per-item grades or original output
+    extractor; prior curator-generated fuzzy-match scores are not treated as author grades. Preserve all original
+    replies, including refusals and three empty cells. Classifier subject configurations retain their training-language
+    directory and run suffix. LLM model versions and the prompt template are described in the paper; exact API requests,
+    generation settings, classifier checkpoints and per-run runtime flags are not released. No inference or training
+    is performed.
+  paper_url: https://arxiv.org/abs/2309.07445
+  data_source_url: https://github.com/dadelani/sib-200
+  subject_type: model
+  item_type: task
+  license: 'Source repository and released results: Apache-2.0. Dataset text: CC-BY-SA-4.0, as declared in the author
+    Hugging Face dataset card.'
+  citation: "@misc{adelani2024sib200simpleinclusivebig,\n      title={SIB-200: A Simple, Inclusive, and Big Evaluation\
+    \ Dataset for Topic Classification in 200+ Languages and Dialects},\n      author={David Ifeoluwa Adelani and\
+    \ Hannah Liu and Xiaoyu Shen and Nikita Vassilyev and Jesujoba O. Alabi and Yanke Mao and Haonan Gao and Annie\
+    \ En-Shiun Lee},\n      year={2024},\n      eprint={2309.07445},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL},\n\
+    \      url={https://arxiv.org/abs/2309.07445},\n}"
+  tags:
+  - multilingual
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Released predicted category differs from the reference
+      '1': Released predicted category matches the reference
+  categorical: true
+  release_date: 2023-09
+  release: public
+  name: SIB-200
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      release: release
+      archive: release/outputs.zip
+      bank: release/data/annotated
+      llm: release/llm-results
+    classifier_models:
+      afroxlmr75L: afroxlmr75L
+      glot: glot
+      xlmr: xlmr
+      xlmrbase: xlmrbase
+    llm_columns:
+      output_gpt3.5: gpt-3
+      output_gpt4: gpt-4
+    llm_models:
+      output_gpt3.5: gpt-3.5
+      output_gpt4: gpt-4
+    paper_model_versions:
+      gpt-3.5: gpt-3.5-turbo-0613
+      gpt-4: gpt-4-0613
+    labels:
+      classifier_harness: SIB-200 released fine-tuned classifier outputs
+      llm_harness: SIB-200 released zero-shot LLM outputs
+      classifier_scope: Original test sentence supplied to the classifier. Tokenization and per-run checkpoints
+        are not recorded.
+      llm_scope: Original test sentence and paper-documented instruction. Exact historical API messages are unavailable.
+      classifier_configuration: Training language and run suffix identify the released configuration. Exact checkpoint
+        and runtime flags are unavailable.
+      llm_configuration: Paper-reported model version. Historical API settings and item-level grading are unavailable.
+    prompts:
+      llm: Is this a piece of news regarding science, technology, travel, politics, sports, health, entertainment,
+        or geography? {INPUT}
+grading:
+  verifiers:
+    classifier:
+      kind: reconstructed_native_exact_match
+      source: https://github.com/dadelani/sib-200/blob/efad32e0fc601cfbfdf5ca80672f29697f6f401f/code/train_textclass.py
+      function: evaluate; accuracy_score(out_label_ids, argmax(logits))
+      comparison: Saved category token equals the original category label; native run summaries are checked separately.
+      rule: Exact comparison of the saved category token with the reference category. Reconstruct correctness from
+        original per-item outputs; preserve conflicting aggregate summaries without changing either source.
+    llm:
+      kind: unavailable_original_grading
+      source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f/llm-results
+      limitation: Only generated replies and reference categories are released. Original per-item grades and the
+        author output extractor are absent.
+      rule: Predict the reference topic category. The author released the free-text reply but not its per-item grade
+        or output-extraction procedure. Retain the attempt with response=null; do not infer a grade from category
+        mentions.
+  rule: Use the declared protocol-specific rule. Preserve original outputs and make unavailable grades explicit.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/dadelani/sib-200
+    revision: efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    files:
+    - match: .*
+      path: release/{path}
+  - name: dataset_card
+    url: https://huggingface.co/datasets/Davlan/sib200
+    revision: 38977a667f6fc264d5c26ec57a01e16db040b358
+    files:
+    - match: README\.md
+      path: dataset-card.md

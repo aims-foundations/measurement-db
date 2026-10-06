@@ -1,0 +1,3 @@
+- Preserve all 1,403,380 identified sentence predictions, complete token/tag sequences, and recorded model/language/run configurations. The unqualified, partly shortened XLM-R export stays raw-only.
+- Match historical references: restore 10,623 previously skipped sentences and correct 85 misaligned grades. Preserve BiLSTM digit-normalized inputs and original Unicode code points.
+- Document the derived sentence exact-match readout separately from published entity F1; correct the legacy citation and dataset license. No model evaluation is rerun.

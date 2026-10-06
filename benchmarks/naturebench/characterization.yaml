@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2070
+    logical_sha256: f2d55e0dbd720a09d7071c09c9f0b613718078422e15d249f735866d9549604c
+  subjects:
+    rows: 23
+    logical_sha256: 8156433de1e716b2b1041eb0f072de03ef20a60c3ca671ed3d22c0557fb7a1dc
+  responses:
+    rows: 2070
+    logical_sha256: 3a54b84aba933a1c407514f757369105bee4980d4210255a77af21c1b6c3f495
+  items:
+    rows: 181
+    logical_sha256: 175787c21934684d51f8ee8e5c47f5ca846346e32e929a62d56b6ed659ba9653
+  benchmarks:
+    rows: 1
+    logical_sha256: 6c549c0559872f0e0f98c61d204820fe648b8f40ac13156ec24efc4917eb02e0
+source_claims:
+  source_current_saved_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 1414
+  source_submission_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 104513
+  source_historical_saved_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 1059
+  source_conversations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 1439
+  source_malformed_original_json_lines:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 26
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 692
+  source_historical_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 1080
+  source_historical_grade_changes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 79
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 2070
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 23
+  source_cases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 90
+  source_native_index_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 1440
+  source_score_only_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 7
+  source_captured_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/FrontisAI/NatureBench/blob/7b9055a7c6f38d11ffa707017adb9c8eacad014b/naturebench-data.js
+    locator: Every full-track cell, matched to FrontisAI/NatureBench-traces at 40beb74d21412655a5471b1032ec91256b40e55b
+      and the captured current/historical source documents.
+    scope: Published configuration/task outcomes, not separately counted submissions or subset leaderboard views;
+      preserve every original trace byte.
+    expected: 7519

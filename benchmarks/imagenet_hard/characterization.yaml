@@ -1,0 +1,153 @@
+format_version: 1
+tables:
+  assets:
+    rows: 7496
+    logical_sha256: afd6763739359071c41398a0dae5e4d23269d0d6db5eab187fdf466fc751ea43
+  benchmarks:
+    rows: 1
+    logical_sha256: af68acf345d7bf52ae58e9ef83cc4c26b2d4813a90ce135ffcad00278f721958
+  items:
+    rows: 7496
+    logical_sha256: d0c790cc42b5067cd1716629d248d8469876b9b65c88c577630c31b2f46cb87b
+  responses:
+    rows: 97500
+    logical_sha256: 9beefbecfc54c5b98d297d49c4472a27fea1fcc09d74b0b82d24a4f4e7e7e797
+  subjects:
+    rows: 13
+    logical_sha256: a5cddc7436eff1adfefcbb7383c0da209965ce85b77036c89cc193ac64c9e5ab
+  traces:
+    rows: 97500
+    logical_sha256: 0043dcc30ef338709902326c056d783e91b3e18359dafe46577ae4c537ac24a3
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 13
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 7496
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 7496
+  source_image_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 7500
+  source_classes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 200
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 97500
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 97500
+  source_duplicate_stimulus_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 4
+  source_additional_predictions_checked:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 17010000
+  source_crop_accuracies_reconciled:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 2268
+  source_main_baseline_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 45000
+  source_additional_baseline_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/taesiri/ZoomIsAllYouNeed/tree/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796
+    locator: The author-linked correctness.pkl and additional_experiment/imagenet-a.zip, plus the original 7,500-image
+      ImageNet-A archive. The original evaluator and additional-results notebook declare unshuffled ImageFolder
+      order and masked top-1 scoring.
+    scope: Fixed center-crop baseline of the ImageNet-A source cohort. Main and additional releases remain distinct.
+      All additional crop accuracies reconcile independently. Source image aliases and repeat presentations are
+      retained without treating oracle maxima as extra attempts.
+    expected: 52500

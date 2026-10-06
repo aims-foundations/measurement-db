@@ -1,0 +1,126 @@
+benchmark:
+  name: RelianceScope
+  description: Recorded LLM classification of help-seeking and response-use in student–chatbot interaction segments.
+  testing_condition: The subjects are classifier models, not the students or tutoring chatbot. Each of 3,600 original
+    joint classification calls yields two scored measurements, one per engagement axis; these are correlated outputs
+    of the same call, not independent trials. Item content includes the original segment plus the documented system
+    prompt, few-shot examples and response schema. Prompt context is transcribed from the evaluation report; exact
+    wire-format requests and message ordering were not released. Do not add a separate axis instruction to the input.
+    The axis belongs to its grading criterion. Preserve recorded reasoning when present, without generating it.
+    Models, prompting strategies and report-declared temperatures define distinct subject configurations. The paper
+    publishes the OSF view-only access link, but no dataset redistribution license was found in the captured README
+    or project metadata. The paper license does not establish a separate dataset license.
+  paper_url: https://arxiv.org/abs/2602.16251
+  data_source_url: https://osf.io/27ec5/
+  subject_type: model
+  item_type: interaction_classification
+  license: Not specified in the captured dataset sources.
+  citation: 'Jin et al. RelianceScope: An Analytical Framework for Examining Students’ Reliance on Generative AI
+    Chatbots in Problem Solving. L@S 2026. arXiv:2602.16251.'
+  tags:
+  - education
+  - llm_classification
+  - engagement
+  modality:
+  - text
+  domain:
+  - education
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The predicted engagement mode differs from the human reference on this axis.
+      '1': The predicted engagement mode matches the human reference on this axis.
+  categorical: true
+  release_date: 2026-02
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      segments: data/150-benchmark.jsonl
+      outputs: outputs/*.jsonl
+      report: reports/evaluation.pdf
+    patterns:
+      system: <Role>.*?</LEARNING\s+INSTRUCTION>
+      three_shot: 3-shot\s+examples\s+(.*?)6-shot\s+examples
+      nine_shot: 9-shot\s+examples\s+(.*?)User\s+prompt
+      filename: (?P<prompting>[^_]+)_(?P<model>.+)\.jsonl
+    models:
+      qwen3:8b: qwen3:8b
+      qwen3:30b: qwen3:30b
+      gpt-4o-mini: gpt-4o-mini-2024-07-18
+      gpt-5.2: gpt-5.2-2025-12-11
+      gemini-3-flash-preview: gemini-3-flash-preview
+      gemini-3-pro-preview: gemini-3-pro-preview
+    temperatures:
+      qwen3:8b: '0.6'
+      qwen3:30b: '0.6'
+      gpt-4o-mini: '1.0'
+      gpt-5.2: not_applicable_in_source_report
+      gemini-3-flash-preview: '1.0'
+      gemini-3-pro-preview: '1.0'
+    filename_escapes:
+      _x3a_: ':'
+      _x2b_: +
+    strategies:
+      zeroshot: none
+      3shot: three_shot
+      9shot: nine_shot
+      9shot+cot: nine_shot
+    plain_schema:
+      help_seeking_mode: Passive | Active | Constructive
+      response_use_mode: Passive | Active | Constructive
+    cot_schema:
+      help_seeking_reasoning: string
+      help_seeking_mode: Passive | Active | Constructive
+      response_use_reasoning: string
+      response_use_mode: Passive | Active | Constructive
+    reference_fields:
+      help_seeking: gt_HelpSeeking
+      response_use: gt_ResponseUse
+    prediction_fields:
+      help_seeking: help_seeking_mode
+      response_use: response_use_mode
+    labels:
+      harness: RelianceScope
+      subject_separator: ' / '
+      prompt_origin: transcribed_evaluation_report_not_wire_request
+grading:
+  rule: Score each engagement axis separately by comparing the recorded mode with its human reference after stripping
+    surrounding whitespace and lowercasing. Keep both outputs associated with their one original classifier call.
+  verifiers:
+    reported:
+      kind: recorded_label_exact_match
+      normalization:
+      - strip
+      - lower
+      source: llm-evaluation/llm-performance report.pdf; compare per-axis class predictions with human annotations
+sources:
+  upstream:
+  - name: evaluation
+    url: https://api.osf.io/v2/nodes/27ec5/files/osfstorage/699017c19c7506d9d7e24c6e/?view_only=a8234a17f908464297d35d5ca1ef476c
+    revision: null
+    tree_sha256: 121d360c5bc356c0f7d577f447d005fef60c9269623e3adbe2ca9ed4f76c8305
+    files:
+    - match: 150-benchmark\.jsonl
+      path: data/150-benchmark.jsonl
+    - match: llm evaluation\.pdf
+      path: reports/evaluation.pdf
+    - match: llm-performance report\.pdf
+      path: reports/performance.pdf
+    - match: outputs/(?P<filename>.+\.jsonl)
+      path: outputs/{filename}
+  - name: description
+    url: https://osf.io/download/s3erx/?view_only=a8234a17f908464297d35d5ca1ef476c&version=1
+    revision: '1'
+    file: README.md
+    size: 23260
+    sha256: e5b7f6705bac773a51ae2fa6f6185538f16306865a0e8ba31261ecd567700a28

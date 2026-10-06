@@ -1,0 +1,3 @@
+- Captured 54 official runs for 18 model labels, their complete released histories, and pinned task/scoring sources. The five table stages retain all 96 previous binary observations and add six newly published runs plus the reported dollar scores.
+- Final cash, survival, and finishing above the $1M starting balance have separate grading protocols. Use the published cash statistic; preserve differing ledger balances and normalized endpoint days in each trace.
+- Record only explicitly released API settings. Historical harness revisions and most inference configurations are unknown; the published task instructions do not reconstruct every historical system prompt. No new inference or simulation was performed.

@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5100000
+    logical_sha256: 14dd10a241445b0a1b583f6ac9acaac82e316403af1efb1b0a94804d126abece
+  subjects:
+    rows: 102
+    logical_sha256: 39390b1b0d64e14348623afafd63cf542b6fbb1b82bf53dc1dd06528430dd235
+  responses:
+    rows: 5100000
+    logical_sha256: 3d203d5a9d7eaebf4295ddb8771995cf8b632833e62fe9bea9b08c24d502e98d
+  items:
+    rows: 149793
+    logical_sha256: 233211a2f02cb940d683ddf98e7c71d5381c41d29d942824dd5d7bee4b2c2dc5
+  benchmarks:
+    rows: 1
+    logical_sha256: 90862dbcba0e2f25805161a819c5f33e93da7024eacd9bbb372c67cd8f8cc100
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 5100000
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 510
+  source_base_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 50000
+  source_tied_maxima:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 100107
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 102
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 149793
+  canonical_alias_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    locator: All pinned outputs_base/outputs_chat_v1/outputs_chat_v2 numeric pickle records and data/*.json. Original
+      generator functions and get_accuracy establish input assembly, option ordering and grading.
+    scope: Complete released forward-pass records, before removing demonstrations or splitting calibration/test
+      rows. No model inference or uncertainty-set recomputation.
+    expected: 7038

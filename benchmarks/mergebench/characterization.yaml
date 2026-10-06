@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3638
+    logical_sha256: f184f35a639d22d21080d34b8595e57eadb13b2bccc8ab3c0d0d9b9051b037c1
+  subjects:
+    rows: 2
+    logical_sha256: 3172a16042bffc17b0c99e69bb296de1b0ba0f8d04233e8f75ce7e08d5a30341
+  responses:
+    rows: 3638
+    logical_sha256: 3c1de6002336c3b5886a0c31b531d8763e301bbd39af94fea3eaae3630d82744
+  items:
+    rows: 1813
+    logical_sha256: 1ccae2badad0a0b023c4f9161003bb230a60c5c9bd71e68e2e05772405a798ba
+  benchmarks:
+    rows: 1
+    logical_sha256: 565279d75e1655d92b4aa68416d89020919d6a9e71e25a00816e1279fdb706ae
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 3638
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 2
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 1813
+  source_unavailable_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 1
+  source_generated_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 2140
+  source_overwritten_output_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 1498
+  source_summary_values:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 118
+  source_repeated_occurrences:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/uiuctml/MergeBench
+    locator: Both safety_generation.json files and adjacent safety_eval.json summaries at dedf1b1b76d69018c058e2ee45406ba5d0021238,
+      with the linked native harness and original task banks.
+    scope: Independently inspect each source record, original task association, overwritten output, cached category,
+      repeated occurrence and every scalar safety summary. No models or classifiers are run.
+    expected: 12

@@ -1,0 +1,30 @@
+# Definition of Data Schema
+- A **subject** is the complete configuration of an AI system under evaluation: the **base model** (typically a large language model) together with the setting that alters its behavior, including its **access date**, **harness name**, **harness version**, and **reasoning effort**. [*Anthropic's Demystifying evals for AI agents*](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents) defines a harness (which is also called scaffold) as "the system that enables a model to act as an agent: it processes inputs, orchestrates tool calls, and returns results." Two evaluations of the same base model under different configurations (e.g., the same base model with two harnesses) can behave quite differently, constituting two different subjects.
+
+- An **item** (i.e., a question or a task) comprises the complete stimulus presented to the subject and its **grading protocol**. The stimulus includes the underlying **prompt**, attachments, and **item features** that alter its presentation (such as few-shot examples or prompt phrasing). The grading protocol comprises the grading criterion (reference answer, rule, or both) and the verifier that applies it. The same stimulus evaluated under different grading protocols has distinct item IDs; its text-only `content_hash` remains available for finding shared prompt text.
+
+- An **interactor** is any party other than the subject that participates in producing a response, such as the **attacker** probing the subject in an adversarial evaluation, the **simulated user** or **human user** the agent converses with, or the **opponent subject** in a pairwise comparison.
+
+- A **test condition** records a setting of the measurement occasion that varied while the model and the prompt content were held fixed, including the **sampling temperature**. The test condition is null when all information about the experiment is captured in other fields. We expect most information of the experiment to be documented in specific fields, and test conditions should be null most of the time.
+
+- A **response** is the grade of a **trace** for tuples of (subject, item, trial, interactor, test condition), typically on a ordinal scale with a small, finite set of categories. The typical case in AI evaluation is binary (with 1 represents correct or success, and 0 otherwise), but there is also the case where we have Likert scales. Continuous responses for the tuple (subject, item, trial, integrator, test condition) are empiricially rare, especially for frontier subjects.
+
+# Implementation of Data Schema
+Each benchmark should have one folder called `benchmarks/{dataset}/`. The most important file in this folder is `build.py`, which is responsible for downloading the raw upstream data and adapt it to the data schema above. The downloaded data is stored in the `raw/` and, in some cases, the `docker/` folder. For a given upstream data source, the data curation done by the file `build.py` should be completely reproducible and well-documented. The `build.py` file relies on the `metadata.yaml` file, stored in the same directory, to provide metadata about the benchmark. The `metadata.yaml` together with shared dataset validation and benchmark-specific source checks under `tests/benchmarks/`, with reviewed expectations in `characterization.yaml` ensure the quality of the curation process.
+
+The `metadata.yaml` file contains the declarative benchmark facts, such as benchmark name, expected number of item from benchmark technical report, expected number of subject, and trace coverage, as well as provider-owned source URLs and paper references. To see a complete list of fields and their descriptions in a `metadata.yaml` file, see `benchmark_metadata_schema.yaml`. We avoid duplicate data stored in this YAML file in other files to avoid drift. For the template of a file `build.py`, please see `benchmarks/_template/build.py`, which can be helpful when starting a new benchmark. Each `build.py` file is intentionally writen in a way that is readable and maintainable. *The quality of the `metadata.yaml` file and characteristic test files are ensure by human reviewers.*
+
+A `build.py` file should generate at least 4 tables, saved as parquet files. For a complete schema of the table with detailed descriptions, please see `parquet_schemas.yaml`. These files are:
+- The file `items.parquet` lists the benchmark's items. Each row includes the exact item used to evaluate the subject and its required `grading_criterion` and `verifier`. The criterion is a JSON object with `reference_answer` and `rule` fields: each is a nonempty string or null, and at least one must be supplied. The verifier describes the grader or implementation that applies the criterion. Both contribute to item identity, together with the effective response scale inherited from the benchmark or specified in a mixed-scale criterion. Uniform scales are not duplicated in item records. Neither grading field is repeated in `responses.parquet`.
+
+- The file `subjects.parquet` lists the AI subjects the benchmark evaluated.
+
+- The file `benchmarks.parquet` is a single row of metadata about the benchmark itself. Its upstream data link is `source_url`. The derived `has_reference_answer` flag is true if any item has a reference answer; items graded solely by rules do not set this flag.
+
+- The file `responses.parquet` is a long-form table with one row per (subject, item, trial, test condition, interactors) tuple.
+
+- The optional file `traces.parquet` holds available interaction traces, with zero or one trace per response. Join it to `responses.parquet` on `response_id`; repeated attempts have distinct response IDs. The response table does not contain a trace placeholder. The trace file is omitted when no traces are available.
+
+- The file `assets.parquet` contains any additional assets needed for the benchmark, such as images or other files.
+
+The `scripts/build_measurement_tables/` folder holds shared Python helpers for registering subjects and items, deriving IDs, and validating and writing tables.

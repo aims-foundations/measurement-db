@@ -1,0 +1,186 @@
+benchmark:
+  name: GoodAI LTM Benchmark
+  description: Released long-term-memory tests for conversational agents, preserving task definitions, scheduling
+    conditions and complete recorded conversations.
+  testing_condition: 'Import 3,507 scored records from ten released experiment groups and 37 session configurations.
+    Exclude runstats cost/runtime summaries. Preserve native score units and each published reference, including
+    author revisions. Keep folder identities even when the original configuration run_name differs. Restaurant is
+    adaptive: retain initial recorded instructions and menu as item context and the subsequent interaction in traces.
+    Released task programs are reference assets; their exact historical runtime correspondence is not established.
+    Model endpoint revisions and unrecorded settings remain unknown. No agents or graders are executed.'
+  paper_url: https://arxiv.org/abs/2409.20222
+  data_source_url: https://github.com/GoodAI/goodai-ltm-benchmark
+  subject_type: model
+  item_type: task
+  license: The repository declares MIT. Constituent datasets retain their original attribution and terms; the upstream
+    README also states usage restrictions for GPT-generated tests. Capturing these files does not establish additional
+    permissions.
+  citation: '@article{castillobolado2024beyond, title={Beyond Prompts: Dynamic Conversational Benchmarking of Large
+    Language Models}, author={Castillo-Bolado, David and Davidson, Joseph and Gray, Finlay and Rosa, Marek}, journal={arXiv
+    preprint arXiv:2409.20222}, year={2024}}'
+  tags:
+  - memory
+  - conversation
+  - agent
+  modality:
+  - text
+  domain:
+  - long_term_memory
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2024-09
+  release: public
+  version: b69d945191c426b887932eb832a52f3bb63a3a85
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: upstream-source.zip
+      prefix: goodai-ltm-benchmark-b69d945191c426b887932eb832a52f3bb63a3a85/
+      tests: data/tests/
+    patterns:
+      result: ^data/tests/(?P<release_group>[^/]+)/results/(?P<session>[^/]+)/(?P<task_type>[^/]+)/(?P<example>[^/]+)_(?P<repetition>\d+)\.json$
+      message: '(?s)^(?P<role>Test|Agent|System)(?: \([^)]*\))?: ?(?P<message>.*)$'
+    labels:
+      program_revision: b69d945191c426b887932eb832a52f3bb63a3a85
+      dynamic_task: Restaurant
+      menu_marker: 'Welcome to our restaurant. Here is the menu for you to look over:'
+      dynamic_scope: Initial recorded instructions and menu; later prompts depend on the agent responses and remain
+        in the trace. Attached programs are released references, not verified historical runtime snapshots.
+      revised: Original automatic fields are retained alongside the published result; use the published score and
+        its associated reference.
+      unmarked: No explicit automatic-result revision marker. The release does not establish whether all historical
+        grades were untouched.
+    grading_fields:
+      expected_responses: Keep the reference associated with each published result in the grading criterion.
+      evaluation_fn: Keep the grading protocol separate from item inputs.
+    task_programs:
+      Colours: datasets/colours.py
+      Delayed Recall: datasets/delayed_recall.py
+      Instruction Recall: datasets/instruction_recall.py
+      Jokes: datasets/jokes.py
+      Locations Directions: datasets/locations_directions.py
+      NameList: datasets/name_list.py
+      Prospective Memory: datasets/prospective_memory.py
+      SallyAnne: datasets/sally_ann.py
+      Shopping: datasets/shopping.py
+      Trigger Response: datasets/trigger_response.py
+      ChapterBreak: datasets/chapterbreak.py
+      Restaurant: datasets/restaurant.py
+      Spy Meeting: datasets/spy_meeting.py
+    shared_resources:
+      interface: dataset_interfaces/interface.py
+      scheduler: runner/scheduler.py
+      menu: data/Restaurant/menu.json
+grading:
+  rule: Import the original published score on its recorded 0-to-max_score scale, without normalization or regrading.
+  verifiers:
+    Colours:
+      kind: deterministic
+      rule: Check whether the expected colour occurs in the final response, ignoring case.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/colours.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Delayed Recall:
+      kind: judge
+      rule: The released task uses the shared GPT grader to compare responses with the recorded targets.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/delayed_recall.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Instruction Recall:
+      kind: judge
+      rule: The released task uses the shared GPT grader to compare responses with the recorded instruction-specific
+        targets.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/instruction_recall.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Jokes:
+      kind: judge
+      rule: Accept an expected answer substring; otherwise use the released GPT grading fallback.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/jokes.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Locations Directions:
+      kind: judge
+      rule: An LLM extracts the reported directions, which are then compared with the expected destination.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/locations_directions.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    NameList:
+      kind: deterministic
+      rule: Parse a JSON list of names, compare case-insensitive multisets, and divide matching names by the larger
+        list length.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/name_list.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Prospective Memory:
+      kind: deterministic
+      rule: A callback checks whether the requested quotation appears at the specified later message position; unfinished
+        callbacks retain their published result.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/prospective_memory.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    SallyAnne:
+      kind: deterministic
+      rule: Parse the JSON answer and compare it with the expected answer, ignoring case.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/sally_ann.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Shopping:
+      kind: deterministic
+      rule: Parse the JSON shopping list; combine the released item-presence, quantity-matching and no-hallucination
+        components.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/shopping.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Trigger Response:
+      kind: judge
+      rule: Check the response by substring and ROUGE matching, with the released GPT grading fallback where required.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/trigger_response.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    ChapterBreak:
+      kind: deterministic
+      rule: Extract numbers from the response; their set must contain only the correct continuation option.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/chapterbreak.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Restaurant:
+      kind: judge
+      rule: Use the recorded rubric to grade the evolving restaurant conversation, including role adherence and
+        order correctness.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/restaurant.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+    Spy Meeting:
+      kind: deterministic
+      rule: Match accepted reference keywords and synonyms; penalize recorded incorrect alternatives under the released
+        task rule.
+      source: https://github.com/GoodAI/goodai-ltm-benchmark/blob/b69d945191c426b887932eb832a52f3bb63a3a85/datasets/spy_meeting.py
+      scope: Released grading-code reference; earlier scoring implementations and manual review can differ. The
+        native result supplies the applicable maximum and reference. Preserve the published score and full original
+        fields.
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/GoodAI/goodai-ltm-benchmark/zip/b69d945191c426b887932eb832a52f3bb63a3a85
+    revision: b69d945191c426b887932eb832a52f3bb63a3a85
+    file: upstream-source.zip
+    size: 585292787
+    sha256: 38ccbe52e5f502585258040ee3d1e3d01631cacce331774054f08f3b40bb6c11

@@ -1,0 +1,3 @@
+- Source: pinned author CSVs and the complete Georgia Tech archive, checked against its publisher MD5; 3,078 model transcriptions of 513 observation samples across six MLLMs.
+- Mapping: preserve original PNGs, complete model Markdown and judgment records. References use 293 expert corrections plus 220 author-reviewed Gemini transcripts; remove the old judgment-derived input excerpts.
+- Scope: 184 attempts lack judgments and eight judge API exceptions remain ungraded. Other 2,886 original grades are unchanged. Textbook problem context is withheld upstream; no resizing, inference or rejudging.

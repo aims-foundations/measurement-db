@@ -1,0 +1,3 @@
+- Source: unchanged 649-file upstream archive with 426 prediction CSVs, containing 415,525 test and 831,400 train records across all three folds and fourteen method labels.
+- Transformation: load CSV tables, join molecule/reference and fitted-model configurations, and preserve every original field in linked traces. All rows reconcile with their source splits; 43,330 additional HIV MLP training occurrences come from the documented oversampling routine.
+- Limits: native PR-AUC and within-cluster Spearman metrics grade groups, so individual response grades remain null; model predictions are retained without inventing a threshold. Raw scores are not uniformly probabilities. Fitted weights and realized seeds are absent, and training records are not held-out performance.

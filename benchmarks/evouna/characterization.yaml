@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 27542
+    logical_sha256: f5165325dd1d46aa96ef7dcd3a582666fa3103523952cbc2d50850aca74634e8
+  subjects:
+    rows: 5
+    logical_sha256: 52b5b6f4f4fb0ee25ab9357226c27a9598b5d3a0e6f007114429890a69bc6ccb
+  responses:
+    rows: 27548
+    logical_sha256: e7c736bcd8103f8b8930289fd8c057ebe39eadce2e5f9459961701d852826cb3
+  items:
+    rows: 5609
+    logical_sha256: 48b5f8368b9c9d5ccec55fce36fe27aaf5cb01e824b4ef9e35a1e844d9202182
+  benchmarks:
+    rows: 1
+    logical_sha256: 0acb055d79e5daa52cf70d5fe0ff21824f3a7970743fc51347ea6bb02644b4b1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wangcunxiang/QA-Eval
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 27548
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wangcunxiang/QA-Eval
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 19513
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/wangcunxiang/QA-Eval
+    locator: Pinned native result files listed in metadata.yaml
+    scope: Observed source records under the inclusion and grading rules documented in curation_record.md.
+    expected: 2189

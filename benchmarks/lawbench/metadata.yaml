@@ -1,0 +1,412 @@
+benchmark:
+  release: public
+  name: LawBench
+  description: Released Chinese legal-task predictions with complete recorded prompts and deterministic native scoring.
+  testing_condition: Preserve all 918000 released predictions across 18 tasks, 51 source model labels and both prompting
+    settings. Use each record's actual prompt and reference, including demonstrations and model template text, rather
+    than matching against a later task-bank ordering. A single HUMAN message is represented by its prompt text;
+    the original message structure remains in traces. Reconstruct scores using the unchanged pinned per-item evaluators
+    and declared dependency versions. Seventeen tasks have per-item metrics; document correction (2-1) has only
+    corpus F0.5 and remains ungraded per record. Native-skipped references remain null. Task 2-2 is scored as binary
+    accuracy by the captured code despite the README's F1 description. Task 3-4/3-5 normalized log-distance can
+    be negative and is not clipped. Tasks 2-9/2-10 have published aggregate results but no released per-item prediction
+    files and receive no fabricated observations. Numeric historical inference settings and exact model revisions
+    are unrecorded. Reported reference labels are preserved, including disputed labels in upstream issues.
+  paper_url: https://arxiv.org/abs/2309.16289
+  data_source_url: https://github.com/open-compass/LawBench
+  subject_type: model
+  item_type: task
+  license: Apache-2.0
+  citation: 'Fei et al. LawBench: Benchmarking Legal Knowledge of Large Language Models (2023).'
+  tags:
+  - chinese
+  - legal_reasoning
+  - classification
+  - generation
+  modality:
+  - text
+  domain:
+  - law
+  - multilingual
+  multi_single_turn: single_turn
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2023-09
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: upstream.zip
+      prefix: LawBench-e30981bb3ff54c41571f222e0b23e92d27375388/
+      grader_directory: evaluation
+    native_functions:
+      1-1: ftcs.compute_ftcs
+      1-2: jec_kd.compute_jec_kd
+      2-1: wsjd.compute_wsjd
+      2-2: jdzy.compute_jdzy
+      2-3: wbfl.compute_wbfl
+      2-4: zxfl.compute_zxfl
+      2-5: ydlj.compute_ydlj
+      2-6: xxcq.compute_xxcq
+      2-7: yqzy.compute_yqzy
+      2-8: lblj.compute_lblj
+      3-1: ljp_article.compute_ljp_article
+      3-2: cjft.compute_cjft
+      3-3: ljp_accusation.compute_ljp_accusation
+      3-4: ljp_imprison.compute_ljp_imprison
+      3-5: ljp_imprison.compute_ljp_imprison
+      3-6: jec_ac.compute_jec_ac
+      3-7: jetq.compute_jetq
+      3-8: flzx.compute_flzx
+    corpus_tasks:
+      2-1: corpus_metric_no_individual_grade
+    excluded_references:
+      2-2: (?s)^.{7}赔偿.$
+      3-4: 死刑|无期
+      3-5: 死刑|无期
+    runtime:
+      python_version: '3.12.12'
+      workers: '8'
+      python_hash_seed: '0'
+    packages:
+      jieba: 0.42.1
+      rouge-chinese: 1.0.3
+      cn2an: 0.5.23
+      proces: 0.1.7
+      nltk: 3.9.1
+    labels:
+      subject_prefix: 'LawBench / '
+      input_scope: Complete saved prompt text including demonstrations and any recorded template.
+    subject_features:
+      harness: LawBench released predictions
+      historical_configuration: numeric_settings_not_recorded
+      model_identifier_status: released_directory_label
+sources:
+  upstream:
+  - name: upstream
+    url: https://codeload.github.com/open-compass/LawBench/zip/e30981bb3ff54c41571f222e0b23e92d27375388
+    revision: e30981bb3ff54c41571f222e0b23e92d27375388
+    file: upstream.zip
+    size: 437892740
+    sha256: c1b67e5af917fe3bd62db7f5f77a622a3d4dd92ffbb75f627dc2b0b71719987a
+grading:
+  rule: Preserve source inputs and references; reconstruct only mathematically per-item metrics with unchanged source
+    code. Null denotes an unavailable individual grade.
+  verifiers:
+    1-1:
+      kind: reconstructed_native_deterministic_metric
+      metric: ROUGE-L
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ftcs.py
+      function: ftcs.compute_ftcs
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    1-2:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/jec_kd.py
+      function: jec_kd.compute_jec_kd
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-1:
+      kind: reconstructed_native_deterministic_metric
+      metric: corpus_F0.5
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/wsjd.py
+      function: wsjd.compute_wsjd
+      response_scale:
+        kind: interval
+        min: 0
+        max: 100
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. This task has only a corpus F0.5 metric; preserve each recorded attempt with response=null,
+        without allocating the corpus score to it.
+    2-2:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/jdzy.py
+      function: jdzy.compute_jdzy
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-3:
+      kind: reconstructed_native_deterministic_metric
+      metric: F1
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/wbfl.py
+      function: wbfl.compute_wbfl
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-4:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/zxfl.py
+      function: zxfl.compute_zxfl
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-5:
+      kind: reconstructed_native_deterministic_metric
+      metric: F1
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ydlj.py
+      function: ydlj.compute_ydlj
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-6:
+      kind: reconstructed_native_deterministic_metric
+      metric: F1
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/xxcq.py
+      function: xxcq.compute_xxcq
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-7:
+      kind: reconstructed_native_deterministic_metric
+      metric: ROUGE-L
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/yqzy.py
+      function: yqzy.compute_yqzy
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    2-8:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/lblj.py
+      function: lblj.compute_lblj
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-1:
+      kind: reconstructed_native_deterministic_metric
+      metric: F1
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ljp_article.py
+      function: ljp_article.compute_ljp_article
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-2:
+      kind: reconstructed_native_deterministic_metric
+      metric: ROUGE-L
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/cjft.py
+      function: cjft.compute_cjft
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-3:
+      kind: reconstructed_native_deterministic_metric
+      metric: F1
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ljp_accusation.py
+      function: ljp_accusation.compute_ljp_accusation
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-4:
+      kind: reconstructed_native_deterministic_metric
+      metric: normalized_log_distance
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ljp_imprison.py
+      function: ljp_imprison.compute_ljp_imprison
+      response_scale:
+        kind: interval
+        min: null
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. The native normalized log-distance can be negative for sufficiently large errors and is
+        not clipped.
+    3-5:
+      kind: reconstructed_native_deterministic_metric
+      metric: normalized_log_distance
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/ljp_imprison.py
+      function: ljp_imprison.compute_ljp_imprison
+      response_scale:
+        kind: interval
+        min: null
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. The native normalized log-distance can be negative for sufficiently large errors and is
+        not clipped.
+    3-6:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/jec_ac.py
+      function: jec_ac.compute_jec_ac
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-7:
+      kind: reconstructed_native_deterministic_metric
+      metric: accuracy
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/jetq.py
+      function: jetq.compute_jetq
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+        direction: higher_is_better
+        meanings:
+          '0': Native parser and reference comparison return failure
+          '1': Native parser and reference comparison return success
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.
+    3-8:
+      kind: reconstructed_native_deterministic_metric
+      metric: ROUGE-L
+      source: https://github.com/open-compass/LawBench/blob/e30981bb3ff54c41571f222e0b23e92d27375388/evaluation/evaluation_functions/flzx.py
+      function: flzx.compute_flzx
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+        direction: higher_is_better
+      rule: Use the unchanged published {task} evaluator on the single released record, including its original prediction
+        and reference. The item contains the complete recorded prompt for the released {setting} setting, including
+        demonstrations and any saved template text. The reference_answer field is a JSON-encoded string, preserving
+        empty references and all whitespace. Source-excluded references remain ungraded; abstentions use the native
+        score. These are reconstructed deterministic grades with declared library versions, not newly generated
+        model responses. Preserve the native per-item value without thresholding or rounding.

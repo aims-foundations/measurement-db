@@ -1,0 +1,3 @@
+- Sources: pinned author website results/questions, earlier question export with AoPS topic links, official evaluator, and task-dataset license card.
+- Transformation: preserve all 69,264 reported grades and complete source records; associate zero-based result IDs with the ordered task release, checked against the earlier author export. Repeated question/reference definitions share an item while retaining each occurrence.
+- Limits: traces contain source records, not unreleased model completions; prompts, decoding settings and historical grader revisions are unknown. Placeholder release dates are omitted. The older 9,079-question results export has unresolved task associations and remains only in raw.

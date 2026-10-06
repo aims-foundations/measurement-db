@@ -1,0 +1,178 @@
+format_version: 1
+tables:
+  traces:
+    rows: 15344
+    logical_sha256: 9e8e70e33e9b9814b6754a9e21f6030e3ead02168ac5f801a3352c7130643e47
+  subjects:
+    rows: 5
+    logical_sha256: e9772d6bd11e260a5441e371e0912080477ecfb0046dc143302671c1fdcb8aff
+  responses:
+    rows: 15344
+    logical_sha256: 8ee0b43e91db73979f6a52395c3540bf6c10e2e9e31de30faa63212cc779b7a3
+  items:
+    rows: 15344
+    logical_sha256: 0e76b79011297e7031c938b4b775d1a9e80d4e30285576aee2d70c3d59418341
+  benchmarks:
+    rows: 1
+    logical_sha256: ec9d2f030f25186a6c1094ece99ffc7d04a7536224cb65b9a6d9c280ce9fae78
+source_claims:
+  source_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 1918
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 15344
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 15344
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 15344
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 5
+  source_rated_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 959
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 197
+  source_unrated_generations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 26
+  source_unrated_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 17
+  source_human_reference_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 394
+  source_changed_display_fields:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected: 157
+  source_grade_histograms:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/coynestevencharles/annotating-errors-wcf
+    locator: Pinned rating_dataset/rated_feedback.json and the five AI fb_setting_outputs/test JSONL files.
+    scope: Released teacher ratings of AI feedback, all native grades, full prompts and outputs, individual
+      teacher identities and unrated-output exclusions.
+    expected:
+      is_relevant/1: 1906
+      is_factual/1: 1844
+      has_what_and_why/1: 1888
+      has_what_to_do/1: 1916
+      is_comprehensible/1: 1875
+      has_out_of_scope/0: 1902
+      is_direct/0: 1778
+      feedback_quality/4: 480
+      feedback_quality/5: 1199
+      is_comprehensible/0: 43
+      feedback_quality/3: 149
+      is_factual/0: 74
+      feedback_quality/2: 54
+      feedback_quality/1: 36
+      is_relevant/0: 12
+      is_direct/1: 138
+      has_out_of_scope/1: 16
+      has_what_and_why/0: 30
+      has_what_to_do/0: 2
+      is_direct/2: 2
+    absolute_tolerance: 0
+  paper_table3_means:
+    kind: aggregate
+    origin: reported
+    source: https://arxiv.org/html/2508.06810v1
+    locator: 'Table 3: five AI systems by seven reported rating dimensions.'
+    scope: Native teacher-rating means rounded to the three decimal places reported in the paper.
+    expected:
+      our_tags/relevant: 1.0
+      our_tags/factual: 0.97
+      our_tags/what_and_why: 0.992
+      our_tags/what_to_do: 1.0
+      our_tags/comprehensible: 0.97
+      our_tags/out_of_scope: 0.008
+      our_tags/quality: 4.487
+      ERRANT_tags/relevant: 0.997
+      ERRANT_tags/factual: 0.967
+      ERRANT_tags/what_and_why: 0.992
+      ERRANT_tags/what_to_do: 1.0
+      ERRANT_tags/comprehensible: 0.982
+      ERRANT_tags/out_of_scope: 0.003
+      ERRANT_tags/quality: 4.475
+      EXPECT_tags/relevant: 0.997
+      EXPECT_tags/factual: 0.975
+      EXPECT_tags/what_and_why: 0.99
+      EXPECT_tags/what_to_do: 1.0
+      EXPECT_tags/comprehensible: 0.975
+      EXPECT_tags/out_of_scope: 0.005
+      EXPECT_tags/quality: 4.5
+      tagless/relevant: 0.995
+      tagless/factual: 0.97
+      tagless/what_and_why: 0.997
+      tagless/what_to_do: 1.0
+      tagless/comprehensible: 0.982
+      tagless/out_of_scope: 0.005
+      tagless/quality: 4.495
+      template_system/relevant: 0.977
+      template_system/factual: 0.921
+      template_system/what_and_why: 0.944
+      template_system/what_to_do: 0.994
+      template_system/comprehensible: 0.98
+      template_system/out_of_scope: 0.023
+      template_system/quality: 4.184
+    absolute_tolerance: 0

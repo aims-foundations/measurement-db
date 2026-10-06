@@ -1,0 +1,3 @@
+- **Sources:** Pinned author CSVs, task/label workbook, prompt scripts and CC BY 4.0 license; original bytes remain in `raw/`.
+- **Conversion:** Retain full records and captured prompts; verify every human label against the task workbook. Group repeated request IDs as aliases, keeping every source row and malformed serialization.
+- **Limits:** Unrecorded chat prompts/settings remain explicit. Six Mixtral-8x22B files use the documented legacy rating parser rather than upstream accuracy; missing ratings stay null. PLM workbooks contain aggregates only.

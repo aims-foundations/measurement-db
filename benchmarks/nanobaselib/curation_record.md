@@ -1,0 +1,3 @@
+- Preserve all 319,289 recorded predictions from the two original RNA-modification matrices, including ELIGOS; retain 45,970 site records and ten method configurations.
+- Store full native rows in traces and keep the reference assays separate. ROC/PR curves grade vectors; individual grades remain null, and 369 blank cells do not become attempts.
+- Correct the unrelated legacy paper link, author citation and license. Site annotations are available; exact pooled-signal inputs and historical checkpoint identities are not supplied with these matrices. No methods or new judges were run.

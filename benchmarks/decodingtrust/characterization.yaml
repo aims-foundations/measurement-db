@@ -1,0 +1,153 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2456958
+    logical_sha256: f32574dde3545cebfdb538b73176d454950a903d51203e0fd654bb6f4a3508b6
+  subjects:
+    rows: 11
+    logical_sha256: 90455d621c49d9e0f07b030b0f2a26ea9b104b2c4874d4a48b574bf6ff6f6353
+  responses:
+    rows: 2456958
+    logical_sha256: a62065958f9626dc9d5fb68aff6cc5dcea401a39a0f1e6722de8f64fe7b90042
+  items:
+    rows: 437586
+    logical_sha256: 9539d2d78cb236b9acc029245bf4b2f471a8b1e4fed4c411c4c1d392d6f68c72
+  benchmarks:
+    rows: 1
+    logical_sha256: c902d2c52ef31425cd3497d59223b33803446ce39755ea1651dd1d01fcebdaa1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 2456958
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 11
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 437586
+  source_stereotype_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 691200
+  source_stereotype_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 691200
+  source_fairness_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 4228
+  source_fairness_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 1925
+  source_ood_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 88862
+  source_ood_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 88862
+  source_privacy_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 281013
+  source_privacy_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 226703
+  source_toxicity_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 918236
+  source_toxicity_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 316
+  source_adv_demonstration_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 473419
+  source_adv_demonstration_graded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AI-secure/DecodingTrust/tree/161ae8321ced62f45fcd9ceb412e05b47c603cd4/data
+    locator: Six native generations folders; official input banks and exactly linked toxicity annotations.
+    scope: Every complete output and original model/input association; exact API duplicates are merged. Stored and
+      deterministically derived grades are distinguished from unavailable grades. Excerpt-only toxicity annotations
+      are not assigned to complete outputs.
+    expected: 473419

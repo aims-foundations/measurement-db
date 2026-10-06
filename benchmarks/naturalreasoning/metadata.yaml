@@ -1,0 +1,91 @@
+benchmark:
+  name: NaturalReasoning
+  description: 'The complete released NaturalReasoning subset: synthetic reasoning questions, available extracted
+    references, and recorded Llama-3.3-70B-Instruct answers without correctness grades.'
+  testing_condition: 'Import all 1,145,824 original JSONL records, rather than only the first viewer-generated Parquet
+    shard. This is the released training-data subset of the 2.8-million-question collection, not a held-out evaluation
+    set. The recorded question is preserved verbatim; the full historical generation prompt, tokenizer and model
+    revisions are not released. Appendix C.1 reports vLLM response generation at temperature 0.7 and top-p 0.9;
+    those are paper-level settings, not per-record execution logs. Reference answers are extracted from source documents
+    and may be noisy; 209,574 are empty. The paper’s reference-checking protocol is documented for interpretation
+    only: neither its application to these released attempts nor cached verdicts are supplied. The [0,1] scale describes
+    a possible No/Yes reference-check verdict, not answer presence or the separate self-training log-probability
+    reward. All grades remain null. No model, judge, training or new scoring is run.'
+  paper_url: https://arxiv.org/abs/2502.13124
+  data_source_url: https://huggingface.co/datasets/facebook/natural_reasoning
+  subject_type: model
+  item_type: question
+  license: CC-BY-NC-4.0
+  citation: 'Yuan, Weizhe; Yu, Jane; Jiang, Song; Padthe, Karthik; Li, Yang; Wang, Dong; Kulikov, Ilia; Cho, Kyunghyun;
+    Tian, Yuandong; Weston, Jason E.; Li, Xian. NaturalReasoning: Reasoning in the Wild with 2.8M Challenging Questions
+    (2025), arXiv:2502.13124.'
+  tags:
+  - reasoning
+  - synthetic_questions
+  - training_data
+  - ungraded_generations
+  modality:
+  - text
+  domain:
+  - reasoning
+  - mathematics
+  - science
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': 'No: reference verification fails one or more criteria'
+      '1': 'Yes: reference verification meets all criteria'
+  categorical: true
+  release_date: 2025-02
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      responses: upstream/full.jsonl
+    item_features:
+      split: released_training_subset
+      input_scope: released_question_text
+    subject_features:
+      harness: vLLM
+      historical_weights_revision: not_recorded
+      historical_tokenizer_revision: not_recorded
+      generation_prompt: not_released
+      generation_settings_evidence: paper_appendix_C.1
+    labels:
+      test_condition: temperature=0.7;top_p=0.9
+      grade_status: no_saved_correctness_verdict
+grading:
+  rule: The paper’s reference-verification prompt asks an LLM to assess final-answer agreement, logical reasoning
+    and completeness, returning Yes or No. This requires a reference answer. This release supplies no verdicts,
+    and this import performs no verification; empty references remain absent, and every recorded attempt has a null
+    grade.
+  verifiers:
+    reference_check:
+      kind: paper_reference_verification
+      source: https://arxiv.org/html/2502.13124v1#A4.F10
+      rule: The paper’s reference-verification prompt asks an LLM to assess final-answer agreement, logical reasoning
+        and completeness, returning Yes or No. This requires a reference answer. This release supplies no verdicts,
+        and this import performs no verification; empty references remain absent, and every recorded attempt has
+        a null grade.
+      execution_status: not_recorded_for_released_attempts
+      eligibility: Requires a nonempty reference answer; no verification is assumed for questions without one.
+      few_shot_examples: not_released
+      historical_judge_identity: not_recorded_for_released_attempts
+      scope: Reference-checking prompt described in section 6 and Figure 10. The distinct section 7 self-training
+        reward is a log-probability difference and is not imported as a binary grade.
+sources:
+  upstream:
+  - name: author_release
+    url: https://huggingface.co/datasets/facebook/natural_reasoning
+    revision: 99eea5dc6bfa45a925eb42600e81dc90377ba237
+    files:
+    - match: .*
+      path: upstream/{path}

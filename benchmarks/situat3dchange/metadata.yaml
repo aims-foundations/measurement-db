@@ -1,0 +1,157 @@
+benchmark:
+  name: Situat3DChange
+  description: Recorded SCReasoner responses to situated questions, change descriptions and rearrangement instructions
+    for paired indoor 3D scans.
+  testing_condition: Import all released validation observations and unchanged source replies. Join recorded scan/index
+    keys to original annotations, camera poses and images. Include both original scene point clouds and object-instance
+    ordering; class-name lookup values are not model inputs. Normalize released judge ratings with the original
+    (score-1)/4 reporting formula and retain original numeric distance accuracy. Missing distance grades remain
+    null. The historical checkpoint, generation settings and sampled point subsets are not recorded. Paper leaderboard
+    aggregates are not item-level observations. Captured data remain local because the underlying 3RScan terms
+    require research use and recipient agreement.
+  paper_url: https://openreview.net/forum?id=WHARtAg5R9
+  data_source_url: https://github.com/RuipingL/Situat3DChange
+  subject_type: model
+  item_type: situated_3d_task
+  license: CC-BY-4.0 (Situat3DChange release); MIT as declared by LEO data/code and 3RScan toolkit; underlying
+    3RScan data have separate non-commercial research/education terms requiring recipient agreement.
+  citation: "@article{liu2025situat3dchange,\n  title={Situat3DChange: Situated 3D Change Understanding Dataset\
+    \ for Multimodal Large Language Model},\n  author={Liu, Ruiping and Zheng, Junwei and Chen, Yufan and Wang,\
+    \ Zirui and Peng, Kunyu and Yang, Kailun and Zhang, Jiaming and Pollefeys, Marc and Stiefelhagen, Rainer},\n\
+    \  journal={arXiv preprint arXiv:2510.11509},\n  year={2025}\n}"
+  tags:
+  - 3d
+  - point_cloud
+  - change_understanding
+  - situated_reasoning
+  - multimodal
+  modality:
+  - text
+  - image
+  - point_cloud
+  domain:
+  - reasoning
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2025-10
+  release: withheld
+  release_reason: "3RScan permits sharing with research associates and colleagues after they accept its terms; public mirroring of the captured point clouds has not been established."
+  granularity: item
+  multi_single_turn: single_turn
+  version: Released validation v2 annotations and SCReasoner outputs
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      annotations: inputs/annotation.zip
+      images: inputs/ego_view.zip
+      pointclouds: leo_data/3RScan-ours-align.zip
+      scene_prefix: 3RScan-base/3RScan-ours-align/
+      annotation_prefix: annotation/Labels/
+      alignment: annotation/alignment_info.json
+      situations: annotation/Labels/situations/
+    tasks:
+      qa: rscan_changeqa
+      caption: rscan_changecap
+      instruction: rscan_changere
+    question_fields:
+      qa: Q
+      caption: Query
+      instruction: Query
+    reference_fields:
+      qa: A
+      caption: Caption
+      instruction: Instruction
+    type_fields:
+      qa: type
+      caption: Type
+      instruction: Type
+    patterns:
+      standing: ^(standing with )(.+)( \d+ o'clock)$
+      number: \d+\.\d+|\d+
+    labels:
+      subject: SCReasoner
+      harness: Situat3DChange released SCReasoner evaluation
+      input_scope: Original situation, recorded instruction and anchor, released pose/alignment, original scene
+        arrays and egocentric image. Historical point subsampling and fully serialized model inputs are unavailable.
+      grade_scope: Original released grades; deterministic upstream reporting normalization only. No model or
+        judge rerun.
+      content_template: 'Situation: {situation}
+
+
+        {instruction}'
+      current_role: current_scene_pointcloud
+      reference_role: reference_scene_pointcloud
+      image_role: egocentric_image
+    subject_features:
+      model_revision: not_recorded
+      generation_settings: not_recorded
+      point_sampling_state: not_recorded
+      configuration_scope: Published defaults do not identify the historical run configuration.
+    media_types:
+      pointcloud: application/octet-stream
+      image: image/png
+grading:
+  rule: Preserve the source score using the upstream reporting scale, with higher values indicating better agreement.
+  verifiers:
+    distance:
+      kind: recorded_distance_accuracy
+      source: https://github.com/RuipingL/Situat3DChange/blob/54c18d21a903c017eacfe784774e675ced318357/eval_qa/eval.py
+      function: resposne_to_scores
+      rule: 'Use the recorded relative-distance accuracy: 1-min(abs(prediction-reference)/reference,1). The original
+        parser returns null when a distance cannot be parsed, 1 when both distances are zero and 0 when exactly
+        one is zero. No parsing or grading is rerun.'
+    qa:
+      kind: recorded_llm_judgment
+      source: https://github.com/RuipingL/Situat3DChange/blob/54c18d21a903c017eacfe784774e675ced318357/eval_qa/eval.py
+      function: gpt_llm_eval; extract_single_number; cls_score
+      documented_default_judge: gpt-4o-mini-2024-07-18; per-call model metadata unavailable
+      rule: "Use the original direction-specific or open-answer 1\u20135 rating. Extract its single number and\
+        \ report (rating-1)/4, as in the original evaluator. Preserve the original reply and rating text; do not\
+        \ rerun the judge."
+    longform:
+      kind: recorded_llm_judgment
+      source: https://github.com/RuipingL/Situat3DChange/blob/54c18d21a903c017eacfe784774e675ced318357/eval_longform/eval_gpt.py
+      function: gpt_llm_eval; js_to_score
+      documented_default_judge: gpt-4o-mini-2024-07-18; per-call model metadata unavailable
+      rule: 'Use the original semantic-correctness rating: 1 incorrect, 2 mostly incorrect, 3 partly correct,
+        4 minor errors, 5 correct or equivalent. Report (rating-1)/4 using the original evaluator formula; do
+        not rerun the judge.'
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/RuipingL/Situat3DChange
+    revision: 54c18d21a903c017eacfe784774e675ced318357
+    files:
+    - match: .*
+      path: release/{path}
+  - name: inputs
+    url: https://huggingface.co/datasets/lrp123/Situat3DChange
+    revision: 08661fe30c37d47e1b717fdf343e219f1355fe28
+    files:
+    - match: (?:annotation\.zip|ego_view\.zip|README\.md)
+      path: inputs/{path}
+  - name: leo_data
+    url: https://huggingface.co/datasets/huangjy-pku/LEO_data
+    revision: 368e162ff3c2ea0b06bf230ad43fb27605f01f14
+    files:
+    - match: (?:3RScan-ours-align\.zip|README\.md)
+      path: leo_data/{path}
+  - name: leo_code
+    url: https://github.com/embodied-generalist/embodied-generalist
+    revision: 567f2d809cf8b21289d7fb9d3b616ae9c405cba3
+    files:
+    - match: (?:README\.md|LICENSE)
+      path: leo_code/{path}
+  - name: scan_provenance
+    url: https://github.com/WaldJohannaU/3RScan
+    revision: 12f040d3dc849e394ed366acd7b54e63acb49205
+    files:
+    - match: (?:README\.md|LICENSE)
+      path: 3rscan/{path}

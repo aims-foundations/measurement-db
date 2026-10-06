@@ -1,0 +1,144 @@
+benchmark:
+  description: Recorded rubric-level LLM judgments and original viewer traces from the 15 official MyPCBench showcase
+    trajectories.
+  testing_condition: Import all 118 recorded rubric judgments from 15 selected runs across six named actor configurations.
+    These selected examples do not reconstruct the complete benchmark panel or its aggregate leaderboard. Each item
+    uses the task instruction and grading criterion recorded in its own trajectory; one task differs from the current
+    task catalog. Rubric requirements and weights are grading information, not instructions passed to the actor.
+    Keep the complete released viewer JSON and locally captured screenshot paths and hashes in each trace. These
+    are the published viewer records, not the unreleased full harness logs. The original VM state is not reconstructed,
+    and exact historical model, harness and judge revisions are unavailable. Preserve explicit cua_only configuration
+    keys without inferring unspecified tool access. Import original judgments without rerunning agents or judges.
+    Later leaderboard rescores do not silently replace showcase grades. Rubrics within the same task are related
+    measurements, not independent task attempts.
+  paper_url: https://arxiv.org/abs/2606.16748
+  data_source_url: https://mypcbench.com/
+  subject_type: system
+  item_type: task
+  license: MIT for the official code and HF dataset. The upstream NOTICE attributes the full-trajectory judge to
+    CC-BY-4.0.
+  citation: "@article{jang2026mypcbench,\n  title={MyPCBench: A Benchmark for Personally Intelligent Computer-Use\
+    \ Agents},\n  author={Jang, Lawrence and others},\n  journal={arXiv preprint arXiv:2606.16748},\n  year={2026}\n\
+    }"
+  tags:
+  - computer-use
+  - gui-agent
+  - personalization
+  - llm-judge
+  - rubric
+  - osworld-style
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - agents_and_tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The recorded judge marked the rubric failed.
+      '1': The recorded judge marked the rubric passed.
+  categorical: true
+  release_date: 2026-06
+  release: public
+  name: MyPCBench
+  granularity: item
+  multi_single_turn: multi_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      trajectories: site/data/trajectories/*__*.json
+      index: site/data/trajectories/index.json
+      signatures: site/data/trajectories/signatures.json
+    labels:
+      site_prefix: site/
+      cua_suffix: -cua_only
+      cua_only: cua_only
+      unspecified_variant: not_explicit_in_showcase
+      cua_condition: variant=cua_only
+      definition_scope: task and rubric version recorded in the published showcase
+    subject_features:
+      benchmark_harness: MyPCBench
+      historical_model_revision: not_recorded
+      historical_harness_revision: not_recorded
+      release_scope: selected_official_showcase
+grading:
+  rule: Import the published rubric score as binary 0 or 1 and verify its pass flag. Use the criterion recorded
+    with this trajectory, not a newer catalog revision. Its weight describes within-task aggregation; the stored
+    response is the individual binary rubric grade. No new grading is performed.
+  verifiers:
+    rubric:
+      kind: published_llm_rubric_judgment
+      source: https://github.com/ljang0/MyPCBench/blob/937ec49882508223c7ea3f79ead3330c6810feb1/agent-harness/utils/osworld_full_traj_judge.py
+      native_field: rubrics[].score
+      consistency_field: rubrics[].pass
+      project_documented_judge: gemini-3.1-flash-lite-preview
+      historical_judge_identifier: not_recorded_per_showcase
+      execution: not_performed
+sources:
+  upstream:
+  - name: showcase_index
+    url: https://mypcbench.com/data/trajectories/index.json
+    revision: null
+    file: site/data/trajectories/index.json
+    size: 20911
+    sha256: 015354cf7a6db78251ac6572ce6b9ed1ea16ef368701f9a10ac249da5130adcc
+  - name: signatures
+    url: https://mypcbench.com/data/trajectories/signatures.json
+    revision: null
+    file: site/data/trajectories/signatures.json
+    size: 2780
+    sha256: 45bd338525aa44b9850189e9c3ad7e8082445b97a7095b9a075b025f95f1bb44
+  - name: task_catalog
+    url: https://mypcbench.com/data/tasks.json
+    revision: null
+    file: site/data/tasks.json
+    size: 383068
+    sha256: 8b25452278a553822c13397885c41a64e9ffe5be45036d4b3afe518678c3bf01
+  - name: leaderboard
+    url: https://mypcbench.com/data/leaderboard.json
+    revision: null
+    file: site/data/leaderboard.json
+    size: 8412
+    sha256: fcf056478c6f891752a1a2d273251dcd9e5c36fbf42d785d8280c8475e86e157
+  - name: trajectories
+    url: https://mypcbench.com/
+    revision: null
+    json_index:
+      source: showcase_index
+      records:
+      - trajectories
+      path: '{data_url}'
+    tree_sha256: ad688426f94df53922509c97493b4f407adf721934ba9f48f3365eafbe3c0c8e
+    files:
+    - match: data/trajectories/[^/]+__[^/]+\.json
+      path: site/{path}
+  - name: screenshots
+    url: https://mypcbench.com/
+    revision: null
+    json_index:
+      source: trajectories
+      records:
+      - steps
+      path: '{image}'
+    tree_sha256: 8a96cdc33176e84b1cacc685276e25223e5160753152d272149bf7dcb6c57851
+    files:
+    - match: assets/img/trajectories/[^/]+/[0-9]+\.jpg
+      path: site/{path}
+  - name: reference
+    url: https://github.com/ljang0/MyPCBench
+    revision: 937ec49882508223c7ea3f79ead3330c6810feb1
+    files:
+    - match: .*
+      path: reference/{path}
+  - name: dataset_metadata
+    url: https://huggingface.co/datasets/ljang0/mypcbench-qemu-baseline
+    revision: 8d747c3416196ffa7df000fc2ea642264778a4ee
+    files:
+    - match: README\.md|VERSION\.json|SHA256SUMS|all_tasks_with_grading\.json
+      path: dataset/{path}

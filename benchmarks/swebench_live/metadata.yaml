@@ -1,0 +1,210 @@
+benchmark:
+  description: Released coding-agent attempts on real repository issues across Python, multilingual and Windows
+    tracks.
+  testing_condition: Join original native reports, predictions and rollout artifacts by source submission and task
+    ID. Deduplicate matching website subset exports, preserve missing grades and keep unassociated evaluation logs
+    in raw. Use the initial Python task release for its original IDs, adding later tasks and seven historical Java
+    definitions where needed. Submission folders are distinct recorded configurations; unavailable settings and
+    historical revisions remain explicit.
+  paper_url: https://openreview.net/forum?id=OGWkr7gXka
+  data_source_url: https://github.com/SWE-bench-Live/submission
+  subject_type: agent
+  item_type: task
+  license: MIT for the official task datasets and evaluation harness; no explicit license is present in the captured
+    community submission repository.
+  citation: "@inproceedings{zhang2025swebenchlive,\n  title={SWE-bench Goes Live!},\n  author={Zhang, Linghao and\
+    \ He, Shilin and Zhang, Chaoyun and Kang, Yu and others},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks\
+    \ Track},\n  year={2025},\n}"
+  tags:
+  - software_engineering
+  - issue_resolution
+  - agent
+  - code
+  - live
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - tool_use
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: '2025-05-21'
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  name: SWE-bench-Live
+  one_line_description: Evaluates coding agents on resolving real repository issues using per-instance test outcomes.
+  multi_single_turn: multi_turn
+  version: submissions:69a925feb3a3f9694b5332062d410c8f9d28f7b3; website:90e8720259d7fd8a311582522e221784aaa30407
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      release: release
+      reports: website/reports-0605.jsonl
+      windows_exporter: windows_exporter/src/agent.py
+    tracks:
+      lite: python
+      multilang: multilang
+      windows: windows
+    bank_files:
+      banks/python_initial/data/full-00000-of-00001.parquet: python
+      banks/multilang/data/c-00000-of-00001.parquet: multilang
+      banks/multilang/data/cpp-00000-of-00001.parquet: multilang
+      banks/multilang/data/cs-00000-of-00001.parquet: multilang
+      banks/multilang/data/go-00000-of-00001.parquet: multilang
+      banks/multilang/data/java-00000-of-00001.parquet: multilang
+      banks/multilang/data/js-00000-of-00001.parquet: multilang
+      banks/multilang/data/rust-00000-of-00001.parquet: multilang
+      banks/multilang/data/ts-00000-of-00001.parquet: multilang
+      banks/windows/data/test-00000-of-00001.parquet: windows
+    fallback_bank_files:
+      banks/python/data/full-00000-of-00002.parquet: python
+      banks/python/data/full-00001-of-00002.parquet: python
+      banks/multilang_history/data/java-00000-of-00001.parquet: multilang
+    artifact_roles:
+      logs/{instance_id}/eval.sh: evaluation_artifact
+      logs/{instance_id}/patch.diff: evaluation_artifact
+      logs/{instance_id}/report.json: evaluation_artifact
+      logs/{instance_id}/run_instance.log: evaluation_artifact
+      logs/{instance_id}/test_output.txt: evaluation_artifact
+      trajs/{instance_id}/trajectory.json: rollout
+      trajs/{instance_id}/{instance_id}.traj: rollout
+      trajs/{instance_id}/subagent_code_navigator_1/{instance_id}.traj: rollout
+      trajs/{instance_id}/subagent_issue_analyzer_1/{instance_id}.traj: rollout
+      trajs/{instance_id}/subagent_code_navigator_2/{instance_id}.traj: rollout
+      trajs/{instance_id}/subagent_code_navigator_3/{instance_id}.traj: rollout
+      logs/{instance_id}.post_patch_log.txt: evaluation_artifact
+      logs/{instance_id}.report.json: evaluation_artifact
+      logs/{instance_id}.results.json: evaluation_artifact
+      trajs/{instance_id}.patch: prediction_patch
+      trajs/{instance_id}.trajectory.json: rollout
+      logs/evaluationresults/{instance_id}/post_patch_log.txt: evaluation_artifact
+      logs/evaluationresults/{instance_id}/report.json: evaluation_artifact
+      logs/evaluationresults/{instance_id}/status.json: evaluation_artifact
+      trajs/{instance_id}.txt: rollout
+      trajs/{instance_id}.md: rollout
+      results/{instance_id}.json: individual_result
+      trajs/{instance_id}.json: rollout
+      '{instance_id}/patch.diff': prediction_patch
+      '{instance_id}/trajectory.json': rollout
+      '{instance_id}/traj.json': rollout
+      '{instance_id}/trajectory.txt': rollout
+      logs/{instance_id}/container.log: evaluation_artifact
+      logs/{instance_id}/test-output.log: evaluation_artifact
+      logs/{instance_id}.status.json: evaluation_artifact
+      logs/{instance_id}.artifact_manifest.json: evaluation_artifact
+      logs/{instance_id}.txt: rollout
+    patterns:
+      instance_id: ([^/]+?__[^/]+?-\d+)(?=/|\.|$)
+    website_aliases:
+      SWE-agent + Claude 3.7 Sonnet|2025-05-01: submissions/lite/sweagent/20250501-sweagent-claude37
+      SWE-agent + GPT 4.1|2025-05-01: submissions/lite/sweagent/20250501-sweagent-gpt41
+      OpenHands + Qwen3-Coder-480B-A35B|2025-07-25: submissions/lite/20250725-openhands-Qwen3-Coder-480B-A35B
+    prediction_key_aliases:
+      otnet__runtime-117105: dotnet__runtime-117105
+      otnet__runtime-117960: dotnet__runtime-117960
+      otnet__runtime-118745: dotnet__runtime-118745
+      OfficeAI__AionUi-2317: iOfficeAI__AionUi-2317
+    labels:
+      harness: SWE-bench-Live published agent submissions
+      configuration_scope: Literal source submission folder. Settings not recorded in its README or native artifacts
+        are unknown.
+      task_version_scope: Pinned official task definition. The exact task-bank and evaluator revision used for each
+        historical run is not fully recorded.
+      missing_grade: No explicit final verdict is available for this recorded attempt.
+      log_scope: Evaluation logs remain in raw. They are not substituted for submitted predictions; some released
+        logs contain different patches.
+      website_scope: Overlapping website exports are aliases. Applied or located IDs establish a recorded attempt,
+        not a final success or failure.
+      summary_scope: Use explicit final verdict lists from the source summary. Preserve incomplete/error flags separately
+        without converting them to failures.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/SWE-bench-Live/submission
+    revision: 69a925feb3a3f9694b5332062d410c8f9d28f7b3
+    files:
+    - match: .*
+      path: release/{path}
+  - name: website
+    url: https://github.com/SWE-bench-Live/swe-bench-live.github.io
+    revision: 90e8720259d7fd8a311582522e221784aaa30407
+    files:
+    - match: ^(?:reports\-0605\.jsonl)$
+      path: website/{path}
+  - name: harness
+    url: https://github.com/SWE-bench-Live/SWE-bench-Live
+    revision: a145aa87c62361532dacaa243398978164b234b7
+    files:
+    - match: .*
+      path: harness/{path}
+  - name: banks_python
+    url: https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live
+    revision: b51a86422e10cfd403beb4773e5a2947953e36ec
+    files:
+    - match: ^(?:README\.md|data/full\-00000\-of\-00002\.parquet|data/full\-00001\-of\-00002\.parquet|data/lite\-00000\-of\-00001\.parquet|data/test\-00000\-of\-00001\.parquet|data/verified\-00000\-of\-00001\.parquet)$
+      path: banks/python/{path}
+  - name: banks_python_initial
+    url: https://huggingface.co/datasets/SWE-bench-Live/SWE-bench-Live
+    revision: 8feba0c8643bf71d5b3439b5b5cdc86d30715f41
+    files:
+    - match: ^(?:README\.md|data/full\-00000\-of\-00001\.parquet|data/lite\-00000\-of\-00001\.parquet)$
+      path: banks/python_initial/{path}
+  - name: banks_multilang
+    url: https://huggingface.co/datasets/SWE-bench-Live/MultiLang
+    revision: 22091f6ce331c5c60c241d76512d4be7ee1a555b
+    files:
+    - match: ^(?:README\.md|data/c\-00000\-of\-00001\.parquet|data/cpp\-00000\-of\-00001\.parquet|data/cs\-00000\-of\-00001\.parquet|data/go\-00000\-of\-00001\.parquet|data/java\-00000\-of\-00001\.parquet|data/js\-00000\-of\-00001\.parquet|data/rust\-00000\-of\-00001\.parquet|data/ts\-00000\-of\-00001\.parquet)$
+      path: banks/multilang/{path}
+  - name: banks_multilang_history
+    url: https://huggingface.co/datasets/SWE-bench-Live/MultiLang
+    revision: eda235aafb332081758d96dd9fd1835ee0e772e1
+    files:
+    - match: ^(?:data/java\-00000\-of\-00001\.parquet)$
+      path: banks/multilang_history/{path}
+  - name: banks_windows
+    url: https://huggingface.co/datasets/SWE-bench-Live/Windows
+    revision: 868cf7b073dad27318b6fca65c83758efeb498f1
+    files:
+    - match: ^(?:README\.md|data/test\-00000\-of\-00001\.parquet)$
+      path: banks/windows/{path}
+  - name: windows_exporter
+    url: https://github.com/njukenanli/Win-Agent
+    revision: 47d85cffd5342a513fa3fb72ec4b5347ced9bb36
+    files:
+    - match: ^(?:README\.md|src/agent\.py)$
+      path: windows_exporter/{path}
+grading:
+  rule: 'Preserve the publisher''s explicit final issue-resolution verdict: resolved/success is 1 and unresolved/failure
+    is 0. A prediction, partial-stage event, empty patch or infrastructure error without a final verdict remains
+    ungraded. Historical grading uses the repository test protocol; captured task definitions describe the released
+    checks but do not prove the exact revision used in every run.'
+  verifiers:
+    published_report:
+      kind: published_issue_resolution_verdict
+      source: https://github.com/SWE-bench-Live/submission
+      protocol: https://github.com/SWE-bench-Live/SWE-bench-Live/blob/a145aa87c62361532dacaa243398978164b234b7/swebench/harness/grading.py
+      task_fields:
+      - repo
+      - base_commit
+      - test_patch
+      - test_cmds
+      - FAIL_TO_PASS
+      - PASS_TO_PASS
+      - log_parser
+      - rebuild_cmds
+      - print_cmds
+      - docker_image
+      rule: 'Preserve the publisher''s explicit final issue-resolution verdict: resolved/success is 1 and unresolved/failure
+        is 0. A prediction, partial-stage event, empty patch or infrastructure error without a final verdict remains
+        ungraded. Historical grading uses the repository test protocol; captured task definitions describe the released
+        checks but do not prove the exact revision used in every run.'

@@ -1,0 +1,3 @@
+- Normalize the pinned provider JSONL archive into questions and human-reviewed answers; preserve 2,400 observations across 16 model/context configurations and all complete answer traces.
+- Retain exact bytes for the 84 filing PDFs referenced by the 150 questions. These are source documents; the released data do not reconstruct every historical model-facing context.
+- Store references and grading rules on items under the current fixed schema. Original three-way labels and provider gold-answer copies remain in raw inputs; item and response IDs change.

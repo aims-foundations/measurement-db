@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1740
+    logical_sha256: 0d6cd9f39832b72eaf358526a361b62e55795e6c454d9ed0111321c883dd1f6e
+  subjects:
+    rows: 7
+    logical_sha256: 1c03ec2acfd1857dfcfb35dd3c6c0612bc304b557d98cb113ff100d57e04ea78
+  responses:
+    rows: 1740
+    logical_sha256: 3cda8d10314ed15a3eed56587384b4f198f2cc97045fd82042da8c2bcf5570cb
+  items:
+    rows: 512
+    logical_sha256: 3c76449a8ade6351254a9e65da521fac36e989f018600d472e53c97733c48d8d
+  benchmarks:
+    rows: 1
+    logical_sha256: c4c67450ffe4bd0fb4bfe32e26afcfccd828c850f6904476ba4715fcebb1bd52
+source_claims:
+  source_executions:
+    kind: count
+    origin: derived_from_data
+    expected: 875
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  included_executions:
+    kind: count
+    origin: derived_from_data
+    expected: 870
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  source_empty_instructions:
+    kind: count
+    origin: derived_from_data
+    expected: 5
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    expected: 7
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  source_items:
+    kind: count
+    origin: derived_from_data
+    expected: 512
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    expected: 1740
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    expected: 1740
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  safety_ones:
+    kind: count
+    origin: derived_from_data
+    expected: 564
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.
+  success_ones:
+    kind: count
+    origin: derived_from_data
+    expected: 326
+    source: https://drive.google.com/drive/folders/1l_Il_Kcx8XGZvh2RunBX4GlRUDpp2ypn
+    locator: All original better_log.json files and directly paired judgment/gpt-4.1/aer/v3/judgment.json records.
+    scope: Exclude five logs with empty instructions; keep safety and completion assessments separate. No new execution
+      or grading.

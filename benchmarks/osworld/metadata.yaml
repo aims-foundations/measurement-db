@@ -1,0 +1,237 @@
+benchmark:
+  name: OSWorld
+  description: Original Ubuntu OSWorld-Verified desktop-agent trajectories and per-task evaluator scores, including
+    partial credit and ungraded attempts.
+  testing_condition: One observed task attempt per original archive/run/task directory. Keep published scores in
+    [0,1] without a binary threshold; a released execution trace without result.txt is an ungraded attempt. Preserve
+    complete captured native text and recorded inference settings. When a run publishes instruction.txt, use that
+    exact wording and keep changed instructions as separate items; otherwise use the pinned provider task instruction.
+    Archive exports remain separate because equal model names do not establish equal historical configurations.
+    Native turn_N directory names identify repeated runs. Published task definitions include setup and evaluators,
+    but the historical trajectories do not identify their exact task-code revision. The builder never starts a desktop,
+    calls a model or regrades a run. Original screenshots/video and external environment assets are referenced by
+    the captured logs/setup, not copied into these text tables.
+  paper_url: https://arxiv.org/abs/2404.07972
+  data_source_url: https://github.com/xlang-ai/OSWorld
+  subject_type: agent
+  item_type: task
+  license: MIT for the original trajectory dataset (its pinned README); Apache-2.0 for task definitions and evaluator
+    code (the pinned OSWorld LICENSE). Preserve both original notices.
+  citation: "@misc{xie2024osworldbenchmarkingmultimodalagents,\n      title={OSWorld: Benchmarking Multimodal Agents\
+    \ for Open-Ended Tasks in Real Computer Environments},\n      author={Tianbao Xie and Danyang Zhang and Jixuan\
+    \ Chen and Xiaochuan Li and Siheng Zhao and Ruisheng Cao and Toh Jing Hua and Zhoujun Cheng and Dongchan Shin\
+    \ and Fangyu Lei and Yitao Liu and Yiheng Xu and Shuyan Zhou and Silvio Savarese and Caiming Xiong and Victor\
+    \ Zhong and Tao Yu},\n      year={2024},\n      eprint={2404.07972},\n      archivePrefix={arXiv},\n      primaryClass={cs.AI},\n\
+    \      url={https://arxiv.org/abs/2404.07972},\n}"
+  tags:
+  - agent
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - gui_agent
+  response_type: fraction
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: 2024-04
+  release: withheld
+  release_reason: "The curation record reports potential credentials in the upstream capture and withholds both raw and formatted data."
+  multi_single_turn: multi_turn
+  version: 5473c39e42a538a187a9b2c2b499db59d560fd8c
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      tasks: tasks
+      results: native
+      attempt_member: ^(?P<run_prefix>(?:[^/]+/)*?)(?P<domain>chrome|gimp|libreoffice_calc|libreoffice_impress|libreoffice_writer|multi_apps|os|thunderbird|vlc|vs_code)/(?P<task_id>[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12})/(?P<file_kind>result\.txt|traj\.jsonl|runtime\.log|instruction\.txt)$
+      trial: (?:^|/)turn_([1-9][0-9]*)/$
+    settings:
+      model: Keep this setting only when explicitly recorded in the run's args.json.
+      max_steps: Keep this setting only when explicitly recorded in the run's args.json.
+      max_trajectory_length: Keep this setting only when explicitly recorded in the run's args.json.
+      observation_type: Keep this setting only when explicitly recorded in the run's args.json.
+      action_space: Keep this setting only when explicitly recorded in the run's args.json.
+      temperature: Keep this setting only when explicitly recorded in the run's args.json.
+      top_p: Keep this setting only when explicitly recorded in the run's args.json.
+      max_tokens: Keep this setting only when explicitly recorded in the run's args.json.
+      a11y_tree_max_tokens: Keep this setting only when explicitly recorded in the run's args.json.
+      screen_width: Keep this setting only when explicitly recorded in the run's args.json.
+      screen_height: Keep this setting only when explicitly recorded in the run's args.json.
+      planner_model: Keep this setting only when explicitly recorded in the run's args.json.
+      grounding_model: Keep this setting only when explicitly recorded in the run's args.json.
+      executor_model: Keep this setting only when explicitly recorded in the run's args.json.
+      history_n: Keep this setting only when explicitly recorded in the run's args.json.
+      reasoning_effort: Keep this setting only when explicitly recorded in the run's args.json.
+      model_name: Keep this setting only when explicitly recorded in the run's args.json.
+      thinking: Keep this setting only when explicitly recorded in the run's args.json.
+      no_thinking: Keep this setting only when explicitly recorded in the run's args.json.
+      use_thinking: Keep this setting only when explicitly recorded in the run's args.json.
+      stop_token: Keep this setting only when explicitly recorded in the run's args.json.
+      resize_factor: Keep this setting only when explicitly recorded in the run's args.json.
+      coordinate_type: Keep this setting only when explicitly recorded in the run's args.json.
+      cot_level: Keep this setting only when explicitly recorded in the run's args.json.
+      history_type: Keep this setting only when explicitly recorded in the run's args.json.
+      max_history_turns: Keep this setting only when explicitly recorded in the run's args.json.
+      max_image_history_length: Keep this setting only when explicitly recorded in the run's args.json.
+      prompt_style: Keep this setting only when explicitly recorded in the run's args.json.
+      language: Keep this setting only when explicitly recorded in the run's args.json.
+      sleep_after_execution: Keep this setting only when explicitly recorded in the run's args.json.
+      use_isp: Keep this setting only when explicitly recorded in the run's args.json.
+      provider_name: Keep this setting only when explicitly recorded in the run's args.json.
+      region: Keep this setting only when explicitly recorded in the run's args.json.
+      add_thought_prefix: Keep this setting only when explicitly recorded in the run's args.json.
+      callusr_tolerance: Keep this setting only when explicitly recorded in the run's args.json.
+      ground_model: Keep this setting only when explicitly recorded in the run's args.json.
+      ground_provider: Keep this setting only when explicitly recorded in the run's args.json.
+      grounding_height: Keep this setting only when explicitly recorded in the run's args.json.
+      grounding_width: Keep this setting only when explicitly recorded in the run's args.json.
+      image_ground_model: Keep this setting only when explicitly recorded in the run's args.json.
+      image_ground_provider: Keep this setting only when explicitly recorded in the run's args.json.
+      image_height: Keep this setting only when explicitly recorded in the run's args.json.
+      image_width: Keep this setting only when explicitly recorded in the run's args.json.
+      infer_mode: Keep this setting only when explicitly recorded in the run's args.json.
+      input_swap: Keep this setting only when explicitly recorded in the run's args.json.
+      max_images: Keep this setting only when explicitly recorded in the run's args.json.
+      max_pixels: Keep this setting only when explicitly recorded in the run's args.json.
+      max_texts: Keep this setting only when explicitly recorded in the run's args.json.
+      min_pixels: Keep this setting only when explicitly recorded in the run's args.json.
+      model_provider: Keep this setting only when explicitly recorded in the run's args.json.
+      model_temperature: Keep this setting only when explicitly recorded in the run's args.json.
+      model_type: Keep this setting only when explicitly recorded in the run's args.json.
+      top_k: Keep this setting only when explicitly recorded in the run's args.json.
+      use_enhanced_runner: Keep this setting only when explicitly recorded in the run's args.json.
+      headless: Keep this setting only when explicitly recorded in the run's args.json.
+      num_envs: Keep this setting only when explicitly recorded in the run's args.json.
+      num_workers: Keep this setting only when explicitly recorded in the run's args.json.
+      uipath_model_name: Keep this setting only when explicitly recorded in the run's args.json.
+      save_complete_trajectory: Keep this setting only when explicitly recorded in the run's args.json.
+    trace_files:
+      result.txt: Original grade text when present.
+      traj.jsonl: Original unmodified trajectory text.
+      runtime.log: Original unmodified execution log.
+      instruction.txt: Original run-specific instruction when released.
+    labels:
+      subject_prefix: 'OSWorld / '
+      harness: OSWorld
+      configuration_scope: Separate published archive exports. Only explicitly recorded allowlisted inference settings
+        are known.
+      definition_provenance: Pinned provider task definitions. Historical run-specific task-code revisions are not
+        recorded.
+      media_capture: Complete selected native text; original screenshots and video remain in the pinned provider
+        ZIP archive.
+sources:
+  upstream:
+  - name: tasks
+    url: https://github.com/xlang-ai/OSWorld
+    revision: b138d348256078fa634fc3b73567a7337c793e6b
+    tree_paths:
+    - evaluation_examples/examples
+    files:
+    - match: evaluation_examples/examples/(?P<task>.+)
+      path: tasks/{task}
+  - name: harness
+    url: https://github.com/xlang-ai/OSWorld
+    revision: b138d348256078fa634fc3b73567a7337c793e6b
+    tree_paths:
+    - desktop_env/evaluators
+    - LICENSE
+    files:
+    - match: (?P<file>desktop_env/evaluators/.+|LICENSE)
+      path: harness/{file}
+  - name: results
+    url: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs
+    revision: 5473c39e42a538a187a9b2c2b499db59d560fd8c
+    zip_members:
+    - UI-TARS-0717-100step.zip
+    - UI-TARS-0717-15step.zip
+    - autoglm_15steps.zip
+    - autoglm_50steps.zip
+    - claude-3-7-sonnet-20250219-100steps.zip
+    - claude-3-7-sonnet-20250219-15steps.zip
+    - claude-3-7-sonnet-20250219-50steps.zip
+    - claude-4-sonnet-20250514-100steps.zip
+    - claude-4-sonnet-20250514-15steps.zip
+    - claude-4-sonnet-20250514-50steps.zip
+    - claude-sonnet-4-5-20250929_100steps.zip
+    - claude-sonnet-4-5-20250929_15steps.zip
+    - claude-sonnet-4-5-20250929_50steps.zip
+    - doubao-1-5-thinking-vision-pro-250428-100step.zip
+    - doubao-1-5-thinking-vision-pro-250428-15step.zip
+    - evocua_20260105.zip
+    - evocua_8b_20260105.zip
+    - kimi-k25.zip
+    - kimi-vl-a3b-100step.zip
+    - kimi-vl-a3b-15step.zip
+    - mobile-agent-v3-gui-owl-7b.zip
+    - mobileagent_v3.zip
+    - o3_100steps.zip
+    - o3_15steps.zip
+    - o3_50steps.zip
+    - opencua_agent-opencua_32b-cot_l2-action_history-3image-Ubuntu-100steps.zip
+    - opencua_agent-opencua_32b-cot_l2-action_history-3image-Ubuntu-15steps.zip
+    - opencua_agent-opencua_32b-cot_l2-action_history-3image-Ubuntu-50steps.zip
+    - opencua_agent-opencua_7b-cot_l2-action_history-3image-Ubuntu-100steps.zip
+    - opencua_agent-opencua_7b-cot_l2-action_history-3image-Ubuntu-15steps.zip
+    - opencua_agent-opencua_7b-cot_l2-action_history-3image-Ubuntu-50steps.zip
+    - opencua_agent-opencua_a3b-cot_l2-action_history-3image-Ubuntu-100step.zip
+    - opencua_agent-opencua_a3b-cot_l2-action_history-3image-Ubuntu-15step.zip
+    - opencua_agent-opencua_a3b-cot_l2-action_history-3image-Ubuntu-50step.zip
+    - opencua_agent-opencua_qwen2_7b-cot_l2-action_history-3image-Ubuntu-100step.zip
+    - opencua_agent-opencua_qwen2_7b-cot_l2-action_history-3image-Ubuntu-15step.zip
+    - opencua_agent-opencua_qwen2_7b-cot_l2-action_history-3image-Ubuntu-50step.zip
+    - qwen2.5-vl-32b-instruct_100step.zip
+    - qwen2.5-vl-32b-instruct_15step.zip
+    - qwen2.5-vl-72b-instruct_100step.zip
+    - qwen2.5-vl-72b-instruct_15step.zip
+    - result_aws_dart_gui_20260122.zip
+    - results_UI-TARS-2-2509_100steps.zip
+    - results_agent_s2_gemini_15steps.zip
+    - results_agent_s2_o3_15steps.zip
+    - results_agi0_50steps.zip
+    - results_autoglm_v_15steps.zip
+    - results_autoglm_v_50steps.zip
+    - results_bbon_10_72_6.zip
+    - results_gbox_15steps.zip
+    - results_hippo_agent.zip
+    - results_maestro_50steps_2_results_only.zip
+    - results_mano_100steps.zip
+    - results_omnitars_100_steps.zip
+    - results_opus4p5_single_agent.zip
+    - results_seed18.zip
+    - results_tianxi_action_7b.zip
+    - uipath_gpt_5_50steps.zip
+    - uitars-72b-dpo-100step.zip
+    - uitars-72b-dpo-15step.zip
+    - uitars-72b-dpo-50step.zip
+    - uitars15-7b-100step-1.zip
+    - uitars15-7b-100step.zip
+    - uitars15-7b-15step-1.zip
+    - uitars15-7b-15step.zip
+    - uitars15-7b-50step-1.zip
+    - uitars15-7b-50step.zip
+    tree_sha256: 5f3e4b307d26692318508af2b85bf1e65947d99726139001d515c72192d3d1c4
+    files:
+    - match: (?P<archive>[^/]+\.zip)/(?P<member>(?!__MACOSX/)(?:[^/]+/)*(?:result\.txt|traj\.jsonl|runtime\.log|instruction\.txt|args\.json|all_result\.json|manifest\.json|results\.json|main_[^/]+\.log))
+      path: native/{archive}/{member}
+  - name: notice
+    url: https://huggingface.co/datasets/xlangai/ubuntu_osworld_verified_trajs
+    revision: 5473c39e42a538a187a9b2c2b499db59d560fd8c
+    files:
+    - match: README\.md
+      path: notice/README.md
+grading:
+  rule: Preserve the provider's original result.txt evaluator score, including partial credit. No new threshold
+    or regrading is applied. A released task execution without result.txt remains response=null. The task evaluator
+    configuration and pinned evaluator code describe grading but do not prove the historical task-code revision.
+  verifiers:
+    published_result:
+      kind: published_desktop_task_evaluator
+      executed_by_builder: false
+      source: https://github.com/xlang-ai/OSWorld/tree/b138d348256078fa634fc3b73567a7337c793e6b/desktop_env/evaluators
+      result: Original task result.txt, a finite score between 0 and 1 inclusive.

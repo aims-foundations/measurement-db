@@ -1,0 +1,130 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1128
+    logical_sha256: 5e9980c3dfa8d63f3075c3883f68c100b2cb9b10558117da08144bce672db23d
+  subjects:
+    rows: 3
+    logical_sha256: f576629e8026880d2456227eb6073eb7e738b687a9d8dbdea2c6bb2bacada052
+  responses:
+    rows: 1128
+    logical_sha256: 56a5291dd455299cc7adfb52497f9d9761afbaf76503cb8d2851941538332547
+  items:
+    rows: 356
+    logical_sha256: b8e7599991dcc215f26e9b9f27799336d90061e522e789ca92e014e18688e261
+  benchmarks:
+    rows: 1
+    logical_sha256: 1fbe14aca06fed3f7496406cc927ba84bc33982c8d218934d656e543e72d0c3a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 1128
+  source_rows:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 282
+  source_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 94
+  source_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 89
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 356
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 3
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 1128
+  source_annotated_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 1
+  source_blank_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 1
+  source_unlabeled_extra_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected: 17
+  criterion_successes:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/stbst1/Nester
+    locator: "Three historical XLSX files, Sheet1 rows 2\u201395, columns A\u2013H; paper Section 4.4/Table\
+      \ 2."
+    scope: Read XLSX XML independently; compare every cell, grade, model, criterion and trace. Preserve
+      blank outputs and the original annotation alongside its clean input.
+    expected:
+      GPT-4/correctness: 90
+      GPT-4/explainability: 81
+      GPT-4/factuality: 91
+      GPT-4/consistency: 90
+      GPT-4o/correctness: 81
+      GPT-4o/explainability: 89
+      GPT-4o/factuality: 85
+      GPT-4o/consistency: 86
+      GPT-4o mini/correctness: 89
+      GPT-4o mini/explainability: 81
+      GPT-4o mini/factuality: 91
+      GPT-4o mini/consistency: 89
+    absolute_tolerance: 0

@@ -1,0 +1,72 @@
+format_version: 1
+tables:
+  traces:
+    rows: 28600
+    logical_sha256: 6acdbbb109dcdd9e45ec958a317db4a598c7fd3ef675de03ac593d8875aafa28
+  subjects:
+    rows: 572
+    logical_sha256: 7aa7dd6cd6a2ce8c6fb79b9d68b15c85cb9d0d0b8a00a6a0adf5b7369deae462
+  responses:
+    rows: 28600
+    logical_sha256: 3a91b2e583e057d0ca48e612ca65e68086b89e22a03afe964b0815e9ac65cbb5
+  items:
+    rows: 38
+    logical_sha256: a79414158a92c1295f93d87707961e0c090c23a52490a3f3edfbf728b9c0ffc4
+  benchmarks:
+    rows: 1
+    logical_sha256: 820191f5fc3a989bd19ed10fd3e6291ebc086d5c33d6e12af103174495ee5cd1
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 28600
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 572
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 38
+  source_finished_runs_without_arrays:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 166
+  source_negative_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 1
+  source_long_training_runs:
+    kind: count
+    origin: derived_from_data
+    source: https://wandb.ai/tlab/NetHack
+    locator: 'Pinned public finished-run files: the largest saved normalized-score checkpoint per policy, its return/depth
+      arrays, and config.yaml.'
+    scope: One observation per recorded episode, one subject per trained policy and one procedural task per character
+      configuration. Missing episode arrays are not reconstructed from aggregate summaries.
+    expected: 2

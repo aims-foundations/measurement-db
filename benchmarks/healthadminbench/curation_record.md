@@ -1,0 +1,3 @@
+- Sources: pin the released task/scoring repository and checksum the official website's 3510 run records. Preserve all available evaluator verdicts and raw judge text; no new evaluations.
+- Transform: join runs to v2 task definitions and the removed-check audit, then retain both strict pass_orig and process-check-removed pass_new with distinct grading rules. Include task-specific guidance only where it was supplied.
+- Review: reconcile every grade, task/check count and available evaluator record. Correct the earlier mislabeled relaxed score; keep its 3510 values unchanged and restore the original strict scores. Evaluation records are absent for 270 runs, and agent actions/screenshots are unavailable. Preserve the distinct CSV replicate index and website seed.

@@ -1,0 +1,106 @@
+format_version: 1
+tables:
+  traces:
+    rows: 11250
+    logical_sha256: 580511b64e3d9cdb4cc318e332c0fdf5b418f40dd31808ca7ed9a0d7fd9bb51c
+  subjects:
+    rows: 5
+    logical_sha256: 13b562e5986943defebd5cbce6f0f3acdd812c707ca0b6637be6ed5ae175ab87
+  responses:
+    rows: 11250
+    logical_sha256: fbbcf6aa9e8c42a9dcfb6f1c89a56fa948c04085acc440bf59be686ed0ed5f73
+  items:
+    rows: 2250
+    logical_sha256: 83511562a044e386489f6531a47f781599b3b184fcf93c253ffb0a53b52f9432
+  benchmarks:
+    rows: 1
+    logical_sha256: 54579d39205f509e6fc2c0c82f0f102375dd8f8a791ea96d033abb984a455161
+source_claims:
+  source_1_full_compliance:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 5907
+  source_2_full_refusal:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 4781
+  source_3_partial_refusal:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 551
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 11
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 11250
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 11250
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 5
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 2250
+  source_completions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 2250
+  source_questions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 450
+  source_prompt_discrepancies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/paul-rottger/xstest/tree/d7bb5bd738c1fcbc36edd83d5e7d1b71a3e2d84d
+    locator: Pinned model_completions CSVs and automated evaluation exports, with both task banks.
+    scope: Every released judgment and complete native completion. Five grades share each model output. No model
+      or judge execution.
+    expected: 5

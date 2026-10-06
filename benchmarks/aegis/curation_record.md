@@ -1,0 +1,3 @@
+- Replace the legacy prompt-as-subject hazard matrix with recorded Mistral outputs and native response safety labels; keep human and LLM-jury grading distinct.
+- Preserve every imported source record, its original split, empty completions and the recorded empty prompt. Native labels are copied without regrading.
+- Retain prompt-only examples and assigned-label refusal augmentation in raw; neither supplies an additional independently graded model attempt. Source revision and paper document the scope.

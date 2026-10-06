@@ -1,0 +1,171 @@
+format_version: 1
+tables:
+  traces:
+    rows: 51491
+    logical_sha256: d1213531faaad9c2f55531421832a1970add59801fe08fba840eacd68a83d016
+  subjects:
+    rows: 633
+    logical_sha256: 4ef91d1ded2ec1abf26b919e841ff4accbdc69b88ee3329c3a5f2e464d4da231
+  responses:
+    rows: 51491
+    logical_sha256: 2cce74a550dc8b6ca57a8b7f692181b712efcd3edd68133e50945ef60053424d
+  items:
+    rows: 34698
+    logical_sha256: b22a89eecab21fbbd8e8e9f6b6d10d8518613af6d912ffd32a309fa7724048bb
+  benchmarks:
+    rows: 1
+    logical_sha256: 316e7c324c8fbbdc02f87f6294c7c13bd77eeed394adc324ac324d648654bc85
+source_claims:
+  source_transcript_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 53187
+  source_missing_monitor_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 17986
+  source_zero_to_hundred_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 24768
+  source_valid:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 50461
+  source_fractional_one_to_five_ratings:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 7443
+  source_no_numeric_verdict:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 1029
+  source_other_recorded_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 23460
+  source_hierarchical_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 9747
+  source_one_to_five_assessments:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 26723
+  source_unmonitored_trajectories:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 1696
+  source_summary_based_requests:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 298
+  source_outside_declared_scale:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 1
+  source_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 51491
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 34698
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 633
+  source_literal_models:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 21
+  source_identical_record_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/ScaleAI/mrt/tree/bc636d0c3b881c7d8c76fd71b45b009c3710d437
+    locator: Every task_pairs*/**/transcript_*.json original record, with request boundaries checked against the
+      released pipeline_utils.py.
+    scope: All named monitoring records, including malformed attempts. Explicitly unmonitored trajectories remain
+      source inputs; no monitor result is invented for them.
+    expected: 49

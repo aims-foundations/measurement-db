@@ -1,0 +1,102 @@
+format_version: 1
+tables:
+  traces:
+    rows: 11000
+    logical_sha256: 7681075ff3d328b676239f4b4a563f9ad2a8fda6c23c40f726af94798e4f8a5f
+  subjects:
+    rows: 22
+    logical_sha256: da78f04269f89577e4ccfee4d836a67a68963ffb634d5876d8b9f4b57de1c9e7
+  responses:
+    rows: 11000
+    logical_sha256: 391c3e5c1b9df92fe93ef1c70b7479544f9e4a0abcfb93487ea80a3a394152dd
+  assets:
+    rows: 500
+    logical_sha256: e740d381e7720fffcae2607b9af614644cf8480ca5f84a402c7e8aaacbbdcb26
+  items:
+    rows: 500
+    logical_sha256: 221c3a2371bd2b509ee931cbe6ad5459af54af1644546de61eac2c6067bfcb6b
+  benchmarks:
+    rows: 1
+    logical_sha256: d1316007becaf1d503915c43b81d0006f1fba95e87590a1a3d2655a6a6253b98
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 11000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 22
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 500
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 500
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 11000
+  unavailable_verdicts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 26
+  empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 39
+  recorded_judge_prompts:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 10500
+  overlapping_hf_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/WildVision-AI/WildVision-Bench/tree/79dacc031b38bb88558bb9a9357d98b3fa6d8bc3/data/vision_bench_0617
+    locator: Original model_answers and model_judgements JSONL files, checked against HF release_bench_0617 tables
+      and original PNG bytes independently of the builder.
+    scope: One observation per original task/model judgment. HF overlaps are supporting evidence; unavailable verdicts
+      remain null and all complete original outputs are retained.
+    expected: 10000

@@ -1,0 +1,4 @@
+- Sources: the pinned author log and scenario bank; 128 conversations, 1,536 turns and 2,687 published ratings. The README declares MIT; no separate license file is supplied.
+- Transformation: five table stages retain each model's full prior conversation and target text, with separate DCS, HES and SIS grading identities and scales. The one missing applicable rating is null.
+- Comparison: all 2,687 old grades and model/scenario/turn associations are unchanged. Restore histories and traces omitted from the old tables; preserve the complete original folder separately.
+- Limits and checks: the logged judge differs from the paper; SIS mode and exact runtime settings are unreported. Preserve those uncertainties. All native records, published summaries and legacy grades are checked; no model or judge is run.

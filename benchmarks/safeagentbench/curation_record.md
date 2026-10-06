@@ -1,0 +1,3 @@
+- Source: six TRIDENT exports at `509e65f15685c11160c97cbace433efa09abd06b`, each covering 750 task IDs matched to the official SafeAgentBench instructions and reference steps. Retain all 4,500 decisions and full returned records.
+- Interpretation: 1 means blocked/refused; 0 means allowed. This unordered scale does not claim safety correctness or embodied execution success. Preserve author labels and distinguish threshold variants, reused GPT-4o outputs and post-hoc Check4 augmentation.
+- Limits: exact API snapshots, per-call prompts and complete simulator traces are unavailable. The author identifies Qwen2.5-VL despite the Qwen3_VL log label; third-party result redistribution terms are undeclared.

@@ -1,0 +1,63 @@
+format_version: 1
+tables:
+  traces:
+    rows: 540
+    logical_sha256: 54e06fec4b8512529328be62ea49e68f2452ae879646e8077668649bdb1a5b2c
+  subjects:
+    rows: 44
+    logical_sha256: 1d0d0bd503a03549b34e2c4388f00faf6a8dfc6ae13255db49491d613e09f7e0
+  responses:
+    rows: 23328
+    logical_sha256: e308412d06c61c185a8eca6673d459c5ca1d967feed5597800e3efc8a53f659f
+  items:
+    rows: 540
+    logical_sha256: df6a8b09b104d9017849d8e9ef2f73a0c0cd5278d90dcb6bade975f231267ab2
+  benchmarks:
+    rows: 1
+    logical_sha256: 7bd01c46cee8e8ca097956632bf5b19d0ea08be9af31fa01117a7c2a0bee8283
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    locator: 'raw/editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz: results/whole_file and generations/whole_file/gpt-o3-mini;
+      raw/complete-*.jsonl; raw/leaderboard-*.csv'
+    scope: Pinned whole-file result cells; grade is full test pass. Both independently released leaderboard
+      tables are reconciled within four-decimal rounding.
+    expected: 23328
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    locator: 'raw/editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz: results/whole_file and generations/whole_file/gpt-o3-mini;
+      raw/complete-*.jsonl; raw/leaderboard-*.csv'
+    scope: Pinned whole-file result cells; grade is full test pass. Both independently released leaderboard
+      tables are reconciled within four-decimal rounding.
+    expected: 540
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    locator: 'raw/editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz: results/whole_file and generations/whole_file/gpt-o3-mini;
+      raw/complete-*.jsonl; raw/leaderboard-*.csv'
+    scope: Pinned whole-file result cells; grade is full test pass. Both independently released leaderboard
+      tables are reconciled within four-decimal rounding.
+    expected: 11109.0
+  leaderboard_max_absolute_error:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    locator: 'raw/editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz: results/whole_file and generations/whole_file/gpt-o3-mini;
+      raw/complete-*.jsonl; raw/leaderboard-*.csv'
+    scope: Pinned whole-file result cells; grade is full test pass. Both independently released leaderboard
+      tables are reconciled within four-decimal rounding.
+    expected: 4.814814814818602e-05
+    absolute_tolerance: 1.0e-12
+  source_api_attributions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    locator: examples/openai_experiment.py:GPT_MAP and examples/openrouter_experiment.py:OPENROUTER_NAME_MAP
+    scope: Every subject API attribution agrees with the native adapter map. Model-name suffixes distinguish
+      reasoning settings, not API providers.
+    expected: 44

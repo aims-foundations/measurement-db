@@ -1,0 +1,75 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7276
+    logical_sha256: 2474c04d4983cf31b98a6937d549d59f25d3f7da33de951fe6d3e9ee882a223e
+  subjects:
+    rows: 4
+    logical_sha256: 55da6b5b53196f741cd0edb3f36425bab7f7371d86637500c5e821a5e806c7de
+  responses:
+    rows: 7276
+    logical_sha256: abb92571ebbc298dc25d8a9ad71b06583c1b040344dec6b2fcfb6c6b5d730c79
+  items:
+    rows: 1819
+    logical_sha256: a9614e3581c5ec4c8f7deb36801aafa52d9953f04199dceeb74499118abdb08b
+  benchmarks:
+    rows: 1
+    logical_sha256: 5af41980a957938f5fcba84262e31b77318e782b4aacd523849c2be605e9ba5a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected: 7276
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected: 1819
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected: 4
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected: 4992
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected: 7276
+  source_correct_by_export:
+    kind: aggregate
+    origin: derived_from_data
+    source: https://github.com/PinzhengWang322/Critic_Discernment_Game
+    locator: Eight lt_eval/results detail Parquets and their corresponding result-summary JSON files.
+    scope: Every native observation, exact prompt, reference, condition, metric and full record; means
+      match all eight published aggregates.
+    expected:
+      llama-CDG2/temp0/gsm8k: 1053
+      llama-CDG2/temp0/math_500: 232
+      llama-CDG2/temp0.75/gsm8k: 1006
+      llama-CDG2/temp0.75/math_500: 223
+      llama-base/temp0/gsm8k: 1041
+      llama-base/temp0/math_500: 226
+      llama-base/temp0.75/gsm8k: 1002
+      llama-base/temp0.75/math_500: 209
+    absolute_tolerance: 0

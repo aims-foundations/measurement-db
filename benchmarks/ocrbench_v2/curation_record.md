@@ -1,0 +1,4 @@
+- Captures the official 10,000 InternVL2.5-26B predictions and matching image/question shards at pinned revisions; every source record and original image association is checked independently.
+- Preserves all attempts, full outputs, structured references and original JPEG bytes. Repeated stimuli share an item but retain their separate source observations.
+- Replaces the legacy custom binary score with null: the release contains predictions, not task-specific grades. Restores 32 previously dropped source records; no model or grader runs.
+- Historical inference settings are unavailable. The upstream GitHub research-only terms conflict with the HF card's MIT declaration; both are recorded in metadata.

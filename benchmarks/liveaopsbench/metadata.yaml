@@ -1,0 +1,184 @@
+benchmark:
+  description: Released 2024 LiveAoPSBench Olympiad mathematics questions and complete source-reported model correctness
+    matrix.
+  testing_condition: Import the 2024 website release only. Zero-based result question_id is associated with the
+    ordered published task file (idx=question_id+1); the earlier author export preserves the same question/solution
+    order and original AoPS topic links. Import pass@1/100 without regrading. Original model completions, historical
+    prompt wrappers, decoding settings and exact grading-harness revision are not released with these scores. Generic
+    website model release dates are placeholders, not subject metadata. Repeated identical question/reference definitions
+    share an item and retain separate source-record occurrences; their trial numbers do not establish independent
+    resampling. Earlier results cover a different 9,079-question set with unresolved mapping and are preserved only
+    in raw. No new model or judge calls occur.
+  paper_url: https://arxiv.org/abs/2501.14275
+  data_source_url: https://github.com/LiveMathBench/LiveMathBench.github.io
+  subject_type: model
+  item_type: question
+  license: 'Task dataset: Apache-2.0 (author HF card); website result/source release: CC-BY-SA-4.0; evaluator code:
+    Apache-2.0. Original notices are captured.'
+  citation: "@article{mahdavi2025leveraging,\n  title={Leveraging Online Olympiad-Level Math Problems for LLMs Training\
+    \ and Contamination-Resistant Evaluation},\n  author={Mahdavi, Sadegh and Li, Muchen and Liu, Kaiwen and Thrampoulidis,\
+    \ Christos and Sigal, Leonid and Liao, Renjie},\n  journal={International Conference on Machine Learning (ICML)},\n\
+    \  year={2025}\n}"
+  tags:
+  - math
+  - olympiad
+  - contamination-resistant
+  - aops
+  modality:
+  - text
+  domain:
+  - mathematics
+  - reasoning
+  response_type: binary
+  response_scale: &id001
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Released leaderboard pass@1 is 0
+      '1': Released leaderboard pass@1 is 100
+  categorical: true
+  release_date: 2025-01
+  release: public
+  name: LiveAoPSBench
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results.json
+      questions: questions.jsonl
+      source_questions: source_questions.jsonl
+    labels:
+      subject_prefix: 'LiveAoPSBench / '
+      condition: published_2024_release
+    subject_features:
+      harness: LiveAoPSBench published 2024 results
+      model_identifier_status: released_label
+      historical_configuration: not_recorded
+grading:
+  rule: Source-reported correctness against the released question's answer. reference_answer is a JSON string preserving
+    the exact native answer, including empty values. Published pass@1 values of 0 and 100 map to 0 and 1; model
+    outputs are unavailable for independent regrading.
+  verifiers:
+    reported:
+      kind: source_reported_metric
+      metric: pass@1
+      conversion: source pass@1 / 100
+      source: https://github.com/LiveMathBench/LiveMathBench.github.io/blob/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+      published_evaluator: https://github.com/DSL-Lab/aops/blob/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/evaluate.py
+      historical_evaluator_revision: not_recorded_in_result_export
+      response_scale: *id001
+sources:
+  upstream:
+  - name: results_json
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc2024.json
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: results.json
+    size: 16598931
+    sha256: 97572e7eb14b47d2aa3fda342682c5305f45ac1dc38f4aad26f55b18206a0045
+  - name: questions_jsonl
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/public/data/LiveAoPSBench-2024.jsonl
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: questions.jsonl
+    size: 13879866
+    sha256: bf6171ac6e1ac8e9fd4de94aa8e976edcb05e2bc42988bb493c5513cf2478328
+  - name: earlier_results_json
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/acc.json
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: earlier/results.json
+    size: 12983264
+    sha256: dec6824db367f5e0631a33191fa740a2956643632f9294cc30dac7a36c784764
+  - name: website_exporter_py
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/src/mocks/trans_json.py
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: website/exporter.py
+    size: 1852
+    sha256: eeff532a851ab8cbbbd4012a64b34d2fadf57d8e5a34e0757b480ab3a79aae94
+  - name: website_index_tsx
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/src/index.tsx
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: website/index.tsx
+    size: 4851
+    sha256: 46d54dbfbf9ae084cbd5a59b7205dd62a8d6f8273c380218515f7b6f48aa1060
+  - name: website_readme_md
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/1fafd48912960842da0caa53a71e1d605a108246/README.md
+    revision: 1fafd48912960842da0caa53a71e1d605a108246
+    file: website/README.md
+    size: 526
+    sha256: c2323370c6bcef7b6ab4c8718997c71a6c732e5de12b341be1259aba1ecaa932
+  - name: source_questions_jsonl
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/f7e3b365cef3c0947199cb9872d525bb74764345/public/data/LiveAoPSbench-1224.jsonl
+    revision: f7e3b365cef3c0947199cb9872d525bb74764345
+    file: source_questions.jsonl
+    size: 20039757
+    sha256: 86b87709c9af8c7c8598071da607728a1ffd5506c7b3eb3c20939a781dbac7ff
+  - name: earlier_questions_jsonl
+    url: https://raw.githubusercontent.com/LiveMathBench/LiveMathBench.github.io/5a9a56b0bb14b028bc996e33dd3eb9a4d6f9e01f/public/data/LiveAoPSBench_v1.0.jsonl
+    revision: 5a9a56b0bb14b028bc996e33dd3eb9a4d6f9e01f
+    file: earlier/questions.jsonl
+    size: 1611779
+    sha256: d0fee6732327ae45e4009eb6641236c4f8504d2a21c17a561abad369802cb620
+  - name: evaluator_license
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/LICENSE
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/LICENSE
+    size: 11357
+    sha256: c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4
+  - name: evaluator_readme_md
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/README.md
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/README.md
+    size: 3703
+    sha256: 9f3b61b9f31f848ed009edb2c4f159193c0f08a3a172304b9d1e36659524f7c1
+  - name: evaluator_eval_license
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/LICENSE
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/LICENSE
+    size: 1067
+    sha256: fad7c7435d19a4c635225d0d64915c12175608f44c68eedc62eaa5253bf43b79
+  - name: evaluator_eval_readme_md
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/README.md
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/README.md
+    size: 1051
+    sha256: 0c3630b498e92ff341cc96e3c5845e1b89ee3a291c2d97e484789cbb311e250a
+  - name: evaluator_eval_evaluate_py
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/evaluate.py
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/evaluate.py
+    size: 5544
+    sha256: 6d319490edd902007880bd19637908613ea1a3a3475825d0e5ea73e456bc1a46
+  - name: evaluator_eval_grader_py
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/grader.py
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/grader.py
+    size: 13675
+    sha256: 4b310de20e3ec186ec4d1dd6efaa7dbd3d73c5c42efee3f0664d2df7acb95f8c
+  - name: evaluator_eval_parser_py
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/parser.py
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/parser.py
+    size: 23778
+    sha256: 9a4df389c78d02ec021d03ed15fc126a14ae9f6a3dc48d610ba71aaad1e35fab
+  - name: evaluator_eval_data_loader_py
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/data_loader.py
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/data_loader.py
+    size: 3347
+    sha256: e6695f7737926b4c51afd3c7ed6721bd23f564572043e086259ad591b2f98567
+  - name: evaluator_eval_math_eval_py
+    url: https://raw.githubusercontent.com/DSL-Lab/aops/56f6bc1e670170e301f1c9ebc172124defd21e90/eval/math_eval.py
+    revision: 56f6bc1e670170e301f1c9ebc172124defd21e90
+    file: evaluator/eval/math_eval.py
+    size: 15205
+    sha256: cbce8c3755baded7bfb56d74f1beb6b787f7a102ad7661be215d523b8dc64a3a
+  - name: task_dataset_card
+    file: task_dataset_card.md
+    url: https://huggingface.co/datasets/jojo23333/LiveAoPSBench-2024/resolve/3ff6280f4c1d75a035698524c26ee91c70e4e2b5/README.md
+    revision: 3ff6280f4c1d75a035698524c26ee91c70e4e2b5
+    size: 1411
+    sha256: e97765a43d3a74fc4591e65b7da4e4443254c561c8709e01d78318e0f7eb7e25

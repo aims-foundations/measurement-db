@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 70ee622b24b84d7c9210eb30192ee09cbe066e62903cebbc50461250a91bb060
+  items:
+    rows: 5140
+    logical_sha256: 4bff7423cace8ec44bb68c11fa12f080440b90f3bc339cb33f3925d9d48e3118
+  responses:
+    rows: 9620
+    logical_sha256: 150dd8683444e9df44bb840673ffcb70f3bc455c7e95385c0d019489d123e51d
+  subjects:
+    rows: 11
+    logical_sha256: 94be9b11d0d3fd8896c644053ebc417fdfa8c580e4f79d724f277ad4982bd49d
+  traces:
+    rows: 9620
+    logical_sha256: 35a8163d49ecaf5de7eabbc2be2cc68212dbd21485032a938804c08e0ea4e710
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 9620
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 9620
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 5140
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 11
+  source_unique_conversation_answer_ids:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 480
+  source_graded_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 9060
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 6440
+  source_option_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 10
+  source_ungraded_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 560
+  source_author_marked_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 80
+  source_conversation_exports:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/hamid-74/Multi-MoE/tree/049f5d47ca741baa2a1de228d7c49492ef0478ac
+    locator: All ten result_5_1.csv exports and seven responses_*.jsonl exports, joined to mt-bench/question.jsonl.
+    scope: Every native record with its original model label, source position, full prompt or user turns, own gold
+      label, original verdict or absent judgment, and complete released trace. The 560 conversation exports contain
+      480 unique answer IDs and are not 560 independent executions.
+    expected: 7

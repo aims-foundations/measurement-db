@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 576
+    logical_sha256: c9ac68cf3cfe54a5bf9d6f395490ec2d1acf7c1ed837a7d442d988995a79d4c0
+  subjects:
+    rows: 16
+    logical_sha256: 8eefe547a5ab78db4a3e94ace9c177d7c80bea1491d86809ceb748f5859c8506
+  responses:
+    rows: 576
+    logical_sha256: aa96306648e8a9f068d2c440db2afe213756c4f6139b4980b5486c7c71a3f176
+  items:
+    rows: 12
+    logical_sha256: e8abc77b9f5df6f61509dff09222b4f9f0254acb70df348ecbd5c9ae1d8ad6ba
+  benchmarks:
+    rows: 1
+    logical_sha256: b366cc5eaf9124bd97f6b88e54e294508568ca52d12127276083db19eecfc9c0
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 576
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 576
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 16
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 12
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 218
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 358
+  source_linked_examples:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 60
+  source_original_panel:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 4800
+  source_unreleased_task_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 4224
+  source_truncated_preview_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://benchmarks.bio/data/txbench/index.json
+    locator: Original runResults, modelResults and evals records, with GitHub task definitions and explicitly linked
+      trajectory previews.
+    scope: All verdicts whose task instructions are released. Unreleased instructions are not synthesized; no grader
+      or model execution.
+    expected: 271

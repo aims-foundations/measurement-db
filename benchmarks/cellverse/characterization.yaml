@@ -1,0 +1,59 @@
+format_version: 1
+tables:
+  traces:
+    rows: 748
+    logical_sha256: fbbdf8560a8dcf7023a62d833d839a0af0a085c2828f5f1a0e9e66aa4ea44c60
+  subjects:
+    rows: 1
+    logical_sha256: 67fac409373146f1ec9eeab27ab9e545ee1d3e73bcfb822c53b947270e5633c1
+  responses:
+    rows: 748
+    logical_sha256: 04f114c160180bf75e2274a30f2addac68b89835b2180b0ddc7d16557c01a61e
+  items:
+    rows: 748
+    logical_sha256: 8e85f3afd1ed9f71de9d66eb6ba1f1a93036dad21933c10b13f6a079278e9145
+  benchmarks:
+    rows: 1
+    logical_sha256: 4c0efe6a251d9ca62eeffb256f7038fd01a82ffb878263e3f3d65f41f0e57fca
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/results/ms_cta_response_deepseek_r1.json
+    locator: All records in results/ms_cta_response_deepseek_r1.json joined to data/cta_scrna_full.json
+    scope: Released DeepSeek-R1 multiple-sclerosis cell-type annotation subset only. Compare the full
+      input, reference, extracted answer, binary correctness and untruncated model output for every observation.
+    expected: 748
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/results/ms_cta_response_deepseek_r1.json
+    locator: All records in results/ms_cta_response_deepseek_r1.json joined to data/cta_scrna_full.json
+    scope: Released DeepSeek-R1 multiple-sclerosis cell-type annotation subset only. Compare the full
+      input, reference, extracted answer, binary correctness and untruncated model output for every observation.
+    expected: 748
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/results/ms_cta_response_deepseek_r1.json
+    locator: All records in results/ms_cta_response_deepseek_r1.json joined to data/cta_scrna_full.json
+    scope: Released DeepSeek-R1 multiple-sclerosis cell-type annotation subset only. Compare the full
+      input, reference, extracted answer, binary correctness and untruncated model output for every observation.
+    expected: 317
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/results/ms_cta_response_deepseek_r1.json
+    locator: All records in results/ms_cta_response_deepseek_r1.json joined to data/cta_scrna_full.json
+    scope: Released DeepSeek-R1 multiple-sclerosis cell-type annotation subset only. Compare the full
+      input, reference, extracted answer, binary correctness and untruncated model output for every observation.
+    expected: 748
+  reported_accuracy_percent:
+    kind: aggregate
+    origin: reported
+    source: https://github.com/zfkarl/CellVerse/blob/59b0e223e8ab2c809612e4f94a1b60dd6e426c93/README.md
+    locator: Leaderboard, DeepSeek-R1 row, CTA (scRNA-seq) column
+    scope: Exact correctness of the 748 released predictions reproduces the reported 42.38 percent to
+      two-decimal rounding.
+    expected: 42.38
+    absolute_tolerance: 0.005

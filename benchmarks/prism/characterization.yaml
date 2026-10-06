@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 136742
+    logical_sha256: 33fbc7626793befb2fb064bdc6306d92c56eb326663293563703a0b16adbcda1
+  subjects:
+    rows: 21
+    logical_sha256: c16b9903b138fa9d8fea82eeecee271596bee857a27b1fdb33ccc40b5a56305b
+  responses:
+    rows: 136742
+    logical_sha256: 76dacfcadc1db32241dd30643da956cac90c93c0b2e0422c47b8f7dfbbf6b345
+  items:
+    rows: 53926
+    logical_sha256: dd4ac69ea4d6587ae9d9dfae5c8076f82bf0c3af765b94aa3280bca2063b9c6f
+  benchmarks:
+    rows: 1
+    logical_sha256: 06a4dd589565e5c7cc13f3201483a6bb3cdd9b868a7f2278615b8ba8b6f929ca
+source_claims:
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 21
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 53926
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 136742
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 136742
+  source_utterances:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 68371
+  source_conversations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 8011
+  source_turns:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 27172
+  source_human_raters:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 1396
+  source_chosen:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 27437
+  source_empty_output_markers:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/HannahRoseKirk/prism-alignment
+    locator: Pinned utterances, conversations and metadata JSONL at 18ab5cfb37456f4ec8cbc00212ce54cf7b1239f6; independently
+      linked by conversation/turn/candidate and utterance IDs.
+    scope: 'Two measures per original utterance: unchanged integer rating and original chosen flag. Subjects are
+      generating models; humans are anonymous raters. Contexts follow the selected branch only.'
+    expected: 147

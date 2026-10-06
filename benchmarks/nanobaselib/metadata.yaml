@@ -1,0 +1,109 @@
+benchmark:
+  name: NanoBaseLib RNA Modification Detection
+  description: Released site-level predictions for the m6A and m5C RNA-modification tasks, with the original reference
+    assays and aggregate evaluation protocol.
+  testing_condition: 'Import every nonempty prediction from both released RNA-modification matrices. Site annotations
+    identify the evaluated genomic locations; they are not the pooled Nanopore current signals used by the methods.
+    Those exact signal-to-site input bundles and fitted model checkpoints are unavailable in this compact release.
+    Keep MeRIP-seq, miCLIP and miCLIP2 labels separately: upstream does not combine them into a consensus reference.
+    Native ROC-AUC and PR-AUC grade complete prediction vectors, so individual response grades remain null. The
+    extra ELIGOS column is preserved but is absent from the six-method m6A plotting routine; do not assume that
+    every stored value is a calibrated modification probability. The 369 empty CHEUI-solo cells have no recorded
+    predictions and do not become attempts. This import covers the two published modification matrices, not NanoBaseLib’s
+    other task families. No inference or fresh grading was performed.'
+  paper_url: https://papers.neurips.cc/paper_files/paper/2024/file/8bce223b376f52fb86a148097eebb10d-Paper-Datasets_and_Benchmarks_Track.pdf
+  data_source_url: https://github.com/nanobaselib/NanoBaseLib
+  subject_type: model
+  item_type: genomic_site
+  license: Apache-2.0, as declared in the captured author repository LICENSE. The separately hosted full signal
+    dataset has its own terms and is not mirrored here.
+  citation: 'Cheng, Guangzhao; Fu, Chengbo; Cheng, Lu. NanoBaseLib: A Multi-Task Benchmark Dataset for Nanopore
+    Sequencing. NeurIPS 2024, volume 37, pages 76319–76331.'
+  tags:
+  - nanopore
+  - rna_modification
+  - genomics
+  - bioinformatics
+  modality:
+  - genomic
+  domain:
+  - biology
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: null
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    matrices:
+      m6A: upstream/rna_mod_detection/m6A.benchmark.csv
+      m5C: upstream/rna_mod_detection/m5C.benchmark.csv
+    site_columns:
+      pos: Original site identifier
+      kmer: Released sequence context
+      gene_id: Released gene identifier
+      coverage: Recorded read coverage
+    labels:
+      subject_prefix: 'NanoBaseLib / '
+      condition_prefix: modification=
+      input_scope: released_site_annotations_only
+      grade_status: no_native_per_site_grade
+    subject_features:
+      protocol: NanoBaseLib RNA modification detection
+      historical_checkpoint_revision: not_recorded
+      historical_harness_revision: not_recorded
+      raw_signal_bundle: not_in_prediction_matrix_release
+grading:
+  rule: Evaluate the complete recorded prediction vector against each original reference assay separately with the
+    native ROC-AUC and PR-AUC routines. No individual grade or consensus reference is defined.
+  verifiers:
+    m6A:
+      kind: native_aggregate_ranking
+      source: https://github.com/nanobaselib/NanoBaseLib/blob/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection/plot_m6A.py
+      functions:
+      - plot_roc_auc
+      - plot_pr_auc
+      reference_assays:
+      - MeRIP-seq
+      - miCLIP
+      - miCLIP2
+      plotted_methods:
+      - Tombo
+      - MINES
+      - Nanom6A
+      - m6Anet
+      - Epinano
+      - SegPore
+      rule: For each assay, select the six plotted method columns and that assay, then drop incomplete rows. ROC-AUC
+        uses sklearn.metrics.roc_curve and auc; PR-AUC uses precision_recall_curve and trapezoidal auc(recall, precision).
+        The extra released ELIGOS column is not plotted. No classification threshold or per-site grade is supplied.
+    m5C:
+      kind: native_aggregate_ranking
+      source: https://github.com/nanobaselib/NanoBaseLib/blob/ac9d96b6d87ec69c09daca144813227fec43ef29/rna_mod_detection/plot_m5C.py
+      functions:
+      - plot_roc_auc
+      - plot_pr_auc
+      reference_assays:
+      - gt
+      plotted_methods:
+      - Tombo_alternative
+      - Tombo_de_novo
+      - CHEUI-solo
+      rule: Evaluate both Tombo columns on all 533 sites and CHEUI-solo on the 164 complete rows. ROC-AUC uses sklearn.metrics.roc_curve
+        and auc; PR-AUC uses precision_recall_curve and trapezoidal auc(recall, precision). No classification threshold
+        or per-site grade is supplied.
+sources:
+  upstream:
+  - name: author_release
+    url: https://github.com/nanobaselib/NanoBaseLib
+    revision: ac9d96b6d87ec69c09daca144813227fec43ef29
+    files:
+    - match: .*
+      path: upstream/{path}

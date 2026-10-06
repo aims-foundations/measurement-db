@@ -1,0 +1,82 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2759
+    logical_sha256: 6dd98a6bc4d03203d9851684d589d910bfd5ba98c40261665f439ef860d6fb25
+  subjects:
+    rows: 18
+    logical_sha256: c356b18321f626d75d4248fa9af108de3655742e32a7c7a0589fb0fd1fc61386
+  responses:
+    rows: 2772
+    logical_sha256: b607c4d08bb53c51747bda028612664d7fc8c2e2c69487243d848c8aca792186
+  items:
+    rows: 154
+    logical_sha256: 01594274ed83d048f91ba82c507533a170c9033498e5f0208660ebd792c43964
+  benchmarks:
+    rows: 1
+    logical_sha256: cc98d5fa8a755cac5b6cc1238a5e2f97e637f4d8ca412c04d189ea5abb35eaa5
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 2772
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 1961
+  source_messages:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 276526
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 2759
+  source_final_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 3003
+  source_reported_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 414
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 154
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/oripress/AlgoTune/tree/dff9914c10800c7a031c9e8c3d4d1c8cd1b38906
+    locator: reports/agent_summary.json and the checksum-pinned algotune.io result pages
+    scope: All 154 tasks and 18 models in the published grid; independently check every reported grade, full task/grading
+      code, conversation message and named final file. N/A failures retain their original binary interpretation.
+    expected: 18

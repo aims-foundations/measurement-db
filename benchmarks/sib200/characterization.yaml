@@ -1,0 +1,144 @@
+format_version: 1
+tables:
+  traces:
+    rows: 765204
+    logical_sha256: f83a4deac848efd489a7f080ade4598ed0cbef775448ebb61e6c4721f06b6dab
+  subjects:
+    rows: 3343
+    logical_sha256: 6a4f66d829694021579e2eb5b7a2992492da1129df75b3b2b0841202fe56213a
+  responses:
+    rows: 765204
+    logical_sha256: d9232e68d47cfc9eb61529a6fa40d27e0b1c3da9e005318811839cac410c7f45
+  items:
+    rows: 83640
+    logical_sha256: 6fe71f236106c04b0a7b68733c4cd3a2ed365965d25afd365781d4dcd37efa1e
+  benchmarks:
+    rows: 1
+    logical_sha256: 5ecc4587428d6ffb258ec8f286e6f1264a9e3a97c758b9d0049f1adbeb8a673d
+source_claims:
+  source_classifier_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 3341
+  source_classifier_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 681564
+  source_correct_classifier_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 481019
+  source_summary_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 48
+  source_llm_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 410
+  source_llm_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 83640
+  source_empty_llm_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 3
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 765204
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 765204
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 3343
+  source_model_labels:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 6
+  source_languages:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 205
+  source_item_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 83640
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/dadelani/sib-200/tree/efad32e0fc601cfbfdf5ca80672f29697f6f401f
+    locator: outputs.zip per-item class predictions and native summaries; llm-results original replies; data/annotated
+      original test TSVs.
+    scope: All original language/run classifier outputs and both LLM output directories. Grades are reconstructed
+      only for native class tokens; missing LLM grading remains null.
+    expected: 83640

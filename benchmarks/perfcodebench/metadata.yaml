@@ -1,0 +1,136 @@
+benchmark:
+  description: Published correctness-and-runnability assessments of generated code replacements for systems optimization
+    tasks, with complete source inputs and native execution logs.
+  testing_condition: One recorded code candidate per model/task. A candidate is successful only if it compiles,
+    runs within its recorded timeout, and passes every repeated oracle check. Each candidate is timed three times
+    in the release; those executions do not constitute three independently generated responses. Error and timeout
+    records receive zero under paper section 5.1; missing_candidate placeholders produce no observation. Runtime
+    statistics remain in the full trace and are not converted into a different grade. Reconstruct the user prompt
+    from the released harness, task metadata, baseline and optional interface. The paper supports this prompt structure;
+    individual API requests and historical generation settings are not logged, so current defaults are not assigned
+    to subjects. No candidate code, compiler or grader is executed by this builder.
+  paper_url: https://arxiv.org/abs/2605.15222
+  data_source_url: https://github.com/HKUST-KnowComp/Perfcodebench
+  subject_type: model
+  item_type: task
+  license: The original public repository declares no explicit redistribution license. Raw and formatted data remain
+    local pending clarification; original source files are unchanged.
+  citation: 'Jing et al. PerfCodeBench: Benchmarking LLMs for System-Level High-Performance Code Optimization. 2026.'
+  tags:
+  - code_optimization
+  - performance
+  - systems
+  - gpu
+  - cuda
+  - code_generation
+  - multilingual_code
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - ml_engineering
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': candidate failed compilation, execution, timeout, output decoding, or task oracle checks
+      '1': candidate compiled and ran within its allowance and passed all repeated oracle checks
+  categorical: true
+  release_date: 2026-05
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
+  name: PerfCodeBench
+  version: 7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      archive: release.tar.gz
+      root: Perfcodebench-7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+      tasks: executable_tasks/[^/]+/instance\.json
+      results: executable_tasks/[^/]+/candidate/[^/]+/eval_result\.json
+      interfaces: executable_tasks/[^/]+/harness/interface\.(h|hpp|txt)
+      harness: executable_tasks/[^/]+/harness/.+
+    labels:
+      missing: missing_candidate
+      success: ok
+      default_solution: solution.cpp
+      subject_prefix: 'PerfCodeBench / '
+      harness: PerfCodeBench
+      settings_status: historical_generation_settings_not_logged
+      metric: correct_and_runnable
+      prompt_basis: published_harness_reconstruction_not_logged_api_request
+    interface_priority:
+      interface.h: '1'
+      interface.hpp: '2'
+      interface.txt: '3'
+    failure_grades:
+      error: '0'
+      timeout: '0'
+    languages:
+      .cpp: C++
+      .c: C
+      .cu: CUDA
+      .go: Go
+      .py: Python
+      .java: Java
+    prompts:
+      user: 'Optimize the following implementation for performance while preserving correctness.
+
+        Return a full, complete, compilable replacement for {solution_file}.
+
+        Do not change the externally required function signature or entrypoint used by the harness.
+
+        You may use only the dependencies already compiled by this task.
+
+
+        Task ID: {task_id}
+
+        Title: {title}
+
+        Goal: {goal}
+
+        Metric: {metric}
+
+        Correctness rule: {correctness_rule}
+
+        Allowed external includes: {includes}
+
+
+        {interface_block}Current baseline {solution_file}:
+
+        {baseline_source}
+
+        '
+      interface: 'Interface / task contract:
+
+        {interface_source}
+
+
+        '
+grading:
+  rule: 'Paper section 5.1, Correct_i: one if the generated implementation compiles, runs within its recorded timeout
+    and passes the task oracle in every repeated execution; zero otherwise. Preserve error and timeout records as
+    failed correctness-and-runnability assessments. A missing_candidate placeholder is not an attempted assessment.
+    Runtime efficiency is a separate metric and remains available in native trace fields.'
+  verifiers:
+    correct_and_runnable:
+      kind: deterministic_execution_and_task_oracle
+      executed_by_builder: false
+      observed_outcome: candidate.status=ok and candidate.all_ok=true; error/timeout are failure
+      source: https://github.com/HKUST-KnowComp/Perfcodebench/blob/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468/scripts/executable_benchmark_lib.py
+      paper: https://arxiv.org/html/2605.15222v2#S5.SS1
+sources:
+  upstream:
+  - name: release
+    url: https://codeload.github.com/HKUST-KnowComp/Perfcodebench/tar.gz/7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    revision: 7e2bcbfeeed6fb0b843a9efcf7c8f4cfbdd25468
+    file: release.tar.gz
+    size: 13127945
+    sha256: 13446a8d2b660c41f0b1a79fb206ba2c372625a5191f13b01820db3617f09e73

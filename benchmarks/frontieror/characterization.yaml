@@ -1,0 +1,81 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2230
+    logical_sha256: f7fe95223de2aae2f8dfddd5ad31ef5a18b79b2884acb4474c0dc7dbe885ef81
+  subjects:
+    rows: 15
+    logical_sha256: b3a6b8394c83df96bd277a560b9bd123e76d8422648b8ce6c490229534b62ac7
+  responses:
+    rows: 2230
+    logical_sha256: c323b5e07e848ec44637e523c1f2520b665f78159bd8da4e70865f754bf5053a
+  items:
+    rows: 180
+    logical_sha256: 4b5e42037df691a6fcbe7dfe4413b82f1361263d73c27143f7f97c831c72f6c1
+  benchmarks:
+    rows: 1
+    logical_sha256: 811ebed6ab15dae3c1b24c2e3213789c892e38622a53ce6c36a45c58f9d37e74
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 2230
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 180
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 15
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 2230
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 0
+  source_one_shot:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 2160
+  source_self_evolution:
+    kind: count
+    origin: derived_from_data
+    source: https://frontieror.vercel.app/tasks.html
+    locator: data/tasks/<paper_id>/details.json per_model[] and pinned author task bank; complete native-source
+      audit
+    scope: 2026-09-30 captured task-level assessments; twelve one-shot models and three evolution configurations;
+      no individual-instance trials inferred.
+    expected: 70

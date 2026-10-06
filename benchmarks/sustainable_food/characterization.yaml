@@ -1,0 +1,88 @@
+format_version: 1
+tables:
+  traces:
+    rows: 3000
+    logical_sha256: ffc3bafedbd393eda022ec044df5cdea000121f9d0e9ac57389e5f3a4e50e797
+  subjects:
+    rows: 6
+    logical_sha256: 6b00b888dba44cd7e53a3bc25abae9f9df61ed8a494f96c8872f469745c7232b
+  responses:
+    rows: 3000
+    logical_sha256: 94695ef2d786f583839d0e0583ef236090fe4cc4744900f8c00fc57e64c73a76
+  items:
+    rows: 500
+    logical_sha256: 5213b08a15a1adb4e6456ee65cc013929764381a2abbbffe30bd9c5730049bb2
+  benchmarks:
+    rows: 1
+    logical_sha256: 15c1232e3720608c81147698557ec93899c05b28886acaed1e1e0346d1aa02d6
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 3000
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 6
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 500
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 3000
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 1709
+  source_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 1290
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 1
+  source_missing_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 1
+  source_present_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 2999
+  source_unparseable_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/thomasat/llms-sustainable-food/tree/916e6474d322554dcd5477e2f4e1caa5f7de9ba8/recipe-rating-prediction
+    locator: pairs_metadata.csv and collected_outputs.csv; step_2 collection and step_3 model-specific parsing notebooks.
+    scope: All six model columns on all 500 Food.com recipe pairs; retain absent output as an ungraded attempt.
+    expected: 0

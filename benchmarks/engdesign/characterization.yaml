@@ -1,0 +1,171 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5394
+    logical_sha256: 05b31a1f2901ea44f709b480bfb7512bcd883a24952602b97e1de3d1a6e573ef
+  subjects:
+    rows: 16
+    logical_sha256: 70615dd041d1b5c16c66835f5d9523e2f16145c1779bf2273ee9650faa315d34
+  responses:
+    rows: 5394
+    logical_sha256: 227a996b34ea6cb2c973fc9e6f7f1ed87cb820594129d645a9447599e0587285
+  assets:
+    rows: 26
+    logical_sha256: 84d90d715e0fa3a5557881f7200bd04a08e5b7c1543c09ad827e3b0a7f733b69
+  items:
+    rows: 101
+    logical_sha256: e424d4997377431c08a682f144a80332a3d5fe3e8bf40e7785bcd6ac54098515
+  benchmarks:
+    rows: 1
+    logical_sha256: 2bc3f12536cebd5c8dc6164ab1a78fec01c834545c43b73be91a38278e1207e8
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 5394
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 1015
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 1
+  source_single_answer_trials:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 3522
+  source_iterative_outcomes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 1872
+  source_iterative_chains:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 284
+  source_empty_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 11
+  source_open_subset_log_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 2340
+  source_repeated_iteration_copies:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 4
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 101
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 16
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 5394
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 26
+  source_image_links:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 28
+  source_opaque_matlab_object_representations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/AGI4Engineering/EngDesign
+    locator: 'Pinned author archive c8ec338cc5f846d792d93728b00c9448111139e5: tasks/*/logs and iterative_result/*/*/*.jsonl;
+      full prompt/evaluator/schema sources, input images and attempt-indexed trace text.'
+    scope: All nonempty native records. Open-subset copies agree after newline normalization; four repeated
+      native iteration records count once. Successive refinement outcomes remain dependent observations
+      with their recorded iteration conditions. An explicit evaluation failure is ungraded.
+    expected: 216

@@ -1,0 +1,148 @@
+benchmark:
+  name: FrontierOR
+  one_line_description: Evaluates whether models can translate operations-research problems into executable optimization
+    programs that produce feasible solutions.
+  description: Published task-level feasibility fractions for optimization-program generation, with complete problem
+    descriptions, input/output schemas and captured reference checkers.
+  testing_condition: '2026-09-30 capture: 180 tasks, twelve one-shot models and three additional self-evolution
+    configurations with unequal task coverage. Each response is one published task-level aggregate, not one individual
+    instance or an inferred execution attempt. The task bank is pinned to the current v1 release. The original run''s
+    exact prompt wrapper, model snapshot, inference settings, checker revision and program-to-score association
+    are not published; current reference artifacts must not be represented as an exact reconstruction of those historical
+    runs. Supersede older score snapshots without counting revised assessments as independent trials.'
+  paper_url: https://arxiv.org/abs/2605.25246
+  data_source_url: https://frontieror.vercel.app/tasks.html
+  subject_type: model
+  item_type: optimization-programming task
+  license: CC-BY-4.0 for the original task artifacts; retain the author dataset card and license notice, and attribute
+    the published website assessments.
+  citation: "@article{kong2026frontieror,\n  title={FrontierOR: Benchmarking LLMs' Capacity for Efficient Algorithm\
+    \ Design in Large-Scale Optimization},\n  author={Kong, Minwei and Jiang, Chonghe and Qu, Ao and Ouyang, Wenbin\
+    \ and Zeng, Zhaoming and Guo, Xiaotong and Li, Zhekai and Li, Junyi and Fan, Yi and Zheng, Xinshou and Jing,\
+    \ Xi and Zhang, Yikai and Liang, Zhiwei and Kim, Seonghoo and Yang, Runqing and Zhou, Zijian and Li, Sirui and\
+    \ Zheng, Han and Ying, Wangyang and Zheng, Ou and Wang, Chonghuan and Zhao, Jinglong and Qin, Hanzhang and Wu,\
+    \ Cathy and Liang, Paul Pu and Zhao, Jinhua and Wang, Hai},\n  journal={arXiv preprint arXiv:2605.25246},\n\
+    \  year={2026}\n}"
+  tags:
+  - operations-research
+  - optimization
+  - algorithm-design
+  - mixed-integer-programming
+  - gurobi
+  - code-generation
+  modality:
+  - text
+  domain:
+  - reasoning
+  - software_engineering
+  - mathematics
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 0.2
+    - 0.4
+    - 0.6
+    - 0.8
+    - 1
+    direction: higher_is_better
+  categorical: true
+  release_date: 2026-05
+  multi_single_turn: multi_turn, single_turn
+  granularity: item
+  release: public
+  version: results-sha256:da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      index: task_bank/metadata/paper_meta_info.json
+      website_index: website/data/tasks/index.csv
+      details: website/data/tasks/{paper_id}/details.json
+      description: task_bank/tasks/{paper_id}/problem_description.txt
+      instance_schema: task_bank/tasks/{paper_id}/instance_schema.json
+      solution_schema: task_bank/tasks/{paper_id}/solution_schema.json
+      checker: task_bank/tasks/{paper_id}/feasibility_check.py
+    labels:
+      subject_prefix: 'FrontierOR / '
+      snapshot: results-sha256:da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe
+      task_revision: 9f5cd5436f7f4e013dfa81aebea77a1cc98628b8
+      one_shot_harness: FrontierOR one-shot
+      condition: published_task_aggregate;five_large_instances;historical_settings_unavailable
+    evolution_harnesses:
+      GPT-5.3-Codex + CoRAL: FrontierOR CoRAL self-evolution
+      GPT-5.3-Codex + EoH: FrontierOR EoH self-evolution
+      GPT-5.3-Codex + OpenEvolve: FrontierOR OpenEvolve self-evolution
+grading:
+  rule: The published feasibility fraction over five large instances of each optimization task. Feasibility checks
+    the constraints, variable domains and consistency of the reported objective with the submitted solution; it
+    does not require matching the Gurobi optimum. The upstream aggregate counts tiny-gate failures, missing large-instance
+    results and infeasible outputs as zero contributions. Preserve this reported task-level fraction rather than
+    inventing five individual trial outcomes. Solution quality and QTE are separate statistics. No solver, model
+    or checker is executed by this builder.
+  verifiers:
+    published_feasibility:
+      kind: published_feasibility_fraction
+      source: https://github.com/Minw913/FrontierOR/blob/bc1bddebc4bbd97f246ceddf0056296a4ac87fcc/scripts/compute_benchmark_main_metrics.py
+      field: per_model[].feasibility
+      reference_checker_status: current_v1_reference;historical_run_revision_unknown
+      constituent_instance_results: not_released_in_this_export
+      executed_by_builder: false
+sources:
+  upstream:
+  - name: task_index
+    url: https://huggingface.co/datasets/frontieror/FrontierOR/resolve/9f5cd5436f7f4e013dfa81aebea77a1cc98628b8/metadata/paper_meta_info.json
+    file: task_bank/metadata/paper_meta_info.json
+    size: 101222
+    sha256: e5524657865fd24eb38f30bf073081e6a9bfdd8973cbdb434b0dbc48c70af2c2
+    revision: 9f5cd5436f7f4e013dfa81aebea77a1cc98628b8
+  - name: website_index
+    url: https://frontieror.vercel.app/data/tasks/index.csv
+    file: website/data/tasks/index.csv
+    size: 34779
+    sha256: 4f7f19376aa9a32659dea3fec207f8f38c0070ecf0257a2563d760d61cdf954e
+    revision: sha256:4f7f19376aa9a32659dea3fec207f8f38c0070ecf0257a2563d760d61cdf954e
+  - name: website_history
+    url: https://frontieror.vercel.app/data/snapshots/index.json
+    file: website/data/snapshots/index.json
+    size: 2945
+    sha256: 0e60601c796ef49247c5fde811346570c22882601695bc23f5f020e7201b24c6
+    revision: sha256:0e60601c796ef49247c5fde811346570c22882601695bc23f5f020e7201b24c6
+  - name: website_metrics
+    url: https://frontieror.vercel.app/assets/js/leaderboard.js
+    file: website/assets/js/leaderboard.js
+    size: 14373
+    sha256: 3312db4dcb3a3fafa85006624df62c5241d5f8300eebfa576406d8d75e63e597
+    revision: sha256:3312db4dcb3a3fafa85006624df62c5241d5f8300eebfa576406d8d75e63e597
+  - name: website_notice
+    url: https://frontieror.vercel.app/index.html
+    file: website/index.html
+    size: 29595
+    sha256: 8f45e5f6af3990932035cce63e40f44c6332aba052f85ad19011795f6f8e9dd3
+    revision: sha256:8f45e5f6af3990932035cce63e40f44c6332aba052f85ad19011795f6f8e9dd3
+  - name: website_task_view
+    url: https://frontieror.vercel.app/task.html
+    file: website/task.html
+    size: 45388
+    sha256: b928d33bc7fd33bbdd888224f012ce1f2a4af19e30a61435dbc36a460c317af0
+    revision: sha256:b928d33bc7fd33bbdd888224f012ce1f2a4af19e30a61435dbc36a460c317af0
+  - name: results
+    url: https://frontieror.vercel.app
+    revision: sha256:da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe
+    json_index:
+      source: task_index
+      records: []
+      path: data/tasks/{paper_id}/details.json
+    tree_sha256: da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe
+    files:
+    - match: data/tasks/[^/]+/details\.json
+      path: website/{path}
+  - name: task_bank
+    url: https://huggingface.co/datasets/frontieror/FrontierOR
+    revision: 9f5cd5436f7f4e013dfa81aebea77a1cc98628b8
+    files:
+    - match: README\.md|LICENSE\.md|RELEASE_NOTES\.md|tasks/[^/]+/(problem_description\.txt|instance_schema\.json|solution_schema\.json|feasibility_check\.py)
+      path: task_bank/{path}
+  - url: https://github.com/Minw913/FrontierOR
+    revision: bc1bddebc4bbd97f246ceddf0056296a4ac87fcc

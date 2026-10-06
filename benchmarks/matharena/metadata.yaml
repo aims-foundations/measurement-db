@@ -34,6 +34,10 @@ benchmark:
     proof grades.
 build:
   contract_version: 2
+  parameters:
+    layout:
+      judge_prefix: grading_details_judge_
+      effort_pattern: (?i)\((low|medium|high|xhigh|max)\)
 sources:
   upstream:
   - url: https://huggingface.co/datasets/MathArena/aime_2025_outputs
@@ -200,3 +204,28 @@ sources:
       path: sources/miklos_2025/{path}
   - url: https://github.com/eth-sri/matharena
     revision: b89f2f0ad64ced464d2944f08c3c0aaeaa0df64b
+grading:
+  verifiers:
+    final_answer:
+      spec: Import the provider's released correct boolean as 0 or 1; the provider compares its parsed
+        final answer with gold_answer. Do not reparse or regrade the solution.
+      rule: The provider's parsed final answer matches gold_answer.
+      response_scale:
+        kind: discrete
+        values:
+        - 0
+        - 1
+    proof:
+      spec: Provider's human criterion grading; normalize awarded points by max_points.
+      judge: human
+      judged_by: human
+      response_scale:
+        kind: interval
+        min: 0
+        max: 1
+      competitions:
+      - imc_2025
+      - imo_2025
+      - miklos_2025
+      - putnam_2025
+      - usamo_2025

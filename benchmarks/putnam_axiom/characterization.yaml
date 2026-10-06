@@ -1,0 +1,39 @@
+format_version: 1
+tables:
+  traces:
+    rows: 5000
+    logical_sha256: d11ffeef51a3681f3a1a5512a5280279fefeb7e1373eb2f8d327a935abf313fc
+  subjects:
+    rows: 2
+    logical_sha256: a31e39809f25c28411be4b08d4fc07265dcbf474ff7b1f12630fe63294ae1186
+  responses:
+    rows: 5000
+    logical_sha256: 384024307c32d18e569b43317d4f7c5007a619be248ed7bc8b9fb533ea9fe149
+  items:
+    rows: 2500
+    logical_sha256: 23f043a126b26b45b1bffc7707fa0e3bf4049ff43637f4299e0772088628148a
+  benchmarks:
+    rows: 1
+    logical_sha256: d55777263a70001dbd4deef342308efebc58cf52a7caa6b27166de179bbd0cff
+source_claims:
+  source_solutions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 1000
+  source_problems:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 500
+  source_rubric_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/3ricme/Putnam-AXIOM-Grading
+    locator: Pinned source files selected in metadata.yaml
+    scope: Native observations under the inclusion and grading rules in curation_record.md.
+    expected: 5000

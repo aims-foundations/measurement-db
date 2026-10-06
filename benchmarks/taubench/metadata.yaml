@@ -1,0 +1,105 @@
+benchmark:
+  name: tau-bench
+  description: Original customer-service tool-agent-user interactions and explicitly attributed third-party HAL
+    runs.
+  testing_condition: Preserve original Sierra airline and retail trajectories and every captured HAL airline run,
+    including historical few-shot runs withdrawn from its leaderboard for test-example leakage. Sixteen HAL error
+    strings lack a native grade and remain null; native numeric zeroes are preserved. HAL task IDs have one common
+    complete definition across all captured runs, used to associate error-only records and recorded in their provenance.
+    No heatmap averages are converted to artificial trials. tau2-bench is curated separately. Historical settings
+    and database snapshots are not inferred from current code.
+  paper_url: https://arxiv.org/abs/2406.12045
+  data_source_url: https://github.com/sierra-research/tau-bench
+  subject_type: agent
+  item_type: task
+  license: 'Original Sierra code and tasks: MIT. HAL traces: public analysis release; no separate data license found
+    in the captured export repository.'
+  citation: 'Yao, Shinn, Razavi and Narasimhan. tau-bench: A Benchmark for Tool-Agent-User Interaction in Real-World
+    Domains. 2024. HAL run provenance: Stroebl, Kapoor and Narayanan, HAL: A Holistic Agent Leaderboard for Centralized
+    and Reproducible Agent Evaluation, 2026.'
+  tags:
+  - agent
+  - tool_use
+  - customer_service
+  modality:
+  - text
+  domain:
+  - agents_and_tool_use
+  multi_single_turn: multi_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2024-06
+  release: public
+  granularity: item
+  version: 59a200c6d575d595120f1cb70fea53cef0632f6b
+  one_line_description: Measures customer-service tool-using agents with simulated users.
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      sierra_runs: sierra/historical_trajectories/*.json
+      hal_runs: hal/archives/taubench*.zip
+    labels:
+      sierra_agent: Original tool-calling agent
+      historical_settings: Exact historical model snapshots and all inference settings are not recorded.
+      configuration_scope: Literal recorded model and source agent configuration. Run timestamps do not create new
+        subjects.
+      input_scope: Complete embedded user instruction and user identifier. Full recorded policies, prompts, tool
+        calls and outputs remain in the associated trace when released. Historical database snapshots and exact
+        prompts are not reconstructed.
+      fewshot_integrity: HAL withdrew this few-shot scaffold for test-example leakage on 2025-12-08. Retain as an
+        attributed historical observation, not a clean held-out evaluation.
+      other_integrity: No clean-evaluation guarantee is inferred from the presence of a published result.
+    sierra_models:
+      gpt-4o-airline.json: gpt-4o
+      gpt-4o-retail.json: gpt-4o
+      sonnet-35-new-airline.json: claude-3-5-sonnet-20241022
+      sonnet-35-new-retail.json: claude-3-5-sonnet-20241022
+    sierra_domains:
+      gpt-4o-airline.json: airline
+      gpt-4o-retail.json: retail
+      sonnet-35-new-airline.json: airline
+      sonnet-35-new-retail.json: retail
+    hal_encoding:
+      public_password: hal1234
+      iterations: '480000'
+grading:
+  rule: Import the original binary reward without regrading. Native success compares the final database state with
+    that produced by the reference actions and, where required, checks requested textual outputs. The captured evaluator
+    documents the rule but does not prove every historical run used this exact revision. Missing grades in logged
+    API-error strings remain unavailable.
+  verifiers:
+    native:
+      kind: native_recorded_reward
+      source: https://github.com/sierra-research/tau-bench/blob/59a200c6d575d595120f1cb70fea53cef0632f6b/tau_bench/envs/base.py
+      implementation: Env.calculate_reward
+      mode: Preserve published result, including historical grader behavior; no judge or agent execution.
+sources:
+  upstream:
+  - name: sierra
+    url: https://github.com/sierra-research/tau-bench
+    revision: 59a200c6d575d595120f1cb70fea53cef0632f6b
+    files:
+    - match: .*
+      path: sierra/{path}
+  - name: hal_runs
+    url: https://huggingface.co/datasets/agent-evals/hal_traces
+    revision: e7dcedc82b4f4bc819a170fd6616bdb44841c71e
+    files:
+    - match: taubench.*\.zip
+      path: hal/archives/{path}
+  - name: hal_protocol
+    url: https://github.com/princeton-pli/hal-harness
+    revision: 16bb03ebc11577fb5ea6dc8bb6c968387085e6aa
+    files:
+    - match: (?:README\.md|LICENSE(?:\.md)?|\.gitmodules|pyproject\.toml|.*(?:decrypt|encrypt|taubench).*)
+      path: hal/harness/{path}

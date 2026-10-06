@@ -1,0 +1,90 @@
+format_version: 1
+tables:
+  traces:
+    rows: 536
+    logical_sha256: 23c12135fee1b170c5d1124d46a34bf60082367e62b63bb17b93377c80cf9d90
+  subjects:
+    rows: 3
+    logical_sha256: 6d44146a586714164dde7778dc63dad6498a099556e4b6d4d56751cdd1086e66
+  responses:
+    rows: 536
+    logical_sha256: b6327e5b33a54c371d002d952e09da3f19246c90258861abd465f58d03448b7d
+  items:
+    rows: 536
+    logical_sha256: c85e29a578cd5ed59d495b784344d4b6335de451514cec641cbabc0932800819
+  benchmarks:
+    rows: 1
+    logical_sha256: dfbaa146095524c42f9eb7f966814abf2fa49ee7d7ede27ed6e5ac69c02c6bca
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 536
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 536
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 536
+  source_trajectory_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 273
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 3
+  source_harmful:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 207
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 233
+  source_trajectory_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/Yunhao-Feng/BraveGuard
+    locator: All three historical guard_sft/merged_mode3.csv blobs and their pinned exports_v8/exports JSONL inputs;
+      complete CSV/JSONL audit independent of the tabular builder.
+    scope: Development-checkpoint guard decisions, not final held-out paper scores. Prompt variants are distinct
+      items; binary responses retain harmful/non-harmful meaning.
+    expected: 5076

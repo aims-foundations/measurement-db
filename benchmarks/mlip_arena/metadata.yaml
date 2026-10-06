@@ -1,0 +1,376 @@
+benchmark:
+  description: Released per-system observations of machine-learned interatomic potentials across physics-aware simulation
+    tasks.
+  testing_condition: Import original per-system results, not model-level leaderboard cells. Preserve complete recorded
+    curves and grouped trajectories, mixed metric units, and missing/undefined values. Metrics from one simulation
+    are dependent assessments, not independent trials. Atomic structures are joined to their original databases;
+    input and reference properties remain separate. Vacancy tasks retain their procedural definition because historical
+    pre-relaxation structures are not released; relaxed structures remain outputs in the trace. Historical model
+    weights, execution revisions, hardware and stochastic seeds are not asserted. No model, molecular dynamics,
+    optimization or new evaluation is run.
+  paper_url: https://openreview.net/forum?id=SAT0KPA5UO
+  data_source_url: https://huggingface.co/datasets/atomind/mlip-arena
+  subject_type: model
+  item_type: simulation task
+  license: The author GitHub repository declares Apache-2.0. Retain the original author data and input-source attributions;
+    do not assume a broader license for referenced third-party crystal databases.
+  citation: "@inproceedings{chiang2025mliparena,\n  title={MLIP Arena: Advancing Fairness and Transparency in Machine\
+    \ Learning Interatomic Potentials via an Open, Accessible Benchmark Platform},\n  author={Chiang, Yuan and Kreiman,\
+    \ Tobias and Zhang, Christine and Kuner, Matthew C. and Weaver, Elizabeth and Amin, Ishan and Park, Hyunsoo\
+    \ and Lim, Yunsung and Kim, Jihan and Chrzan, Daryl and Walsh, Aron and Blau, Samuel M. and Asta, Mark and Krishnapriyan,\
+    \ Aditi S.},\n  booktitle={NeurIPS 2025 Datasets and Benchmarks Track},\n  year={2025},\n}"
+  tags:
+  - interatomic_potentials
+  - force_fields
+  - materials
+  - molecular_simulation
+  modality:
+  - text
+  domain:
+  - science
+  response_type: mixed
+  response_scale:
+    kind: mixed
+  categorical: false
+  release_date: 2025-12
+  release: public
+  name: MLIP Arena
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      github: github
+      huggingface: huggingface
+    subject_features:
+      harness: MLIP Arena
+      historical_model_revision: not_recorded
+      historical_hardware: not_recorded
+      historical_execution_revision: not_recorded
+    labels:
+      subject_prefix: 'MLIP Arena / '
+grading:
+  verifiers:
+    native:
+      metrics:
+        energy-diff-flip-times:
+          rule: Import the native per-structure energy-diff-flip-times value from the processed curve table.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: count
+        tortuosity:
+          rule: Import the native per-structure tortuosity value from the processed curve table.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: dimensionless
+        spearman-compression-energy:
+          rule: Import the native per-structure spearman-compression-energy value from the processed curve table.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: lower_is_better
+          unit: dimensionless
+        spearman-compression-derivative:
+          rule: Import the native per-structure spearman-compression-derivative value from the processed curve table.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: higher_is_better
+          unit: dimensionless
+        spearman-tension-energy:
+          rule: Import the native per-structure spearman-tension-energy value from the processed curve table.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: higher_is_better
+          unit: dimensionless
+        force-flip-times:
+          rule: Import the native force-flip-times assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: count
+        force-total-variation:
+          rule: Import the native force-total-variation assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: eV/angstrom
+        energy-grad-norm-max:
+          rule: Import the native energy-grad-norm-max assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: eV/angstrom
+        energy-jump:
+          rule: Import the native energy-jump assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: eV
+        energy-total-variation:
+          rule: Import the native energy-total-variation assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: eV
+        conservation-deviation:
+          rule: Import the native conservation-deviation assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: lower_is_better
+          unit: eV/angstrom
+        spearman-descending-force:
+          rule: Import the native spearman-descending-force assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: lower_is_better
+          unit: dimensionless
+        spearman-ascending-force:
+          rule: Import the native spearman-ascending-force assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: higher_is_better
+          unit: dimensionless
+        spearman-repulsion-energy:
+          rule: Import the native spearman-repulsion-energy assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: lower_is_better
+          unit: dimensionless
+        spearman-attraction-energy:
+          rule: Import the native spearman-attraction-energy assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: -1
+            max: 1
+            direction: higher_is_better
+          unit: dimensionless
+        force-jump:
+          rule: Import the native force-jump assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+          unit: eV/angstrom
+        pbe-energy-mae:
+          rule: Import the native pbe-energy-mae assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: lower_is_better
+          unit: eV
+        pbe-force-mae:
+          rule: Import the native pbe-force-mae assessment of the complete diatomic potential curve.
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: lower_is_better
+          unit: eV/angstrom
+        normalized_final_step:
+          rule: Recorded final_step divided by target_steps; preserve the native value once per simulation, not
+            once per frame.
+          unit: fraction
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: higher_is_better
+        steps_per_second:
+          rule: Native throughput from recorded steps and wall time. Hardware is not recorded, so this is not a
+            controlled cross-hardware comparison.
+          unit: steps/s
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: higher_is_better
+        yield:
+          rule: Native fraction of water products at the final recorded combustion frame.
+          unit: fraction
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: higher_is_better
+        enthalpy_difference:
+          rule: (final potential energy - initial potential energy) / 128 * 23.0 - (-68.3078), as in the native
+            combustion leaderboard. Signed difference; the leaderboard ranks its absolute magnitude.
+          unit: kcal/mol
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+        com_drift:
+          rule: Euclidean norm of the final recorded center-of-mass displacement vector.
+          unit: angstrom
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: lower_is_better
+        asymmetry:
+          rule: Native abs(NEB endpoint energy difference / migration barrier). Formation energies, migration energies
+            and fit parameters remain model outputs in the complete trace; they are not accuracy grades.
+          unit: dimensionless
+          response_scale:
+            kind: interval
+            min: null
+            max: null
+            direction: lower_is_better
+        classification_agreement:
+          rule: Agreement of the native per-system classification with its released reference. See the task-specific
+            classifier and exclusions.
+          unit: binary agreement
+          response_scale:
+            kind: discrete
+            values:
+            - 0
+            - 1
+            direction: higher_is_better
+            meanings:
+              '0': Native classification differs from the reference.
+              '1': Native classification agrees with the reference.
+      families:
+        diatomics:
+          metrics:
+          - force-flip-times
+          - force-total-variation
+          - energy-diff-flip-times
+          - energy-grad-norm-max
+          - energy-jump
+          - energy-total-variation
+          - conservation-deviation
+          - spearman-descending-force
+          - spearman-ascending-force
+          - spearman-repulsion-energy
+          - spearman-attraction-energy
+          - tortuosity
+          - force-jump
+          - pbe-energy-mae
+          - pbe-force-mae
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/mlip_arena/flows/diatomics.py
+          instruction: Evaluate a homonuclear diatomic potential at the recorded separation grid (angstrom). The
+            published generator centers the atoms at plus/minus half the separation in a nonperiodic cell of side
+            lengths [5*rmax, 5*rmax+0.001, 5*rmax+0.002]. Historical calculator configuration is not recorded.
+        eos_bulk:
+          metrics: &id001
+          - energy-diff-flip-times
+          - tortuosity
+          - spearman-compression-energy
+          - spearman-compression-derivative
+          - spearman-tension-energy
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/mlip_arena/flows/eos_bulk.py
+          instruction: Relax this original WBM atomic structure and evaluate its equation of state over the recorded
+            21-volume range. Import the published per-structure curve assessments. The captured workflow describes
+            FIRE relaxation to fmax=0.1 and maximum volume strain 0.2; its historical execution revision is not
+            recorded.
+        ev:
+          metrics: *id001
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/mlip_arena/flows/ev.py
+          instruction: Evaluate the energy-versus-volume curve for this original WBM atomic structure. Import the
+            published per-structure curve assessments; no model or relaxation is executed during curation.
+        stability:
+          metrics:
+          - normalized_final_step
+          - steps_per_second
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/mlip_arena/flows/stability.py
+          instruction: Simulate this original random-mixture atomic structure with the recorded heating or compression
+            protocol. The published workflow uses a 10 ps Nose-Hoover run with temperature ramp 300 to 3000 K and,
+            for compression, pressure ramp 0 to 500 GPa. Historical execution revision and initial velocities are
+            not recorded.
+        combustion:
+          metrics:
+          - yield
+          - steps_per_second
+          - enthalpy_difference
+          - com_drift
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/serve/ranks/combustion.py
+          instruction: Simulate the hydrogen/oxygen combustion system given by the original H256O128 extended-XYZ
+            input. Evaluate the released water yield, throughput, reaction enthalpy difference and center-of-mass
+            drift.
+        vacancy_migration:
+          metrics:
+          - asymmetry
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/benchmarks/vacancy_migration/run.py
+          instruction: Evaluate single-vacancy migration in the given elemental FCC (108 atom) or HCP (36 atom)
+            supercell after the native equation-of-state relaxation. The published generator selects the lowest-hull-energy
+            conventional structure from Materials Project or a crystallographic fallback. The original pre-relaxation
+            geometry is not released; the model-dependent relaxed geometry and complete NEB result are preserved
+            as outputs, not substituted as shared inputs.
+        c2db:
+          metrics:
+          - classification_agreement
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/benchmarks/c2db/analysis.ipynb
+          instruction: Predict dynamical stability for this original C2DB atomic structure using the released elastic
+            eigenvalues and Gamma-point phonon frequencies. Native prediction is stable unless the minimum real
+            eigenvalue or frequency is below -1e-7; nonreal vectors receive the native threshold fallback. References
+            marked Unknown and nonfinite/unavailable outputs remain ungraded.
+        mof:
+          metrics:
+          - classification_agreement
+          source: https://github.com/atomind-ai/mlip-arena/blob/6239aea513c494aeab237fc96ef133b9b1cc204f/benchmarks/mof/classification/analysis.ipynb
+          instruction: Classify CO2 adsorption for this original metal-organic-framework structure using the mean
+            of the released heat-of-adsorption samples. The source classifier applies the reference-class interval
+            to the negated mean heat (kJ/mol). Preserve original samples; do not execute new Widom insertions.
+      combustion:
+        water_count: 128
+        energy_conversion: 23.0
+        reference_enthalpy: -68.3078
+      c2db_threshold: -1.0e-07
+      mof_intervals:
+        General:
+        - null
+        - 35
+        Flue Gas:
+        - 35
+        - 50
+        DAC:
+        - 50
+        - 100
+      mof_excluded_names:
+      - MIL-96-Al
+sources:
+  upstream:
+  - name: github_code
+    url: https://github.com/atomind-ai/mlip-arena
+    revision: 6239aea513c494aeab237fc96ef133b9b1cc204f
+    files:
+    - match: (?!(?!(?:benchmarks|mlip_arena/tasks)/combustion/H256O128\.extxyz$|benchmarks/stability/stability-and-speed-n[vp]t-loglog\.pdf$)(?:benchmarks|mlip_arena/tasks)/.+\.(?:db|pkl|parquet|json|extxyz|pdf)$)(?!\.devcontainer/devcontainer\.json$|docs/mint\.json$).+
+      path: github/{path}
+  - name: github_data
+    git_lfs: true
+    url: https://github.com/atomind-ai/mlip-arena
+    revision: 6239aea513c494aeab237fc96ef133b9b1cc204f
+    files:
+    - match: (?!(?:benchmarks|mlip_arena/tasks)/combustion/H256O128\.extxyz$|benchmarks/stability/stability-and-speed-n[vp]t-loglog\.pdf$)(?:benchmarks|mlip_arena/tasks)/.+\.(?:db|pkl|parquet|json|extxyz|pdf)
+      path: github/{path}
+  - name: huggingface
+    url: https://huggingface.co/datasets/atomind/mlip-arena
+    revision: 6b66842c34c92ad1f81a90df0d7e64a6e3ad1ca4
+    files:
+    - match: \.gitattributes|README\.md|vacancy_migration/.+\.pkl|combustion/.+\.extxyz|stability/random-mixture\.db
+      path: huggingface/{path}

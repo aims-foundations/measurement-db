@@ -1,0 +1,4 @@
+- Source: pinned AgentRewardBench human annotations and all 472 corresponding WorkArena trajectories. Preserve the original data terms and recorded agent configurations.
+- Transformation: join on agent, experiment and task; retain actual instructions, task seeds, every human rating and complete trajectories. Automatic rewards remain source evidence rather than replacing human labels.
+- Correction: the legacy builder selected one annotator and shortened traces. Repeated ratings now remain distinct observations; trial numbers do not imply separate agent executions.
+- Limits: screenshots remain upstream references within the traces; no new agent evaluation or grading is performed. The reference code documents the release without claiming an exact historical Git revision for every execution.

@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 15024
+    logical_sha256: 3c26ffccf2b11bec4ff98c7b977b375a7b1dc79092aa8f360af296478faf7394
+  subjects:
+    rows: 1
+    logical_sha256: d14bd0e0a2bddf254861f6c8199db3522e32b43bb199a37fd30b85af8dd33141
+  responses:
+    rows: 15024
+    logical_sha256: f341f8ae2eac27d5bac68a491e0c720fecc0c16326cb5c2b4876882c5badd991
+  assets:
+    rows: 1561
+    logical_sha256: 9db955f537932c21c9fa72bb3e4006ffdda58e688ea03491435c76800bf2515a
+  items:
+    rows: 15024
+    logical_sha256: eeeda0f69db6c983ad58ce3356835ea603e3d9cf993308d45cd5f14341a90554
+  benchmarks:
+    rows: 1
+    logical_sha256: 1e6f82625263cc6e4c2a37a5e6d3178afe4f8dbdbf8ed8bf5de7fb33bd102540
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 15024
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 1
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 15024
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 15024
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 1561
+  source_categories:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 7
+  source_correct:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 13850
+  source_incorrect:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 1174
+  source_historical_only_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 2
+  source_overlapping_stimulus_records:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 12
+  source_distinct_ordered_stimuli:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/RAIVNLab/sugar-crepe/tree/0047054b243992f0fad63d6f64f7544862daf846
+    locator: gpt-4v-results/{positive-first,negative-first}/*.json; COCO-2017 validation image associations.
+    scope: All released per-category GPT-4V observations, preserving both caption orders and original visual inputs.
+    expected: 15012

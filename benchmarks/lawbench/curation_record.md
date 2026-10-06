@@ -1,0 +1,3 @@
+- Sources: pinned original predictions, task banks, deterministic graders and reports; captured files match the author Git tree.
+- Coverage: 918,000 attempts across 18 tasks and 51 released model labels, with complete prompts/references/traces. All 305,184 previous observations reconcile; native per-item means match all 1,734 comparable published scores.
+- Limits: 51,000 corpus-only and 1,581 source-excluded grades remain null. Preserve negative scores and disputed labels; historical model settings and scorer library versions were unrecorded. No new inference or fabricated observations for aggregate-only tasks.

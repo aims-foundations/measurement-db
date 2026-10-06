@@ -1,0 +1,3 @@
+- Join by category and item number; preserve full answer options, outputs/logits, and both released annotation versions.
+- Match the author's ordered answer parser. Keep unparsed attempts ungraded and question-only context copies as trace provenance.
+- Preserve input-format differences and RACE fine-tuning labels; historical tokenization and checkpoint revisions are unverified.

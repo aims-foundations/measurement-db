@@ -1,0 +1,131 @@
+benchmark:
+  name: 'Large Language Monkeys: Monkey Business'
+  description: Complete released prompts, model-generated solutions and per-sample correctness flags from the original
+    Monkey Business repeated-sampling collection.
+  testing_condition: The original release contains 10,000 samples per model/problem and explicit Boolean correctness
+    flags. Preserve the native JSON row and sample order, complete few-shot prompts, reference solutions, and every
+    output including empty or invalid generations. Protocol settings come from the pinned author dataset card; exact
+    model checkpoints, execution dates and dependency revisions are not recorded and are not inferred. CodeContests
+    uses public, private and generated tests. MiniF2F uses named theorems in the repository pinned by the author
+    evaluator. The historical local slug monkey_power_laws is retained for continuity, but the observations are
+    attributed to Brown et al. (2024), not counted as new measurements from the later power-law analysis. No model,
+    code solution or grader is executed.
+  paper_url: https://arxiv.org/abs/2407.21787
+  data_source_url: https://huggingface.co/datasets/ScalingIntelligence/monkey_business
+  subject_type: model
+  item_type: problem
+  license: MIT for released model samples; Apache-2.0 for the author evaluation code. Original problem and reference
+    sources retain their upstream licenses.
+  citation: 'Brown, Bradley et al. (2024). Large Language Monkeys: Scaling Inference Compute with Repeated Sampling.
+    arXiv:2407.21787. The later analysis by Schaeffer et al. (2025), arXiv:2502.17578, reuses this collection.'
+  tags:
+  - repeated_sampling
+  - inference_scaling
+  - mathematics
+  - code
+  - formal_proofs
+  modality:
+  - text
+  domain:
+  - mathematics
+  - software_engineering
+  - reasoning
+  multi_single_turn: single_turn
+  granularity: item
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The original released grader marked this sample incorrect.
+      '1': The original released grader marked this sample correct.
+  categorical: true
+  release_date: 2024-07
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      results: results/*.json
+      code_contests: code_contests/data/test-00000-of-00001-9c49eeff30aacaa8.parquet
+      minif2f: minif2f/test.jsonl
+      lean_test: lean/MiniF2F/Test.lean
+    subject:
+      harness: Large Language Monkeys
+      inference_engine: vLLM (author-reported)
+    sampling:
+      GSM8K: temperature=0.6;top_p=1;max_tokens=512
+      MATH: temperature=0.6;top_p=1;max_tokens=512
+      CodeContests: temperature=0.5;top_p=0.95;max_tokens=1024
+      MiniF2F-MATH: temperature=0.5;top_p=1;max_tokens=200
+grading:
+  verifiers:
+    GSM8K:
+      kind: programmatic_answer_check
+      source: https://github.com/ScalingIntelligence/large_language_monkeys/blob/ed2bdb06bcfcbda1ed7d9c2bff87c2db10c3ee78/llmonk/evaluate/math_datasets.py
+      rule: 'Import the published is_corrects boolean for the matching sample. The release card describes extracting
+        the final #### answer and comparing with the released ground truth. The captured author evaluator also permits
+        symbolic equivalence after normalization. Its exact executed revision is not recorded in the sample export;
+        do not replace the original verdict with a fresh judgment.'
+      reported_protocol_source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/blob/a9f8f73bcd6948a57ed922cba4e48062ef95f553/README.md
+    MATH:
+      kind: programmatic_answer_check
+      source: https://github.com/ScalingIntelligence/large_language_monkeys/blob/ed2bdb06bcfcbda1ed7d9c2bff87c2db10c3ee78/llmonk/evaluate/math_datasets.py
+      rule: Import the published is_corrects boolean for the matching sample. The author protocol extracts and normalizes
+        the final answer, including the reference boxed answer, and checks string or symbolic equivalence using
+        the Minerva-MATH utilities. The executed dependency revision is not recorded; preserve the original grade.
+      reported_protocol_source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/blob/a9f8f73bcd6948a57ed922cba4e48062ef95f553/README.md
+    CodeContests:
+      kind: program_execution_check
+      source: https://github.com/ScalingIntelligence/large_language_monkeys/blob/ed2bdb06bcfcbda1ed7d9c2bff87c2db10c3ee78/llmonk/evaluate/code_contests.py
+      test_source: https://huggingface.co/datasets/deepmind/code_contests/blob/802411c3010cb00d1b05bad57ca77365a3c699d6/data/test-00000-of-00001-9c49eeff30aacaa8.parquet
+      rule: Import the published is_corrects boolean. The upstream protocol extracts Python code and checks it against
+        the concatenation of public, private and generated input/output tests, using the AlphaCode comparison implementation.
+        The captured generator reads the task time limit; its paired evaluator adds a ten-second buffer. The rule
+        records the exact test-bank row and SHA-256 of all three test sets plus the time limit. Test cases remain
+        in the pinned raw Parquet file. Do not execute or regrade code during curation.
+      reported_protocol_source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/blob/a9f8f73bcd6948a57ed922cba4e48062ef95f553/README.md
+    MiniF2F-MATH:
+      kind: lean_proof_check
+      source: https://github.com/ScalingIntelligence/large_language_monkeys/blob/ed2bdb06bcfcbda1ed7d9c2bff87c2db10c3ee78/llmonk/evaluate/minif2f.py
+      theorem_source: https://github.com/rah4927/lean-dojo-mew/blob/d00c776260c77de7e70125ef0cd119de6c0ff1de/MiniF2F/Test.lean
+      rule: Import the published is_corrects boolean for the matching proof sample. The author protocol uses Lean-Dojo
+        1.1.2 and Lean 4.3.0-rc2, splits the completion into tactic steps, and requires ProofFinished for the named
+        theorem. Each tactic has a ten-second timeout. Timeouts can be recorded as failures even for valid proofs.
+        The named theorem and repository revision are retained; no proof checker runs during curation.
+      reported_protocol_source: https://huggingface.co/datasets/ScalingIntelligence/monkey_business/blob/a9f8f73bcd6948a57ed922cba4e48062ef95f553/README.md
+sources:
+  upstream:
+  - name: original_sample_exports
+    url: https://huggingface.co/datasets/ScalingIntelligence/monkey_business
+    revision: a9f8f73bcd6948a57ed922cba4e48062ef95f553
+    files:
+    - match: .*\.json|README\.md
+      path: results/{path}
+  - name: original_evaluation_protocol
+    url: https://github.com/ScalingIntelligence/large_language_monkeys
+    revision: ed2bdb06bcfcbda1ed7d9c2bff87c2db10c3ee78
+    files:
+    - match: .*
+      path: protocol/{path}
+  - name: code_contests_tests
+    url: https://huggingface.co/datasets/deepmind/code_contests
+    revision: 802411c3010cb00d1b05bad57ca77365a3c699d6
+    files:
+    - match: data/test-.*\.parquet|README\.md
+      path: code_contests/{path}
+  - name: minif2f_statements
+    url: https://huggingface.co/datasets/cat-searcher/minif2f-lean4
+    revision: 70a1249ce240667f6bcdd1ccd62f847f0e065d57
+    files:
+    - match: test\.jsonl|README\.md
+      path: minif2f/{path}
+  - name: lean_grading_repository
+    url: https://github.com/rah4927/lean-dojo-mew
+    revision: d00c776260c77de7e70125ef0cd119de6c0ff1de
+    files:
+    - match: MiniF2F/Test\.lean|lakefile\.lean|lean-toolchain|lake-manifest\.json|README\.md|LICENSE
+      path: lean/{path}

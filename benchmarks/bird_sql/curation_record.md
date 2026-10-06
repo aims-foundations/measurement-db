@@ -1,0 +1,3 @@
+- Import all 43,200 Petavue BIRD results with a library Excel-to-table reader. Keep 120 model/provider/prompt configurations distinct and retain every complete workbook record as a trace.
+- Restore full input-bank questions, schemas and hints. Document one question encoding alias and three inconsistent difficulty labels; preserve the original strings and all published grades.
+- Import the recorded Petavue column-wise execution verdict, which differs from strict row-wise SQL equivalence. Historical requests and database snapshots are not reconstructed. Check every cell and observation independently and preserve previous tables locally.

@@ -298,7 +298,7 @@ benchmarks:
       nullable: false
       description: >-
         How the grader emits the response. Controlled vocabulary: "binary",
-        "likert_5", "likert_10", "win_rate", "ordinal", "fraction",
+        "likert_5", "likert_10", "win_rate", "ordinal", "nominal", "fraction",
         "continuous_bounded", "continuous_unbounded", "error_presence",
         "mixed". Defaults to "binary".
     - name: response_scale
@@ -325,7 +325,7 @@ benchmarks:
       nullable: false
       description: >-
         Classification for downstream categorical versus numeric modeling.
-        Derived as true for binary, error_presence, Likert, and ordinal types;
+        Derived as true for binary, error_presence, Likert, ordinal, and nominal types;
         false for continuous types. Contradictory declarations are rejected.
         Fractions, win rates, and mixed scales retain an explicit curator-supplied
         boolean; finite numeric support alone does not imply categorical
@@ -362,10 +362,11 @@ benchmarks:
       type: string
       nullable: true
       description: >-
-        Public/private publish gate (replaced the old manifest.yaml):
-        "public" makes the benchmark eligible for the public HF mirror,
-        "private" keeps it private. Declared in build.py's `INFO`; omitting
-        it defaults to "private".
+        Publication decision: "public" permits public publication, "private"
+        belongs in the separate private repository, and "withheld" prevents
+        publication. Metadata requires an explicit decision; legacy inline
+        builders default to "withheld". The public repository permits only
+        public and withheld. release_reason is authoring metadata, not a column.
     - name: n_response_values
       type: int
       nullable: true

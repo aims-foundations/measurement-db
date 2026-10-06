@@ -1,0 +1,4 @@
+- Scope: 315 released error-detection judgments for 105 injected errors in six papers, across three Claude Opus 4.6 method/prompt configurations. This early experimental slice is not the publication’s complete evaluation.
+- Import: join detected/missed lists to exact injected-error rubrics and perturbed paper text. Method and review-prompt variant identify subjects; paper/error combinations identify items.
+- Checks: independently verify all source-to-subject/item/grade associations and paper/rubric contents. Every output table is unchanged by the tabular refactor.
+- Limits: these selected releases contain scores but no associated review text; no traces are invented. Items sharing a paper are dependent, and the historical grading model is unspecified.

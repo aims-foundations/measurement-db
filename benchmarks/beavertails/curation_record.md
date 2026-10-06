@@ -1,0 +1,3 @@
+- Import all 560 released generations from four models on 140 prompts. Preserve complete outputs and all three safety judgments: 1,680 grades with judge-specific item protocols, not extra model runs.
+- Score 1 for unflagged and 0 for flagged. Retain disagreements and the GPT-4 prompt; historical endpoint/configuration details and judge explanations remain unknown. No inference or rejudging.
+- Correct the legacy interpretation of human annotation categories as classifier subjects. The separate 30k/330k training annotations remain outside this evaluation; independent source checks cover every output, judgment and association.

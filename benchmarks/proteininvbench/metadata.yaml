@@ -1,0 +1,105 @@
+benchmark:
+  description: Original ProteinInvBench CATH4.2 and CATH4.3 inverse-folding predictions, matched to the released
+    backbone coordinates and recorded model configurations.
+  testing_condition: 'Import all saved unperturbed CATH predictions. Compute the author notebook''s per-protein
+    recovery: mean equality between every stored true_seq token and argmax(pred_probs), including any recorded padding
+    positions. Keep full native probability matrices, tokenizer vocabulary and input preprocessing. Confidence is
+    retained in the native probabilities, not counted as a second observation. PDB predictions remain raw-only because
+    the exact sampled assemblies are unavailable; coordinate-noise predictions remain raw-only because the actual
+    perturbed coordinates were not recorded. No model execution.'
+  paper_url: https://openreview.net/forum?id=bqXduvuW5E
+  data_source_url: https://zenodo.org/records/8031783
+  subject_type: model
+  item_type: protein_structure
+  license: The released prediction archive is CC-BY-4.0 (Zenodo 8031783). The author code is Apache-2.0; original
+    structure sources retain their upstream terms.
+  citation: "@inproceedings{gao2023proteininvbench,\n  title={ProteinInvBench: Benchmarking Protein Inverse Folding\
+    \ on Diverse Tasks, Models, and Metrics},\n  author={Gao, Zhangyang and Tan, Cheng and Zhang, Yijie and Chen,\
+    \ Xingran and Wu, Lirong and Li, Stan Z.},\n  booktitle={Advances in Neural Information Processing Systems (NeurIPS)\
+    \ Datasets and Benchmarks Track},\n  year={2023},\n}"
+  tags:
+  - protein
+  - inverse_folding
+  - protein_design
+  - structural_biology
+  - per_item
+  - recovery
+  modality:
+  - text
+  domain:
+  - biology
+  response_type: continuous_bounded
+  response_scale:
+    kind: interval
+    min: 0
+    max: 1
+    direction: higher_is_better
+  categorical: false
+  release_date: '2023-06-13'
+  release: public
+  name: ProteinInvBench
+  version: Zenodo-8031783
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    paths:
+      predictions: model_zoom.tar.gz
+      inputs: data.tar.gz
+      prediction_pattern: model_zoom/(?P<dataset>[^/]+)/(?P<model>[^/]+)/results\.pt
+    datasets:
+      CATH4.2: data/cath4.2/chain_set.jsonl
+      CATH4.3: data/cath4.3/chain_set.jsonl
+    preprocessing:
+      StructGNN: finite_padded
+      GraphTrans: finite_padded
+      GCA: finite_padded
+      ProteinMPNN: full
+      GVP: full
+      AlphaDesign: finite_compact
+      PiFold: finite_compact
+      KWDesign: finite_compact
+    labels:
+      harness: ProteinInvBench
+      task: Predict the amino-acid sequence from the original protein backbone.
+      scope: unperturbed_CATH
+      source_release: Zenodo-8031783
+    raw_only:
+      PDB: Exact sampled multi-chain assemblies are not supplied in the released dataset archive.
+      CATH4_3_noise: Random coordinate perturbations are not stored; original backbones cannot stand in for perturbed
+        inputs.
+grading:
+  rule: Compute mean(true_seq == argmax(pred_probs, axis=1)) over all saved positions using the author notebook's
+    float32 mean. Do not silently remove padding positions. The reference records the native token IDs and vocabulary;
+    the original amino-acid sequence and coordinate-validity layout independently establish their association with
+    the input backbone.
+  verifiers:
+    native:
+      kind: native_notebook_sequence_recovery
+      source: https://github.com/A4Bio/ProteinInvBench/blob/d45c9c6b04aa8cbe9c0bb74f921a73353391e469/Calculate_metrics.ipynb
+      file: code/Calculate_metrics.ipynb
+      sha256: 70cf16c3bdd779510d96dd407c1ca6d72ec41ee368ff91ac39950874d6896757
+      function: summary_perp_recovery
+      reduction: float32 mean over every recorded position
+      definition: true_seq == pred_probs.argmax(dim=1)
+sources:
+  upstream:
+  - name: predictions
+    url: https://zenodo.org/records/8031783/files/model_zoom.tar.gz
+    revision: null
+    file: model_zoom.tar.gz
+    size: 3604960074
+    sha256: eb48891703023d67e0dbd67a58da97a6466f7dcd4542d9945a68cdcd302a31f1
+  - name: inputs
+    url: https://github.com/A4Bio/ProteinInvBench/releases/download/dataset_release/data.tar.gz
+    revision: null
+    file: data.tar.gz
+    size: 422815658
+    sha256: 80824a62a25102fca6d70b86a71e703bb80a471565e213d269ea17c18268bb27
+  - name: code
+    url: https://github.com/A4Bio/ProteinInvBench
+    revision: d45c9c6b04aa8cbe9c0bb74f921a73353391e469
+    files:
+    - match: .*\.(?:py|md|json|yaml|yml|ipynb|sh)|LICENSE
+      path: code/{path}

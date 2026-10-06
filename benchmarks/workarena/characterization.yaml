@@ -1,0 +1,117 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 629533cfbe4e09e1cc383b142c2e493e0269dfe6f9a1c0b58bb1139a14a2e66b
+  items:
+    rows: 385
+    logical_sha256: c922d6bf22faee79bdad1a8180ca15bf11e4f6b12721906eae37fe52d3597fd8
+  responses:
+    rows: 475
+    logical_sha256: 006bf2c8f935d3462a0007764929ab396bb12fc647e2b788d39586c1fe81a40b
+  subjects:
+    rows: 8
+    logical_sha256: 17a9c13e1cd3a54edee1b3dfa6e137dc26ffa14669c03b57219a3db517ab2a12
+  traces:
+    rows: 475
+    logical_sha256: f78dde4cc28c15b21218ecd7c621816ab276962adabd5d3b946f821bcd15c6e2
+source_claims:
+  source_executions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 472
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 8
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 385
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 475
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 475
+  human_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 108
+  human_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 367
+  human_native_disagreements:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 45
+  native_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 71
+  native_failures:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 401
+  source_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/McGill-NLP/agent-reward-bench
+    locator: All WorkArena annotations in data/annotations.csv and the 472 corresponding cleaned trajectories at
+      the pinned revision.
+    scope: Preserve every original human rating, exact native task instance, model configuration and full trajectory;
+      do not substitute automatic rewards.
+    expected: 12664

@@ -1,0 +1,116 @@
+benchmark:
+  description: Standard center-crop ImageNet-A classification records from the ImageNet-Hard authors' zoom study,
+    with original images and thirteen released classifier configurations.
+  testing_condition: The scope is the ImageNet-A source cohort, not the separately curated ImageNet-Hard image collection.
+    Retain the established center-crop baseline (anchor 1,1; resize 256; crop 224) from both author releases. Main
+    correctness matrices and additional raw predictions remain distinct configurations because historical weights
+    and execution settings are not fully recorded. The native protocol masks logits to ImageNet-A's 200 classes.
+    Original ImageFolder order is sorted class directory followed by sorted image filename. Additional predictions
+    reconcile against every published per-crop accuracy. The full 324-crop sources remain captured, but oracle maxima
+    are derived summaries and are not separate prediction attempts. Traces contain released score or prediction
+    evidence, not model reasoning. No new model or judge execution.
+  paper_url: https://arxiv.org/abs/2304.05538
+  data_source_url: https://github.com/taesiri/ZoomIsAllYouNeed
+  subject_type: image_classifier
+  item_type: image
+  license: The author code and original ImageNet-A repository declare MIT; source images retain their upstream attribution
+    and applicable source terms.
+  citation: "@inproceedings{taesiri2023imagenethard,\n  title={ImageNet-Hard: The Hardest Images Remaining from\
+    \ a Study of the Power of Zoom and Spatial Biases in Image Classification},\n  author={Taesiri, Mohammad Reza\
+    \ and Nguyen, Giang and Habchi, Sarra and Bezemer, Cor-Paul and Nguyen, Anh},\n  booktitle={Advances in Neural\
+    \ Information Processing Systems (NeurIPS) Datasets and Benchmarks Track},\n  year={2023},\n}"
+  tags:
+  - image_classification
+  - imagenet
+  - robustness
+  - natural_adversarial
+  - zoom
+  modality:
+  - image
+  domain:
+  - general
+  - computer_vision
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': incorrect class
+      '1': correct class
+  categorical: true
+  release_date: 2023-12
+  release: withheld
+  release_reason: >-
+    Source reproducibility hold, reviewed 2026-10-04: the required ImageNet-A archive at
+    https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar returns HTTP 404, and no
+    author-hosted or author-endorsed replacement matching the pinned input has been verified.
+    Restore public release when that source is available and strict table reproduction passes.
+  name: 'ImageNet-Hard zoom study: ImageNet-A'
+  version: 2023 main and additional releases
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      correctness: correctness.pkl
+      additional: additional-imagenet-a.zip
+      images: imagenet-a.tar
+    selection:
+      dataset: imagenet_a
+      transform: LOC:1_1_Size:256
+      scale: '256'
+      image_suffixes: .jpg,.jpeg
+      prediction_pattern: imagenet-a/predictions_pytorch_overallping/imagenet-a-(.+)-1-1_1_1\.pickle
+    labels:
+      harness: ZoomIsAllYouNeed
+      image_cohort: ImageNet-A source cohort
+      transform: resize 256 / anchor 1,1 / crop 224
+      unavailable: Exact historical weight revisions and execution settings are not fully recorded.
+    model_names:
+      resnet18: ResNet-18
+      resnet50: ResNet-50
+      vit32: ViT-B/32
+      vgg16: VGG-16
+      alexnet: AlexNet
+      clip_vit_l_14: CLIP ViT-L/14
+      convnext_base: ConvNeXt-Base
+      efficientnet_b0: EfficientNet-B0
+      maxvit_t: MaxViT-T
+      mobilenet_v3_small: MobileNetV3-Small
+      swin_b: Swin-B
+      vit_b_32: ViT-B/32
+grading:
+  rule: Top-1 correctness after masking predictions to the 200 ImageNet-A classes in sorted WordNet-directory order.
+    Match the predicted class against the source image directory.
+  verifiers:
+    classification:
+      kind: released_top1_classification
+      source: https://github.com/taesiri/ZoomIsAllYouNeed/blob/2eef9f6d7ad3f835e39ba9ef7662c2857ea2a796/src/evaluators/eval-IN-trained.py
+      function: benchmark_masked
+      label_order: sorted source class directories
+      scope: Original boolean matrix for the main release; original class-index prediction for the additional release.
+        Preserve release distinction and the documented fixed center-crop baseline.
+sources:
+  upstream:
+  - name: correctness
+    revision: null
+    url: https://drive.usercontent.google.com/download?id=1Gdt6qE8wfFUPHDhPKITqv2aWbVDNgBnL&export=download&confirm=t
+    file: correctness.pkl
+    size: 502902054
+    sha256: 3b9cb445585a37b0f7be39565c0b9d4fefbdfa36a052b0c25829ab1eb7961b52
+  - name: imagenet_a
+    revision: null
+    url: https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar
+    file: imagenet-a.tar
+    size: 687552512
+    sha256: 3bb3632277e6ba6392ea64c02ddbf4dd2266c9caffd6bc09c9656d28f012589e
+  - name: additional_imagenet_a
+    revision: null
+    url: https://drive.usercontent.google.com/download?id=1fTZTdeWU7RxP9hTRI8UwgMGMJ1sjzLJl&export=download&confirm=t
+    file: additional-imagenet-a.zip
+    size: 28276109
+    sha256: b43490046763d95803b57cd3a8189d3c5bf874425d0fb0f075d453f1109029c7

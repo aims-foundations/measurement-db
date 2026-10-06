@@ -1,0 +1,72 @@
+format_version: 1
+tables:
+  traces:
+    rows: 7227
+    logical_sha256: d6f03f16049ef820c7b88a20860fb36c128f77c8d715217b05201742f8fe6f7c
+  subjects:
+    rows: 11
+    logical_sha256: db97be1f3036bfb0590c5db0cb074bdf22e6f018646edb70296fbfe101a728ef
+  responses:
+    rows: 7227
+    logical_sha256: e4083b7a7ac47681cbf2364458429796b7655197ade1d5efb1fc003e94407403
+  items:
+    rows: 657
+    logical_sha256: e2e0e6a3c97a8a31fd9cc773f5a246a4c8bd20ab56bea38abe54c72bbae54ece
+  benchmarks:
+    rows: 1
+    logical_sha256: 66397666a451f2e35fc66d5f6059fff82db0b5086c4ed33fdb6b75529e8ce96d
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 7227
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 2215
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 657
+  source_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 11
+  source_ungraded_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 14
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/Minbyul/OpenBioRQ
+    locator: 'Pinned OpenBioRQ release: full_core_657.jsonl, rubrics.jsonl and all eleven predictions/checklist/summary
+      folders. Source grading is independently recomputed from criterion weights and verdicts, allowing
+      the released three-decimal rounding.'
+    scope: The captured item-level release, independently read from native files.
+    expected: 7227

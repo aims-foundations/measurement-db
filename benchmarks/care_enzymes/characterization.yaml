@@ -1,0 +1,99 @@
+format_version: 1
+tables:
+  traces:
+    rows: 16817
+    logical_sha256: a9fda05116f24fa234323b756239fe87d04e64d44af180834e565a62aac2ddf3
+  subjects:
+    rows: 22
+    logical_sha256: 025da0bb526a1702185cb003c537d0b7268d4b43473d9994be1ad197f37120fe
+  responses:
+    rows: 16817
+    logical_sha256: f54051f0e82dc757ed64ef8f7d16c0c908332fde6523c2f0e16ac10a854393fc
+  items:
+    rows: 4136
+    logical_sha256: 7a2bc1eb56268647d402c7b63c77f62ae708cbf094e070830224a73c939c53f9
+  benchmarks:
+    rows: 1
+    logical_sha256: 9f72b94bbfcfd930e789eebe605b7c2ab33e1c65c1966a59ec049c19e7ac10d3
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 16817
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 16817
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 4136
+  source_subject_configurations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 22
+  source_paper_scores:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 45
+  source_missing_predictions:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 245
+  source_fractional_grades:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 315
+  source_legacy_observations:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 1
+  source_maximum_ranks:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/jsunn-y/CARE
+    locator: All 46 native results_summary CSVs, matched original test banks, and saved k=1 result tables in performance_evaluation.ipynb
+      cells 4, 6 and 9.
+    scope: 45 final paper method/split combinations and one explicitly separate June sample. Independent CSV traversal
+      checks all records, full rankings, inputs, subject conditions and per-reference grades.
+    expected: 4960

@@ -1,0 +1,175 @@
+benchmark:
+  name: Tengu-Bench
+  version: 59d832e37b0486f9f127b9ee24bdb5e8b083387f
+  description: Original Japanese Tengu answers and separately recorded Shaberi judge ratings. Each judgment retains
+    its complete task-specific rubric, any reference answer, generating-model alias and judge group.
+  testing_condition: "Preserve all 192,575 released judgments, including 123 unavailable grades and 12 out-of-scale\
+    \ scores represented as flagged unavailable responses. Original 0\u201310 integer grades are not normalized\
+    \ or clipped. Keep full judged outputs, including 568 empty outputs and 367 error strings. The same model/question\
+    \ can have different answers across judges; each rating refers to its own recorded answer. Source files may\
+    \ contain 120 or 115 questions after an upstream five-question exclusion; join by question text, never by file\
+    \ position. Judge prompts changed in November 2025, and exact per-record prompt/runtime revisions are generally\
+    \ unrecorded. No inference or new judging."
+  paper_url: https://huggingface.co/datasets/lightblue/tengu_bench
+  data_source_url: https://github.com/shisa-ai/shaberi
+  subject_type: model
+  item_type: question_and_judge_protocol
+  license: 'Shaberi code/results: Apache-2.0. The original lightblue/tengu_bench dataset card has no explicit license
+    declaration; this does not imply that the questions are relicensed under Apache-2.0.'
+  citation: "@misc{tengubench,\n  title={Tengu-Bench},\n  author={Lightblue},\n  howpublished={\\url{https://huggingface.co/datasets/lightblue/tengu_bench}}\n\
+    }"
+  tags:
+  - multilingual
+  - japanese
+  modality:
+  - text
+  domain:
+  - multilingual
+  response_type: ordinal
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    - 7
+    - 8
+    - 9
+    - 10
+    direction: higher_is_better
+  categorical: true
+  release_date: null
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      judgments: data/judgements/*/lightblue__tengu_bench/*.json
+      questions: questions/data/test-00000-of-00001.parquet
+    labels:
+      harness: Shaberi Tengu evaluation
+      input_scope: original_japanese_question
+      historical_configuration: Exact per-record model, prompt and generation revisions are unrecorded.
+    filename_aliases:
+      qwen__qwen3.6-plus_x3a_free: qwen__qwen3.6-plus:free
+grading:
+  rule: Import the recorded integer rating from 0 to 10 without normalization or clipping. Explicit nulls remain
+    unavailable. A published out-of-scale value remains intact in the complete trace with grade_status=invalid_upstream_score
+    and an unavailable response. Judge families and known prompt variants define separate grading protocols.
+  verifiers:
+    judge_gpt-4-turbo-preview:
+      kind: released_llm_rating
+      judge: gpt-4-turbo-preview
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-4-turbo-preview
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-4.1-2025-04-14:
+      kind: released_llm_rating
+      judge: gpt-4.1-2025-04-14
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-4.1-2025-04-14
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-5.1-2025-11-13:
+      kind: released_llm_rating
+      judge: gpt-5.1-2025-11-13
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-5.1-2025-11-13
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_gpt-5.1-2025-11-13-oldjudgeprompt:
+      kind: released_llm_rating
+      judge: gpt-5.1-2025-11-13
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_gpt-5.1-2025-11-13-oldjudgeprompt
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: The group explicitly names the older prompt.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-athenev2:
+      kind: released_llm_rating
+      judge: llmjudge-athenev2
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-athenev2
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-llama33:
+      kind: released_llm_rating
+      judge: llmjudge-llama33
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-llama33
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+    judge_llmjudge-tulu405:
+      kind: released_llm_rating
+      judge: llmjudge-tulu405
+      source: https://github.com/shisa-ai/shaberi/blob/59d832e37b0486f9f127b9ee24bdb5e8b083387f/evaluation_datasets_config.py
+      source_judge_group: judge_llmjudge-tulu405
+      criterion: Grade the original answer against the task-specific Criteria rubric and any released Answer reference,
+        using the recorded named judge.
+      requested_scale: An integer from 0 to 10. Published 11/12 values are retained in traces and flagged invalid,
+        not clipped or rejudged.
+      prompt_version: Exact historical prompt version is not recorded per judgment; current and older source implementations
+        are retained for reference.
+      execution: Import the native score and judge explanation unchanged; do not rerun the judge or replace unavailable
+        scores.
+sources:
+  upstream:
+  - name: shaberi_results
+    url: https://github.com/shisa-ai/shaberi
+    revision: 59d832e37b0486f9f127b9ee24bdb5e8b083387f
+    files:
+    - match: .*/lightblue__tengu_bench/.*|chat_templates/.*|README\.md|LICENSE|evaluation_datasets_config\.py|generate_answers\.py|judge_answers\.py|llm_functions\.py|multijudge-batch-judge\.py|01-answer\.sh|02-judge\.sh|reprocess-forgotten-scores\.py
+      path: '{path}'
+  - name: question_bank
+    url: https://huggingface.co/datasets/lightblue/tengu_bench
+    revision: 5651a53cb785a5d5d7c15bbedcaa0bdecf35f20f
+    files:
+    - match: .*
+      path: questions/{path}
+  - name: earlier_rubric
+    url: https://github.com/shisa-ai/shaberi
+    revision: 451c0aaea6c6a423e328fb4b59615a6f16f07151
+    files:
+    - match: evaluation_datasets_config\.py
+      path: protocol_history/451c0aaea6c6a423e328fb4b59615a6f16f07151/{path}

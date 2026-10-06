@@ -1,0 +1,3 @@
+- Source: the author-linked LLoVi output/data archives, pinned implementations and official EgoSchema questions/answers; 5,500 recorded answers across 11 configurations.
+- Mapping: retain complete native records and caption-fed QA inputs, templates and demonstrations. Keep all original binary scores, including 34 unparsed answers; newer random-guess credit is not applied.
+- Scope: six demonstrations overlap evaluation targets in both few-shot runs (12 observations). Published final choices can include fallback; intermediate CoT messages, original videos and historical API envelopes are unavailable here. No new inference or grading.

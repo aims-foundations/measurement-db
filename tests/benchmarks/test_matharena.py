@@ -15,6 +15,8 @@ import sys
 import unicodedata
 import unittest
 from collections import defaultdict
+from types import SimpleNamespace
+from unittest.mock import patch
 from pathlib import Path
 
 import numpy as np
@@ -34,7 +36,21 @@ from scripts.build_measurement_tables.validate_benchmark_metadata import (
 from scripts.build_measurement_tables import validate_asset_relations, validate_table, validate_trace_relations
 
 from measurement_db.scripts.build_measurement_tables.source_snapshots import verify_snapshot_file
-from measurement_db.benchmarks.matharena.build import source_competitions
+def source_competitions(files):
+    # Independently frozen release layout; do not import the builder's grouping.
+    proof = {"imc_2025", "imo_2025", "miklos_2025", "putnam_2025", "usamo_2025"}
+    competitions = {}
+    for name in sorted(files):
+        path = Path(name)
+        if len(path.parts) != 4 or path.parts[0] != "sources" or path.suffix != ".parquet":
+            continue
+        competition = path.parts[1]
+        group = competitions.setdefault(competition, {
+            "kind": "proof" if competition in proof else "final_answer",
+            "shards": [], "card": f"sources/{competition}/README.md",
+        })
+        group["shards"].append(name)
+    return competitions
 
 OUTPUT_NAMES = ("items", "subjects", "benchmarks", "responses", "traces", "assets")
 PRIMARY_KEY = ["subject_id", "item_id", "trial", "test_condition", "interactors"]
@@ -128,64 +144,70 @@ REGRESSION = {'legacy_baseline': {'observation_multiset_sha256': '5aa565e8d2a628
 class ParserTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        spec = importlib.util.spec_from_file_location(
-            "matharena_build", BENCHMARK_DIR / "build.py"
-        )
+        spec = importlib.util.spec_from_file_location("matharena_build", BENCHMARK_DIR / "build.py")
         cls.builder = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.builder)
 
+    def tables(self, changes=None, competition="aime_2025"):
+        row = {"problem_idx": "1", "problem": "Compute the answer.", "model_name": "Test Model",
+               "model_config": "test/model", "idx_answer": 0, "gold_answer": "42", "answer": "42", "correct": True}
+        row.update(changes or {})
+        source = pd.DataFrame([row], dtype=object)
+        builder = self.builder.MathArenaBuild(BENCHMARK_DIR / "build.py")
+        builder.source_files = (f"sources/{competition}/data/test.parquet",)
+        with patch.object(self.builder.pq, "read_schema", return_value=SimpleNamespace(names=list(source.columns))), \
+             patch.object(self.builder.pd, "read_parquet", return_value=source):
+            return builder.build_tables()
+
     def test_json_and_native_rubrics_are_equivalent(self):
         rubric = [{"title": "Construction", "points": 1, "max_points": 3}]
-        self.assertEqual(self.builder.grading_details(json.dumps(rubric)), rubric)
-        self.assertEqual(self.builder.grading_details(rubric), rubric)
-        with self.assertRaises(ValueError):
-            self.builder.grading_details('{"not": "a criterion list"}')
+        a = self.tables({"grading_details_judge_1": json.dumps(rubric)}, "putnam_2025")
+        b = self.tables({"grading_details_judge_1": rubric}, "putnam_2025")
+        for name in a:
+            pd.testing.assert_frame_equal(a[name], b[name])
+        with self.assertRaisesRegex(ValueError, "grading_details"):
+            self.tables({"grading_details_judge_1": '{"not": "a criterion list"}'}, "putnam_2025")
 
     def test_legacy_fraction_clipping_and_missing_scores(self):
-        for points, maximum, expected in [
-            (1, 3, 1 / 3),
-            (-1, 3, 0),
-            (4, 3, 1),
-            (1, 0, None),
-            (None, 3, None),
-            (1, None, None),
-        ]:
-            with self.subTest(points=points, maximum=maximum):
-                self.assertEqual(
-                    self.builder.criterion_fraction(
-                        {"points": points, "max_points": maximum}
-                    ),
-                    expected,
-                )
+        cases = [(1, 3, 1 / 3), (-1, 3, 0), (4, 3, 1), (1, 0, None),
+                 (None, 3, None), (1, None, None), (float("inf"), 3, None)]
+        rubric = [{"title": str(i), "points": points, "max_points": maximum}
+                  for i, (points, maximum, _) in enumerate(cases)]
+        tables = self.tables({"grading_details_judge_1": rubric}, "putnam_2025")
+        self.assertEqual(tables["responses"].response.tolist(), [expected for _, _, expected in cases if expected is not None])
+        self.assertEqual(len(tables["traces"]), 1)
+        self.assertEqual(tables["items"].verifier_features.map(lambda x: x["criterion_index"]).tolist(), [0, 1, 2])
 
     def test_answer_is_never_used_as_the_question(self):
         with self.assertRaisesRegex(ValueError, "no released prompt"):
-            self.builder.prompt_components({"gold_answer": "A"})
+            self.tables({"problem": None, "gold_answer": "A"})
+
+    def test_proof_without_a_reference_preserves_null(self):
+        tables = self.tables({"gold_answer": None, "grading_details_judge_1": [
+            {"title": "Proof", "points": 1, "max_points": 3}]}, "putnam_2025")
+        self.assertIsNone(tables["items"].grading_criterion.iloc[0]["reference_answer"])
 
     def test_prompt_and_trace_text_are_not_truncated(self):
         text = "  " + "proof " * 2000 + "  "
-        self.assertEqual(self.builder.nonempty_text(text), text)
-        self.assertEqual(
-            self.builder.prompt_components({"user_message": text})[0], text
-        )
+        tables = self.tables({"user_message": text, "answer": text})
+        self.assertEqual(tables["items"].content.iloc[0], text)
+        self.assertEqual(tables["traces"].trace.iloc[0], text)
 
     def test_effort_is_labelled_not_inferred_from_model_family(self):
-        self.assertEqual(
-            self.builder.subject_features("GPT-5.2 (high)", "openai/gpt-52-high")[
-                "reasoning_effort"
-            ],
-            "high",
-        )
-        self.assertEqual(
-            self.builder.subject_features(
-                "DeepSeek-v4-Pro (Max)", "deepseek/deepseek_v4_pro"
-            )["reasoning_effort"],
-            "max",
-        )
-        self.assertNotIn(
-            "reasoning_effort",
-            self.builder.subject_features("Gemini 2.5 Pro", "gemini/gemini-pro-2.5"),
-        )
+        for label, effort in [("GPT-5.2 (high)", "high"), ("DeepSeek-v4-Pro (Max)", "max"), ("GPT-5", None)]:
+            features = self.tables({"model_name": label})["subjects"].features.iloc[0]
+            self.assertEqual(features.get("reasoning_effort"), effort)
+
+    def test_inline_images_are_returned_as_bytes(self):
+        payload = b"released image bytes"
+        prompt = json.dumps([{"type": "text", "text": "Which figure?"},
+                             {"type": "image_url", "image_url": {"url": "data:image/png;base64," + base64.b64encode(payload).decode(), "detail": "high"}}])
+        decoded = self.builder.decode_prompt(prompt, True)
+        self.assertEqual(decoded["content"], "Which figure?")
+        self.assertEqual(decoded["attachments"][0]["data"], payload)
+        self.assertNotIn("source_path", decoded["attachments"][0])
+        with self.assertRaisesRegex(ValueError, "not recovered"):
+            self.builder.decode_prompt("Which figure?", True)
 
 
 class MathArenaCharacterizationTests(unittest.TestCase):

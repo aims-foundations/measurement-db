@@ -1,0 +1,114 @@
+format_version: 1
+tables:
+  traces:
+    rows: 681726
+    logical_sha256: fc7a4357e834596ea48e7c9dd775dfa0388f6b261d8e619bf28a1e0ad573889a
+  subjects:
+    rows: 3
+    logical_sha256: 37105f35e3b5e1d7a292481d20cc499d8ff39cecbce7338cc3cc3ab2390d48f6
+  responses:
+    rows: 681726
+    logical_sha256: 7e8b54e8b49677d47fed2f160a75a38f41d27cf9b8088f51cfa7244ddda689e7
+  items:
+    rows: 570791
+    logical_sha256: 98b7fd5216f19f7eb7fe2bcd5096e6ea4ee303883d72d700f98e9d9aea08ac38
+  benchmarks:
+    rows: 1
+    logical_sha256: 139fef097c3909d7d4d16588dd2eb8d0d33d707e0bab758cdabfa48b3dc8ec2a
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 681726
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 3
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 570791
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 681726
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 0
+  normalized_missing_values:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 239096
+  attack_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 563349
+  access_granted:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 123506
+  withheld_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 2063
+  empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 9881
+  incomplete_inputs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 1433
+  defense_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/qxcv/tensor-trust
+    locator: raw-data/v2/raw_dump_attacks.jsonl.bz2 and raw_dump_defenses.jsonl.bz2, read independently of the builder.
+    scope: All released game records and their original access-granted flags; these are observational behavior labels,
+      not the v1 robustness benchmark scores.
+    expected: 118377

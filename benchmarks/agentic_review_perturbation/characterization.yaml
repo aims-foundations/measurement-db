@@ -1,0 +1,51 @@
+format_version: 1
+tables:
+  subjects:
+    rows: 3
+    logical_sha256: e22cf2fe8b4c48d865147273f9e0599fb272af9e42e08728bdbb9bdf694661a4
+  responses:
+    rows: 315
+    logical_sha256: 7d88906fc4d1d39f60796d81cf75e7426dc8517bd69c8791074348892354dfe1
+  items:
+    rows: 105
+    logical_sha256: 0064392e79dadf130f69cc173672468f30ccece4c59e6c47cfb94c960b9fd1f8
+  benchmarks:
+    rows: 1
+    logical_sha256: 3aa7351cfc2159fa5479534fc189dfab8dd606ed6b2a66883b8cc242aac14668
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ChicagoHAI/OpenAIReview
+    locator: raw/extracted/benchmarks/experimental_perturbations/results_*/**/score/llm/*_score.json and
+      perturbation_results/*/all/*/experimental/*_recorrupted.md
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 315
+  source_successes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ChicagoHAI/OpenAIReview
+    locator: raw/extracted/benchmarks/experimental_perturbations/results_*/**/score/llm/*_score.json and
+      perturbation_results/*/all/*/experimental/*_recorrupted.md
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 30
+  source_results_baseline:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ChicagoHAI/OpenAIReview
+    locator: raw/extracted/benchmarks/experimental_perturbations/results_*/**/score/llm/*_score.json and
+      perturbation_results/*/all/*/experimental/*_recorrupted.md
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 210
+  source_results_experimental:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/ChicagoHAI/OpenAIReview
+    locator: raw/extracted/benchmarks/experimental_perturbations/results_*/**/score/llm/*_score.json and
+      perturbation_results/*/all/*/experimental/*_recorrupted.md
+    scope: Captured release scope described in curation_record.md; independently parsed from upstream
+      artifacts.
+    expected: 105

@@ -1,0 +1,180 @@
+benchmark:
+  description: Human assessments of model-generated CNN/DailyMail summaries along four quality dimensions.
+  testing_condition: One source article is summarized by each released model. Expert and crowd ratings are separate
+    grading protocols; each rating is an assessment of the same saved summary, not a new generation. Use original
+    source articles as canonical inputs and retain complete generated summaries as traces.
+  paper_url: https://arxiv.org/abs/2007.12626
+  data_source_url: https://github.com/Yale-LILY/SummEval
+  subject_type: model
+  item_type: task
+  license: MIT for the SummEval repository; source news articles retain their upstream rights
+  citation: "@misc{fabbri2021summevalreevaluatingsummarizationevaluation,\n      title={SummEval: Re-evaluating\
+    \ Summarization Evaluation},\n      author={Alexander R. Fabbri and Wojciech Kryściński and Bryan McCann and\
+    \ Caiming Xiong and Richard Socher and Dragomir Radev},\n      year={2021},\n      eprint={2007.12626},\n  \
+    \    archivePrefix={arXiv},\n      primaryClass={cs.CL},\n      url={https://arxiv.org/abs/2007.12626},\n}"
+  tags:
+  - reasoning
+  modality:
+  - text
+  domain:
+  - summarization
+  response_type: likert_5
+  response_scale:
+    kind: discrete
+    values:
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    direction: higher_is_better
+  categorical: true
+  release_date: 2020-07
+  release: public
+  name: SummEval
+  granularity: item
+  multi_single_turn: single_turn
+  version: original-1600-annotations; 81b59ad53d63cb6009764240853c91235a44e238
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      annotations: model_annotations.aligned.jsonl
+    archives:
+      cnn: cnn_stories.tgz
+      dailymail: dailymail_stories.tgz
+    model_names:
+      M0: LEAD-3
+      M1: NEUSUM
+      M2: BanditSum
+      M5: RNES
+      M8: Pointer Generator
+      M9: Fast-abs-rl
+      M10: Bottom-Up
+      M11: Improve-abs
+      M12: Unified-ext-abs
+      M13: ROUGESal
+      M14: Multi-task (Ent + QG)
+      M15: Closed book decoder
+      M17: T5
+      M20: GPT-2 (zero shot)
+      M22: BART
+      M23: PEGASUS
+    model_papers:
+      M0: not applicable
+      M1: https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/view/16838/16118
+      M2: http://aclweb.org/anthology/P18-1061
+      M5: https://www.aaai.org/ocs/index.php/AAAI/AAAI18/paper/view/16838/16118
+      M8: http://aclweb.org/anthology/P17-1099
+      M9: https://www.aclweb.org/anthology/P18-1063
+      M10: https://www.aclweb.org/anthology/D18-1443/
+      M11: http://aclweb.org/anthology/D18-1207
+      M12: http://aclweb.org/anthology/P18-1013
+      M13: http://aclweb.org/anthology/N18-2102
+      M14: http://aclweb.org/anthology/P18-1064
+      M15: http://aclweb.org/anthology/D18-1440
+      M17: https://arxiv.org/abs/1910.10683
+      M20: https://openai.com/blog/fine-tuning-gpt-2/
+      M22: https://www.aclweb.org/anthology/2020.acl-main.703
+      M23: https://arxiv.org/pdf/1912.08777.pdf
+    model_titles:
+      M0: Lead-3 Baseline
+      M1: Neural Document Summarization by Jointly Learning to Score and Select Sentences
+      M2: 'BANDITSUM: Extractive Summarization as a Contextual Bandit'
+      M5: Learning to Extract Coherent Summary via Deep Reinforcement Learning
+      M8: 'Get To The Point: Summarization with Pointer-Generator Networks'
+      M9: Fast Abstractive Summarization with Reinforce-Selected Sentence Rewriting
+      M10: Bottom-Up Abstractive Summarization
+      M11: Improving Abstraction in Text Summarization
+      M12: A Unified Model for Extractive and Abstractive Summarization using Inconsistency Loss
+      M13: Multi-Reward Reinforced Summarization with Saliency and Entailment
+      M14: Soft Layer-Specific Multi-Task Summarization with Entailment and Question Generation
+      M15: Closed-Book Training to Improve Summarization Encoder Memory
+      M17: Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer
+      M20: Fine-Tuning GPT-2 from Human Preferences
+      M22: 'BART: Denoising Sequence-to-Sequence Pre-training for Natural Language Generation, Translation, and
+        Comprehension'
+      M23: 'PEGASUS: Pre-training with Extracted Gap-sentences for Abstractive Summarization'
+    model_types:
+      M0: Extractive
+      M1: Extractive
+      M2: Extractive
+      M5: Extractive
+      M8: Abstractive
+      M9: Abstractive
+      M10: Abstractive
+      M11: Abstractive
+      M12: Abstractive
+      M13: Abstractive
+      M14: Abstractive
+      M15: Abstractive
+      M17: Abstractive
+      M20: Abstractive
+      M22: Abstractive
+      M23: Abstractive
+    groups:
+      expert_annotations: expert
+      turker_annotations: crowd
+    group_procedures:
+      expert_annotations: Three summarization experts; published ratings include the paper's disagreement-review
+        round.
+      turker_annotations: Five Amazon Mechanical Turk annotators per summary, selected using the paper's experience,
+        approval-rate and language-location criteria.
+    dimensions:
+      coherence: 'Assess the organization and collective quality of the summary: its sentences should form a connected
+        account rather than a list of loosely related information.'
+      consistency: Assess factual agreement with the source article. Penalize statements that are unsupported by
+        the source, including hallucinated facts.
+      fluency: Assess individual sentence quality, including grammar, completeness, capitalization and formatting.
+      relevance: Assess the selection of important source content. Penalize redundant or unnecessary information.
+    labels:
+      harness: SummEval published summarization outputs and human annotations
+      input_scope: original_source_article, historical model-specific preprocessing is unrecorded
+      configuration_status: source_model_alias, exact historical checkpoint and decoding settings are unrecorded
+      trial_scope: within-summary rater position, not a fresh model generation
+grading:
+  rule: Preserve the released human rating on the original ordinal scale from 1 to 5, with higher values better.
+    Do not binarize, average raters or treat their ratings as independent generations. Annotator positions are local
+    to this summary and group; global rater identities are unavailable.
+  verifiers:
+    human:
+      kind: published_human_rating
+      source: https://aclanthology.org/2021.tacl-1.24/
+      locator: 'Section 3.3: human evaluation'
+      procedure: Raters viewed the source article and randomized groups of summaries, with the original reference
+        summary included as a common comparison.
+      rule: Preserve the released human rating on the original ordinal scale from 1 to 5, with higher values better.
+        Do not binarize, average raters or treat their ratings as independent generations. Annotator positions are
+        local to this summary and group; global rater identities are unavailable.
+sources:
+  upstream:
+  - name: release
+    url: https://github.com/Yale-LILY/SummEval
+    revision: 81b59ad53d63cb6009764240853c91235a44e238
+    files:
+    - match: ^(?:README\.md|LICENSE|data_processing/pair_data\.py)$
+      path: release/{path}
+  - name: annotations
+    url: https://storage.googleapis.com/sfr-summarization-repo-research/model_annotations.aligned.jsonl
+    revision: sha256:f0d4166e0cdeb439b387c4449634b067b7e9f721b9ef4c2b722f6b7550d3d6ab
+    file: model_annotations.aligned.jsonl
+    size: 5839062
+    sha256: f0d4166e0cdeb439b387c4449634b067b7e9f721b9ef4c2b722f6b7550d3d6ab
+  - name: cnn
+    url: https://drive.usercontent.google.com/download?id=0BwmD_VLjROrfTHk4NFg2SndKcjQ&export=download&confirm=t&resourcekey=0-plDHB0-3Jgnal3MfHKQS1w
+    revision: sha256:e8fbc0027e54e0a916abd9c969eb35f708ed1467d7ef4e3b17a56739d65cb200
+    file: cnn_stories.tgz
+    size: 158577824
+    sha256: e8fbc0027e54e0a916abd9c969eb35f708ed1467d7ef4e3b17a56739d65cb200
+  - name: dailymail
+    url: https://drive.usercontent.google.com/download?id=0BwmD_VLjROrfM1BxdkxVaTY2bWs&export=download&confirm=t&resourcekey=0-1ri6M21edJq7j66FITDNnA
+    revision: sha256:ad69010002210b7c406718248ee66e65868b9f6820f163aa966369878d14147e
+    file: dailymail_stories.tgz
+    size: 375893739
+    sha256: ad69010002210b7c406718248ee66e65868b9f6820f163aa966369878d14147e
+  - name: paper
+    url: https://aclanthology.org/2021.tacl-1.24.pdf
+    revision: sha256:fdc792b5627f41571a21b1f980198d7549153ce17d2e3a2c615dfaf20a85727f
+    file: paper.pdf
+    size: 699131
+    sha256: fdc792b5627f41571a21b1f980198d7549153ce17d2e3a2c615dfaf20a85727f

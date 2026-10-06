@@ -1,0 +1,98 @@
+format_version: 1
+tables:
+  traces:
+    rows: 114
+    logical_sha256: ac3de1761d2641802364f28685e23c85e1e4d5b9c668a2a052c9f5c30265f1fb
+  subjects:
+    rows: 7
+    logical_sha256: 9af59e6cc5d2c90954599b6175479e654df0784c928e0f65690261143693e218
+  responses:
+    rows: 114
+    logical_sha256: 3950ea6f99604390ea42f02d919106b8f5cf15a3e501e16d61210b8cc4766cc0
+  items:
+    rows: 114
+    logical_sha256: 62e4994a927b88be0d023b42e67ba208528a2a1946b4e8bc03b54797d483abd8
+  benchmarks:
+    rows: 1
+    logical_sha256: c7f87c2de6f67b9709d9651c00a37c784ddf8b928a39daa5193df96e18ab38c7
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 114
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 114
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 7
+  source_models:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 3
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 114
+  source_screenshots:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 2430
+  source_trace_entries:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 11151
+  source_action_steps:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 8343
+  source_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 63
+  source_ungraded:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/weavebench/weavebench.github.io/tree/9a3c55c1f767c58c539a7520d3b80da4fdc34912/trajectories
+    locator: Original manifest, per-task JSON and linked screenshots; complete native-source audit
+    scope: One selected best hybrid rollout per task. Trace entries include actions and notes; action-step counts
+      exclude notes. Not the full model evaluation sweep.
+    expected: 0

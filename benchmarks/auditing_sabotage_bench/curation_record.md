@@ -1,0 +1,4 @@
+- Import every released AI audit, retaining native model/regime labels and all CSV fields. Detection correctness follows the recorded verdict; uncertain verdicts count as incorrect. Human audits are excluded.
+- Reconstruct released paper/codebase inputs, applying documented persuasion overlays. Restore 73 previously omitted audits; preserve all earlier grades. Inputs describe the captured release, not verified historical sandboxes or requests.
+- Preserve complete CSV records as traces. Original audit conversations and exact historical configurations are unavailable; the Gemini-labelled paper-only condition has an unresolved model-identity discrepancy in the released launcher.
+- Verify the pinned archive, complete source-to-table correspondence, asset bytes and shared schema checks. No model inference or codebase execution is performed.

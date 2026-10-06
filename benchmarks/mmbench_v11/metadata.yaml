@@ -1,0 +1,156 @@
+benchmark:
+  description: Recorded English MMBench V1.1 answers, original image/question inputs and explicit deterministic
+    per-response grading.
+  testing_condition: One item is one image/question with its presented option ordering, and one response is one
+    recorded model answer. Preserve both dev and test partitions and every distinct complete prediction export under
+    its literal model label. Identical whole exports are aliases; differing exports do not establish independent
+    reruns. Use the pinned historical VLMEvalKit deterministic answer extractor with VERBOSE unset. A recognized
+    option is compared with the public task-bank reference; unresolved extraction, failed API calls, missing outputs
+    and conflicting recorded references remain null. Missing references can be supplied by the public task bank
+    after exact input matching. These individual answer grades are not the official circular score, which requires
+    all rotations to succeed. Released circular verdicts and their logs are preserved as group evidence, never copied
+    into individual response grades. Task text and source image bytes describe the benchmark inputs; model-specific
+    prompt wrappers, image preprocessing, model revisions and historical inference settings are not asserted. No
+    model or judge is called.
+  paper_url: https://arxiv.org/abs/2307.06281
+  data_source_url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+  subject_type: model
+  item_type: image question with ordered choices
+  license: OpenVLMRecords and the MMBench/VLMEvalKit repositories declare Apache-2.0. Retain their source attribution
+    and the original task-image provenance.
+  citation: "@misc{liu2024mmbenchmultimodalmodelallaround,\n      title={MMBench: Is Your Multi-modal Model an All-around\
+    \ Player?},\n      author={Yuan Liu and Haodong Duan and Yuanhan Zhang and Bo Li and Songyang Zhang and Wangbo\
+    \ Zhao and Yike Yuan and Jiaqi Wang and Conghui He and Ziwei Liu and Kai Chen and Dahua Lin},\n      year={2024},\n\
+    \      eprint={2307.06281},\n      archivePrefix={arXiv},\n      primaryClass={cs.CV},\n      url={https://arxiv.org/abs/2307.06281},\n\
+    }"
+  tags:
+  - vision-language
+  modality:
+  - text
+  - image
+  domain:
+  - reasoning
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': The historical deterministic extractor returns a different option or its explicit rejection marker.
+      '1': The historical deterministic extractor returns the reference option.
+  categorical: true
+  multi_single_turn: single_turn
+  release_date: 2023-07
+  release: public
+  name: MMBench V1.1 recorded answers
+  version: '1.1'
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      results: results
+      predictions_glob: '**/*_MMBench_V11.xlsx'
+      judgments_glob: '**/*_MMBench_V11_gpt4_result.xlsx'
+      supplements_glob: '**/*_MMBench_V11_supp.pkl'
+      tasks_glob: tasks/MMBench_*_EN_V11.tsv
+    parsing:
+      filename_marker: _MMBench_V11
+      circular_stride: '1000000'
+      input_fields: question hint A B C D category l2-category split
+      choices: ABCD
+      punctuation: .()[],:;!*#{}
+      api_failure: Failed to obtain answer via API
+      rejection_marker: Z
+    refusals:
+      people: Sorry, I can't help with images of people yet.
+      file: I can't process this file.
+      missing_image: I'm sorry, but without the image provided
+      indeterminate: Cannot determine the answer
+    prompt:
+      hint: 'Hint: {hint}
+
+        '
+      question: 'Question: {question}
+
+        '
+      options: 'Options:
+
+        '
+      choice: '{letter}. {value}
+
+        '
+      suffix: "Please select the correct answer from the options above. \n"
+    image_types:
+      JPEG: image/jpeg
+      PNG: image/png
+      MPO: image/jpeg
+      WEBP: image/webp
+    labels:
+      subject_prefix: 'MMBench V1.1 / '
+    subject_features:
+      harness: VLMEvalKit
+      configuration_scope: literal_released_model_label
+      historical_model_revision: not_recorded
+      historical_inference_settings: not_recorded
+grading:
+  rule: Apply the frozen historical VLMEvalKit can_infer function, with VERBOSE unset, to this individual recorded
+    answer and its ordered choices. Compare a recognized letter with the source task-bank reference. Native rejection
+    marker Z is a failure. Unresolved extraction, missing/API-failure outputs, or a nonempty recorded reference
+    that disagrees with the task bank remain ungraded. The public reference may restore an absent recorded label.
+    No judge fallback, random guessing, or circular-group verdict is used as an individual grade.
+  verifiers:
+    recorded_answer:
+      kind: historical_deterministic_answer_comparison
+      source: https://github.com/open-compass/VLMEvalKit/blob/aaf24c59feae4f987025e21af32ed4b849cf9105/vlmeval/utils/matching_util.py
+      function: can_infer
+      verbose: false
+      judge_api: disabled
+      unit: one recorded answer to one option rotation
+      circular_score_scope: Available native group verdicts are retained in traces only.
+sources:
+  upstream:
+  - name: results
+    url: https://huggingface.co/datasets/VLMEval/OpenVLMRecords
+    revision: c29391cf912cae8dd2a7579e02ba1f7cd7ed9e8a
+    files:
+    - match: .*/[^/]+_MMBench_V11(?:\.xlsx|_gpt4_result\.(?:pkl|xlsx)|_supp\.pkl)|README\.md
+      path: results/{path}
+  - name: historical_harness
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: aaf24c59feae4f987025e21af32ed4b849cf9105
+    files:
+    - match: vlmeval/dataset/(?:image_mcq|image_base)\.py|vlmeval/dataset/utils/multiple_choice\.py|vlmeval/utils/matching_util\.py
+      path: historical_harness/{path}
+  - name: harness
+    url: https://github.com/open-compass/VLMEvalKit
+    revision: 6f0370704932cec0d9aa1e73f01954cd786c57ea
+    files:
+    - match: LICENSE|README\.md|run\.py|vlmeval/config\.py|vlmeval/dataset/(?:image_mcq|image_base)\.py|vlmeval/dataset/utils/multiple_choice\.py|vlmeval/utils/matching_util\.py|vlmeval/smp/file\.py
+      path: harness/{path}
+  - name: benchmark
+    url: https://github.com/open-compass/MMBench
+    revision: 8eaac9ae42e22eaf42863b218455acd51268ba1c
+    files:
+    - match: LICENSE|README\.md|.*\.py
+      path: github/{path}
+  - name: tasks_tasks_mmbench_dev_en_v11
+    url: https://opencompass.oss-cn-shanghai.aliyuncs.com/utils/benchmarks/MMBench/MMBench_DEV_EN_V11.tsv
+    revision: sha256:27a54ae2e8f54502361cc5a41ed5fc35f4253af74734b5593d7b1de545eb5656
+    file: tasks/MMBench_DEV_EN_V11.tsv
+    size: 52285836
+    sha256: 27a54ae2e8f54502361cc5a41ed5fc35f4253af74734b5593d7b1de545eb5656
+  - name: tasks_tasks_mmbench_test_en_v11
+    url: https://opencompass.oss-cn-shanghai.aliyuncs.com/utils/benchmarks/MMBench/MMBench_TEST_EN_V11.tsv
+    revision: sha256:c8fb8b7ead6e52e5c09f805049bc3f16740a2f8664d3a8d71e7294943584516a
+    file: tasks/MMBench_TEST_EN_V11.tsv
+    size: 72968653
+    sha256: c8fb8b7ead6e52e5c09f805049bc3f16740a2f8664d3a8d71e7294943584516a
+  - name: tasks_historical_mmbench_test_en_v11
+    url: https://opencompass.oss-cn-shanghai.aliyuncs.com/utils/VLMEval/MMBench_TEST_EN_V11.tsv
+    revision: sha256:5dda740dda364d0062ef6f8d3195a32febe3ba5be4dd742dc1e9c30a83334501
+    file: tasks/historical/MMBench_TEST_EN_V11.tsv
+    size: 72939448
+    sha256: 5dda740dda364d0062ef6f8d3195a32febe3ba5be4dd742dc1e9c30a83334501

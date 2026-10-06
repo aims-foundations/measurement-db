@@ -1,0 +1,138 @@
+format_version: 1
+tables:
+  benchmarks:
+    rows: 1
+    logical_sha256: 4de2cb5454f2b40cfef42fb72e44d1b84296c1fb1370e517ec0bc5ec7db5053c
+  items:
+    rows: 4284
+    logical_sha256: c0f0b90ebe6307cef84fd2153d2e5ba42c647e1887c35e44afb7b3479f5222bd
+  responses:
+    rows: 386240
+    logical_sha256: 6dc18aeba0a82c30416915521b4d0129795bd4871d995f52441afb6f52db9d3a
+  subjects:
+    rows: 9
+    logical_sha256: 46777faa4e4ee014f69c55d3e0c06084894cba16d9ae6696dae6fc18464df7ab
+  traces:
+    rows: 386240
+    logical_sha256: d19262649b48e0a905295dd3dbdff9960263f4119d0d5ec2dcf997f290cb4e82
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 99
+  source_tasks:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 11
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 9
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 4284
+  source_input_definitions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 4400
+  source_duplicate_stimulus_aliases:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 116
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 386240
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 386240
+  source_joint_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 193120
+  source_empty_joint_trial_positions:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 480
+  source_invalid_fc:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 227
+  source_invalid_rs:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/lguerdan/indeterminacy-experiments/tree/d009e71909eb242952bea8bd5475d6c27d22a1ff
+    locator: The 99 original runs/main-run/<task>/<model>.json tensors, eleven saved ratings.csv input orders and
+      task_config.json; verbatim prompts from the pinned author code/config/prompts.py.
+    scope: Each original tensor cell represents a paired FC and RS judgment. Preserve both unordered category indices
+      and every native trial, including parser-invalid outcomes; exclude empty joint positions without inventing
+      missing calls.
+    expected: 3056

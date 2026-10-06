@@ -1,0 +1,170 @@
+benchmark:
+  name: EDIT-Bench
+  one_line_description: Evaluates whether models can perform instructed whole-file code edits, with success
+    determined by task-specific executable tests.
+  description: EDIT-Bench evaluates 44 model configurations on 540 real-world whole-file instructed code
+    edits, with binary success determined by task-specific executable tests.
+  paper_url: https://arxiv.org/abs/2511.04486
+  data_source_url: https://github.com/waynchi/editbench/tree/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+  license: Apache-2.0
+  modality:
+  - text
+  domain:
+  - software_engineering
+  - multilingual
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': failure
+      '1': success
+  categorical: true
+  release_date: 2025-11
+  multi_single_turn: single_turn
+  testing_condition: One provider-released generation per observed model/item cell. The subject receives
+    one whole-file + highlighted-code prompt and no follow-up input. Response is 1 iff the released per-question
+    test fraction equals exactly 1.0, otherwise 0. The raw test fraction remains in the captured source
+    result JSONs. test_condition and interactors are null. Results/prompt are pinned to GitHub b406cc5
+    and items/verifiers to the chronologically aligned HF 230cd165 revision; the result files do not independently
+    record that HF revision. The example OpenRouter adapter and paper use temperature=0 when supported,
+    but do not record exact per-cell values. API family from the released adapter maps and the paper-reported
+    Docker Ubuntu 22.04 sandbox are retained as subject features; exact endpoint route, historical dependency
+    resolution, and container digest are not inferred. The same-commit whole-file prompt is linked to
+    the result matrix by provider layout and paper rather than a run manifest.
+  subject_type: model
+  item_type: instructed code edit
+  citation: "@misc{chi2025editbench,\n  title={EDIT-Bench: Evaluating LLM Abilities to Perform Real-World\
+    \ Instructed Code Edits},\n  author={Wayne Chi and Valerie Chen and Ryan Shar and Aditya Mittal and\
+    \ Jenny Liang and Wei-Lin Chiang and Anastasios Nikolas Angelopoulos and Ion Stoica and Graham Neubig\
+    \ and Ameet Talwalkar and Chris Donahue},\n  year={2025},\n  eprint={2511.04486},\n  archivePrefix={arXiv},\n\
+    \  primaryClass={cs.SE}\n}"
+  tags:
+  - coding
+  - multilingual
+  benchmark_features:
+    item_bank: complete
+    prompt_variant: whole_file_highlight
+  release: public
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      archive: editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz
+      items: complete-230cd16584238c917c3c45a77c72d6a2607ed623.jsonl
+      prompt_member: prompts/whole_file.txt
+      results_prefix: results/whole_file/
+      traces_prefix: generations/whole_file/
+    adapter_modules:
+      examples/openai_experiment.py: GPT_MAP
+      examples/openrouter_experiment.py: OPENROUTER_NAME_MAP
+    adapter_apis:
+      examples/openai_experiment.py: OpenAI API
+      examples/openrouter_experiment.py: OpenRouter
+    subject_features:
+      harness: EDIT-Bench official single-turn whole-file runner
+      sandbox: Docker Ubuntu 22.04
+    reasoning_effort:
+      gpt-5: medium
+      gpt-5-high: high
+      gpt-o3-mini: medium
+      gpt-o3-mini-high: high
+      gpt-o4-mini: medium
+      gpt-o4-mini-high: high
+sources:
+  upstream:
+  - name: items
+    url: https://huggingface.co/datasets/copilot-arena/editbench
+    revision: 230cd16584238c917c3c45a77c72d6a2607ed623
+    files:
+    - match: data/editbench/complete\.jsonl
+      path: complete-230cd16584238c917c3c45a77c72d6a2607ed623.jsonl
+    - match: data/editbench/test\.jsonl
+      path: core-230cd16584238c917c3c45a77c72d6a2607ed623.jsonl
+  - name: release
+    revision: b406cc5143feb91e9bda1edd01cbe37d84d185fd
+    file: editbench-b406cc5143feb91e9bda1edd01cbe37d84d185fd.tar.gz
+    sha256: bd3a3d96d2024326b77639484418528dcf9bcbfd4e95e64b92c26525b75c085b
+    size: 950486
+    url: https://codeload.github.com/waynchi/editbench/tar.gz/b406cc5143feb91e9bda1edd01cbe37d84d185fd
+  - name: leaderboards
+    url: https://github.com/waynchi/edit-bench
+    revision: 6a111875195227d7e9ff18ea4d5162d82eda3dfd
+    files:
+    - match: results-(?P<subset>complete|core)\.csv
+      path: leaderboard-{subset}-6a111875195227d7e9ff18ea4d5162d82eda3dfd.csv
+    - match: index\.html
+      path: project-site-6a111875195227d7e9ff18ea4d5162d82eda3dfd.html
+grading:
+  rule: passed / (total + skipped) == 1.0 in the official EDIT-Bench test runner
+  verifiers:
+    test_suite:
+      kind: editbench_executable_test_suite
+      source_item: https://huggingface.co/datasets/copilot-arena/editbench/blob/230cd16584238c917c3c45a77c72d6a2607ed623/data/editbench/complete.jsonl
+      grader_source: https://github.com/waynchi/editbench/blob/b406cc5143feb91e9bda1edd01cbe37d84d185fd/edit_bench/evaluation.py
+      timeout_seconds_per_command: 180
+      max_parallel_items: 4
+      raw_score: passed / (total + skipped)
+      success: raw_score == 1.0
+      missing_or_malformed_test_result_score: 0.0
+    execution:
+      javascript:
+        commands:
+        - - npm
+          - install
+        - - sleep
+          - '1'
+        - - npm
+          - test
+        files:
+          implementation: implementation1.js
+          original: original_code.js
+          test: tests/test_code.test.js
+        extraction: generated_code.split('```javascript')[-1].split('```')[0].strip()
+      javascript/react:
+        commands:
+        - - npm
+          - install
+        - - sleep
+          - '1'
+        - - npm
+          - test
+        files:
+          implementation: implementation1.jsx
+          original: original_code.jsx
+          test: tests/test_code.test.js
+        extraction: generated_code.split('```javascript')[-1].split('```')[0].strip()
+      python:
+        commands:
+        - - uv
+          - venv
+          - --python
+          - '{python_version}'
+        - - uv
+          - pip
+          - install
+          - --python
+          - <sandbox>/.venv/bin/python
+          - -r
+          - <sandbox>/requirements.txt
+        - - <sandbox>/.venv/bin/python
+          - -m
+          - pytest
+          - <sandbox>/test_code.py
+          - -v
+          - -s
+        - - rm
+          - -rf
+          - .venv
+        files:
+          implementation: implementation1.py
+          original: original_code.py
+          requirements: requirements.txt
+          test: test_code.py
+        extraction: generated_code.split('```python')[-1].split('```')[0].strip()
+    special_files:
+      b8451da4-d914-442a-9eb5-6982148c1cab:
+        app.py: fastapp = {}

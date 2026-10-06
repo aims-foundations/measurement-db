@@ -1,0 +1,4 @@
+- Sources: pinned author result files and evaluation scripts, plus the official English/Basque question release. All target questions, options, references and saved few-shot examples match that release.
+- Scope: 57,072 native responses from six API models on 4,756 questions in each language. Preserve full conversations; different few-shot samples yield 51,760 prompt/reference definitions, with the original question ID retained as an alias.
+- Corrections: restore system instructions and demonstrations omitted by the old builder, and recover all 28,536 Claude traces through their native response format. Preserve strict released grades, exact model revisions, API records and all 29 non-letter failures.
+- Limits: reviewed open-model files provide aggregate scores, not item-level observations. Request settings come from the published scripts; result rows do not separately record them. The dataset declares CC-BY-4.0 and the GitHub repository MIT.

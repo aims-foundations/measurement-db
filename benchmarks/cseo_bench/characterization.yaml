@@ -1,0 +1,108 @@
+format_version: 1
+tables:
+  traces:
+    rows: 259128
+    logical_sha256: 1fce6c169a95ab0396175325751facba8778fbeabaf267785f2401755a0edc68
+  subjects:
+    rows: 4
+    logical_sha256: 3a2fc978bb3ab3247b619639b2f58eee8f499b9a06a2c652cd3aaedbac8d7b51
+  responses:
+    rows: 259128
+    logical_sha256: c3a9b99baede9cd0564c3434999f14e9d971cc2e2205d85ce5fee08e1409e707
+  items:
+    rows: 242265
+    logical_sha256: 5307bb4f28cc5ffb2a3d4fc81c9ab240f4745c756fa1a31129c2ddffb48d58d6
+  benchmarks:
+    rows: 1
+    logical_sha256: 02f7dbb3e1db62f035cf87e4dc2a5f7d0a5f509d2d98fee9e4f15b556329928c
+source_claims:
+  source_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 413
+  source_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 140482
+  source_baseline_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 7684
+  source_extra_control_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 294
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 259128
+  source_ungraded_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 1
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 259128
+  source_parser_discrepancies:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 4
+  source_duplicate_condition_files:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 2
+  source_duplicate_condition_records:
+    kind: count
+    origin: derived_from_data
+    source: https://huggingface.co/datasets/parameterlab/c-seo-results
+    locator: All 413 responses.parquet files at pinned upstream revision 620e095fe4fac55cc5d735062cd61eaef0b3a8eb.
+      Original controls are matched by model/domain/query; intervention target documents are expanded
+      individually. Native citation lists and complete paired prompts/outputs are checked independently.
+    scope: The captured results release; document comparisons sharing an output are dependent observations.
+    expected: 936

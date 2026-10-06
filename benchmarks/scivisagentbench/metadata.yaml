@@ -1,0 +1,131 @@
+benchmark:
+  description: Scientific-visualization agent benchmark with 108 logical tasks; this build preserves provider-released
+    per-case pass outcomes from selected public and historical model/harness reports.
+  testing_condition: Preserve all published case outcomes in the current 108-task roster and the additional recorded
+    repeat runs. The response is the provider-reported case percentage thresholded at 50 percent, not a new model
+    or judge run. Keep each administered task text and its own visible grading rules; missing report details are
+    not borrowed from another run. Full native report sections remain in traces. Original task resources are captured
+    at the declared upstream revisions; exact historical workspace snapshots and all generation/judge settings are
+    unavailable. Input volumes exceeding the canonical binary value limit remain intact in raw, with paths, sizes
+    and SHA256 in item_features.external_input_files. Anonymous input paths are recovered from the paired author
+    YAML files, without exposing their original descriptive names in the stimulus. Generated figures and reference
+    images remain in the captured reports.
+  paper_url: https://arxiv.org/abs/2603.29139
+  data_source_url: https://github.com/SciVisAgentBench/scivisagentbench.github.io/tree/cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e/eval_reports
+  subject_type: model
+  item_type: task
+  license: LicenseRef-SciVisAgentBench-Research-Only
+  citation: 'Ai et al. SciVisAgentBench: A Benchmark for Evaluating Scientific Data Analysis and Visualization Agents.
+    2026.'
+  tags:
+  - scientific-visualization
+  - agents
+  - paraview
+  - molecular
+  - bioimage
+  - topology
+  modality:
+  - text
+  - gui_screenshot
+  domain:
+  - science
+  - agents_and_tool_use
+  multi_single_turn: multi_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': criterion not satisfied
+      '1': criterion satisfied
+  categorical: true
+  release_date: 2026-03
+  release: withheld
+  release_reason: "The captured project license expressly prohibits redistribution without prior written permission; project-use authorization does not cover publication."
+  name: SciVisAgentBench
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      tasks: tasks
+      named_tasks: main/benchmark/eval_cases/paraview/what_obj_cases.yaml
+      anonymous_tasks: main/benchmark/eval_cases/paraview/what_obj_cases_anonymized.yaml
+    report_patterns:
+      current: site/eval_reports/*/*/report.html
+      historical_repeats: history/eval_reports/*/*_exp[2-9]/report.html
+    suites:
+      paraview: paraview
+      anonymized: object_identification
+      bioimage: bioimage
+      molecular_vis: molecular
+      topology: topology
+    data_suites:
+      paraview: paraview
+      sci_volume_data: object_identification
+      bioimage_data: bioimage
+      molecular_vis: molecular
+      topology: topology
+    harnesses:
+      claude_code: Claude Code
+      codex_cli: Codex CLI
+      paraview_mcp: ParaView-MCP
+      chatvis: ChatVis
+      napari_mcp: BioImage-Agent (napari-MCP)
+      gmx_vmd_mcp_agent: GMX-VMD-MCP
+      topopilot_mcp: TopoPilot2
+    resources:
+      maximum_inline_bytes: '2147483647'
+      media_type: application/octet-stream
+    labels:
+      input_scope: Administered report text and explicitly named files from the released task corpus. Exact historical
+        workspace snapshots unavailable.
+      historical_settings: Model and harness labels are recorded. Exact historical endpoint, generation settings
+        and workspace versions are unavailable.
+sources:
+  upstream:
+  - name: main
+    url: https://github.com/KuangshiAi/SciVisAgentBench
+    revision: b9435d13e9ff979226b1754e6c467efeb026978a
+    files:
+    - match: .*
+      path: main/{path}
+  - name: site
+    url: https://github.com/SciVisAgentBench/scivisagentbench.github.io
+    revision: cd0f81b8d27bbd669fe1405a5ec6658bd4ae6a1e
+    files:
+    - match: .*
+      path: site/{path}
+  - name: history
+    url: https://github.com/KuangshiAi/SciVisAgentBench
+    revision: d31b5b3e7e50f1e8f94b592ebb04286da762f092
+    files:
+    - match: (?!.*\.png$)(?:eval_reports/.*|benchmark/eval_cases/.*|README\.md|LICENSE|\.gitattributes|analyze_reports\.py|evaluation_statistics\.md)
+      path: history/{path}
+  - name: historical_images
+    url: https://github.com/KuangshiAi/SciVisAgentBench
+    revision: d31b5b3e7e50f1e8f94b592ebb04286da762f092
+    git_lfs: true
+    files:
+    - match: eval_reports/.*\.png
+      path: history/{path}
+  - name: tasks
+    url: https://huggingface.co/datasets/SciVisAgentBench/SciVisAgentBench-tasks
+    revision: d2975dd424f619d706e8ae86dd47d1843e0f52c7
+    files:
+    - match: .*
+      path: tasks/{path}
+grading:
+  rule: 'Read the original case percentage and retain the provider analysis rule: pass iff percentage >= 50. Preserve
+    the report-specific visible rubrics, reference answers and checks; empty lists mean the report does not disclose
+    those components. Do not infer a perfect result from an incomplete or failed report.'
+  verifiers:
+    reported_case:
+      kind: published_mixed_component_assessment
+      pass_percent: 50
+      source: https://github.com/KuangshiAi/SciVisAgentBench/blob/d31b5b3e7e50f1e8f94b592ebb04286da762f092/eval_reports/analyze_reports.py
+      field: case-score displayed percentage
+      underlying_protocol: LLM rubric/answer judgments and deterministic scoring components; historical per-report
+        versions not consistently recorded.

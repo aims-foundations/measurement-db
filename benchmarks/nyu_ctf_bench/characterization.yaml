@@ -1,0 +1,120 @@
+format_version: 1
+tables:
+  traces:
+    rows: 2979
+    logical_sha256: 7f179cbfc57d17117763e8ccf118f902230493a6d5c4b900be3bc257ebc2c03d
+  subjects:
+    rows: 15
+    logical_sha256: 10f2b50ea12630194c079e20a94cc984d2fd1d41f123eab7bb8fc9fcb0bda163
+  responses:
+    rows: 2979
+    logical_sha256: bdd9e5c6ce0365f3b52337379805e0f4ebd3273333cb69113f5a4238cb301da6
+  assets:
+    rows: 244
+    logical_sha256: c2e300f14baa7806e2e3f017f350a1bdf78165336e2465df558bb3e6f08dad62
+  items:
+    rows: 400
+    logical_sha256: fb27a01316bbece9b7242584625cf57d58487eec55790a847ae28193fe6edd18
+  benchmarks:
+    rows: 1
+    logical_sha256: 6a45983090a029cb1e2da55ce9d79d818015fe96ac4f7fab8de41ebba84bcde7
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 2979
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 400
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 15
+  source_traces:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 2979
+  source_challenges:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 200
+  source_assets:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 244
+  source_declared_input_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 254
+  source_native_trace_files:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 4105
+  source_assessments_without_released_trace:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 270
+  source_unpublished_cells:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 21
+  source_passes:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/NYU-LLM-CTF/leaderboard_submissions/tree/69def02a79e8b1d890e1e0d5c11106a9f40e11e1
+    locator: transcripts/*/summary.json and released JSON/traj logs, joined to the pinned NYU_CTF_Bench test_dataset.json,
+      challenge.json definitions and original input bytes
+    scope: Published challenge assessments with their stated pass@1/pass@5 allowance; absent summary keys remain
+      absent. Counts verified by an independent source reader.
+    expected: 376

@@ -1,0 +1,3 @@
+- Join each released model result to the authoritative v9 probe bank. Retain its provider correctness flag; exclude superseded question wording and blank API-failure outputs.
+- The tabular migration preserves all 268,351 observations, their complete traces, and the 1,400-probe item bank. Grading descriptions now use the current schema, so item and response IDs change.
+- The released three-way judge is Gemini 3 Flash Preview. The separate evidence-aware fractional grading is outside this binary curation.

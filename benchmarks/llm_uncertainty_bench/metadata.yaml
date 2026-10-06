@@ -1,0 +1,191 @@
+benchmark:
+  name: LLM-Uncertainty-Bench
+  description: Released six-option logits for 25 model labels on five adapted multiple-choice datasets, with three
+    prompting strategies and base/chat input formats.
+  testing_condition: 'Preserve all 5,100,000 released forward-pass records. Subjects distinguish model label, input-format
+    variant and prompting strategy. Items contain the complete documented prompt before model-specific chat serialization
+    and tokenization, including all demonstrations; the dialogue knowledge field is not part of the published generator''s
+    input. The icl1 filename flag enables all configured demonstrations, not one example: five for MMLU/CosmosQA/HellaSwag,
+    three for dialogue and one for summarization. The generator uses left truncation at min(tokenizer.model_max_length,
+    2048); exact historical tokenizer/model revisions and realized token sequences are unavailable. Do not download
+    a current tokenizer and claim it reproduces historical input. Keep all released records, including demonstration
+    IDs and both later calibration/test partitions; these are not the paper''s held-out aggregate accuracy. Grade
+    the first maximum of A-F logits against the original answer, exactly as get_accuracy does, preserving ties.
+    Store all six original logits as the response trace; no free-text generation was released. Original source question
+    IDs remain in each trace, including aliases of identical prompt/grading definitions.'
+  paper_url: https://arxiv.org/abs/2401.12794
+  data_source_url: https://github.com/smartyfh/LLM-Uncertainty-Bench
+  subject_type: model
+  item_type: question
+  license: MIT source repository; adapted task content retains its applicable original dataset terms.
+  citation: Ye, Fanghua; Yang, Mingming; Pang, Jianhui; Wang, Longyue; Wong, Derek F.; Yilmaz, Emine; Shi, Shuming;
+    Tu, Zhaopeng. Benchmarking LLMs via Uncertainty Quantification. NeurIPS 2024, arXiv:2401.12794.
+  tags:
+  - uncertainty
+  - multiple_choice
+  - calibration
+  modality:
+  - text
+  domain:
+  - knowledge
+  - reasoning
+  - language
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': First maximum-logit option differs from the reference
+      '1': First maximum-logit option equals the reference
+  categorical: true
+  release_date: 2024-01
+  release: public
+  granularity: item
+  multi_single_turn: single_turn
+build:
+  contract_version: 2
+  parameters:
+    layout:
+      repository: repo
+      questions: data/*.json
+      results: outputs*/*_icl1.pkl
+      result_pattern: (?P<model>.+)_(?P<dataset>cosmosqa_10k|halu_dialogue|halu_summarization|hellaswag_10k|mmlu_10k)_(?P<method>base|shared|task)_icl1\.pkl
+    datasets:
+      cosmosqa_10k: CosmosQA
+      halu_dialogue: Halu-OpenDialKG
+      halu_summarization: Halu-CNN/DailyMail
+      hellaswag_10k: HellaSwag
+      mmlu_10k: MMLU
+    demonstrations:
+      cosmosqa_10k: 1,3,5,7,9
+      halu_dialogue: 5,7,9
+      halu_summarization: '9'
+      hellaswag_10k: 1,3,5,7,9
+      mmlu_10k: 1,3,5,7,9
+    context_prefixes:
+      CosmosQA: 'Context: '
+      HellaSwag: 'Context: '
+      Halu-OpenDialKG: 'Dialogue: '
+      Halu-CNN/DailyMail: 'Document: '
+      MMLU: ''
+    task_prefixes:
+      MMLU: 'Below are some examples of multiple-choice questions about question answering. Each question should
+        be answered based on your world knowledge and problem solving ability.
+
+
+        '
+      HellaSwag: 'Below are some examples of multiple-choice questions about commonsense natural language inference.
+        For each question, there is a given context and the answer is the option that most likely follows the context.
+
+
+        '
+      CosmosQA: 'Below are some examples of multiple-choice questions about reading comprehension. Each question
+        should be answered based on the given context and commonsense reasoning when necessary.
+
+
+        '
+      Halu-OpenDialKG: 'Below are some examples of multiple-choice questions about dialogue response selection.
+        For each question, the answer is the option that represents the most suitable response for the given dialogue
+        history, without hallucination and non-factual information.
+
+
+        '
+      Halu-CNN/DailyMail: 'Below are some examples of multiple-choice questions about document summarization. For
+        each question, the answer is the option that accurately summarizes the given document without hallucination
+        and non-factual information.
+
+
+        '
+    formatting:
+      question_prefix: 'Question: '
+      choices_prefix: '
+
+        Choices:
+
+        '
+      answer_suffix: 'Answer:'
+      shared_prefix: 'Below are some examples of multiple-choice questions with six potential answers. For each
+        question, only one option is correct.
+
+
+        '
+      falcon_chat: 'User: {prompt}
+
+        Assistant:'
+      following_question: '
+
+        Now make your best effort and select the correct answer for the following question. You only need to output
+        the option.
+
+
+        '
+    variants:
+      outputs_base: plain
+      outputs_chat_v1: model_chat_template
+      outputs_chat_v2: plain
+    labels:
+      subject_prefix: 'LLM-Uncertainty / '
+      input_scope: documented_prompt_before_chat_serialization_and_tokenization
+    subject_features:
+      harness: LLM-Uncertainty-Bench
+      historical_revisions: model_and_tokenizer_revisions_not_recorded
+      truncation_side: left
+      truncation_limit: min(tokenizer.model_max_length, 2048)
+      few_shot_flag: '1'
+    options_default:
+      A: 'Answer: A'
+      B: 'Answer: B'
+      C: 'Answer: C'
+      D: 'Answer: D'
+      E: 'Answer: E'
+      F: 'Answer: F'
+    options_chat_yi:
+      A: '
+
+        A'
+      B: '
+
+        B'
+      C: '
+
+        C'
+      D: '
+
+        D'
+      E: '
+
+        E'
+      F: '
+
+        F'
+sources:
+  upstream:
+  - name: published_release
+    url: https://github.com/smartyfh/LLM-Uncertainty-Bench
+    revision: 5d189dcc54dbde7f6a327e7139142aa41ff7c42c
+    files:
+    - match: .*
+      path: repo/{path}
+grading:
+  rule: Select the first maximum in the original six logits in A/B/C/D/E/F order and compare that letter exactly
+    with the source answer. Tied maxima retain NumPy argmax's first-index rule; no softmax, threshold, calibration
+    or new inference is required.
+  verifiers:
+    option_argmax:
+      kind: released_logit_exact_match
+      source: https://github.com/smartyfh/LLM-Uncertainty-Bench/blob/5d189dcc54dbde7f6a327e7139142aa41ff7c42c/uncertainty_quantification_via_cp.py
+      function: get_accuracy
+      option_order:
+      - A
+      - B
+      - C
+      - D
+      - E
+      - F
+      tie_break: first_maximum_index
+      input_field: logits_options
+      reference_field: answer
+      historical_execution: Recorded forward-pass logits; no model execution or sampling.

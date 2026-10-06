@@ -1,0 +1,99 @@
+benchmark:
+  description: Legal reasoning in five LegalBench tasks evaluated by the 155 released HELM Lite v1.0.0 runs; preserve
+    original per-instance quasi-exact-match grades.
+  testing_condition: 'Import the established HELM Lite v1.0.0 subset: abercrombie, corporate_lobbying, function_of_decision_section,
+    international_citizenship_questions and proa. Preserve actual prompts including demonstrations, recorded generation
+    settings, every original prediction and complete native completion/token results. Item identity includes the
+    task definition and grading protocol. The release is a subset of LegalBench, not coverage of every LegalBench
+    task. The historical harness code revision is unrecorded; the captured grader code is an inspected reference,
+    not a claimed historical revision. No model or judge calls occur.'
+  paper_url: https://arxiv.org/abs/2308.11462
+  data_source_url: https://crfm.stanford.edu/helm/lite/latest/
+  subject_type: model
+  item_type: task
+  license: unknown
+  citation: "@inproceedings{NEURIPS2023_89e44582,\n  title={LegalBench: A Collaboratively Built Benchmark for Measuring\
+    \ Legal Reasoning in Large Language Models},\n  author={Guha, Neel and Nyarko, Julian and Ho, Daniel E. and\
+    \ R{\\'e}, Christopher and Chilton, Adam and Narayana, Aditya and Chohlas-Wood, Alex and Peters, Austin and\
+    \ Waldon, Brandon and Rockmore, Daniel N. and Zambrano, Diego and Talisman, Dmitry and Hoque, Enam and Surani,\
+    \ Faiz and Fagan, Frank and Sarfaty, Galit and Dickinson, Gregory M. and Porat, Haggai and Hegland, Jason and\
+    \ Wu, Jessica and Nudell, Joe and Niklaus, Joel and Nay, John and Choi, Jonathan H. and Tobia, Kevin and Hagan,\
+    \ Margaret and Ma, Megan and Livermore, Michael and Rasumov-Rahe, Nikon and Holzenberger, Nils and Kolt, Noam\
+    \ and Henderson, Peter and Rehaag, Sean and Goel, Sharad and Gao, Shang and Williams, Spencer and Gandhi, Sunny\
+    \ and Zur, Tom and Iyer, Varun and Li, Zehua},\n  booktitle={Advances in Neural Information Processing Systems},\n\
+    \  doi={10.52202/075280-1915},\n  pages={44123--44279},\n  publisher={Curran Associates, Inc.},\n  volume={36},\n\
+    \  year={2023},\n  url={https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html},\n\
+    }"
+  tags:
+  - law
+  - legal_reasoning
+  - helm
+  modality:
+  - text
+  domain:
+  - law
+  - reasoning
+  multi_single_turn: single_turn
+  response_type: binary
+  response_scale:
+    kind: discrete
+    values:
+    - 0
+    - 1
+    direction: higher_is_better
+    meanings:
+      '0': Published quasi-exact-match failure
+      '1': Published quasi-exact-match success
+  categorical: true
+  release_date: 2023-08
+  release: public
+  name: LegalBench
+  version: HELM Lite v1.0.0
+  granularity: item
+build:
+  contract_version: 2
+  parameters:
+    helm:
+      scenario: legalbench
+      release: v1.0.0
+      metric: quasi_exact_match
+      item_features: scenario_spec
+      result_file: scenario_state.json
+grading:
+  rule: Import the published quasi_exact_match grade unchanged. HELM compares the adapted prediction against accepted
+    references after its quasi-exact normalization. reference_answer is a JSON array preserving all correct-tagged
+    references in their native order.
+  verifiers:
+    published:
+      kind: published_helm_metric
+      class: exact_matcher
+      reference_kind: gold
+      reference_encoding: json_array
+      metric: quasi_exact_match
+      implementation_reference: https://github.com/stanford-crfm/helm/blob/63754d05db6f874e41a395880fb573890a13e791/src/helm/benchmark/metrics/evaluate_reference_metrics.py
+      release_code_revision: Not recorded in the published run spec; the captured code is an inspected reference
+        implementation.
+sources:
+  upstream:
+  - name: runs
+    url: https://storage.googleapis.com/crfm-helm-public
+    revision: v1.0.0
+    prefix: 'lite/benchmark_output/runs/v1.0.0/legalbench:'
+    tree_sha256: 28c010ba7af33606f0ae5075acbc8a8697391d7201827d4341f9afd9e692009a
+    files:
+    - match: (?P<run>[^/]+)/(?P<kind>run_spec|instances|per_instance_stats|display_predictions|display_requests|scenario_state|scenario|stats)\.json
+      path: runs/{run}/{kind}.json
+  - name: grader
+    url: https://github.com/stanford-crfm/helm
+    revision: 63754d05db6f874e41a395880fb573890a13e791
+    files:
+    - match: src/helm/benchmark/metrics/(?:basic_metrics\.py|evaluate_reference_metrics\.py)
+      path: harness/{path}
+    - match: src/helm/benchmark/scenarios/legalbench_scenario\.py
+      path: harness/{path}
+  - name: task_documentation
+    url: https://github.com/HazyResearch/legalbench
+    revision: b46bf4ffae90524b2b72aaa30e7745fe9db64481
+    files:
+    - match: (?:README\.md|tasks/(?:abercrombie|corporate_lobbying|function_of_decision_section|international_citizenship_questions|proa)/README\.[mM][dD])
+      path: documentation/{path}

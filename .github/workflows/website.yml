@@ -1,0 +1,66 @@
+name: Website
+
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'scripts/render_website/**'
+      - 'scripts/analyze_measurements/**'
+      - 'tests/**'
+      - 'schema.md'
+      - 'requirements.txt'
+      - '.github/workflows/website.yml'
+      - '.github/workflows/deploy-website.yml'
+  push:
+    branches: [main, 'migration/**']
+    paths:
+      - 'website/**'
+      - 'scripts/render_website/**'
+      - 'scripts/analyze_measurements/**'
+      - 'tests/**'
+      - 'schema.md'
+      - 'requirements.txt'
+      - '.github/workflows/website.yml'
+      - '.github/workflows/deploy-website.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r requirements.txt fastparquet pytest==8.3.5
+      - name: Test rendering and analysis without downloads
+        run: >-
+          python -m pytest -q tests/test_ai_subjects.py
+          tests/test_benchmark_saturation.py tests/test_fit_rasch_models.py
+          tests/test_generate_benchmark_attributions.py
+          tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py
+          tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py
+          tests/test_gallery_hf_layouts.py
+          tests/test_gallery_hybrid_data.py
+          tests/test_website_deployment.py
+      - run: python scripts/render_website/generate_benchmark_attributions.py --check
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - run: pnpm --dir website install --frozen-lockfile
+      - name: Check browser source reads against canonical tables
+        run: |
+          python tests/test_gallery_hybrid_data.py --export "$RUNNER_TEMP/gallery-fixture"
+          node website/scripts/test-gallery-source.mjs "$RUNNER_TEMP/gallery-fixture"
+          node website/scripts/test-gallery-source-route.mjs
+          node website/scripts/test-vercel-fetch.mjs
+      - run: pnpm --dir website lint
+      - run: pnpm --dir website build
+      - run: pnpm --dir website search:check

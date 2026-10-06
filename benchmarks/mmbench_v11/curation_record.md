@@ -1,0 +1,3 @@
+- Import complete English dev/test answer exports and original image/question inputs from the pinned author releases. Identical complete exports are aliases; differing exports are retained without claiming independent reruns.
+- Use the frozen historical deterministic answer extractor. Keep unresolved, missing, API-failed or conflicting-reference answers ungraded; restore absent references only after exact task matching. Circular verdicts remain group evidence in traces.
+- Check every source cell, image, alias and grade; preserve full outputs. Model labels remain literal because historical revisions, inference settings and model-specific prompt wrappers are unavailable. No new evaluation or judge calls.

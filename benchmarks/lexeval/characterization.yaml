@@ -1,0 +1,306 @@
+format_version: 1
+tables:
+  traces:
+    rows: 1076280
+    logical_sha256: fd313ddb430ee51f53a16137eacd949a9dd28c961320ce8d5801b66bc2af6b56
+  subjects:
+    rows: 38
+    logical_sha256: 8375d9cf6979e3ee7eb316ff21d76d051453651b3dcdbafb310d5e53de93e0a8
+  responses:
+    rows: 1076280
+    logical_sha256: 4f1cebc4f0902f16479ee4061bb9ceebef4862c61632594ee4dfab07b44eb35f
+  items:
+    rows: 39908
+    logical_sha256: 499912c71f040edca9c4afff1640de0eb2312561fd45355218908938618c10c4
+  benchmarks:
+    rows: 1
+    logical_sha256: 332f7be647d8f646095bd6450e0c54161c3501d71a05b021024a771b0a279597
+source_claims:
+  source_responses:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 1076280
+  source_subjects:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38
+  source_items:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 39908
+  source_reconstructed_native_score:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 1061899
+  source_task_1_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_empty_outputs:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 4439
+  source_empty_references:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 0
+  source_source_failure_marker:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 46
+  source_task_1_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 77000
+  source_task_1_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 22724
+  source_task_2_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_task_2_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 22800
+  source_task_2_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 7700
+  source_task_2_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38500
+  source_task_2_5:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38500
+  source_task_3_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 76029
+  source_task_3_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 77000
+  source_task_3_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 75500
+  source_task_3_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_task_3_5:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 29944
+  source_task_3_6:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_task_4_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_task_4_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 23104
+  source_task_5_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 75144
+  source_task_5_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 75335
+  source_native_rouge_fallback_recursionerror:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 13059
+  source_task_5_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 19000
+  source_task_5_4:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_task_6_1:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 76000
+  source_task_6_2:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 76000
+  source_task_6_3:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 38000
+  source_native_rouge_fallback_valueerror:
+    kind: count
+    origin: derived_from_data
+    source: https://github.com/CSHaitao/LexEval
+    locator: All 1748 original JSONL prediction files, native option extraction and normalization, and deterministic
+      accuracy/ROUGE-L from the pinned source release.
+    scope: Preserve every source row, model label, recorded input, reference, output and repeat. Reconstruct only
+      deterministic individual metrics, retaining native zero fallbacks and their exception types.
+    expected: 1322

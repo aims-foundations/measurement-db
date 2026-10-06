@@ -1,0 +1,4 @@
+- Source: pinned author release `892b6402c1adc982532a1ca221ddb863088aae77`; complete prompts, outputs and human-rating guidelines are retained in `raw/`.
+- Scope: five GPT-4o prompting strategies, 959 rated generations, two teachers per generation and eight criteria. Each criterion has its own scale, and each identified teacher belongs to the grading definition. These judgments assess one saved output per system/task.
+- Corrections: replace generic task text with full recorded prompts and preserve both generation inputs and rater displays, including their `[NONE]` differences. Traces retain complete native records; grades are unchanged.
+- Limits: human-written reference feedback and 26 template outputs without released ratings are outside the rated-AI import. Those outputs remain in raw data (17 empty, nine nonempty); no grades or raters are inferred. The captured repository states no license.
