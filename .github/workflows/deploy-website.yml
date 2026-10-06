@@ -149,6 +149,8 @@ jobs:
           NODE
       - name: Deploy
         id: deploy
+        env:
+          NODE_OPTIONS: --require=${{ github.workspace }}/website/scripts/vercel-fetch.cjs
         run: |
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi

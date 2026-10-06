@@ -60,6 +60,7 @@ jobs:
           python tests/test_gallery_hybrid_data.py --export "$RUNNER_TEMP/gallery-fixture"
           node website/scripts/test-gallery-source.mjs "$RUNNER_TEMP/gallery-fixture"
           node website/scripts/test-gallery-source-route.mjs
+          node website/scripts/test-vercel-fetch.mjs
       - run: pnpm --dir website lint
       - run: pnpm --dir website build
       - run: pnpm --dir website search:check

@@ -25,7 +25,7 @@ python scripts/render_website/generate_benchmark_attributions.py
 python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
 python scripts/render_website/generate_benchmark_gallery.py cards
 python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --eval-every 4000 --device cpu --out artifacts/website-rasch
-pnpm --dir website build --webpack
+pnpm --dir website build
 pnpm --dir website start
 ```
 
@@ -135,6 +135,7 @@ server environment; it is never included in client code.
 The deployment job uses the existing `measurement-db-reproduction` self-hosted
 runners: the migrated tables exceed a standard hosted runner's disk capacity.
 Full rendering and analysis can take hours, so the job allows up to 24 hours.
+Uploads serialize Vercel API requests and retry connection timeouts on the shared runners.
 Its Python dependencies are isolated in a job-local environment; HF maintains
 the shared download cache.
 The reused Vercel project has the historical name `measurement-db-private`;
