@@ -9,6 +9,7 @@ from email.utils import parsedate_to_datetime
 from fnmatch import fnmatchcase
 import hashlib
 from html.parser import HTMLParser
+from http.client import IncompleteRead
 import json
 import logging
 import os
@@ -32,23 +33,38 @@ class SourceDataError(RuntimeError):
     """A downloaded source is absent, corrupt, or structurally unreadable."""
 
 
-def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=8):
-    """Retry temporary connection/server failures with bounded exponential pauses.
+def _request_http_source(request, *, timeout, opener=None, consume=None,
+                         max_retry_delay=60, attempts=8, retry_not_found=False,
+                         source_name=None):
+    """Use one retry budget for connecting and consuming a response.
 
-    Eight attempts allow 255 seconds of backoff, in addition to the caller's
-    per-request timeout. Access denials, absent files and certificate errors
-    remain terminal. Log only the host, never signed URLs or credentials.
+    A request factory can resume from bytes already written by a consumer.
+    Consumers that restart a transfer must discard their partial output first.
+    Pinned sources may opt into at most three attempts for transient 404s.
+    Access denials, invalid certificates and content validation stay terminal.
     """
     if attempts < 1 or max_retry_delay < 0:
         raise ValueError('Retry attempts must be positive and delay nonnegative')
     opener = urlopen if opener is None else opener
     for attempt in range(attempts):
+        current_request = request() if callable(request) else request
         try:
-            return opener(request, timeout=timeout)
-        except (URLError, OSError) as error:
+            response = opener(current_request, timeout=timeout)
+            if consume is None:
+                return response
+            with response:
+                return consume(response)
+        except (URLError, OSError, IncompleteRead) as error:
+            host = urlparse(current_request.full_url if isinstance(current_request, Request)
+                            else current_request).hostname
+            if source_name is not None:
+                note = f'Source {source_name!r} on {host}'
+                if note not in getattr(error, '__notes__', ()):
+                    error.add_note(note)
             delay = min(5 * 2 ** attempt, max_retry_delay)
             if isinstance(error, HTTPError):
-                if error.code not in (429, 500, 502, 503, 504):
+                transient_missing = error.code == 404 and retry_not_found and attempt < 2
+                if error.code not in (429, 500, 502, 503, 504) and not transient_missing:
                     raise
                 retry_after = (error.headers or {}).get('Retry-After')
                 if retry_after is not None:
@@ -61,16 +77,31 @@ def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attem
                             pass
             else:
                 reason = error.reason if isinstance(error, URLError) else error
-                if not isinstance(reason, (socket.gaierror, TimeoutError, ConnectionError)):
+                if not isinstance(reason, (socket.gaierror, TimeoutError, ConnectionError, IncompleteRead)):
                     raise
             if attempt == attempts - 1 or not 0 <= delay <= max_retry_delay:
                 raise  # Never retry earlier than a server's requested pause.
             if isinstance(error, HTTPError):
                 error.close()
-            host = urlparse(request.full_url if isinstance(request, Request) else request).hostname
-            logging.getLogger(__name__).warning('Source connection to %s failed (%s); retry %d/%d in %ss',
-                host, type(error).__name__, attempt + 2, attempts, delay)
+            logging.getLogger(__name__).warning('Source transfer from %s (%r) failed (%s); retry %d/%d in %ss',
+                host, source_name, type(error).__name__, attempt + 2, attempts, delay)
             time.sleep(delay)
+
+
+def open_http_source(request, *, timeout, opener=None, max_retry_delay=60, attempts=8):
+    """Retry opening a connection. Use read_http_source to retry body reads too."""
+    return _request_http_source(request, timeout=timeout, opener=opener,
+                                max_retry_delay=max_retry_delay, attempts=attempts)
+
+
+def read_http_source(request, *, timeout, consume=None, opener=None,
+                     max_retry_delay=60, attempts=8, retry_not_found=False,
+                     source_name=None):
+    """Read a complete response, closing and retrying interrupted transfers."""
+    return _request_http_source(request, timeout=timeout, opener=opener,
+                                consume=consume if consume is not None else lambda response: response.read(),
+                                max_retry_delay=max_retry_delay, attempts=attempts,
+                                retry_not_found=retry_not_found, source_name=source_name)
 
 
 def github_tree_entries(repository: str, revision: str, paths: list[str] | None = None) -> list[dict]:
@@ -91,8 +122,8 @@ def github_tree_entries(repository: str, revision: str, paths: list[str] | None 
         if key not in cache:
             url = f"https://api.github.com/repos/{repository}/git/trees/{sha}"
             request = Request(url + ("?recursive=1" if recursive else ""), headers=headers)
-            with open_http_source(request, timeout=120) as response:
-                tree = json.load(response)
+            tree = read_http_source(request, timeout=120, consume=json.load,
+                                    source_name=f'{repository}/git/trees/{sha}')
             if tree.get("truncated"):
                 raise SourceDataError("Upstream GitHub tree is truncated; select smaller tree_paths")
             cache[key] = tree["tree"]
@@ -160,8 +191,8 @@ def _read_index_source(url, destination, raw_dir, request_json=None):
     if request_json is not None:
         body = json.dumps(request_json, allow_nan=False).encode('utf-8')
         headers['Content-Type'] = 'application/json'
-    with open_http_source(Request(url, data=body, headers=headers), timeout=120) as response:
-        return response.read()
+    return read_http_source(Request(url, data=body, headers=headers), timeout=120,
+                            source_name=destination, retry_not_found=True)
 
 
 def _json_index_documents(index, named, raw_dir, trail):
@@ -401,8 +432,8 @@ def osf_entries(source: dict) -> list[dict]:
         if url in visited:
             raise SourceDataError('Repeated OSF folder or pagination link')
         visited.add(url)
-        with open_http_source(Request(url, headers={'User-Agent': 'measurement-db'}), timeout=120) as response:
-            page = json.load(response)
+        page = read_http_source(Request(url, headers={'User-Agent': 'measurement-db'}),
+                                timeout=120, consume=json.load, source_name=source.get('name'))
         if page.get('links', {}).get('next'):
             pending.append((page['links']['next'], prefix))
         for record in page['data']:
@@ -447,8 +478,8 @@ def google_drive_entries(source: dict, raw_dir: Path | None = None) -> list[dict
         raise SourceDataError(f'{name}: expected a public Google Drive folder URL')
 
     def read(url):
-        with open_http_source(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}), timeout=120) as response:
-            return response.read()
+        return read_http_source(Request(url, headers={'User-Agent': 'measurement-db', 'Accept-Encoding': 'identity'}),
+                                timeout=120, source_name=source['name'])
 
     class Links(HTMLParser):
         def __init__(self):
@@ -547,8 +578,7 @@ def wandb_entries(source: dict) -> list[dict]:
         request = Request("https://api.wandb.ai/graphql", data=json.dumps(dict(query=text,
             variables=dict(p=project, e=entity, **variables))).encode(),
             headers={"Content-Type":"application/json", "User-Agent":"measurement-db"})
-        with open_http_source(request, timeout=120) as response:
-            result = json.load(response)
+        result = read_http_source(request, timeout=120, consume=json.load, source_name=source.get('name'))
         if result.get("errors") or not result.get("data", {}).get("project"):
             raise SourceDataError("W&B project query failed or is not publicly accessible")
         return result["data"]["project"]
@@ -829,8 +859,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                     if source.get('revision') != record_id:
                         raise SourceDataError(f'{name}: Zenodo revision must equal the versioned record ID')
                     request = Request(f'https://zenodo.org/api/records/{record_id}', headers={'User-Agent': 'measurement-db'})
-                    with open_http_source(request, timeout=120) as response:
-                        record = json.load(response)
+                    record = read_http_source(request, timeout=120, consume=json.load, source_name=name)
                     matches = [entry for entry in record.get('files', []) if entry.get('key') == archive_name]
                     if (str(record.get('id')) != record_id or len(matches) != 1
                             or matches[0].get('size') != source['size']
@@ -864,8 +893,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                     if not {"url", "file", "size", "sha256"} <= index.keys():
                         raise SourceDataError(f"{name}: HELM index must name a pinned HTTP source")
                     request = Request(index["url"], headers={"User-Agent": "Mozilla/5.0"})
-                    with open_http_source(request, timeout=120) as response:
-                        payload = response.read()
+                    payload = read_http_source(request, timeout=120, source_name=index['file'])
                     if len(payload) != index["size"] or hashlib.sha256(payload).hexdigest() != index["sha256"]:
                         raise SourceDataError(f"{name}: HELM release index differs from its declared bytes")
                     prefixes = []
@@ -888,8 +916,7 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                     while True:
                         request = Request(f"https://storage.googleapis.com/storage/v1/b/{bucket}/o?{urlencode(parameters)}",
                                           headers={"User-Agent": "measurement-db"})
-                        with open_http_source(request, timeout=120) as response:
-                            page = json.load(response)
+                        page = read_http_source(request, timeout=120, consume=json.load, source_name=name)
                         for entry in page.get("items", []):
                             relative = entry["name"].removeprefix(prefix)
                             if not any(re.fullmatch(rule["match"], relative) for rule in source["files"]):
@@ -971,8 +998,9 @@ def upstream_artifacts(sources: list[dict], names: tuple[str, ...], *, raw_dir: 
                         # The commit pins the pointer; its object ID pins the
                         # large file. Verify both, rather than saving the pointer.
                         request = Request(entry["url"], headers={"User-Agent": "measurement-db"})
-                        with open_http_source(request, timeout=120) as response:
-                            pointer = response.read(1024)
+                        pointer = read_http_source(request, timeout=120,
+                                                   consume=lambda response: response.read(1024),
+                                                   source_name=destination, retry_not_found=True)
                         digest = hashlib.sha1(f"blob {len(pointer)}\0".encode() + pointer).hexdigest()
                         if len(pointer) != entry["size"] or digest != entry["digest"]:
                             raise SourceDataError(f"{name}: Git LFS pointer differs from the pinned commit")

@@ -18,7 +18,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install -r requirements.txt pytest==8.3.5
+      - run: pip install -r requirements.txt fastparquet pytest==8.3.5
       - name: Require explicit public or withheld metadata for every benchmark
         run: python -m scripts.build_measurement_tables.validate_benchmark_metadata --require-current --public-repository benchmarks/*/metadata.yaml
       - name: Require reviewed characterizations and source claims
