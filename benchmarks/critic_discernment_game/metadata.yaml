@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released Lighteval observations for the Llama-3.1-8B-Instruct baseline and a CDG-trained
     checkpoint on GSM8K and MATH-500.
   testing_condition: 'Import all eight native detail files without recomputing extractive_match. Full

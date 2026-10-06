@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: KRIS-Bench
   description: Released image-editing attempts and their individual consistency, instruction-following, quality
     and knowledge-plausibility ratings.

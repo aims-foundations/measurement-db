@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released TRIDENT instruction-rejection observations on the SafeAgentBench task bank. Six
     system configurations report whether an instruction is blocked or refused; this subset measures system
     behavior, not embodied task-completion success.

@@ -36,7 +36,7 @@ benchmark:
       '1': injected error detected
   categorical: true
   release_date: 2026-06
-  release: private
+  release: public
   name: Agentic Review Systems — Perturbation Benchmark
   multi_single_turn: multi_turn
 build:

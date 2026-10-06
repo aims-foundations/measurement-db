@@ -30,7 +30,6 @@ import shutil
 import sys
 import tempfile
 import urllib.request
-from urllib.error import URLError
 from pathlib import Path, PurePosixPath
 
 # Quiet the notice spam from the HuggingFace libraries.
@@ -252,7 +251,9 @@ class BenchmarkBuild(ABC):
         expected_sha256: str | None = None,
         request_headers: dict[str, str] | None = None,
         request_json: dict | None = None,
-        chunk_size: int = 256 * 1024 * 1024,
+        chunk_size: int = 64 * 1024 * 1024,
+        source_name: str | None = None,
+        retry_not_found: bool = False,
     ) -> Path:
         """Download and optionally verify one cached source artifact.
 
@@ -298,51 +299,72 @@ class BenchmarkBuild(ABC):
                 suffix=".tmp", delete=False,
             ) as temporary:
                 temporary_path = Path(temporary.name)
+                transfer_options = dict(timeout=timeout, opener=urllib.request.urlopen,
+                                        source_name=source_name or dest.name,
+                                        retry_not_found=retry_not_found)
+
+                def copy_complete(response):
+                    # A whole-file retry must never append to an incomplete copy.
+                    temporary.seek(0)
+                    temporary.truncate()
+                    shutil.copyfileobj(response, temporary)
+                    length = expected_size
+                    if length is None:
+                        declared = getattr(response, 'headers', {}).get('Content-Length')
+                        if declared is not None:
+                            length = int(declared)
+                    if length is not None and temporary.tell() < length:
+                        raise IncompleteRead(b'', length - temporary.tell())
+
                 if body is not None or expected_size is None or expected_size <= chunk_size:
                     request = urllib.request.Request(url, headers=headers, data=body)
-                    with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as response:
-                        shutil.copyfileobj(response, temporary)
+                    _source_files.read_http_source(request, consume=copy_complete, **transfer_options)
                 else:
-                    failures = 0
                     while temporary.tell() < expected_size:
-                        offset = temporary.tell()
-                        end = min(offset + chunk_size, expected_size) - 1
-                        request = urllib.request.Request(url, headers={**headers, "Range": f"bytes={offset}-{end}"})
-                        try:
-                            with urllib.request.urlopen(request, timeout=timeout) as response:
-                                if response.status == 206:
-                                    expected_range = f"bytes {offset}-{end}/{expected_size}"
-                                    if response.headers.get("Content-Range") != expected_range:
-                                        if (response.headers.get("Content-Encoding") == "gzip"
-                                                and headers.get("Accept-Encoding") != "gzip"):
-                                            # GCS ranges address stored gzip bytes even when a
-                                            # normal GET serves the uncompressed, pinned file.
-                                            # Restart without ranges; retain the exact hash check.
-                                            response.close()
-                                            request = urllib.request.Request(url, headers={**headers, "Accept-Encoding": "identity"})
-                                            with _source_files.open_http_source(request, timeout=timeout, opener=urllib.request.urlopen) as whole:
-                                                if whole.status != 200 or whole.headers.get("Content-Encoding") not in (None, "identity"):
-                                                    raise _source_files.SourceDataError("Upstream did not return the complete uncompressed source")
-                                                temporary.seek(0)
-                                                temporary.truncate()
-                                                shutil.copyfileobj(whole, temporary)
-                                            break
-                                        raise _source_files.SourceDataError("Upstream returned an unexpected byte range")
-                                elif response.status == 200 and offset == 0:
-                                    # Servers without Range support may send the complete file.
-                                    end = expected_size - 1
-                                else:
-                                    raise _source_files.SourceDataError("Upstream did not honor a resumed byte range")
-                                shutil.copyfileobj(response, temporary)
+                        # Finish this range before moving its end forward. Connection
+                        # failures and interrupted bodies share eight attempts per range.
+                        end = min(temporary.tell() + chunk_size, expected_size) - 1
+
+                        def range_request():
+                            return urllib.request.Request(url, headers={**headers,
+                                'Range': f'bytes={temporary.tell()}-{end}'})
+
+                        def copy_range(response):
+                            offset = temporary.tell()
+                            if response.status == 206:
+                                expected_range = f'bytes {offset}-{end}/{expected_size}'
+                                if response.headers.get('Content-Range') != expected_range:
+                                    if (response.headers.get('Content-Encoding') == 'gzip'
+                                            and headers.get('Accept-Encoding') != 'gzip'):
+                                        # GCS ranges can describe stored gzip bytes, while
+                                        # the pinned source is its uncompressed representation.
+                                        return {'Accept-Encoding': 'identity'}
+                                    raise _source_files.SourceDataError('Upstream returned an unexpected byte range')
+                            elif response.status == 200 and offset == 0:
+                                # Retry complete transfers for servers without Range support.
+                                return {}
+                            else:
+                                raise _source_files.SourceDataError('Upstream did not honor a resumed byte range')
+                            shutil.copyfileobj(response, temporary)
                             if temporary.tell() > end + 1:
-                                raise _source_files.SourceDataError("Upstream exceeded the requested byte range")
-                            if temporary.tell() != end + 1:
-                                raise OSError("Upstream transfer ended before the requested byte range")
-                            failures = 0
-                        except (OSError, URLError, IncompleteRead):
-                            failures += 1
-                            if failures >= 3:
-                                raise
+                                raise _source_files.SourceDataError('Upstream exceeded the requested byte range')
+                            if temporary.tell() < end + 1:
+                                raise IncompleteRead(b'', end + 1 - temporary.tell())
+                            return None
+
+                        fallback = _source_files.read_http_source(range_request, consume=copy_range,
+                                                                  **transfer_options)
+                        if fallback is not None:
+                            request = urllib.request.Request(url, headers={**headers, **fallback})
+
+                            def copy_fallback(response):
+                                if response.status != 200 or (fallback and
+                                        response.headers.get('Content-Encoding') not in (None, 'identity')):
+                                    raise _source_files.SourceDataError('Upstream did not return the complete source')
+                                copy_complete(response)
+
+                            _source_files.read_http_source(request, consume=copy_fallback, **transfer_options)
+                            break
             if has_pinned_integrity:
                 try:
                     _source_files.verify_file(
@@ -352,7 +374,7 @@ class BenchmarkBuild(ABC):
                     )
                 except _source_files.SourceDataError as exc:
                     raise _source_files.SourceDataError(
-                        f"[{self.slug}] downloaded {url} for {dest} failed "
+                        f"[{self.slug}] source {source_name or dest.name!r} failed "
                         f"integrity validation: {exc}"
                     ) from None
             temporary_path.replace(dest)
@@ -811,6 +833,7 @@ class BenchmarkBuild(ABC):
                     self._download(artifact["url"], temporary, timeout=600,
                                    expected_size=artifact["size"],
                                    expected_sha256=artifact["digest"] if artifact["hash_kind"] == "sha256" else None,
+                                   source_name=artifact["file"], retry_not_found=True,
                                    **encoding_options)
                 _source_snapshots.verify_snapshot_file(temporary, artifact)
                 temporary.replace(target)

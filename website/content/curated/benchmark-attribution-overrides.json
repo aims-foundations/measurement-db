@@ -1,0 +1,366 @@
+{
+ "aliases": {
+  "osworld": {
+   "metadataSlug": "osworld_v1",
+   "evidenceUrl": "https://github.com/xlang-ai/OSWorld",
+   "reason": "The visible osworld record is the original OSWorld work; osworld_v1 is the repository's attribution-only metadata source for that same provider publication. This alias does not reuse its unfinished measurement build."
+   }
+  },
+ "affiliations": {
+  "arc_agi_3": {
+   "status": "not_applicable",
+   "evidenceUrl": "https://arxiv.org/abs/2603.24621",
+   "reason": "The paper's sole author is ARC Prize Foundation itself and the paper supplies no separate author affiliation. Repeating the corporate author as a lead-author institution would imply a person-to-institution relationship that is not present."
+  },
+  "tengu": {
+   "status": "not_applicable",
+   "evidenceUrl": "https://huggingface.co/datasets/lightblue/tengu_bench",
+   "reason": "The provider supplies no formal paper author list, so there are no lead paper authors whose institutional affiliations can be represented. Producer credit remains on the dataset reference."
+  }
+ },
+ "authorVerifications": {
+  "alignment_faking": {
+   "expectedCount": 20,
+   "evidenceUrl": "https://arxiv.org/abs/2412.14093",
+   "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+  },
+  "arc_agi_3": {
+   "expectedCount": 1,
+   "organizationAuthors": [
+    "ARC Prize Foundation"
+   ],
+   "evidenceUrl": "https://arxiv.org/abs/2603.24621",
+   "reason": "The primary paper formally identifies ARC Prize Foundation as its sole corporate author."
+  },
+  "arcagi": {
+   "expectedCount": 1,
+   "evidenceUrl": "https://arxiv.org/abs/1911.01547",
+   "reason": "The primary paper identifies François Chollet as its sole author."
+  },
+  "bfcl": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://proceedings.mlr.press/v267/patil25a.html",
+   "reason": "The final PMLR author list was checked after replacing a missing local citation."
+  },
+  "frontieror": {
+   "expectedCount": 27,
+   "evidenceUrl": "https://arxiv.org/abs/2605.25246",
+   "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_airbench": {
+   "expectedCount": 12,
+   "evidenceUrl": "https://openreview.net/forum?id=UVnD9Ze6mF",
+   "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_anthropic_redteam": {
+   "expectedCount": 36,
+   "evidenceUrl": "https://arxiv.org/abs/2209.07858",
+   "reason": "The primary paper author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_bbq": {
+   "expectedCount": 8,
+   "evidenceUrl": "https://aclanthology.org/2022.findings-acl.165/",
+   "reason": "The final ACL author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_bold": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://doi.org/10.1145/3442188.3445924",
+   "reason": "The final publication author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_harmbench": {
+   "expectedCount": 12,
+   "evidenceUrl": "https://proceedings.mlr.press/v235/mazeika24a.html",
+   "reason": "The final PMLR author list was checked after replacing an abbreviated local citation."
+  },
+  "helm_xstest": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://aclanthology.org/2024.naacl-long.301/",
+   "reason": "The final ACL author list was checked after replacing an abbreviated local citation."
+  },
+  "ikp": {
+   "expectedCount": 1,
+   "evidenceUrl": "https://arxiv.org/abs/2604.24827",
+   "reason": "The primary paper identifies Bojie Li as its sole author."
+  },
+  "legalbench": {
+   "expectedCount": 40,
+   "evidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2023/hash/89e44582fd28ddfea1ea4dcb0ebbf4b0-Abstract-Datasets_and_Benchmarks.html",
+   "reason": "The final NeurIPS author list was checked after replacing an abbreviated local citation."
+  },
+  "osworld_v2": {
+   "expectedCount": 36,
+   "evidenceUrl": "https://github.com/xlang-ai/OSWorld-V2/blob/bf0ee4338c32cbbf817fd8473d0a5a9a601a0f6d/README.md#-citation",
+   "reason": "The pinned provider citation was checked after replacing the XLANG Lab shorthand."
+  },
+  "preference_dissection": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://aclanthology.org/2024.acl-long.99/",
+   "reason": "The final ACL Anthology author list and citation were checked."
+  },
+  "supergpqa": {
+   "expectedCount": 96,
+   "evidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf#page=19",
+   "reason": "The final paper directs readers to Appendix A for its full author list; the 96 named people there were checked because the NeurIPS proceedings export contains only 95 entries and includes malformed or incomplete names."
+  },
+  "tau_voice": {
+   "expectedCount": 4,
+   "evidenceUrl": "https://arxiv.org/abs/2603.13686",
+   "reason": "The primary paper author list was checked after replacing a missing local citation."
+  },
+  "terminal_bench": {
+   "expectedCount": 84,
+   "evidenceUrl": "https://openreview.net/forum?id=a7Qa4CcHak",
+   "reason": "The final ICLR author list was checked after replacing a missing local citation."
+  },
+  "terminal_bench_2_1": {
+   "expectedCount": 85,
+   "evidenceUrl": "https://github.com/harbor-framework/terminal-bench-2-1#citing-terminal-bench",
+   "reason": "The provider-requested paper citation was checked after replacing the Terminal-Bench Team shorthand."
+  },
+  "truthfulqa_mc": {
+   "expectedCount": 3,
+   "evidenceUrl": "https://arxiv.org/abs/2109.07958",
+   "reason": "The primary paper identifies exactly three authors."
+  },
+  "afrimedqa": {
+   "expectedCount": 26,
+   "evidenceUrl": "https://arxiv.org/abs/2411.15640",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "ai2d_test": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://arxiv.org/abs/1603.07396",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "arena_140k": {
+   "expectedCount": 11,
+   "evidenceUrl": "https://arxiv.org/abs/2403.04132",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "arena_hard": {
+   "expectedCount": 8,
+   "evidenceUrl": "https://arxiv.org/abs/2406.11939",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "biggen": {
+   "expectedCount": 32,
+   "evidenceUrl": "https://arxiv.org/abs/2406.05761",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "charxiv": {
+   "expectedCount": 13,
+   "evidenceUrl": "https://arxiv.org/abs/2406.18521",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "deepswe": {
+   "expectedCount": 4,
+   "evidenceUrl": "https://arxiv.org/abs/2607.07946",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "genai_learning": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://www.pnas.org/doi/10.1073/pnas.2422633122",
+   "reason": "Six-author list verified against the final PNAS article; the corrected display name is Özge Kabakcı."
+  },
+  "haiid": {
+   "expectedCount": 4,
+   "evidenceUrl": "https://arxiv.org/abs/2107.07015",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "helm_real_toxicity_prompts": {
+   "expectedCount": 5,
+   "evidenceUrl": "https://arxiv.org/abs/2009.11462",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "helm_simple_safety_tests": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2311.08370",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "helm_thaiexam": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2312.13951",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "icpc2_code_selector": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2507.14681",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "judgebench": {
+   "expectedCount": 8,
+   "evidenceUrl": "https://arxiv.org/abs/2410.12784",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "lawbench": {
+   "expectedCount": 9,
+   "evidenceUrl": "https://arxiv.org/abs/2309.16289",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "lexeval": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://arxiv.org/abs/2409.20288",
+   "reason": "Six-author list verified against the provider-submitted arXiv record; the corrected names are Yueyue Wu and Ruizhe Zhang."
+  },
+  "livecodebench": {
+   "expectedCount": 10,
+   "evidenceUrl": "https://arxiv.org/abs/2403.07974",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "matharena": {
+   "expectedCount": 5,
+   "evidenceUrl": "https://arxiv.org/abs/2505.23281",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "matharena_platform": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2605.00674",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mathvista_mini": {
+   "expectedCount": 10,
+   "evidenceUrl": "https://arxiv.org/abs/2310.02255",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mmbench_v11": {
+   "expectedCount": 12,
+   "evidenceUrl": "https://arxiv.org/abs/2307.06281",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mmdocrag": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://openreview.net/forum?id=W4b3v9jx1p",
+   "reason": "Ordered author list verified against the provider paper on OpenReview."
+  },
+  "mme": {
+   "expectedCount": 14,
+   "evidenceUrl": "https://arxiv.org/abs/2306.13394",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mmlu": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2009.03300",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mmlupro": {
+   "expectedCount": 17,
+   "evidenceUrl": "https://arxiv.org/abs/2406.01574",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mmmu_dev_val": {
+   "expectedCount": 22,
+   "evidenceUrl": "https://arxiv.org/abs/2311.16502",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "mtbench": {
+   "expectedCount": 13,
+   "evidenceUrl": "https://arxiv.org/abs/2306.05685",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "osworld": {
+   "expectedCount": 17,
+   "evidenceUrl": "https://arxiv.org/abs/2404.07972",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "programbench": {
+   "expectedCount": 12,
+   "evidenceUrl": "https://arxiv.org/abs/2605.03546",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "prompt_to_leaderboard": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2502.14855",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "real_webagents": {
+   "expectedCount": 18,
+   "evidenceUrl": "https://arxiv.org/abs/2504.11543",
+   "reason": "Corrected 18-author list verified against the provider-submitted arXiv record; the stale OpenReview paper directs readers to this version."
+  },
+  "researchcodebench": {
+   "expectedCount": 8,
+   "evidenceUrl": "https://openreview.net/forum?id=3k70Vt0YFS",
+   "reason": "Ordered author list verified against the provider paper on OpenReview."
+  },
+  "rewardbench": {
+   "expectedCount": 12,
+   "evidenceUrl": "https://arxiv.org/abs/2403.13787",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "rewardbench2": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2506.01937",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "sorrybench": {
+   "expectedCount": 16,
+   "evidenceUrl": "https://arxiv.org/abs/2406.14598",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "swe_chat": {
+   "expectedCount": 6,
+   "evidenceUrl": "https://arxiv.org/abs/2604.20779",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "swebench": {
+   "expectedCount": 7,
+   "evidenceUrl": "https://arxiv.org/abs/2310.06770",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "swebench_java": {
+   "expectedCount": 20,
+   "evidenceUrl": "https://arxiv.org/abs/2408.14354",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "tau2_bench": {
+   "expectedCount": 5,
+   "evidenceUrl": "https://arxiv.org/abs/2506.07982",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  },
+  "wildbench": {
+   "expectedCount": 9,
+   "evidenceUrl": "https://arxiv.org/abs/2406.04770",
+   "reason": "Ordered author list verified against the provider-submitted arXiv record."
+  }
+ },
+ "citations": {
+  "supergpqa": {
+   "bibtex": "@inproceedings{NEURIPS2025_a3c5af1f,\n  author={Xinrun Du and Yifan Yao and Kaijing Ma and Bingli Wang and Tianyu Zheng and King Zhu and Minghao Liu and Yiming Liang and Xiaolong Jin and Zhenlin Wei and Chujie Zheng and Kaixin Deng and Shawn Gavin and Shian Jia and Sichao Jiang and Qinrui Li and Rui Li and Sirun Li and Yizhi Li and Yunwen Li and Yiyan Liao and David Ma and Yuansheng Ni and Haoran Que and Qiyao Wang and Zekun Moore Wang and Zhoufutu Wen and Siwei Wu and Tyshawn Hsing and Ming Xu and Zhenzhu Yang and Junting Zhou and Yuelin Bai and Xingyuan Bu and Chenglin Cai and Liang Chen and Yifan Chen and Chengtuo Cheng and Tianhao Cheng and Keyi Ding and Siming Huang and Yun Huang and Yaoru Li and Yizhe Li and Zhaoqun Li and Tianhao Liang and Chengdong Lin and Hongquan Lin and Yinghao Ma and Tianyang Pang and Zhongyuan Peng and Zifan Peng and Qige Qi and Shi Qiu and Xingwei Qu and Shanghaoran Quan and Yizhou Tan and Chenqing Wang and Hao Wang and Yiya Wang and Yubo Wang and Zili Wang and Jiajun Xu and Kexin Yang and Ruibin Yuan and Yuanhao Yue and Tianyang Zhan and Chun Zhang and Jinyang Zhang and Xingjian Zhang and Xiyue Zhang and Yue Zhang and Yongchi Zhao and Xiangyu Zheng and Chenghua Zhong and Meng Cao and Yang Gao and Zhoujun Li and Dayiheng Liu and Qian Liu and Tianyu Liu and Shiwen Ni and Junran Peng and Yujia Qin and Wenbo Su and Guoyin Wang and Shi Wang and Jian Yang and Min Yang and Xiang Yue and Zhaoxiang Zhang and Wangchunshu Zhou and Jiaheng Liu and Qunshu Lin and Wenhao Huang and Ge Zhang},\n  booktitle={Advances in Neural Information Processing Systems},\n  doi={10.52202/085713-3766},\n  editor={D. Belgrave and C. Zhang and H. Lin and R. Pascanu and P. Koniusz and M. Ghassemi and N. Chen},\n  publisher={Curran Associates, Inc.},\n  title={SuperGPQA: Scaling LLM Evaluation across 285 Graduate Disciplines},\n  url={https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf},\n  volume={38, Main Conference},\n  year={2025},\n}",
+   "evidenceUrl": "https://proceedings.neurips.cc/paper_files/paper/2025/file/a3c5af1f56fc73eef1ba0f442739f5ca-Paper-Datasets_and_Benchmarks_Track.pdf#page=19",
+   "reason": "The final paper explicitly places its full author list in Appendix A. This override retains the official NeurIPS bibliographic fields but replaces the proceedings export's 95-entry malformed author field with the appendix's exact 96 named people."
+  }
+ },
+ "references": {
+  "tengu": {
+   "kind": "dataset",
+   "title": "Tengu-Bench",
+   "url": "https://huggingface.co/datasets/lightblue/tengu_bench",
+   "year": "2024",
+   "authors": [],
+   "producers": [
+    {
+     "name": "Lightblue KK.",
+     "role": "dataset producer",
+     "url": "https://huggingface.co/datasets/lightblue/tengu_bench"
+    }
+   ],
+   "contributors": [
+    {
+     "name": "Yuki Horikawa",
+     "role": "dataset repository contributor",
+     "url": "https://huggingface.co/fukufuk"
+    }
+   ],
+   "measurementSources": [
+    {
+     "name": "Shisa.AI Shaberi",
+     "role": "measurement release",
+     "url": "https://github.com/shisa-ai/shaberi"
+    }
+   ],
+   "citationStatus": "not_provided",
+   "evidenceUrl": "https://huggingface.co/datasets/lightblue/tengu_bench",
+   "reason": "The provider publishes no formal author list or citation template. Credit the named producer and measurement release without inventing paper authorship."
+  }
+ }
+}

@@ -43,7 +43,8 @@ benchmark:
       '1': criterion satisfied
   categorical: true
   release_date: 2026-03
-  release: private
+  release: withheld
+  release_reason: "The captured project license expressly prohibits redistribution without prior written permission; project-use authorization does not cover publication."
   name: SciVisAgentBench
 build:
   contract_version: 2

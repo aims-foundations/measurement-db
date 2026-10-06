@@ -125,6 +125,8 @@ class MJBench(BenchmarkBuild):
         paths = sorted({path for pattern in parameters['result_globs'].values() for path in self.raw_dir.glob(pattern)})
         parts = []
         for path in paths:
+            # Workspace names must never become part of the source protocol.
+            source_parts = path.relative_to(self.raw_dir).parts
             rows = json.loads(path.read_text())
             if not rows:
                 continue
@@ -155,9 +157,11 @@ class MJBench(BenchmarkBuild):
                 table['model'] = standard[1] if standard else closed[1] if closed else path.parent.name
                 table['style'] = standard[2] if standard else 'number' if closed else 'not_recorded'
                 table['scale'] = standard[3] if standard else '10' if closed else 'not_recorded'
-                dimension = next((name for name in ['alignment', 'artifacts', 'safety', 'bias'] if name in path.parts), None)
+                dimension = next((name for name in ['alignment', 'artifacts', 'safety', 'bias'] if name in source_parts), None)
                 if 'images_dir' in table:
                     dimension = 'bias'
+                if dimension is None and closed:
+                    dimension = 'alignment'
                 if dimension is None:
                     dimension = parameters['legacy_dimensions'][re.sub(r'_?0\.0$', '', basename).lower()]
                 table['dimension'] = dimension
@@ -174,7 +178,7 @@ class MJBench(BenchmarkBuild):
                     table['model_output'] = table.native_record.map(lambda row: dict(scores=row['scores']))
                 else:
                     table['model_output'] = table.native_record.map(lambda row: dict(score_0=row.get('score_0'), score_1=row.get('score_1')))
-                table['preference_encoding'] = 'online' if 'online_result' in path.parts else (
+                table['preference_encoding'] = 'online' if 'online_result' in source_parts else (
                     'multi' if 'vlm_pred' in table else 'single')
             score_models = table.model.isin(parameters['score_models'])
             table.loc[score_models, ['style', 'scale', 'mode']] = ['scalar', 'not_applicable', 'single_image']

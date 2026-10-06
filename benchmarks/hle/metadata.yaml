@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Humanity's Last Exam
   description: Released Sup AI pro and DeepWriter agentic evaluations of HLE, retaining distinct execution systems,
     original grading and complete recorded streams.

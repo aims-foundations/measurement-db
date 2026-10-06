@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'AlgoTune evaluates agents that optimize 154 numerical-programming tasks. This curation retains one
     published final speedup per task/model and the existing binary threshold: a finite final_speedup >= 1.0 is 1;
     a smaller finite speedup or the provider''s explicit N/A is 0.'

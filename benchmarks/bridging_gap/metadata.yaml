@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Bridging-the-Gap African Languages
   description: Published multilingual question-answering results on Winogrande, Belebele and three clinical MMLU
     sections, with base and fine-tuned models.

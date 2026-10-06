@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BraveGuard (historical guard decisions)
   description: Published development-checkpoint guard classifications of recorded computer-use-agent trajectories.
   testing_condition: Import 536 native guard decisions from three historical exports (263, 263 and 10 rows). Preserve

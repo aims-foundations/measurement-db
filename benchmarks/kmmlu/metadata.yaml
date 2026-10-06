@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: KMMLU
   description: Published Korean multiple-choice predictions from the independently maintained Korean LLM Benchmark
     Suite, matched to the original KMMLU question bank.

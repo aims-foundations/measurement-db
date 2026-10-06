@@ -13,8 +13,10 @@ from measurement_db.build_base import BenchmarkBuild, Judge
 
 class FrontierOR(BenchmarkBuild):
     def download(self):
-        return self.fetch_sources("task_index", "website_index", "website_history", "website_metrics",
-                                  "website_notice", "website_task_view", "results", "task_bank")
+        # The homepage and history remain provenance references in metadata;
+        # neither is read by table construction or the independent source audit.
+        return self.fetch_sources("task_index", "website_index", "website_metrics",
+                                  "website_task_view", "results", "task_bank")
 
     def build_tables(self) -> dict[str, pd.DataFrame]:
         config = self.build_parameters

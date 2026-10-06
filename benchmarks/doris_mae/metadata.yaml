@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DORIS-MAE
   description: "Published Anno-GPT relevance judgments and explanations for scientific requirement\u2013abstract\
     \ pairs."

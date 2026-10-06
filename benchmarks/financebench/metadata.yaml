@@ -48,7 +48,7 @@ benchmark:
   benchmark_features:
     item_bank: open_source_human_eval_sample
     grading: provider_human_review
-  release: private
+  release: public
 build:
   contract_version: 2
   parameters:

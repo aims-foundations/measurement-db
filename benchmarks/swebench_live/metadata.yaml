@@ -39,6 +39,7 @@ benchmark:
   categorical: true
   release_date: '2025-05-21'
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: SWE-bench-Live
   one_line_description: Evaluates coding agents on resolving real repository issues using per-instance test outcomes.
   multi_single_turn: multi_turn

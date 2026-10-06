@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: ChatGPT Drift (LLMDrift)
   description: Recorded 2023 GPT-3.5/GPT-4 snapshots across eight tasks, retaining complete outputs and original
     grading semantics.

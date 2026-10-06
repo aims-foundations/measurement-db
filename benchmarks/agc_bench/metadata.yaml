@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AGC-Bench
   description: Released model attempts and individual creativity judgments across the AGC-Bench component datasets.
   testing_condition: Import the pinned generation corpus, retaining native scores, missing grades, complete

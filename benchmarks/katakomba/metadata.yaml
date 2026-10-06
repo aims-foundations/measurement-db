@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Katakomba
   description: Released final-checkpoint NetHack episode outcomes for 572 independently trained offline-RL policies
     across 38 character-configuration tasks.

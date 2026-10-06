@@ -42,7 +42,12 @@ benchmark:
       '1': correct class
   categorical: true
   release_date: 2023-12
-  release: public
+  release: withheld
+  release_reason: >-
+    Source reproducibility hold, reviewed 2026-10-04: the required ImageNet-A archive at
+    https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar returns HTTP 404, and no
+    author-hosted or author-endorsed replacement matching the pinned input has been verified.
+    Restore public release when that source is available and strict table reproduction passes.
   name: 'ImageNet-Hard zoom study: ImageNet-A'
   version: 2023 main and additional releases
   granularity: item

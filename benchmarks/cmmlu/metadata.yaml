@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: CMMLU
   description: Chinese multiple-choice knowledge questions with complete OpenCompass model predictions and a versioned reconstruction of option-extraction accuracy.
   testing_condition: >-

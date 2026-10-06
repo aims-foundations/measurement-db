@@ -41,6 +41,7 @@ benchmark:
   multi_single_turn: multi_turn
   release_date: 2026-06
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   granularity: item
   version: GitHub a4e0913d76c3dbc433ecf39903afbe7711a6a807 and original website panel generated 2026-06-17T05:30:49.889Z
   one_line_description: Measures agents performing preclinical pharmacology analysis on released task definitions.

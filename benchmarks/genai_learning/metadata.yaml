@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: GenAI Learning
   description: Original student practice and exam grades from a mathematics tutoring study, with separately annotated
     standalone GPT-4 answers.

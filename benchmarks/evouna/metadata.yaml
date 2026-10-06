@@ -35,7 +35,7 @@ benchmark:
       '1': correct
   categorical: true
   release_date: 2023-05
-  release: private
+  release: public
   name: EVOUNA
   multi_single_turn: single_turn
 build:

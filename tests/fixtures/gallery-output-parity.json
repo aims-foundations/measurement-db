@@ -1,0 +1,143 @@
+{
+  "referenceCommit": "5fcbafd13",
+  "referenceScriptSha256": "9e31317f54762a5711faf85fc53216189a202e3517b4d99d2694df621aeb8801",
+  "cases": {
+    "binary": {
+      "detail": "cdac752562f01f52c649024a49ed17e4dbc34293574b8397a7cef4c2abc7c0ba",
+      "card": "3a1ed7fe58183541218848642a3bdb85e02ac4534c2997ff9559b1f2f4c639a1",
+      "assets": {
+        "benchmarks/data/binary.json.gz": "69138236682d3868efaa1a676c79f12fe36302ca02f8f5213de9330f96c03b62",
+        "benchmarks/joined/binary.json.gz": "0faf2ced406e5db807f90e253f126005530588da49cd0dc37e4c080ec26e3ba1",
+        "benchmarks/matrices/binary.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/traces/binary/s0.json.gz": "0b0d71ce68af0f052744d8882520e9ad60fd8af22d4b5c17c03980c022666a8d",
+        "benchmarks/traces/binary/s1.json.gz": "49e36a36e9c8710aa8b39d0a46bd11862df2bb0e4ef10c6a0a048e5632a23773"
+      }
+    },
+    "continuous": {
+      "detail": "0ce2c5cd7b0e6bfc7192092e15d813bb2a2a93f9ba102bde41f88d5e35b4e049",
+      "card": "a4776550612f6aa2e1119f6740741a94fbde8bcc293dc0644d788c87451b5e00",
+      "assets": {
+        "benchmarks/data/continuous.json.gz": "395333e8a7da4985d5bfa6655c77d7dc58c407340de7b112f8905034bcf61b87",
+        "benchmarks/joined/continuous.json.gz": "34561b6e2aa0268152bca50ddc7f18aea7306e91607853de429145618caebdb0",
+        "benchmarks/matrices/continuous.png": "b7fa6c6a362e6cd4c6b151cd09b830003ec3d7de93dae69fdd2b56d6b67491c6",
+        "benchmarks/traces/continuous/s0.json.gz": "0b0d71ce68af0f052744d8882520e9ad60fd8af22d4b5c17c03980c022666a8d",
+        "benchmarks/traces/continuous/s1.json.gz": "49e36a36e9c8710aa8b39d0a46bd11862df2bb0e4ef10c6a0a048e5632a23773"
+      }
+    },
+    "ragged": {
+      "detail": "9458bd35c6b1cc90dd609c27a2a73e0dac7bbc72897d1711ec720168c820c934",
+      "card": "e9f6d3b8174c6c84be629eb48166f7441bfc1d158c8a11ca9aabdd9618c23211",
+      "assets": {
+        "benchmarks/data/ragged.json.gz": "880f29d8fc72341fdedef39c016cddb7ac7971fa3a59e0461488606c58b17b99",
+        "benchmarks/joined/ragged.json.gz": "315b231e44f779d968280e61ca47290444615add2d5e35adc64bea97a87be4f7",
+        "benchmarks/matrices/ragged/protocol_a_opponent_n_a_trial_1.png": "613bb35ec3604a5045a8a44955f480cc79aa0d733696dd42822415809ad17f4e",
+        "benchmarks/matrices/ragged/protocol_a_opponent_n_a_trial_2.png": "f49024c5d729cce496e76d106382225cb931f071d4e7c369642c8b4eed9c862b",
+        "benchmarks/matrices/ragged/protocol_b_opponent_extra_trial_1.png": "613bb35ec3604a5045a8a44955f480cc79aa0d733696dd42822415809ad17f4e",
+        "benchmarks/matrices/ragged/protocol_b_opponent_extra_trial_2.png": "f49024c5d729cce496e76d106382225cb931f071d4e7c369642c8b4eed9c862b",
+        "benchmarks/traces/ragged/s0.json.gz": "8d325936002980e29b1930d1ce94963c4a3711b67c3a051b01ea69f68a311784",
+        "benchmarks/traces/ragged/s1.json.gz": "1edd8945a433a530b41938af11d835df05035a8b294f15ea4d3f0860e140b79d"
+      }
+    },
+    "collapsed": {
+      "detail": "ebb78786ecadcc03c86e7e835583cca02d0aaff5f143491245ee3a94044befd6",
+      "card": "cf8a2903e33cec890a082d6a120a6d832663f6e68635c9cfc5ea5d8d041e73e0",
+      "assets": {
+        "benchmarks/data/collapsed.json.gz": "40a05e09bb3308c4eae61c2365c5667782eb591a97bcebf0af74729f4be6f54a",
+        "benchmarks/joined/collapsed.json.gz": "815c05f7f4e02b4bc9efeb89ee9b69fb40ad35d48e78c1a21ecf350d8eac80e3",
+        "benchmarks/matrices/collapsed/condition_dataset_b.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/collapsed/condition_protocol_a.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/traces/collapsed/s0.json.gz": "21537abcf35f9a0c01350ce1ec0dc1cf518c873a5ade9c1c4d78834d5658adf5",
+        "benchmarks/traces/collapsed/s1.json.gz": "a9a0bfd17ff62b3087293d0625379f5e05cb7eecdce5f7397e6bf75714a643bb"
+      }
+    },
+    "trial_cap": {
+      "detail": "a25b1a4068eac3f103a26099f4136759ae131e5c2fc8838d211c4e8db25e3e45",
+      "card": "2057667d2d77e1fff97e2df3603045cf3c98b0f470342ed6b9a5ddd2d8142d89",
+      "assets": {
+        "benchmarks/data/trial_cap.json.gz": "74d39780dda6207062a16fd1b950fc9bc950d650fb953a39ab31f84a88f06569",
+        "benchmarks/joined/trial_cap.json.gz": "8736086f3681ed1ff58c1f44e1d6ae51e145425b286fd780af8530347da8e2ef",
+        "benchmarks/matrices/trial_cap/trial_1.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_10.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_11.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_12.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_13.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_14.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_15.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_16.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_2.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_3.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_4.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_5.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_6.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_7.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/matrices/trial_cap/trial_8.png": "8c436573ad3f55daa9d3d557f4a96254523b1ededde95d6119bbc8c65453abb3",
+        "benchmarks/matrices/trial_cap/trial_9.png": "0a0550e63d15c6ed384caaad878eec33a2e144403649634a9a4d742cda8ed1a8",
+        "benchmarks/traces/trial_cap/s0.json.gz": "d2757dbd551884dd58d44090ae4c49c1f42167a1cdd7c9a69a467eec954e7cd2",
+        "benchmarks/traces/trial_cap/s1.json.gz": "d4eef90309fb186efda705daef2a911f377a0a469fa8c7fd152bf4a313fb115b"
+      }
+    },
+    "normalized": {
+      "detail": "d5412ee7847643d1f694e45eb465dc95b8d143372ac827f86f8a3929687eda9c",
+      "card": "c0042ba452d3a5ff8321d0fa3cce8f22b930876248e58472e1af9635cbe473bd",
+      "assets": {
+        "benchmarks/data/normalized.json.gz": "e3505bcff61b24884deae8542867f68d3ca976a863e9a0a7ddc5e8f7eb19a090",
+        "benchmarks/joined/normalized.json.gz": "b970fe65f684cdfea3dff038d03d352815d7dafc55568a5d7c5dd14f9108aeef",
+        "benchmarks/matrices/normalized/difficulty_0_harness_h0_judge_judge-a_opponent_reference_precision_full_temperature_0.png": "8e0f90dccdafe3412beea901a50787b1257258d2492f15d40c475cf26d5bafb0",
+        "benchmarks/matrices/normalized/difficulty_0_harness_h0_judge_judge-a_opponent_reference_precision_full_temperature_1.png": "8e0f90dccdafe3412beea901a50787b1257258d2492f15d40c475cf26d5bafb0",
+        "benchmarks/matrices/normalized/difficulty_0_harness_h1_judge_judge-a_opponent_reference_precision_full_temperature_0.png": "d823bcb8f1993948ebb2aceaf5a753cd6d0153c3c9ff254ce4b69dd5bf510e11",
+        "benchmarks/matrices/normalized/difficulty_0_harness_h1_judge_judge-a_opponent_reference_precision_full_temperature_1.png": "d823bcb8f1993948ebb2aceaf5a753cd6d0153c3c9ff254ce4b69dd5bf510e11",
+        "benchmarks/matrices/normalized/difficulty_1_harness_h0_judge_judge-a_opponent_reference_precision_full_temperature_0.png": "d823bcb8f1993948ebb2aceaf5a753cd6d0153c3c9ff254ce4b69dd5bf510e11",
+        "benchmarks/matrices/normalized/difficulty_1_harness_h0_judge_judge-a_opponent_reference_precision_full_temperature_1.png": "d823bcb8f1993948ebb2aceaf5a753cd6d0153c3c9ff254ce4b69dd5bf510e11",
+        "benchmarks/matrices/normalized/difficulty_1_harness_h1_judge_judge-a_opponent_reference_precision_full_temperature_0.png": "8e0f90dccdafe3412beea901a50787b1257258d2492f15d40c475cf26d5bafb0",
+        "benchmarks/matrices/normalized/difficulty_1_harness_h1_judge_judge-a_opponent_reference_precision_full_temperature_1.png": "8e0f90dccdafe3412beea901a50787b1257258d2492f15d40c475cf26d5bafb0",
+        "benchmarks/traces/normalized/s0.json.gz": "87cd83eb32faaaa19f00054985150b747ab417c11de921739b8fcf8161922e69",
+        "benchmarks/traces/normalized/s1.json.gz": "0fb6ae8d7bec67cf8ef205977c26633401576ec58a1e813ca8570ae682d74f62"
+      }
+    },
+    "pairwise": {
+      "detail": "cf4536dcfb786632ba5fabd701e294d3e9a71759c76b1d18029d9d36ec436982",
+      "card": "2eee9882e1ffc1a4dc073a53d1d17f150118847ef2658894c7e44631e6ed4045",
+      "assets": {
+        "benchmarks/data/pairwise.json.gz": "594979515fcfb6ed4c86ece4cfa06548427a358f380e8627f9fed309c9997095",
+        "benchmarks/joined/pairwise.json.gz": "c72b1c615be8ecdb298ace6fee843d7d553606cc2bbad667d4d07a10702d21e6",
+        "benchmarks/matrices/pairwise/opponent_Model 0.png": "8e0f90dccdafe3412beea901a50787b1257258d2492f15d40c475cf26d5bafb0",
+        "benchmarks/matrices/pairwise/opponent_Model 1.png": "d823bcb8f1993948ebb2aceaf5a753cd6d0153c3c9ff254ce4b69dd5bf510e11",
+        "benchmarks/traces/pairwise/s0.json.gz": "86c1d937dd6c062a410d7cf8bd684ca70acbf34371775107c46516bbdcc4da39",
+        "benchmarks/traces/pairwise/s1.json.gz": "1dfc45ea695e903361312975825770121402abf467b50ed0038343b246600c02"
+      }
+    },
+    "sessions": {
+      "detail": "7c58e21e12128cccb3f865b1e285ed71b0ea37f1a811033a0adee0ea1223682f",
+      "card": "3bc46f69315cfe6b389467d06dc50aed4d0fbfb500f871897bbfe8d7278caa38",
+      "assets": {
+        "benchmarks/data/sessions.json.gz": "4bf17abd475861266ee7e4af6c16719efcd13ac20b35764fab0f97191b9f8e59",
+        "benchmarks/joined/sessions.json.gz": "96e3020e970bd8f44c8f3a24dff90d8f31c844e97e6aff1e7dcaf0d654bcd854",
+        "benchmarks/matrices/sessions.png": "0775bd0617bbba80dbee699308a822a89743d918f159ba3539dfe7aacd9e0b49",
+        "benchmarks/traces/sessions/s0.json.gz": "4182411b5b77f1534aaa7132552ba92b9b1d6190833eb8b2da064ca0440ffa2a",
+        "benchmarks/traces/sessions/s1.json.gz": "ca2256d31832266312234f9c9b00ef6bb58e0c4c240d4a3281caa05854b6d2e8"
+      }
+    },
+    "faceted": {
+      "detail": "b454eb509e5d30e50b903adaefdf9b661d914a31b3951e17ecf76c06f80d0825",
+      "card": "53c365c69b768a5d53e9c59955d55adace4acce4ceb9d63c99c959fccb1dd9b0",
+      "assets": {
+        "benchmarks/data/faceted.json.gz": "a4d378d3d1369f2bafe43efbf93644377834e0472aa491bbc657390cbf2e977c",
+        "benchmarks/joined/faceted.json.gz": "f4778fd95bf09c972780a8c7b72a20097c5a2b101ad6ac1796c964b7c1751b9a",
+        "benchmarks/matrices/faceted/task_task-0_stage_post.png": "2f4678dbc694eb8f0c39f563e6013ab7cc70df9fad484f96b226e8088113b541",
+        "benchmarks/matrices/faceted/task_task-0_stage_pre.png": "2f4678dbc694eb8f0c39f563e6013ab7cc70df9fad484f96b226e8088113b541",
+        "benchmarks/matrices/faceted/task_task-1_stage_post.png": "2f4678dbc694eb8f0c39f563e6013ab7cc70df9fad484f96b226e8088113b541",
+        "benchmarks/matrices/faceted/task_task-1_stage_pre.png": "2f4678dbc694eb8f0c39f563e6013ab7cc70df9fad484f96b226e8088113b541",
+        "benchmarks/traces/faceted/s0.json.gz": "58c10d135dafcfa12cf97497d225a566e07e5a16cdaa6cfe131b9ade13449c86",
+        "benchmarks/traces/faceted/s1.json.gz": "f466281013506ad866491015e809e1908022950f1fcb409427bd002d34517997"
+      }
+    },
+    "item_bank": {
+      "detail": "71f60ebf4575d3e913e9705ea70e02cf9f044525c2d997ec61dabcc057a39420",
+      "card": "36bd7179f373d82ada28187f09f0d76ac2e2119ce037f1bc71a043f626b6b931",
+      "assets": {
+        "benchmarks/data/item_bank.json.gz": "0d4899e881f3edb095e18b0f5ca23f70b04ada6ad93d7af495c60daaa2490bb6",
+        "benchmarks/matrices/item_bank.png": "5ada621e29b839a2e0f4f330a1f8ca58196be20142d8441dd67afb0a2dc5da68"
+      }
+    }
+  }
+}

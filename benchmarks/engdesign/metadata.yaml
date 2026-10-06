@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Engineering-design tasks with released simulation-based pass/fail judgments. The native
     release includes single-answer trials and iterative refinement chains.
   testing_condition: 'Items retain the released task prompt, output-structure source and input images.

@@ -40,6 +40,7 @@ benchmark:
   categorical: true
   release_date: 2026-04
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   granularity: item
   multi_single_turn: single_turn
   version: b715f505b569a4d8bded804d4ec9f9cec16b2ed9

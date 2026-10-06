@@ -1,4 +1,6 @@
 benchmark:
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   description: Recorded next-lesson recommendations from fourteen Pxplore policy configurations, with per-criterion
     learner-state alignment judgments for fifty released sessions.
   testing_condition: 'Retain all original next_state criterion records, plus initial criteria omitted from next_state

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: HealthAdminBench
   description: Computer-use agent results on 135 synthetic healthcare-administration tasks, with original strict
     and process-check-removed judgments.

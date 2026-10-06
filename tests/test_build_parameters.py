@@ -20,6 +20,26 @@ class BuildParametersTests(unittest.TestCase):
         del self.metadata["build"]["parameters"]
         validate_benchmark_metadata(self.metadata)
 
+    def test_release_is_required_and_withheld_requires_a_nonempty_reason(self):
+        for fields in ({}, {"release": "withheld"}, {"release": "withheld", "release_reason": " "},
+                       {"release": "invalid"}):
+            with self.subTest(fields=fields):
+                metadata = copy.deepcopy(self.metadata)
+                metadata["benchmark"].pop("release", None)
+                metadata["benchmark"].pop("release_reason", None)
+                metadata["benchmark"].update(fields)
+                with self.assertRaises(BenchmarkMetadataError):
+                    validate_benchmark_metadata(metadata)
+        self.metadata["benchmark"].update(release="withheld", release_reason="Review pending.")
+        validate_benchmark_metadata(self.metadata)
+
+    def test_shared_schema_supports_private_but_public_repository_policy_rejects_it(self):
+        from scripts.ci.benchmark_release import validate_public_release
+        self.metadata["benchmark"]["release"] = "private"
+        validate_benchmark_metadata(self.metadata)
+        with self.assertRaisesRegex(ValueError, "public or withheld"):
+            validate_public_release(self.metadata["benchmark"])
+
     def test_groups_accept_verbatim_strings(self):
         self.metadata["build"]["parameters"] = {
             "prompt": {"prefix": "\n  Indented text\n\n", "suffix": ""},

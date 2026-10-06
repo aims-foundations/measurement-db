@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AfriMed-QA
   description: Released model responses to multiple-choice medical questions in African healthcare contexts.
   testing_condition: Import the provider's MCQ releases for the 3,000-question Phase-1 bank, the 3,910-question

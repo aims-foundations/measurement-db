@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Cell-type annotation from verbalized single-cell gene expression. This curation covers
     the released DeepSeek-R1 results for the 748 multiple-sclerosis scRNA-seq questions.
   testing_condition: One released DeepSeek-R1 answer per cell-type question. Input contains the system

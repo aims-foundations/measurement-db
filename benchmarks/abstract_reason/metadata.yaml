@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: 'Abstract-Reason benchmark: rule-based symbolic reasoning tasks (basic/extended computation,
     non-decimal number bases, symbolic function inference, symbolic manipulation) with systematic symbol remapping
     to separate genuine abstraction from memorization.'

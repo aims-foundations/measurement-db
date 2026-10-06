@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: C-SEO Bench
   description: >-
     C-SEO Bench measures changes in document citation ranking in conversational search.

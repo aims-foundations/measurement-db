@@ -42,7 +42,8 @@ benchmark:
       '1': The recorded predicted class equals the reference class.
   categorical: true
   release_date: 2023-12
-  release: public
+  release: withheld
+  release_reason: "ObjectNet requires red borders for individually posted images and ImageNet requires recipients to accept its access terms; unrestricted mirroring of the unchanged cropped assets is unresolved."
   name: MVT Image Difficulty
   granularity: item
   multi_single_turn: single_turn

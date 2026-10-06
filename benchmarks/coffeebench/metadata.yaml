@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Recorded net income of language-model agents managing a coffee roaster in a 90-day multi-agent economy.
   testing_condition: 'Retain all 21 focal LLM runs from seven reported model identifiers in three seeded repetitions
     of the same 90-day business task. Seeds are response trial conditions, not separate questions. The six scripted-control

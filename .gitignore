@@ -20,5 +20,8 @@ __pycache__/
 *.out
 .cache/
 /.hf-cache/
+/scripts/render_website/.hf-cache/
+/scripts/render_website/.affiliation-pages/
+/.vercel/
 benchmarks/haiid/clickstream_public.txt.gz
 benchmarks/reliancescope/harbor/

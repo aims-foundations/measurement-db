@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Emoji Attack (released EasyJailbreak results)
   description: Original EasyJailbreak attack inputs, model outputs and binary success annotations redistributed
     with Emoji Attack.

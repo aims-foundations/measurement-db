@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released rubric-based judgments of 76,555 model generations on the 765-instance BiGGen-Bench,
     preserving each published judge rating and its complete output.
   testing_condition: "Import the five Parquets in the release card's four default splits. Five LLM judges\

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: FaithCoT-Bench (released FINE-CoT generator measurements)
   description: Released reasoning trajectories from four models on four task suites, with human faithfulness annotations
     and parsed-answer correctness.

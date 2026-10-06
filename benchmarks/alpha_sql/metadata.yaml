@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Alpha-SQL (BIRD dev)
   description: Released final SQL queries from Alpha-SQL, a Monte Carlo tree-search system
     using Qwen2.5-Coder-32B-Instruct, on the BIRD development questions.

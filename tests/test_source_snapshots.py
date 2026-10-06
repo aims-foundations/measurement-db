@@ -3,6 +3,7 @@ import copy
 import base64
 import gzip
 import hashlib
+from http.client import IncompleteRead
 import json
 import io
 import shutil
@@ -43,6 +44,88 @@ class DownloadFixture(BenchmarkBuild):
 
 
 class HTTPSourceRetryTests(unittest.TestCase):
+    def test_github_and_index_body_interruptions_recover_and_close_responses(self):
+        from scripts.build_measurement_tables.load_source_files import _read_index_source, github_tree_entries
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                raise IncompleteRead(b'{"tree":', 100)
+
+        entries = [dict(path='source.json', sha='b' * 40, type='blob', size=len(PAYLOAD))]
+        cases = [
+            (lambda: _read_index_source('https://provider.example/index', 'index.json', None), PAYLOAD, PAYLOAD),
+            (lambda: github_tree_entries('author/dataset', 'a' * 40),
+             json.dumps(dict(tree=entries)).encode(), entries),
+        ]
+        for read, payload, expected in cases:
+            responses = [Interrupted(), io.BytesIO(payload)]
+            with self.subTest(expected=expected), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=responses) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                self.assertEqual(read(), expected)
+                self.assertEqual(download.call_count, 2)
+                sleep.assert_called_once_with(5)
+                self.assertTrue(all(response.closed for response in responses))
+
+    def test_connections_and_body_reads_share_one_retry_budget(self):
+        from scripts.build_measurement_tables.load_source_files import read_http_source
+
+        class Interrupted(io.BytesIO):
+            def read(self, size=-1):
+                raise IncompleteRead(b'partial', 100)
+
+        responses = [Interrupted() for _ in range(4)]
+        outcomes = [part for response in responses for part in (TimeoutError('connect'), response)]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=outcomes) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            with self.assertRaises(IncompleteRead):
+                read_http_source('https://provider.example/index', timeout=10)
+            self.assertEqual(download.call_count, 8)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40, 60, 60, 60])
+            self.assertTrue(all(response.closed for response in responses))
+
+    def test_pinned_missing_files_have_short_retries_and_safe_source_context(self):
+        from urllib.error import HTTPError
+        from scripts.build_measurement_tables.load_source_files import _read_index_source
+
+        url = 'https://provider.example/path?token=secret'
+        for status, recover, expected_calls in [(404, True, 3), (404, False, 3), (403, False, 1)]:
+            errors = [HTTPError(url, status, 'HTTP error', {}, None) for _ in range(3)]
+            outcomes = errors[:2] + [io.BytesIO(PAYLOAD)] if recover else errors
+            with self.subTest(status=status, recover=recover), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=outcomes) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep, \
+                 patch('scripts.build_measurement_tables.load_source_files.logging.getLogger') as logger:
+                if recover:
+                    self.assertEqual(_read_index_source(url, 'sources/release.json', None), PAYLOAD)
+                else:
+                    with self.assertRaises(HTTPError) as caught:
+                        _read_index_source(url, 'sources/release.json', None)
+                    self.assertEqual(caught.exception.__notes__, ["Source 'sources/release.json' on provider.example"])
+                self.assertEqual(download.call_count, expected_calls)
+                self.assertEqual(sleep.call_count, expected_calls - 1)
+                self.assertNotIn('secret', str(logger.mock_calls))
+            for error in errors:
+                error.close()
+
+    def test_disk_errors_and_invalid_json_are_not_retried(self):
+        import errno
+        from scripts.build_measurement_tables.load_source_files import read_http_source
+
+        def disk_full(response):
+            raise OSError(errno.ENOSPC, 'Disk full')
+
+        for consume, error_type in [(disk_full, OSError), (json.load, json.JSONDecodeError)]:
+            response = io.BytesIO(b'not json')
+            with self.subTest(consume=consume), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', return_value=response) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(error_type):
+                    read_http_source('https://provider.example/index', timeout=10, consume=consume)
+                download.assert_called_once()
+                sleep.assert_not_called()
+                self.assertTrue(response.closed)
+
     def test_index_retries_rate_limit_and_keeps_original_bytes(self):
         from urllib.error import HTTPError
         from scripts.build_measurement_tables.load_source_files import _read_index_source
@@ -60,7 +143,7 @@ class HTTPSourceRetryTests(unittest.TestCase):
         from urllib.error import HTTPError
         from scripts.build_measurement_tables.load_source_files import open_http_source
 
-        for status, header, expected_calls, pauses in [(503, None, 4, [5, 10, 20]),
+        for status, header, expected_calls, pauses in [(503, None, 8, [5, 10, 20, 40, 60, 60, 60]),
                 (403, None, 1, []), (404, None, 1, []), (429, '120', 1, [])]:
             error = HTTPError('https://provider.example', status, 'HTTP error',
                               {} if header is None else {'Retry-After': header}, None)
@@ -72,6 +155,56 @@ class HTTPSourceRetryTests(unittest.TestCase):
                 self.assertEqual(download.call_count, expected_calls)
                 self.assertEqual([call.args[0] for call in sleep.call_args_list], pauses)
                 error.close()
+
+    def test_transient_connections_recover_without_logging_secret_urls(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason in [socket.gaierror(socket.EAI_NONAME, 'Name or service not known'),
+                       socket.gaierror(socket.EAI_AGAIN, 'Temporary failure'),
+                       TimeoutError('timed out'), ConnectionResetError('reset')]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                       side_effect=[URLError(reason)] * 6 + [io.BytesIO(PAYLOAD)]) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep, \
+                 self.assertLogs('scripts.build_measurement_tables.load_source_files', level='WARNING') as logs:
+                with open_http_source('https://provider.example/file?token=secret', timeout=10) as response:
+                    self.assertEqual(response.read(), PAYLOAD)
+                self.assertEqual(download.call_count, 7)
+                self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40, 60, 60])
+                self.assertNotIn('secret', '\n'.join(logs.output))
+
+    def test_dns_exhaustion_and_certificate_failures(self):
+        import socket
+        import ssl
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import open_http_source
+
+        for reason, calls in [(socket.gaierror(socket.EAI_AGAIN, 'DNS unavailable'), 8),
+                              (ssl.SSLCertVerificationError('invalid certificate'), 1),
+                              ('unknown URL type', 1)]:
+            with self.subTest(reason=reason), \
+                 patch('scripts.build_measurement_tables.load_source_files.urlopen', side_effect=URLError(reason)) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                with self.assertRaises(URLError):
+                    open_http_source('https://provider.example', timeout=10)
+                self.assertEqual(download.call_count, calls)
+                self.assertEqual(sleep.call_count, calls - 1)
+
+    def test_github_inventory_retries_dns_without_changing_pinned_tree(self):
+        import socket
+        from urllib.error import URLError
+        from scripts.build_measurement_tables.load_source_files import github_tree_entries
+
+        entries = [dict(path='source.json', sha='b' * 40, type='blob', size=len(PAYLOAD))]
+        with patch('scripts.build_measurement_tables.load_source_files.urlopen',
+                   side_effect=[URLError(socket.gaierror(-2, 'DNS')), io.BytesIO(json.dumps(dict(tree=entries)).encode())]) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            self.assertEqual(github_tree_entries('author/dataset', 'a' * 40), entries)
+            self.assertEqual(download.call_count, 2)
+            self.assertEqual(download.call_args.args[0].full_url,
+                             'https://api.github.com/repos/author/dataset/git/trees/' + 'a' * 40 + '?recursive=1')
 
     def test_file_download_retries_and_still_rejects_wrong_hash(self):
         from urllib.error import HTTPError
@@ -455,6 +588,70 @@ class SnapshotTests(unittest.TestCase):
         self.artifact = dict(file='source.json', size=len(PAYLOAD), hash_kind='sha256',
                              digest=hashlib.sha256(PAYLOAD).hexdigest(), url='https://example.org/source')
 
+    def test_complete_transfers_restart_after_interruption_including_range_fallback(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for ranged in (False, True):
+            for failure in (ConnectionResetError('reset'), IncompleteRead(b'partial', 100), None):
+                class Interrupted(io.BytesIO):
+                    def read(self, size=-1):
+                        if self.tell():
+                            if failure is not None:
+                                raise failure
+                            return b''
+                        return super().read(2)
+
+                responses = ([io.BytesIO()] if ranged else []) + [Interrupted(PAYLOAD), io.BytesIO(PAYLOAD)]
+                for response in responses:
+                    response.status, response.headers = 200, {'Content-Length': str(len(PAYLOAD))}
+                destination = self.raw / 'release.json'
+                destination.write_bytes(b'previous bytes')
+                with self.subTest(ranged=ranged, failure=type(failure).__name__), \
+                     patch('urllib.request.urlopen', side_effect=responses) as download, \
+                     patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+                    builder._download('https://provider.example/release', destination,
+                        expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(),
+                        chunk_size=5 if ranged else 1024)
+                    self.assertEqual(destination.read_bytes(), PAYLOAD)
+                    self.assertEqual(download.call_count, 3 if ranged else 2)
+                    sleep.assert_called_once_with(5)
+                    self.assertTrue(all(response.closed for response in responses))
+                    self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_complete_transfer_exhaustion_preserves_existing_file(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        destination = self.raw / 'release.json'
+        destination.write_bytes(b'previous bytes')
+        with patch('urllib.request.urlopen', side_effect=lambda *a, **k: io.BytesIO(PAYLOAD[:2])) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            with self.assertRaises(IncompleteRead):
+                builder._download('https://provider.example/release', destination, expected_size=len(PAYLOAD))
+            self.assertEqual(download.call_count, 8)
+            self.assertEqual(destination.read_bytes(), b'previous bytes')
+            self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_large_transfer_can_resume_more_than_three_partial_responses(self):
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        payload = b'abcdefghijklm'
+        requested = []
+
+        def fetch(request, **kwargs):
+            start, end = map(int, request.get_header('Range').removeprefix('bytes=').split('-'))
+            requested.append((start, end))
+            response = io.BytesIO(payload[start:start + 1] if len(requested) <= 4 else payload[start:end + 1])
+            response.status = 206
+            response.headers = {'Content-Range': f'bytes {start}-{end}/{len(payload)}'}
+            return response
+
+        destination = self.raw / 'archive.zip'
+        with patch('urllib.request.urlopen', side_effect=fetch), \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep:
+            builder._download('https://example.org/archive', destination,
+                expected_size=len(payload), expected_sha256=hashlib.sha256(payload).hexdigest(), chunk_size=5)
+            self.assertEqual([call.args[0] for call in sleep.call_args_list], [5, 10, 20, 40])
+        self.assertEqual(destination.read_bytes(), payload)
+        self.assertEqual(requested, [(0, 4), (1, 4), (2, 4), (3, 4), (4, 4), (5, 9), (10, 12)])
+        self.assertFalse(list(self.raw.glob('*.tmp')))
+
     def test_large_pinned_download_resumes_interrupted_ranges(self):
         payload = b'abcdefghijklm'
         requested = []
@@ -475,11 +672,12 @@ class SnapshotTests(unittest.TestCase):
 
         destination = self.raw / 'archive.zip'
         builder = DownloadFixture(str(self.folder / 'build.py'))
-        with patch('urllib.request.urlopen', side_effect=fetch):
+        with patch('urllib.request.urlopen', side_effect=fetch), \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
             builder._download('https://example.org/archive', destination,
                 expected_size=len(payload), expected_sha256=hashlib.sha256(payload).hexdigest(), chunk_size=5)
         self.assertEqual(destination.read_bytes(), payload)
-        self.assertEqual(requested, [(0, 4), (2, 6), (7, 11), (12, 12)])
+        self.assertEqual(requested, [(0, 4), (2, 4), (5, 9), (10, 12)])
         self.assertFalse(list(self.raw.glob('*.tmp')))
 
     def test_resumed_download_rejects_wrong_ranges_and_preserves_existing_file(self):
@@ -503,9 +701,10 @@ class SnapshotTests(unittest.TestCase):
         for valid in [True, False]:
             with self.subTest(valid=valid):
                 destination = self.raw / ('valid.zip' if valid else 'corrupt.zip')
-                response = io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD))
-                response.status, response.headers = 200, {}
-                with patch('urllib.request.urlopen', return_value=response):
+                responses = [io.BytesIO(PAYLOAD if valid else b'x' * len(PAYLOAD)) for _ in range(2)]
+                for response in responses:
+                    response.status, response.headers = 200, {}
+                with patch('urllib.request.urlopen', side_effect=responses):
                     arguments = dict(expected_size=len(PAYLOAD),
                         expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=5)
                     if valid:
@@ -526,13 +725,33 @@ class SnapshotTests(unittest.TestCase):
             response.headers = {'Content-Range': f'bytes 0-4/{len(PAYLOAD)}'}
             return response
 
-        with patch('urllib.request.urlopen', side_effect=fetch) as download:
-            with self.assertRaisesRegex(OSError, 'ended before'):
+        with patch('urllib.request.urlopen', side_effect=fetch) as download, \
+             patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+            with self.assertRaises(IncompleteRead):
                 builder._download('https://example.org/archive', destination,
                     expected_size=len(PAYLOAD), chunk_size=5)
-        self.assertEqual(download.call_count, 3)
+        self.assertEqual(download.call_count, 8)
         self.assertFalse(destination.exists())
         self.assertFalse(list(self.raw.glob('*.tmp')))
+
+    def test_range_connections_share_retry_budget_and_stop_on_access_errors(self):
+        import socket
+        from urllib.error import HTTPError, URLError
+
+        builder = DownloadFixture(str(self.folder / 'build.py'))
+        for error, calls in [(HTTPError('https://example.org/archive', 404, 'Missing', {}, None), 1),
+                             (URLError(socket.gaierror(-2, 'DNS')), 8),
+                             (TimeoutError('timed out'), 8), (ConnectionResetError('reset'), 8)]:
+            destination = self.raw / 'absent.zip'
+            with self.subTest(error=type(error).__name__), \
+                 patch('urllib.request.urlopen', side_effect=error) as download, \
+                 patch('scripts.build_measurement_tables.load_source_files.time.sleep'):
+                with self.assertRaises(OSError):
+                    builder._download('https://example.org/archive', destination,
+                                      expected_size=len(PAYLOAD), chunk_size=5)
+                self.assertEqual(download.call_count, calls)
+                self.assertFalse(destination.exists())
+                self.assertFalse(list(self.raw.glob('*.tmp')))
 
     def test_compressed_ranges_retry_whole_file_and_preserve_exact_hash_checks(self):
         builder = DownloadFixture(str(self.folder / 'build.py'))
@@ -1408,7 +1627,7 @@ class SnapshotTests(unittest.TestCase):
                 expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest(), chunk_size=1)
         self.assertEqual(destination.read_bytes(), PAYLOAD)
         destination.unlink()
-        with patch('urllib.request.urlopen', return_value=io.BytesIO(b'wrong')):
+        with patch('urllib.request.urlopen', return_value=io.BytesIO(b'x' * len(PAYLOAD))):
             with self.assertRaises(SourceDataError):
                 builder._download('https://provider.example/search', destination, request_json=body,
                     expected_size=len(PAYLOAD), expected_sha256=hashlib.sha256(PAYLOAD).hexdigest())
@@ -1539,8 +1758,8 @@ class SnapshotTests(unittest.TestCase):
                 patch('scripts.build_measurement_tables.load_source_files.time.sleep') as sleep):
             with self.assertRaises(HTTPError):
                 google_drive_entries(source)
-        self.assertEqual(fetch.call_count, 4)
-        self.assertEqual(sleep.call_count, 3)
+        self.assertEqual(fetch.call_count, 8)
+        self.assertEqual(sleep.call_count, 7)
 
     def test_public_drive_rejects_incomplete_unsafe_and_cyclic_trees(self):
         from scripts.build_measurement_tables.load_source_files import upstream_artifacts

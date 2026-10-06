@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DBPA (Distribution-Based Perturbation Analysis)
   description: Released distribution-test results for prompt perturbations, model alignment and persona comparisons.
   testing_condition: 'Preserve 409 published comparisons and all 9,060 captured generation strings, including

@@ -38,6 +38,7 @@ properties:
       - paper_url
       - data_source_url
       - license
+      - release
       - modality
       - domain
       - response_type
@@ -45,6 +46,12 @@ properties:
       - release_date
       - multi_single_turn
     allOf:
+      - if:
+          properties:
+            release: {const: withheld}
+          required: [release]
+        then:
+          required: [release_reason]
       - if:
           properties:
             response_type: {enum: [binary, error_presence, likert_5, likert_10, ordinal, nominal]}
@@ -130,9 +137,17 @@ properties:
           - aggregate
           - not_released
       release:
+        description: >-
+          Explicit publication decision. The public measurement-db repository
+          permits public and withheld; private belongs in the separate private
+          repository. Withheld benchmarks are skipped by reproduction CI.
         enum:
           - public
           - private
+          - withheld
+      release_reason:
+        description: Explanation of the publication decision; required when release is withheld.
+        $ref: "#/$defs/nonempty_string"
       benchmark_features:
         type:
           - object

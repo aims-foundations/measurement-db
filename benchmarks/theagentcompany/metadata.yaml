@@ -36,7 +36,7 @@ benchmark:
     direction: higher_is_better
   categorical: false
   release_date: 2024-12
-  release: private
+  release: public
   one_line_description: Evaluates agents on workplace tasks in a simulated company using task-specific
     checkpoint scores.
   multi_single_turn: multi_turn

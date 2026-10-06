@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DecodingTrust
   description: Released model outputs from six DecodingTrust perspectives, with complete source context and explicit
     missing grades.

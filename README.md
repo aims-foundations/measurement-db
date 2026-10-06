@@ -14,6 +14,29 @@ metadata, a reviewed characterization, and a curation record. Publishing a build
 here does not imply a Hugging Face data release. Raw inputs, generated tables,
 and model-fitting outputs are excluded from Git.
 
+## Website
+
+The website lives in [`website/`](website), with its rendering scripts in
+[`scripts/render_website/`](scripts/render_website). See the
+[gallery guide](scripts/render_website/README.md) for installation, local preview,
+data refresh, and validation commands. Viewer data is built directly from
+`aims-foundations/measurement-db` on Hugging Face and included in the Vercel
+deployment; no private-bank fallback or separate gallery service is used.
+
+Merging changes under `benchmarks/` into `main` automatically refreshes and
+deploys the website using the tables already published on public HF. The workflow
+discovers new HF benchmarks automatically and retains the website's explicit
+hidden-benchmark list. It does not execute benchmark builders or upload tables;
+the benchmark reproducibility workflow remains a separate correctness check.
+If tables are released after the merge, manually run **Deploy website to Vercel**
+on `main` to refresh the website.
+
+PRs targeting `main` from branches in this repository deploy a preview when they
+change benchmark or website files. Open the **Deploy website to Vercel** check
+to find its website link. You can also run the workflow manually on a feature
+branch; only `main` deploys production. Fork and Dependabot PR deployments are
+skipped because GitHub does not provide the required deployment secrets.
+
 ## Contributing
 
 Curating a benchmark is not simply a data-cleaning task. It requires reconstructing what was measured, which systems were evaluated, how the evaluation was conducted, and what each recorded outcome means. Contributors will gain firsthand experience with the structure and limitations of modern AI evaluation data. For participants in the Predictive AI Evaluation Competition, this work can also inform the development of prediction methods and expand the public evidence available for training them. For benchmark authors, curation makes their results easier to discover, compare, and reuse. For measurement researchers and practitioners, it creates a common foundation for studying the validity, reliability, and generalizability of AI evaluations. Under appropriate conditions, contributors will also be eligible for the AI Measurement Data award under the NeurIPS 2026 Predictive AI Evaluation Competition.
@@ -188,6 +211,41 @@ Set `benchmark.release_date` explicitly to `null` when unknown. Known dates use
 quoted `YYYY-MM` or `YYYY-MM-DD` strings with valid calendar values; retain the
 available precision rather than guessing a month or day.
 
+Every `metadata.yaml` must explicitly set `benchmark.release` to `public` or
+`withheld` in this repository. `public` records the decision to publish the
+formatted tables under their source terms. `withheld` prevents publication and
+skips reproduction CI; it requires a nonempty `benchmark.release_reason`.
+Keep the underlying terms in `license` and evidence in `curation_record.md`.
+Private benchmarks belong in the separate repository; shared tooling still
+recognizes `private`, but this repository's metadata check rejects it. The
+template starts withheld. Missing legacy inline decisions also default to
+withheld. `release_reason` is authoring metadata and adds no Parquet column.
+
+The [2026-10-04 release inventory](docs/release-reconciliation-2026-10-04.csv)
+records all 290 previous values, decisions, reasons, and existing license and
+curation evidence. It is a migration snapshot; `metadata.yaml` remains the
+current source of truth. The repository policy is public unless the reviewed
+evidence identifies a concrete redistribution restriction, unmet source-access
+condition, sensitive content in the formatted data, or unavailable exact author
+inputs needed for reproducibility. A missing or historical
+private flag, an unknown license, and noncommercial or attribution conditions
+alone do not make a benchmark withheld. Unclear licensing remains documented
+in the inventory and source metadata; public is a repository decision, not a
+new license grant or a claim of legal clearance. Earlier holds based only on
+unclear licensing are superseded explicitly in release_reason. Raw-only holds
+remain in the curation records where the formatted tables exclude that material.
+No private definitions were moved and no publication tooling was changed in
+this migration. Upload review must still respect the original source terms.
+
+Source reproducibility holds record the missing or changed input and the
+conditions for restoring public release in `release_reason` and the curation
+record. Preserve builders, pinned source hashes and historical measurements.
+Restore public release after verified author-source recovery and strict table
+reproduction, or a separately reviewed version update using immutable author
+inputs. Temporary connection failures or long download times alone do not
+justify withholding a benchmark. A reproducibility hold does not change its
+recorded license or imply a redistribution restriction.
+
 Fixed verifier descriptions belong in the optional `grading.verifiers` mapping
 in `metadata.yaml`, exposed to builders through `self.grading`. Each named
 description is a nonempty JSON-compatible object; its fields describe the
@@ -267,6 +325,134 @@ MeasurementDB maintains reproducible data curation from captured upstream inputs
 Running new model evaluations and maintaining their execution environments are
 outside this repository's scope. Source provenance, released traces, and the
 checks needed to rebuild and audit the curated tables remain part of the project.
+
+### Checking published table bytes in CI
+
+The `Benchmark table reproduction` workflow checks PR creation, PR updates,
+and branch pushes, and rebuilds the benchmark folders changed under `benchmarks/`.
+It reads the full Git diff instead of GitHub's 300-file path-filter window,
+including metadata, documentation, nested files, renames, and deletions.
+Template changes and new branches check all builders. A manual run can select a
+single benchmark or all benchmarks. Events with no benchmark changes run only
+the offline CI tests and change detection, without accessing HF or rebuilding.
+
+Set the repository's **`HF_TOKEN` Actions secret** to a read token whose account
+has access to `aims-foundations/measurement-db`. The dataset is gated; missing
+credentials or access prevent reference comparison but do not block upstream
+builds. Author-hosted gated sources still require their own access through this
+token. GitHub sources use the automatically supplied `GITHUB_TOKEN`.
+Fork PRs are skipped; their reviewed commits
+need a branch in this repository to run this check with repository secrets.
+
+Selection first reads each changed benchmark's `metadata.yaml`. Withheld
+benchmarks are excluded from the job matrix before build dependency installation,
+source downloads, or reference access. The complete report lists each as
+**SKIPPED (WITHHELD)** with its reason; skips are neither passes nor failures.
+An all-withheld selection runs no reproduction jobs and does not resolve HF.
+Missing, invalid, duplicate, or private release declarations fail selection.
+Direct `verify` commands apply the same release check before executing a builder.
+
+Each run with public benchmarks attempts to resolve the HF `migration/tabular-builders-20260924` branch
+to one immutable commit shared by all jobs. If that preparation fails, upstream
+builds still run and successful builds report **REFERENCE ERROR**. Jobs never
+fall back to independently resolving a moving HF branch.
+Each selected public benchmark first executes `benchmarks/<slug>/build.py`
+in a temporary source checkout, downloading the authors' inputs declared in
+`sources.upstream` in the benchmark's `metadata.yaml`. The HF commit supplies
+only the expected output tables; it does not select the build's raw inputs.
+Only after a successful upstream build does the job list and download those
+reference tables and compare them. Missing reference tables therefore cannot
+prevent an upstream build from being attempted.
+The check clears `MEASUREMENT_DB_SOURCE_REPO`, `MEASUREMENT_DB_SOURCE_REVISION`,
+and `MEASUREMENT_DB_SOURCE_MANIFEST` so inherited archive overrides cannot
+redirect those downloads. Existing local raw inputs and tables are never reused
+or modified. The comparison uses `<slug>/formatted_tables/*.parquet`
+on HF, or the older flat `<slug>/*.parquet` layout when the modern directory is
+absent. Only the legacy filename `response.parquet` maps to `responses.parquet`;
+no table bytes are normalized or rewritten.
+
+Success requires the exact same set of tables and byte-identical files, including
+optional traces and assets, row order, and Parquet metadata. Missing references,
+missing builders, build errors, extra tables, and any byte difference fail.
+SHA-256 values for both files appear in the job log. Jobs continue independently
+after another benchmark fails. The workflow uses up to 16 concurrent reproduction jobs;
+changes exceeding GitHub's 256-job matrix limit are split into small batches.
+
+Jobs use Python 3.11 unless `build.parameters.runtime.python_version` declares
+a quoted version in the benchmark's metadata. Batches contain only benchmarks
+using the same interpreter. LawBench pins Python 3.12.12 because its native
+scorer's floating-point summation must reproduce the published grades; use that
+version for local LawBench builds too.
+
+The final **Benchmark report** job publishes a table on the workflow run's
+**Summary** page, with one row per selected benchmark: overall result, upstream
+build status, comparison status, elapsed time,
+failure details, and a link to its job log. Each grouped job also publishes its
+own summary. The **benchmark-run-report-<attempt>** artifact contains
+`summary.md`, `results.csv`, and `results.json` with full failure messages.
+Results are checkpointed after each benchmark and uploaded even when a job
+fails. A passing benchmark remains visible if another benchmark in its group
+fails. **BUILD FAILED** identifies an upstream download/build failure.
+**COMPARISON FAILED** means the build passed but comparison failed, including
+byte differences and missing or extra generated tables. **REFERENCE MISSING**
+means the build passed but published comparison tables are absent;
+**REFERENCE ERROR** covers reference access, resolution, and network failures.
+Neither reference status counts as a reproduction pass; the workflow remains
+unsuccessful unless every selected benchmark builds and matches its references.
+**NOT RUN** means verification never started; **INTERRUPTED** means it
+started without completing; **NOT REPORTED** means no usable artifact arrived.
+Missing reports are never counted as passes. Reruns use the latest result for
+each group at the same source and HF revisions, retaining prior successful
+groups when only failed jobs are rerun. A forcibly cancelled run or an unavailable
+runner can prevent the final report from being published; already uploaded group
+reports remain available. Existing historical runs do not gain these reports.
+
+All workflow jobs target a native Linux x64 self-hosted runner with the custom label
+`measurement-db-reproduction`. The runner runs as a systemd user service on
+`skampere1`, with its installation, runner home, tool cache, downloads,
+and temporary builds under
+`/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction`. It needs no Docker,
+interactive login, or AFS credentials. Each job creates a fresh Python virtual
+environment. Sixteen independent runner instances process one job each. The original
+instance lives at the installation root, and the other 15 live under
+`runners/02` through `runners/16`. Each has its own checkout, Python tool
+cache, download cache, and temporary directory. Full runs still group benchmarks
+in pairs; each pair runs sequentially within its job, so at most 16 benchmarks
+are being rebuilt at once. Reproduction jobs configure OpenMP, OpenBLAS, MKL,
+NumExpr, and Arrow CPU pools to use two threads, and Arrow I/O pools to use four.
+These are library settings, not an operating-system CPU quota. Larger pools
+require more runner installations and a higher `max-parallel` setting.
+
+An existing run keeps the workflow configuration from its original commit.
+GitHub's **Re-run jobs** also uses that commit. To apply a new parallelism limit,
+start a fresh **Run workflow** dispatch on the updated branch. A new manual run
+on the same branch cancels the previous manual run through the workflow's
+concurrency group; preserve any needed results before replacing an active run.
+
+Before activating this runner for the public repository, configure **Settings >
+Actions > General > Fork pull request workflows** to require approval for all
+outside collaborators. Review all workflow and executable changes before
+approving a fork run. The fork condition in this workflow prevents accidental
+execution; it is not an access-control boundary because a PR can modify workflow
+files. The service runs as `sttruong` and has that account's filesystem access.
+It needs no sudo: user lingering keeps systemd running after logout and starts
+it at boot. A user crontab restores the service definition under `/run/user`
+after reboot, avoiding the AFS home directory. The installer is
+`deployment/install-user-service.py` in the installation directory. Use
+`deployment/runnerctl status`, `logs`, `stop`, or `start` to manage all 16; append
+an instance number from `1` to `16` to manage one instance. `stop` also prevents cron from
+restarting the selected instances. Trusted push/PR events and manual
+dispatches are picked up automatically once the workflow is pushed.
+
+The CI constraints pin pandas and PyArrow to versions recorded in the published
+migration tables. To run the same comparison locally after authenticating to HF:
+
+```bash
+python -m pip install -r requirements.txt -c scripts/ci/reproduction-constraints.txt
+python scripts/ci/benchmark_reproduction.py verify xstest
+```
+
+Pass `--revision <HF-commit-SHA>` to repeat a comparison against an exact snapshot.
 
 ## License
 

@@ -1,0 +1,8366 @@
+[
+  {
+    "name": "OpenAI GPT-2",
+    "provider": "OpenAI",
+    "releaseDate": "2019-02-14",
+    "benchmarks": [
+      "dbpa",
+      "ood_prediction"
+    ]
+  },
+  {
+    "name": "Google T5 11B",
+    "provider": "Google",
+    "releaseDate": "2019-10-23",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI Ada",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI Babbage",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3 Ada",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3 Babbage",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3 Curie",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3 Davinci",
+    "provider": "OpenAI",
+    "releaseDate": "2020-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Fusion-in-Decoder",
+    "provider": "Meta",
+    "releaseDate": "2020-07-02",
+    "benchmarks": [
+      "evouna"
+    ]
+  },
+  {
+    "name": "Zhipu GLM",
+    "provider": "Zhipu",
+    "releaseDate": "2021-03-18",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "EleutherAI GPT-J 6B",
+    "provider": "EleutherAI",
+    "releaseDate": "2021-06-04",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-1 Jumbo",
+    "provider": "AI21",
+    "releaseDate": "2021-08-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-1 Large",
+    "provider": "AI21",
+    "releaseDate": "2021-08-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Microsoft Turing-NLG 530B",
+    "provider": "Microsoft",
+    "releaseDate": "2021-10-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "BigScience T0pp",
+    "provider": "Bigscience",
+    "releaseDate": "2021-10-15",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Cohere Large",
+    "provider": "Cohere",
+    "releaseDate": "2021-11-15",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Cohere Medium",
+    "provider": "Cohere",
+    "releaseDate": "2021-11-15",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Cohere Small",
+    "provider": "Cohere",
+    "releaseDate": "2021-11-15",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Microsoft Turing-NLG 7B",
+    "provider": "Microsoft",
+    "releaseDate": "2022-01-28",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "EleutherAI GPT-NeoX 20B",
+    "provider": "EleutherAI",
+    "releaseDate": "2022-02-02",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Aleph Alpha Luminous Base",
+    "provider": "Aleph Alpha",
+    "releaseDate": "2022-04",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Aleph Alpha Luminous Extended",
+    "provider": "Aleph Alpha",
+    "releaseDate": "2022-04",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Cohere Xlarge",
+    "provider": "Cohere",
+    "releaseDate": "2022-04",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "DeepMind Flamingo",
+    "provider": "Deepmind",
+    "releaseDate": "2022-04-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-1 Grande",
+    "provider": "AI21",
+    "releaseDate": "2022-05-02",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Meta OPT 175B",
+    "provider": "Meta",
+    "releaseDate": "2022-05-03",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Meta OPT 66B",
+    "provider": "Meta",
+    "releaseDate": "2022-05-03",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Google UL2",
+    "provider": "Google",
+    "releaseDate": "2022-05-10",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Yandex YaLM 100B",
+    "provider": "Yandex",
+    "releaseDate": "2022-06-23",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "BigScience BLOOM",
+    "provider": "Bigscience",
+    "releaseDate": "2022-07-12",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Aleph Alpha Luminous Supreme",
+    "provider": "Aleph Alpha",
+    "releaseDate": "2022-08",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Gustavosta MagicPrompt",
+    "provider": "Community",
+    "releaseDate": "2022-09-17",
+    "benchmarks": [
+      "dbpa"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 1.5",
+    "provider": "Stability AI",
+    "releaseDate": "2022-10-20",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Cohere Command",
+    "provider": "Cohere",
+    "releaseDate": "2022-11-08",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3.5 Davinci",
+    "provider": "OpenAI",
+    "releaseDate": "2022-11-28",
+    "benchmarks": [
+      "evouna",
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "intercode",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3.5",
+    "provider": "OpenAI",
+    "releaseDate": "2022-11-30",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "alpacaeval",
+      "arcagi",
+      "beavertails",
+      "bertaqa",
+      "biggen",
+      "bird_sql",
+      "bridging_gap",
+      "chatgpt_drift",
+      "clasheval",
+      "cruxeval",
+      "decodingtrust",
+      "donotanswer",
+      "doris_mae",
+      "egoschema",
+      "emoji_attack",
+      "evouna",
+      "find_interp",
+      "ghosts_math",
+      "goodai_ltm_benchmark",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_cleva",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "igakuqa",
+      "ikp",
+      "infibench",
+      "jailbreakbench",
+      "legalbench",
+      "naep_llm_students",
+      "preference_dissection",
+      "prism",
+      "qatch",
+      "rakuda",
+      "statqa",
+      "tengu",
+      "tulu_human_eval",
+      "ultrafeedback",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 2.1",
+    "provider": "Stability AI",
+    "releaseDate": "2022-12-07",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Cohere Command Medium",
+    "provider": "Cohere",
+    "releaseDate": "2023-01",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Google Bard",
+    "provider": "Google",
+    "releaseDate": "2023-02-06",
+    "benchmarks": [
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Microsoft Bing Chat",
+    "provider": "Microsoft",
+    "releaseDate": "2023-02-07",
+    "benchmarks": [
+      "evouna"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 1.4B",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 12B",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 160M",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 1B",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 2.8B",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 410M",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 6.9B",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "EleutherAI Pythia 70M",
+    "provider": "EleutherAI",
+    "releaseDate": "2023-02-13",
+    "benchmarks": [
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "Writer Palmyra Instruct 30",
+    "provider": "Writer",
+    "releaseDate": "2023-02-16",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Meta LLaMA",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "egoschema"
+    ]
+  },
+  {
+    "name": "Meta LLaMA 65B",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "helm_cleva",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-3.5 Turbo",
+    "provider": "OpenAI",
+    "releaseDate": "2023-03-01",
+    "benchmarks": [
+      "harmbench",
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-2 Grande",
+    "provider": "AI21",
+    "releaseDate": "2023-03-09",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-2 Jumbo",
+    "provider": "AI21",
+    "releaseDate": "2023-03-09",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts",
+      "legalbench"
+    ]
+  },
+  {
+    "name": "AI21 Jurassic-2 Large",
+    "provider": "AI21",
+    "releaseDate": "2023-03-09",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Stanford Alpaca 13B",
+    "provider": "Stanford",
+    "releaseDate": "2023-03-13",
+    "benchmarks": [
+      "beavertails"
+    ]
+  },
+  {
+    "name": "Stanford Alpaca 7B",
+    "provider": "Stanford",
+    "releaseDate": "2023-03-13",
+    "benchmarks": [
+      "alpacaeval",
+      "beavertails",
+      "decodingtrust",
+      "pku_saferlhf",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Anthropic Claude",
+    "provider": "Anthropic",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "alpacaeval",
+      "donotanswer"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 1",
+    "provider": "Anthropic",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Instant",
+    "provider": "Anthropic",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "alpacaeval",
+      "legalbench",
+      "prism"
+    ]
+  },
+  {
+    "name": "Google Med-PaLM 2",
+    "provider": "Google",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4",
+    "provider": "OpenAI",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "alpacaeval",
+      "appworld",
+      "bertaqa",
+      "biggen",
+      "bird_sql",
+      "bridging_gap",
+      "chatgpt_drift",
+      "cruxeval",
+      "decodingtrust",
+      "donotanswer",
+      "egoschema",
+      "evouna",
+      "financebench",
+      "find_interp",
+      "genai_learning",
+      "ghosts_math",
+      "goodai_ltm_benchmark",
+      "harmbench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_cleva",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "infibench",
+      "intercode",
+      "jailbreakbench",
+      "legalbench",
+      "mmdocrag",
+      "nester",
+      "preference_dissection",
+      "prism",
+      "rakuda",
+      "sib200",
+      "statqa",
+      "tengu",
+      "ultrafeedback",
+      "vhelm",
+      "wildvision",
+      "workbench_revisited",
+      "xstest"
+    ]
+  },
+  {
+    "name": "TII Falcon 40B",
+    "provider": "TII",
+    "releaseDate": "2023-03-15",
+    "benchmarks": [
+      "alpacaeval",
+      "legalbench",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "LMSYS Vicuna 13B",
+    "provider": "LMSYS",
+    "releaseDate": "2023-03-30",
+    "benchmarks": [
+      "alpacaeval",
+      "helm_cleva",
+      "jailbreakbench",
+      "preference_dissection"
+    ]
+  },
+  {
+    "name": "LMSYS Vicuna 7B",
+    "provider": "LMSYS",
+    "releaseDate": "2023-03-30",
+    "benchmarks": [
+      "advprompter",
+      "alpacaeval",
+      "beavertails",
+      "decodingtrust",
+      "donotanswer",
+      "preference_dissection"
+    ]
+  },
+  {
+    "name": "Baize 13B",
+    "provider": "Community",
+    "releaseDate": "2023-04-03",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "MiniGPT-4 13B",
+    "provider": "Vision-CAIR",
+    "releaseDate": "2023-04-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "MiniGPT-4 7B",
+    "provider": "Vision-CAIR",
+    "releaseDate": "2023-04-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft WizardLM 7B",
+    "provider": "Microsoft",
+    "releaseDate": "2023-04-24",
+    "benchmarks": [
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "TII Falcon 7B",
+    "provider": "TII",
+    "releaseDate": "2023-04-24",
+    "benchmarks": [
+      "alpacaeval",
+      "decodingtrust",
+      "legalbench",
+      "prism"
+    ]
+  },
+  {
+    "name": "Cohere Command Light",
+    "provider": "Cohere",
+    "releaseDate": "2023-04-26",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Microsoft WizardLM 13B",
+    "provider": "Microsoft",
+    "releaseDate": "2023-05",
+    "benchmarks": [
+      "alpacaeval",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "LLaVA Vicuna 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2023-05-02",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "MosaicML MPT 7B",
+    "provider": "MosaicML",
+    "releaseDate": "2023-05-05",
+    "benchmarks": [
+      "decodingtrust"
+    ]
+  },
+  {
+    "name": "Together RedPajama-INCITE 7B",
+    "provider": "Together",
+    "releaseDate": "2023-05-05",
+    "benchmarks": [
+      "decodingtrust"
+    ]
+  },
+  {
+    "name": "Hugging Face StarChat",
+    "provider": "Hugging Face",
+    "releaseDate": "2023-05-09",
+    "benchmarks": [
+      "intercode",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Google PaLM 2 Bison",
+    "provider": "Google",
+    "releaseDate": "2023-05-10",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Google PaLM 2 Unicorn",
+    "provider": "Google",
+    "releaseDate": "2023-05-10",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Salesforce InstructBLIP",
+    "provider": "Salesforce",
+    "releaseDate": "2023-05-11",
+    "benchmarks": [
+      "harmbench"
+    ]
+  },
+  {
+    "name": "Salesforce InstructBLIP 13B",
+    "provider": "Salesforce",
+    "releaseDate": "2023-05-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Salesforce InstructBLIP 7B",
+    "provider": "Salesforce",
+    "releaseDate": "2023-05-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Zhipu VisualGLM 6B",
+    "provider": "Zhipu",
+    "releaseDate": "2023-05-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Guanaco 33B",
+    "provider": "Community",
+    "releaseDate": "2023-05-23",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "Guanaco 65B",
+    "provider": "Community",
+    "releaseDate": "2023-05-23",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "PandaGPT 13B",
+    "provider": "Pandagpt",
+    "releaseDate": "2023-05-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Nous Research Nous-Hermes 13B",
+    "provider": "Nous Research",
+    "releaseDate": "2023-06-03",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 65B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-06-07",
+    "benchmarks": [
+      "tulu_human_eval"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 7B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-06-07",
+    "benchmarks": [
+      "tulu_human_eval"
+    ]
+  },
+  {
+    "name": "Writer Palmyra X",
+    "provider": "Writer",
+    "releaseDate": "2023-06-11",
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "LMSYS Vicuna 33B",
+    "provider": "LMSYS",
+    "releaseDate": "2023-06-22",
+    "benchmarks": [
+      "alpacaeval",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "MosaicML MPT 30B",
+    "provider": "MosaicML",
+    "releaseDate": "2023-06-22",
+    "benchmarks": [
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Zhipu ChatGLM2",
+    "provider": "Zhipu",
+    "releaseDate": "2023-06-25",
+    "benchmarks": [
+      "donotanswer"
+    ]
+  },
+  {
+    "name": "Microsoft Kosmos-2",
+    "provider": "Microsoft",
+    "releaseDate": "2023-06-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenBMB UltraLM 13B",
+    "provider": "OpenBMB",
+    "releaseDate": "2023-06-27",
+    "benchmarks": [
+      "alpacaeval",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 2",
+    "provider": "Anthropic",
+    "releaseDate": "2023-07-11",
+    "benchmarks": [
+      "alpacaeval",
+      "financebench",
+      "goodai_ltm_benchmark",
+      "legalbench",
+      "prism"
+    ]
+  },
+  {
+    "name": "Meta Llama 2 13B",
+    "provider": "Meta",
+    "releaseDate": "2023-07-18",
+    "benchmarks": [
+      "biggen",
+      "find_interp",
+      "legalbench",
+      "mmlupro",
+      "preference_dissection",
+      "prism",
+      "statqa",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Meta Llama 2 70B",
+    "provider": "Meta",
+    "releaseDate": "2023-07-18",
+    "benchmarks": [
+      "biggen",
+      "bird_sql",
+      "financebench",
+      "find_interp",
+      "legalbench",
+      "mmlupro",
+      "preference_dissection",
+      "prism",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Meta Llama 2 7B",
+    "provider": "Meta",
+    "releaseDate": "2023-07-18",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "decodingtrust",
+      "donotanswer",
+      "jailbreakbench",
+      "legalbench",
+      "mmlupro",
+      "preference_dissection",
+      "prism",
+      "statqa",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Chinese-LLaMA-Alpaca-2 7B",
+    "provider": "Community",
+    "releaseDate": "2023-07-31",
+    "benchmarks": [
+      "pku_saferlhf"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2023-08-03",
+    "benchmarks": [
+      "ceval"
+    ]
+  },
+  {
+    "name": "OpenBMB UltraLM 65B",
+    "provider": "OpenBMB",
+    "releaseDate": "2023-08-07",
+    "benchmarks": [
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Microsoft WizardLM 70B",
+    "provider": "Microsoft",
+    "releaseDate": "2023-08-09",
+    "benchmarks": [
+      "alpacaeval",
+      "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen-VL",
+    "provider": "Alibaba",
+    "releaseDate": "2023-08-22",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Hugging Face IDEFICS 80B",
+    "provider": "Hugging Face",
+    "releaseDate": "2023-08-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Hugging Face IDEFICS 9B",
+    "provider": "Hugging Face",
+    "releaseDate": "2023-08-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Code Llama 13B",
+    "provider": "Meta",
+    "releaseDate": "2023-08-24",
+    "benchmarks": [
+      "cruxeval"
+    ]
+  },
+  {
+    "name": "Meta Code Llama 34B",
+    "provider": "Meta",
+    "releaseDate": "2023-08-24",
+    "benchmarks": [
+      "bird_sql",
+      "cruxeval"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2023-09",
+    "benchmarks": [
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen Turbo",
+    "provider": "Alibaba",
+    "releaseDate": "2023-09",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen 14B",
+    "provider": "Alibaba",
+    "releaseDate": "2023-09-25",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4V",
+    "provider": "OpenAI",
+    "releaseDate": "2023-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "harmbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "InternLM-XComposer",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2023-09-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral 7B",
+    "provider": "Mistral",
+    "releaseDate": "2023-09-27",
+    "benchmarks": [
+      "aegis",
+      "afrimedqa",
+      "alpacaeval",
+      "babilong",
+      "biggen",
+      "bird_sql",
+      "cruxeval",
+      "dbpa",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "legalbench",
+      "mmdocrag",
+      "mmlupro",
+      "naep_llm_students",
+      "preference_dissection",
+      "prism"
+    ]
+  },
+  {
+    "name": "Defog SQLCoder 7B",
+    "provider": "Defog",
+    "releaseDate": "2023-10-03",
+    "benchmarks": [
+      "bird_sql"
+    ]
+  },
+  {
+    "name": "LLaVA v1.5 13B",
+    "provider": "LLaVA",
+    "releaseDate": "2023-10-05",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "LLaVA-1.5 Vicuna 13B",
+    "provider": "LLaVA",
+    "releaseDate": "2023-10-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-1.5 Vicuna 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2023-10-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Zhipu CogVLM",
+    "provider": "Zhipu",
+    "releaseDate": "2023-10-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "HuggingFace Zephyr 7B",
+    "provider": "Hugging Face",
+    "releaseDate": "2023-10-09",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "preference_dissection",
+      "prism"
+    ]
+  },
+  {
+    "name": "Parrot",
+    "provider": "Unknown",
+    "releaseDate": "2023-10-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "M42 Med42 70B",
+    "provider": "M42",
+    "releaseDate": "2023-10-12",
+    "benchmarks": [
+      "hivmedqa"
+    ]
+  },
+  {
+    "name": "MiniGPT-v2",
+    "provider": "Vision-CAIR",
+    "releaseDate": "2023-10-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Dolphin Mistral 7B",
+    "provider": "Cognitive Computations",
+    "releaseDate": "2023-10-30",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "TransCore-M",
+    "provider": "Unknown",
+    "releaseDate": "2023-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenChat 3.5",
+    "provider": "Openchat",
+    "releaseDate": "2023-11-01",
+    "benchmarks": [
+      "biggen"
+    ]
+  },
+  {
+    "name": "01.AI Yi 34B",
+    "provider": "01.AI",
+    "releaseDate": "2023-11-02",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "helm_airbench",
+      "legalbench",
+      "mmlupro",
+      "preference_dissection"
+    ]
+  },
+  {
+    "name": "01.AI Yi 6B",
+    "provider": "01.AI",
+    "releaseDate": "2023-11-02",
+    "benchmarks": [
+      "biggen",
+      "legalbench",
+      "mmlupro",
+      "preference_dissection"
+    ]
+  },
+  {
+    "name": "DeepSeek Coder 33B",
+    "provider": "DeepSeek",
+    "releaseDate": "2023-11-02",
+    "benchmarks": [
+      "appworld"
+    ]
+  },
+  {
+    "name": "DeepSeek Coder 6.7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2023-11-02",
+    "benchmarks": [
+      "jetts"
+    ]
+  },
+  {
+    "name": "Alibaba mPLUG-Owl2",
+    "provider": "Alibaba",
+    "releaseDate": "2023-11-07",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen Max",
+    "provider": "Alibaba",
+    "releaseDate": "2023-11-10",
+    "benchmarks": [
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Monkey",
+    "provider": "Hust",
+    "releaseDate": "2023-11-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 2 70B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-11-13",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "preference_dissection"
+    ]
+  },
+  {
+    "name": "ShareCaptioner",
+    "provider": "Unknown",
+    "releaseDate": "2023-11-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "ShareGPT4V 7B",
+    "provider": "Unknown",
+    "releaseDate": "2023-11-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen-VL Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2023-11-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek",
+    "provider": "DeepSeek",
+    "releaseDate": "2023-11-29",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "DeepSeek LLM 67B",
+    "provider": "DeepSeek",
+    "releaseDate": "2023-11-29",
+    "benchmarks": [
+      "alpacaeval",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "SEA-LION 7B",
+    "provider": "Ai Singapore",
+    "releaseDate": "2023-12",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Writer Palmyra X V2",
+    "provider": "Writer",
+    "releaseDate": "2023-12-01",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Writer Palmyra X V3",
+    "provider": "Writer",
+    "releaseDate": "2023-12-01",
+    "benchmarks": [
+      "legalbench"
+    ]
+  },
+  {
+    "name": "Google Gemini 1.0 Pro",
+    "provider": "Google",
+    "releaseDate": "2023-12-06",
+    "benchmarks": [
+      "ai2d_test",
+      "biggen",
+      "bird_sql",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_thaiexam",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Google Gemini Pro",
+    "provider": "Google",
+    "releaseDate": "2023-12-06",
+    "benchmarks": [
+      "afrimedqa",
+      "alpacaeval",
+      "harmbench"
+    ]
+  },
+  {
+    "name": "Google Gemini Ultra",
+    "provider": "Google",
+    "releaseDate": "2023-12-06",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "LLaVA InternLM 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2023-12-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Medium",
+    "provider": "Mistral",
+    "releaseDate": "2023-12-11",
+    "benchmarks": [
+      "alpacaeval",
+      "infibench"
+    ]
+  },
+  {
+    "name": "Mistral Mixtral 8x7B",
+    "provider": "Mistral",
+    "releaseDate": "2023-12-11",
+    "benchmarks": [
+      "afrimedqa",
+      "alpacaeval",
+      "babilong",
+      "biggen",
+      "bird_sql",
+      "cruxeval",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "legalbench",
+      "mmdocrag",
+      "mmlupro",
+      "moe_cap",
+      "multi_moe",
+      "subjective_qa"
+    ]
+  },
+  {
+    "name": "Google Gemini Pro Vision",
+    "provider": "Google",
+    "releaseDate": "2023-12-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Google MedLM",
+    "provider": "Google",
+    "releaseDate": "2023-12-13",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "ShareGPT4V 13B",
+    "provider": "Unknown",
+    "releaseDate": "2023-12-14",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "BAAI Emu2",
+    "provider": "BAAI",
+    "releaseDate": "2023-12-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SCB10X Typhoon 7B",
+    "provider": "SCB10X",
+    "releaseDate": "2023-12-23",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4V",
+    "provider": "Zhipu",
+    "releaseDate": "2024-01",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft WizardCoder 33B",
+    "provider": "Microsoft",
+    "releaseDate": "2024-01-04",
+    "benchmarks": [
+      "bird_sql"
+    ]
+  },
+  {
+    "name": "LLaVA InternLM2 20B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA InternLM2 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "ClimateGPT 70B",
+    "provider": "Climategpt",
+    "releaseDate": "2024-01-18",
+    "benchmarks": [
+      "atmossci_bench"
+    ]
+  },
+  {
+    "name": "ClimateGPT 7B",
+    "provider": "Climategpt",
+    "releaseDate": "2024-01-18",
+    "benchmarks": [
+      "atmossci_bench"
+    ]
+  },
+  {
+    "name": "01.AI Yi-VL",
+    "provider": "01.AI",
+    "releaseDate": "2024-01-23",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "01.AI Yi-VL 34B",
+    "provider": "01.AI",
+    "releaseDate": "2024-01-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "01.AI Yi-VL 6B",
+    "provider": "01.AI",
+    "releaseDate": "2024-01-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "MMAlaya",
+    "provider": "Datacanvas",
+    "releaseDate": "2024-01-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL 1.1",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-01-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen-VL Max",
+    "provider": "Alibaba",
+    "releaseDate": "2024-01-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "InternLM-XComposer2",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-01-29",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Code Llama 70B",
+    "provider": "Meta",
+    "releaseDate": "2024-01-29",
+    "benchmarks": [
+      "bird_sql",
+      "infibench"
+    ]
+  },
+  {
+    "name": "Moondream 1",
+    "provider": "Moondream",
+    "releaseDate": "2024-01-29",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Defog SQLCoder 70B",
+    "provider": "Defog",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "bird_sql"
+    ]
+  },
+  {
+    "name": "LLaVA v1.6 13B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "LLaVA v1.6 34B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "LLaVA v1.6 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Mistral 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Vicuna 13B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Vicuna 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Yi 34B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-01-30",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Moonshot v1",
+    "provider": "Moonshot",
+    "releaseDate": "2024-01-31",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI OLMo 1B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-02-01",
+    "benchmarks": [
+      "biggen"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM-V",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-02-01",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "OpenBMB OmniLMM 12B",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-02-01",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SeaLLM 7B v2",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-02",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 14B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "helm_thaiexam",
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "DeepSeek Math 7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-02-05",
+    "benchmarks": [
+      "atmossci_bench",
+      "jetts",
+      "proofaug"
+    ]
+  },
+  {
+    "name": "SenseTime SenseChat Vision",
+    "provider": "Sensetime",
+    "releaseDate": "2024-02-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL 1.2",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-02-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Reka Edge",
+    "provider": "Reka",
+    "releaseDate": "2024-02-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Reka Flash",
+    "provider": "Reka",
+    "releaseDate": "2024-02-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "BioMistral 7B",
+    "provider": "Biomistral",
+    "releaseDate": "2024-02-15",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "Google Gemini 1.5 Pro",
+    "provider": "Google",
+    "releaseDate": "2024-02-15",
+    "benchmarks": [
+      "agentdojo",
+      "ai2d_test",
+      "babilong",
+      "dave",
+      "disco",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "image2struct",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "mmlupro",
+      "mmmu_dev_val",
+      "rakuda",
+      "tengu",
+      "theagentcompany",
+      "vhelm"
+    ]
+  },
+  {
+    "name": "Unum UForm-Gen2 500M",
+    "provider": "Unum",
+    "releaseDate": "2024-02-15",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "BAAI Bunny 3B",
+    "provider": "BAAI",
+    "releaseDate": "2024-02-18",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Google Gemma 2B",
+    "provider": "Google",
+    "releaseDate": "2024-02-21",
+    "benchmarks": [
+      "alpacaeval",
+      "biggen",
+      "helm_afr",
+      "infibench",
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "Google Gemma 7B",
+    "provider": "Google",
+    "releaseDate": "2024-02-21",
+    "benchmarks": [
+      "afrimedqa",
+      "alpacaeval",
+      "biggen",
+      "infibench",
+      "mmlupro",
+      "monkey_power_laws"
+    ]
+  },
+  {
+    "name": "TinyLLaVA",
+    "provider": "Community",
+    "releaseDate": "2024-02-22",
+    "benchmarks": [
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Mistral Large",
+    "provider": "Mistral",
+    "releaseDate": "2024-02-26",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "infibench"
+    ]
+  },
+  {
+    "name": "Mistral Small",
+    "provider": "Mistral",
+    "releaseDate": "2024-02-26",
+    "benchmarks": [
+      "infibench"
+    ]
+  },
+  {
+    "name": "SambaNova SambaLingo Thai 7B",
+    "provider": "Sambanova",
+    "releaseDate": "2024-02-26",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Sailor 7B",
+    "provider": "Sea Ai Lab",
+    "releaseDate": "2024-03-02",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3 Haiku",
+    "provider": "Anthropic",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "ai2d_test",
+      "bertaqa",
+      "biggen",
+      "bird_sql",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "indeterminacy",
+      "infibench",
+      "mmmu_dev_val",
+      "rakuda",
+      "tengu",
+      "vhelm",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3 Opus",
+    "provider": "Anthropic",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "ai2d_test",
+      "alignment_faking",
+      "alpacaeval",
+      "bertaqa",
+      "biggen",
+      "bird_sql",
+      "clasheval",
+      "goodai_ltm_benchmark",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "image2struct",
+      "infibench",
+      "mmmu_dev_val",
+      "rakuda",
+      "tengu",
+      "vhelm",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3 Sonnet",
+    "provider": "Anthropic",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "ai2d_test",
+      "alpacaeval",
+      "bertaqa",
+      "biggen",
+      "bird_sql",
+      "clasheval",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "image2struct",
+      "infibench",
+      "mmmu_dev_val",
+      "rakuda",
+      "tengu",
+      "vhelm",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus",
+    "provider": "Anthropic",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Sonnet",
+    "provider": "Anthropic",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Moondream 2",
+    "provider": "Moondream",
+    "releaseDate": "2024-03-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek VL 1.3B",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-03-08",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek VL 7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-03-08",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "Cohere Command R",
+    "provider": "Cohere",
+    "releaseDate": "2024-03-11",
+    "benchmarks": [
+      "agentdojo",
+      "babilong",
+      "biggen",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "StepFun Step-1V",
+    "provider": "StepFun",
+    "releaseDate": "2024-03-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Databricks DBRX",
+    "provider": "Databricks",
+    "releaseDate": "2024-03-27",
+    "benchmarks": [
+      "bird_sql",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "moe_cap"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 MoE A2.7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-03-28",
+    "benchmarks": [
+      "moe_cap"
+    ]
+  },
+  {
+    "name": "SambaNova SambaLingo Thai 70B",
+    "provider": "Sambanova",
+    "releaseDate": "2024-04",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "SeaLLM 7B v2.5",
+    "provider": "Alibaba",
+    "releaseDate": "2024-04-03",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Cohere Command R+",
+    "provider": "Cohere",
+    "releaseDate": "2024-04-04",
+    "benchmarks": [
+      "agentdojo",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenThaiGPT 1.0.0 13B",
+    "provider": "Openthaigpt",
+    "releaseDate": "2024-04-08",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "OpenThaiGPT 1.0.0 7B",
+    "provider": "Openthaigpt",
+    "releaseDate": "2024-04-08",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "InternLM-XComposer2 1.8B",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-04-09",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Mixtral 8x22B",
+    "provider": "Mistral",
+    "releaseDate": "2024-04-10",
+    "benchmarks": [
+      "agc_bench",
+      "alpacaeval",
+      "babilong",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "moe_cap",
+      "subjective_qa"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM-V 2",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-04-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Hugging Face IDEFICS2 8B",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-04-15",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "wildvision"
+    ]
+  },
+  {
+    "name": "MiniMax abab6.5s",
+    "provider": "MiniMax",
+    "releaseDate": "2024-04-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 3 Large",
+    "provider": "Stability AI",
+    "releaseDate": "2024-04-17",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Meta Llama 3 70B",
+    "provider": "Meta",
+    "releaseDate": "2024-04-18",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "alpacaeval",
+      "appworld",
+      "biggen",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "mmlupro",
+      "monkey_power_laws",
+      "subjective_qa",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "Meta Llama 3 8B",
+    "provider": "Meta",
+    "releaseDate": "2024-04-18",
+    "benchmarks": [
+      "afrimedqa",
+      "agc_bench",
+      "ai2d_test",
+      "alpacaeval",
+      "biggen",
+      "causal_axioms",
+      "clasheval",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "ikp",
+      "mmlupro",
+      "mmmu_dev_val",
+      "monkey_power_laws",
+      "ood_prediction",
+      "statqa"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL 1.5",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-04-18",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Saama OpenBioLLM 8B",
+    "provider": "Saama",
+    "releaseDate": "2024-04-20",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "Bunny Llama 3 8B",
+    "provider": "BAAI",
+    "releaseDate": "2024-04-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA Llama 3 8B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-04-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3 Medium",
+    "provider": "Microsoft",
+    "releaseDate": "2024-04-23",
+    "benchmarks": [
+      "afrimedqa",
+      "llmail_inject"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3 Mini",
+    "provider": "Microsoft",
+    "releaseDate": "2024-04-23",
+    "benchmarks": [
+      "afrimedqa",
+      "babilong",
+      "biggen",
+      "dbpa",
+      "ikp",
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Saama OpenBioLLM 70B",
+    "provider": "Saama",
+    "releaseDate": "2024-04-24",
+    "benchmarks": [
+      "afrimedqa"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 110B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-04-25",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "VXVERSE",
+    "provider": "Xverse",
+    "releaseDate": "2024-04-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Chinese-LLaMA-Alpaca-3 8B",
+    "provider": "Community",
+    "releaseDate": "2024-04-30",
+    "benchmarks": [
+      "pku_saferlhf"
+    ]
+  },
+  {
+    "name": "NVIDIA VILA 1.5 13B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA VILA 1.5 3B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA VILA 1.5 40B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA VILA 1.5 8B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "TIGER-Lab Mantis 8B CLIP-LLaMA3",
+    "provider": "TIGER-Lab",
+    "releaseDate": "2024-05-02",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "TIGER-Lab Mantis 8B Fuyu",
+    "provider": "TIGER-Lab",
+    "releaseDate": "2024-05-02",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "TIGER-Lab Mantis 8B SigLIP-LLaMA3",
+    "provider": "TIGER-Lab",
+    "releaseDate": "2024-05-02",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Llama 3 8B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-05-10",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "01.AI Yi Large",
+    "provider": "01.AI",
+    "releaseDate": "2024-05-13",
+    "benchmarks": [
+      "alpacaeval"
+    ]
+  },
+  {
+    "name": "01.AI Yi Vision",
+    "provider": "01.AI",
+    "releaseDate": "2024-05-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4o",
+    "provider": "OpenAI",
+    "releaseDate": "2024-05-13",
+    "benchmarks": [
+      "afrimedqa",
+      "agc_bench",
+      "agentdojo",
+      "agi_elo",
+      "ai2d_test",
+      "alpacaeval",
+      "annotating_errors_wcf",
+      "appworld",
+      "arcagi",
+      "atmossci_bench",
+      "biggen",
+      "bridging_gap",
+      "clasheval",
+      "corebench",
+      "das_med_hallucination",
+      "disco",
+      "dqvis",
+      "eduguardbench",
+      "edumath",
+      "engdesign",
+      "fgbench",
+      "goodai_ltm_benchmark",
+      "hallusionbench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "hivmedqa",
+      "icpc2_code_selector",
+      "ikp",
+      "image2struct",
+      "infibench",
+      "kernelbench",
+      "live_agent_risk",
+      "matharena",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "mmlupro",
+      "mmmu_dev_val",
+      "multimodal_stem_ai",
+      "nester",
+      "phyblock",
+      "psychosis_bench",
+      "radar",
+      "rakuda",
+      "real_webagents",
+      "researchcodebench",
+      "safeagentbench",
+      "scale_mrt",
+      "statqa",
+      "subjective_qa",
+      "swe_smith",
+      "taubench",
+      "tengu",
+      "theagentcompany",
+      "vhelm",
+      "visualwebarena",
+      "vl_rewardbench",
+      "wildvision",
+      "workarena",
+      "workbench_revisited",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "TII Falcon 2 VLM 11B",
+    "provider": "TII",
+    "releaseDate": "2024-05-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Google Gemini 1.5 Flash",
+    "provider": "Google",
+    "releaseDate": "2024-05-14",
+    "benchmarks": [
+      "agentdojo",
+      "ai2d_test",
+      "clasheval",
+      "dave",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "mmlupro",
+      "mmmu_dev_val",
+      "phyblock",
+      "rakuda",
+      "tengu",
+      "vhelm"
+    ]
+  },
+  {
+    "name": "Google Gemini Flash",
+    "provider": "Google",
+    "releaseDate": "2024-05-14",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Google PaliGemma 3B",
+    "provider": "Google",
+    "releaseDate": "2024-05-14",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Chameleon 30B",
+    "provider": "Meta",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Chameleon 7B",
+    "provider": "Meta",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Qihoo 360VL 70B",
+    "provider": "Qihoo 360",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SCB10X Typhoon 1.5 72B",
+    "provider": "SCB10X",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "SCB10X Typhoon 1.5 8B",
+    "provider": "SCB10X",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Sailor 14B",
+    "provider": "Sea Ai Lab",
+    "releaseDate": "2024-05-16",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "OpenGVLab Mini-InternVL 2B v1.5",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-05-19",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM-V 2.5",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-05-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Zhipu CogVLM2",
+    "provider": "Zhipu",
+    "releaseDate": "2024-05-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3 Vision",
+    "provider": "Microsoft",
+    "releaseDate": "2024-05-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "TIGER-Lab Mantis 8B Idefics2",
+    "provider": "TIGER-Lab",
+    "releaseDate": "2024-05-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab Mini-InternVL 4B v1.5",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-05-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Codestral",
+    "provider": "Mistral",
+    "releaseDate": "2024-05-29",
+    "benchmarks": [
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "WeMM",
+    "provider": "Unknown",
+    "releaseDate": "2024-06-03",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4V 9B",
+    "provider": "Zhipu",
+    "releaseDate": "2024-06-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-06-07",
+    "benchmarks": [
+      "alpacaeval",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "SLIME 13B",
+    "provider": "Unknown",
+    "releaseDate": "2024-06-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SLIME 7B",
+    "provider": "Unknown",
+    "releaseDate": "2024-06-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 3 Medium",
+    "provider": "Stability AI",
+    "releaseDate": "2024-06-12",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT-Interleave Qwen 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-06-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek Coder V2",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-06-17",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3.5 Sonnet",
+    "provider": "Anthropic",
+    "releaseDate": "2024-06-20",
+    "benchmarks": [
+      "afrimedqa",
+      "agentdojo",
+      "ai2d_test",
+      "alignment_faking",
+      "alpacaeval",
+      "corebench",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "hivmedqa",
+      "image2struct",
+      "indeterminacy",
+      "kernelbench",
+      "live_agent_risk",
+      "matharena",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "mmlupro",
+      "mmmu_dev_val",
+      "phyblock",
+      "rakuda",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "swe_smith",
+      "taubench",
+      "tengu",
+      "theagentcompany",
+      "vhelm",
+      "vl_rewardbench"
+    ]
+  },
+  {
+    "name": "Cambrian 13B",
+    "provider": "Cambrian",
+    "releaseDate": "2024-06-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Cambrian 34B",
+    "provider": "Cambrian",
+    "releaseDate": "2024-06-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Cambrian 8B",
+    "provider": "Cambrian",
+    "releaseDate": "2024-06-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SCB10X Typhoon 1.5X 70B",
+    "provider": "SCB10X",
+    "releaseDate": "2024-06-25",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "SCB10X Typhoon 1.5X 8B",
+    "provider": "SCB10X",
+    "releaseDate": "2024-06-25",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Google Gemma 2 27B",
+    "provider": "Google",
+    "releaseDate": "2024-06-27",
+    "benchmarks": [
+      "agc_bench",
+      "atmossci_bench",
+      "helm_afr",
+      "icpc2_code_selector",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Gemma 2 9B",
+    "provider": "Google",
+    "releaseDate": "2024-06-27",
+    "benchmarks": [
+      "atmossci_bench",
+      "babilong",
+      "dbpa",
+      "helm_afr",
+      "judgetuning"
+    ]
+  },
+  {
+    "name": "AI Singapore SEA-LION 2 8B",
+    "provider": "Ai Singapore",
+    "releaseDate": "2024-07",
+    "benchmarks": [
+      "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "InternLM-XComposer2.5",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-07-02",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 1B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 26B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 2B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 40B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 4B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 76B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2 8B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "vl_rewardbench"
+    ]
+  },
+  {
+    "name": "StepFun Step-1.5V Mini",
+    "provider": "StepFun",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Tencent Hunyuan Vision",
+    "provider": "Tencent",
+    "releaseDate": "2024-07-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Maritaca Sabiá-3",
+    "provider": "Maritaca AI",
+    "releaseDate": "2024-07-05",
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "OmChat",
+    "provider": "Unknown",
+    "releaseDate": "2024-07-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "EPFL Meditron 3 70B",
+    "provider": "Epfl",
+    "releaseDate": "2024-07-12",
+    "benchmarks": [
+      "hivmedqa"
+    ]
+  },
+  {
+    "name": "Hugging Face SmolLM 135M",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-07-16",
+    "benchmarks": [
+      "dbpa"
+    ]
+  },
+  {
+    "name": "LLaVA-NeXT Qwen 32B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-07-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Codestral Mamba",
+    "provider": "Mistral",
+    "releaseDate": "2024-07-16",
+    "benchmarks": [
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Mistral Mathstral 7B",
+    "provider": "Mistral",
+    "releaseDate": "2024-07-16",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Mistral NeMo",
+    "provider": "Mistral",
+    "releaseDate": "2024-07-18",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Mistral NeMo 12B",
+    "provider": "Mistral",
+    "releaseDate": "2024-07-18",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4o mini",
+    "provider": "OpenAI",
+    "releaseDate": "2024-07-18",
+    "benchmarks": [
+      "abstract_reason",
+      "afrimedqa",
+      "agc_bench",
+      "agentdojo",
+      "ai2d_test",
+      "alpacaeval",
+      "atmossci_bench",
+      "babilong",
+      "corebench",
+      "cseo_bench",
+      "faithcot",
+      "hallusionbench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "indeterminacy",
+      "ineqmath",
+      "judgetuning",
+      "live_agent_risk",
+      "llmail_inject",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "mmlupro",
+      "mmmu_dev_val",
+      "nester",
+      "phyblock",
+      "rakuda",
+      "researchcodebench",
+      "scale_mrt",
+      "sgrades",
+      "tengu",
+      "vhelm",
+      "vl_rewardbench"
+    ]
+  },
+  {
+    "name": "SLIME 8B",
+    "provider": "Unknown",
+    "releaseDate": "2024-07-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.1 405B",
+    "provider": "Meta",
+    "releaseDate": "2024-07-23",
+    "benchmarks": [
+      "afrimedqa",
+      "atmossci_bench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "kernelbench"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.1 70B",
+    "provider": "Meta",
+    "releaseDate": "2024-07-23",
+    "benchmarks": [
+      "agc_bench",
+      "babilong",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "jetts",
+      "kernelbench",
+      "live_agent_risk",
+      "mmlupro",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.1 8B",
+    "provider": "Meta",
+    "releaseDate": "2024-07-23",
+    "benchmarks": [
+      "afrimedqa",
+      "agc_bench",
+      "agi_elo",
+      "babilong",
+      "critic_discernment_game",
+      "dbpa",
+      "faithcot",
+      "fewshot_ttt_bbh",
+      "fgbench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_thaiexam",
+      "helm_xstest",
+      "hivmedqa",
+      "ikp",
+      "jetts",
+      "mmdocrag",
+      "mmlupro",
+      "real_webagents",
+      "revolve"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis1.5 Gemma2 9B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2024-07-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis1.5 Llama3 8B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2024-07-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Large 2",
+    "provider": "Mistral",
+    "releaseDate": "2024-07-24",
+    "benchmarks": [
+      "alpacaeval",
+      "helm_airbench",
+      "putnam_axiom"
+    ]
+  },
+  {
+    "name": "Google Gemma 2 2B",
+    "provider": "Google",
+    "releaseDate": "2024-07-31",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Writer Palmyra Fin",
+    "provider": "Writer",
+    "releaseDate": "2024-07-31",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Writer Palmyra Med",
+    "provider": "Writer",
+    "releaseDate": "2024-07-31",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Black Forest Labs FLUX",
+    "provider": "Black Forest Labs",
+    "releaseDate": "2024-08-01",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Mini-Monkey",
+    "provider": "Hust",
+    "releaseDate": "2024-08-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-OneVision Qwen2 0.5B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-08-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-OneVision Qwen2 72B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-08-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Hugging Face IDEFICS3 8B",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-08-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LLaVA-OneVision Qwen2 7B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-08-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM-V 2.6",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-08-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "iAsk Pro",
+    "provider": "Iask",
+    "releaseDate": "2024-08-07",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Alibaba mPLUG-Owl3",
+    "provider": "Alibaba",
+    "releaseDate": "2024-08-09",
+    "benchmarks": [
+      "ai2d_test"
+    ]
+  },
+  {
+    "name": "Salesforce xGen-MM",
+    "provider": "Salesforce",
+    "releaseDate": "2024-08-09",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "VITA",
+    "provider": "Unknown",
+    "releaseDate": "2024-08-09",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Vintern 1B",
+    "provider": "Unknown",
+    "releaseDate": "2024-08-09",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "xAI Grok 2",
+    "provider": "xAI",
+    "releaseDate": "2024-08-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Nous Research Hermes 3 405B",
+    "provider": "Nous Research",
+    "releaseDate": "2024-08-15",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "MMAlaya2",
+    "provider": "Datacanvas",
+    "releaseDate": "2024-08-19",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3.5 Mini",
+    "provider": "Microsoft",
+    "releaseDate": "2024-08-21",
+    "benchmarks": [
+      "babilong"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3.5 Vision",
+    "provider": "Microsoft",
+    "releaseDate": "2024-08-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "vl_rewardbench"
+    ]
+  },
+  {
+    "name": "AI21 Jamba 1.5 Large",
+    "provider": "AI21",
+    "releaseDate": "2024-08-22",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "RBDash 72B",
+    "provider": "Rbdash",
+    "releaseDate": "2024-08-27",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA Eagle X5 13B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-08-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA Eagle X5 34B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-08-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA Eagle X5 7B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-08-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2-VL 2B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-08-29",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2-VL 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-08-29",
+    "benchmarks": [
+      "ai2d_test",
+      "disco",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "vl_rewardbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2-VL 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-08-29",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4V Plus",
+    "provider": "Zhipu",
+    "releaseDate": "2024-08-29",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Arx 3",
+    "provider": "Unknown",
+    "releaseDate": "2024-09",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "AllenAI OLMoE 1B-7B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-09-03",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "DeepSeek V2.5",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-09-05",
+    "benchmarks": [
+      "mmlupro"
+    ]
+  },
+  {
+    "name": "Tencent POINTS Yi 1.5 9B",
+    "provider": "Tencent",
+    "releaseDate": "2024-09-07",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Tencent POINTS Qwen2.5 7B",
+    "provider": "Tencent",
+    "releaseDate": "2024-09-09",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Pixtral 12B",
+    "provider": "Mistral",
+    "releaseDate": "2024-09-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenAI o1-mini",
+    "provider": "OpenAI",
+    "releaseDate": "2024-09-12",
+    "benchmarks": [
+      "corebench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "multimodal_stem_ai",
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "NVIDIA NVLM",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-09-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis1.6 Gemma2 9B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 0.5B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 14B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 32B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "appworld",
+      "atmossci_bench",
+      "jetts",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 3B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench",
+      "eduguardbench",
+      "helm_afr",
+      "helm_airbench",
+      "igakuqa119",
+      "ikp",
+      "jetts",
+      "mmdocrag",
+      "putnam_axiom",
+      "theagentcompany",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench",
+      "babilong",
+      "faithcot",
+      "fgbench",
+      "helm_afr",
+      "helm_airbench",
+      "ikp",
+      "jetts",
+      "mmdocrag",
+      "naep_llm_students"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-Math 1.5B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-Math 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-Math 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-09-19",
+    "benchmarks": [
+      "atmossci_bench",
+      "jetts",
+      "naep_llm_students"
+    ]
+  },
+  {
+    "name": "Xinyuan-VL 2B",
+    "provider": "Unknown",
+    "releaseDate": "2024-09-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI Molmo 72B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI Molmo 7B-D",
+    "provider": "AllenAI",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI Molmo 7B-O",
+    "provider": "AllenAI",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI MolmoE 1B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.2 11B",
+    "provider": "Meta",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "agc_bench",
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.2 1B",
+    "provider": "Meta",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "hivmedqa",
+      "icpc2_code_selector",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.2 3B",
+    "provider": "Meta",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "agc_bench",
+      "icpc2_code_selector",
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.2 90B",
+    "provider": "Meta",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "ai2d_test",
+      "disco",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "TinyLlama 1.1B CPT OpenWebMath",
+    "provider": "Community",
+    "releaseDate": "2024-09-25",
+    "benchmarks": [
+      "prox"
+    ]
+  },
+  {
+    "name": "BAAI Emu3",
+    "provider": "BAAI",
+    "releaseDate": "2024-09-27",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Google Gemini 1.5 Flash-8B",
+    "provider": "Google",
+    "releaseDate": "2024-10-03",
+    "benchmarks": [
+      "phyblock"
+    ]
+  },
+  {
+    "name": "Rhymes AI Aria",
+    "provider": "Rhymes Ai",
+    "releaseDate": "2024-10-08",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Writer Palmyra X 004",
+    "provider": "Writer",
+    "releaseDate": "2024-10-09",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Ross-Qwen2 7B",
+    "provider": "Unknown",
+    "releaseDate": "2024-10-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 70B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-10-15",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Mistral Ministral 3B",
+    "provider": "Mistral",
+    "releaseDate": "2024-10-16",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Mistral Ministral 8B",
+    "provider": "Mistral",
+    "releaseDate": "2024-10-16",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "mlrbench"
+    ]
+  },
+  {
+    "name": "DeepSeek Janus 1.3B",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-10-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "H2O.ai H2OVL Mississippi 1B",
+    "provider": "H2O.Ai",
+    "releaseDate": "2024-10-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "H2O.ai H2OVL Mississippi 2B",
+    "provider": "H2O.Ai",
+    "releaseDate": "2024-10-17",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis1.6 Llama3.2 3B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2024-10-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3.5 Haiku",
+    "provider": "Anthropic",
+    "releaseDate": "2024-10-22",
+    "benchmarks": [
+      "cseo_bench",
+      "helm_afr",
+      "ikp",
+      "mmlupro",
+      "phyblock",
+      "researchcodebench",
+      "scale_mrt",
+      "scigym"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 3.5 Large",
+    "provider": "Stability AI",
+    "releaseDate": "2024-10-22",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Diffusion 3.5 Medium",
+    "provider": "Stability AI",
+    "releaseDate": "2024-10-22",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Vintern 3B",
+    "provider": "Unknown",
+    "releaseDate": "2024-10-22",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "BAAI Aquila-VL 2B",
+    "provider": "BAAI",
+    "releaseDate": "2024-10-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Taiyi",
+    "provider": "Unknown",
+    "releaseDate": "2024-10-25",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolLM2 1.7B",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-10-31",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolLM2 135M",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-10-31",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolLM2 360M",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-10-31",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google LearnLM 1.5 Pro",
+    "provider": "Google",
+    "releaseDate": "2024-11",
+    "benchmarks": [
+      "naep_llm_students"
+    ]
+  },
+  {
+    "name": "MiniMax abab7",
+    "provider": "MiniMax",
+    "releaseDate": "2024-11-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-Coder 32B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-11-12",
+    "benchmarks": [
+      "atmossci_bench",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Maritaca Sabiazinho-3",
+    "provider": "Maritaca AI",
+    "releaseDate": "2024-11-13",
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "LLaVA-CoT 11B",
+    "provider": "LLaVA",
+    "releaseDate": "2024-11-15",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "vivo BlueLM-V",
+    "provider": "Vivo",
+    "releaseDate": "2024-11-16",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Pixtral Large",
+    "provider": "Mistral",
+    "releaseDate": "2024-11-18",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "TeleMM",
+    "provider": "Unknown",
+    "releaseDate": "2024-11-24",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis1.6 Gemma2 27B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2024-11-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AllenAI OLMo 2 13B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-11-26",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "AllenAI OLMo 2 7B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-11-26",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-11-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba QwQ 32B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-11-28",
+    "benchmarks": [
+      "agi_elo",
+      "atmossci_bench",
+      "icpc2_code_selector",
+      "ikp",
+      "matharena",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "NCSOFT VARCO-VISION",
+    "provider": "Ncsoft",
+    "releaseDate": "2024-11-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SAIL-VL 2B",
+    "provider": "Unknown",
+    "releaseDate": "2024-12",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Amazon Nova Lite",
+    "provider": "Amazon",
+    "releaseDate": "2024-12-03",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Amazon Nova Micro",
+    "provider": "Amazon",
+    "releaseDate": "2024-12-03",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Amazon Nova Pro",
+    "provider": "Amazon",
+    "releaseDate": "2024-12-03",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "OpenAI o1",
+    "provider": "OpenAI",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "atmossci_bench",
+      "corebench",
+      "engdesign",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "kernelbench",
+      "phyblock",
+      "real_webagents",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 1B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 26B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "ocrbench_v2",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 2B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 38B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 4B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 78B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL2.5 8B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2024-12-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "Meta Llama 3.3 70B",
+    "provider": "Meta",
+    "releaseDate": "2024-12-06",
+    "benchmarks": [
+      "agc_bench",
+      "agentdojo",
+      "atmossci_bench",
+      "helm_afr",
+      "hivmedqa",
+      "icpc2_code_selector",
+      "ikp",
+      "mathconstraint",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "naturalreasoning",
+      "real_webagents",
+      "reasoning_gym",
+      "researchcodebench",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.0 Flash",
+    "provider": "Google",
+    "releaseDate": "2024-12-11",
+    "benchmarks": [
+      "agentdojo",
+      "ai2d_test",
+      "atmossci_bench",
+      "dave",
+      "engdesign",
+      "hallusionbench",
+      "helm_afr",
+      "helm_airbench",
+      "icpc2_code_selector",
+      "ikp",
+      "matharena",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock",
+      "rakuda",
+      "researchcodebench",
+      "taubench",
+      "tengu",
+      "theagentcompany",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "Tencent POINTS1.5 Qwen2.5 7B",
+    "provider": "Tencent",
+    "releaseDate": "2024-12-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-4",
+    "provider": "Microsoft",
+    "releaseDate": "2024-12-12",
+    "benchmarks": [
+      "ikp",
+      "rakuda",
+      "tengu"
+    ]
+  },
+  {
+    "name": "Cohere Command R7B",
+    "provider": "Cohere",
+    "releaseDate": "2024-12-13",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "DeepSeek VL2",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-12-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek VL2 Small",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-12-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek VL2 Tiny",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-12-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "ByteDance Doubao VL",
+    "provider": "ByteDance",
+    "releaseDate": "2024-12-18",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.0 Flash Thinking",
+    "provider": "Google",
+    "releaseDate": "2024-12-19",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenAI o3",
+    "provider": "OpenAI",
+    "releaseDate": "2024-12-20",
+    "benchmarks": [
+      "aider",
+      "cseo_bench",
+      "das_med_hallucination",
+      "engdesign",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "matharena",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "sketchjudge",
+      "taubench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI o3-mini",
+    "provider": "OpenAI",
+    "releaseDate": "2024-12-20",
+    "benchmarks": [
+      "atmossci_bench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mmdocrag",
+      "naep_llm_students",
+      "real_webagents",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "ByteDance Valley-Eagle",
+    "provider": "ByteDance",
+    "releaseDate": "2024-12-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "SocraticLM",
+    "provider": "Community",
+    "releaseDate": "2024-12-24",
+    "benchmarks": [
+      "naep_llm_students"
+    ]
+  },
+  {
+    "name": "DeepSeek V3",
+    "provider": "DeepSeek",
+    "releaseDate": "2024-12-26",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "aider",
+      "das_med_hallucination",
+      "eduguardbench",
+      "ehrflowbench",
+      "engdesign",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "indeterminacy",
+      "kernelbench",
+      "matharena",
+      "mmdocrag",
+      "rakuda",
+      "real_webagents",
+      "researchcodebench",
+      "sciarena",
+      "taubench",
+      "tengu",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "Tencent Hunyuan Standard Vision",
+    "provider": "Tencent",
+    "releaseDate": "2024-12-31",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM-o 2.6",
+    "provider": "OpenBMB",
+    "releaseDate": "2025-01-13",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "MiniMax-01",
+    "provider": "MiniMax",
+    "releaseDate": "2025-01-15",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Ant Bailing-MM Pro",
+    "provider": "Ant Group",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "DeepSeek R1",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "agi_elo",
+      "algotune",
+      "cellverse",
+      "das_med_hallucination",
+      "eduguardbench",
+      "ehrflowbench",
+      "engdesign",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "kernelbench",
+      "matharena",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mlrbench",
+      "mmdocrag",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "DeepSeek R1 Distill Llama 70B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "atmossci_bench",
+      "eduguardbench",
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "DeepSeek R1 Distill Qwen 1.5B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "agi_elo",
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "DeepSeek R1 Distill Qwen 32B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "DeepSeek R1 Distill Qwen 7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "agi_elo",
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "StepFun Step-1o",
+    "provider": "StepFun",
+    "releaseDate": "2025-01-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM 256M",
+    "provider": "Hugging Face",
+    "releaseDate": "2025-01-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM 500M",
+    "provider": "Hugging Face",
+    "releaseDate": "2025-01-23",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenAI CUA",
+    "provider": "OpenAI",
+    "releaseDate": "2025-01-23",
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-VL 3B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-01-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val",
+      "phyblock",
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-VL 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-01-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-VL 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-01-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock",
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "DeepSeek Janus-Pro 7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-27",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmdocrag",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Mistral Small 24B",
+    "provider": "Mistral",
+    "releaseDate": "2025-01-30",
+    "benchmarks": [
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Mistral Small 3",
+    "provider": "Mistral",
+    "releaseDate": "2025-01-30",
+    "benchmarks": [
+      "helm_airbench",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.0 Flash-Lite",
+    "provider": "Google",
+    "releaseDate": "2025-02-05",
+    "benchmarks": [
+      "dave",
+      "helm_airbench",
+      "icpc2_code_selector",
+      "phyblock",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.0 Pro",
+    "provider": "Google",
+    "releaseDate": "2025-02-05",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "helm_airbench",
+      "icpc2_code_selector",
+      "matharena",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "phyblock"
+    ]
+  },
+  {
+    "name": "Ola",
+    "provider": "Unknown",
+    "releaseDate": "2025-02-06",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Stanford s1.1 32B",
+    "provider": "Stanford",
+    "releaseDate": "2025-02-11",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "Llama-3-8B-Instruct axiomatic dsep (LoRA)",
+    "provider": "Community",
+    "releaseDate": "2025-02-17",
+    "benchmarks": [
+      "causal_axioms"
+    ]
+  },
+  {
+    "name": "xAI Grok 3",
+    "provider": "xAI",
+    "releaseDate": "2025-02-17",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "matharena",
+      "mmdocrag",
+      "real_webagents",
+      "researchcodebench",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "xAI Grok 3 Mini",
+    "provider": "xAI",
+    "releaseDate": "2025-02-17",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "mmdocrag",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM2",
+    "provider": "Hugging Face",
+    "releaseDate": "2025-02-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM2 256M",
+    "provider": "Hugging Face",
+    "releaseDate": "2025-02-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HuggingFace SmolVLM2 500M",
+    "provider": "Hugging Face",
+    "releaseDate": "2025-02-20",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 16B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 1B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 2B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 34B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 4B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AIDC-AI Ovis2 8B",
+    "provider": "AIDC-AI",
+    "releaseDate": "2025-02-21",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Anthropic Claude 3.7 Sonnet",
+    "provider": "Anthropic",
+    "releaseDate": "2025-02-24",
+    "benchmarks": [
+      "agc_bench",
+      "agentdojo",
+      "agi_elo",
+      "ai2d_test",
+      "chartmuseum",
+      "das_med_hallucination",
+      "eduguardbench",
+      "engdesign",
+      "hallusionbench",
+      "helm_afr",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mlrbench",
+      "mmmu_dev_val",
+      "multimodal_stem_ai",
+      "os_harm",
+      "phyblock",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "scigym",
+      "sketchjudge",
+      "swe_smith",
+      "tau2_bench",
+      "taubench",
+      "theagentcompany",
+      "visualwebarena",
+      "workarena"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-4 Vision",
+    "provider": "Microsoft",
+    "releaseDate": "2025-02-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4.5",
+    "provider": "OpenAI",
+    "releaseDate": "2025-02-27",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "AKI",
+    "provider": "Unknown",
+    "releaseDate": "2025-03-04",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba QwQ Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2025-03-05",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "AI21 Jamba Large",
+    "provider": "AI21",
+    "releaseDate": "2025-03-06",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Gemma 3 12B",
+    "provider": "Google",
+    "releaseDate": "2025-03-12",
+    "benchmarks": [
+      "agc_bench",
+      "ai2d_test",
+      "babilong",
+      "hallusionbench",
+      "ikp",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Google Gemma 3 1B",
+    "provider": "Google",
+    "releaseDate": "2025-03-12",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Gemma 3 27B",
+    "provider": "Google",
+    "releaseDate": "2025-03-12",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "ai2d_test",
+      "babilong",
+      "hallusionbench",
+      "hivmedqa",
+      "icpc2_code_selector",
+      "ikp",
+      "mmmu_dev_val",
+      "real_webagents",
+      "reasoning_gym",
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Google Gemma 3 4B",
+    "provider": "Google",
+    "releaseDate": "2025-03-12",
+    "benchmarks": [
+      "agc_bench",
+      "ai2d_test",
+      "babilong",
+      "hallusionbench",
+      "icpc2_code_selector",
+      "ikp",
+      "mmmu_dev_val",
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "AllenAI OLMo 2 32B",
+    "provider": "AllenAI",
+    "releaseDate": "2025-03-13",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Cohere Command A",
+    "provider": "Cohere",
+    "releaseDate": "2025-03-13",
+    "benchmarks": [
+      "ikp",
+      "researchcodebench"
+    ]
+  },
+  {
+    "name": "Mistral Small 3.1 24B",
+    "provider": "Mistral",
+    "releaseDate": "2025-03-17",
+    "benchmarks": [
+      "agc_bench",
+      "reasoning_gym"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron Super 49B",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-03-18",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2.5-VL 32B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-03-24",
+    "benchmarks": [
+      "mmdocrag",
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.5 Pro",
+    "provider": "Google",
+    "releaseDate": "2025-03-25",
+    "benchmarks": [
+      "ai2d_test",
+      "algotune",
+      "benger",
+      "das_med_hallucination",
+      "edu_circuit_hw",
+      "engdesign",
+      "hallusionbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "hivmedqa",
+      "icpc2_code_selector",
+      "ikp",
+      "matharena",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mlrbench",
+      "mmdocrag",
+      "mmmu_dev_val",
+      "os_harm",
+      "psychosis_bench",
+      "rakuda",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "scigym",
+      "tengu",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "Ristretto 3B",
+    "provider": "Unknown",
+    "releaseDate": "2025-03-26",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Alibaba QVQ-Max",
+    "provider": "Alibaba",
+    "releaseDate": "2025-03-28",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Amazon Nova Act",
+    "provider": "Amazon",
+    "releaseDate": "2025-03-31",
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Meta Llama 4 Maverick",
+    "provider": "Meta",
+    "releaseDate": "2025-04-05",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "benger",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "matharena",
+      "mmdocrag",
+      "psychosis_bench",
+      "real_webagents",
+      "reasoning_gym",
+      "researchcodebench",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "Meta Llama 4 Scout",
+    "provider": "Meta",
+    "releaseDate": "2025-04-05",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "mmdocrag",
+      "reasoning_gym",
+      "researchcodebench",
+      "sciarena",
+      "sgrades",
+      "sketchjudge",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "HiDream",
+    "provider": "Hidream",
+    "releaseDate": "2025-04-07",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL3 14B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2025-04-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL3 38B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2025-04-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL3 78B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2025-04-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL3 8B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2025-04-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenGVLab InternVL3 9B",
+    "provider": "OpenGVLab",
+    "releaseDate": "2025-04-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4.1",
+    "provider": "OpenAI",
+    "releaseDate": "2025-04-14",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "aider",
+      "appworld",
+      "arcagi",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "live_agent_risk",
+      "mmdocrag",
+      "os_harm",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "scigym",
+      "tau2_bench",
+      "taubench",
+      "workbench_revisited",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4.1 mini",
+    "provider": "OpenAI",
+    "releaseDate": "2025-04-14",
+    "benchmarks": [
+      "agc_bench",
+      "agi_elo",
+      "arcagi",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "mmdocrag",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "scigym",
+      "tau2_bench",
+      "worldcentralbanks"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-4.1 nano",
+    "provider": "OpenAI",
+    "releaseDate": "2025-04-14",
+    "benchmarks": [
+      "agi_elo",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "mmdocrag",
+      "researchcodebench",
+      "scale_mrt"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4 32B",
+    "provider": "Zhipu",
+    "releaseDate": "2025-04-14",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-Z1 9B",
+    "provider": "Zhipu",
+    "releaseDate": "2025-04-14",
+    "benchmarks": [
+      "eduguardbench"
+    ]
+  },
+  {
+    "name": "ByteDance Seedream 3.0",
+    "provider": "ByteDance",
+    "releaseDate": "2025-04-16",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "IBM Granite 3.3 2B",
+    "provider": "IBM",
+    "releaseDate": "2025-04-16",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "IBM Granite 3.3 8B",
+    "provider": "IBM",
+    "releaseDate": "2025-04-16",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "OpenAI o4-mini",
+    "provider": "OpenAI",
+    "releaseDate": "2025-04-16",
+    "benchmarks": [
+      "algotune",
+      "cseo_bench",
+      "das_med_hallucination",
+      "engdesign",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "icpc2_code_selector",
+      "ikp",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "mlrbench",
+      "os_harm",
+      "psychosis_bench",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "tau2_bench",
+      "taubench"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.5 Flash",
+    "provider": "Google",
+    "releaseDate": "2025-04-17",
+    "benchmarks": [
+      "agc_bench",
+      "das_med_hallucination",
+      "faithcot",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "mmdocrag",
+      "os_harm",
+      "psychosis_bench",
+      "rakuda",
+      "real_webagents",
+      "researchcodebench",
+      "scale_mrt",
+      "sciarena",
+      "scigym",
+      "sgrades",
+      "sketchjudge",
+      "tengu",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "OpenAI GPT Image 1",
+    "provider": "OpenAI",
+    "releaseDate": "2025-04-23",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "StepFun Step1X-Edit",
+    "provider": "StepFun",
+    "releaseDate": "2025-04-23",
+    "benchmarks": [
+      "risebench"
+    ]
+  },
+  {
+    "name": "Baidu ERNIE 4.5 Turbo VL",
+    "provider": "Baidu",
+    "releaseDate": "2025-04-25",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Writer Palmyra X5",
+    "provider": "Writer",
+    "releaseDate": "2025-04-28",
+    "benchmarks": [
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 0.6B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 14B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "agc_bench",
+      "appworld",
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 235B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "openbiorq",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 235B A22B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "atmossci_bench",
+      "eduguardbench",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "matharena",
+      "mlrbench",
+      "mmdocrag",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 30B A3B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "ikp",
+      "matharena",
+      "mmdocrag",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 32B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "eduguardbench",
+      "ikp",
+      "mmdocrag",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 4B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "matharena",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 8B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-04-29",
+    "benchmarks": [
+      "eduguardbench",
+      "ikp",
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Amazon Nova Premier",
+    "provider": "Amazon",
+    "releaseDate": "2025-04-30",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-4 Reasoning Plus",
+    "provider": "Microsoft",
+    "releaseDate": "2025-04-30",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "Google Gemini Image",
+    "provider": "Google",
+    "releaseDate": "2025-05-07",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Mistral Medium 3",
+    "provider": "Mistral",
+    "releaseDate": "2025-05-07",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "researchcodebench",
+      "sciarena",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Mixtral-8x7B-v0.1 Multi-MoE (no reconfiguration)",
+    "provider": "Community",
+    "releaseDate": "2025-05-10",
+    "benchmarks": [
+      "multi_moe"
+    ]
+  },
+  {
+    "name": "Mixtral-8x7B-v0.1 Multi-MoE (proposed, runtime reconfiguration)",
+    "provider": "Community",
+    "releaseDate": "2025-05-10",
+    "benchmarks": [
+      "multi_moe"
+    ]
+  },
+  {
+    "name": "Mixtral-8x7B-v0.1-avg (weight-averaging baseline)",
+    "provider": "Community",
+    "releaseDate": "2025-05-10",
+    "benchmarks": [
+      "multi_moe"
+    ]
+  },
+  {
+    "name": "MMDocRAG Qwen2.5 14B LoRA",
+    "provider": "Community",
+    "releaseDate": "2025-05-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "MMDocRAG Qwen2.5 32B LoRA",
+    "provider": "Community",
+    "releaseDate": "2025-05-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "MMDocRAG Qwen2.5 3B LoRA",
+    "provider": "Community",
+    "releaseDate": "2025-05-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "MMDocRAG Qwen2.5 72B LoRA",
+    "provider": "Community",
+    "releaseDate": "2025-05-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "MMDocRAG Qwen2.5 7B LoRA",
+    "provider": "Community",
+    "releaseDate": "2025-05-11",
+    "benchmarks": [
+      "mmdocrag"
+    ]
+  },
+  {
+    "name": "Stanford Marin 8B",
+    "provider": "Stanford",
+    "releaseDate": "2025-05-19",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "ByteDance BAGEL",
+    "provider": "ByteDance",
+    "releaseDate": "2025-05-20",
+    "benchmarks": [
+      "imgedit",
+      "risebench"
+    ]
+  },
+  {
+    "name": "Google Gemma 3n E4B",
+    "provider": "Google",
+    "releaseDate": "2025-05-20",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google MedGemma 27B",
+    "provider": "Google",
+    "releaseDate": "2025-05-20",
+    "benchmarks": [
+      "hivmedqa"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4",
+    "provider": "Anthropic",
+    "releaseDate": "2025-05-22",
+    "benchmarks": [
+      "algotune",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "real_webagents",
+      "sciarena",
+      "taubench"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Sonnet 4",
+    "provider": "Anthropic",
+    "releaseDate": "2025-05-22",
+    "benchmarks": [
+      "agc_bench",
+      "alignment_faking",
+      "das_med_hallucination",
+      "helm_airbench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "psychosis_bench",
+      "real_webagents",
+      "reasoning_gym",
+      "scale_mrt",
+      "sciarena",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "Llama-3.1-8B-Instruct-CDG",
+    "provider": "Community",
+    "releaseDate": "2025-05-24",
+    "benchmarks": [
+      "critic_discernment_game"
+    ]
+  },
+  {
+    "name": "Ant Bailing-MM Lite",
+    "provider": "Ant Group",
+    "releaseDate": "2025-05-28",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Black Forest Labs FLUX Kontext",
+    "provider": "Black Forest Labs",
+    "releaseDate": "2025-05-29",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Ant Bailing-MM",
+    "provider": "Ant Group",
+    "releaseDate": "2025-06-11",
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "ByteDance Seed 1.6",
+    "provider": "ByteDance",
+    "releaseDate": "2025-06-11",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "ByteDance Seed 1.6 Flash",
+    "provider": "ByteDance",
+    "releaseDate": "2025-06-11",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "MiniMax M1",
+    "provider": "MiniMax",
+    "releaseDate": "2025-06-16",
+    "benchmarks": [
+      "ikp",
+      "sciarena"
+    ]
+  },
+  {
+    "name": "Google Gemini 2.5 Flash-Lite",
+    "provider": "Google",
+    "releaseDate": "2025-06-17",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Tencent Hunyuan A13B",
+    "provider": "Tencent",
+    "releaseDate": "2025-06-27",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Ovis-U1",
+    "provider": "Alibaba",
+    "releaseDate": "2025-06-29",
+    "benchmarks": [
+      "risebench"
+    ]
+  },
+  {
+    "name": "Baidu ERNIE 4.5 300B A47B",
+    "provider": "Baidu",
+    "releaseDate": "2025-06-30",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Baidu ERNIE 4.5 VL 424B-A47B",
+    "provider": "Baidu",
+    "releaseDate": "2025-06-30",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "AI21 Jamba Large 1.7",
+    "provider": "AI21",
+    "releaseDate": "2025-07-03",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Meta SecAlign 70B",
+    "provider": "Meta",
+    "releaseDate": "2025-07-03",
+    "benchmarks": [
+      "agentdojo"
+    ]
+  },
+  {
+    "name": "Morph V3 Fast",
+    "provider": "Morph",
+    "releaseDate": "2025-07-07",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "EduChat-R1",
+    "provider": "Community",
+    "releaseDate": "2025-07-08",
+    "benchmarks": [
+      "eduguardbench"
+    ]
+  },
+  {
+    "name": "xAI Grok 4",
+    "provider": "xAI",
+    "releaseDate": "2025-07-09",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "matharena",
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Moonshot Kimi K2",
+    "provider": "Moonshot",
+    "releaseDate": "2025-07-11",
+    "benchmarks": [
+      "agc_bench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "matharena"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo",
+    "provider": "Community",
+    "releaseDate": "2025-07-19",
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo-001",
+    "provider": "Community",
+    "releaseDate": "2025-07-19",
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3-Coder",
+    "provider": "Alibaba",
+    "releaseDate": "2025-07-22",
+    "benchmarks": [
+      "algotune"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 235B A22B Thinking",
+    "provider": "Alibaba",
+    "releaseDate": "2025-07-25",
+    "benchmarks": [
+      "benger"
+    ]
+  },
+  {
+    "name": "Alibaba Wan 2.2",
+    "provider": "Alibaba",
+    "releaseDate": "2025-07-28",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.5",
+    "provider": "Zhipu",
+    "releaseDate": "2025-07-28",
+    "benchmarks": [
+      "algotune",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.5 Air",
+    "provider": "Zhipu",
+    "releaseDate": "2025-07-28",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen Image",
+    "provider": "Alibaba",
+    "releaseDate": "2025-08-04",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.1",
+    "provider": "Anthropic",
+    "releaseDate": "2025-08-05",
+    "benchmarks": [
+      "algotune",
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-OSS 120B",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-05",
+    "benchmarks": [
+      "algotune",
+      "dtap_bench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "mathconstraint",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-OSS 20B",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-05",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-07",
+    "benchmarks": [
+      "aider",
+      "algotune",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "live_agent_risk",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "psychosis_bench",
+      "real_webagents",
+      "sketchjudge",
+      "tau2_bench",
+      "taubench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5 Chat",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-07",
+    "benchmarks": [
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5 Pro",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-07",
+    "benchmarks": [
+      "algotune",
+      "arcagi",
+      "ikp",
+      "matharena"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5 mini",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-07",
+    "benchmarks": [
+      "algotune",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "live_agent_risk",
+      "medhelm_ehr_sql",
+      "medhelm_head_qa",
+      "medhelm_med_mcqa",
+      "medhelm_med_qa",
+      "medhelm_medbullets",
+      "medhelm_medcalc_bench",
+      "medhelm_medec",
+      "medhelm_medhallu",
+      "medhelm_pubmed_qa",
+      "medhelm_race_based_med",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5 nano",
+    "provider": "OpenAI",
+    "releaseDate": "2025-08-07",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "live_agent_risk",
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.5V",
+    "provider": "Zhipu",
+    "releaseDate": "2025-08-11",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Google Gemma 3 270M",
+    "provider": "Google",
+    "releaseDate": "2025-08-14",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "ByteDance Doubao Seed 1.6 Vision",
+    "provider": "ByteDance",
+    "releaseDate": "2025-08-15",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron Nano 9B V2",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-08-18",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "DeepSeek V3.1",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-08-21",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "psychosis_bench"
+    ]
+  },
+  {
+    "name": "Nous Research Hermes 4 405B",
+    "provider": "Nous Research",
+    "releaseDate": "2025-08-26",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Nous Research Hermes 4 70B",
+    "provider": "Nous Research",
+    "releaseDate": "2025-08-26",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3 Max",
+    "provider": "Alibaba",
+    "releaseDate": "2025-09-05",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3-Next 80B A3B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-09-12",
+    "benchmarks": [
+      "agc_bench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp"
+    ]
+  },
+  {
+    "name": "xAI Grok 4 Fast",
+    "provider": "xAI",
+    "releaseDate": "2025-09-19",
+    "benchmarks": [
+      "arcagi"
+    ]
+  },
+  {
+    "name": "Baidu Qianfan VL 70B",
+    "provider": "Baidu",
+    "releaseDate": "2025-09-22",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Baidu Qianfan VL 8B",
+    "provider": "Baidu",
+    "releaseDate": "2025-09-22",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3-VL Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2025-09-23",
+    "benchmarks": [
+      "edu_circuit_hw"
+    ]
+  },
+  {
+    "name": "Meta CWM",
+    "provider": "Meta",
+    "releaseDate": "2025-09-24",
+    "benchmarks": [
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Sonnet 4.5",
+    "provider": "Anthropic",
+    "releaseDate": "2025-09-29",
+    "benchmarks": [
+      "agc_bench",
+      "algotune",
+      "arcagi",
+      "dtap_bench",
+      "edu_circuit_hw",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "real_webagents",
+      "tau2_bench"
+    ]
+  },
+  {
+    "name": "DeepSeek V3.2",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-09-29",
+    "benchmarks": [
+      "agc_bench",
+      "dataclawbench",
+      "ikp",
+      "matharena",
+      "real_webagents",
+      "theagentcompany"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.6",
+    "provider": "Zhipu",
+    "releaseDate": "2025-09-30",
+    "benchmarks": [
+      "agc_bench",
+      "ikp",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "IBM Granite 4.0 H Micro",
+    "provider": "IBM",
+    "releaseDate": "2025-10-02",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "IBM Granite 4.0 H-Small",
+    "provider": "IBM",
+    "releaseDate": "2025-10-02",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "IBM Granite 4.0 Micro",
+    "provider": "IBM",
+    "releaseDate": "2025-10-02",
+    "benchmarks": [
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3-VL 8B",
+    "provider": "Alibaba",
+    "releaseDate": "2025-10-15",
+    "benchmarks": [
+      "edu_circuit_hw"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Haiku 4.5",
+    "provider": "Anthropic",
+    "releaseDate": "2025-10-15",
+    "benchmarks": [
+      "agc_bench",
+      "arcagi",
+      "ceobench",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "software_world_models",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "MiniMax M2",
+    "provider": "MiniMax",
+    "releaseDate": "2025-10-27",
+    "benchmarks": [
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron Nano 12B v2 VL",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-10-28",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.1",
+    "provider": "OpenAI",
+    "releaseDate": "2025-11-12",
+    "benchmarks": [
+      "agc_bench",
+      "dtap_bench",
+      "edu_circuit_hw",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "ikp",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "xAI Grok 4.1",
+    "provider": "xAI",
+    "releaseDate": "2025-11-17",
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Google Gemini 3 Deep Think",
+    "provider": "Google",
+    "releaseDate": "2025-11-18",
+    "benchmarks": [
+      "arcagi"
+    ]
+  },
+  {
+    "name": "Google Gemini 3 Pro",
+    "provider": "Google",
+    "releaseDate": "2025-11-18",
+    "benchmarks": [
+      "algotune",
+      "arcagi",
+      "dtap_bench",
+      "edu_circuit_hw",
+      "helm_anthropic_redteam",
+      "helm_bbq",
+      "helm_harmbench",
+      "helm_simple_safety_tests",
+      "helm_xstest",
+      "matharena",
+      "openbiorq",
+      "rakuda",
+      "tau2_bench",
+      "tengu"
+    ]
+  },
+  {
+    "name": "Deep Cogito v2.1 671B",
+    "provider": "Deep Cogito",
+    "releaseDate": "2025-11-19",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "xAI Grok 4.1 Fast",
+    "provider": "xAI",
+    "releaseDate": "2025-11-19",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.5",
+    "provider": "Anthropic",
+    "releaseDate": "2025-11-24",
+    "benchmarks": [
+      "agc_bench",
+      "algotune",
+      "arcagi",
+      "ikp",
+      "tau2_bench"
+    ]
+  },
+  {
+    "name": "Black Forest Labs FLUX.2 Pro",
+    "provider": "Black Forest Labs",
+    "releaseDate": "2025-11-25",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron Orchestrator 8B",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-11-26",
+    "benchmarks": [
+      "tau2_bench"
+    ]
+  },
+  {
+    "name": "Prime Intellect INTELLECT-3",
+    "provider": "Prime Intellect",
+    "releaseDate": "2025-11-26",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Amazon Nova 2 Lite",
+    "provider": "Amazon",
+    "releaseDate": "2025-12-02",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Mistral Large 3",
+    "provider": "Mistral",
+    "releaseDate": "2025-12-02",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "Nex N1",
+    "provider": "Community",
+    "releaseDate": "2025-12-04",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Nex N1 (DeepSeek V3.1)",
+    "provider": "Nex AGI",
+    "releaseDate": "2025-12-04",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.6V",
+    "provider": "Zhipu",
+    "releaseDate": "2025-12-08",
+    "benchmarks": [
+      "sketchjudge"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.2",
+    "provider": "OpenAI",
+    "releaseDate": "2025-12-11",
+    "benchmarks": [
+      "algotune",
+      "dtap_bench",
+      "ikp",
+      "legal_rag_bench",
+      "matharena",
+      "software_world_models",
+      "tau2_bench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.2 Pro",
+    "provider": "OpenAI",
+    "releaseDate": "2025-12-11",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "AllenAI OLMo 3.1 32B",
+    "provider": "AllenAI",
+    "releaseDate": "2025-12-12",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 3 Nano 30B",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-12-15",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 3 Nano 30B A3B",
+    "provider": "NVIDIA",
+    "releaseDate": "2025-12-15",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "OpenAI GPT Image 1.5",
+    "provider": "OpenAI",
+    "releaseDate": "2025-12-16",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Xiaomi MiMo V2 Flash",
+    "provider": "Xiaomi",
+    "releaseDate": "2025-12-16",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Gemini 3 Flash",
+    "provider": "Google",
+    "releaseDate": "2025-12-17",
+    "benchmarks": [
+      "babilong",
+      "benger",
+      "ceobench",
+      "dpai",
+      "ikp",
+      "matharena",
+      "rakuda",
+      "tau2_bench",
+      "tengu"
+    ]
+  },
+  {
+    "name": "MiniMax M2.1",
+    "provider": "MiniMax",
+    "releaseDate": "2025-12-22",
+    "benchmarks": [
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.7",
+    "provider": "Zhipu",
+    "releaseDate": "2025-12-22",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4.7 Flash",
+    "provider": "Zhipu",
+    "releaseDate": "2026-01-19",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "MiniMax M2 HER",
+    "provider": "MiniMax",
+    "releaseDate": "2026-01-23",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Arcee Trinity Large",
+    "provider": "Arcee AI",
+    "releaseDate": "2026-01-27",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "Moonshot Kimi K2.5",
+    "provider": "Moonshot",
+    "releaseDate": "2026-01-27",
+    "benchmarks": [
+      "agc_bench",
+      "dataclawbench",
+      "healthadminbench",
+      "ikp",
+      "matharena",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "StepFun Step 3.5 Flash",
+    "provider": "StepFun",
+    "releaseDate": "2026-01-29",
+    "benchmarks": [
+      "ikp",
+      "matharena"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.6",
+    "provider": "Anthropic",
+    "releaseDate": "2026-02-05",
+    "benchmarks": [
+      "agc_bench",
+      "agentic_review_perturbation",
+      "algotune",
+      "arcagi",
+      "benger",
+      "dataclawbench",
+      "dtap_bench",
+      "healthadminbench",
+      "ikp",
+      "matharena",
+      "mypcbench",
+      "naturebench",
+      "researchclawbench",
+      "robust_reasoning_benchmark"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.6 Fast",
+    "provider": "Anthropic",
+    "releaseDate": "2026-02-07",
+    "benchmarks": [
+      "agc_bench"
+    ]
+  },
+  {
+    "name": "MiniMax M2.5",
+    "provider": "MiniMax",
+    "releaseDate": "2026-02-12",
+    "benchmarks": [
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-5",
+    "provider": "Zhipu",
+    "releaseDate": "2026-02-12",
+    "benchmarks": [
+      "agc_bench",
+      "dataclawbench",
+      "ikp",
+      "matharena",
+      "openbiorq",
+      "tau2_bench"
+    ]
+  },
+  {
+    "name": "ByteDance Seed 2.0 Lite",
+    "provider": "ByteDance",
+    "releaseDate": "2026-02-14",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "ByteDance Seed 2.0 Mini",
+    "provider": "ByteDance",
+    "releaseDate": "2026-02-14",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-16",
+    "benchmarks": [
+      "healthadminbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 397B A17B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-16",
+    "benchmarks": [
+      "ikp",
+      "matharena",
+      "openbiorq",
+      "researchclawbench",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-16",
+    "benchmarks": [
+      "dataclawbench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Sonnet 4.6",
+    "provider": "Anthropic",
+    "releaseDate": "2026-02-17",
+    "benchmarks": [
+      "agc_bench",
+      "benger",
+      "ceobench",
+      "ikp",
+      "mathconstraint",
+      "mypcbench",
+      "software_world_models",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "xAI Grok 4.20",
+    "provider": "xAI",
+    "releaseDate": "2026-02-17",
+    "benchmarks": [
+      "arcagi",
+      "ceobench",
+      "ikp",
+      "mathconstraint"
+    ]
+  },
+  {
+    "name": "Google Gemini 3.1 Pro",
+    "provider": "Google",
+    "releaseDate": "2026-02-19",
+    "benchmarks": [
+      "algotune",
+      "benger",
+      "dataclawbench",
+      "dpai",
+      "healthadminbench",
+      "ikp",
+      "legal_rag_bench",
+      "live_agent_risk",
+      "matharena",
+      "mathconstraint",
+      "mmlupro",
+      "researchclawbench",
+      "robust_reasoning_benchmark",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 122B A10B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-24",
+    "benchmarks": [
+      "benger",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 27B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-24",
+    "benchmarks": [
+      "ikp",
+      "matharena"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 35B A3B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-24",
+    "benchmarks": [
+      "ikp",
+      "matharena",
+      "mypcbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 Flash",
+    "provider": "Alibaba",
+    "releaseDate": "2026-02-24",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Nano Banana 2",
+    "provider": "Google",
+    "releaseDate": "2026-02-26",
+    "benchmarks": [
+      "finegrain_t2i"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 0.8B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-03-02",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 4B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-03-02",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.5 9B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-03-02",
+    "benchmarks": [
+      "ikp",
+      "matharena",
+      "mypcbench"
+    ]
+  },
+  {
+    "name": "Google Gemini 3.1 Flash-Lite",
+    "provider": "Google",
+    "releaseDate": "2026-03-03",
+    "benchmarks": [
+      "autoresearchbench",
+      "benger",
+      "ikp",
+      "mathconstraint"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.3",
+    "provider": "OpenAI",
+    "releaseDate": "2026-03-03",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.4",
+    "provider": "OpenAI",
+    "releaseDate": "2026-03-05",
+    "benchmarks": [
+      "agc_bench",
+      "algotune",
+      "benger",
+      "dataclawbench",
+      "dtap_bench",
+      "healthadminbench",
+      "ikp",
+      "live_agent_risk",
+      "matharena",
+      "naturebench",
+      "researchclawbench",
+      "robust_reasoning_benchmark",
+      "software_world_models",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.4 Pro",
+    "provider": "OpenAI",
+    "releaseDate": "2026-03-05",
+    "benchmarks": [
+      "ikp",
+      "matharena"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 3 Super",
+    "provider": "NVIDIA",
+    "releaseDate": "2026-03-10",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 3 Super 120B",
+    "provider": "NVIDIA",
+    "releaseDate": "2026-03-10",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-5 Turbo",
+    "provider": "Zhipu",
+    "releaseDate": "2026-03-15",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Mistral Small 4",
+    "provider": "Mistral",
+    "releaseDate": "2026-03-16",
+    "benchmarks": [
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.4 mini",
+    "provider": "OpenAI",
+    "releaseDate": "2026-03-17",
+    "benchmarks": [
+      "agc_bench",
+      "arcagi",
+      "benger",
+      "ikp",
+      "live_agent_risk",
+      "mypcbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.4 nano",
+    "provider": "OpenAI",
+    "releaseDate": "2026-03-17",
+    "benchmarks": [
+      "agc_bench",
+      "arcagi",
+      "ikp",
+      "live_agent_risk",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "MiniMax M2.7",
+    "provider": "MiniMax",
+    "releaseDate": "2026-03-18",
+    "benchmarks": [
+      "dataclawbench",
+      "ikp",
+      "naturebench",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Xiaomi MiMo V2 Pro",
+    "provider": "Xiaomi",
+    "releaseDate": "2026-03-18",
+    "benchmarks": [
+      "ikp",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.6",
+    "provider": "Alibaba",
+    "releaseDate": "2026-04-02",
+    "benchmarks": [
+      "openbiorq"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.6 Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2026-04-02",
+    "benchmarks": [
+      "ikp",
+      "mathconstraint",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Google Gemma 4 26B",
+    "provider": "Google",
+    "releaseDate": "2026-04-02",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Google Gemma 4 31B",
+    "provider": "Google",
+    "releaseDate": "2026-04-02",
+    "benchmarks": [
+      "agc_bench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "QED-Nano",
+    "provider": "Unknown",
+    "releaseDate": "2026-04-06",
+    "benchmarks": [
+      "matharena"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-5.1",
+    "provider": "Zhipu",
+    "releaseDate": "2026-04-07",
+    "benchmarks": [
+      "agc_bench",
+      "ceobench",
+      "ikp",
+      "matharena",
+      "naturebench",
+      "openbiorq",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.6 35B A3B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-04-16",
+    "benchmarks": [
+      "benger"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.7",
+    "provider": "Anthropic",
+    "releaseDate": "2026-04-16",
+    "benchmarks": [
+      "agc_bench",
+      "benger",
+      "ceobench",
+      "ikp",
+      "live_agent_risk",
+      "matharena",
+      "mathconstraint",
+      "naturebench",
+      "openbiorq",
+      "researchclawbench",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "xAI Grok 4.3",
+    "provider": "xAI",
+    "releaseDate": "2026-04-17",
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Moonshot Kimi K2.6",
+    "provider": "Moonshot",
+    "releaseDate": "2026-04-20",
+    "benchmarks": [
+      "agc_bench",
+      "ceobench",
+      "ikp",
+      "live_agent_risk",
+      "matharena",
+      "mathconstraint",
+      "naturebench",
+      "researchclawbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Ant Group Ling 2.6 Flash",
+    "provider": "Ant Group",
+    "releaseDate": "2026-04-22",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.5",
+    "provider": "OpenAI",
+    "releaseDate": "2026-04-23",
+    "benchmarks": [
+      "agc_bench",
+      "ceobench",
+      "ikp",
+      "live_agent_risk",
+      "matharena",
+      "mathconstraint",
+      "mypcbench",
+      "naturebench",
+      "openbiorq",
+      "researchclawbench",
+      "software_world_models",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.5 Pro",
+    "provider": "OpenAI",
+    "releaseDate": "2026-04-23",
+    "benchmarks": [
+      "ikp",
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "Xiaomi MiMo V2.5",
+    "provider": "Xiaomi",
+    "releaseDate": "2026-04-23",
+    "benchmarks": [
+      "ikp",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Xiaomi MiMo V2.5 Pro",
+    "provider": "Xiaomi",
+    "releaseDate": "2026-04-23",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "DeepSeek V4",
+    "provider": "DeepSeek",
+    "releaseDate": "2026-04-24",
+    "benchmarks": [
+      "openbiorq"
+    ]
+  },
+  {
+    "name": "DeepSeek V4 Flash",
+    "provider": "DeepSeek",
+    "releaseDate": "2026-04-24",
+    "benchmarks": [
+      "benger",
+      "ikp",
+      "matharena",
+      "mathconstraint"
+    ]
+  },
+  {
+    "name": "DeepSeek V4 Pro",
+    "provider": "DeepSeek",
+    "releaseDate": "2026-04-24",
+    "benchmarks": [
+      "benger",
+      "ceobench",
+      "ikp",
+      "matharena",
+      "mathconstraint",
+      "naturebench",
+      "researchclawbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Poolside Laguna XS.2",
+    "provider": "Poolside",
+    "releaseDate": "2026-04-28",
+    "benchmarks": [
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "Google Gemini 3.5 Flash",
+    "provider": "Google",
+    "releaseDate": "2026-05-19",
+    "benchmarks": [
+      "ceobench",
+      "matharena",
+      "naturebench",
+      "researchclawbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.7 Max",
+    "provider": "Alibaba",
+    "releaseDate": "2026-05-20",
+    "benchmarks": [
+      "ceobench",
+      "ikp",
+      "naturebench",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Opus 4.8",
+    "provider": "Anthropic",
+    "releaseDate": "2026-05-28",
+    "benchmarks": [
+      "arcagi",
+      "ceobench",
+      "ikp",
+      "researchclawbench",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "StepFun Step 3.7 Flash",
+    "provider": "StepFun",
+    "releaseDate": "2026-05-28",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.7 Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2026-06-01",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "MiniMax M3",
+    "provider": "MiniMax",
+    "releaseDate": "2026-06-01",
+    "benchmarks": [
+      "ikp",
+      "naturebench",
+      "researchclawbench",
+      "software_world_models"
+    ]
+  },
+  {
+    "name": "NVIDIA Nemotron 3 Ultra",
+    "provider": "NVIDIA",
+    "releaseDate": "2026-06-04",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Fable 5",
+    "provider": "Anthropic",
+    "releaseDate": "2026-06-09",
+    "benchmarks": [
+      "ceobench",
+      "ikp",
+      "workbench_revisited"
+    ]
+  },
+  {
+    "name": "Moonshot Kimi K2.7",
+    "provider": "Moonshot",
+    "releaseDate": "2026-06-12",
+    "benchmarks": [
+      "ikp"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-5.2",
+    "provider": "Zhipu",
+    "releaseDate": "2026-06-16",
+    "benchmarks": [
+      "ceobench",
+      "ikp",
+      "naturebench",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Anthropic Claude Sonnet 5",
+    "provider": "Anthropic",
+    "releaseDate": "2026-06-30",
+    "benchmarks": [
+      "ceobench",
+      "ikp"
+    ]
+  },
+  {
+    "name": "Tencent Hunyuan 3",
+    "provider": "Tencent",
+    "releaseDate": "2026-07-06",
+    "benchmarks": [
+      "ikp",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: AGI Agent 0",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Agent: ARIS Codex",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: Claude Code",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: Codex CLI",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: ColaCare",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "confagents"
+    ]
+  },
+  {
+    "name": "Agent: ConfAgents",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "confagents"
+    ]
+  },
+  {
+    "name": "Agent: EvoScientist",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: MDAgents",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "confagents"
+    ]
+  },
+  {
+    "name": "Agent: MedAgent",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "confagents"
+    ]
+  },
+  {
+    "name": "Agent: Nanobot",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: Open Science",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: OpenClaw",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: ResearchClaw",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Agent: brassbunny",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Agent: cloudwalk",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Agent: gbox",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Agent: igg-baseline",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Agent: igg-interrogation",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Agent: igg-interrogation_plus_sa",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Agent: igg-interrogation_plus_sa_plus_honest_persona",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Agent: igg-interrogation_plus_sa_plus_other_ai",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Agent: igg-simple_interrogation",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "JT-VL",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "KISS-1",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Llama-3.1-8B-Instruct + Shared E2E direct I/O (10-shot)",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "fewshot_ttt_bbh"
+    ]
+  },
+  {
+    "name": "MUG-U 7B",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Magellanes",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "TGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Baseline_4",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Interrogation",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Interrogation_plus_SA",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Interrogation_plus_SA_plus_Honest_persona",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Interrogation_plus_SA_plus_Sonnet_4",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Interrogation_plus_SA_plus_other_AI",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "TGG-Simple_Interrogation",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "Test",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "Update Eval",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "real_webagents"
+    ]
+  },
+  {
+    "name": "anthropic/stanford-online-all-v4-s3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "helm_bold",
+      "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo-002",
+    "provider": "Community",
+    "releaseDate": null,
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo-003",
+    "provider": "Community",
+    "releaseDate": null,
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo-004-step-0050",
+    "provider": "Community",
+    "releaseDate": null,
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "llama-3.2-1B-instruct-grpo-005-step-1000",
+    "provider": "Community",
+    "releaseDate": null,
+    "benchmarks": [
+      "icpc2_code_selector"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_IGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_IGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_IGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_IGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_IGG-Scratchpad_monitor",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_TGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_TGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_TGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_TGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Counterfactual_TGG-Scratchpad_monitor",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_IGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_IGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_IGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_TGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_TGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Emotional_TGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Output_only",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Output_only_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Output_only_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Reward_AF",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Scratchpad_monitor",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Scratchpad_monitor_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Scratchpad_only",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Scratchpad_only_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-IGG-Scratchpad_only_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-SL3_Helpful-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_IGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_IGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_IGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_IGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_TGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_TGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_TGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Short_TGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Baseline_4",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Hinge_length_penalty",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Output_only",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Output_only_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Output_only_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Reward_AF",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Scratchpad_monitor",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Scratchpad_only",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Scratchpad_only_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-TGG-Scratchpad_only_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Training_Sycophancy-Baseline",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Training_Sycophancy-Baseline_2",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "long_context-Training_Sycophancy-Baseline_3",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "alignment_faking"
+    ]
+  },
+  {
+    "name": "nano-medium-a",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "nano-medium-b",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "nano-medium-c",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "live_agent_risk"
+    ]
+  },
+  {
+    "name": "qwen_base",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "qwen_chat",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "ai2d_test",
+      "hallusionbench",
+      "mmmu_dev_val"
+    ]
+  }
+]

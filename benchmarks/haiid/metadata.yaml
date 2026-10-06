@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: HAIID
   description: Human judgments before and after advice on five classification tasks, with recorded ResNet-18 advice
     for the dermatology task.

@@ -1,4 +1,6 @@
 benchmark:
+  release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: ProgramBench
   description: Published ProgramBench attempts to reconstruct executable behavior from a compiled program and its
     documentation, with native fractional behavioral-test scores and complete recorded agent trajectories.

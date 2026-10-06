@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BABILong
   description: Released language-model answers to bAbI reasoning questions embedded in long distractor passages.
   testing_condition: Curate all individual CSV predictions in the pinned HF release and the later GitHub release.

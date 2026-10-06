@@ -58,6 +58,7 @@ build:
       historical_configuration: numeric_settings_not_recorded
       model_identifier_status: released_directory_label
     runtime:
+      python_version: '3.14.6'
       workers: '8'
 grading:
   rule: Preserve the original records and reconstruct native per-item deterministic scores using the explicitly

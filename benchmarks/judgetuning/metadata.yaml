@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: JudgeTuning LMSys human agreement
   description: Released evaluations of seven named LLM judges on 3000 LMSys paired-answer comparisons.
   testing_condition: Each observation evaluates one judge system on an existing LMSys battle using the published

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: AISafetyLab evaluation of 50 AdvPrompter prompts against Vicuna-7B-v1.5, without a defense
     and with SafeDecoding. Each released judgment records whether Llama Guard 3 classified the response
     as unsafe.

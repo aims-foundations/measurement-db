@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Alignment Faking (RL)
   description: Published judgments of alignment-faking reasoning across model organisms,
     interventions and reinforcement-learning checkpoints in Anthropic's training-time

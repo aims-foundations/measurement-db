@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: CEO-Bench
   description: Language-model agents manage a simulated startup; retain published outcomes and complete released
     trajectories.

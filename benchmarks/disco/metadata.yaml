@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DIS-CO (MovieTection)
   description: Individual movie-title guesses from four vision-language models, queried with movie frames or their
     released captions.

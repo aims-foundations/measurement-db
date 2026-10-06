@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: IgakuQA119
   description: Released Qwen2.5-72B-Instruct answers on all 400 questions of the 119th Japanese Medical Licensing
     Examination, with original explanations and source image resources.

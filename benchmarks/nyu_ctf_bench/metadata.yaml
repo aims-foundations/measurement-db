@@ -45,6 +45,7 @@ benchmark:
   categorical: true
   release_date: 2024-06
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   name: NYU CTF Bench
   version: 69def02a79e8b1d890e1e0d5c11106a9f40e11e1
   granularity: item

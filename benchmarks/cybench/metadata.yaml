@@ -1,4 +1,6 @@
 benchmark:
+  release: withheld
+  release_reason: "The curation record reports apparent evaluator credentials in upstream logs retained in complete traces."
   description: Recorded agent runs on 40 capture-the-flag tasks, with unguided flag recovery, guided flag recovery
     and guided subtask completion scores.
   testing_condition: 'Preserve all 960 original paper scores and add 61 measurements from 50 additional released

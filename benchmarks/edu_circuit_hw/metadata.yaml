@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: EDU-CIRCUIT-HW
   description: Released model transcriptions of 513 anonymized circuit-analysis homework samples and the available
     recognition-error judgments for six MLLMs.

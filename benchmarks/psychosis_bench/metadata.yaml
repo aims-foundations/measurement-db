@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released turn-level ratings of delusion confirmation, harm enablement and safety intervention in
     scripted conversations with eight models.
   testing_condition: 'Preserve the logged accumulated history independently for each model and scenario, without

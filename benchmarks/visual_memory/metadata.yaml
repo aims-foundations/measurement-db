@@ -40,7 +40,13 @@ benchmark:
       '1': The recorded nearest neighbor belongs to the reference class.
   categorical: true
   release_date: 2024-08
-  release: public
+  release: withheld
+  release_reason: >-
+    Source reproducibility hold, reviewed 2026-10-04: the required ImageNet-A and ImageNet-R
+    archives at https://people.eecs.berkeley.edu/~hendrycks/imagenet-a.tar and
+    https://people.eecs.berkeley.edu/~hendrycks/imagenet-r.tar return HTTP 404, and no
+    author-hosted or author-endorsed replacements matching the pinned inputs have been verified.
+    Restore public release when those sources are available and strict table reproduction passes.
 build:
   contract_version: 2
   parameters:

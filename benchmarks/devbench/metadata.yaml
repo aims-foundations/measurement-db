@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: DevBench
   description: Published model choice scores for lexical mapping, visual vocabulary and grammatical comprehension,
     with available complete image inputs.

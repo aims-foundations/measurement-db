@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: C-Eval
   description: Chinese multiple-choice question bank with released item-level option predictions from the Contamination
     Detector study.

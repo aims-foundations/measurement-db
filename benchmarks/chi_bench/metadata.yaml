@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Healthcare workflow agents evaluated in a managed-care simulator; retain released per-trial rewards,
     configurations and complete trajectories.
   testing_condition: Capture all 46 published submission packets, including third-party systems under their reported

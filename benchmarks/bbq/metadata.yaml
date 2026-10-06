@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BBQ
   description: Multiple-choice questions testing the effects of social biases in ambiguous and disambiguated contexts.
   testing_condition: >-

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: BeaverTails
   description: Released safety judgments of 560 outputs from four language models on 140 red-team prompts.
   testing_condition: >-

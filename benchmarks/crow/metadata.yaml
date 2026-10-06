@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Historical model outputs and keyword-based attack-success grades from CROW development exports.
   testing_condition: Preserve 34 distinct result exports across four pinned historical Git snapshots; identical
     file copies are not new observations. Subjects distinguish exports because exact checkpoint and defense

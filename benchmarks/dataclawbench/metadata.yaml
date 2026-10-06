@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released accuracy judgments for eight OpenClaw agents on 492 exploratory financial data-analysis
     tasks.
   testing_condition: Preserve all 3,936 published task scores, including 154 partial-credit values, at their

@@ -36,7 +36,7 @@ benchmark:
       '1': criterion satisfied
   categorical: true
   release_date: 2025-08
-  release: private
+  release: public
   name: ConfAgents
   multi_single_turn: multi_turn
 build:

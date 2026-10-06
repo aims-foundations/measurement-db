@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released task-utility and attacker-success verdicts for ten agent-framework/model configurations,
     with complete related native histories.
   testing_condition: 'Import published grading records whose related defender histories identify one consistent

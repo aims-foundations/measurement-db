@@ -43,6 +43,7 @@ benchmark:
   multi_single_turn: multi_turn
   release_date: 2026-06
   release: public
+  release_reason: "Public under the repository policy; this supersedes the earlier hold based only on unclear licensing. Source terms remain unresolved; no new license grant is implied."
   granularity: item
   version: 99da791f028343b3a0a08933c1089ee294c9c253
 build:

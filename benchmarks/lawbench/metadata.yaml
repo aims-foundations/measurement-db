@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: LawBench
   description: Released Chinese legal-task predictions with complete recorded prompts and deterministic native scoring.
   testing_condition: Preserve all 918000 released predictions across 18 tasks, 51 source model labels and both prompting
@@ -66,6 +67,7 @@ build:
       3-4: 死刑|无期
       3-5: 死刑|无期
     runtime:
+      python_version: '3.12.12'
       workers: '8'
       python_hash_seed: '0'
     packages:

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Released idea-generation and research-proposal reviews for 201 ML research tasks, six generator
     models and two LLM reviewers. Each observation is one rubric dimension of a released review.
   testing_condition: Idea generation receives the task description. Proposal generation additionally receives

@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: AVerImaTeC
   description: Released AIC CTU development predictions for image-text claim verification, measured by the upstream verdict-correctness component.
   testing_condition: >-

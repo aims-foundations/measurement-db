@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   name: Functional Programming Course LLM Evaluation
   description: Released OCaml course code-generation, program-repair and conceptual-question assessments.
   testing_condition: Nine released model labels, with API defaults reported in the paper and numeric inference settings

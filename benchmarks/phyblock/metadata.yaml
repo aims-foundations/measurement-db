@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Visual 3D block assembly planning with released model outputs, scene images, candidate
     blocks and dependency annotations. This import covers the assembly branch, not aggregate paper rows
     or VQA references without predictions.

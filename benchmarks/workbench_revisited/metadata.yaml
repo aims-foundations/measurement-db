@@ -40,7 +40,7 @@ benchmark:
       '1': success
   categorical: true
   release_date: 2026-06
-  release: private
+  release: public
   name: WorkBench Revisited
   one_line_description: Evaluates tool-using agents on workplace tasks by comparing their final sandbox
     state with the expected outcome.

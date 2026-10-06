@@ -1,4 +1,5 @@
 benchmark:
+  release: public
   description: Recorded responses to medical red-teaming prompts and the authors' multi-agent hallucination-detector
     categories.
   testing_condition: Preserve all 1,965 recorded generations and all 1,918 associated detector judgments from
