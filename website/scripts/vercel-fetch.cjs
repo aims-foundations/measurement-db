@@ -1,4 +1,5 @@
 // Shared runners intermittently time out when Vercel opens many connections.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Node's --require hook loads this CommonJS preload.
 const { setTimeout: delay } = require("node:timers/promises");
 const originalFetch = globalThis.fetch;
 let pending = Promise.resolve();
