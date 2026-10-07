@@ -71,6 +71,45 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event_name == 'pull_request' && github.sha || github.ref }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+      - name: Check deployment credentials
+        run: |
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              exit 1
+            fi
+          done
+      - name: Pull Vercel environment
+        run: |
+          flags=()
+          if [ "$DEPLOY_ENV" = preview ]; then flags+=(--git-branch="$DEPLOY_BRANCH"); fi
+          pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV" \
+            "${flags[@]}" --token="$VERCEL_TOKEN"
+      - name: Verify Vercel project settings
+        run: |
+          node --input-type=module - <<'NODE'
+          const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
+          const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
+          projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
+          const response = await fetch(projectUrl, {
+            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
+            signal: AbortSignal.timeout(30_000),
+          });
+          if (!response.ok) fail(`Vercel project check returned HTTP ${response.status}.`);
+          const project = await response.json();
+          if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
+            fail('The Vercel project must use the website root directory and Next.js framework.');
+          }
+          console.log('Vercel project verified; viewer data is included in the deployment.');
+          NODE
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -101,52 +140,15 @@ jobs:
           python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
           python scripts/render_website/generate_benchmark_gallery.py cards
           python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --eval-every 4000 --device cpu --out artifacts/website-rasch
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.33.0
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: pnpm
-          cache-dependency-path: website/pnpm-lock.yaml
-      - name: Check deployment credentials
-        run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
-            if [ -z "${!name:-}" ]; then
-              echo "::error::Missing GitHub Actions secret: $name"
-              exit 1
-            fi
-          done
       - run: pnpm --dir website install --frozen-lockfile
       - run: pnpm --dir website lint
       - run: pnpm --dir website typecheck
       - run: pnpm --dir website search:check
-      - name: Pull Vercel environment
-        run: >-
-          pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV"
-          --git-branch="$DEPLOY_BRANCH" --token="$VERCEL_TOKEN"
       - name: Build Vercel output
         run: |
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
-      - name: Verify Vercel project settings
-        run: |
-          node --input-type=module - <<'NODE'
-          const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
-          const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
-          projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
-          const response = await fetch(projectUrl, {
-            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
-            signal: AbortSignal.timeout(30_000),
-          });
-          if (!response.ok) fail(`Vercel project check returned HTTP ${response.status}.`);
-          const project = await response.json();
-          if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
-            fail('The Vercel project must use the website root directory and Next.js framework.');
-          }
-          console.log('Vercel project verified; viewer data is included in the deployment.');
-          NODE
       - name: Deploy
         id: deploy
         env:
