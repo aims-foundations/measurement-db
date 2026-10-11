@@ -1,4 +1,6 @@
 // Shared runners intermittently time out when Vercel opens many connections.
+// eslint-disable-next-line @typescript-eslint/no-require-imports -- Node's --require hook loads this CommonJS preload.
+const { setTimeout: delay } = require("node:timers/promises");
 const originalFetch = globalThis.fetch;
 let pending = Promise.resolve();
 
@@ -18,11 +20,13 @@ globalThis.fetch = function (input, options) {
       try {
         return await originalFetch(input, options);
       } catch (error) {
-        if (error.cause?.code !== "UND_ERR_CONNECT_TIMEOUT" || attempt === 3)
+        if (error.cause?.code !== "UND_ERR_CONNECT_TIMEOUT" || attempt === 11)
           throw error;
+        const waitMs = Math.min(1000 * 2 ** attempt, 10_000);
         console.error(
-          "Retrying Vercel connection timeout before sending the request.",
+          `Retrying Vercel connection timeout before sending the request (${attempt + 2}/12, in ${waitMs / 1000}s).`,
         );
+        await delay(waitMs, undefined, { signal: options?.signal });
       }
     }
   });
