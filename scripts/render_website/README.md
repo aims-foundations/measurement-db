@@ -150,11 +150,11 @@ take hours; subsequent preparation reuses unchanged bundles. The roughly 3 GB
 of retained static website data still has to be transferred to Vercel.
 
 GitHub Actions needs the existing `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
-`VERCEL_PROJECT_ID`, and `HF_TOKEN`. The read token must access both HF datasets.
-Add `HF_GALLERY_WRITE_TOKEN` with write permission **only** to
-`aims-foundations/measurement-db-gallery`; it is used only by the production
-publication step. No workflow has an operation that writes canonical tables.
-The read token remains server-only for the existing dynamic lookups.
+`VERCEL_PROJECT_ID`, and `HF_TOKEN`. The existing HF token needs read access to
+both HF datasets and write access to `aims-foundations/measurement-db-gallery`.
+Production publication reuses this token and fixes every write destination to
+the gallery dataset. No workflow has an operation that writes canonical tables.
+The token remains server-only for the existing dynamic lookups.
 Preparation and deployment use the existing `measurement-db-reproduction`
 self-hosted runners. Preparation has a 12-hour timeout; deployment has 90 minutes.
 Vercel uploads retain serialized requests and bounded connection-timeout retries.

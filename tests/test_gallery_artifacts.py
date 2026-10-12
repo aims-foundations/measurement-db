@@ -190,13 +190,14 @@ class GalleryArtifactTests(unittest.TestCase):
         api = Mock()
         api.dataset_info.return_value.sha = "parent"
         api.create_commit.side_effect = [SimpleNamespace(oid="objects"), SimpleNamespace(oid="published")]
-        with patch.dict(os.environ, GITHUB_REF="refs/heads/main", GITHUB_EVENT_NAME="push", HF_GALLERY_WRITE_TOKEN="fixture"), \
+        with patch.dict(os.environ, GITHUB_REF="refs/heads/main", GITHUB_EVENT_NAME="push", HF_TOKEN="fixture"), \
              patch.object(release, "git", side_effect=[COMMIT, TREE]), \
              patch.object(release, "github", return_value={"object": {"sha": COMMIT}}), \
-             patch("huggingface_hub.HfApi", return_value=api), \
+             patch("huggingface_hub.HfApi", return_value=api) as api_factory, \
              patch("huggingface_hub.hf_hub_download", side_effect=RemoteEntryNotFoundError(
                  "no v2 yet", response=httpx.Response(404, request=httpx.Request("GET", "https://huggingface.co/fixture")))):
             self.assertEqual(release.publish(self.candidate), "published")
+        api_factory.assert_called_once_with(token="fixture")
         calls = [call.kwargs for call in api.create_commit.call_args_list]
         self.assertEqual([c["repo_id"] for c in calls], [artifacts.GALLERY_REPO] * 2)
         self.assertTrue(all(op.path_in_repo.endswith(".tar") for op in calls[0]["operations"]))
@@ -209,7 +210,7 @@ class GalleryArtifactTests(unittest.TestCase):
         with patch.dict(os.environ, GITHUB_REF="refs/pull/42/merge", GITHUB_EVENT_NAME="pull_request"), \
              self.assertRaisesRegex(ValueError, "main-branch"):
             release.publish(self.candidate)
-        with patch.dict(os.environ, GITHUB_REF="refs/heads/main", GITHUB_EVENT_NAME="push", HF_GALLERY_WRITE_TOKEN="fixture"), \
+        with patch.dict(os.environ, GITHUB_REF="refs/heads/main", GITHUB_EVENT_NAME="push", HF_TOKEN="fixture"), \
              patch.object(release, "git", side_effect=[COMMIT, TREE]), \
              patch.object(release, "github", return_value={"object": {"sha": "new-main"}}), \
              self.assertRaisesRegex(ValueError, "stale"):

@@ -92,19 +92,13 @@ jobs:
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
       - name: Check deployment credentials
-        env:
-          HF_GALLERY_WRITE_TOKEN: ${{ secrets.HF_GALLERY_WRITE_TOKEN }}
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID HF_TOKEN; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Missing GitHub Actions secret: $name"
               exit 1
             fi
           done
-          if [ "$DEPLOY_ENV" = production ] && [ -z "$HF_GALLERY_WRITE_TOKEN" ]; then
-            echo '::error::Missing HF_GALLERY_WRITE_TOKEN for the gallery repository only.'
-            exit 1
-          fi
       - name: Pull Vercel environment
         run: |
           flags=()
@@ -157,8 +151,6 @@ jobs:
       - name: Publish the accepted gallery release to HF
         if: env.DEPLOY_ENV == 'production'
         id: gallery
-        env:
-          HF_GALLERY_WRITE_TOKEN: ${{ secrets.HF_GALLERY_WRITE_TOKEN }}
         run: >-
           python -m scripts.ci.gallery_release publish
           --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"

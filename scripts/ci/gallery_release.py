@@ -236,9 +236,9 @@ def publish(candidate: Path) -> str:
 
     if os.environ.get("GITHUB_REF") != "refs/heads/main" or os.environ.get("GITHUB_EVENT_NAME") not in {"push", "workflow_dispatch"}:
         raise ValueError("Only a main-branch release can publish gallery artifacts")
-    token = os.environ.get("HF_GALLERY_WRITE_TOKEN")
+    token = os.environ.get("HF_TOKEN")
     if not token:
-        raise ValueError("Configure HF_GALLERY_WRITE_TOKEN with write access only to measurement-db-gallery")
+        raise ValueError("Configure HF_TOKEN with write access to measurement-db-gallery")
     sha, tree = git("rev-parse", "HEAD"), git("rev-parse", "HEAD^{tree}")
     if github("git/ref/heads/main")["object"]["sha"] != sha:
         raise ValueError("A newer main commit exists; refusing to publish a stale release")
