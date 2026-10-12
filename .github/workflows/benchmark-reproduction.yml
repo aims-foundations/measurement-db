@@ -13,9 +13,15 @@ on:
         description: 'Benchmark folders to rebuild, comma-separated (empty means all benchmarks)'
         type: string
         required: false
+      prepare_gallery:
+        description: 'Prepare a complete reusable gallery after validation (bootstrap or data refresh)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  actions: read
+  pull-requests: read
 
 concurrency:
   group: benchmark-reproduction-${{ github.event_name }}-${{ github.event.pull_request.number || github.ref }}
@@ -34,6 +40,7 @@ jobs:
       has_benchmarks: ${{ steps.select.outputs.has_benchmarks }}
       withheld: ${{ steps.select.outputs.withheld }}
       hf_revision: ${{ steps.reference.outputs.revision }}
+      prepare_gallery: ${{ steps.gallery.outputs.prepare }}
     defaults:
       run:
         working-directory: measurement_db
@@ -57,14 +64,32 @@ jobs:
       - name: Read release metadata and select public benchmarks
         id: select
         run: python scripts/ci/benchmark_reproduction.py select
+      - name: Select gallery preparation for repository PRs
+        id: gallery
+        env:
+          BEFORE: ${{ github.event.pull_request.base.sha }}
+          AFTER: ${{ github.event.pull_request.head.sha }}
+          MANUAL_PREPARE: ${{ inputs.prepare_gallery }}
+        run: |
+          prepare=false
+          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+            prepare=${MANUAL_PREPARE:-false}
+          elif [ "$GITHUB_EVENT_NAME" = pull_request ] && [ "$GITHUB_ACTOR" != 'dependabot[bot]' ]; then
+            base=$(git merge-base "$BEFORE" "$AFTER")
+            changed=$(git diff --name-only --no-renames "$base" "$AFTER" -- \
+              benchmarks/ website/ schema.md scripts/render_website/ scripts/analyze_measurements/ \
+              scripts/ci/ .github/workflows/deploy-website.yml .github/workflows/benchmark-reproduction.yml)
+            if [ -n "$changed" ]; then prepare=true; fi
+          fi
+          echo "prepare=$prepare" >> "$GITHUB_OUTPUT"
       - name: Install Hub client
         id: hub
-        if: steps.select.outputs.has_benchmarks == 'true'
+        if: steps.select.outputs.has_benchmarks == 'true' || steps.gallery.outputs.prepare == 'true'
         continue-on-error: true
         run: python -m pip install 'huggingface_hub>=1.0,<2'
       - name: Resolve the HF branch to one immutable commit
         id: reference
-        if: steps.select.outputs.has_benchmarks == 'true' && steps.hub.outcome == 'success'
+        if: (steps.select.outputs.has_benchmarks == 'true' || steps.gallery.outputs.prepare == 'true') && steps.hub.outcome == 'success'
         # Reference availability must never prevent the upstream builds.
         # An empty revision makes successful builds report REFERENCE ERROR.
         continue-on-error: true
@@ -180,3 +205,74 @@ jobs:
           name: benchmark-run-report-${{ github.run_attempt }}
           path: ${{ runner.temp }}/benchmark-run-report/
           if-no-files-found: warn
+
+  prepare-gallery:
+    name: Prepare gallery
+    needs: [changes, report]
+    if: >-
+      always() && needs.changes.result == 'success' && needs.report.result == 'success' &&
+      needs.changes.outputs.prepare_gallery == 'true'
+    runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
+    timeout-minutes: 720
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
+      PYTHONUNBUFFERED: '1'
+      OMP_NUM_THREADS: '2'
+      MKL_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+      NUMEXPR_NUM_THREADS: '2'
+      ARROW_IO_THREADS: '4'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: scripts/ci/gallery-requirements.txt
+      - name: Install isolated preparation dependencies
+        run: |
+          python -m venv --clear "$RUNNER_TEMP/gallery-venv"
+          echo "$RUNNER_TEMP/gallery-venv/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/gallery-venv/bin/pip" install -r scripts/ci/gallery-requirements.txt
+          "$RUNNER_TEMP/gallery-venv/bin/pip" install 'torch==2.10.0' --index-url https://download.pytorch.org/whl/cpu
+      - name: Test gallery parity, cache reuse, and artifact integrity
+        run: python -m unittest discover -s tests -p 'test_gallery_*.py' -v
+      - name: Download this run's validation receipts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: benchmark-run-report-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gallery-validation
+      - name: Prepare benchmark bundles with four workers and stage timings
+        run: >-
+          python -m scripts.ci.gallery_prepare
+          --report "$RUNNER_TEMP/gallery-validation/results.json"
+          --out "$RUNNER_TEMP/gallery-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          --workers 4
+      - name: Upload prepared benchmark archives and validation receipts
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-candidate-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/
+          compression-level: 0
+          retention-days: 30
+          if-no-files-found: error
+      - name: Upload the small candidate manifest for merge lookup
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-manifest-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
+          retention-days: 30
+          if-no-files-found: error
+
+  preview:
+    name: Preview prepared website
+    needs: prepare-gallery
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/deploy-website.yml
+    with:
+      candidate_run_id: ${{ format('{0}', github.run_id) }}
+    secrets: inherit

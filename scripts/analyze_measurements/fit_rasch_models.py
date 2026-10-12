@@ -359,22 +359,23 @@ def fit(df: pd.DataFrame, *, test_size: float, seed: int, lr: float,
 # ---------------------------------------------------------------------------
 
 def write_outputs(slug: str, df: pd.DataFrame, res: dict, names: dict[str, str],
-                  out_dir: Path, curves: bool) -> dict:
+                  out_dir: Path, curves: bool, *, write_responses: bool = True) -> dict:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     # --- responses.csv: the data as read + the fit + the train/test comparison
-    obs = df.copy()
-    obs.insert(1, "subject", obs["subject_id"].map(names).fillna(obs["subject_id"]))
-    obs["split"] = res["split"]
-    obs["irt_prob"] = np.round(res["p"], 6)
-    obs["irt_pred"] = (res["p"] >= 0.5).astype(int)
     # Held-out agreement between the prediction and the actual response. Train
     # rows are "-": the model was fitted on them, so agreement there is fit, not
     # prediction, and averaging the two would flatter the model.
-    agree = np.where(obs["irt_pred"].to_numpy() == obs["response"].to_numpy(),
-                     "match", "miss")
-    obs["match"] = np.where(res["split"] == "test", agree, "-")
-    obs.to_csv(out_dir / "responses.csv", index=False)
+    predictions = (res["p"] >= 0.5).astype(int)
+    matches = predictions == df["response"].to_numpy()
+    if write_responses:
+        obs = df.copy()
+        obs.insert(1, "subject", obs["subject_id"].map(names).fillna(obs["subject_id"]))
+        obs["split"] = res["split"]
+        obs["irt_prob"] = np.round(res["p"], 6)
+        obs["irt_pred"] = predictions
+        obs["match"] = np.where(res["split"] == "test", np.where(matches, "match", "miss"), "-")
+        obs.to_csv(out_dir / "responses.csv", index=False)
 
     # --- per-subject: theta beside the observed accuracy the matrix shows
     acc = df.groupby("subject_id")["response"].agg(["mean", "size"])
@@ -407,7 +408,6 @@ def write_outputs(slug: str, df: pd.DataFrame, res: dict, names: dict[str, str],
     separated_subjects = int((acc["mean"].isin([0.0, 1.0])).sum())
     separated_items = int((rate["mean"].isin([0.0, 1.0])).sum())
 
-    test_rows = obs[obs["split"] == "test"]
     summary = {
         "slug": slug,
         "model": "sigmoid(theta - z + c)" if res["use_cond"] else "sigmoid(theta - z)",
@@ -417,7 +417,7 @@ def write_outputs(slug: str, df: pd.DataFrame, res: dict, names: dict[str, str],
         "llTest": num(res["test_ll"], 2),
         "separatedSubjects": separated_subjects,
         "separatedItems": separated_items,
-        "accTest": round(float((test_rows["match"] == "match").mean()), 4),
+        "accTest": round(float(matches[res["split"] == "test"].mean()), 4),
         "nTrain": res["n_train"], "nTest": res["n_test"],
         "nSubjects": res["n_subjects"], "nItems": res["n_items"],
         "nConditions": res["n_conditions"],

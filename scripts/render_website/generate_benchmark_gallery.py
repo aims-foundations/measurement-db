@@ -35,6 +35,10 @@ from huggingface_hub.errors import EntryNotFoundError, LocalEntryNotFoundError
 HF_REPO = "aims-foundations/measurement-db"
 HF_REVISION = os.environ.get("HF_REVISION")
 RESPONSE_FILE = "responses.parquet"
+# Set only by the preparation worker after it verifies these local files against
+# the pinned HF manifest. A missing local file must never fall back to the network.
+LOCAL_DATA_DIR: Path | None = None
+LOCAL_SOURCES: dict[str, dict] | None = None
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_DIR = SCRIPT_DIR.parents[1]
 HIDDEN_PATH = REPO_DIR / "website" / "content" / "curated" / "hidden-benchmarks.json"
@@ -114,6 +118,8 @@ def categories_for(domain) -> list[str]:
 @lru_cache(maxsize=None)
 def source_revision() -> str:
     """Use one repository commit for all tables in a render."""
+    if HF_REVISION and re.fullmatch(r"[0-9a-f]{40}", HF_REVISION):
+        return HF_REVISION
     return HfApi().dataset_info(HF_REPO, revision=HF_REVISION or "main").sha
 
 
@@ -124,6 +130,9 @@ class TableSource(NamedTuple):
 
 @lru_cache(maxsize=None)
 def source_tables(slug: str) -> TableSource:
+    if LOCAL_SOURCES is not None:
+        source = LOCAL_SOURCES[slug]
+        return TableSource(source["directory"], frozenset(source["tables"]))
     api = HfApi()
     directory = slug
     entries = list(api.list_repo_tree(
@@ -138,6 +147,13 @@ def source_tables(slug: str) -> TableSource:
 
 def fetch(filename: str, cache_dir: Path, refresh: bool = False) -> Path:
     slug, name = filename.split("/", 1)
+    if LOCAL_DATA_DIR is not None:
+        if slug not in (LOCAL_SOURCES or {}) or name not in LOCAL_SOURCES[slug]["tables"]:
+            raise SystemExit(f"No validated local table: {filename}")
+        local = LOCAL_DATA_DIR / slug / name
+        if not local.is_file():
+            raise FileNotFoundError(f"Missing validated local table: {local}")
+        return local
     source = f"{source_tables(slug).directory}/{name}"
     if source.endswith("/responses.parquet"):
         source = source.removesuffix("responses.parquet") + RESPONSE_FILE
@@ -1721,10 +1737,11 @@ def static_item(slug: str, row: dict) -> dict:
     return item
 
 
-def write_website_lookups(slug: str, cache_dir: Path, output: Path, has_traces: bool) -> int:
+def write_website_lookups(slug: str, cache_dir: Path, output: Path, has_traces: bool,
+                          dynamic_items: bool = False) -> int:
     source = source_tables(slug)
     descriptor = {"revision": source_revision(), "directory": source.directory,
-                  "dynamicItems": False, "tables": {}}
+                  "dynamicItems": dynamic_items, "tables": {}}
     items_path = fetch(f"{slug}/items.parquet", cache_dir)
     items = pq.ParquetFile(items_path)
     columns = [c for c in ["content", "asset_manifest", "grading_criterion",
@@ -1738,7 +1755,15 @@ def write_website_lookups(slug: str, cache_dir: Path, output: Path, has_traces: 
                 image_ids.update(link["asset_id"] for link in input_images(row.get("asset_manifest")))
                 yield row["item_id"], static_item(slug, row)
 
-    write_lookup(output / "item", item_rows())
+    if dynamic_items:
+        # Dynamic prompts are read from HF at runtime. Read only asset references
+        # here: do not decode/compress gigabytes of prompt text only to delete it.
+        if "asset_manifest" in columns:
+            for batch in items.iter_batches(columns=["asset_manifest"]):
+                for row in batch.to_pylist():
+                    image_ids.update(link["asset_id"] for link in input_images(row["asset_manifest"]))
+    else:
+        write_lookup(output / "item", item_rows())
     # Inline images need an item row even when its text is shipped statically.
     write_lookup(output / "item-rows", source_row_keys(items_path, ["item_id"]))
     if has_traces:
@@ -1754,7 +1779,8 @@ def write_website_lookups(slug: str, cache_dir: Path, output: Path, has_traces: 
         if {key for key, _ in assets} != image_ids:
             raise ValueError(f"{slug}: missing image assets")
         write_lookup(output / "asset-rows", assets)
-    descriptor["itemBytes"] = sum(p.stat().st_size for p in (output / "item").iterdir())
+    descriptor["itemBytes"] = (0 if dynamic_items else
+                               sum(p.stat().st_size for p in (output / "item").iterdir()))
     with gzip.open(output / "source.json.gz", "wt", encoding="utf-8") as stream:
         json.dump(descriptor, stream, separators=(",", ":"))
     return descriptor["itemBytes"]
@@ -1806,7 +1832,7 @@ def separate_cell_keys(bundle: dict) -> list:
 
 
 def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
-                       refresh: bool = False) -> dict:
+                       refresh: bool = False, *, dynamic_items: set[str] | None = None) -> dict:
     """Build deployable viewer files; no source tables are copied into the website."""
     root = web_dir / "public" / "benchmark-data"
     root.mkdir(parents=True, exist_ok=True)
@@ -1826,14 +1852,16 @@ def build_website_data(slugs: list[str], cache_dir: Path, web_dir: Path,
             with gzip.open(output / "view.json.gz", "wt", encoding="utf-8", compresslevel=6) as stream:
                 json.dump(bundle, stream, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
             item_sizes[slug] = write_website_lookups(
-                slug, cache_dir, output, bundle["detail"]["hasTraces"])
+                slug, cache_dir, output, bundle["detail"]["hasTraces"],
+                dynamic_items=dynamic_items is not None and slug in dynamic_items)
             destination = root / slug
             if destination.exists():
                 shutil.rmtree(destination)
             output.rename(destination)
         size = sum(p.stat().st_size for p in destination.rglob("*") if p.is_file())
         print(f"{slug}: {size / 1_000_000:.1f} MB, {time.monotonic() - start:.1f}s", flush=True)
-    select_dynamic_items(root, item_sizes)
+    if dynamic_items is None:
+        select_dynamic_items(root, item_sizes)
     return details
 
 

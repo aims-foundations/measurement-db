@@ -1,0 +1,10 @@
+# Explicit upgrades invalidate prepared bundles; routine installs must not.
+# Cache identity also records actual installed versions and Python's version.
+numpy==2.4.2
+pandas==3.0.5
+pyarrow==25.0.0
+fastparquet==2026.9.0
+huggingface_hub==1.33.0
+scikit-learn==1.9.1
+PyYAML==6.0.3
+# torch==2.10.0 is installed separately from the CPU wheel index.

@@ -288,11 +288,12 @@ class ByteComparisonTests(unittest.TestCase):
 
     def compare(self):
         with contextlib.redirect_stdout(io.StringIO()):
-            reproduction.compare_tables(self.generated, self.expected)
+            return reproduction.compare_tables(self.generated, self.expected)
 
     def test_identical_bytes_pass(self):
         (self.generated / "responses.parquet").write_bytes(self.reference.read_bytes())
-        self.compare()
+        self.assertEqual(self.compare(), {"responses.parquet": {
+            "sha256": reproduction.sha256(self.reference), "size": self.reference.stat().st_size}})
 
     def test_same_size_and_timestamp_with_different_bytes_fails(self):
         actual = self.generated / "responses.parquet"
