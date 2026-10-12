@@ -109,6 +109,8 @@ from their original item row.
    `gallery-manifest-<attempt>` artifact, retained for 30 days. A reusable Vercel
    workflow restores this candidate and deploys a PR preview. Wait for the
    benchmark report, preparation, and preview checks before merging.
+   A failed-preview-only retry reuses the successful preparation attempt's
+   manifest and candidate together, without repeating preparation.
 4. A relevant push to `main` runs **Deploy website to Vercel**. It finds a
    successful preparation run for the merged PR and requires an exact Git-tree
    match, which supports merge and squash commits. It verifies the validation

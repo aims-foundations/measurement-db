@@ -164,6 +164,26 @@ class GalleryArtifactTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 release.checked_run({**good, "status": "in_progress", "conclusion": None})
 
+    def test_failed_preview_retry_reuses_one_complete_prior_preparation_attempt(self):
+        run = {"id": 123, "run_attempt": 3}
+        rows = [{"id": 21, "name": "gallery-manifest-2", "expired": False},
+                {"id": 22, "name": "gallery-candidate-2", "expired": False},
+                {"id": 11, "name": "gallery-manifest-1", "expired": False},
+                {"id": 12, "name": "gallery-candidate-1", "expired": False}]
+        def api(path, *, destination=None):
+            if destination is None:
+                return {"artifacts": rows}
+            self.assertEqual(path, "actions/artifacts/21/zip")
+            with zipfile.ZipFile(destination, "w") as zipped:
+                zipped.writestr("manifest.json", artifacts.encoded(self.manifest))
+        with patch.object(release, "github", side_effect=api):
+            self.assertEqual(release.manifest_from_run(run, TREE), self.manifest)
+            self.assertEqual(run["preparation_attempt"], 2)
+            self.assertEqual(release.find_artifact(run, "gallery-candidate")["id"], 22)
+            rows[1]["expired"] = True
+            with self.assertRaisesRegex(ValueError, "Missing/expired"):
+                release.find_artifact(run, "gallery-candidate")
+
     def test_publisher_writes_only_gallery_and_promotes_pointer_after_objects(self):
         from huggingface_hub.errors import RemoteEntryNotFoundError
         import httpx

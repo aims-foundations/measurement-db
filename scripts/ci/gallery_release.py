@@ -11,6 +11,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import stat
 import subprocess
@@ -62,18 +63,31 @@ def checked_run(run: dict, *, allow_current: bool = False) -> None:
 
 
 def find_artifact(run: dict, prefix: str) -> dict:
-    name = f"{prefix}-{run['run_attempt']}"
+    attempt = run.get("preparation_attempt", run["run_attempt"])
+    name = f"{prefix}-{attempt}"
+    matches = []
     page = 1
     while True:
         rows = github(f"actions/runs/{run['id']}/artifacts?per_page=100&page={page}")["artifacts"]
-        matches = [row for row in rows if row["name"] == name and not row["expired"]]
-        if len(matches) == 1:
-            return matches[0]
-        if len(matches) > 1:
-            raise ValueError(f"Ambiguous artifact: {name}")
+        for row in rows:
+            match = re.fullmatch(re.escape(prefix) + r"-([1-9][0-9]*)", row["name"])
+            if match and not row["expired"]:
+                number = int(match[1])
+                # A failed-preview-only rerun does not recreate preparation.
+                # Select the latest successful manifest, then require its exact
+                # candidate attempt. Never mix artifacts across attempts.
+                if number == attempt or (prefix == "gallery-manifest" and number < attempt):
+                    matches.append((number, row))
         if len(rows) < 100:
-            raise ValueError(f"Missing/expired {name}; rerun gallery preparation")
+            break
         page += 1
+    if not matches:
+        raise ValueError(f"Missing/expired {name}; rerun gallery preparation")
+    newest = max(number for number, _ in matches)
+    selected = [row for number, row in matches if number == newest]
+    if len(selected) != 1:
+        raise ValueError(f"Ambiguous artifact: {prefix}-{newest}")
+    return selected[0]
 
 
 def unzip(path: Path, target: Path) -> None:
@@ -105,8 +119,10 @@ def manifest_from_run(run: dict, tree: str) -> dict:
                 raise ValueError("Invalid candidate manifest artifact")
             manifest = json.loads(zipped.read("manifest.json"))
     artifacts.validate_manifest(manifest, tree=tree)
-    if manifest["validation"]["run_id"] != str(run["id"]) or manifest["validation"]["run_attempt"] != run["run_attempt"]:
+    attempt = int(artifact["name"].rsplit("-", 1)[1])
+    if manifest["validation"]["run_id"] != str(run["id"]) or manifest["validation"]["run_attempt"] != attempt:
         raise ValueError("Candidate manifest belongs to a different validation run")
+    run["preparation_attempt"] = attempt
     return manifest
 
 
@@ -176,7 +192,7 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
     if json.loads((candidate / "manifest.json").read_text()) != manifest:
         raise ValueError("Candidate archive and manifest artifact disagree")
     verify_candidate(candidate, tree=tree)
-    print(f"Verified gallery candidate from run {selected['id']}, attempt {selected['run_attempt']}")
+    print(f"Verified gallery candidate from run {selected['id']}, preparation attempt {selected['preparation_attempt']}")
     return manifest
 
 
