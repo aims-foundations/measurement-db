@@ -230,7 +230,8 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          # Keep the preparation cache identity identical across runner caches.
+          python-version: '3.11.17'
           cache: pip
           cache-dependency-path: scripts/ci/gallery-requirements.txt
       - name: Install isolated preparation dependencies
