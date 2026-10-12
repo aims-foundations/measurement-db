@@ -8,7 +8,7 @@ import multiprocessing
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 import pandas as pd
 
@@ -66,6 +66,32 @@ class GalleryPreparationTests(unittest.TestCase):
             self.addCleanup(patcher.stop)
         self.addCleanup(gallery.source_tables.cache_clear)
         self.addCleanup(gallery.source_revision.cache_clear)
+
+    def test_listing_retries_transient_errors_but_never_missing_or_forbidden_data(self):
+        import httpx
+        from huggingface_hub.errors import HfHubHTTPError
+        def error(status):
+            return HfHubHTTPError("fixture", response=httpx.Response(
+                status, request=httpx.Request("GET", "https://huggingface.co/fixture")))
+        api = Mock()
+        api.list_repo_tree.side_effect = [error(504), ["pinned-result"]]
+        with patch.object(prepare.time, "sleep") as sleep:
+            self.assertEqual(prepare.source_tree(api, REVISION, "ceval"), ["pinned-result"])
+        sleep.assert_called_once_with(1)
+        self.assertTrue(all(call.kwargs["revision"] == REVISION for call in api.list_repo_tree.call_args_list))
+        for status in (401, 403, 404):
+            api.reset_mock()
+            api.list_repo_tree.side_effect = error(status)
+            with patch.object(prepare.time, "sleep") as sleep, self.assertRaises(HfHubHTTPError):
+                prepare.source_tree(api, REVISION, "ceval")
+            sleep.assert_not_called()
+            self.assertEqual(api.list_repo_tree.call_count, 1)
+        api.reset_mock()
+        api.list_repo_tree.side_effect = error(503)
+        with patch.object(prepare.time, "sleep") as sleep, self.assertRaises(HfHubHTTPError):
+            prepare.source_tree(api, REVISION, "ceval")
+        self.assertEqual(api.list_repo_tree.call_count, 5)
+        self.assertEqual(sleep.call_count, 4)
 
     def test_new_global_hf_revision_reuses_unchanged_bytes_but_local_inputs_invalidate(self):
         _, web, source = fixture(self.root)

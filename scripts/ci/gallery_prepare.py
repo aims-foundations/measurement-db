@@ -47,17 +47,41 @@ def generator_identity(root: Path = ROOT) -> dict:
             "fit": FIT_OPTIONS, "device": "cpu"}
 
 
+def source_tree(api, revision: str, path: str = "") -> list:
+    """Retry transient listing failures without interpreting them as missing data."""
+    import httpx
+    from huggingface_hub.errors import HfHubHTTPError
+
+    for attempt in range(5):
+        try:
+            return list(api.list_repo_tree(artifacts.SOURCE_REPO, repo_type="dataset",
+                                          revision=revision, path_in_repo=path or None))
+        except (HfHubHTTPError, httpx.TransportError) as exc:
+            response = getattr(exc, "response", None)
+            if response is not None and response.status_code not in {429, 500, 502, 503, 504}:
+                raise
+            if attempt == 4:
+                raise
+            try:
+                delay = float(response.headers.get("Retry-After", 2 ** attempt)) if response is not None else 2 ** attempt
+            except ValueError:
+                delay = 2 ** attempt
+            if delay > 60:
+                raise  # Respect a longer server-requested pause; let CI retry later.
+            print(f"Transient HF listing error for {path or '/'}; retry {attempt + 1}/4 in {max(1, delay)}s", flush=True)
+            time.sleep(max(1, delay))
+    raise AssertionError("unreachable")
+
+
 def describe_source(api, slug: str, revision: str) -> dict | None:
     from huggingface_hub import hf_hub_download
     import yaml
 
-    entries = list(api.list_repo_tree(artifacts.SOURCE_REPO, repo_type="dataset",
-                                    revision=revision, path_in_repo=slug))
+    entries = source_tree(api, revision, slug)
     directory = f"{slug}/formatted_tables" if any(
         e.path == f"{slug}/formatted_tables" for e in entries) else slug
     if directory != slug:
-        entries = list(api.list_repo_tree(artifacts.SOURCE_REPO, repo_type="dataset",
-                                        revision=revision, path_in_repo=directory))
+        entries = source_tree(api, revision, directory)
     if not any(e.path == f"{directory}/benchmarks.parquet" for e in entries):
         return None
     metadata_path = Path(hf_hub_download(artifacts.SOURCE_REPO, f"{slug}/metadata.yaml",
@@ -309,7 +333,7 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
     generator = generator_identity()
     hidden = set(json.loads((ROOT / "website/content/curated/hidden-benchmarks.json").read_text()))
     tasks = []
-    roots = api.list_repo_tree(artifacts.SOURCE_REPO, repo_type="dataset", revision=revision)
+    roots = source_tree(api, revision)
     for folder in roots:
         slug = folder.path
         if not isinstance(folder, RepoFolder) or slug in hidden or not artifacts.SLUG.fullmatch(slug):
