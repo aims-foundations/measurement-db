@@ -3,6 +3,7 @@
 import copy
 from concurrent.futures import ProcessPoolExecutor
 import gzip
+import importlib.util
 import json
 import multiprocessing
 from pathlib import Path
@@ -21,6 +22,10 @@ from test_gallery_output_parity import write_fixture
 
 
 REVISION = "a" * 40
+# The metadata job has no fitting dependencies; Prepare gallery installs torch
+# and runs these integration tests before generating any release artifacts.
+requires_torch = unittest.skipUnless(importlib.util.find_spec("torch"),
+                                     "PyTorch fitting is tested in the Prepare gallery job")
 
 
 def fixture(root, slug="binary"):
@@ -151,6 +156,7 @@ class GalleryPreparationTests(unittest.TestCase):
                      for slug in ("binary", "other")}
         self.assertEqual(prepare.combine_timelines(summaries), json.loads(baseline.read_text()))
 
+    @requires_torch
     def test_website_fit_omits_response_csv_without_changing_fits_or_summaries(self):
         tables, _, _ = fixture(self.root)
         frame = rasch.binary_frame(pd.read_parquet(tables / "binary/responses.parquet").fillna({"test_condition": ""}))
@@ -164,6 +170,7 @@ class GalleryPreparationTests(unittest.TestCase):
         for name in ("subjects.csv", "items.csv", "summary.json", "history.csv"):
             self.assertEqual((website / name).read_bytes(), (full / name).read_bytes())
 
+    @requires_torch
     def test_cold_preparation_and_warm_reuse_do_not_refit_or_download_source(self):
         tables, _, source = fixture(self.root)
         task = {"slug": "binary", "source": source, "gallery_revision": "gallery-commit",
@@ -200,6 +207,7 @@ class GalleryPreparationTests(unittest.TestCase):
         self.assertFalse(summary["card"]["itemResponses"])
         self.assertTrue((output["data"] / "view.json.gz").exists())
 
+    @requires_torch
     def test_spawned_workers_produce_isolated_bundles_and_complete_combined_catalog(self):
         tasks = []
         for slug in ("binary", "continuous"):
