@@ -288,18 +288,19 @@ jobs:
     needs: [changes, report, prepare-gallery, preview]
     if: >-
       always() && github.event_name == 'pull_request' &&
-      github.repository == 'aims-foundations/measurement-db' &&
-      github.event.pull_request.head.repo.full_name == github.repository
+      github.repository == 'aims-foundations/measurement-db'
     runs-on: ubuntu-latest
     steps:
       - name: Require successful validation and any requested preparation and preview
         env:
+          CONTRIBUTOR_BRANCH: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
           CHANGES: ${{ needs.changes.result }}
           REPORT: ${{ needs.report.result }}
           PREPARE: ${{ needs.changes.outputs.prepare_gallery }}
           PREPARED: ${{ needs.prepare-gallery.result }}
           PREVIEW: ${{ needs.preview.result }}
         run: |
+          test "$CONTRIBUTOR_BRANCH" = true
           test "$CHANGES" = success
           test "$REPORT" = success
           if [ "$PREPARE" = true ]; then
