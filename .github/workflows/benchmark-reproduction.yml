@@ -293,7 +293,9 @@ jobs:
     steps:
       - name: Require successful validation and any requested preparation and preview
         env:
-          CONTRIBUTOR_BRANCH: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          # Dependabot is excluded from preparation because it cannot use the
+          # deployment secrets; its skipped preparation must not pass this gate.
+          CONTRIBUTOR_BRANCH: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' }}
           CHANGES: ${{ needs.changes.result }}
           REPORT: ${{ needs.report.result }}
           PREPARE: ${{ needs.changes.outputs.prepare_gallery }}
