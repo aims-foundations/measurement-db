@@ -2,13 +2,23 @@ name: Deploy website to Vercel
 
 on:
   push:
-    branches: [main, migration/tabular-builders-20260924]
-  pull_request:
     branches: [main]
+  workflow_call:
+    inputs:
+      candidate_run_id:
+        type: string
+        required: true
   workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: 'Successful preparation run ID (empty: find the candidate matching this Git tree)'
+        type: string
+        required: false
 
 permissions:
   contents: read
+  actions: read
+  pull-requests: read
 
 jobs:
   changes:
@@ -35,7 +45,8 @@ jobs:
             fi
             changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
               benchmarks/ website/ schema.md scripts/render_website/ \
-              scripts/analyze_measurements/ .github/workflows/deploy-website.yml)
+              scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
+              .github/workflows/benchmark-reproduction.yml)
             if [ -n "$changed_paths" ]; then website_changed=true; fi
           fi
           echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
@@ -51,17 +62,18 @@ jobs:
       group: vercel-measurement-db-${{ github.ref }}
       cancel-in-progress: true
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
-    timeout-minutes: 1440
+    timeout-minutes: 90
     environment:
       name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
       url: ${{ steps.deploy.outputs.url }}/measurement-db
     env:
+      GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      OMP_NUM_THREADS: 2
-      MKL_NUM_THREADS: 2
+      PYTHONUNBUFFERED: '1'
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
       DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
-      HF_SOURCE_REF: main
+      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
+      GITHUB_TOKEN: ${{ github.token }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -70,18 +82,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'pull_request' && github.sha || github.ref }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
       - name: Check deployment credentials
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
+          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID HF_TOKEN; do
             if [ -z "${!name:-}" ]; then
               echo "::error::Missing GitHub Actions secret: $name"
               exit 1
@@ -113,33 +126,20 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install rendering dependencies
+      - name: Install the artifact download client
         run: |
-          python -m venv "$RUNNER_TEMP/website-venv"
+          python -m venv --clear "$RUNNER_TEMP/website-venv"
           echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/website-venv/bin/pip" install numpy pandas pyarrow fastparquet 'huggingface_hub>=1,<2' scikit-learn PyYAML
-          "$RUNNER_TEMP/website-venv/bin/pip" install torch --index-url https://download.pytorch.org/whl/cpu
-      - name: Resolve the public HF source revision
-        run: |
-          python - <<'PYTHON'
-          import os
-          from huggingface_hub import HfApi
-          source = os.environ['HF_SOURCE_REF']
-          revision = HfApi().dataset_info('aims-foundations/measurement-db', revision=source).sha
-          with open(os.environ['GITHUB_ENV'], 'a') as output:
-              output.write(f'HF_REVISION={revision}\n')
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
-              output.write(f'Data source: aims-foundations/measurement-db@{source} ({revision})\n')
-          PYTHON
-      - name: Build viewer data from the public source tables
-        run: |
-          python scripts/render_website/generate_benchmark_gallery.py build
-          python scripts/render_website/generate_chart_marginals.py
-          python scripts/render_website/generate_model_timeline.py
-          python scripts/render_website/generate_benchmark_attributions.py
-          python scripts/analyze_measurements/benchmark_saturation.py --benchmarks-dir scripts/render_website/.hf-cache --emit-web --replace
-          python scripts/render_website/generate_benchmark_gallery.py cards
-          python scripts/analyze_measurements/fit_rasch_models.py --all --emit-web --no-curves --eval-every 4000 --device cpu --out artifacts/website-rasch
+          "$RUNNER_TEMP/website-venv/bin/pip" install 'huggingface_hub>=1,<2'
+      - name: Download the validated candidate matching this Git tree
+        run: >-
+          python -m scripts.ci.gallery_release download
+          --run-id "$CANDIDATE_RUN_ID"
+          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+      - name: Restore verified static files and generated catalogs
+        run: >-
+          python -m scripts.ci.gallery_release restore
+          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
       - run: pnpm --dir website install --frozen-lockfile
       - run: pnpm --dir website lint
       - run: pnpm --dir website typecheck
@@ -149,19 +149,38 @@ jobs:
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
+      - name: Check the upload file budget
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          count = sum(path.is_file() for path in Path('.vercel/output').rglob('*'))
+          if not 0 < count < 10000:
+              raise SystemExit(f'Unexpected Vercel output file count: {count}; investigate gallery packing')
+          print(f'Vercel output contains {count} files (budget: 10,000).')
+          PY
+      - name: Publish the accepted gallery release to HF
+        if: env.DEPLOY_ENV == 'production'
+        id: gallery
+        run: >-
+          python -m scripts.ci.gallery_release publish
+          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
       - name: Deploy
         id: deploy
         env:
           NODE_OPTIONS: --require=${{ github.workspace }}/website/scripts/vercel-fetch.cjs
         run: |
-          flags=()
-          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
-          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --target="$DEPLOY_ENV" \
             --env HF_TOKEN="$HF_TOKEN" \
             --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
             --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Create or reuse the PR review link
+        if: env.DEPLOY_ENV == 'preview' && github.event_name == 'pull_request'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: python scripts/ci/vercel_preview_link.py --url "$DEPLOYMENT_URL" --pr "$PR_NUMBER"
       - name: Check deployed pages
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
@@ -175,13 +194,6 @@ jobs:
             --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
             --output /dev/null --write-out '%{http_code}')
           [[ "$status" = 307 || "$status" = 206 ]]
-      - name: Update preview alias
-        if: github.ref == 'refs/heads/migration/tabular-builders-20260924'
-        env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          pnpm dlx vercel@62.2.0 alias set "$DEPLOYMENT_URL" measurement-db-build-test.vercel.app --token="$VERCEL_TOKEN"
-          echo "Preview: https://measurement-db-build-test.vercel.app/measurement-db" >> "$GITHUB_STEP_SUMMARY"
       - name: Sync production search indexes
         if: env.DEPLOY_ENV == 'production' && env.MEILISEARCH_HOST != '' && env.MEILISEARCH_ADMIN_KEY != ''
         run: pnpm --dir website search:sync

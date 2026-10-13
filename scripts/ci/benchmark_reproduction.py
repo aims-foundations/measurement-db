@@ -194,10 +194,11 @@ def sha256(path: Path) -> str:
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def compare_tables(generated: Path, expected: dict[str, Path]) -> None:
+def compare_tables(generated: Path, expected: dict[str, Path]) -> dict[str, dict]:
     actual = {str(path.relative_to(generated)): path for path in generated.rglob("*.parquet")}
     missing, extra = sorted(expected.keys() - actual.keys()), sorted(actual.keys() - expected.keys())
     problems = []
+    verified = {}
     if missing:
         problems.append(f"Missing generated tables: {', '.join(missing)}")
     if extra:
@@ -213,11 +214,14 @@ def compare_tables(generated: Path, expected: dict[str, Path]) -> None:
               f"generated_sha256={actual_hash} hf_sha256={expected_hash}", flush=True)
         if not identical:
             problems.append(f"Byte mismatch: {name}")
+        else:
+            verified[name] = {"sha256": actual_hash, "size": actual[name].stat().st_size}
     if problems:
         raise ValueError("\n".join(problems))
+    return verified
 
 
-def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> None:
+def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> dict[str, dict]:
     """Build from upstream first, then fetch references and compare exact bytes."""
     progress = progress or (lambda phase, revision=None: None)
     validate_slug(slug)
@@ -264,7 +268,7 @@ def verify_benchmark(root: Path, slug: str, revision: str, *, progress=None) -> 
         except RemoteEntryNotFoundError as exc:
             raise MissingReferenceError(f"Published reference missing for {slug} at {revision}: {exc}") from exc
         progress("comparison")
-        compare_tables(generated, expected)
+        return compare_tables(generated, expected)
 
 
 def main() -> int:
@@ -325,7 +329,7 @@ def main() -> int:
                 reports.save(args.report, report)
 
         try:
-            verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress)
+            tables = verify_benchmark(ROOT, slug, report["hf_revision"], progress=progress)
         except WithheldBenchmark as exc:
             row.update(reports.withheld_result(slug, str(exc)))
             print(f"SKIPPED (WITHHELD) {slug}: {exc}", flush=True)
@@ -355,6 +359,7 @@ def main() -> int:
         else:
             row.update(status="passed", build_status="passed", comparison_status="passed",
                        message="Upstream build passed; every published table matched byte for byte.")
+            row["tables"] = tables
         finally:
             row.update(duration_seconds=round(time.monotonic() - started, 3), finished_at=reports.utc_now())
             if args.report:

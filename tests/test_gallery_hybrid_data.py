@@ -90,9 +90,13 @@ class HybridDataTests(unittest.TestCase):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3 and sys.argv[1] == "--export":
+    if len(sys.argv) == 3 and sys.argv[1] in {"--export", "--export-packed"}:
         root = Path(sys.argv[2])
         root.mkdir(parents=True, exist_ok=True)
         fixture(root)
+        if sys.argv[1] == "--export-packed":
+            from scripts.ci.gallery_packs import pack_lookups
+            for output in sorted((root / "website/public/benchmark-data").iterdir()):
+                pack_lookups(output)
     else:
         unittest.main()

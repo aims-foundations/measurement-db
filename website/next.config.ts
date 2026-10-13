@@ -14,6 +14,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/benchmark-data/:slug/lookup-pack/:file",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
         source: "/benchmark-data/:path*.json.gz",
         headers: [
           { key: "Content-Type", value: "application/json; charset=utf-8" },

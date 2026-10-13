@@ -1,0 +1,22 @@
+[
+  "bridging_gap",
+  "cseo_bench",
+  "decodingtrust",
+  "decompile_bench",
+  "doris_mae",
+  "lawbench",
+  "llm_uncertainty_bench",
+  "llmail_inject",
+  "mind2web",
+  "naturalreasoning",
+  "prm800k",
+  "proteininvbench",
+  "qatch",
+  "robust_reasoning_benchmark",
+  "scale_mrt",
+  "sciarena",
+  "tabarena",
+  "tensortrust",
+  "tumlu",
+  "ultrafeedback"
+]

@@ -115,5 +115,25 @@ class WebsiteDeploymentTests(unittest.TestCase):
         self.assertEqual(output, "deploy=true")
 
 
+class GalleryMergeGateTests(unittest.TestCase):
+    def test_gate_requires_validation_and_requested_preview_without_running_fork_code(self):
+        workflow = yaml.safe_load((WORKFLOW.parent / "benchmark-reproduction.yml").read_text())
+        steps = workflow["jobs"]["ready"]["steps"]
+        # This job reports a failing gate for forks without checking out code.
+        self.assertFalse(any("uses" in step for step in steps))
+        script = steps[0]["run"]
+        valid = {"CONTRIBUTOR_BRANCH": "true", "CHANGES": "success", "REPORT": "success",
+                 "PREPARE": "true", "PREPARED": "success", "PREVIEW": "success",
+                 "GITHUB_EVENT_NAME": "pull_request"}
+        cases = [({}, True), ({"PREPARE": "false", "PREPARED": "skipped", "PREVIEW": "skipped"}, True),
+                 ({"CONTRIBUTOR_BRANCH": "false"}, False)]
+        cases += [({key: state}, False) for key in ("CHANGES", "REPORT", "PREPARED", "PREVIEW")
+                  for state in ("failure", "cancelled", "skipped")]
+        for overrides, success in cases:
+            with self.subTest(overrides=overrides):
+                result = subprocess.run(["bash", "-e", "-c", script], env={**os.environ, **valid, **overrides})
+                self.assertEqual(result.returncode == 0, success)
+
+
 if __name__ == "__main__":
     unittest.main()

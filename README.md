@@ -19,23 +19,25 @@ and model-fitting outputs are excluded from Git.
 The website lives in [`website/`](website), with its rendering scripts in
 [`scripts/render_website/`](scripts/render_website). See the
 [gallery guide](scripts/render_website/README.md) for installation, local preview,
-data refresh, and validation commands. Viewer data is built directly from
-`aims-foundations/measurement-db` on Hugging Face and included in the Vercel
-deployment; no private-bank fallback or separate gallery service is used.
+data refresh, and validation commands. PR workflows prepare viewer data from
+`aims-foundations/measurement-db` on Hugging Face. Accepted bundles are cached in
+`aims-foundations/measurement-db-gallery`, then restored as static files in the
+Vercel deployment. Packed lookups are served from Vercel; the existing dynamic
+items, traces, and images retain their pinned canonical HF source reads.
 
-Merging changes under `benchmarks/` into `main` automatically refreshes and
-deploys the website using the tables already published on public HF. The workflow
-discovers new HF benchmarks automatically and retains the website's explicit
-hidden-benchmark list. It does not execute benchmark builders or upload tables;
-the benchmark reproducibility workflow remains a separate correctness check.
-If tables are released after the merge, manually run **Deploy website to Vercel**
-on `main` to refresh the website.
+An in-repository PR validates changed benchmark builders against tables already
+published on canonical HF. Missing or mismatched references fail. Parallel
+workers then prepare the gallery, reusing unchanged bundles, and deploy a
+preview. Merging a green PR into `main` promotes that exact validated gallery,
+builds Next.js, and deploys production. No workflow writes canonical HF tables.
+For a later HF release, run **Benchmark table reproduction** with
+`prepare_gallery=true`, then **Deploy website to Vercel** with that run ID.
 
 PRs targeting `main` from branches in this repository deploy a preview when they
 change benchmark or website files. Open the **Deploy website to Vercel** check
 to find its website link. You can also run the workflow manually on a feature
-branch; only `main` deploys production. Fork and Dependabot PR deployments are
-skipped because GitHub does not provide the required deployment secrets.
+branch; only `main` deploys production. Fork PRs do not execute repository code
+in these workflows. Deployment is restricted to repository contributors.
 
 ## Contributing
 
