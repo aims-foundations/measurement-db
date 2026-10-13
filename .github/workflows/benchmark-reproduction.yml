@@ -282,11 +282,14 @@ jobs:
     secrets: inherit
 
   ready:
-    name: Gallery ready
+    # Push runs must not publish the PR gate's check name: they deliberately
+    # skip preparation and could otherwise satisfy protection with stale data.
+    name: ${{ github.event_name == 'pull_request' && 'Gallery ready' || 'Gallery preparation (non-PR)' }}
     needs: [changes, report, prepare-gallery, preview]
     if: >-
-      always() && github.repository == 'aims-foundations/measurement-db' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+      always() && github.event_name == 'pull_request' &&
+      github.repository == 'aims-foundations/measurement-db' &&
+      github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
       - name: Require successful validation and any requested preparation and preview
