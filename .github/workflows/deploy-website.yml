@@ -1,188 +1,86 @@
-name: Deploy website to Vercel
+name: Packed gallery preview experiment
 
 on:
-  push:
-    branches: [main]
-  workflow_call:
-    inputs:
-      candidate_run_id:
-        type: string
-        required: true
   workflow_dispatch:
-    inputs:
-      candidate_run_id:
-        description: 'Successful preparation run ID (empty: find the candidate matching this Git tree)'
-        type: string
-        required: false
 
 permissions:
   contents: read
-  actions: read
-  pull-requests: read
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      deploy: ${{ steps.check.outputs.deploy }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - name: Check for benchmark or website changes
-        id: check
-        env:
-          BEFORE: ${{ github.event.pull_request.base.sha || github.event.before }}
-          AFTER: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          website_changed=false
-          if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || [[ "$BEFORE" =~ ^0+$ ]]; then
-            website_changed=true
-          else
-            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
-              BEFORE=$(git merge-base "$BEFORE" "$AFTER")
-            fi
-            changed_paths=$(git diff --name-only --no-renames "$BEFORE" "$AFTER" -- \
-              benchmarks/ website/ schema.md scripts/render_website/ \
-              scripts/analyze_measurements/ scripts/ci/ .github/workflows/deploy-website.yml \
-              .github/workflows/benchmark-reproduction.yml)
-            if [ -n "$changed_paths" ]; then website_changed=true; fi
-          fi
-          echo "deploy=$website_changed" >> "$GITHUB_OUTPUT"
-
-  deploy:
-    needs: changes
-    if: >-
-      needs.changes.outputs.deploy == 'true' &&
-      (github.event_name != 'pull_request' ||
-       (github.event.pull_request.head.repo.full_name == github.repository &&
-        github.actor != 'dependabot[bot]'))
-    concurrency:
-      group: vercel-measurement-db-${{ github.ref }}
-      cancel-in-progress: true
+  preview:
+    if: github.ref == 'refs/heads/perf/gallery-packed-preview'
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     timeout-minutes: 90
-    environment:
-      name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
-      url: ${{ steps.deploy.outputs.url }}/measurement-db
+    concurrency:
+      group: gallery-packed-preview-experiment
+      cancel-in-progress: false
+    environment: preview
     env:
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
-      PYTHONUNBUFFERED: '1'
-      DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
-      DEPLOY_BRANCH: ${{ github.head_ref || github.ref_name }}
-      CANDIDATE_RUN_ID: ${{ inputs.candidate_run_id }}
-      GITHUB_TOKEN: ${{ github.token }}
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      MEILISEARCH_HOST: ${{ vars.MEILISEARCH_HOST }}
-      MEILISEARCH_ADMIN_KEY: ${{ secrets.MEILISEARCH_ADMIN_KEY }}
+      EXPERIMENT_RESULTS: /lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/gallery-feasibility-20261012/preview-runs/${{ github.run_id }}/${{ github.run_attempt }}
+      PREPARED: /lfs/skampere1/0/sttruong/aims/measurement-db-worktrees/gallery-feasibility-20261012/preview-input
+      PYTHONUNBUFFERED: '1'
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
           version: 10.33.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
-      - name: Check deployment credentials
+      - name: Verify preview target
+        run: python scripts/ci/packed_preview_experiment.py preflight
+      - name: Restore the checksummed local experiment snapshot
+        shell: python
         run: |
-          for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID HF_TOKEN; do
-            if [ -z "${!name:-}" ]; then
-              echo "::error::Missing GitHub Actions secret: $name"
-              exit 1
-            fi
-          done
-      - name: Pull Vercel environment
-        run: |
-          flags=()
-          if [ "$DEPLOY_ENV" = preview ]; then flags+=(--git-branch="$DEPLOY_BRANCH"); fi
-          pnpm dlx vercel@62.2.0 pull --yes --environment="$DEPLOY_ENV" \
-            "${flags[@]}" --token="$VERCEL_TOKEN"
-      - name: Verify Vercel project settings
-        run: |
-          node --input-type=module - <<'NODE'
-          const fail = (message) => { console.error(`::error::${message}`); process.exit(1); };
-          const projectUrl = new URL(`https://api.vercel.com/v9/projects/${process.env.VERCEL_PROJECT_ID}`);
-          projectUrl.searchParams.set('teamId', process.env.VERCEL_ORG_ID);
-          const response = await fetch(projectUrl, {
-            headers: { Authorization: `Bearer ${process.env.VERCEL_TOKEN}` },
-            signal: AbortSignal.timeout(30_000),
-          });
-          if (!response.ok) fail(`Vercel project check returned HTTP ${response.status}.`);
-          const project = await response.json();
-          if (project.rootDirectory !== 'website' || project.framework !== 'nextjs') {
-            fail('The Vercel project must use the website root directory and Next.js framework.');
-          }
-          console.log('Vercel project verified; viewer data is included in the deployment.');
-          NODE
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install the artifact download client
-        run: |
-          python -m venv --clear "$RUNNER_TEMP/website-venv"
-          echo "$RUNNER_TEMP/website-venv/bin" >> "$GITHUB_PATH"
-          "$RUNNER_TEMP/website-venv/bin/pip" install 'huggingface_hub>=1,<2'
-      - name: Download the validated candidate matching this Git tree
-        run: >-
-          python -m scripts.ci.gallery_release download
-          --run-id "$CANDIDATE_RUN_ID"
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-      - name: Restore verified static files and generated catalogs
-        run: >-
-          python -m scripts.ci.gallery_release restore
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          import hashlib, json, os
+          from pathlib import Path
+          source = Path(os.environ['PREPARED'])
+          data = (source / 'manifest.json').read_bytes()
+          assert hashlib.sha256(data).hexdigest() == '15bfa5258ab60087676fc50673d3e4ee563071b33c256c95b34821679091e1a3'
+          manifest = json.loads(data)
+          assert manifest['benchmarks'] == 270
+          for entry in manifest['files']:
+              path = Path(entry['path'])
+              assert path.parts[0] == 'website' and '..' not in path.parts
+              payload = (source / path).read_bytes()
+              assert len(payload) == entry['bytes'] and hashlib.sha256(payload).hexdigest() == entry['sha256']
+              path.parent.mkdir(parents=True, exist_ok=True)
+              path.write_bytes(payload)
+          print('Restored verified packed data and catalogs for 270 benchmarks.')
       - run: pnpm --dir website install --frozen-lockfile
+      - run: node website/scripts/test-gallery-lookup.mjs
       - run: pnpm --dir website lint
       - run: pnpm --dir website typecheck
-      - run: pnpm --dir website search:check
-      - name: Build Vercel output
-        run: |
-          flags=()
-          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
-          pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
-      - name: Publish the accepted gallery release to HF
-        if: env.DEPLOY_ENV == 'production'
-        id: gallery
-        run: >-
-          python -m scripts.ci.gallery_release publish
-          --candidate "$RUNNER_TEMP/website-candidate-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-      - name: Deploy
-        id: deploy
-        env:
-          NODE_OPTIONS: --require=${{ github.workspace }}/website/scripts/vercel-fetch.cjs
-        run: |
-          flags=()
-          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
-          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
-            --env HF_TOKEN="$HF_TOKEN" \
-            --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
-            --token="$VERCEL_TOKEN")
-          echo "url=$url" >> "$GITHUB_OUTPUT"
-          echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
-      - name: Check deployed pages
-        env:
-          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
-        run: |
-          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/view.json.gz; do
-            pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
-              -- --fail --silent --show-error --max-time 120 --output /dev/null
-          done
-          status=$(pnpm dlx vercel@62.2.0 curl /measurement-db/api/gallery-source/researchcodebench/items \
-            --deployment "$DEPLOYMENT_URL" -- --fail --silent --show-error --max-time 120 \
-            --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
-            --output /dev/null --write-out '%{http_code}')
-          [[ "$status" = 307 || "$status" = 206 ]]
-      - name: Sync production search indexes
-        if: env.DEPLOY_ENV == 'production' && env.MEILISEARCH_HOST != '' && env.MEILISEARCH_ADMIN_KEY != ''
-        run: pnpm --dir website search:sync
-      - name: Report missing production search credentials
-        if: env.DEPLOY_ENV == 'production' && (env.MEILISEARCH_HOST == '' || env.MEILISEARCH_ADMIN_KEY == '')
-        run: echo '::warning::Search sync skipped; configure MEILISEARCH_HOST and MEILISEARCH_ADMIN_KEY.'
+      - name: Pull preview environment
+        run: pnpm dlx vercel@62.2.0 pull --yes --environment=preview --git-branch=perf/gallery-packed-preview --token="$VERCEL_TOKEN"
+      - name: Build the full preview
+        run: pnpm dlx vercel@62.2.0 build --token="$VERCEL_TOKEN"
+      - name: Initial packed upload
+        run: python scripts/ci/packed_preview_experiment.py deploy --label initial
+      - name: Repeat with identical build output
+        run: python scripts/ci/packed_preview_experiment.py deploy --label repeat
+      - name: Change one prompt in preview output
+        run: python scripts/ci/packed_preview_experiment.py edit
+      - name: Measure one-benchmark update
+        run: python scripts/ci/packed_preview_experiment.py deploy --label one-benchmark
+      - name: Create an experiment preview link for the unchanged data
+        run: python scripts/ci/packed_preview_experiment.py share
+      - name: Upload non-sensitive measurement summaries
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packed-preview-measurements
+          path: |
+            ${{ env.EXPERIMENT_RESULTS }}/*-summary.json
+            ${{ env.EXPERIMENT_RESULTS }}/*-requests.jsonl
+            ${{ env.EXPERIMENT_RESULTS }}/controlled-edit.json
+            ${{ env.EXPERIMENT_RESULTS }}/final-state.json
+          if-no-files-found: ignore

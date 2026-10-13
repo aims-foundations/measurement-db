@@ -4,12 +4,13 @@ import {
   parquetReadObjects,
 } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
+import {
+  gallerySource,
+  readGalleryLookup as lookup,
+  type GallerySource as Source,
+} from "./gallery-lookup.ts";
 
 type RowPosition = [number, number];
-type Source = {
-  dynamicItems: boolean;
-  tables: Record<string, { size: number; columns: string[] }>;
-};
 type PageIndex = {
   footer: string;
   pages: Record<string, [number, number, number][]>;
@@ -17,31 +18,6 @@ type PageIndex = {
 type Item = { content: string | null; answer: string | null };
 const INLINE_IMAGE = /data:image\/[\w.+-]+;base64,[A-Za-z0-9+/=]+/g;
 const TRACE_MAX_CHARS = 50000;
-
-async function json<T>(url: string): Promise<T> {
-  const response = await fetch(url);
-  if (!response.ok)
-    throw new Error(`Could not load gallery data (${response.status}).`);
-  return response.json();
-}
-
-async function lookup<T>(
-  base: string,
-  kind: string,
-  key: unknown,
-): Promise<T | undefined> {
-  const encoded = JSON.stringify(key);
-  const hash = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(encoded),
-  );
-  const bucket = new Uint8Array(hash)[0].toString(16).padStart(2, "0");
-  const response = await fetch(`${base}/${kind}/${bucket}.json.gz`);
-  if (response.status === 404) return undefined;
-  if (!response.ok)
-    throw new Error(`Could not load ${kind} data (${response.status}).`);
-  return ((await response.json()) as Record<string, T>)[encoded];
-}
 
 async function readRow(
   base: string,
@@ -181,7 +157,7 @@ self.onmessage = async ({
 }: MessageEvent<{ base: string; kind: string; key: unknown }>) => {
   try {
     const { base, kind, key } = data;
-    const source = await json<Source>(`${base}/source.json.gz`);
+    const source = await gallerySource(base);
     let value: unknown;
     if (kind === "item") value = await loadItem(base, source, String(key));
     else if (kind === "image")
