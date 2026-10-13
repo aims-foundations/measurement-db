@@ -21,10 +21,19 @@ class PreviewLinkTests(unittest.TestCase):
         if path.startswith("/v13/deployments/"):
             return self.deployment
         if method == "PATCH":
-            self.alias["protectionBypass"] = {"fresh": {"scope": "shareable-link", "expires": 9999999999999}}
+            self.alias["protectionBypass"] = {"fresh": {"scope": "shareable-link", "expires": 9999999999}}
             if getattr(self, "conflict", False):
                 raise HTTPError(path, 409, "concurrent creation", {}, None)
         return self.alias
+
+    def test_expiry_uses_unix_seconds_from_the_vercel_api(self):
+        # Real API shape: expires is seconds, while createdAt is milliseconds.
+        alias = {"protectionBypass": {"existing": {"scope": "shareable-link",
+                 "expires": 1792479239, "createdAt": 1791874439211}}}
+        with patch.object(links.time, "time", return_value=1791874440):
+            self.assertEqual(links.active_link(alias), "existing")
+        with patch.object(links.time, "time", return_value=1792479239):
+            self.assertIsNone(links.active_link(alias))
 
     def test_existing_share_link_is_reused_after_alias_update(self):
         self.alias["protectionBypass"] = {"existing": {"scope": "shareable-link"}}

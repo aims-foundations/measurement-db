@@ -18,7 +18,8 @@ def api(path, method="GET", payload=None):
 
 
 def active_link(alias):
-    now = time.time() * 1000
+    # Vercel returns expires in Unix seconds (createdAt uses milliseconds).
+    now = time.time()
     for token, entry in alias.get("protectionBypass", {}).items():
         if entry.get("scope") == "shareable-link" and entry.get("expires", float("inf")) > now:
             return token
