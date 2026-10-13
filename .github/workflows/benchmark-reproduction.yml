@@ -210,7 +210,7 @@ jobs:
     name: Prepare gallery
     needs: [changes, report]
     if: >-
-      always() && needs.changes.result == 'success' && needs.report.result == 'success' &&
+      !cancelled() && needs.changes.result == 'success' && needs.report.result == 'success' &&
       needs.changes.outputs.prepare_gallery == 'true'
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     timeout-minutes: 720
@@ -275,7 +275,7 @@ jobs:
   preview:
     name: Preview prepared website
     needs: prepare-gallery
-    if: always() && needs.prepare-gallery.result == 'success' && github.event_name == 'pull_request'
+    if: ${{ !cancelled() && needs.prepare-gallery.result == 'success' && github.event_name == 'pull_request' }}
     uses: ./.github/workflows/deploy-website.yml
     with:
       candidate_run_id: ${{ format('{0}', github.run_id) }}
