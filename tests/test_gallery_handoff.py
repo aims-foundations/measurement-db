@@ -64,7 +64,10 @@ class GalleryHandoffTests(unittest.TestCase):
         entry = self.manifest["benchmarks"]["alpha"]
         self.manifest["base_gallery"] = {"revision": REVISION, "paths": [entry["path"]]}
         self.omit.add(entry["path"])
-        with patch("huggingface_hub.hf_hub_download", return_value=self.candidate / entry["path"]) as fetch:
+        # The HF SDK normally returns a snapshot symlink into its blob cache.
+        snapshot = self.root / "hf-snapshot.tar"
+        snapshot.symlink_to(self.candidate / entry["path"])
+        with patch("huggingface_hub.hf_hub_download", return_value=snapshot) as fetch:
             timing = self.download()
         fetch.assert_called_once_with(artifacts.GALLERY_REPO, "v2/" + entry["path"],
                                       revision=REVISION, repo_type="dataset")

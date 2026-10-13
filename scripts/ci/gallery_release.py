@@ -233,7 +233,7 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
             if entry["path"] not in base["paths"]:
                 raise ValueError(f"Portable handoff is missing {entry['path']}")
             source = Path(hf_hub_download(artifacts.GALLERY_REPO, "v2/" + entry["path"],
-                                        revision=base["revision"], repo_type="dataset"))
+                                        revision=base["revision"], repo_type="dataset")).resolve()
             if not cache.matches(source, entry):
                 raise ValueError("Pinned HF fallback archive checksum mismatch")
             target = candidate / entry["path"]
