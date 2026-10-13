@@ -59,7 +59,9 @@ def share(url: str, number: int) -> str:
             # Another invocation may have created the link after our GET.
         token = active_link(api("/v4/aliases/" + hostname))
         if not token:
-            raise ValueError("No active preview share link is available")
+            details = [{key: entry.get(key) for key in ("scope", "expires", "createdAt")}
+                       for entry in api("/v4/aliases/" + hostname).get("protectionBypass", {}).values()]
+            raise ValueError("No active preview share link is available: " + json.dumps(details))
     return f"https://{hostname}/measurement-db?" + urlencode({"_vercel_share": token})
 
 
