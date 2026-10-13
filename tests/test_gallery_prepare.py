@@ -6,6 +6,7 @@ import gzip
 import importlib.util
 import json
 import multiprocessing
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
@@ -62,6 +63,9 @@ class GalleryPreparationTests(unittest.TestCase):
         temporary = TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        environment = patch.dict(os.environ, GALLERY_CACHE_DIR="")
+        environment.start()
+        self.addCleanup(environment.stop)
         # render_bundle sets process-local state, as it does in disposable CI workers.
         self.patchers = [patch.object(gallery, name, getattr(gallery, name))
                          for name in ("LOCAL_DATA_DIR", "LOCAL_SOURCES", "HF_REVISION")]
@@ -196,6 +200,15 @@ class GalleryPreparationTests(unittest.TestCase):
         self.assertEqual(warm[:3], (slug, entry, summary))
         self.assertTrue(warm[3]["cache_hit"])
         self.assertEqual(fetch.call_args.args, (artifacts.GALLERY_REPO, "v2/" + entry["path"]))
+
+        # An unpublished candidate can also be reused locally, but only with
+        # exactly matching content inputs and a verified immutable archive.
+        with patch.dict(os.environ, GALLERY_CACHE_DIR=str(self.root / "shared-cache")):
+            prepare.cache.remember(slug, entry, archive)
+            task.update(previous=None, candidate=str(self.root / "local-warm"))
+            with patch("huggingface_hub.hf_hub_download", side_effect=AssertionError("no network on local hit")), \
+                 patch.object(prepare, "render_bundle", side_effect=AssertionError("no refit on local hit")):
+                self.assertEqual(prepare.prepare_one(task)[:3], (slug, entry, summary))
 
     def test_unreleased_item_bank_has_static_view_and_no_rasch_fit(self):
         tables, web, source = fixture(self.root, "item_bank")

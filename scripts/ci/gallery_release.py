@@ -16,11 +16,13 @@ import shutil
 import stat
 import subprocess
 from tempfile import TemporaryDirectory
+import time
 import urllib.parse
 import urllib.request
 import zipfile
 
 from . import gallery_artifacts as artifacts
+from . import gallery_cache as cache
 
 ROOT = Path(__file__).resolve().parents[2]
 REPOSITORY = "aims-foundations/measurement-db"
@@ -109,20 +111,27 @@ def unzip(path: Path, target: Path) -> None:
                 shutil.copyfileobj(source, output, length=1024 * 1024)
 
 
-def manifest_from_run(run: dict, tree: str) -> dict:
+def manifest_from_run(run: dict, tree: str, receipt: Path | None = None) -> dict:
     with TemporaryDirectory(prefix="gallery-manifest-") as temporary:
         archive = Path(temporary) / "manifest.zip"
         artifact = find_artifact(run, "gallery-manifest")
         github(f"actions/artifacts/{artifact['id']}/zip", destination=archive)
         with zipfile.ZipFile(archive) as zipped:
-            if zipped.namelist() != ["manifest.json"] or zipped.getinfo("manifest.json").file_size > 32_000_000:
+            names = zipped.namelist()
+            if (set(names) not in ({"manifest.json"}, {"manifest.json", "validation.json"})
+                    or len(names) != len(set(names))
+                    or any(zipped.getinfo(name).file_size > 32_000_000 for name in names)):
                 raise ValueError("Invalid candidate manifest artifact")
             manifest = json.loads(zipped.read("manifest.json"))
+            report = zipped.read("validation.json") if "validation.json" in names else None
     artifacts.validate_manifest(manifest, tree=tree)
     attempt = int(artifact["name"].rsplit("-", 1)[1])
     if manifest["validation"]["run_id"] != str(run["id"]) or manifest["validation"]["run_attempt"] != attempt:
         raise ValueError("Candidate manifest belongs to a different validation run")
     run["preparation_attempt"] = attempt
+    if receipt is not None and report is not None:
+        receipt.parent.mkdir(parents=True, exist_ok=True)
+        receipt.write_bytes(report)
     return manifest
 
 
@@ -146,7 +155,14 @@ def candidate_runs(sha: str) -> list[dict]:
 def verify_candidate(candidate: Path, *, tree: str) -> dict:
     manifest = json.loads((candidate / "manifest.json").read_text())
     artifacts.validate_manifest(manifest, tree=tree)
-    report_path = candidate / "validation.json"
+    verify_receipt(candidate / "validation.json", manifest)
+    for entry in [manifest["catalog"], *manifest["benchmarks"].values()]:
+        if not cache.matches(candidate / entry["path"], entry):
+            raise ValueError(f"Candidate archive checksum mismatch: {entry['path']}")
+    return manifest
+
+
+def verify_receipt(report_path: Path, manifest: dict) -> None:
     if artifacts.file_digest(report_path) != manifest["validation"]["report_sha256"]:
         raise ValueError("Validation receipt checksum mismatch")
     receipts = artifacts.validate_report(json.loads(report_path.read_text()),
@@ -158,14 +174,10 @@ def verify_candidate(candidate: Path, *, tree: str) -> dict:
             expected = {name: {"size": row["size"], "sha256": row["sha256"]} for name, row in inputs.items()}
             if receipt != expected:
                 raise ValueError(f"{slug}: release differs from byte-validated tables")
-    for entry in [manifest["catalog"], *manifest["benchmarks"].values()]:
-        path = candidate / entry["path"]
-        if path.is_symlink() or path.stat().st_size != entry["size"] or artifacts.file_digest(path) != entry["sha256"]:
-            raise ValueError(f"Candidate archive checksum mismatch: {entry['path']}")
-    return manifest
 
 
 def download(candidate: Path, run_id: str | None = None) -> dict:
+    started = time.monotonic()
     if candidate.exists() and any(candidate.iterdir()):
         raise ValueError("Candidate directory must be empty")
     sha, tree = git("rev-parse", "HEAD"), git("rev-parse", "HEAD^{tree}")
@@ -176,7 +188,7 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
     for run in runs:
         try:
             checked_run(run, allow_current=True)
-            manifest = manifest_from_run(run, tree)
+            manifest = manifest_from_run(run, tree, candidate / "validation.json")
             selected = run
             break
         except ValueError as exc:
@@ -184,14 +196,60 @@ def download(candidate: Path, run_id: str | None = None) -> dict:
     if selected is None:
         raise ValueError("No successful prepared candidate matches this tree. Update/revalidate the PR, "
                          "or dispatch Benchmark table reproduction with prepare_gallery=true. " + "; ".join(errors))
-    with TemporaryDirectory(prefix="gallery-candidate-") as temporary:
-        archive = Path(temporary) / "candidate.zip"
-        artifact = find_artifact(selected, "gallery-candidate")
-        github(f"actions/artifacts/{artifact['id']}/zip", destination=archive)
-        unzip(archive, candidate)
-    if json.loads((candidate / "manifest.json").read_text()) != manifest:
-        raise ValueError("Candidate archive and manifest artifact disagree")
+    entries = [manifest["catalog"], *manifest["benchmarks"].values()]
+    cached = 0
+    portable_download = False
+    if (candidate / "validation.json").exists():
+        verify_receipt(candidate / "validation.json", manifest)
+        for entry in entries:
+            cached += cache.restore(entry, candidate / entry["path"])
+    missing = [entry for entry in entries if not (candidate / entry["path"]).is_file()]
+    base = manifest.get("base_gallery", {"paths": []})
+    if any(entry["path"] not in base["paths"] for entry in missing) or not (candidate / "validation.json").exists():
+        portable_download = True
+        with TemporaryDirectory(prefix="gallery-candidate-") as temporary:
+            archive = Path(temporary) / "candidate.zip"
+            artifact = find_artifact(selected, "gallery-candidate")
+            github(f"actions/artifacts/{artifact['id']}/zip", destination=archive)
+            staged = Path(temporary) / "files"
+            unzip(archive, staged)
+            if json.loads((staged / "manifest.json").read_text()) != manifest:
+                raise ValueError("Candidate archive and manifest artifact disagree")
+            verify_receipt(staged / "validation.json", manifest)
+            candidate.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(staged / "validation.json", candidate / "validation.json")
+            for entry in missing:
+                source = staged / entry["path"]
+                if source.exists():
+                    if not cache.matches(source, entry):
+                        raise ValueError(f"Candidate archive checksum mismatch: {entry['path']}")
+                    target = candidate / entry["path"]
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(source, target)
+    missing = [entry for entry in entries if not (candidate / entry["path"]).is_file()]
+    if missing:
+        from huggingface_hub import hf_hub_download
+        def fetch(entry):
+            if entry["path"] not in base["paths"]:
+                raise ValueError(f"Portable handoff is missing {entry['path']}")
+            source = Path(hf_hub_download(artifacts.GALLERY_REPO, "v2/" + entry["path"],
+                                        revision=base["revision"], repo_type="dataset"))
+            if not cache.matches(source, entry):
+                raise ValueError("Pinned HF fallback archive checksum mismatch")
+            target = candidate / entry["path"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(source, target)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            list(pool.map(fetch, missing))
+    artifacts.write_json(candidate / "manifest.json", manifest)
     verify_candidate(candidate, tree=tree)
+    for entry in entries:
+        cache.store(candidate / entry["path"], entry)
+    timing = {"seconds": round(time.monotonic() - started, 3), "cached_archives": cached,
+              "hf_archives": len(missing), "github_candidate_downloaded": portable_download,
+              "archive_bytes": sum(entry["size"] for entry in entries)}
+    artifacts.write_json(candidate / "handoff-timing.json", timing)
+    print("Gallery handoff: " + json.dumps(timing), flush=True)
     print(f"Verified gallery candidate from run {selected['id']}, preparation attempt {selected['preparation_attempt']}")
     return manifest
 
@@ -213,19 +271,23 @@ def download_published(candidate: Path, tree: str) -> dict | None:
         return None
 
     def fetch(pair):
-        remote, local = pair
-        path = hf_hub_download(artifacts.GALLERY_REPO, remote, revision=revision, repo_type="dataset")
+        remote, local, entry = pair
         target = candidate / local
+        if entry and cache.restore(entry, target):
+            return
+        path = hf_hub_download(artifacts.GALLERY_REPO, remote, revision=revision, repo_type="dataset")
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(path, target)
 
-    files = [("v2/" + entry["path"], entry["path"])
+    files = [("v2/" + entry["path"], entry["path"], entry)
              for entry in [manifest["catalog"], *manifest["benchmarks"].values()]]
-    files.append((f"v2/receipts/{manifest['validation']['report_sha256']}.json", "validation.json"))
+    files.append((f"v2/receipts/{manifest['validation']['report_sha256']}.json", "validation.json", None))
     with ThreadPoolExecutor(max_workers=4) as pool:
         list(pool.map(fetch, files))
     artifacts.write_json(candidate / "manifest.json", manifest)
     verify_candidate(candidate, tree=tree)
+    for entry in [manifest["catalog"], *manifest["benchmarks"].values()]:
+        cache.store(candidate / entry["path"], entry)
     print(f"Downloaded accepted static gallery from {artifacts.GALLERY_REPO}@{revision}")
     return manifest
 

@@ -60,6 +60,9 @@ class GalleryArtifactTests(unittest.TestCase):
         temporary = TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        environment = patch.dict(os.environ, GALLERY_CACHE_DIR="")
+        environment.start()
+        self.addCleanup(environment.stop)
         self.candidate, self.manifest = candidate_fixture(self.root)
 
     def test_verified_release_restores_static_files_and_removes_obsolete_benchmarks(self):

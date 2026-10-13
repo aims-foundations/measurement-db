@@ -24,7 +24,11 @@ const LINE = 12; // wrapped-line pitch
 const TOP_PAD = 11;
 const BOTTOM_PAD = 5;
 const PAD_X = 4;
-const OBSERVATIONS_PER_PAGE = 5000;
+const OBSERVATIONS_PER_PAGE = 1000;
+// Bound both individual surfaces and the number alive at once. On a 3x phone,
+// AGC's 83 eager strips previously requested about 1.3 GB of pixel buffers.
+const MAX_CANVAS_SIDE = 4096;
+const MAX_CANVAS_PIXELS = 1024 * 1024;
 
 type SessionRow = {
   sid: string;
@@ -278,6 +282,8 @@ function StripRow({
   zeroLabel: string;
 }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const visible = useRef(false);
   const [page, setPage] = useState(0);
   const start = observationRows ? page * OBSERVATIONS_PER_PAGE : 0;
   const placed = useRef<Placed[]>([]);
@@ -286,7 +292,7 @@ function StripRow({
   const draw = useCallback(() => {
     const cv = ref.current;
     if (!cv) return;
-    const width = cv.clientWidth;
+    const width = trackRef.current?.clientWidth ?? 0;
     if (!width) return;
     const { cells, height } = layout(
       observationRows
@@ -295,11 +301,25 @@ function StripRow({
       width,
     );
     if (observationRows) for (const cell of cells) cell.i += start;
-    placed.current = cells;
-    const dpr = window.devicePixelRatio || 1;
-    cv.width = Math.round(width * dpr);
-    cv.height = Math.round(height * dpr);
     cv.style.height = `${height}px`;
+    if (!visible.current) {
+      // Keep layout space, but release offscreen backing stores immediately.
+      // Waiting for garbage collection can exhaust mobile canvas memory.
+      cv.width = 0;
+      cv.height = 0;
+      placed.current = [];
+      return;
+    }
+    placed.current = cells;
+    const dpr = Math.min(
+      window.devicePixelRatio || 1,
+      2,
+      MAX_CANVAS_SIDE / width,
+      MAX_CANVAS_SIDE / height,
+      Math.sqrt(MAX_CANVAS_PIXELS / (width * height)),
+    );
+    cv.width = Math.max(1, Math.floor(width * dpr));
+    cv.height = Math.max(1, Math.floor(height * dpr));
     const g = cv.getContext("2d");
     if (!g) return;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -357,10 +377,29 @@ function StripRow({
   }, [bits, row.segs, row.n, row.colors, selected, observationRows, start]);
 
   useEffect(() => {
+    const track = trackRef.current;
+    const canvas = ref.current;
+    if (!track || !canvas) return;
     draw();
-    const ro = new ResizeObserver(() => draw());
-    if (ref.current) ro.observe(ref.current);
-    return () => ro.disconnect();
+    let width = track.clientWidth;
+    const ro = new ResizeObserver(() => {
+      if (track.clientWidth === width) return;
+      width = track.clientWidth;
+      draw();
+    });
+    ro.observe(track);
+    const io = new IntersectionObserver(([entry]) => {
+      visible.current = entry.isIntersecting;
+      draw();
+    });
+    io.observe(track);
+    return () => {
+      ro.disconnect();
+      io.disconnect();
+      canvas.width = 0;
+      canvas.height = 0;
+      placed.current = [];
+    };
   }, [draw]);
 
   function hit(ev: React.MouseEvent<HTMLCanvasElement>) {
@@ -386,8 +425,8 @@ function StripRow({
     : `${rate}% ${oneLabel}`;
 
   return (
-    <div className="flex items-start gap-3 py-[1px]">
-      <div className="w-44 flex-none pt-px font-mono text-[11px]">
+    <div className="flex flex-col items-start gap-1 py-[1px] sm:flex-row sm:gap-3">
+      <div className="w-full flex-none pt-px font-mono text-[11px] sm:w-44">
         <div className="flex items-baseline gap-2">
           <span className="flex-1 truncate" title={row.name}>
             {row.name}
@@ -421,36 +460,40 @@ function StripRow({
           </div>
         )}
       </div>
-      <canvas
-        aria-label={
-          observationRows
-            ? `${row.name}: ${row.n} recorded observations, ${score}`
-            : `${row.name}: ${row.n} prompts across ${row.segs.length} sessions, ${rate}% ${oneLabel}`
-        }
-        className="min-w-0 flex-1 cursor-crosshair"
-        onClick={(ev) => {
-          const c = hit(ev);
-          if (c) onPickCell(c.i, bits[c.i] === "1");
-        }}
-        onMouseLeave={onLeave}
-        onMouseMove={(ev) => {
-          const c = hit(ev);
-          if (!c) return onLeave();
-          const passed = bits[c.i] === "1";
-          const turnInSeg =
-            c.i - row.segs.slice(0, c.seg).reduce((s, v) => s + v, 0) + 1;
-          onTip({
-            x: ev.clientX,
-            y: ev.clientY,
-            passed,
-            text: observationRows
-              ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel}`
-              : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
-          });
-        }}
-        ref={ref}
-        role="img"
-      />
+      <div ref={trackRef} className="w-full min-w-0 sm:flex-1">
+        <canvas
+          width={0}
+          height={0}
+          aria-label={
+            observationRows
+              ? `${row.name}: ${row.n} recorded observations, ${score}`
+              : `${row.name}: ${row.n} prompts across ${row.segs.length} sessions, ${rate}% ${oneLabel}`
+          }
+          className="block w-full cursor-crosshair"
+          onClick={(ev) => {
+            const c = hit(ev);
+            if (c) onPickCell(c.i, bits[c.i] === "1");
+          }}
+          onMouseLeave={onLeave}
+          onMouseMove={(ev) => {
+            const c = hit(ev);
+            if (!c) return onLeave();
+            const passed = bits[c.i] === "1";
+            const turnInSeg =
+              c.i - row.segs.slice(0, c.seg).reduce((s, v) => s + v, 0) + 1;
+            onTip({
+              x: ev.clientX,
+              y: ev.clientY,
+              passed,
+              text: observationRows
+                ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel}`
+                : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
+            });
+          }}
+          ref={ref}
+          role="img"
+        />
+      </div>
     </div>
   );
 }

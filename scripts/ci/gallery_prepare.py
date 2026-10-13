@@ -23,6 +23,8 @@ from tempfile import TemporaryDirectory
 import time
 
 from . import gallery_artifacts as artifacts
+from . import gallery_cache as cache
+from .gallery_packs import pack_lookups
 
 ROOT = Path(__file__).resolve().parents[2]
 FIT_OPTIONS = {"test_size": 0.2, "seed": 1, "lr": 0.05, "max_iter": 4000,
@@ -37,7 +39,7 @@ def generator_identity(root: Path = ROOT) -> dict:
     paths = [p for folder in ("scripts/render_website", "scripts/analyze_measurements")
              for p in (root / folder).rglob("*.py")]
     paths += [root / "scripts/ci" / name for name in
-              ("gallery_prepare.py", "gallery_artifacts.py", "gallery-requirements.txt")]
+              ("gallery_prepare.py", "gallery_artifacts.py", "gallery_packs.py", "gallery-requirements.txt")]
     libraries = {name: importlib.metadata.version(name) for name in
                  ("numpy", "pandas", "pyarrow", "fastparquet", "cramjam", "scikit-learn",
                   "scipy", "torch", "PyYAML")}
@@ -219,10 +221,10 @@ def render_bundle(slug: str, source: dict, tables: Path, web: Path, output: Path
         return summary, None
 
     irt, skipped = stage("rasch", fit)
+    source_descriptor = stage("packing", lambda: pack_lookups(data))
     summary = {"card": card, "detail": detail, "saturation": verdict, "marginals": marginals,
                "timeline": timeline, "irt": irt, "irt_skip_reason": skipped}
-    with gzip.open(data / "source.json.gz", "rt") as stream:
-        summary["source"] = json.load(stream)
+    summary["source"] = source_descriptor
     artifacts.write_json(data / "summary.json", summary)
     return {"data": data, "timings": timings}
 
@@ -237,14 +239,22 @@ def prepare_one(task: dict) -> tuple[str, dict, dict, dict]:
     with TemporaryDirectory(prefix=f"gallery-{slug}-") as temporary:
         root = Path(temporary)
         previous = task.get("previous")
+        accepted = bool(previous and previous["key"] == key)
+        if not accepted:
+            previous = cache.lookup(slug, inputs)
         if previous and previous["key"] == key:
-            path = Path(hf_hub_download(artifacts.GALLERY_REPO, "v2/" + previous["path"],
-                                       revision=task["gallery_revision"], repo_type="dataset"))
+            path = root / "cached.tar"
+            if not cache.restore(previous, path):
+                if not accepted:
+                    raise ValueError("Cached archive disappeared during preparation; retry the job")
+                path = Path(hf_hub_download(artifacts.GALLERY_REPO, "v2/" + previous["path"],
+                                           revision=task["gallery_revision"], repo_type="dataset"))
             data = root / "cached"
             artifacts.unpack(path, data, previous, {"slug": slug, "key": key})
             target = candidate / previous["path"]
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(path, target)
+            cache.remember(slug, previous, target)
             summary = json.loads((data / "summary.json").read_text())
             timing = {"cache_hit": True, "total_seconds": round(time.monotonic() - start, 3)}
             print(f"{slug}: reused prepared bundle ({timing['total_seconds']}s)", flush=True)
@@ -271,6 +281,7 @@ def prepare_one(task: dict) -> tuple[str, dict, dict, dict]:
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(archive, destination)
         entry = {**meta, "path": relative, "key": key, "inputs": inputs}
+        cache.remember(slug, entry, destination)
         timing = {"cache_hit": False, **result["timings"],
                   "total_seconds": round(time.monotonic() - start, 3)}
         return slug, entry, json.loads((result["data"] / "summary.json").read_text()), timing
@@ -376,10 +387,18 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
                 "validation": {"run_id": run_id, "run_attempt": attempt,
                                "report_sha256": artifacts.file_digest(report_path)},
                 "benchmarks": entries, "catalog": catalog}
+    # Only archives already present in this accepted, immutable HF release may
+    # be omitted from the portable PR handoff. Local cache hits alone never
+    # justify dropping an archive from that fallback.
+    known = {entry["path"] for entry in previous["benchmarks"].values()}
+    manifest["base_gallery"] = {"revision": gallery_revision,
+                                "paths": sorted(entry["path"] for entry in entries.values()
+                                                if entry["path"] in known)}
     artifacts.validate_manifest(manifest)
     artifacts.write_json(candidate / "manifest.json", manifest)
     shutil.copyfile(report_path, candidate / "validation.json")
     artifacts.write_json(candidate / "timings.json", timings)
+    stage_handoff(candidate, manifest)
     hits = sum(t["cache_hit"] for t in timings.values())
     print(f"Prepared {len(entries)} benchmarks: {hits} reused, {len(entries) - hits} generated.")
     if summary_path := os.environ.get("GITHUB_STEP_SUMMARY"):
@@ -389,6 +408,29 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
             for slug, timing in sorted(timings.items()):
                 output.write(f"| {slug} | {'hit' if timing['cache_hit'] else 'miss'} | "
                              f"{timing.get('gallery', 0)} | {timing.get('rasch', 0)} | {timing['total_seconds']} |\n")
+
+
+def stage_handoff(candidate: Path, manifest: dict) -> None:
+    """Cache full objects locally; upload only objects absent from accepted HF."""
+    handoff = candidate / "handoff"
+    handoff.mkdir()
+    base = set(manifest.get("base_gallery", {}).get("paths", []))
+    changed_bytes = changed = 0
+    for entry in [manifest["catalog"], *manifest["benchmarks"].values()]:
+        source = candidate / entry["path"]
+        cache.store(source, entry)
+        if entry["path"] not in base:
+            target = handoff / entry["path"]
+            target.parent.mkdir(parents=True, exist_ok=True)
+            # These are immutable, verified candidate files. Hard links avoid a
+            # second local copy; GitHub receives regular file bytes.
+            target.hardlink_to(source)
+            changed_bytes += entry["size"]
+            changed += 1
+    for name in ("manifest.json", "validation.json", "timings.json"):
+        shutil.copyfile(candidate / name, handoff / name)
+    print(f"Portable handoff: {changed} archives, {changed_bytes:,} bytes; "
+          f"{len(base)} accepted archives reused from pinned HF.", flush=True)
 
 
 def main() -> None:

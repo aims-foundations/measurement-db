@@ -11,7 +11,7 @@ gallery repository. Python chart rendering stays in `generate_benchmark_gallery.
 
 ## Build and preview
 
-Use Python 3.11+, Node.js 22.12+ (or 24), and pnpm 10.33.0. From the repository root:
+Use Python 3.11+, Node.js 24, and pnpm 10.33.0. From the repository root:
 
 ```bash
 python -m pip install -r scripts/ci/gallery-requirements.txt
@@ -61,7 +61,13 @@ Rasch summaries stay in the catalog; item difficulties are compressed alongside
 each benchmark's viewer data so a page loads only its own fitted values.
 The browser loads the selected benchmark's chart as a static file. Compressed
 cell-key and item dictionaries use exact source keys, divided into up to
-256 nonempty buckets. Trace and dynamic-item indexes map those keys to physical
+256 nonempty buckets in the standalone renderer. CI combines these into
+content-addressed binary packs (8 MiB target size). A small index locates each
+independently gzipped lookup chunk; the browser requests that exact byte range
+from Vercel and verifies its SHA-256 before decoding it. Adaptive chunks target
+at most 512 KiB compressed and 4 MiB expanded; existing oversized buckets stay
+isolated. Packing preserves all entries and adds no HF runtime requests.
+Trace and dynamic-item indexes map those keys to physical
 Parquet rows. Page indexes let the browser read the required source pages,
 with decoding in a worker so the chart remains responsive. Some source pages
 and dictionaries are large, so an individual lookup can still transfer tens of MB.
@@ -83,7 +89,9 @@ are annotation occasions, not useful condition bands. Repeated items keep their
 separate recorded answers.
 Charts exceeding 10,000 rows or 250 million dense cells also use observation
 strips, preserving native grades and exact keys. Large strips page through
-5,000 observations at a time; other joined charts page through 200 rows.
+1,000 observations at a time; other joined charts page through 200 rows.
+Session canvases allocate only near the viewport and release their buffers when
+offscreen. Pixel density and buffer dimensions are bounded for mobile devices.
 
 Card images and institution logos must exist under `website/public/`; otherwise
 the existing generated thumbnail and institution-initial fallbacks are used.
@@ -101,14 +109,18 @@ from their original item row.
    existing skip policy. There is no automatic baseline creation or canonical
    HF upload. Fork PRs never execute repository code on the runners.
 2. After the benchmark report succeeds, **Prepare gallery** checks its per-table
-   SHA-256/size receipts. Four isolated worker processes reuse matching accepted
+   SHA-256/size receipts. Four isolated worker processes reuse matching verified
    bundles or generate gallery, saturation, marginals, timeline inputs, and
    Rasch output for each benchmark. One parent combines all eight catalogs.
    Preparation emits stage timings and a cache-hit summary. It does not write HF.
-3. The same run uploads a `gallery-candidate-<attempt>` artifact and a small
-   `gallery-manifest-<attempt>` artifact, retained for 30 days. A reusable Vercel
-   workflow restores this candidate and deploys a PR preview. Wait for the
-   benchmark report, preparation, and preview checks before merging.
+3. The same run uploads a `gallery-candidate-<attempt>` artifact containing only
+   archives not yet accepted on HF, plus a small `gallery-manifest-<attempt>`
+   artifact with the manifest and validation receipt, retained for 30 days.
+   A reusable Vercel workflow restores verified archives from the shared runner
+   cache first, downloading the candidate artifact only for unpublished cache
+   misses. Accepted misses come from the pinned HF gallery commit. It deploys a
+   PR preview and creates or reuses a seven-day review link. **Gallery ready**
+   succeeds only after validation and any requested preparation/preview succeed.
    A failed-preview-only retry reuses the successful preparation attempt's
    manifest and candidate together, without repeating preparation.
 4. A relevant push to `main` runs **Deploy website to Vercel**. It finds a
@@ -140,14 +152,31 @@ An accepted HF release matching the current Git tree also supports redeployment
 after GitHub's candidate artifacts expire. Neither path regenerates missing data
 silently: stale/missing candidates fail with instructions to prepare again.
 
-GitHub artifacts are the temporary PR handoff; HF gallery is the durable cache.
-The HF SDK's runner-local download cache and pip/pnpm caches reduce transfers
-and installation work but are not required for correctness. Archive upload uses
-compression level zero because bulky viewer files are already gzipped. Four
+Set the repository variable `GALLERY_CACHE_DIR` to a shared directory on the
+trusted runner pool, outside any checkout or job temporary directory. The pool
+uses `/lfs/skampere1/0/sttruong/aims/measurement-db-ghaction/gallery-cache`.
+Immutable archives live under `objects/<sha256>.tar`; per-benchmark input indexes
+live under `inputs/<slug>/<input-key>.json`. Writes are atomic and every read
+checks the expected size and hash. Cache contents never replace Git-tree or
+validation-receipt checks. The cache is optional and disposable: GitHub artifacts
+are the portable PR handoff and HF gallery is the durable accepted cache.
+The HF SDK's download cache and pip/pnpm caches further reduce transfers and
+installation work. Archive upload uses compression level zero because bulky
+viewer files are already gzipped. Four
 workers and two numerical-library threads per worker bound initial concurrency.
 The initial v2 cache fill still prepares the full visible collection and can
-take hours; subsequent preparation reuses unchanged bundles. The roughly 3 GB
-of retained static website data still has to be transferred to Vercel.
+take hours; subsequent preparation reuses unchanged bundles. A warm PR-to-deploy
+handoff downloads only the small manifest/receipt artifact and restores archive
+bytes locally. Without the shared cache, only unpublished archives cross the
+GitHub artifact handoff; accepted archives download directly from pinned HF.
+
+Vercel receives a complete prebuilt deployment using ordinary content-addressed
+uploads, without `--archive=tgz`. Unchanged files require no re-upload. The packed
+preview experiment reduced 224,088 static files to 1,631 while preserving about
+3 GB of static data; an identical redeploy uploaded zero bytes, and a one-prompt
+change uploaded 247,040 bytes. These are experiment measurements, not timing
+guarantees. CI rejects output at 10,000 files to leave room below the CLI's
+15,000-file upload limit. Packed filenames and gzip headers are deterministic.
 
 GitHub Actions needs the existing `VERCEL_TOKEN`, `VERCEL_ORG_ID`,
 `VERCEL_PROJECT_ID`, and `HF_TOKEN`. The existing HF token needs read access to
@@ -173,8 +202,10 @@ For initial bootstrap, expired PR artifacts, or an intentional HF data refresh:
 
 An ordinary redeploy can leave `candidate_run_id` empty. If the base branch
 changed since PR preparation, update the PR and rerun its checks before merging.
-Make the preparation/preview checks required under repository branch protection
-when enabling this flow; this patch does not change repository settings.
+Require **Gallery ready** and **Benchmark metadata checks** under main-branch
+protection when enabling this flow. The path-filtered **Website checks** workflow
+is also checked before merging website changes; it is not globally required
+because unrelated PRs may not trigger it.
 
 ## Checks
 

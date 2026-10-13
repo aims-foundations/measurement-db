@@ -20,6 +20,7 @@ import type {
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
 import { withBase } from "@/lib/base-path";
 import { readGallerySource } from "@/lib/gallery-source";
+import { gallerySource, readGalleryLookup } from "@/lib/gallery-lookup";
 import { IrtPanel } from "./irt-panel";
 import {
   JoinedMatrix,
@@ -72,25 +73,11 @@ async function readCellData<T>(
   if (kind === "answer")
     return readGallerySource<T>(dataUrl, kind, key, signal);
   if (kind === "item") {
-    const response = await fetch(`${dataUrl}/source.json.gz`, { signal });
-    if (!response.ok) throw new Error("Could not load item information.");
-    const source = (await response.json()) as { dynamicItems: boolean };
+    const source = await gallerySource(dataUrl, signal);
     if (source.dynamicItems)
       return readGallerySource<T>(dataUrl, kind, key, signal);
   }
-  const encoded = JSON.stringify(key);
-  const digest = await crypto.subtle.digest(
-    "SHA-256",
-    new TextEncoder().encode(encoded),
-  );
-  const bucket = new Uint8Array(digest)[0].toString(16).padStart(2, "0");
-  const response = await fetch(`${dataUrl}/${kind}/${bucket}.json.gz`, {
-    signal,
-  });
-  if (response.status === 404) return undefined;
-  if (!response.ok) throw new Error(`Could not load ${kind} data.`);
-  const entries = (await response.json()) as Record<string, T>;
-  return entries[encoded];
+  return readGalleryLookup<T>(dataUrl, kind, key, signal);
 }
 /* Display-time colour swap for BINARY matrices, so we can recolour without
    re-rendering any PNG. The matrices bake RED=(214,39,40)=correct(1),

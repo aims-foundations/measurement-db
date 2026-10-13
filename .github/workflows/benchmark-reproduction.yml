@@ -215,6 +215,7 @@ jobs:
     runs-on: [self-hosted, linux, x64, measurement-db-reproduction]
     timeout-minutes: 720
     env:
+      GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       HF_REVISION: ${{ needs.changes.outputs.hf_revision }}
       PYTHONUNBUFFERED: '1'
@@ -257,7 +258,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gallery-candidate-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/
+          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/handoff/
           compression-level: 0
           retention-days: 30
           if-no-files-found: error
@@ -265,7 +266,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: gallery-manifest-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
+          path: |
+            ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/manifest.json
+            ${{ runner.temp }}/gallery-candidate-${{ github.run_id }}-${{ github.run_attempt }}/validation.json
           retention-days: 30
           if-no-files-found: error
 
@@ -277,3 +280,26 @@ jobs:
     with:
       candidate_run_id: ${{ format('{0}', github.run_id) }}
     secrets: inherit
+
+  ready:
+    name: Gallery ready
+    needs: [changes, report, prepare-gallery, preview]
+    if: >-
+      always() && github.repository == 'aims-foundations/measurement-db' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require successful validation and any requested preparation and preview
+        env:
+          CHANGES: ${{ needs.changes.result }}
+          REPORT: ${{ needs.report.result }}
+          PREPARE: ${{ needs.changes.outputs.prepare_gallery }}
+          PREPARED: ${{ needs.prepare-gallery.result }}
+          PREVIEW: ${{ needs.preview.result }}
+        run: |
+          test "$CHANGES" = success
+          test "$REPORT" = success
+          if [ "$PREPARE" = true ]; then
+            test "$PREPARED" = success
+            if [ "$GITHUB_EVENT_NAME" = pull_request ]; then test "$PREVIEW" = success; fi
+          fi

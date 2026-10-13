@@ -67,6 +67,7 @@ jobs:
       name: ${{ github.event_name == 'pull_request' && format('preview-pr-{0}', github.event.number) || (github.ref == 'refs/heads/main' && 'production' || 'preview') }}
       url: ${{ steps.deploy.outputs.url }}/measurement-db
     env:
+      GALLERY_CACHE_DIR: ${{ vars.GALLERY_CACHE_DIR }}
       HF_TOKEN: ${{ secrets.HF_TOKEN }}
       PYTHONUNBUFFERED: '1'
       DEPLOY_ENV: ${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }}
@@ -88,7 +89,7 @@ jobs:
           version: 10.33.0
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
       - name: Check deployment credentials
@@ -148,6 +149,15 @@ jobs:
           flags=()
           if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
           pnpm dlx vercel@62.2.0 build "${flags[@]}" --token="$VERCEL_TOKEN"
+      - name: Check the upload file budget
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          count = sum(path.is_file() for path in Path('.vercel/output').rglob('*'))
+          if not 0 < count < 10000:
+              raise SystemExit(f'Unexpected Vercel output file count: {count}; investigate gallery packing')
+          print(f'Vercel output contains {count} files (budget: 10,000).')
+          PY
       - name: Publish the accepted gallery release to HF
         if: env.DEPLOY_ENV == 'production'
         id: gallery
@@ -159,14 +169,18 @@ jobs:
         env:
           NODE_OPTIONS: --require=${{ github.workspace }}/website/scripts/vercel-fetch.cjs
         run: |
-          flags=()
-          if [ "$DEPLOY_ENV" = production ]; then flags+=(--prod); fi
-          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --archive=tgz "${flags[@]}" \
+          url=$(pnpm dlx vercel@62.2.0 deploy --prebuilt --target="$DEPLOY_ENV" \
             --env HF_TOKEN="$HF_TOKEN" \
             --meta githubDeployment=1 --meta githubCommitRef="$DEPLOY_BRANCH" \
             --token="$VERCEL_TOKEN")
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Website: $url/measurement-db" >> "$GITHUB_STEP_SUMMARY"
+      - name: Create or reuse the PR review link
+        if: env.DEPLOY_ENV == 'preview' && github.event_name == 'pull_request'
+        env:
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
+          PR_NUMBER: ${{ github.event.number }}
+        run: python scripts/ci/vercel_preview_link.py --url "$DEPLOYMENT_URL" --pr "$PR_NUMBER"
       - name: Check deployed pages
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}

@@ -41,7 +41,22 @@ globalThis.fetch = async (input, init) => {
         url.pathname.replace("/measurement-db/", ""),
       ),
     );
-    return new Response(gunzipSync(bytes), { status: 200 });
+    if (url.pathname.endsWith(".bin")) {
+      const range = new Headers(init?.headers).get("range");
+      const match = /^bytes=(\d+)-(\d+)$/.exec(range || "");
+      assert.ok(match, "Packed lookups require an exact byte range");
+      const start = Number(match[1]),
+        end = Number(match[2]);
+      assert.ok(start >= 0 && end < bytes.length);
+      return new Response(bytes.subarray(start, end + 1), {
+        status: 206,
+        headers: { "Content-Range": `bytes ${start}-${end}/${bytes.length}` },
+      });
+    }
+    return new Response(
+      url.pathname.endsWith(".gz") ? gunzipSync(bytes) : bytes,
+      { status: 200 },
+    );
   } catch (error) {
     if (error.code === "ENOENT") return new Response(null, { status: 404 });
     throw error;

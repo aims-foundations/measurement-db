@@ -164,6 +164,13 @@ def validate_manifest(manifest: dict, *, tree: str | None = None) -> None:
     descriptor(manifest["catalog"])
     if manifest["catalog"]["path"] != f"catalog/{manifest['catalog']['sha256']}.tar":
         raise ValueError("Invalid catalog archive location")
+    if base := manifest.get("base_gallery"):
+        paths = base.get("paths")
+        allowed = {entry["path"] for entry in manifest["benchmarks"].values()}
+        if (not COMMIT.fullmatch(base.get("revision", "")) or not isinstance(paths, list)
+                or any(not isinstance(p, str) for p in paths)
+                or len(paths) != len(set(paths)) or not set(paths) <= allowed):
+            raise ValueError("Invalid pinned gallery fallback")
 
 
 def descriptor(entry: dict) -> None:
