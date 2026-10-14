@@ -5,6 +5,7 @@ import searchConfig from "@/meilisearch.config.json";
 
 export const BENCHMARKS_INDEX_UID = searchConfig.benchmarksIndex;
 export const RESULTS_INDEX_UID = searchConfig.resultsIndex;
+export const CLOUD_SEARCH_ENABLED = searchConfig.enabled === true;
 
 let publicClient: Meilisearch | null | undefined;
 
@@ -19,11 +20,12 @@ function validPublicHost(host: string): boolean {
 }
 
 /**
- * Return the browser-safe search client, or null when Cloud is not configured.
+ * Return the browser-safe search client, or null when Cloud is disabled or unconfigured.
  * The key must have only the `search` action for the two public indexes. Admin
  * credentials belong in CI and must never use the NEXT_PUBLIC_ prefix.
  */
 export function getPublicSearchClient(): Meilisearch | null {
+  if (!CLOUD_SEARCH_ENABLED) return null;
   if (publicClient !== undefined) return publicClient;
 
   const host = process.env.NEXT_PUBLIC_MEILISEARCH_HOST?.trim() ?? "";

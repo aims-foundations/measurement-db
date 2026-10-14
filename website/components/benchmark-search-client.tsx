@@ -10,6 +10,7 @@ import {
 } from "@phosphor-icons/react";
 import {
   BENCHMARKS_INDEX_UID,
+  CLOUD_SEARCH_ENABLED,
   RESULTS_INDEX_UID,
   getPublicSearchClient,
 } from "@/lib/meilisearch";
@@ -362,7 +363,9 @@ export function BenchmarkSearchClient({
   return (
     <div className="min-w-0" aria-busy={state.status === "loading"}>
       <label htmlFor={inputId} className="sr-only">
-        Search {scopeLabel}, AI subjects, and results
+        {CLOUD_SEARCH_ENABLED
+          ? `Search ${scopeLabel}, AI subjects, and results`
+          : `Search ${scopeLabel}`}
       </label>
       <div
         className={
@@ -388,7 +391,11 @@ export function BenchmarkSearchClient({
               updateQuery(event.target.value);
               setState(EMPTY_STATE);
             }}
-            placeholder="Search benchmarks, AI subjects, or use cases…"
+            placeholder={
+              CLOUD_SEARCH_ENABLED
+                ? "Search benchmarks, AI subjects, or use cases…"
+                : "Search benchmarks or use cases…"
+            }
             autoComplete="off"
             className={
               catalogPresentation
@@ -431,19 +438,23 @@ export function BenchmarkSearchClient({
             </span>
           ) : hasQuery && state.status === "ready" ? (
             hasResults ? (
-              `Showing ${state.benchmarks.length} benchmark match${state.benchmarks.length === 1 ? "" : "es"} and ${state.results.length} aggregate result${state.results.length === 1 ? "" : "s"}.`
-            ) : (
+              `Showing ${state.benchmarks.length} benchmark match${state.benchmarks.length === 1 ? "" : "es"}${state.fallback ? "." : ` and ${state.results.length} aggregate result${state.results.length === 1 ? "" : "s"}.`}`
+            ) : CLOUD_SEARCH_ENABLED ? (
               "No matches. Try a broader AI subject, domain, or task."
+            ) : (
+              "No matches. Try a broader domain or task."
             )
           ) : query.trim() ? (
             "Enter at least two characters to search."
-          ) : (
+          ) : CLOUD_SEARCH_ENABLED ? (
             "Searches benchmark descriptions, domains, AI subjects, and aggregate scores."
+          ) : (
+            "Searches benchmark descriptions, domains, and use cases."
           )}
         </div>
       ) : null}
 
-      {state.fallback && hasQuery ? (
+      {CLOUD_SEARCH_ENABLED && state.fallback && hasQuery ? (
         <p className="mt-2 text-xs font-light text-[var(--rd-cardinal)]">
           Aggregate-result search is temporarily unavailable; showing benchmark
           matches only.

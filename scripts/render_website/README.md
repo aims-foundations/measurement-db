@@ -189,6 +189,9 @@ self-hosted runners. Preparation has a 12-hour timeout; deployment has 90 minute
 Vercel uploads retain serialized requests and bounded connection-timeout retries.
 The existing Vercel project's root is `website` and framework is Next.js.
 Production search sync retains `MEILISEARCH_HOST` and `MEILISEARCH_ADMIN_KEY`.
+Meilisearch is opt-in through `website/meilisearch.config.json` (`enabled: false`
+by default); the same switch disables browser Cloud requests and skips indexing.
+See `website/MEILISEARCH.md` to enable it after activating the subscription.
 
 For initial bootstrap, expired PR artifacts, or an intentional HF data refresh:
 

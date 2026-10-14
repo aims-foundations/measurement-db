@@ -2,6 +2,7 @@ import { ErrorStatusCode, Meilisearch, MeilisearchApiError } from "meilisearch";
 import {
   BENCHMARKS_INDEX_SETTINGS,
   BENCHMARKS_INDEX_UID,
+  CLOUD_SEARCH_ENABLED,
   RESULTS_INDEX_SETTINGS,
   RESULTS_INDEX_UID,
   buildSearchDocuments,
@@ -116,6 +117,12 @@ async function prepareIndex({
 }
 
 async function sync() {
+  if (!DRY_RUN && !CLOUD_SEARCH_ENABLED) {
+    console.log(
+      "Meilisearch is disabled in meilisearch.config.json; skipping sync.",
+    );
+    return;
+  }
   const { benchmarks, results } = buildSearchDocuments();
   console.log(
     `Prepared ${benchmarks.length} public benchmarks and ${results.length} aggregate model results.`,
