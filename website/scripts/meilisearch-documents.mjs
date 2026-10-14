@@ -8,6 +8,7 @@ const searchConfig = readJson("meilisearch.config.json");
 
 export const BENCHMARKS_INDEX_UID = searchConfig.benchmarksIndex;
 export const RESULTS_INDEX_UID = searchConfig.resultsIndex;
+export const CLOUD_SEARCH_ENABLED = searchConfig.enabled === true;
 
 const CATEGORY_SEARCH_TEXT = {
   safety: "safety adversarial robustness harmful behavior refusal",

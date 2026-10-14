@@ -92,6 +92,20 @@ jobs:
           node-version: '24'
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
+      - name: Read optional search configuration
+        id: search
+        run: |
+          node --input-type=module - <<'NODE'
+          import { appendFileSync, readFileSync } from 'node:fs';
+          const { enabled } = JSON.parse(readFileSync('website/meilisearch.config.json', 'utf8'));
+          if (typeof enabled !== 'boolean') throw new Error('Meilisearch enabled must be a boolean.');
+          appendFileSync(process.env.GITHUB_OUTPUT, `enabled=${enabled}\n`);
+          const message = enabled
+            ? 'Meilisearch enabled; production search indexes will be synchronized.'
+            : 'Meilisearch disabled; local benchmark search remains available and cloud sync is skipped.';
+          console.log(message);
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${message}\n`);
+          NODE
       - name: Check deployment credentials
         run: |
           for name in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID HF_TOKEN; do
@@ -195,8 +209,5 @@ jobs:
             --output /dev/null --write-out '%{http_code}')
           [[ "$status" = 307 || "$status" = 206 ]]
       - name: Sync production search indexes
-        if: env.DEPLOY_ENV == 'production' && env.MEILISEARCH_HOST != '' && env.MEILISEARCH_ADMIN_KEY != ''
+        if: env.DEPLOY_ENV == 'production' && steps.search.outputs.enabled == 'true'
         run: pnpm --dir website search:sync
-      - name: Report missing production search credentials
-        if: env.DEPLOY_ENV == 'production' && (env.MEILISEARCH_HOST == '' || env.MEILISEARCH_ADMIN_KEY == '')
-        run: echo '::warning::Search sync skipped; configure MEILISEARCH_HOST and MEILISEARCH_ADMIN_KEY.'

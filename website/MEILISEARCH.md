@@ -1,12 +1,31 @@
 # Meilisearch Cloud setup
 
-The website is ready to search two public indexes:
+Meilisearch is currently disabled. `website/meilisearch.config.json` contains
+`"enabled": false`, which controls both browser requests and production indexing.
+The website uses local benchmark search without an unavailable-service warning,
+and deployment skips the cloud sync. Existing hosts and keys can stay configured.
+`pnpm search:check` still validates the search documents; `pnpm search:sync` exits
+successfully without contacting Cloud while disabled.
+
+To enable it later:
+
+1. Activate the Cloud subscription and confirm the instance is available.
+2. Update the Vercel browser host/search key and GitHub sync host/admin key below
+   if the instance or credentials have changed.
+3. Change `enabled` to `true` in `website/meilisearch.config.json`, open a PR, and
+   merge after its checks pass. The production deployment enables browser search
+   and synchronizes the indexes. Sync errors remain failures when enabled.
+
+To disable it again, set `enabled` to `false` and deploy. No indexes or credentials
+are deleted by this switch. Site-wide AIMS search is independent and unchanged.
+
+When enabled, the website searches two public indexes:
 
 - `measurement_db_benchmarks`: one document per visible benchmark
 - `measurement_db_results`: one aggregate result per visible benchmark and AI
   model
 
-The current build prepares 61 benchmarks and 7,432 aggregate model results.
+Run `pnpm search:check` to see the current benchmark and aggregate-result counts.
 Raw model responses, prompts, traces, and hidden competition benchmarks are not
 sent to Meilisearch.
 
@@ -105,8 +124,8 @@ After the Vercel and GitHub values are configured:
 
 1. Open **GitHub → Actions → Deploy measurement-db to Vercel**.
 2. Choose **Run workflow** on the `main` branch.
-3. Confirm the `Sync Meilisearch Cloud indexes` step reports 61 benchmarks and
-   7,432 results for the current data revision.
+3. Confirm the `Sync production search indexes` step reports the same counts
+   as `pnpm search:check` for the current data revision.
 4. Redeploy Preview separately if it should receive the new public browser
    variables.
 5. Search the site for a benchmark such as `MMLU`, a model such as `Claude`, and
