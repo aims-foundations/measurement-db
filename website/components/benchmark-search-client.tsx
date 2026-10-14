@@ -363,7 +363,9 @@ export function BenchmarkSearchClient({
   return (
     <div className="min-w-0" aria-busy={state.status === "loading"}>
       <label htmlFor={inputId} className="sr-only">
-        Search {scopeLabel}, AI subjects, and results
+        {CLOUD_SEARCH_ENABLED
+          ? `Search ${scopeLabel}, AI subjects, and results`
+          : `Search ${scopeLabel}`}
       </label>
       <div
         className={
