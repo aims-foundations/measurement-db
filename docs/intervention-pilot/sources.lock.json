@@ -1,0 +1,103 @@
+{
+  "captured_on": "2026-10-16",
+  "files": [
+    {
+      "id": "onlycodes_results",
+      "url": "https://raw.githubusercontent.com/hyang0129/onlycodes/7548222e5f33b4e760b3cbeb193e5403f8e2e6cc/paper/data/raw/all_results.csv",
+      "local_path": "onlycodes/paper/data/raw/all_results.csv",
+      "bytes": 953757,
+      "sha256": "c99879c4964540d512994a6e5c6041c9854eeb1b078f54ff3fad091e17daf541"
+    },
+    {
+      "id": "onlycodes:paper/sections/03_method.tex",
+      "url": "https://raw.githubusercontent.com/hyang0129/onlycodes/7548222e5f33b4e760b3cbeb193e5403f8e2e6cc/paper/sections/03_method.tex",
+      "local_path": "onlycodes/paper/sections/03_method.tex",
+      "bytes": 15411,
+      "sha256": "3cde8ae40f4b9bcc9fdefa1c2e3de84725540ce16cd38efcce00d7a220c6b8dd"
+    },
+    {
+      "id": "onlycodes:paper/sections/04_experimental_setup.tex",
+      "url": "https://raw.githubusercontent.com/hyang0129/onlycodes/7548222e5f33b4e760b3cbeb193e5403f8e2e6cc/paper/sections/04_experimental_setup.tex",
+      "local_path": "onlycodes/paper/sections/04_experimental_setup.tex",
+      "bytes": 9419,
+      "sha256": "447412b8685d130c009422eda610191d47bd2582cd46cebeecc01aff395226a3"
+    },
+    {
+      "id": "tool-arch-study:README.md",
+      "url": "https://raw.githubusercontent.com/XZ-X/tool-arch-study/fd3fbbe111f19afe156942338db2f79dfec4185d/README.md",
+      "local_path": "tool-arch-study/README.md",
+      "bytes": 4022,
+      "sha256": "e58b838a4dae793e3ae7e89544238c2cd3f301f932d23debdd70491a61fc6fef"
+    },
+    {
+      "id": "tool-arch-study:reproduce-paper-results.md",
+      "url": "https://raw.githubusercontent.com/XZ-X/tool-arch-study/fd3fbbe111f19afe156942338db2f79dfec4185d/reproduce-paper-results.md",
+      "local_path": "tool-arch-study/reproduce-paper-results.md",
+      "bytes": 3041,
+      "sha256": "84c706beb53ce7a019d320daf4c2e0adfa5b794e2153138f627504c0cbf0452f"
+    },
+    {
+      "id": "tool-arch-study:tool-interfaces.md",
+      "url": "https://raw.githubusercontent.com/XZ-X/tool-arch-study/fd3fbbe111f19afe156942338db2f79dfec4185d/tool-interfaces.md",
+      "local_path": "tool-arch-study/tool-interfaces.md",
+      "bytes": 7635,
+      "sha256": "9b6931c2608a551a8380a96cb25fd47528d870146314a0296565e3c18123cbb3"
+    },
+    {
+      "id": "tool-arch-study:scripts/reproduce_table2.py",
+      "url": "https://raw.githubusercontent.com/XZ-X/tool-arch-study/fd3fbbe111f19afe156942338db2f79dfec4185d/scripts/reproduce_table2.py",
+      "local_path": "tool-arch-study/scripts/reproduce_table2.py",
+      "bytes": 3901,
+      "sha256": "a9e3d4b575614dc753570edaef0abb0f2eed761e71e3affad3b7fa60b0395419"
+    },
+    {
+      "id": "tool-arch-study:scripts/reproduce_figure4.py",
+      "url": "https://raw.githubusercontent.com/XZ-X/tool-arch-study/fd3fbbe111f19afe156942338db2f79dfec4185d/scripts/reproduce_figure4.py",
+      "local_path": "tool-arch-study/scripts/reproduce_figure4.py",
+      "bytes": 9652,
+      "sha256": "4ef505560d48f3bfbfd47a4713aca078dc5e4d3a30f6be06c6a9febd9127945c"
+    },
+    {
+      "id": "AgentArch:README.md",
+      "url": "https://raw.githubusercontent.com/ServiceNow/AgentArch/dfdd9cd69642f74d7f2c72738c96faff7b70e59f/README.md",
+      "local_path": "AgentArch/README.md",
+      "bytes": 11261,
+      "sha256": "07c1110db1ce76dc281b1b066d25ddd51ed716e7922a3e7f049bb3819f5498bb"
+    },
+    {
+      "id": "AgentArch:entrypoint.sh",
+      "url": "https://raw.githubusercontent.com/ServiceNow/AgentArch/dfdd9cd69642f74d7f2c72738c96faff7b70e59f/entrypoint.sh",
+      "local_path": "AgentArch/entrypoint.sh",
+      "bytes": 5766,
+      "sha256": "ddea42ec7478133e9f7718bfe405e5331a88bf3727d51d2090aaa565f1f06607"
+    },
+    {
+      "id": "AgentArch:agent_arch/run.py",
+      "url": "https://raw.githubusercontent.com/ServiceNow/AgentArch/dfdd9cd69642f74d7f2c72738c96faff7b70e59f/agent_arch/run.py",
+      "local_path": "AgentArch/agent_arch/run.py",
+      "bytes": 23956,
+      "sha256": "b91973fddd99b6126bcbe04f1275f516212584f6276c75b19eb1f00a34230414"
+    },
+    {
+      "id": "AgentArch:agent_arch/configs/use_case_configs/requesting_time_off.yaml",
+      "url": "https://raw.githubusercontent.com/ServiceNow/AgentArch/dfdd9cd69642f74d7f2c72738c96faff7b70e59f/agent_arch/configs/use_case_configs/requesting_time_off.yaml",
+      "local_path": "AgentArch/agent_arch/configs/use_case_configs/requesting_time_off.yaml",
+      "bytes": 69672,
+      "sha256": "4d2af0661a23d5d22293cb66b34d51605b09c91d7bbdcfce88c5e91f05ec7977"
+    },
+    {
+      "id": "AgentArch:agent_arch/configs/use_case_configs/customer_request_routing.yaml",
+      "url": "https://raw.githubusercontent.com/ServiceNow/AgentArch/dfdd9cd69642f74d7f2c72738c96faff7b70e59f/agent_arch/configs/use_case_configs/customer_request_routing.yaml",
+      "local_path": "AgentArch/agent_arch/configs/use_case_configs/customer_request_routing.yaml",
+      "bytes": 175041,
+      "sha256": "764ef4ea5a1bf9f6bc497986a7bc8f843a1b6d5204e3a9c727c86fb727a05ab0"
+    },
+    {
+      "id": "tool_archive",
+      "url": "https://drive.usercontent.google.com/download?id=19CFyQoD_gv_VQbn5zjj9y1hi1_I7dxQb&export=download&confirm=t",
+      "local_path": "tool-arch-study-data.zip",
+      "bytes": 748538616,
+      "sha256": "59b0e867bf36c41f330d5eba23d3b91ac5a4fe867aef695ce2502136add5d4b4"
+    }
+  ]
+}
