@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { CompanyLogo } from "@/components/company-logo";
 import {
   cellColor,
+  MIN_CELL_N,
   type HeatmapRow,
   type ModelDomainHeatmapData,
 } from "@/content/model-domain-heatmap";
@@ -305,6 +306,12 @@ export function ModelDomainHeatmap({
           </ol>
         </div>
       </div>
+
+      <p className="mt-4 text-xs leading-relaxed text-[var(--muted)]">
+        This chart includes {heatmapRows.length.toLocaleString()} AI subjects
+        with at least {MIN_CELL_N} binary-scored responses in at least one
+        domain.
+      </p>
 
       {models.length > MOBILE_VISIBLE_ROWS ? (
         <div className="mt-3 flex items-center justify-between gap-3 text-xs text-[var(--muted)] sm:hidden">
