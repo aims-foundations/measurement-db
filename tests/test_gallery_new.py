@@ -223,6 +223,30 @@ def test_subject_page_index_and_lazy_trace_positions_cover_every_source_row(tmp_
         check(source / "formatted_tables", output / "0")
 
 
+def test_ci_preparation_packages_verified_records_and_server_authenticated_traces(tmp_path):
+    import gzip
+    from scripts.ci.canonical_gallery import prepare
+
+    source, data = fixture(tmp_path)
+    tables = tmp_path / "tables"
+    tables.mkdir()
+    (tables / "binary").symlink_to(source / "formatted_tables", target_is_directory=True)
+    web = tmp_path / "website"
+    config = web / "content/curated"
+    config.mkdir(parents=True)
+    (config / "canonical-record-benchmarks.json").write_text('["binary"]')
+    bundle = tmp_path / "bundle"
+    bundle.mkdir()
+    entry = prepare("binary", {"revision": "a" * 40}, tables, bundle, web)
+    assert entry["base"] == "/benchmark-data/binary/records"
+    assert entry["manifest"]["compressed"]
+    assert entry["manifest"]["tables"]["traces"]["parquet"]["url"] == "/api/gallery-source/binary/traces"
+    assert json.loads((bundle / "records/manifest.json").read_text()) == entry["manifest"]
+    rows = json.loads(gzip.decompress((bundle / "records/responses/0.json.gz").read_bytes()))
+    assert list(rows.values()) == data["responses"]
+    assert json.loads((bundle / "records-validation.json").read_text())["responses"]["grades"]["null"] == 2
+
+
 if __name__ == "__main__":
     root = Path(sys.argv[1])
     sources = [
