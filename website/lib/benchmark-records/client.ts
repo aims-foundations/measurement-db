@@ -50,6 +50,7 @@ export class RecordSource {
     table: T,
     signal: AbortSignal,
     selectedPages?: number[],
+    include?: (record: TableRows[T]) => boolean,
   ): Promise<TableRows[T][]> {
     const result: TableRows[T][] = [];
     const pages =
@@ -70,7 +71,9 @@ export class RecordSource {
             ),
           ),
       );
-      for (const page of batch) result.push(...Object.values(page));
+      for (const page of batch)
+        for (const record of Object.values(page))
+          if (!include || include(record)) result.push(record);
     }
     return result;
   }
@@ -100,7 +103,12 @@ export class RecordSource {
     const [subjects, items, observations] = await Promise.all([
       this.all("subjects", signal),
       this.index("items", signal),
-      this.all("responses", signal, pages),
+      this.all(
+        "responses",
+        signal,
+        pages,
+        (record) => !selected || selected.has(record.subject_id),
+      ),
     ]);
     return {
       ...(selected ? { allSubjects: subjects } : {}),
@@ -108,9 +116,7 @@ export class RecordSource {
         ? subjects.filter((s) => selected.has(s.subject_id))
         : subjects,
       itemIds: Object.keys(items),
-      observations: selected
-        ? observations.filter((r) => selected.has(r.subject_id))
-        : observations,
+      observations,
     };
   }
 
