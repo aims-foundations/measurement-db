@@ -9,6 +9,7 @@ import type {
   GalleryEntry,
   TableName,
   TableRows,
+  Subject,
 } from "@/lib/benchmark-records/types";
 
 export type LoadState<T> =
@@ -22,39 +23,65 @@ const failure = (error: unknown): LoadState<never> => ({
 });
 
 /** Request lifecycle is separate from both record preparation and JSX. */
-export function useGallery(entry: GalleryEntry) {
+export function useGallery(entry: GalleryEntry, subjectIds?: string[]) {
   const source = useMemo(
     () => new RecordSource(withBase(entry.base), entry.manifest),
     [entry],
   );
   const [result, setResult] = useState<{
     source: RecordSource;
+    selection: string;
     state: LoadState<MatrixModel>;
   }>();
+  const selection = JSON.stringify(subjectIds ?? null);
   useEffect(() => {
     const controller = new AbortController();
     source
-      .load(controller.signal)
+      .load(controller.signal, JSON.parse(selection) ?? undefined)
       .then(prepareMatrix)
       .then(
         (value) => {
           if (!controller.signal.aborted)
-            setResult({ source, state: { status: "ready", value } });
+            setResult({ source, selection, state: { status: "ready", value } });
         },
         (error) => {
           if (!controller.signal.aborted)
-            setResult({ source, state: failure(error) });
+            setResult({ source, selection, state: failure(error) });
         },
       );
     return () => controller.abort();
-  }, [source]);
+  }, [source, selection]);
   return {
     source,
     state:
-      result?.source === source
+      result?.source === source && result.selection === selection
         ? result.state
         : ({ status: "loading" } as LoadState<MatrixModel>),
   };
+}
+
+/** The full subject registry remains searchable before response pages are fetched. */
+export function useSubjects(entry: GalleryEntry): LoadState<Subject[]> {
+  const [result, setResult] = useState<{
+    entry: GalleryEntry;
+    state: LoadState<Subject[]>;
+  }>();
+  useEffect(() => {
+    const controller = new AbortController();
+    const source = new RecordSource(withBase(entry.base), entry.manifest);
+    source.subjects(controller.signal).then(
+      (value) => {
+        if (!controller.signal.aborted)
+          setResult({ entry, state: { status: "ready", value } });
+      },
+      (error) => {
+        if (!controller.signal.aborted)
+          setResult({ entry, state: failure(error) });
+      },
+    );
+    return () => controller.abort();
+  }, [entry]);
+  return result?.entry === entry ? result.state : { status: "loading" };
 }
 
 export function useRecord<T extends TableName>(

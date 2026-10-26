@@ -34,11 +34,13 @@ export function RecordGallery({
   model,
   metadata,
   irt,
+  paged = false,
 }: {
   source: RecordSource;
   model: MatrixModel;
   metadata: BenchmarkMetadata;
   irt?: Omit<BenchmarkIrt, "zByItem">;
+  paged?: boolean;
 }) {
   const scale = useMemo(
     () => JSON.parse(metadata.response_scale) as ResponseScale,
@@ -85,9 +87,9 @@ export function RecordGallery({
   const publishedFit =
     irt &&
     metadata.response_type === "binary" &&
-    irt.nTrain + irt.nTest === model.observations.length &&
+    irt.nTrain + irt.nTest === source.manifest.tables.responses?.rows &&
     irt.nItems === model.itemIds.length &&
-    irt.nSubjects === model.subjects.length &&
+    irt.nSubjects === source.manifest.tables.subjects?.rows &&
     model.subjects.every((subject) =>
       Object.hasOwn(irt.theta, subject.subject_id),
     )
@@ -113,8 +115,10 @@ export function RecordGallery({
         settings={settings}
         canOrder={comparable(scale)}
         onChange={update}
+        paged={paged}
       />
       <p className="mb-3 text-xs text-[var(--muted)]">
+        {paged && "On this page: "}
         {view.subjects.length.toLocaleString()} models ·{" "}
         {view.itemIds.length.toLocaleString()} tasks ·{" "}
         {view.observations.length.toLocaleString()} recorded attempts ·{" "}

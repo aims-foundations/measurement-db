@@ -208,6 +208,12 @@ jobs:
             --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
             --output /dev/null --write-out '%{http_code}')
           [[ "$status" = 307 || "$status" = 206 ]]
+          for slug in $(node -e 'console.log(require("./website/content/curated/canonical-record-benchmarks.json").join(" "))'); do
+            for path in "/measurement-db/$slug" "/measurement-db/benchmark-data/$slug/records/manifest.json" "/measurement-db/benchmark-data/$slug/records/subjects/0.json.gz" "/measurement-db/benchmark-data/$slug/records-validation.json"; do
+              pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
+                -- --fail --silent --show-error --max-time 120 --output /dev/null
+            done
+          done
       - name: Sync production search indexes
         if: env.DEPLOY_ENV == 'production' && steps.search.outputs.enabled == 'true'
         run: pnpm --dir website search:sync

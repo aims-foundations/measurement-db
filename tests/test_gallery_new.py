@@ -10,7 +10,9 @@ import pyarrow.parquet as pq
 import pytest
 import yaml
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.render_website import generate_benchmark_gallery_new as gallery
+from scripts.ci.check_gallery_records import check
 
 
 def fixture(root, *, kind="binary"):
@@ -204,6 +206,23 @@ def test_table_directory_without_yaml_uses_exported_metadata(tmp_path):
     gallery.build([source / "formatted_tables"], tmp_path / "gallery")
 
 
+def test_subject_page_index_and_lazy_trace_positions_cover_every_source_row(tmp_path):
+    source, _ = fixture(tmp_path)
+    output = tmp_path / "gallery"
+    gallery.build([source], output, page_size=5, parquet_base="https://fixture.invalid")
+    report = check(source / "formatted_tables", output / "0")
+    assert report["responses"]["rows"] == 48
+    assert report["responses"]["grades"]["null"] == 2
+    assert report["traces"] == {"rows": 48, "exact_source_positions": True}
+    assert not list((output / "0/traces").glob("[0-9]*.json"))
+    page = output / "0/responses/0.json"
+    rows = json.loads(page.read_text())
+    rows["r0-1"]["response"] = 1
+    page.write_text(json.dumps(rows))
+    with pytest.raises(ValueError, match="changed source fields"):
+        check(source / "formatted_tables", output / "0")
+
+
 if __name__ == "__main__":
     root = Path(sys.argv[1])
     sources = [
@@ -211,3 +230,8 @@ if __name__ == "__main__":
         for kind in ["binary", "pairwise", "mixed", "item_bank"]
     ]
     gallery.build(sources, root / "site", page_size=5)
+    gallery.build(sources, root / "lazy", page_size=5, parquet_base="http://fixture.invalid")
+    gallery.write_json(root / "expected-traces.json", {
+        str(i): pq.read_table(source / "formatted_tables/traces.parquet").to_pylist()
+        for i, source in enumerate(sources) if (source / "formatted_tables/traces.parquet").exists()
+    })

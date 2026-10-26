@@ -12,7 +12,10 @@ async function loadModule(name, dependencies = {}) {
     { mode: "transform" },
   );
   for (const [name, module] of Object.entries(dependencies))
-    code = code.replaceAll(`"./${name}"`, JSON.stringify(module.url));
+    code = code.replaceAll(
+      JSON.stringify(name.startsWith(".") ? name : `./${name}`),
+      JSON.stringify(module.url),
+    );
   const url = `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
   return { url, exports: await import(url) };
 }
@@ -21,7 +24,13 @@ const { gradeLabel, describeScale } = scaleModule.exports;
 const modelModule = await loadModule("model", { scale: scaleModule });
 const { prepareMatrix, observationsFor, findSubjects, pageOf, prepareItem } =
   modelModule.exports;
-const { RecordSource } = (await loadModule("client")).exports;
+const baseModule = await loadModule("../base-path");
+const parquetModule = await loadModule("parquet", {
+  "../base-path": baseModule,
+});
+const { RecordSource } = (
+  await loadModule("client", { parquet: parquetModule })
+).exports;
 const { recordCard } = (await loadModule("catalog")).exports;
 const signal = () => new AbortController().signal;
 
@@ -211,6 +220,36 @@ test("default transport does not bind browser fetch to the record source", async
   });
   const source = new RecordSource("/records", fixture.manifest);
   assert.deepEqual(await source.load(signal()), fixture.dataset);
+});
+
+test("subject pages fetch only needed responses, retaining all attempts and unobserved axes", async () => {
+  const f = transport();
+  f.manifest.tables.responses.bySubject = "subjects.json";
+  f.files["responses/subjects.json"] = { a: [0], b: [1] };
+  // A physical page may straddle two subjects. Filter it without changing records.
+  f.files["responses/0.json"]["b-1"] = f.dataset.observations[24];
+  const a = await f.source.load(signal(), ["a"]);
+  assert.deepEqual(a.observations, f.dataset.observations.slice(0, 24));
+  assert.deepEqual(a.itemIds, f.dataset.itemIds);
+  assert.deepEqual(a.allSubjects, f.dataset.subjects);
+  assert.equal(f.calls.includes("responses/1.json"), false);
+  const b = await f.source.load(signal(), ["b"]);
+  assert.deepEqual(b.observations, f.dataset.observations.slice(24));
+  const empty = await f.source.load(signal(), ["empty"]);
+  assert.equal(empty.observations.length, 0);
+  assert.equal(empty.subjects[0].subject_id, "empty");
+  assert.deepEqual(empty.itemIds, f.dataset.itemIds);
+});
+
+test("prepared gzip transport keeps the same records and exact lazy ID lookup", async () => {
+  const f = transport();
+  f.manifest.compressed = true;
+  const source = new RecordSource("/records", f.manifest, (url, options) => {
+    assert.ok(url.endsWith(".json.gz"));
+    return f.fetch(url.slice(0, -3), options);
+  });
+  assert.deepEqual(await source.load(signal()), f.dataset);
+  assert.equal((await source.get("traces", "a-1", signal())).trace, "Answer A");
 });
 
 test("missing optional tables remain empty, but failed reads are errors", async () => {
