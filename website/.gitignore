@@ -11,6 +11,8 @@
 # Legacy generated item images.
 /public/benchmarks/item-images/
 /public/benchmark-data/
+/public/benchmark-records/
+/public/benchmark-records.staging-*/
 
 # misc
 .DS_Store
