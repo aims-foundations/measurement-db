@@ -1,5 +1,6 @@
 import type { CellSelection, MatrixModel } from "@/lib/benchmark-records/model";
-import type { Subject } from "@/lib/benchmark-records/types";
+import { gradeColor } from "@/lib/benchmark-records/colors";
+import type { ResponseScale, Subject } from "@/lib/benchmark-records/types";
 
 /** Render the selected axes; observations have already been indexed by ID. */
 export function MatrixTable({
@@ -8,8 +9,10 @@ export function MatrixTable({
   items,
   itemOffset,
   onSelect,
+  scale,
 }: {
   model: MatrixModel;
+  scale: ResponseScale;
   subjects: Subject[];
   items: string[];
   itemOffset: number;
@@ -80,6 +83,18 @@ export function MatrixTable({
                         aria-label={`${subject.display_name}, task ${itemOffset + i + 1}: ${label}`}
                         onClick={() => onSelect({ subject, itemId: id })}
                       >
+                        {attempts.length === 1 && (
+                          <span
+                            aria-hidden="true"
+                            className="mr-2 inline-block h-2.5 w-2.5 rounded-sm border border-black/15"
+                            style={{
+                              background: gradeColor(
+                                attempts[0].response,
+                                scale,
+                              ),
+                            }}
+                          />
+                        )}
                         {label}
                       </button>
                     ) : (

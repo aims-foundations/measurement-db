@@ -18,9 +18,9 @@ async function loadModule(name, dependencies = {}) {
 }
 const scaleModule = await loadModule("scale");
 const { gradeLabel, describeScale } = scaleModule.exports;
-const { prepareMatrix, observationsFor, findSubjects, pageOf, prepareItem } = (
-  await loadModule("model", { scale: scaleModule })
-).exports;
+const modelModule = await loadModule("model", { scale: scaleModule });
+const { prepareMatrix, observationsFor, findSubjects, pageOf, prepareItem } =
+  modelModule.exports;
 const { RecordSource } = (await loadModule("client")).exports;
 const { recordCard } = (await loadModule("catalog")).exports;
 const signal = () => new AbortController().signal;
@@ -295,4 +295,221 @@ test("page cards use exported counts while retaining curated artwork", () => {
   assert.equal(card.models, 3);
   assert.equal(card.responses, 48);
   assert.equal(card.image, "/logo.svg");
+});
+
+const contextModule = await loadModule("context");
+const { prepareContexts, parseFields } = contextModule.exports;
+const { prepareView } = (
+  await loadModule("view", { model: modelModule, context: contextModule })
+).exports;
+const { gradeColor, EMPTY, UNGRADED } = (await loadModule("colors")).exports;
+const { prepareComparisons } = (
+  await loadModule("comparisons", { context: contextModule })
+).exports;
+const { displayText, presentationFor } = (await loadModule("presentation"))
+  .exports;
+const { normalizeMath } = (await loadModule("text")).exports;
+const orderedScale = {
+  kind: "discrete",
+  values: [0, 0.5, 1],
+  direction: "higher_is_better",
+};
+
+test("filters, axes, means, and ordering describe exactly the selected observations", () => {
+  const original = records(),
+    before = structuredClone(original),
+    model = prepareMatrix(original),
+    contexts = prepareContexts(original.observations);
+  const all = prepareView(model, contexts, {}, "", "grade", orderedScale);
+  assert.deepEqual(
+    all.subjects.map((s) => s.subject_id),
+    ["a", "b", "empty"],
+  );
+  assert.equal(all.rowMeans.get("a"), 0.5);
+  assert.deepEqual(all.itemIds, ["i", "unanswered"]);
+  const filtered = prepareView(
+    model,
+    contexts,
+    { trial: JSON.stringify("2") },
+    "",
+    "grade",
+    orderedScale,
+  );
+  assert.equal(filtered.observations.length, 2);
+  assert.equal(filtered.graded, 2);
+  assert.deepEqual(filtered.itemIds, ["i"]);
+  const search = prepareView(
+    model,
+    contexts,
+    {},
+    "empty",
+    "grade",
+    orderedScale,
+  );
+  assert.equal(search.observations.length, 0);
+  assert.equal(search.graded, 0);
+  assert.deepEqual(search.itemIds, ["i", "unanswered"]);
+  const lower = prepareView(model, contexts, {}, "", "grade", {
+    ...orderedScale,
+    direction: "lower_is_better",
+  });
+  assert.deepEqual(
+    lower.subjects.map((s) => s.subject_id),
+    ["b", "a", "empty"],
+  );
+  assert.deepEqual(original, before);
+});
+
+test("mixed and unordered scales do not produce cross-item means or grade ordering", () => {
+  const model = prepareMatrix(records()),
+    contexts = prepareContexts(model.observations);
+  for (const scale of [
+    { kind: "mixed" },
+    { ...orderedScale, direction: "unordered" },
+  ]) {
+    const view = prepareView(model, contexts, {}, "", "grade", scale);
+    assert.equal(view.rowMeans.size, 0);
+    assert.equal(view.columnMeans.size, 0);
+  }
+});
+
+test("JSON and key=value contexts stay distinct from subject metadata", () => {
+  assert.deepEqual(parseFields("setting=a=b;mode=fast"), {
+    setting: "a=b",
+    mode: "fast",
+  });
+  assert.deepEqual(parseFields('{"axis":"accuracy","source_row":0}'), {
+    axis: "accuracy",
+    source_row: "0",
+  });
+  const source = records();
+  source.observations[0].test_condition = null;
+  const dimensions = prepareContexts(source.observations).dimensions;
+  assert.ok(
+    dimensions
+      .find((d) => d.key === "condition.temperature")
+      .values.includes(null),
+  );
+  assert.ok(dimensions.find((d) => d.key === "interactor.opponent"));
+  assert.equal(
+    dimensions.some((d) => d.key.includes("display_name")),
+    false,
+  );
+});
+
+test("colors use declared direction and keep null, absent, and midpoint distinct", () => {
+  assert.equal(gradeColor(null, orderedScale), UNGRADED);
+  assert.notEqual(gradeColor(0.5, orderedScale), EMPTY);
+  assert.notEqual(gradeColor(0.5, orderedScale), UNGRADED);
+  assert.equal(
+    gradeColor(0, { ...orderedScale, direction: "lower_is_better" }),
+    gradeColor(1, orderedScale),
+  );
+  const categorical = {
+    kind: "discrete",
+    values: [0, 1, 2],
+    direction: "unordered",
+  };
+  assert.equal(
+    new Set(categorical.values.map((value) => gradeColor(value, categorical)))
+      .size,
+    3,
+  );
+  assert.equal(
+    gradeColor(100, { kind: "interval", min: 0, max: null }),
+    gradeColor(1000, { kind: "interval", min: 0, max: null }),
+  );
+});
+
+test("comparison links require a unique reciprocal context across all trials", () => {
+  const repeated = prepareMatrix(records());
+  assert.equal(
+    prepareComparisons(repeated, {}).size,
+    0,
+    "trial counters alone cannot pair repetitions",
+  );
+  const observations = repeated.observations.filter((r) => r.trial === 2);
+  const single = prepareMatrix({ ...repeated, observations });
+  const pairs = prepareComparisons(single, {});
+  assert.equal(pairs.get("a-2").response_id, "b-2");
+  assert.equal(pairs.get("b-2").response_id, "a-2");
+  const duplicate = { ...observations[0], response_id: "duplicate", trial: 3 };
+  assert.equal(
+    prepareComparisons(
+      prepareMatrix({
+        ...repeated,
+        observations: [...observations, duplicate],
+      }),
+      {},
+    ).size,
+    0,
+  );
+  const differentTrials = [{ ...observations[0], trial: 3 }, observations[1]];
+  assert.equal(
+    prepareComparisons(
+      prepareMatrix({ ...repeated, observations: differentTrials }),
+      {},
+    ).size,
+    0,
+  );
+});
+
+test("source-specific comparison and text mappings are explicit and preserve original payloads", () => {
+  const source = records();
+  source.observations = source.observations
+    .slice(1, 2)
+    .concat(source.observations.slice(25, 26));
+  for (const [i, subject] of source.subjects.slice(0, 2).entries())
+    subject.subject_features_extra = `source_provider=provider${i}`;
+  source.observations.forEach((record, i) => {
+    record.interactors = `opponent=provider${1 - i}`;
+    record.test_condition = JSON.stringify({
+      axis: "accuracy",
+      render_mode: "qa_text_only",
+      source_row: 12,
+      slot: i ? "slot_b_provider" : "slot_a_provider",
+    });
+  });
+  const presentation = presentationFor("real_pocqi");
+  const pairs = prepareComparisons(prepareMatrix(source), presentation);
+  assert.equal(pairs.get("a-2").response_id, "b-2");
+  const text = JSON.stringify({
+    native_answer: { answer_markdown: "**Answer**" },
+    private_example: "still in original",
+  });
+  assert.equal(displayText(text, presentation.answerPath), "**Answer**");
+  assert.equal(displayText(text, ["absent"]), text);
+  assert.equal(
+    displayText("plain text", presentation.answerPath),
+    "plain text",
+  );
+});
+
+test("math formatting preserves currency, code, and raw source text", () => {
+  assert.equal(normalizeMath("Cost $5 and $10 more."), "Cost $5 and $10 more.");
+  assert.equal(normalizeMath("Solve $x+1$."), "Solve $$x+1$$.");
+  assert.equal(normalizeMath("`$x$` and $y$"), "`$x$` and $$y$$");
+  assert.equal(normalizeMath(String.raw`\[x^2\]`), "\n$$\nx^2\n$$\n");
+  assert.equal(normalizeMath("$$x$$"), "$$x$$");
+});
+
+test("comparison identity preserves JSON value types", () => {
+  const source = records();
+  source.observations = source.observations
+    .slice(1, 2)
+    .concat(source.observations.slice(25, 26));
+  source.observations[0].test_condition = '{"id":1}';
+  source.observations[1].test_condition = '{"id":"1"}';
+  assert.equal(prepareComparisons(prepareMatrix(source), {}).size, 0);
+});
+
+test("an undeclared value is never relabeled as the nearest category", () => {
+  assert.equal(
+    gradeLabel(2, {
+      kind: "discrete",
+      values: [0, 1],
+      meanings: { 0: "unsafe", 1: "safe" },
+    }),
+    "2",
+  );
 });
