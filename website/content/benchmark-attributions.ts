@@ -10,7 +10,7 @@
 // ---------------------------------------------------------------------------
 
 import attributionJson from "@/content/generated/benchmark-attributions.json";
-import { benchmarks } from "@/content/measurement-db";
+import { catalogBenchmarks } from "@/content/measurement-db";
 
 export const LEAD_AUTHOR_AFFILIATION_SCOPE =
   "first_two_authors_first_listed_institutions" as const;
@@ -169,11 +169,9 @@ type BenchmarkAttributionManifest = {
 
 const manifest = attributionJson as unknown as BenchmarkAttributionManifest;
 
-// benchmark-attributions.json is generated for the visible catalog, not for
-// every benchmark ever curated. Match measurement-db.ts (the site's canonical
-// hidden-benchmark filter) and fail the build loudly if either generated file
-// has moved ahead of the other.
-const visibleSlugs = benchmarks.map((benchmark) => benchmark.slug);
+// Validate the complete public catalog after its hidden-benchmark filter.
+// A focused viewer preview may display a subset without changing these credits.
+const visibleSlugs = catalogBenchmarks.map((benchmark) => benchmark.slug);
 const visibleSlugSet = new Set(visibleSlugs);
 const manifestSlugs = Object.keys(manifest.benchmarks);
 const missing = visibleSlugs.filter((slug) => !(slug in manifest.benchmarks));

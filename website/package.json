@@ -16,6 +16,8 @@
     "search:check": "node scripts/index-meilisearch.mjs --dry-run",
     "search:sync": "node scripts/index-meilisearch.mjs",
     "network:test": "node --test scripts/test-coverage-network.mjs",
+    "gallery:prepare": "node --experimental-strip-types scripts/prepare-gallery-records.mts",
+    "gallery:test": "node --test scripts/test-benchmark-records.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
