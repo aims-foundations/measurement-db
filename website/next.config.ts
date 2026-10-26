@@ -14,6 +14,13 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/benchmark-records/:path*.json.gz",
+        headers: [
+          { key: "Content-Type", value: "application/json; charset=utf-8" },
+          { key: "Content-Encoding", value: "gzip" },
+        ],
+      },
+      {
         source: "/benchmark-data/:slug/lookup-pack/:file",
         headers: [
           {

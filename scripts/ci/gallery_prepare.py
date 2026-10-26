@@ -39,7 +39,7 @@ def generator_identity(root: Path = ROOT) -> dict:
     paths = [p for folder in ("scripts/render_website", "scripts/analyze_measurements")
              for p in (root / folder).rglob("*.py")]
     paths += [root / "scripts/ci" / name for name in
-              ("gallery_prepare.py", "gallery_artifacts.py", "gallery_packs.py", "gallery-requirements.txt")]
+              ("gallery_prepare.py", "gallery_artifacts.py", "gallery_packs.py", "canonical_gallery.py", "check_gallery_records.py", "gallery-requirements.txt")]
     libraries = {name: importlib.metadata.version(name) for name in
                  ("numpy", "pandas", "pyarrow", "fastparquet", "cramjam", "scikit-learn",
                   "scipy", "torch", "PyYAML")}
@@ -124,7 +124,9 @@ def benchmark_inputs(slug: str, source: dict, generator: dict, web: Path) -> dic
             "metadata_sha256": source["metadata_sha256"], "generator": generator,
             "override": override, "assets": assets,
             "affiliations": benchmark_affiliations, "institutions": institutions,
-            "dynamic_items": slug in load("dynamic-item-benchmarks.json")}
+            "dynamic_items": slug in load("dynamic-item-benchmarks.json"),
+            "canonical_records": (web / "content/curated/canonical-record-benchmarks.json").exists()
+            and slug in load("canonical-record-benchmarks.json")}
 
 
 def timeline_counts(path: Path) -> dict:
@@ -225,6 +227,8 @@ def render_bundle(slug: str, source: dict, tables: Path, web: Path, output: Path
     summary = {"card": card, "detail": detail, "saturation": verdict, "marginals": marginals,
                "timeline": timeline, "irt": irt, "irt_skip_reason": skipped}
     summary["source"] = source_descriptor
+    from .canonical_gallery import prepare as prepare_records
+    summary["records"] = stage("canonical records", lambda: prepare_records(slug, source, tables, data, web))
     artifacts.write_json(data / "summary.json", summary)
     return {"data": data, "timings": timings}
 
@@ -302,6 +306,7 @@ def assemble(summaries: dict, destination: Path) -> None:
         "benchmark-saturation.json": {slug: s["saturation"] for slug, s in summaries.items()},
         "benchmark-irt.json": {slug: s["irt"] for slug, s in summaries.items() if s["irt"] is not None},
         "gallery-sources.json": {slug: s["source"] for slug, s in summaries.items()},
+        "gallery-records.json": {slug: s["records"] for slug, s in summaries.items() if s.get("records")},
         "chart-marginals.json": marginals, "model-timeline.json": combine_timelines(summaries),
     }
     for name, payload in payloads.items():
@@ -374,6 +379,9 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
         for slug, entry, summary, timing in pool.map(prepare_one, sorted(tasks, key=lambda t: t["slug"])):
             entries[slug], summaries[slug], timings[slug] = entry, summary, timing
     with TemporaryDirectory(prefix="gallery-catalog-") as temporary:
+        requested = json.loads((ROOT / "website/content/curated/canonical-record-benchmarks.json").read_text())
+        if missing := set(requested) - {slug for slug, summary in summaries.items() if summary.get("records")}:
+            raise ValueError(f"Canonical gallery selection is missing source data: {sorted(missing)}")
         generated = Path(temporary) / "generated"
         assemble(summaries, generated)
         archive = Path(temporary) / "catalog.tar"

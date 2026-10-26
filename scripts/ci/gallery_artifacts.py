@@ -20,6 +20,7 @@ GENERATED_FILES = {
     "benchmark-cards.json", "benchmark-details.json", "gallery-sources.json",
     "chart-marginals.json", "model-timeline.json", "benchmark-attributions.json",
     "benchmark-saturation.json", "benchmark-irt.json",
+    "gallery-records.json",
 }
 
 
@@ -200,6 +201,12 @@ def restore(candidate: Path, web_dir: Path, manifest: dict, *, tree: str) -> Non
         sources = json.loads((generated / "gallery-sources.json").read_text())
         if {c["slug"] for c in cards} != set(manifest["benchmarks"]) or set(sources) != set(manifest["benchmarks"]):
             raise ValueError("Catalog and benchmark archives disagree")
+        records = json.loads((generated / "gallery-records.json").read_text())
+        for slug, entry in records.items():
+            if slug not in sources or entry["base"] != f"/benchmark-data/{slug}/records":
+                raise ValueError("Canonical record catalog has an unknown benchmark or data path")
+            if json.loads((data / slug / "records/manifest.json").read_text()) != entry["manifest"]:
+                raise ValueError(f"{slug}: canonical record manifest does not match the static bundle")
         import gzip
         for slug in sources:
             with gzip.open(data / slug / "source.json.gz", "rt") as stream:

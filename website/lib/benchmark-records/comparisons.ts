@@ -9,7 +9,7 @@ export function prepareComparisons(
   presentation: Presentation,
 ) {
   const aliases = new Map<string, string[]>();
-  for (const subject of model.subjects) {
+  for (const subject of model.allSubjects ?? model.subjects) {
     const names = new Set([subject.subject_id, subject.display_name]);
     if (presentation.pairing) {
       const alias = parseFields(subject.subject_features_extra)[
@@ -21,6 +21,7 @@ export function prepareComparisons(
       aliases.set(name, [...(aliases.get(name) ?? []), subject.subject_id]);
   }
   const identity = (record: Observation) => {
+    if (!record.interactors) return null;
     const partners = parseFields(record.interactors);
     const ids = aliases.get(partners.opponent);
     if (ids?.length !== 1 || ids[0] === record.subject_id) return null;

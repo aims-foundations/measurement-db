@@ -51,11 +51,13 @@ export function ViewControls({
   settings,
   canOrder,
   onChange,
+  paged = false,
 }: {
   dimensions: Dimension[];
   settings: ViewSettings;
   canOrder: boolean;
   onChange: (value: ViewSettings) => void;
+  paged?: boolean;
 }) {
   const [advanced, setAdvanced] = useState(false);
   const update = (patch: Partial<ViewSettings>) =>
@@ -66,18 +68,20 @@ export function ViewControls({
   return (
     <div className="mb-4 space-y-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
+        {!paged && (
+          <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
+            Find a model
+            <input
+              type="search"
+              placeholder="Name or subject ID"
+              className={CONTROL}
+              value={settings.query}
+              onChange={(e) => update({ query: e.target.value })}
+            />
+          </label>
+        )}
         <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
-          Find a model
-          <input
-            type="search"
-            placeholder="Name or subject ID"
-            className={CONTROL}
-            value={settings.query}
-            onChange={(e) => update({ query: e.target.value })}
-          />
-        </label>
-        <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
-          Order
+          {paged ? "Order on this page" : "Order"}
           <select
             className={CONTROL}
             value={settings.order}

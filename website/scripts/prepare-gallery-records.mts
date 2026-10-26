@@ -1,7 +1,17 @@
 /** Install the Python export as static data. No rendering or data interpretation. */
-import { cp, mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
+import {
+  cp,
+  mkdir,
+  readFile,
+  readdir,
+  rename,
+  rm,
+  writeFile,
+} from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
 import type { GalleryEntry, Manifest } from "../lib/benchmark-records/types.ts";
 
 const source = process.argv[2];
@@ -16,6 +26,18 @@ const catalog = JSON.parse(
   await readFile(join(source, "index.json"), "utf8"),
 ) as { id: string; manifest: string }[];
 const entries: Record<string, GalleryEntry> = {};
+const compress = promisify(gzip);
+
+async function compressPages(directory: string) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const path = join(directory, entry.name);
+    if (entry.isDirectory()) await compressPages(path);
+    else if (entry.name.endsWith(".json") && entry.name !== "manifest.json") {
+      await writeFile(`${path}.gz`, await compress(await readFile(path)));
+      await rm(path);
+    }
+  }
+}
 
 try {
   await mkdir(stage, { recursive: true });
@@ -37,6 +59,12 @@ try {
       recursive: true,
       dereference: true,
     });
+    await compressPages(join(stage, entry.id));
+    manifest.compressed = true;
+    await writeFile(
+      join(stage, entry.id, "manifest.json"),
+      JSON.stringify(manifest),
+    );
     entries[entry.id] = { base: `/benchmark-records/${entry.id}`, manifest };
   }
   await rm(output, { recursive: true, force: true });

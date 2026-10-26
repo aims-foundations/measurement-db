@@ -22,19 +22,20 @@ import { recordCard } from "@/lib/benchmark-records/catalog";
 const originalCards = new Map(
   benchmarkCardsRaw.map((card) => [card.slug, card]),
 );
-const recordCards = Object.values(galleryRecords).map((entry) =>
-  recordCard(
-    entry,
-    originalCards.get(entry.manifest.benchmark.benchmark_id) as
-      | Benchmark
-      | undefined,
-  ),
+const recordCards = new Map(
+  Object.values(galleryRecords).map((entry) => [
+    entry.manifest.benchmark.benchmark_id,
+    recordCard(
+      entry,
+      originalCards.get(entry.manifest.benchmark.benchmark_id) as
+        | Benchmark
+        | undefined,
+    ),
+  ]),
 );
 const publicCards = [
-  ...benchmarkCardsRaw.filter(
-    (card) => !Object.hasOwn(galleryRecords, card.slug),
-  ),
-  ...recordCards,
+  ...benchmarkCardsRaw.map((card) => recordCards.get(card.slug) ?? card),
+  ...[...recordCards.values()].filter((card) => !originalCards.has(card.slug)),
 ].filter((card) => !hiddenBenchmarkSet.has(card.slug));
 
 // Validate shared metadata against the complete catalog, even when a preview

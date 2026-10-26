@@ -40,7 +40,13 @@ export type TableRows = {
   assets: Asset;
 };
 export type TableName = keyof TableRows;
-export type TableDescriptor = { key: string; rows: number; pages: number };
+export type TableDescriptor = {
+  key: string;
+  rows: number;
+  pages: number;
+  bySubject?: string;
+  parquet?: { url: string; bytes: number };
+};
 
 export type BenchmarkMetadata = SourceRecord & {
   benchmark_id: string;
@@ -55,12 +61,14 @@ export type BenchmarkMetadata = SourceRecord & {
 };
 
 export type Manifest = {
+  compressed?: boolean;
   benchmark: BenchmarkMetadata;
   tables: Partial<Record<TableName, TableDescriptor>>;
 };
 export type GalleryEntry = { base: string; manifest: Manifest };
 export type GalleryRecords = {
   subjects: Subject[];
+  allSubjects?: Subject[];
   itemIds: string[];
   observations: Observation[];
 };

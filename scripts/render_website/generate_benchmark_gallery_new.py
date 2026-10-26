@@ -27,6 +27,7 @@ from scripts.build_measurement_tables.response_scales import (
     canonical_response_scale,
     validate_scale_type,
 )
+from scripts.render_website.record_parquet import export_parquet
 
 PRIMARY_KEYS = {
     "subjects": "subject_id",
@@ -71,6 +72,7 @@ def export_table(path: Path, output: Path, key: str, page_size: int) -> dict:
     """Write unchanged rows in pages, with an ID-to-page index for lazy lookups."""
     output.mkdir()
     index = {}
+    subjects: dict[str, set[int]] = {}
     pages = 0
     for pages, batch in enumerate(
         pq.ParquetFile(path).iter_batches(batch_size=page_size), 1
@@ -87,12 +89,17 @@ def export_table(path: Path, output: Path, key: str, page_size: int) -> dict:
                 row["data_url"] = filename
             records[identity] = row
             index[identity] = pages - 1
+            if path.stem == "responses":
+                subjects.setdefault(row["subject_id"], set()).add(pages - 1)
         write_json(output / f"{pages - 1}.json", records)
     write_json(output / "index.json", index)
-    return {"key": key, "rows": len(index), "pages": pages}
+    if path.stem == "responses":
+        write_json(output / "subjects.json", {k: sorted(v) for k, v in subjects.items()})
+    return {"key": key, "rows": len(index), "pages": pages,
+            **({"bySubject": "subjects.json"} if path.stem == "responses" else {})}
 
 
-def export_benchmark(source: Path, output: Path, page_size: int) -> dict:
+def export_benchmark(source: Path, output: Path, page_size: int, parquet_base: str | None = None) -> dict:
     directory = (
         source / "formatted_tables"
         if (source / "formatted_tables").is_dir()
@@ -107,7 +114,14 @@ def export_benchmark(source: Path, output: Path, page_size: int) -> dict:
     for name, key in PRIMARY_KEYS.items():
         path = directory / f"{name}.parquet"
         if path.exists():
-            tables[name] = export_table(path, output / name, key, page_size)
+            if name == "traces" and parquet_base:
+                relative = f"{metadata['benchmark_id']}/"
+                if directory.name == "formatted_tables":
+                    relative += "formatted_tables/"
+                tables[name] = export_parquet(path, output / name, key,
+                                             f"{parquet_base.rstrip('/')}/{relative}{path.name}")
+            else:
+                tables[name] = export_table(path, output / name, key, page_size)
         elif name in required:
             raise FileNotFoundError(path)
     write_json(output / "manifest.json", {"benchmark": metadata, "tables": tables})
@@ -118,7 +132,8 @@ def export_benchmark(source: Path, output: Path, page_size: int) -> dict:
     }
 
 
-def build(sources: list[Path], output: Path, *, page_size: int = 256) -> None:
+def build(sources: list[Path], output: Path, *, page_size: int = 1024,
+          parquet_base: str | None = None) -> None:
     """Publish a complete data export, leaving source tables and presentation alone."""
     if page_size < 1:
         raise ValueError("page_size must be positive")
@@ -129,7 +144,7 @@ def build(sources: list[Path], output: Path, *, page_size: int = 256) -> None:
         stage = Path(temporary) / "site"
         stage.mkdir()
         catalog = [
-            export_benchmark(source, stage / str(i), page_size)
+            export_benchmark(source, stage / str(i), page_size, parquet_base)
             for i, source in enumerate(sources)
         ]
         if len({entry["id"] for entry in catalog}) != len(catalog):
@@ -154,8 +169,9 @@ def main() -> None:
         required=True,
         help="new directory for the exported records",
     )
+    parser.add_argument("--parquet-base", help="Pinned source URL; leave traces in Parquet and export only lookup indexes")
     args = parser.parse_args()
-    build(args.sources, args.output)
+    build(args.sources, args.output, parquet_base=args.parquet_base)
     print(f"Gallery records written to {args.output.resolve()}")
 
 

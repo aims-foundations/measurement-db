@@ -4,7 +4,9 @@ import type {
   Manifest,
   TableName,
   TableRows,
+  Subject,
 } from "./types";
+import { readParquetRecord } from "./parquet";
 
 type Fetch = typeof fetch;
 type PageIndex = Record<string, number>;
@@ -22,7 +24,11 @@ export class RecordSource {
   private async json<T>(path: string, signal: AbortSignal): Promise<T> {
     signal.throwIfAborted();
     if (this.cache.has(path)) return this.cache.get(path) as T;
-    const response = await this.request(`${this.base}/${path}`, { signal });
+    const suffix =
+      this.manifest.compressed && path.endsWith(".json") ? ".gz" : "";
+    const response = await this.request(`${this.base}/${path}${suffix}`, {
+      signal,
+    });
     if (!response.ok)
       throw new Error(`Could not load benchmark data (${response.status}).`);
     const value = (await response.json()) as T;
@@ -43,31 +49,69 @@ export class RecordSource {
   private async all<T extends TableName>(
     table: T,
     signal: AbortSignal,
+    selectedPages?: number[],
   ): Promise<TableRows[T][]> {
     const result: TableRows[T][] = [];
-    const pages = this.manifest.tables[table]?.pages ?? 0;
+    const pages =
+      selectedPages ??
+      Array.from(
+        { length: this.manifest.tables[table]?.pages ?? 0 },
+        (_, i) => i,
+      );
     // A small concurrency bound avoids a request burst for large benchmarks.
-    for (let start = 0; start < pages; start += 4) {
+    for (let start = 0; start < pages.length; start += 4) {
       const batch = await Promise.all(
-        Array.from({ length: Math.min(4, pages - start) }, (_, i) =>
-          this.json<Record<string, TableRows[T]>>(
-            `${table}/${start + i}.json`,
-            signal,
+        pages
+          .slice(start, start + 4)
+          .map((page) =>
+            this.json<Record<string, TableRows[T]>>(
+              `${table}/${page}.json`,
+              signal,
+            ),
           ),
-        ),
       );
       for (const page of batch) result.push(...Object.values(page));
     }
     return result;
   }
 
-  async load(signal: AbortSignal): Promise<GalleryRecords> {
+  subjects(signal: AbortSignal): Promise<Subject[]> {
+    return this.all("subjects", signal);
+  }
+
+  async load(
+    signal: AbortSignal,
+    subjectIds?: string[],
+  ): Promise<GalleryRecords> {
+    const descriptor = this.manifest.tables.responses;
+    const bySubject =
+      subjectIds && descriptor?.bySubject
+        ? await this.json<Record<string, number[]>>(
+            `responses/${descriptor.bySubject}`,
+            signal,
+          )
+        : undefined;
+    const pages =
+      bySubject &&
+      [...new Set(subjectIds!.flatMap((id) => bySubject[id] ?? []))].sort(
+        (a, b) => a - b,
+      );
+    const selected = subjectIds && new Set(subjectIds);
     const [subjects, items, observations] = await Promise.all([
       this.all("subjects", signal),
       this.index("items", signal),
-      this.all("responses", signal),
+      this.all("responses", signal, pages),
     ]);
-    return { subjects, itemIds: Object.keys(items), observations };
+    return {
+      ...(selected ? { allSubjects: subjects } : {}),
+      subjects: selected
+        ? subjects.filter((s) => selected.has(s.subject_id))
+        : subjects,
+      itemIds: Object.keys(items),
+      observations: selected
+        ? observations.filter((r) => selected.has(r.subject_id))
+        : observations,
+    };
   }
 
   async get<T extends TableName>(
@@ -75,6 +119,14 @@ export class RecordSource {
     id: string,
     signal: AbortSignal,
   ): Promise<TableRows[T] | null> {
+    const parquet = this.manifest.tables[table]?.parquet;
+    if (parquet)
+      return readParquetRecord<TableRows[T]>(
+        `${this.base}/${table}`,
+        parquet,
+        id,
+        signal,
+      );
     const index = await this.index(table, signal);
     if (!Object.hasOwn(index, id)) return null;
     const page = await this.json<Record<string, TableRows[T]>>(
