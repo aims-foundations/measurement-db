@@ -81,26 +81,25 @@ export function CellDetails({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h3 className="break-words text-sm font-medium">
-            {selection.subject?.display_name ?? "Task"}
-            {opponentName && (
-              <span className="text-[var(--muted)]"> vs {opponentName}</span>
-            )}
+            {opponent
+              ? "Model comparison"
+              : (selection.subject?.display_name ?? "Task")}
           </h3>
           <p className="mt-1 break-all font-mono text-[0.625rem] text-[var(--muted)]">
-            {selection.itemId}
+            Task ID: {selection.itemId}
           </p>
         </div>
         <button className={CONTROL} onClick={onClose}>
           Close
         </button>
       </div>
-      <div className="mt-4 grid gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-        <section className="min-w-0">
-          <h4 className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--muted)]">
+      <div className="mt-4 grid items-start gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <section className="min-w-0 rounded-md border border-[var(--line)] bg-white p-4 sm:p-5">
+          <h4 className="mb-4 border-b border-[var(--line)] pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
             Task
           </h4>
           <div
-            className="max-h-[28rem] overflow-auto rounded bg-white p-4"
+            className="max-h-[28rem] overflow-auto"
             aria-label="Task content"
           >
             <TaskContent
@@ -189,12 +188,15 @@ export function CellDetails({
         </div>
       )}
       {observation && (
-        <div className={`mt-5 grid gap-5 ${opponent ? "lg:grid-cols-2" : ""}`}>
+        <div
+          className={`mt-6 grid gap-5 border-t border-[var(--line)] pt-6 ${opponent ? "lg:grid-cols-2" : ""}`}
+        >
           <AnswerPanel
             key={observation.response_id}
             source={source}
             observation={observation}
-            name={selection.subject?.display_name ?? "Model answer"}
+            name={selection.subject?.display_name ?? "Selected model"}
+            showName={Boolean(opponent)}
             presentation={presentation}
           />
           {opponent && (
@@ -202,7 +204,8 @@ export function CellDetails({
               key={opponent.response_id}
               source={source}
               observation={opponent}
-              name={opponentName!}
+              name={opponentName ?? opponent.subject_id}
+              showName
               presentation={presentation}
             />
           )}

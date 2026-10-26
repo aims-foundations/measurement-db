@@ -1,4 +1,6 @@
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
+import katex from "katex";
+import "katex/dist/katex.min.css";
 
 /* ============================================================
    IrtPanel — the Rasch fit summary that sits above the response
@@ -31,16 +33,18 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 export function IrtPanel({ irt }: { irt: BenchmarkIrt }) {
   const n = (irt.nTrain + irt.nTest).toLocaleString("en-US");
+  const formula = String.raw`p = \sigma(\theta - z${irt.nConditions > 1 ? " + c" : ""})`;
   return (
     <div className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-md border border-[var(--line)] bg-[var(--fog-light)] px-3 py-2.5">
       <div className="min-w-0">
         <div className="text-xs font-medium text-[var(--ink)]">
           Rasch analysis{" "}
-          <span className="font-normal text-[var(--muted)]">
-            {/* The fitted link, spelled the way the parameters are named in the
-                gutters (θ) and in subjects.csv. */}
-            p = σ(θ − z{irt.nConditions > 1 ? " + c" : ""})
-          </span>
+          <span
+            className="font-normal text-[var(--muted)]"
+            dangerouslySetInnerHTML={{
+              __html: katex.renderToString(formula, { trust: false }),
+            }}
+          />
         </div>
         <p className="mt-0.5 text-[0.6875rem] leading-snug text-[var(--muted)]">
           {n} responses, 80/20 split over cells · {irt.nSubjects} subjects ·{" "}
