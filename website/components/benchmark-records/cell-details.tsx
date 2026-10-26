@@ -20,6 +20,7 @@ import { RichText, SourceText } from "./rich-text";
 import { AnswerPanel } from "./answer-panel";
 import { Attachment } from "./attachment";
 import { CONTROL } from "./view-controls";
+import { TaskContent } from "../task-content";
 
 function Metadata({ title, value }: { title: string; value: unknown }) {
   return (
@@ -102,7 +103,8 @@ export function CellDetails({
             className="max-h-[28rem] overflow-auto rounded bg-white p-4"
             aria-label="Task content"
           >
-            <RichText
+            <TaskContent
+              format={presentation.taskFormat}
               text={
                 displayText(item.value.content, presentation.promptPath) ??
                 "No text component released."
