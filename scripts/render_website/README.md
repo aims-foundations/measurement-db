@@ -1,5 +1,10 @@
 # Benchmark gallery
 
+For the smaller canonical-record experiment, see
+[`website/lib/benchmark-records/README.md`](../../website/lib/benchmark-records/README.md) and
+[`generate_benchmark_gallery_new.py`](generate_benchmark_gallery_new.py).
+Python exports records; the website's TypeScript modules prepare and render them.
+
 The website reads only `aims-foundations/measurement-db` on Hugging Face.
 `generate_benchmark_gallery.py` prepares chart layouts and viewer bundles;
 `gallery_schema.py` interprets table fields and declared grade scales.

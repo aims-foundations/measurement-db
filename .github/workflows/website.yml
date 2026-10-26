@@ -43,6 +43,7 @@ jobs:
           tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py
           tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py
           tests/test_gallery_schema_semantics.py
+          tests/test_gallery_new.py
           tests/test_gallery_hf_layouts.py
           tests/test_gallery_hybrid_data.py
           tests/test_website_deployment.py
@@ -56,6 +57,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: website/pnpm-lock.yaml
       - run: pnpm --dir website install --frozen-lockfile
+      - run: pnpm --dir website gallery:test
       - name: Check browser source reads against canonical tables
         run: |
           python tests/test_gallery_hybrid_data.py --export "$RUNNER_TEMP/gallery-fixture"

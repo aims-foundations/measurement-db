@@ -11,14 +11,39 @@
 import benchmarkCardsRaw from "@/content/generated/benchmark-cards.json";
 import modelTimelineRowsRaw from "@/content/generated/model-timeline.json";
 import { hiddenBenchmarkSet } from "@/content/curated/hidden-benchmarks";
+import { galleryRecords } from "@/content/gallery-records";
+import { recordCard } from "@/lib/benchmark-records/catalog";
 
 // The single point where hidden benchmarks leave the site: every card
 // consumer below (shelves, coverage totals, detail-page params, chart shelf
 // lists, timeline) derives from this filtered array, so a slug in
 // hidden-benchmarks.ts is absent from all of them at once. The asset proxy
 // enforces the same list for the underlying files.
-const benchmarkCards = benchmarkCardsRaw.filter(
-  (c) => !hiddenBenchmarkSet.has(c.slug),
+const originalCards = new Map(
+  benchmarkCardsRaw.map((card) => [card.slug, card]),
+);
+const recordCards = Object.values(galleryRecords).map((entry) =>
+  recordCard(
+    entry,
+    originalCards.get(entry.manifest.benchmark.benchmark_id) as
+      | Benchmark
+      | undefined,
+  ),
+);
+const publicCards = [
+  ...benchmarkCardsRaw.filter(
+    (card) => !Object.hasOwn(galleryRecords, card.slug),
+  ),
+  ...recordCards,
+].filter((card) => !hiddenBenchmarkSet.has(card.slug));
+
+// Validate shared metadata against the complete catalog, even when a preview
+// selects a smaller set of benchmark pages.
+export const catalogBenchmarks = publicCards as unknown as readonly Benchmark[];
+const benchmarkCards = publicCards.filter(
+  (card) =>
+    process.env.NEXT_PUBLIC_GALLERY_RECORDS_ONLY !== "1" ||
+    Object.hasOwn(galleryRecords, card.slug),
 );
 
 // ---------------------------------------------------------------------------
