@@ -197,7 +197,7 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
           <ScrollReveal>
             <figure className="rd-card mt-8 p-4 sm:p-6">
               {records ? (
-                <BenchmarkRecords key={detail.slug} entry={records} />
+                <BenchmarkRecords key={detail.slug} entry={records} irt={irt} />
               ) : (
                 <>
                   <BenchmarkMatrix

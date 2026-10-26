@@ -19,8 +19,12 @@ export function gradeLabel(value: number | null, scale: ConcreteScale): string {
   // category, while the number displayed remains the exact recorded value.
   const category =
     scale.kind === "discrete"
-      ? scale.values.reduce((a, b) =>
-          Math.abs(a - value) <= Math.abs(b - value) ? a : b,
+      ? scale.values.find(
+          (category) =>
+            Math.abs(category - value) <=
+            Number.EPSILON *
+              8 *
+              Math.max(1, Math.abs(category), Math.abs(value)),
         )
       : value;
   const meaning =
