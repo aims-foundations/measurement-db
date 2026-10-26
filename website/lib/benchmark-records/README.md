@@ -47,6 +47,12 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
   comparison identifiers. For example, ReAL-PoCQI's source row identifies a
   rating, while its slot identifies the perspective. Unknown payloads remain
   readable as text/JSON. The full original prompt and trace are always available.
+- Both viewers use `lib/task-content.ts` and `components/task-content.tsx` to
+  present structured tasks as labeled fields, lists, and conversation messages.
+  MMLU's explicit format shows the evaluated question and answer choices first,
+  with instructions, demonstrations, and request details in disclosures.
+  Ambiguous question boundaries fall back to displaying every source field.
+  Original task text remains accessible; this formatting never changes exports.
 - Existing Rasch summaries and subject abilities can be supplied separately.
   They describe the published full-benchmark analysis, not a refit of the current
   filters; incompatible counts/subject IDs prevent displaying them.

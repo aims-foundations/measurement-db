@@ -33,6 +33,9 @@ import {
 import { FacetedMatrix, type FacetedData } from "./faceted-matrix";
 import { SessionStrip, type SessionData } from "./session-strip";
 import { MatrixColumnStrip, MatrixGutter } from "./matrix-gutter";
+import { TaskContent } from "./task-content";
+import { SourceText } from "./benchmark-records/rich-text";
+import { presentationFor } from "@/lib/benchmark-records/presentation";
 
 /* ============================================================
    MatrixViewer — interactive response-matrix heatmap.
@@ -1596,12 +1599,18 @@ export function MatrixViewer({
             </p>
             {pinned.item?.content ? (
               (() => {
-                const [prompt, aside, kind] = splitAside(pinned.item.content);
+                const content = pinned.item.content;
+                const [prompt, aside, kind] = splitAside(content);
                 return (
                   <>
                     <div className="max-h-[32rem] overflow-auto break-words rounded bg-white p-4 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                      <MathText text={prompt} />
+                      <TaskContent
+                        text={prompt}
+                        format={presentationFor(slug).taskFormat}
+                        Text={MathText}
+                      />
                     </div>
+                    <SourceText text={content} label="Task" />
                     {/* Separate box, separate heading: the aside is a reading
                         aid or a curation record, and sharing the prompt's box is
                         what makes readers take it for something the model was

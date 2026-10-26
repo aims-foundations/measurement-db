@@ -32,7 +32,87 @@ const { RecordSource } = (
   await loadModule("client", { parquet: parquetModule })
 ).exports;
 const { recordCard } = (await loadModule("catalog")).exports;
+const { prepareTaskContent } = (await loadModule("../task-content")).exports;
 const signal = () => new AbortController().signal;
+
+test("MMLU shows the evaluated question and retains examples and request details", () => {
+  const context =
+    "Instructions.\n\nExample?\nA. One\nB. Two\nC. Three\nD. Four\nAnswer: B\n\n";
+  const source = {
+    prompt:
+      context +
+      "Read this passage.\n\nWhich statement follows?\nA. First\ncontinued\nB. Second\nC. Third\nD. Fourth\nAnswer:",
+    candidate_continuations: [" A", " B", " C", " D"],
+    request_protocol: "Score each continuation.",
+    extra_metadata: { seed: 0 },
+  };
+  const result = prepareTaskContent(JSON.stringify(source), "mmlu");
+  assert.deepEqual(result.value, source);
+  assert.deepEqual(result.multipleChoice, {
+    question: "Read this passage.\n\nWhich statement follows?",
+    choices: [
+      { label: "A", text: "First\ncontinued" },
+      { label: "B", text: "Second" },
+      { label: "C", text: "Third" },
+      { label: "D", text: "Fourth" },
+    ],
+    context,
+    details: {
+      request_protocol: source.request_protocol,
+      extra_metadata: { seed: 0 },
+    },
+  });
+  assert.equal(
+    prepareTaskContent(JSON.stringify(source)).multipleChoice,
+    undefined,
+  );
+});
+
+test("MMLU supports prompts without demonstrations and Windows line endings", () => {
+  const source = {
+    prompt: "Question?\r\nA. One\r\nB. Two\r\nC. Three\r\nD. Four\r\nAnswer:",
+    candidate_continuations: ["A", "B", "C", "D"],
+  };
+  const result = prepareTaskContent(JSON.stringify(source), "mmlu");
+  assert.equal(result.multipleChoice.question, "Question?");
+  assert.equal(result.multipleChoice.context, "");
+  assert.deepEqual(
+    result.multipleChoice.choices.map((c) => c.text),
+    ["One", "Two", "Three", "Four"],
+  );
+});
+
+test("ambiguous or incomplete questions keep all fields instead of guessing", () => {
+  for (const prompt of [
+    "Quotation\nA. Author's name\nQuestion?\nA. One\nB. Two\nC. Three\nD. Four\nAnswer:",
+    "Question?\nA. One\nB. Two\nC. Three\nAnswer:",
+    "Question?\nA. One\nB. Two\nC. Three\nD. Four\nAnswer: A",
+  ]) {
+    const source = { prompt, candidate_continuations: ["A", "B", "C", "D"] };
+    assert.deepEqual(prepareTaskContent(JSON.stringify(source), "mmlu"), {
+      value: source,
+    });
+  }
+});
+
+test("general structured tasks preserve messages, nesting, and empty or false values", () => {
+  const source = {
+    messages: [
+      { role: "user", content: "**Question**\n\n$x^2$", name: "Test" },
+    ],
+    options: ["Yes", "No"],
+    environment: { count: 0, enabled: false, missing: null, empty: "" },
+  };
+  assert.deepEqual(prepareTaskContent(JSON.stringify(source)), {
+    value: source,
+  });
+  for (const text of [
+    "# Question\n\nText",
+    "{'prompt': 'Unparsed dictionary'}",
+    '{"prompt":',
+  ])
+    assert.deepEqual(prepareTaskContent(text), { value: text });
+});
 
 function records() {
   return {

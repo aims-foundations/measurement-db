@@ -1,10 +1,12 @@
 /** Explicit display mappings for source payloads; they never change canonical records. */
 export type Presentation = {
   promptPath?: string[];
+  taskFormat?: "mmlu";
   answerPath?: string[];
   pairing?: { subjectFeature: string; contextFields: string[] };
 };
 const presentations: Record<string, Presentation> = {
+  mmlu: { taskFormat: "mmlu" },
   aegis: { promptPath: ["prompt"], answerPath: ["source_record", "response"] },
   real_pocqi: {
     answerPath: ["native_answer", "answer_markdown"],
