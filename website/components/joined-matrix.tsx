@@ -34,6 +34,7 @@ function cellColor(
   ramp: [number, number, number][] | null,
   none?: [number, number, number] | null,
 ): [number, number, number] {
+  if (ch === "?") return NONE_GRADED;
   if (ch === ".") return none ?? (ramp ? NONE_GRADED : NONE);
   if (!ramp) return ch === "1" ? PASS : FAIL;
   const i = LEVEL_CHARS.indexOf(ch);
@@ -598,6 +599,7 @@ export function JoinedMatrix({
   const levels = data.levels ?? null;
   const ramp = levels ? levels.map((l) => hexToRgbTriple(l.color)) : null;
   const levelAt = (ch: string) => {
+    if (ch === "?") return { label: "Grade unavailable", color: "#9e9e9e" };
     if (!levels || ch === ".") return null;
     const l = levels[LEVEL_CHARS.indexOf(ch)];
     return l ? { label: l.label, color: l.color } : null;
@@ -930,8 +932,8 @@ export function JoinedMatrix({
               }}
             >
               {tip.passed
-                ? (binaryLabels?.one ?? "passed")
-                : (binaryLabels?.zero ?? "failed")}
+                ? (binaryLabels?.one ?? "1")
+                : (binaryLabels?.zero ?? "0")}
             </div>
           )}
         </div>

@@ -1,4 +1,4 @@
-"""Bundle snapshots verified against the original renderer before consolidation."""
+"""Schema-driven bundle snapshots and exact source lookup regressions."""
 
 from __future__ import annotations
 
@@ -120,7 +120,13 @@ def write_fixture(root: Path, case: str) -> dict:
         "n_subjects": 2,
         "n_items": 4,
         "n_responses": 0 if case == "item_bank" else len(rows),
-        "response_scale": "[0, 1]",
+        "response_type": "continuous_bounded" if case == "continuous" else "win_rate" if case == "pairwise" else "binary",
+        "response_scale": json.dumps(
+            {"kind": "interval", "min": 0, "max": 1, "direction": "higher_is_better"}
+            if case == "continuous" else
+            {"kind": "discrete", "values": [0, 0.5, 1], "direction": "higher_is_better"}
+            if case == "pairwise" else
+            {"kind": "discrete", "values": [0, 1], "direction": "higher_is_better"}),
     }
     frames = {"benchmarks": [meta], "subjects": subjects, "items": items}
     if case != "item_bank":
@@ -189,7 +195,7 @@ class GalleryOutputParityTests(unittest.TestCase):
                             case, root / "cache", root / "web", False, overrides))
                     self.assertEqual(digest_json(bundle), expected[case]["bundle"])
 
-    def test_bundles_match_verified_pre_consolidation_output(self):
+    def test_bundles_match_schema_driven_snapshots(self):
         expected = json.loads(EXPECTED.read_text())["cases"]
         for case in CASES:
             with self.subTest(case=case), TemporaryDirectory() as tmp:
@@ -266,7 +272,7 @@ class DirectTableTests(unittest.TestCase):
             self.assertEqual(rows[0]["blocks"]["all"]["bits"], "101")
             self.assertEqual(list(chart_keys(view["chart"])),
                              [["s0", "i0", record["test_condition"], 1] for record in records])
-            self.assertEqual(view["detail"]["stats"]["items"], 1)
+            self.assertEqual(view["detail"]["stats"]["items"], 4)
 
     def test_ungraded_observations_keep_prompts_answers_conditions_and_trials(self):
         with TemporaryDirectory() as tmp:
@@ -385,7 +391,10 @@ class DirectTableTests(unittest.TestCase):
                                 "trial": 1, "response": i % 2,
                                 "_selection": {"task": str(i % 2), "difficulty": str(i // 2)},
                                 "_key": [sid, str(i), condition, 1]})
-        chart = gallery.joined_matrix("fixture", pd.DataFrame(records),
+        observations = pd.DataFrame(records)
+        observations.attrs["dimension_kinds"] = {"task": "item", "difficulty": "item"}
+        observations["_slice"] = "[null,null]"
+        chart = gallery.joined_matrix("fixture", observations,
                                       ["task", "difficulty"], ["a", "b"], {}, [])
         self.assertEqual(len(chart["trials"]["1"]), 2)
         self.assertEqual(sum(row["n"] for row in chart["trials"]["1"]), 8)
@@ -567,7 +576,7 @@ class DirectTableTests(unittest.TestCase):
                             ),
                             patch.object(
                                 gallery,
-                                "registry_feature_dims",
+                                "attach_features",
                                 side_effect=AssertionError(
                                     "Answer lookup must not parse display features"
                                 ),
@@ -726,8 +735,8 @@ class DirectTableTests(unittest.TestCase):
                     for offset, r, g, b in matrix["pixels"]:
                         grid.reshape(-1, 3)[offset] = [r, g, b]
                     expected = [
-                        [[136, 180, 211], [228, 141, 141]],
-                        [[242, 242, 242], [214, 39, 40]],
+                        [[115, 168, 205], [236, 201, 202]],
+                        [[200, 217, 230], [225, 120, 121]],
                     ]
                     np.testing.assert_array_equal(grid, expected)
                     self.assertEqual(len(matrix["keys"]), 8)

@@ -196,9 +196,9 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
               />
               <figcaption className="mt-4 space-y-2 text-xs font-light opacity-70">
                 <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-                  {detail.stats.meanResponse ===
-                  null ? null : detail.categories &&
-                    detail.categories.length ? (
+                  {(detail.stats.graded ??
+                    (detail.stats.meanResponse === null ? 0 : 1)) ===
+                  0 ? null : detail.categories && detail.categories.length ? (
                     detail.categories.map((c) => (
                       <span
                         key={c.value}
@@ -220,15 +220,17 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
                         <span className="inline-block h-3 w-3 rounded-sm bg-[#1f77b4]" />
                         {detail.binaryLabels
                           ? `${detail.binaryLabels.one} (1)`
-                          : "Correct (1)"}
+                          : "1"}
                       </span>
                       <span className="inline-flex items-center gap-1.5">
                         <span className="inline-block h-3 w-3 rounded-sm bg-[#d62728]" />
                         {detail.binaryLabels
                           ? `${detail.binaryLabels.zero} (0)`
-                          : "Incorrect (0)"}
+                          : "0"}
                       </span>
                     </>
+                  ) : detail.responseType === "mixed" ? (
+                    <span>Each task uses its declared grade scale.</span>
                   ) : (
                     <span className="inline-flex items-center gap-2">
                       <span>low</span>
@@ -244,17 +246,12 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
                     </span>
                   )}
                   <span className="inline-flex items-center gap-1.5">
-                    <span
-                      className={`inline-block h-3 w-3 rounded-sm ${
-                        detail.isBinary &&
-                        !(detail.categories && detail.categories.length)
-                          ? "border border-[var(--line)] bg-white"
-                          : "bg-[#9e9e9e]"
-                      }`}
-                    />
-                    {detail.stats.meanResponse === null
-                      ? "Grade unavailable"
-                      : "Unobserved"}
+                    <span className="inline-block h-3 w-3 rounded-sm bg-[#9e9e9e]" />
+                    Grade unavailable
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded-sm border border-[var(--line)] bg-white" />
+                    No recorded observation
                   </span>
                 </div>
                 <p>

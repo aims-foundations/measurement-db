@@ -429,65 +429,24 @@ class GallerySchemaCompatibilityTests(unittest.TestCase):
                     self.assertEqual(row["content"], "Question")
 
 
-    def test_normalized_schema_recreates_legacy_matrix_dimensions_and_traces(
-        self,
-    ) -> None:
+    def test_registry_fields_stay_separate_from_observation_conditions(self) -> None:
         with TemporaryDirectory() as tmp:
             fixture = _write_schema_pair(Path(tmp))
             with patch.object(gallery, "fetch", side_effect=_local_fetch):
-                legacy = gallery.load_raw(
-                    fixture["slug"], fixture["legacy_cache"], refresh=False
-                )
-                normalized = gallery.load_raw(
-                    fixture["slug"], fixture["normalized_cache"], refresh=False
-                )
-
-            legacy_plan = gallery.plan_slices(fixture["slug"], legacy).observations
-            normalized_plan = gallery.plan_slices(fixture["slug"], normalized).observations
-            columns = [
-                "subject_id",
-                "item_id",
-                "test_condition",
-                "trial",
-                "response",
-            ]
-            sort_by = columns[:4]
-            legacy = legacy[columns].sort_values(sort_by).reset_index(drop=True)
-            normalized = (
-                normalized[columns].sort_values(sort_by).reset_index(drop=True)
-            )
-
+                normalized = gallery.load_raw(fixture["slug"], fixture["normalized_cache"], False)
+                legacy = gallery.load_raw(fixture["slug"], fixture["legacy_cache"], False)
             self.assertEqual(len(normalized), 16)
-            pd.testing.assert_frame_equal(normalized, legacy)
-            self.assertTrue(normalized["test_condition"].str.contains("judge=").all())
-            self.assertTrue(
-                normalized["test_condition"].str.contains("opponent=").all()
-            )
-            self.assertFalse(
-                normalized["test_condition"].str.contains("judged_by=").any()
-            )
-
-            expected_kinds = {
-                "difficulty": "item",
-                "harness": "subject",
-                "judge": "item",
-                "opponent": "condition",
-                "quantization": "subject",
-                "reasoning_effort": "subject",
-                "temperature": "condition",
-            }
-            self.assertEqual(
-                gallery.classify_dims(
-                    legacy_plan, fixture["dims"]
-                ),
-                expected_kinds,
-            )
-            self.assertEqual(
-                gallery.classify_dims(
-                    normalized_plan, fixture["dims"]
-                ),
-                expected_kinds,
-            )
+            self.assertEqual(normalized["test_condition"].unique().tolist(), ["temperature=0", "temperature=1"])
+            self.assertTrue(normalized["interactors"].str.startswith("opponent=").all())
+            self.assertTrue(legacy["test_condition"].str.contains("harness=").all())
+            self.assertEqual(normalized["response"].tolist(), legacy["response"].tolist())
+            self.assertEqual(normalized.attrs["dimension_kinds"], {
+                "difficulty": "item", "harness": "subject", "opponent": "condition",
+                "quantization": "subject", "reasoning_effort": "subject", "temperature": "condition",
+            })
+            # A verifier is a grading protocol, not a reconstructed condition.
+            self.assertTrue(all("judge" not in fields for fields in normalized["_features"]))
+            self.assertEqual(len(gallery.plan_slices(fixture["slug"], normalized).conditions), 4)
 
     def test_answers_still_match_after_feature_projection(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -495,7 +454,7 @@ class GallerySchemaCompatibilityTests(unittest.TestCase):
             with patch.object(gallery, "fetch", side_effect=_local_fetch):
                 frame = gallery.load_raw(fixture["slug"], fixture["normalized_cache"], False)
                 for (_, row), expected in zip(frame.iterrows(), fixture["semantic_rows"]):
-                    self.assertEqual(row["test_condition"], expected["test_condition"])
+                    self.assertEqual(row["test_condition"], row["_key"][2])
                     answer = gallery.read_answer(fixture["slug"], fixture["normalized_cache"], row["_key"])
                     self.assertEqual(answer["trace"], expected["trace"])
 

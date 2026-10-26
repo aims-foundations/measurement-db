@@ -1,35 +1,35 @@
 {
-  "source": "Original renderer snapshots at 5fcbafd13, with unused per-condition matrices and axes removed from joined bundles. Restoring those fields reproduces every original digest.",
+  "source": "Schema-driven layouts: declared score domains, separately owned fields, all trials and ungraded attempts retained. Source semantics independently checked in test_gallery_schema_semantics.py.",
   "cases": {
     "binary": {
-      "bundle": "2c300d172332eb65590e07ac31120dd54093eb41219ad8c407bc856c461ad19a"
+      "bundle": "3baa8681eb65de0d1f75956b4f14d50f9c4340a1daa1289b35c29bea37ed3904"
     },
     "continuous": {
-      "bundle": "84e125a3f91cb007856a9239b67fdb2861fbd40739873588675f34d952b831f9"
+      "bundle": "1d693930d44774dc57a4723f29f04189e2884d57783456f9eb68d23dc9caa24d"
     },
     "ragged": {
-      "bundle": "0b414a9a7b1be96d9445feea82187ad59772d9f98189eb3e472fffb6dfa0f072"
+      "bundle": "0cbc8c1123f4d61a65803a950017707568a384dcbaa710a8f15cbfd7eb58f204"
     },
     "collapsed": {
-      "bundle": "306ea07148c7cb535ff643fa277ebae3e4b2c33cf347add7734751668088b6a3"
+      "bundle": "75f11bc95f5d2cc96e29db9e478d1b2b5294f3d0c8f1869d179798084b39ce7f"
     },
     "trial_cap": {
-      "bundle": "76961e487af91f8658f390c1bfbf6896ee9b423275ab03bf8a0ea795dfdce3aa"
+      "bundle": "184e182dd533afb2cdc50d1e284691a47c5c4909b6e77f00b0f79b7b2d7980ee"
     },
     "normalized": {
-      "bundle": "90abbcb8c074bd191dc15f70c629d70f8389eceeb026369865944c232bfb9b2e"
+      "bundle": "fb310c455260d0f54ac5832a09d4355eddcb1a562772079756d9ffac4547f98a"
     },
     "pairwise": {
-      "bundle": "b4c2df8b7cbfcedb366e76826e82c48081b81d1ed87c48ec6e1cb274cda100ee"
+      "bundle": "45164b1b654d2d232ac51a0b4bf38224fc7de0871649fb28cffc25e77eedafe4"
     },
     "sessions": {
-      "bundle": "065722aa7d2cb51976ce1737863d7e5e13be1620fdf10e48e8416712178ace9c"
+      "bundle": "3708fa696eea6c5c626cff49834c8e9bb3be311079762b62c0db8834aa24fb65"
     },
     "faceted": {
-      "bundle": "0ffa0379e07a0003453eaf070d5b683fbde2acfbc7d466f64132b9fb0f23a5d4"
+      "bundle": "83dff0b0237371844be11a6e6d28487ba9ee4561b5dfd9cb6194fc7335eefc67"
     },
     "item_bank": {
-      "bundle": "041c7c0bdb91893e649fdea41af857700d47519dda6443bcdbbeb94a195e7ba3"
+      "bundle": "d69e69d8a1f41f5c01bac9e566f3163abd854ad87cb89fb9921030d75f511d02"
     }
   }
 }

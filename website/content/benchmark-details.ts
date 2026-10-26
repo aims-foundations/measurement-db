@@ -93,8 +93,9 @@ export type BenchmarkDetail = {
     subjects: number;
     /** Fraction of (subject × item) cells that were actually evaluated. */
     observed: number;
-    /** Mean response across all observed cells; null when the benchmark has
-     *  no per-item responses (nothing observed). */
+    /** Number of attempts with a released grade, across all conditions/trials. */
+    graded?: number;
+    /** Null when grades are unavailable or their scales cannot be averaged. */
     meanResponse: number | null;
   };
   /** Path to the bare response-matrix heatmap under /public (rows = subjects,

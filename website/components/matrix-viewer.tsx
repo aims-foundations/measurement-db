@@ -189,6 +189,9 @@ export type ChartBundle = {
       width: number;
       height: number;
       pixels: [number, number, number, number][];
+      grades?: Record<number, number | null>;
+      /** Current bundles supply final colors; older bundles need the SVG filter. */
+      displayColors?: boolean;
       keys?: Record<number, ObservationKey>;
       keyRef?: string;
     }
@@ -247,8 +250,8 @@ function classify(
         : { label: `${binaryLabels.zero} (0)`, color: "#d62728" };
     }
     return redder
-      ? { label: "Correct (1)", color: "#1f77b4" }
-      : { label: "Incorrect (0)", color: "#d62728" };
+      ? { label: "1", color: "#1f77b4" }
+      : { label: "0", color: "#d62728" };
   }
   return redder
     ? { label: "Higher response", color: "#d62728" }
@@ -733,7 +736,7 @@ export function BenchmarkMatrix({
       conditions={detail.conditions}
       categories={detail.categories}
       binaryLabels={detail.binaryLabels}
-      irt={fitted}
+      irt={detail.isBinary ? fitted : null}
     />
   );
 }
@@ -805,6 +808,12 @@ export function MatrixViewer({
   const effH = cond?.matrixSize[1] ?? height;
 
   const imageKey = comboKey ?? "";
+  const scoreText = (value: number | null | undefined) =>
+    value == null
+      ? "N/A"
+      : isBinary
+        ? pctText(value)
+        : Number(value.toFixed(4)).toString();
   const matrixUrl = directImage?.key === imageKey ? directImage.src : null;
 
   useEffect(() => {
@@ -818,7 +827,10 @@ export function MatrixViewer({
       const ctx = cells.getContext("2d")!;
       const pixels = ctx.createImageData(data.width, data.height);
       for (let i = 0; i < data.width * data.height; i++) {
-        pixels.data.set([158, 158, 158, 255], i * 4);
+        pixels.data.set(
+          data.displayColors ? [255, 255, 255, 255] : [158, 158, 158, 255],
+          i * 4,
+        );
       }
       for (const [offset, r, g, b] of data.pixels)
         pixels.data.set([r, g, b, 255], offset * 4);
@@ -1006,6 +1018,27 @@ export function MatrixViewer({
         1,
       ).data;
       value = classify(r, g, b, isBinary, categories, binaryLabels);
+    }
+    const grades = bundle.matrices[imageKey]?.grades;
+    if (grades) {
+      const grade = grades[row * effNItems + col];
+      const category = categories?.find((entry) => entry.value === grade);
+      value =
+        grade === undefined
+          ? { label: "No recorded observation", color: "#ffffff" }
+          : grade === null
+            ? { label: "Grade unavailable", color: "#9e9e9e" }
+            : category
+              ? { label: category.label, color: category.color }
+              : isBinary
+                ? {
+                    label:
+                      grade === 1
+                        ? (binaryLabels?.one ?? "1")
+                        : (binaryLabels?.zero ?? "0"),
+                    color: grade === 1 ? "#1f77b4" : "#d62728",
+                  }
+                : { label: String(grade), color: value.color };
     }
     return { row, col, value, fx, fy };
   }
@@ -1398,10 +1431,10 @@ export function MatrixViewer({
                   width={GUTTER_R}
                   height={fitH}
                   scale="fill"
-                  format={(v) => pctText(v)}
+                  format={scoreText}
                   side="right"
-                  title="acc"
-                  label="Observed accuracy, per subject"
+                  title="mean"
+                  label="Mean recorded grade, per subject"
                   hoverRow={hover?.row ?? null}
                 />
               }
@@ -1438,7 +1471,9 @@ export function MatrixViewer({
                     // Recolour binary matrices at display time (RED↔BLUE, GRAY→WHITE)
                     // without touching the underlying PNG. Graded/categorical matrices
                     // keep their own colour scale, so the filter is skipped for them.
-                    ...(isBinary && !categorical
+                    ...(isBinary &&
+                    !categorical &&
+                    !bundle.matrices[imageKey]?.displayColors
                       ? { filter: `url(#${COLOR_SWAP_ID})` }
                       : {}),
                   }}
@@ -1482,7 +1517,7 @@ export function MatrixViewer({
                           ? ` · θ ${thetaByRow[hover.row]?.toFixed(2)}`
                           : ""}
                         {accByRow[hover.row] != null
-                          ? ` · ${pctText(accByRow[hover.row])}`
+                          ? ` · ${scoreText(accByRow[hover.row])}`
                           : ""}
                       </span>
                     ) : null}
@@ -1496,7 +1531,7 @@ export function MatrixViewer({
                   <span className="whitespace-nowrap rounded bg-[var(--ink)] px-1.5 py-0.5 text-[0.625rem] font-medium text-white">
                     #{(hover.col + 1).toLocaleString("en-US")}
                     {!categorical && effColP && effColP[hover.col] != null
-                      ? ` · ${pctText(effColP[hover.col])}`
+                      ? ` · ${scoreText(effColP[hover.col])}`
                       : ""}
                     {/* The strip shows the shape of the difficulty curve; the
                         exact z for one item is only readable here. */}
@@ -1540,8 +1575,8 @@ export function MatrixViewer({
               </span>
               {!categorical && pinned.subjectScore !== null ? (
                 <span className="text-xs text-[var(--muted)]">
-                  ({pctText(pinned.subjectScore)}
-                  {isBinary ? " accuracy" : ""} overall)
+                  ({scoreText(pinned.subjectScore)}
+                  {isBinary ? " rate" : ""} overall)
                 </span>
               ) : null}
             </div>
@@ -1599,7 +1634,9 @@ export function MatrixViewer({
             <p className="mb-1 flex flex-wrap items-baseline gap-x-3 text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
               <span>
                 Item #{(pinned.itemIndex + 1).toLocaleString("en-US")}
-                {!categorical ? ` · ${pctText(pinned.solveRate)} solved` : ""}
+                {!categorical
+                  ? ` · ${scoreText(pinned.solveRate)} mean grade`
+                  : ""}
               </span>
               {pinned.itemId ? (
                 <span className="font-mono normal-case tracking-normal text-[0.625rem]">

@@ -37,11 +37,14 @@ type SessionRow = {
   subjects: string[];
   pass: number;
   n: number;
-  values?: number[];
+  values?: (number | null)[];
+  labels?: string[];
+  score?: string;
   colors?: string[];
 };
 
 export type SessionData = {
+  summary?: string;
   observationRows?: boolean;
   graded?: boolean;
   bandDims: string[];
@@ -169,9 +172,10 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
         <span className="text-xs text-[var(--muted)]">
           {rows.length.toLocaleString()} {rowUnit}s ·{" "}
           {shownCells.toLocaleString()} {cellUnit} ·{" "}
-          {data.graded
-            ? `mean ${(shownPass / shownCells).toFixed(3)}`
-            : `${((shownPass / shownCells) * 100).toFixed(1)}% ${oneLabel}`}
+          {data.summary ??
+            (data.graded
+              ? `mean ${(shownPass / shownCells).toFixed(3)}`
+              : `${((shownPass / shownCells) * 100).toFixed(1)}% ${oneLabel}`)}
         </span>
         <label className="ml-auto flex items-center gap-2 text-xs text-[var(--muted)]">
           Min {cellUnit}
@@ -229,7 +233,10 @@ export function SessionStrip({ data, onPick, binaryLabels }: Props) {
                     trial: "1",
                     passed,
                     level: row.values
-                      ? { label: String(row.values[i]), color: row.colors![i] }
+                      ? {
+                          label: row.labels?.[i] ?? String(row.values[i]),
+                          color: row.colors![i],
+                        }
                       : null,
                   });
                 }}
@@ -381,9 +388,11 @@ function StripRow({
   }
 
   const rate = row.n ? Math.round((row.pass / row.n) * 100) : 0;
-  const score = row.values
-    ? `mean ${(row.pass / row.n).toFixed(3)}`
-    : `${rate}% ${oneLabel}`;
+  const score =
+    row.score ??
+    (row.values
+      ? `mean ${(row.pass / row.n).toFixed(3)}`
+      : `${rate}% ${oneLabel}`);
 
   return (
     <div className="flex items-start gap-3 py-[1px]">
@@ -394,7 +403,8 @@ function StripRow({
           </span>
           <span className="tabular-nums text-[var(--muted)]">{row.n}</span>
           <span className="w-9 text-right tabular-nums text-[var(--muted)]">
-            {row.values ? (row.pass / row.n).toFixed(3) : `${rate}%`}
+            {row.score ??
+              (row.values ? (row.pass / row.n).toFixed(3) : `${rate}%`)}
           </span>
         </div>
         {observationRows && row.n > OBSERVATIONS_PER_PAGE && (
@@ -422,11 +432,7 @@ function StripRow({
         )}
       </div>
       <canvas
-        aria-label={
-          observationRows
-            ? `${row.name}: ${row.n} recorded observations, ${score}`
-            : `${row.name}: ${row.n} prompts across ${row.segs.length} sessions, ${rate}% ${oneLabel}`
-        }
+        aria-label={`${row.name}: ${row.n} ${observationRows ? "recorded observations" : "prompts"}, ${score}`}
         className="min-w-0 flex-1 cursor-crosshair"
         onClick={(ev) => {
           const c = hit(ev);
@@ -444,8 +450,8 @@ function StripRow({
             y: ev.clientY,
             passed,
             text: observationRows
-              ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel}`
-              : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${passed ? oneLabel : zeroLabel}`,
+              ? `${row.name} · observation ${c.i + 1} of ${row.n} — ${row.labels?.[c.i] ?? (row.values ? row.values[c.i] : passed ? oneLabel : zeroLabel)}`
+              : `${row.name} · session ${row.segLabels[c.seg]} · turn ${turnInSeg} of ${row.segs[c.seg]} — ${row.labels?.[c.i] ?? (passed ? oneLabel : zeroLabel)}`,
           });
         }}
         ref={ref}

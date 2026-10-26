@@ -12,9 +12,10 @@ import {
 
 const PASS: [number, number, number] = [31, 119, 180];
 const FAIL: [number, number, number] = [214, 39, 40];
-const NONE: [number, number, number] = [233, 232, 228];
+const NONE: [number, number, number] = [255, 255, 255];
 
 function cellColor(ch: string): [number, number, number] {
+  if (ch === "?") return [158, 158, 158];
   if (ch === ".") return NONE;
   return ch === "1" ? PASS : FAIL;
 }
@@ -138,6 +139,7 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
     text: string;
     passed: boolean;
     observed: boolean;
+    ungraded: boolean;
   } | null>(null);
 
   const totals = useMemo(() => {
@@ -162,8 +164,8 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
 
   if (!data || !data.bands?.length) return null;
 
-  const one = binaryLabels?.one ?? "passed";
-  const zero = binaryLabels?.zero ?? "failed";
+  const one = binaryLabels?.one ?? "1";
+  const zero = binaryLabels?.zero ?? "0";
 
   return (
     <div className="relative">
@@ -273,6 +275,7 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                               text: `${row.name} · ${p.label} · item ${idx + 1}`,
                               passed: ch === "1",
                               observed: ch !== ".",
+                              ungraded: ch === "?",
                             });
                           }}
                           onLeave={() => setTip(null)}
@@ -290,6 +293,13 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                               cond: rp.cond,
                               trial: "1",
                               passed: ch === "1",
+                              level:
+                                ch === "?"
+                                  ? {
+                                      label: "Grade unavailable",
+                                      color: "#9e9e9e",
+                                    }
+                                  : null,
                             });
                           }}
                         />
@@ -313,7 +323,14 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
         >
           {tip.text}
           <span className="ml-1 text-[var(--muted)]">
-            — {tip.observed ? (tip.passed ? one : zero) : "never measured"}
+            —{" "}
+            {tip.ungraded
+              ? "Grade unavailable"
+              : tip.observed
+                ? tip.passed
+                  ? one
+                  : zero
+                : "No recorded observation"}
           </span>
         </div>
       ) : null}

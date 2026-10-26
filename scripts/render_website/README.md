@@ -1,7 +1,8 @@
 # Benchmark gallery
 
 The website reads only `aims-foundations/measurement-db` on Hugging Face.
-All Python chart rendering stays in `generate_benchmark_gallery.py`.
+`generate_benchmark_gallery.py` prepares chart layouts and viewer bundles;
+`gallery_schema.py` interprets table fields and declared grade scales.
 The build packages charts, identities, and most item content with Next.js.
 The 20 largest item bundles, all traces, and all item images load from the
 same HF revision on demand. No separate Python service or gallery repository is needed.
@@ -69,10 +70,31 @@ The remaining benchmarks keep their full prompt and reference-answer text static
 `gallery-sources.json` records the pinned source revision and allowed tables;
 it contains no data credentials and is generated with the viewer files.
 
-Pairwise, session, faceted, and basic layouts share the same chart functions.
-Answer keys preserve subject, item, condition, trial, and interactors. Missing
-answers remain unavailable; duplicate lookup keys fail the build. Rasch fits
-use only native binary responses; graded benchmarks retain their original scale.
+The renderer reads `response_type` and structured `response_scale` from
+`benchmarks.parquet`, as exported from `metadata.yaml`. Missing or invalid scale
+metadata fails the build; observed values do not determine the response type.
+Declared meanings label grades (for example, safe/unsafe); unspecified meanings
+stay numeric. Discrete domains and bounded intervals determine the color range.
+Unordered categories and mixed item scales have no overall numeric average.
+Mixed scales use each item's `grading_criterion.response_scale`.
+
+Subject features stay attached to subjects, item features to items, and conditions
+and interactors to individual observations. These fields are joined for display
+without rewriting `test_condition` or guessing their roles from correlations.
+Column blocks are enabled explicitly with the curated `blockDim` setting.
+Every trial is retained. Coverage uses the complete registered subject/item banks.
+Unavailable grades have a distinct, clickable cell and retain their answer key.
+Keys preserve subject, item, condition, trial, and interactors; supplied response
+IDs are retained and checked for duplicates. Missing answers remain unavailable.
+
+Win-rate benchmarks with an explicit opponent field can use the pairwise view.
+Only unique mirrored attempts for a pair, item, and condition are combined.
+Unmatched opponents, ambiguous model names, repeated attempts without a shared
+comparison identifier, and incompatible outcomes use the ordinary view with all
+individual records retained. Trial numbers are positional repetitions, not shared
+comparison identifiers. Faceted layouts also fall back if they would overwrite
+attempts or omit unmatched observations. Filename and directory migration fallbacks
+remain supported independently of these interpretation rules.
 TuMLU and PKU-SafeRLHF use observation strips because their source-row identifiers
 are annotation occasions, not useful condition bands. Repeated items keep their
 separate recorded answers.
@@ -151,6 +173,7 @@ python -m pytest -q tests/test_ai_subjects.py tests/test_benchmark_saturation.py
   tests/test_fit_rasch_models.py tests/test_generate_benchmark_attributions.py \
   tests/test_generate_benchmark_gallery.py tests/test_generate_chart_marginals.py \
   tests/test_gallery_output_parity.py tests/test_gallery_response_filenames.py \
+  tests/test_gallery_schema_semantics.py \
   tests/test_gallery_hybrid_data.py \
   tests/test_website_deployment.py
 python scripts/render_website/generate_benchmark_attributions.py --check
@@ -162,5 +185,7 @@ node website/scripts/test-gallery-source.mjs /tmp/gallery-fixture
 node website/scripts/test-gallery-source-route.mjs
 ```
 
-The fixture tests compare all ten chart layouts with the previously verified
-renderer and compare exported prompts/answers with direct Parquet lookups.
+The fixture tests check the supported layouts, compare exported prompts/answers
+with direct Parquet lookups, and verify declared score meanings, field ownership,
+missing grades, trial retention, and unambiguous pairwise matching. Bundle snapshots
+record the schema-driven output; semantic tests independently check source records.
