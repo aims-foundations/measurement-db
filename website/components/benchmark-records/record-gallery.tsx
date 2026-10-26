@@ -97,15 +97,6 @@ export function RecordGallery({
       : undefined;
   return (
     <div>
-      {publishedFit && (
-        <>
-          <IrtPanel irt={{ ...publishedFit, zByItem: {} }} />
-          <p className="mb-4 text-[0.6875rem] text-[var(--muted)]">
-            Published fit for the full benchmark; filters below change the
-            observed data view.
-          </p>
-        </>
-      )}
       <p id="heatmap-help" className="mb-3 text-xs text-[var(--muted)]">
         Hover for model and task; click a cell for details. Arrow keys move
         between cells; Enter opens the selected cell.
@@ -185,6 +176,15 @@ export function RecordGallery({
           pairs={pairs}
           onClose={() => setSelection(null)}
         />
+      )}
+      {publishedFit && (
+        <div className="mt-6 border-t border-[var(--line)] pt-6">
+          <IrtPanel irt={{ ...publishedFit, zByItem: {} }} />
+          <p className="text-[0.6875rem] text-[var(--muted)]">
+            Published fit for the full benchmark. Filters affect only the
+            displayed observations.
+          </p>
+        </div>
       )}
     </div>
   );

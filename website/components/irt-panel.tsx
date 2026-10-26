@@ -3,9 +3,9 @@ import katex from "katex";
 import "katex/dist/katex.min.css";
 
 /* ============================================================
-   IrtPanel — the Rasch fit summary that sits above the response
-   matrix: what was fitted, and how well it predicts a held-out
-   cell.
+   IrtPanel — the Rasch fit summary below the response matrix and
+   selected details: what was fitted, and how well it predicts a
+   held-out cell.
 
    The AUC pair is the point. Train AUC says how much of the
    matrix a two-parameter model can absorb at all; test AUC says
@@ -35,7 +35,10 @@ export function IrtPanel({ irt }: { irt: BenchmarkIrt }) {
   const n = (irt.nTrain + irt.nTest).toLocaleString("en-US");
   const formula = String.raw`p = \sigma(\theta - z${irt.nConditions > 1 ? " + c" : ""})`;
   return (
-    <div className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-md border border-[var(--line)] bg-[var(--fog-light)] px-3 py-2.5">
+    <section
+      aria-label="Rasch analysis"
+      className="mb-3 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 rounded-md border border-[var(--line)] bg-[var(--fog-light)] px-3 py-2.5"
+    >
       <div className="min-w-0">
         <div className="text-xs font-medium text-[var(--ink)]">
           Rasch analysis{" "}
@@ -67,6 +70,6 @@ export function IrtPanel({ irt }: { irt: BenchmarkIrt }) {
         <Stat label="AUC train" value={fmt(irt.aucTrain)} />
         <Stat label="AUC test" value={fmt(irt.aucTest)} />
       </div>
-    </div>
+    </section>
   );
 }

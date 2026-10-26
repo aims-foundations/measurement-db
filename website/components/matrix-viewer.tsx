@@ -1262,10 +1262,6 @@ export function MatrixViewer({
           </filter>
         </svg>
       ) : null}
-      {/* The Rasch summary heads the section: it describes the whole matrix
-          below it, in either rendering. Absent for graded benchmarks. */}
-      {irt ? <IrtPanel irt={irt} /> : null}
-
       {/* Joined matrix first: every response at once, nothing to choose but
           trial. The per-condition matrix and its dropdowns follow, collapsed. */}
       {hasJoined && rowKind === "session" ? (
@@ -1681,6 +1677,11 @@ export function MatrixViewer({
               ))}
             </div>
           ) : null}
+        </div>
+      ) : null}
+      {irt ? (
+        <div className="mt-6 border-t border-[var(--line)] pt-6">
+          <IrtPanel irt={irt} />
         </div>
       ) : null}
     </div>

@@ -14,7 +14,6 @@ import {
 } from "@/content/gallery-records";
 import { PageHero } from "@/components/page-hero";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { SectionHeading } from "@/components/section-heading";
 import { getBenchmarkAttribution } from "@/content/benchmark-attributions";
 import {
   getBenchmark,
@@ -182,20 +181,18 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
             dozen sentences, and at the 48ch reading measure they broke into a
             ragged ten-line column beside empty space. */}
         <div className="rd-container">
-          <ScrollReveal>
-            <SectionHeading eyebrow="Response matrix" />
-          </ScrollReveal>
-
           {detail.note ? (
             <ScrollReveal>
-              <p className="rd-prose-wide mt-6 whitespace-pre-line text-sm font-light opacity-70">
+              <p className="rd-prose-wide whitespace-pre-line text-sm font-light opacity-70">
                 {detail.note}
               </p>
             </ScrollReveal>
           ) : null}
 
           <ScrollReveal>
-            <figure className="rd-card mt-8 p-4 sm:p-6">
+            <figure
+              className={`rd-card p-4 sm:p-6 ${detail.note ? "mt-6" : ""}`}
+            >
               {records ? (
                 <BenchmarkRecords key={detail.slug} entry={records} irt={irt} />
               ) : (
