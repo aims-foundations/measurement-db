@@ -1012,3 +1012,71 @@ test("source page limits reject large downloads and decompression before allocat
   assert.throws(() => source.file.slice(0, 10000), /preview limit/);
   assert.equal(reads, 1);
 });
+
+test("SciGym separates instructions and XML and selects its released final model", async () => {
+  const { default: presentation } =
+    await import("../lib/presentation-transforms/benchmarks/scigym.ts");
+  const xml = '<?xml version="1.0"?><sbml><model id="a"/></sbml>';
+  const input = `                ## Task Info\n                Instructions\n${xml}\n                ## Requirements\n                Finish.`;
+  const blocks = presentation.item(input);
+  assert.equal(blocks[0].text, "## Task Info\nInstructions");
+  assert.equal(blocks[1].text, xml);
+  assert.equal(blocks[1].language, "xml");
+  assert.equal(blocks[2].text, "## Requirements\nFinish.");
+  assert.equal(
+    displayText(
+      JSON.stringify({ final_model: xml, chat_history: "prior" }),
+      presentation.answerPath,
+    ),
+    xml,
+  );
+});
+
+test("ProgramBench selects structured conversation messages without changing their contents", async () => {
+  const { default: presentation } =
+    await import("../lib/presentation-transforms/benchmarks/programbench.ts");
+  const messages = [{ role: "assistant", content: "    code\n😺" }];
+  assert.deepEqual(
+    JSON.parse(
+      displayText(
+        JSON.stringify({ trajectory: { messages } }),
+        presentation.answerPath,
+      ),
+    ),
+    messages,
+  );
+  assert.equal(
+    displayText("unrecognized release", presentation.answerPath),
+    "unrecognized release",
+  );
+});
+
+test("HTML and embedded configuration have explicit readable views with unknown fields retained", async () => {
+  const { default: mind } =
+    await import("../lib/presentation-transforms/benchmarks/mind2web.ts");
+  const html = "<html>\n  <body>Text</body>\n</html>";
+  const blocks = mind.item(
+    JSON.stringify({ query: "Do this", cleaned_html: html, extra: false }),
+  );
+  assert.equal(blocks[1].blocks[0].text, html);
+  assert.equal(blocks[1].blocks[0].language, "html");
+  assert.deepEqual(blocks[2].value, { extra: false });
+  const { default: health } =
+    await import("../lib/presentation-transforms/benchmarks/healthadminbench.ts");
+  const raw = {
+    multimedia_elements: [
+      {
+        content_type: "text/plain",
+        text: 'Published initial task configuration:\n{"value":0}',
+      },
+    ],
+    extra: "retained",
+  };
+  const result = health.item(JSON.stringify(raw));
+  assert.deepEqual(result[0].value, { value: 0 });
+  assert.deepEqual(result[1].value, { extra: "retained" });
+  assert.equal(
+    raw.multimedia_elements[0].text,
+    'Published initial task configuration:\n{"value":0}',
+  );
+});

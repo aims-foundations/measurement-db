@@ -1,3 +1,5 @@
+"use client";
+import { TextPages } from "./text-pages";
 import { isValidElement, type ReactNode } from "react";
 
 /** Display source code verbatim; never evaluate it or run math processing on it. */
@@ -8,6 +10,12 @@ export function CodeBlock({
   text: string;
   language?: string;
 }) {
+  if (text.length > 65536)
+    return (
+      <TextPages text={text}>
+        {(part) => <CodeBlock text={part} language={language} />}
+      </TextPages>
+    );
   return (
     <div className="my-3 min-w-0 overflow-hidden rounded-md border border-[var(--line)] bg-[var(--fog-light)]">
       <div className="border-b border-[var(--line)] px-3 py-1.5 text-[0.625rem] uppercase tracking-wide text-[var(--muted)]">

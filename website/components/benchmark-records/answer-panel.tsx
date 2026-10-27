@@ -45,14 +45,30 @@ export function AnswerPanel({
           Loading answer…
         </p>
       ) : answer.status === "error" ? (
-        <SourceError source={source} table="traces" message={answer.message} />
+        <SourceError
+          source={source}
+          table="traces"
+          message={answer.message}
+          paged={answer.paged}
+          onRetry={answer.retry}
+        />
       ) : (
         <>
           <div
             className="max-h-[32rem] overflow-auto"
             aria-label="Model answer"
           >
-            {scores ? (
+            {presentation.answerNotice ? (
+              <>
+                <p className="text-sm">{presentation.answerNotice}</p>
+                <details className="mt-4">
+                  <summary className="cursor-pointer text-xs">
+                    Released evaluation record
+                  </summary>
+                  <StructuredContent value={answer.value?.trace} />
+                </details>
+              </>
+            ) : scores ? (
               <>
                 <table
                   className="w-full text-left text-sm"
@@ -103,7 +119,10 @@ export function AnswerPanel({
             )}
           </div>
           {answer.value?.trace && (
-            <SourceText text={answer.value.trace} label="Answer" />
+            <SourceText
+              text={answer.value.trace}
+              label={presentation.answerNotice ? "record" : "Answer"}
+            />
           )}
         </>
       )}

@@ -1,3 +1,7 @@
+"use client";
+import { useState } from "react";
+import { CodeBlock } from "../code-block";
+import { TextPages } from "../text-pages";
 import "katex/dist/katex.min.css";
 import { normalizeMath } from "@/lib/benchmark-records/text";
 import ReactMarkdown from "react-markdown";
@@ -9,6 +13,12 @@ import { MarkdownCodeBlock } from "../code-block";
 
 /** Keep JSON as code; render authored Markdown and explicit math without executing HTML. */
 export function RichText({ text }: { text: string }) {
+  if (text.length > 65536)
+    return (
+      <TextPages text={text}>{(part) => <RichText text={part} />}</TextPages>
+    );
+  if (/^\s*<\?xml\b/.test(text) || /^\s*<sbml\b[\s\S]*<\/sbml>\s*$/.test(text))
+    return <CodeBlock text={text} language="xml" />;
   let json: unknown;
   try {
     json = JSON.parse(text);
@@ -54,17 +64,20 @@ export function RichText({ text }: { text: string }) {
 }
 
 export function SourceText({ text, label }: { text: string; label: string }) {
+  const [open, setOpen] = useState(false);
   return (
-    <details className="mt-3 text-xs text-[var(--muted)]">
+    <details
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="mt-3 text-xs text-[var(--muted)]"
+    >
       <summary className="cursor-pointer">
         Original {label.toLowerCase()}
       </summary>
-      <pre
-        aria-label={`Original ${label.toLowerCase()}`}
-        className="mt-2 max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/5 p-3 text-xs"
-      >
-        {text}
-      </pre>
+      {open && (
+        <div aria-label={`Original ${label.toLowerCase()}`}>
+          <CodeBlock text={text} language="Original text" />
+        </div>
+      )}
     </details>
   );
 }

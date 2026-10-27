@@ -154,6 +154,8 @@ export class RecordSource {
       return readParquetRecord<TableRows[T]>(this.base, parquet, id, signal, {
         table,
         key: this.manifest.tables[table]!.key,
+        preview: this.manifest.previews?.[table],
+        slug: this.manifest.benchmark.benchmark_id,
         ...this.manifest,
       });
     const index = await this.index(table, signal);
