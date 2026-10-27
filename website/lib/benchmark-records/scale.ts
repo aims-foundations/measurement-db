@@ -9,7 +9,7 @@ export function itemScale(scale: ResponseScale, item: Item): ConcreteScale {
   if (scale.kind !== "mixed") return scale;
   const criterion = JSON.parse(item.grading_criterion) as GradingCriterion;
   if (!criterion.response_scale)
-    throw new Error(`Task ${item.item_id} has no declared grade scale.`);
+    throw new Error(`Item ${item.item_id} has no declared grade scale.`);
   return criterion.response_scale;
 }
 

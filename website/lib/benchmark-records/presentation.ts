@@ -1,12 +1,13 @@
 /** Explicit display mappings for source payloads; they never change canonical records. */
 export type Presentation = {
   promptPath?: string[];
-  taskFormat?: "mmlu";
+  itemFormat?: "mmlu";
   answerPath?: string[];
+  answerFormat?: "mmlu";
   pairing?: { subjectFeature: string; contextFields: string[] };
 };
 const presentations: Record<string, Presentation> = {
-  mmlu: { taskFormat: "mmlu" },
+  mmlu: { itemFormat: "mmlu", answerFormat: "mmlu" },
   aegis: { promptPath: ["prompt"], answerPath: ["source_record", "response"] },
   real_pocqi: {
     answerPath: ["native_answer", "answer_markdown"],
@@ -36,5 +37,33 @@ export function displayText(
     return typeof value === "string" ? value : source;
   } catch {
     return source;
+  }
+}
+
+/** MMLU releases four answer-letter log-likelihoods, not a generated completion. */
+export function answerScores(source: string | null, format?: "mmlu") {
+  if (!source || format !== "mmlu") return;
+  try {
+    const record = JSON.parse(source)?.source_record;
+    const choices: unknown = record?.choices,
+      scores: unknown = record?.predictions;
+    if (
+      !Array.isArray(choices) ||
+      !Array.isArray(scores) ||
+      scores.length !== 4 ||
+      choices
+        .map((value) => (typeof value === "string" ? value.trim() : ""))
+        .join() !== "A,B,C,D" ||
+      !scores.every(
+        (value) => typeof value === "number" && Number.isFinite(value),
+      )
+    )
+      return;
+    return choices.map((choice: string, i) => ({
+      label: choice.trim(),
+      score: scores[i] as number,
+    }));
+  } catch {
+    // An unfamiliar trace retains the general structured display.
   }
 }

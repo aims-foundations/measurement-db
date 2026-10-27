@@ -33,7 +33,9 @@ import {
 import { FacetedMatrix, type FacetedData } from "./faceted-matrix";
 import { SessionStrip, type SessionData } from "./session-strip";
 import { MatrixColumnStrip, MatrixGutter } from "./matrix-gutter";
-import { TaskContent } from "./task-content";
+import { ItemContent } from "./item-content";
+import { StructuredContent } from "./structured-content";
+import { InlineMath } from "./inline-math";
 import { SourceText } from "./benchmark-records/rich-text";
 import { presentationFor } from "@/lib/benchmark-records/presentation";
 
@@ -632,7 +634,7 @@ function OmitWhen({
   return omit ? null : <>{children}</>;
 }
 
-/** Flanks the matrix with its two numeric columns, or renders it untouched when
+/** Places the two numeric columns beside the matrix, or omits them when
  *  there is no fit to show. The `head` pad matches the gutters' heading line so
  *  row 0 of a gutter starts level with row 0 of the image. */
 const GUTTER_HEAD = 18; // px — MatrixGutter's h-3.5 heading + mb-1
@@ -641,15 +643,15 @@ function GutterRow({
   show,
   gap,
   head,
-  left,
-  right,
+  ability,
+  score,
   children,
 }: {
   show: boolean;
   gap: number;
   head: number;
-  left: React.ReactNode;
-  right: React.ReactNode;
+  ability: React.ReactNode;
+  score: React.ReactNode;
   children: React.ReactNode;
 }) {
   if (!show) return <>{children}</>;
@@ -659,11 +661,11 @@ function GutterRow({
   const BORDER = 1;
   return (
     <div className="flex items-start justify-center" style={{ gap }}>
-      <div style={{ paddingTop: BORDER }}>{left}</div>
       <div className="min-w-0" style={{ paddingTop: head }}>
         {children}
       </div>
-      <div style={{ paddingTop: BORDER }}>{right}</div>
+      <div style={{ paddingTop: BORDER }}>{ability}</div>
+      <div style={{ paddingTop: BORDER }}>{score}</div>
     </div>
   );
 }
@@ -864,16 +866,16 @@ export function MatrixViewer({
   // in JS off the outer frame — CSS aspect-ratio + min constraints transfer
   // across axes and overflow.
   //
-  // When the Rasch fit is available the matrix is flanked by two numeric
-  // columns (θ left, observed accuracy right), so they come out of the same
+  // When the Rasch fit is available two numeric columns sit to the right
+  // (θ and observed accuracy), so they come out of the same
   // width budget — the image is sized against what is LEFT of the frame, not
   // the whole frame, or the three together overflow the card.
   const MAX_H = 600;
   const CELL_MAX = 16;
   const MIN_ROW = 4;
   const BAND_MIN = 24; // matrices with 1-2 subjects render a visible band, not a hairline
-  const GUTTER_L = 48; // θ
-  const GUTTER_R = 42; // accuracy
+  const THETA_WIDTH = 48; // θ
+  const SCORE_WIDTH = 42; // accuracy
   const GUTTER_GAP = 6;
   const [panelW, setPanelW] = useState<number | null>(null);
   useEffect(() => {
@@ -892,7 +894,7 @@ export function MatrixViewer({
   const theta = irt?.theta ?? null;
   const showGutters =
     !!theta && !actual && !missing && effRowIds != null && nSubjects > 0;
-  const gutterW = showGutters ? GUTTER_L + GUTTER_R + 2 * GUTTER_GAP : 0;
+  const gutterW = showGutters ? THETA_WIDTH + SCORE_WIDTH + 2 * GUTTER_GAP : 0;
   const availW = Math.max(0, (panelW ?? 0) - gutterW);
 
   // Both gutters are indexed by the SELECTED slice's row axis, so switching
@@ -1354,7 +1356,7 @@ export function MatrixViewer({
             {conditions ? listDims(conditions.dims) : "condition"}.
           </div>
         ) : (
-          /* Frame: θ gutter + matrix + accuracy gutter + bottom strip (item) */
+          /* Frame: matrix + θ and accuracy columns + item difficulty strip */
           <div
             ref={frameRef}
             className="relative"
@@ -1365,23 +1367,23 @@ export function MatrixViewer({
               show={showGutters}
               gap={GUTTER_GAP}
               head={GUTTER_HEAD}
-              left={
+              ability={
                 <MatrixGutter
                   values={thetaByRow}
-                  width={GUTTER_L}
+                  width={THETA_WIDTH}
                   height={fitH}
                   scale="diverging"
                   format={(v) => v.toFixed(2)}
                   side="left"
-                  title="θ"
+                  title={<InlineMath tex="\theta" />}
                   label="Fitted ability (theta), per subject"
                   hoverRow={hover?.row ?? null}
                 />
               }
-              right={
+              score={
                 <MatrixGutter
                   values={accByRow}
-                  width={GUTTER_R}
+                  width={SCORE_WIDTH}
                   height={fitH}
                   scale="fill"
                   format={(v) => pctText(v)}
@@ -1600,13 +1602,13 @@ export function MatrixViewer({
                 return (
                   <>
                     <div className="max-h-[32rem] overflow-auto break-words rounded bg-white p-4 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                      <TaskContent
+                      <ItemContent
                         text={prompt}
-                        format={presentationFor(slug).taskFormat}
+                        format={presentationFor(slug).itemFormat}
                         Text={MathText}
                       />
                     </div>
-                    <SourceText text={content} label="Task" />
+                    <SourceText text={content} label="Item" />
                     {/* Separate box, separate heading: the aside is a reading
                         aid or a curation record, and sharing the prompt's box is
                         what makes readers take it for something the model was
@@ -1666,7 +1668,7 @@ export function MatrixViewer({
                     </p>
                   ) : pane.state === "answer" ? (
                     <div className="max-h-[32rem] overflow-auto break-words rounded bg-white p-4 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                      <MathText text={pane.text as string} />
+                      <StructuredContent value={pane.text} Text={MathText} />
                     </div>
                   ) : (
                     <p className="rounded bg-white p-4 text-[0.8125rem] text-[var(--muted)]">

@@ -1,35 +1,17 @@
-/** Presentation only: recognize structured prompts without changing stored content. */
-export type TaskValue =
-  | string
-  | number
-  | boolean
-  | null
-  | TaskValue[]
-  | { [key: string]: TaskValue };
+import { isRecord, structuredValue } from "./structured-content";
 
-export type TaskDocument = {
-  value: TaskValue;
+export type ItemDocument = {
+  value: unknown;
   multipleChoice?: {
     question: string;
     choices: { label: string; text: string }[];
     context: string;
-    details: Record<string, TaskValue>;
+    details: Record<string, unknown>;
   };
 };
 
-export function isTaskObject(
-  value: TaskValue,
-): value is Record<string, TaskValue> {
-  return value !== null && typeof value === "object" && !Array.isArray(value);
-}
-
-export function fieldLabel(key: string): string {
-  const words = key.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/[_-]/g, " ");
-  return words.charAt(0).toUpperCase() + words.slice(1);
-}
-
 /** MMLU stores the full few-shot prompt and four answer-letter continuations. */
-function mmluQuestion(value: Record<string, TaskValue>) {
+function mmluQuestion(value: Record<string, unknown>) {
   const { prompt, candidate_continuations: candidates, ...details } = value;
   if (
     typeof prompt !== "string" ||
@@ -65,17 +47,12 @@ function mmluQuestion(value: Record<string, TaskValue>) {
   return { question: stem, choices, context: prompt.slice(0, start), details };
 }
 
-export function prepareTaskContent(
+export function prepareItemContent(
   text: string,
   format?: "mmlu",
-): TaskDocument {
-  let value: TaskValue;
-  try {
-    value = JSON.parse(text) as TaskValue;
-  } catch {
-    return { value: text };
-  }
+): ItemDocument {
+  const value = structuredValue(text);
   const multipleChoice =
-    format === "mmlu" && isTaskObject(value) ? mmluQuestion(value) : undefined;
+    format === "mmlu" && isRecord(value) ? mmluQuestion(value) : undefined;
   return { value, ...(multipleChoice ? { multipleChoice } : {}) };
 }

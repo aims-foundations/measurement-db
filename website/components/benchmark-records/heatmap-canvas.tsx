@@ -170,7 +170,7 @@ export function HeatmapCanvas({
         </div>
         <div className="sr-only" role="row" aria-rowindex={row + 1}>
           <span role="gridcell" aria-colindex={col + 1}>
-            {subject?.display_name}, task {col + 1}: {value}
+            {subject?.display_name}, item {col + 1}: {value}
           </span>
         </div>
       </div>
@@ -179,7 +179,7 @@ export function HeatmapCanvas({
         role="status"
         aria-live="polite"
       >
-        {subject?.display_name} · Task {col + 1}: {value}
+        {subject?.display_name} · Item {col + 1}: {value}
         <span className="block font-mono text-[0.6rem]">{itemId}</span>
       </p>
     </div>

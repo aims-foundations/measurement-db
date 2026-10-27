@@ -26,7 +26,7 @@ import { Legend } from "./legend";
 import { ViewControls, type ViewSettings } from "./view-controls";
 
 const ROWS_PER_PAGE = 40,
-  TASKS_PER_PAGE = 12;
+  ITEMS_PER_PAGE = 12;
 
 /** Compose prepared views. Network requests and record transformations live elsewhere. */
 export function RecordGallery({
@@ -54,7 +54,7 @@ export function RecordGallery({
     actual: false,
   });
   const [rowPage, setRowPage] = useState(0),
-    [taskPage, setTaskPage] = useState(0);
+    [itemPage, setItemPage] = useState(0);
   const [selection, setSelection] = useState<CellSelection | null>(null);
   const contexts = useMemo(() => prepareContexts(model.observations), [model]);
   const presentation = presentationFor(metadata.benchmark_id);
@@ -82,7 +82,7 @@ export function RecordGallery({
     setSettings(next);
     setSelection(null);
     setRowPage(0);
-    setTaskPage(0);
+    setItemPage(0);
   };
   const publishedFit =
     irt &&
@@ -98,7 +98,7 @@ export function RecordGallery({
   return (
     <div>
       <p id="heatmap-help" className="mb-3 text-xs text-[var(--muted)]">
-        Hover for model and task; click a cell for details. Arrow keys move
+        Hover for model and item; click a cell for details. Arrow keys move
         between cells; Enter opens the selected cell.
       </p>
       <ViewControls
@@ -111,7 +111,7 @@ export function RecordGallery({
       <p className="mb-3 text-xs text-[var(--muted)]">
         {paged && "On this page: "}
         {view.subjects.length.toLocaleString()} models ·{" "}
-        {view.itemIds.length.toLocaleString()} tasks ·{" "}
+        {view.itemIds.length.toLocaleString()} items ·{" "}
         {view.observations.length.toLocaleString()} recorded attempts ·{" "}
         {view.graded.toLocaleString()} graded
       </p>
@@ -143,18 +143,18 @@ export function RecordGallery({
         <>
           <div className="mb-3">
             <Pagination
-              label="tasks"
-              page={taskPage}
+              label="items"
+              page={itemPage}
               total={view.itemIds.length}
-              size={TASKS_PER_PAGE}
-              onChange={setTaskPage}
+              size={ITEMS_PER_PAGE}
+              onChange={setItemPage}
             />
           </div>
           <MatrixTable
             model={view}
             subjects={subjects}
-            items={pageOf(view.itemIds, taskPage, TASKS_PER_PAGE)}
-            itemOffset={taskPage * TASKS_PER_PAGE}
+            items={pageOf(view.itemIds, itemPage, ITEMS_PER_PAGE)}
+            itemOffset={itemPage * ITEMS_PER_PAGE}
             scale={scale}
             onSelect={setSelection}
           />

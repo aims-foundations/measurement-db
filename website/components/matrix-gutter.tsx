@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 /* ============================================================
    MatrixGutter — a numeric column flanking the response matrix,
    one value per matrix ROW (= one per subject).
 
-   Two of them frame the matrix: the fitted ability θ on the left
-   and the subject's observed accuracy on the right, both in the
+   Two sit beside the matrix: fitted ability θ and observed
+   accuracy, both in the
    matrix's own row order (weakest subject at the top).
 
    Rows can be 2px tall on a 260-subject benchmark, so the column
@@ -128,7 +128,7 @@ export type MatrixGutterProps = {
   /** Which side of the matrix this sits on — the numbers hug the matrix. */
   side: "left" | "right";
   /** Column heading, shown above the bars. */
-  title: string;
+  title: ReactNode;
   /** Full-word heading for screen readers and the title attribute. */
   label: string;
   /** Row currently under the cursor, highlighted to tie the value to the cell. */

@@ -2,10 +2,12 @@ import type { RecordSource } from "@/lib/benchmark-records/client";
 import type { Observation } from "@/lib/benchmark-records/types";
 import {
   displayText,
+  answerScores,
   type Presentation,
 } from "@/lib/benchmark-records/presentation";
 import { useRecord } from "./use-records";
-import { RichText, SourceText } from "./rich-text";
+import { SourceText } from "./rich-text";
+import { StructuredContent } from "../structured-content";
 
 export function AnswerPanel({
   source,
@@ -21,6 +23,10 @@ export function AnswerPanel({
   presentation: Presentation;
 }) {
   const answer = useRecord(source, "traces", observation.response_id);
+  const scores =
+    answer.status === "ready"
+      ? answerScores(answer.value?.trace ?? null, presentation.answerFormat)
+      : undefined;
   return (
     <section
       className="min-w-0 rounded-md border border-[var(--line)] bg-white p-4 sm:p-5"
@@ -48,14 +54,55 @@ export function AnswerPanel({
             className="max-h-[32rem] overflow-auto"
             aria-label="Model answer"
           >
-            <RichText
-              text={
-                displayText(
-                  answer.value?.trace ?? null,
-                  presentation.answerPath,
-                ) ?? "No answer text released."
-              }
-            />
+            {scores ? (
+              <>
+                <table
+                  className="w-full text-left text-sm"
+                  aria-label="Answer-choice scores"
+                >
+                  <thead>
+                    <tr className="border-b border-[var(--line)]">
+                      <th className="pb-2 font-medium">Answer choice</th>
+                      <th className="pb-2 text-right font-medium">
+                        Log-likelihood
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {scores.map(({ label, score }) => (
+                      <tr
+                        key={label}
+                        className="border-b border-[var(--line)] last:border-0"
+                      >
+                        <th scope="row" className="py-2 font-medium">
+                          {label}
+                        </th>
+                        <td className="py-2 text-right font-mono text-xs">
+                          {score}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <details className="mt-4 border-t border-[var(--line)] pt-3 text-xs">
+                  <summary className="cursor-pointer">
+                    Evaluation details
+                  </summary>
+                  <div className="mt-3">
+                    <StructuredContent value={answer.value?.trace} />
+                  </div>
+                </details>
+              </>
+            ) : (
+              <StructuredContent
+                value={
+                  displayText(
+                    answer.value?.trace ?? null,
+                    presentation.answerPath,
+                  ) ?? "No answer text released."
+                }
+              />
+            )}
           </div>
           {answer.value?.trace && (
             <SourceText text={answer.value.trace} label="Answer" />
