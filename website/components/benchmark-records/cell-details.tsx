@@ -160,12 +160,18 @@ export function CellDetails({
             </p>
           )}
           {prepared.criterion.rule && (
-            <div className="mt-4">
+            <section className="mt-4" aria-label="Grading rule">
               <h5 className="mb-1 text-xs font-medium text-[var(--muted)]">
                 Grading rule
               </h5>
-              <RichText text={prepared.criterion.rule} />
-            </div>
+              <div
+                className="max-h-[32rem] overflow-auto break-words"
+                aria-label="Formatted grading rule"
+              >
+                <StructuredContent value={prepared.criterion.rule} />
+              </div>
+              <SourceText text={prepared.criterion.rule} label="Grading rule" />
+            </section>
           )}
           <Metadata title="Item metadata" value={item.value} />
           {selection.subject && (
