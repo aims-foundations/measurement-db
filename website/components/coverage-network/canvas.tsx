@@ -9,9 +9,9 @@ import {
 } from "react";
 import type Sigma from "sigma";
 import type { CoverageNetwork } from "@/lib/coverage-network/model";
+import { NODE_COLORS, nodeRadius } from "@/lib/coverage-network/appearance";
 import styles from "./network.module.css";
 
-export const NODE_COLORS = { benchmark: "#8c1515", subject: "#167b80" };
 export type NetworkControls = {
   zoom: (factor: number) => void;
   reset: () => void;
@@ -42,51 +42,59 @@ export function CoverageCanvas({
     let instance: Sigma | undefined;
     let observer: ResizeObserver | undefined;
     // Sigma touches WebGL at import time, so load only after mounting.
-    Promise.all([import("sigma"), import("graphology")])
-      .then(([{ default: Sigma }, { default: Graph }]) => {
-        if (cancelled || !container.current) return;
-        const graph = new Graph({ type: "undirected" });
-        for (const node of data.nodes)
-          graph.addNode(node.id, {
-            ...node,
-            color: NODE_COLORS[node.kind],
-            size: 3 + Math.min(6, Math.log2(node.degree + 1) * 0.8),
+    Promise.all([
+      import("sigma"),
+      import("graphology"),
+      import("@sigma/node-square"),
+    ])
+      .then(
+        ([{ default: Sigma }, { default: Graph }, { NodeSquareProgram }]) => {
+          if (cancelled || !container.current) return;
+          const graph = new Graph({ type: "undirected" });
+          for (const node of data.nodes.filter((n) => n.degree > 0))
+            graph.addNode(node.id, {
+              ...node,
+              color: NODE_COLORS[node.kind],
+              type: node.kind === "benchmark" ? "square" : "circle",
+              size: nodeRadius(node.degree),
+            });
+          for (const edge of data.edges)
+            graph.addEdgeWithKey(edge.id, edge.source, edge.target, {
+              size: 0.55,
+              color: "rgba(64, 97, 88, 0.3)",
+            });
+          instance = new Sigma(graph, container.current, {
+            nodeProgramClasses: { square: NodeSquareProgram },
+            labelFont: getComputedStyle(container.current).fontFamily,
+            labelSize: 12,
+            labelColor: { color: "#263b38" },
+            labelDensity: 0.3,
+            labelGridCellSize: 140,
+            labelRenderedSizeThreshold: 4.2,
+            stagePadding: 55,
+            minCameraRatio: 0.05,
+            maxCameraRatio: 2.5,
+            zIndex: true,
+            hideEdgesOnMove: true,
           });
-        for (const edge of data.edges)
-          graph.addEdgeWithKey(edge.id, edge.source, edge.target, {
-            size: 0.5,
-            color: "#d9dfdd",
+          instance.on("clickNode", ({ node }) => onSelect(node));
+          instance.on("clickStage", () => onSelect(null));
+          instance.on("enterNode", ({ node }) => {
+            setHovered(node);
+            if (container.current) container.current.style.cursor = "pointer";
           });
-        instance = new Sigma(graph, container.current, {
-          labelFont: "Arial, sans-serif",
-          labelSize: 12,
-          labelColor: { color: "#263b38" },
-          labelDensity: 0.12,
-          labelGridCellSize: 120,
-          labelRenderedSizeThreshold: 8,
-          stagePadding: 35,
-          minCameraRatio: 0.05,
-          maxCameraRatio: 2.5,
-          zIndex: true,
-          hideEdgesOnMove: true,
-        });
-        instance.on("clickNode", ({ node }) => onSelect(node));
-        instance.on("clickStage", () => onSelect(null));
-        instance.on("enterNode", ({ node }) => {
-          setHovered(node);
-          if (container.current) container.current.style.cursor = "pointer";
-        });
-        instance.on("leaveNode", () => {
-          setHovered(null);
-          if (container.current) container.current.style.cursor = "grab";
-        });
-        observer = new ResizeObserver(() => {
-          instance?.resize();
-          instance?.refresh();
-        });
-        observer.observe(container.current);
-        setRenderer(instance);
-      })
+          instance.on("leaveNode", () => {
+            setHovered(null);
+            if (container.current) container.current.style.cursor = "grab";
+          });
+          observer = new ResizeObserver(() => {
+            instance?.resize();
+            instance?.refresh();
+          });
+          observer.observe(container.current);
+          setRenderer(instance);
+        },
+      )
       .catch(() => {
         if (!cancelled) setError(true);
       });
@@ -123,8 +131,9 @@ export function CoverageCanvas({
   useEffect(() => {
     if (!renderer) return;
     const graph = renderer.getGraph();
-    const active =
+    const candidate =
       selected || (hovered && visible.has(hovered) ? hovered : null);
+    const active = candidate && graph.hasNode(candidate) ? candidate : null;
     const neighbors = active
       ? new Set([active, ...graph.neighbors(active)])
       : null;
@@ -140,7 +149,7 @@ export function CoverageCanvas({
           zIndex: id === active ? 2 : emphasized ? 1 : 0,
           size:
             (attributes.size + (id === active ? 2 : 0)) *
-            Math.min(1, renderer.getDimensions().width / 700),
+            Math.max(0.75, Math.min(1, renderer.getDimensions().width / 700)),
         };
       },
       edgeReducer(id, attributes) {
@@ -152,8 +161,8 @@ export function CoverageCanvas({
             !visible.has(source) ||
             !visible.has(target) ||
             (!!active && !incident),
-          color: incident ? "#739b95" : attributes.color,
-          size: incident ? 1 : attributes.size,
+          color: incident ? "rgba(35, 94, 81, 0.75)" : attributes.color,
+          size: incident ? 1.25 : attributes.size,
         };
       },
     });
@@ -162,6 +171,7 @@ export function CoverageCanvas({
   useEffect(() => {
     if (!renderer || !selected) return;
     const graph = renderer.getGraph();
+    if (!graph.hasNode(selected)) return;
     // Reducer updates briefly leave the display cache in raw graph coordinates.
     // Convert canonical positions explicitly instead of reading that cache.
     const framedPosition = (id: string) =>
@@ -238,8 +248,26 @@ export function CoverageCanvas({
           node using the search and connection list.
         </p>
       ) : null}
+      <div
+        className={styles.sizeKey}
+        aria-label="Node size key: 1, 10, and 100 connections"
+      >
+        <span>Connections</span>
+        {[1, 10, 100].map((degree) => (
+          <span key={degree}>
+            <i
+              style={{
+                width: nodeRadius(degree) * 2,
+                height: nodeRadius(degree) * 2,
+              }}
+            />
+            {degree}
+          </span>
+        ))}
+      </div>
       <div className={styles.graphHint}>
-        Drag to pan · Scroll or pinch to zoom · Click to select
+        Drag to pan · Scroll or pinch to zoom · Select a node to trace its
+        connections
       </div>
     </div>
   );

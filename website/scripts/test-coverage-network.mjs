@@ -13,6 +13,16 @@ const code = stripTypeScriptTypes(
 const { buildCoverageNetwork, filterCoverageNetwork } = await import(
   `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`
 );
+const matrixCode = stripTypeScriptTypes(
+  await readFile(
+    new URL("../lib/coverage-network/matrix.ts", import.meta.url),
+    "utf8",
+  ),
+  { mode: "transform" },
+);
+const { buildCoverageMatrix, matrixWindow } = await import(
+  `data:text/javascript;base64,${Buffer.from(matrixCode).toString("base64")}`
+);
 const benchmarks = [
   { slug: "shared", name: "Shared", categories: ["coding"] },
   { slug: "unmapped", name: "Unmapped", categories: ["safety"] },
@@ -119,7 +129,71 @@ test("the real catalog snapshot has valid bipartite edges and retains unlinked b
         edge.target.startsWith("benchmark:"),
     );
   }
+  for (const order of ["coverage", "name", "group"]) {
+    const matrix = buildCoverageMatrix(data.nodes, data.edges, order);
+    assert.equal(matrix.rows.length, visible.length);
+    assert.equal(matrix.columns.length, data.nodes.length - visible.length);
+    assert.equal(matrix.values.size, data.edges.length);
+    for (const edge of data.edges)
+      assert.equal(matrix.values.get(edge.id), edge.items);
+    const reconstructed = matrix.points
+      .map((p) =>
+        JSON.stringify([matrix.columns[p.column].id, matrix.rows[p.row].id]),
+      )
+      .sort();
+    assert.deepEqual(reconstructed, data.edges.map((e) => e.id).sort());
+  }
   t.diagnostic(
     `${visible.length} benchmarks; ${data.nodes.length - visible.length} subjects; ${data.edges.length} links; ${data.nodes.filter((n) => n.kind === "benchmark" && !n.degree).length} unmapped benchmarks`,
   );
+});
+
+test("matrix keeps absent records distinct from zero and retains unlinked rows", () => {
+  const data = buildCoverageNetwork(benchmarks, subjects, marginals);
+  const matrix = buildCoverageMatrix(data.nodes, data.edges, "coverage");
+  assert.equal(matrix.rows.length, 2);
+  assert.equal(
+    matrix.values.get(JSON.stringify(["subject:shared", "benchmark:shared"])),
+    10,
+  );
+  assert.equal(
+    matrix.values.get(JSON.stringify(["subject:shared", "benchmark:unmapped"])),
+    undefined,
+  );
+  assert.equal(matrix.rowIndex.get("benchmark:unmapped"), 1);
+  const filtered = filterCoverageNetwork(data, {
+    domain: "",
+    provider: "Provider B",
+    showUnmapped: true,
+  });
+  const subset = buildCoverageMatrix(
+    data.nodes.filter((n) => filtered.nodes.has(n.id)),
+    filtered.edges,
+    "name",
+  );
+  assert.equal(subset.columns.length, 1);
+  assert.equal(subset.points.length, 1);
+  assert.equal(
+    subset.values.get(JSON.stringify(["subject:second", "benchmark:shared"])),
+    20,
+  );
+});
+
+test("matrix windows are bounded and every row and column remains reachable on narrow screens", () => {
+  for (const total of [0, 1, 7, 270, 983])
+    for (const size of [3, 12, 18]) {
+      const covered = new Set();
+      for (let start = 0; start < total; start += size) {
+        const window = matrixWindow(total, size, start);
+        assert.ok(
+          window.start >= 0 &&
+            window.end <= total &&
+            window.end - window.start <= size,
+        );
+        for (let i = window.start; i < window.end; i++) covered.add(i);
+      }
+      assert.equal(covered.size, total);
+      assert.equal(matrixWindow(total, size, -99).start, 0);
+      assert.equal(matrixWindow(total, size, total + 99).end, total);
+    }
 });

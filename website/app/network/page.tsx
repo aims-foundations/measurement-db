@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CoverageExplorer } from "@/components/coverage-network/explorer";
-import { coverageNetwork } from "@/content/coverage-network";
-import { benchmarkCategories } from "@/content/measurement-db";
+import { CoverageLoader } from "@/components/coverage-network/loader";
 
 export const metadata: Metadata = {
   title: "Coverage network | Measurement Data Bank",
@@ -28,16 +26,10 @@ export default function NetworkPage() {
           <p className="mt-4 text-base leading-relaxed text-[var(--muted)] sm:text-lg">
             Which subjects have been evaluated together? Each line connects an
             AI subject to a benchmark with recorded evaluations. Select a node
-            to explore its connections.
+            to explore its connections, or use the matrix to compare coverage.
           </p>
         </div>
-        <CoverageExplorer
-          data={coverageNetwork}
-          categories={benchmarkCategories.map(({ id, label }) => ({
-            id,
-            label,
-          }))}
-        />
+        <CoverageLoader />
       </div>
     </main>
   );

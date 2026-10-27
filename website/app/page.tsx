@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { CatalogExplorer } from "@/components/catalog-explorer";
 import { BenchmarkCatalogClient } from "@/components/benchmark-catalog-client";
 import { buildBenchmarkGalleryData } from "@/components/benchmark-gallery";
 import { BenchmarkTimeline } from "@/components/benchmark-timeline";
@@ -216,47 +216,31 @@ export default function MeasurementDbPage() {
             Benchmark catalog
           </h2>
 
-          <Link
-            href="/network"
-            className="mb-8 flex flex-wrap items-center justify-between gap-3 border-y border-black/20 py-5"
-          >
-            <span>
-              <span className="block text-xl font-medium">
-                Explore benchmark–subject coverage
-              </span>
-              <span className="mt-1 block text-sm text-[var(--muted)]">
-                An interactive map of the subjects evaluated across the data
-                bank.
-              </span>
-            </span>
-            <span className="text-sm underline underline-offset-4">
-              Open network →
-            </span>
-          </Link>
-
-          <BenchmarkCatalogClient
-            automated={automatedCatalog}
-            humanCentered={humanCenteredCatalog}
-            categories={benchmarkCategories}
-            sharedAnalysisRows={
-              <SharedMetaAnalysisRows
-                charts={sharedCatalogCharts}
-                scope={`All ${benchmarks.length}`}
-              />
-            }
-            automatedScoreAnalysis={
-              <ScoreMetaAnalysisRow
-                heatmap={automatedScoreHeatmap}
-                scope="Automated"
-              />
-            }
-            humanCenteredScoreAnalysis={
-              <ScoreMetaAnalysisRow
-                heatmap={humanCenteredScoreHeatmap}
-                scope="Human-centered"
-              />
-            }
-          />
+          <CatalogExplorer>
+            <BenchmarkCatalogClient
+              automated={automatedCatalog}
+              humanCentered={humanCenteredCatalog}
+              categories={benchmarkCategories}
+              sharedAnalysisRows={
+                <SharedMetaAnalysisRows
+                  charts={sharedCatalogCharts}
+                  scope={`All ${benchmarks.length}`}
+                />
+              }
+              automatedScoreAnalysis={
+                <ScoreMetaAnalysisRow
+                  heatmap={automatedScoreHeatmap}
+                  scope="Automated"
+                />
+              }
+              humanCenteredScoreAnalysis={
+                <ScoreMetaAnalysisRow
+                  heatmap={humanCenteredScoreHeatmap}
+                  scope="Human-centered"
+                />
+              }
+            />
+          </CatalogExplorer>
         </div>
       </section>
 
