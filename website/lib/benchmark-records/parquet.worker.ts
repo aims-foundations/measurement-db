@@ -4,6 +4,8 @@ import {
   parquetReadObjects,
 } from "hyparquet";
 import { compressors } from "hyparquet-compressors";
+import { readJson, type JsonTransport } from "./json";
+import { budgetSource } from "./source-budget";
 
 type PageIndex = {
   footer: string;
@@ -19,26 +21,37 @@ async function json<T>(url: string): Promise<T> {
 /** Return the exact source row. Never extract, truncate, or re-label its answer. */
 self.onmessage = async ({
   data,
-}: MessageEvent<{
-  base: string;
-  parquet: { url: string; bytes: number };
-  id: string;
-}>) => {
+}: MessageEvent<
+  {
+    base: string;
+    parquet: { url: string; bytes: number };
+    id: string;
+    table?: string;
+    key?: string;
+  } & JsonTransport
+>) => {
   try {
-    const { base, parquet, id } = data;
+    const { base, parquet, id, table, key = "response_id" } = data;
+    const indexJson = <T>(path: string) =>
+      table
+        ? readJson<T>(base, `${table}/${path}`, {
+            compressed: true,
+            pack: data.pack,
+          })
+        : json<T>(`${base}/${path}.gz`);
     const hash = new Uint8Array(
       await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id)),
     );
     const bucket = hash[0].toString(16).padStart(2, "0");
-    const positions = await json<Record<string, [number, number]>>(
-      `${base}/index-${bucket}.json.gz`,
+    const positions = await indexJson<Record<string, [number, number]>>(
+      `index-${bucket}.json`,
     );
     if (!Object.hasOwn(positions, id)) {
       self.postMessage({ value: null });
       return;
     }
     const [group, row] = positions[id];
-    const index = await json<PageIndex>(`${base}/group-${group}.json.gz`);
+    const index = await indexJson<PageIndex>(`group-${group}.json`);
     const file = await asyncBufferFromUrl({
       url: parquet.url,
       byteLength: parquet.bytes,
@@ -59,17 +72,16 @@ self.onmessage = async ({
       ),
     ];
     const options = {
-      file,
+      ...budgetSource(file, compressors),
       metadata,
-      compressors,
       utf8: false,
       rowStart: row,
       rowEnd: row + 1,
       pageLocationsByGroup,
     };
     const rows = await parquetReadObjects(options);
-    if (rows.length !== 1 || rows[0].response_id !== id)
-      throw new Error("Source row does not match the requested response ID.");
+    if (rows.length !== 1 || rows[0][key] !== id)
+      throw new Error("Source row does not match the requested record ID.");
     const value = Object.fromEntries(
       Object.entries(rows[0]).map(([key, value]) => {
         if (typeof value !== "bigint") return [key, value];

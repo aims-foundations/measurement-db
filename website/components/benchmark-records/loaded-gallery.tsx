@@ -9,12 +9,14 @@ export function LoadedGallery({
   entry,
   irt,
   subjectIds,
+  windowPage,
 }: {
   entry: GalleryEntry;
   irt?: Omit<BenchmarkIrt, "zByItem">;
   subjectIds?: string[];
+  windowPage?: number;
 }) {
-  const { source, state } = useGallery(entry, subjectIds);
+  const { source, state } = useGallery(entry, subjectIds, windowPage);
   if (state.status === "loading")
     return (
       <p role="status" className="p-6 text-sm">
@@ -33,7 +35,9 @@ export function LoadedGallery({
       model={state.value}
       metadata={entry.manifest.benchmark}
       irt={irt}
-      paged={subjectIds !== undefined}
+      paged={
+        subjectIds !== undefined || (entry.manifest.windows?.pages ?? 0) > 1
+      }
     />
   );
 }

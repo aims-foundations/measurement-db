@@ -33,10 +33,10 @@ function Filter({
   );
   return (
     <label className="flex min-w-0 items-center gap-2 text-xs text-[var(--muted)]">
-      <span className="capitalize">{dimension.label}</span>
+      <span className="shrink-0 capitalize">{dimension.label}</span>
       <select
         aria-label={`Filter ${dimension.label}`}
-        className={CONTROL}
+        className={`${CONTROL} min-w-0`}
         value={value}
         onChange={(e) => onChange(e.target.value)}
       >
@@ -68,18 +68,16 @@ export function ViewControls({
   return (
     <div className="mb-4 space-y-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-        {!paged && (
-          <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
-            Find a model
-            <input
-              type="search"
-              placeholder="Name or subject ID"
-              className={CONTROL}
-              value={settings.query}
-              onChange={(e) => update({ query: e.target.value })}
-            />
-          </label>
-        )}
+        <label className="flex min-w-0 items-center gap-2 text-xs text-[var(--muted)]">
+          Find a model
+          <input
+            type="search"
+            placeholder="Name or subject ID"
+            className={`${CONTROL} min-w-0`}
+            value={settings.query}
+            onChange={(e) => update({ query: e.target.value })}
+          />
+        </label>
         <label className="flex items-center gap-2 text-xs text-[var(--muted)]">
           {paged ? "Order on this page" : "Order"}
           <select

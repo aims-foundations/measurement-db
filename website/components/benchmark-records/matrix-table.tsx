@@ -98,7 +98,15 @@ export function MatrixTable({
                         {label}
                       </button>
                     ) : (
-                      <span title="No recorded observation">—</span>
+                      <span
+                        title={
+                          model.partialItemIds?.includes(id)
+                            ? "No observation on this page"
+                            : "No recorded observation"
+                        }
+                      >
+                        —
+                      </span>
                     )}
                   </td>
                 );

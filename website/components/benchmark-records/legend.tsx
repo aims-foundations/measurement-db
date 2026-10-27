@@ -34,12 +34,15 @@ export function Legend({ scale }: { scale: ResponseScale }) {
           { color: UNGRADED, label: "Grade unavailable" },
           { color: EMPTY, label: "No recorded observation" },
         ].map(({ color, label }) => (
-          <span key={label} className="inline-flex items-center gap-1.5">
+          <span
+            key={label}
+            className="inline-flex min-w-0 items-center gap-1.5"
+          >
             <span
-              className="h-3 w-3 rounded-sm border border-black/15"
+              className="h-3 w-3 shrink-0 rounded-sm border border-black/15"
               style={{ background: color }}
             />
-            {label}
+            <span className="min-w-0 break-words">{label}</span>
           </span>
         ))}
       </div>

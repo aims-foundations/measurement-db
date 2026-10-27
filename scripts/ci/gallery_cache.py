@@ -99,3 +99,37 @@ def lookup(slug: str, inputs: dict) -> dict | None:
         return entry if matches(source, entry) else None
     except (OSError, ValueError, KeyError, TypeError):
         return None
+
+
+def same_legacy_inputs(previous: dict, current: dict) -> bool:
+    """Reuse charts only when their source, curation, code and libraries match."""
+    from .legacy_gallery_cache import PRE_SPLIT_GENERATORS
+
+    def legacy(value):
+        value = {**value, "generator": dict(value["generator"])}
+        value.pop("canonical_records", None)
+        generator = value["generator"]
+        code = generator.pop("code")
+        generator["legacy_code"] = generator.get("legacy_code") or PRE_SPLIT_GENERATORS.get(code)
+        return value
+    old, new = legacy(previous), legacy(current)
+    return bool(old["generator"]["legacy_code"]) and old == new
+
+
+def lookup_legacy(slug: str, inputs: dict) -> dict | None:
+    if root() is None or not artifacts.SLUG.fullmatch(slug):
+        return None
+    for path in sorted((root() / "inputs" / slug).glob("*.json")):
+        try:
+            if path.is_symlink():
+                continue
+            entry = json.loads(path.read_text())
+            if (entry["key"] == artifacts.input_key(entry["inputs"])
+                    and entry["path"] == f"benchmarks/{slug}/{entry['key']}/{entry['sha256']}.tar"
+                    and same_legacy_inputs(entry["inputs"], inputs)):
+                source = object_path(entry)
+                if source is not None and matches(source, entry):
+                    return entry
+        except (OSError, ValueError, KeyError, TypeError):
+            continue
+    return None

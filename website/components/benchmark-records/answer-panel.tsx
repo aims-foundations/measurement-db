@@ -7,6 +7,7 @@ import {
 import { useRecord } from "./use-records";
 import { SourceText } from "./rich-text";
 import { StructuredContent } from "../structured-content";
+import { SourceError } from "./source-error";
 
 export function AnswerPanel({
   source,
@@ -44,9 +45,7 @@ export function AnswerPanel({
           Loading answer…
         </p>
       ) : answer.status === "error" ? (
-        <p role="alert" className="text-sm">
-          {answer.message}
-        </p>
+        <SourceError source={source} table="traces" message={answer.message} />
       ) : (
         <>
           <div

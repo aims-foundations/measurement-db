@@ -35,6 +35,7 @@ export function prepareView(
     subjects: model.subjects,
     itemIds,
     observations,
+    partialItemIds: model.partialItemIds,
   });
   const rowTotals = new Map<string, [number, number]>(),
     columnTotals = new Map<string, [number, number]>();

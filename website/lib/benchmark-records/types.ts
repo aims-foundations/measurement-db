@@ -24,7 +24,11 @@ export type Observation = SourceRecord & {
 };
 
 export type Trace = SourceRecord & { response_id: string; trace: string };
-export type Asset = SourceRecord & { asset_id: string; data_url: string };
+export type Asset = SourceRecord & {
+  asset_id: string;
+  data_url?: string;
+  data?: Uint8Array;
+};
 export type AssetLink = {
   asset_id: string;
   path: string;
@@ -45,7 +49,7 @@ export type TableDescriptor = {
   rows: number;
   pages: number;
   bySubject?: string;
-  parquet?: { url: string; bytes: number };
+  parquet?: { url: string; bytes: number; download?: string };
 };
 
 export type BenchmarkMetadata = SourceRecord & {
@@ -62,6 +66,14 @@ export type BenchmarkMetadata = SourceRecord & {
 
 export type Manifest = {
   compressed?: boolean;
+  pack?: { index: string };
+  windows?: {
+    pages: number;
+    rows: number;
+    maxRows: number;
+    maxItems: number;
+    maxBytes: number;
+  };
   benchmark: BenchmarkMetadata;
   tables: Partial<Record<TableName, TableDescriptor>>;
 };
@@ -71,6 +83,7 @@ export type GalleryRecords = {
   allSubjects?: Subject[];
   itemIds: string[];
   observations: Observation[];
+  partialItemIds?: string[];
 };
 
 export type Direction = "higher_is_better" | "lower_is_better" | "unordered";

@@ -28,6 +28,7 @@ from scripts.build_measurement_tables.response_scales import (
     validate_scale_type,
 )
 from scripts.render_website.record_parquet import export_parquet
+from scripts.render_website.record_windows import export_windows
 
 PRIMARY_KEYS = {
     "subjects": "subject_id",
@@ -114,7 +115,9 @@ def export_benchmark(source: Path, output: Path, page_size: int, parquet_base: s
     for name, key in PRIMARY_KEYS.items():
         path = directory / f"{name}.parquet"
         if path.exists():
-            if name == "traces" and parquet_base:
+            if name == "responses" and parquet_base:
+                tables[name] = {"key": key, "rows": pq.ParquetFile(path).metadata.num_rows, "pages": 0}
+            elif name in {"items", "traces", "assets"} and parquet_base:
                 relative = f"{metadata['benchmark_id']}/"
                 if directory.name == "formatted_tables":
                     relative += "formatted_tables/"
@@ -124,7 +127,9 @@ def export_benchmark(source: Path, output: Path, page_size: int, parquet_base: s
                 tables[name] = export_table(path, output / name, key, page_size)
         elif name in required:
             raise FileNotFoundError(path)
-    write_json(output / "manifest.json", {"benchmark": metadata, "tables": tables})
+    windows = export_windows(directory, output / "windows") if parquet_base else None
+    write_json(output / "manifest.json", {"benchmark": metadata, "tables": tables,
+                                          **({"windows": windows} if windows else {})})
     return {
         "id": metadata["benchmark_id"],
         "name": metadata["name"],

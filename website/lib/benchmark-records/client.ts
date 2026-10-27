@@ -7,6 +7,7 @@ import type {
   Subject,
 } from "./types";
 import { readParquetRecord } from "./parquet";
+import { readJson } from "./json";
 
 type Fetch = typeof fetch;
 type PageIndex = Record<string, number>;
@@ -24,19 +25,17 @@ export class RecordSource {
   private async json<T>(path: string, signal: AbortSignal): Promise<T> {
     signal.throwIfAborted();
     if (this.cache.has(path)) return this.cache.get(path) as T;
-    const suffix =
-      this.manifest.compressed && path.endsWith(".json") ? ".gz" : "";
-    const response = await this.request(`${this.base}/${path}${suffix}`, {
+    const value = await readJson<T>(
+      this.base,
+      path,
+      this.manifest,
       signal,
-    });
-    if (!response.ok)
-      throw new Error(`Could not load benchmark data (${response.status}).`);
-    const value = (await response.json()) as T;
+      this.request,
+    );
     signal.throwIfAborted();
     // Cache completed requests only: aborting one selection cannot poison another.
-    this.cache.set(path, value);
-    if (this.cache.size > 32)
-      this.cache.delete(this.cache.keys().next().value!);
+    if (!path.startsWith("windows/")) this.cache.set(path, value);
+    if (this.cache.size > 8) this.cache.delete(this.cache.keys().next().value!);
     return value;
   }
 
@@ -80,6 +79,31 @@ export class RecordSource {
 
   subjects(signal: AbortSignal): Promise<Subject[]> {
     return this.all("subjects", signal);
+  }
+
+  async window(page: number, signal: AbortSignal): Promise<GalleryRecords> {
+    const [subjects, window] = await Promise.all([
+      this.subjects(signal),
+      this.json<Omit<GalleryRecords, "subjects">>(
+        `windows/${page}.json`,
+        signal,
+      ),
+    ]);
+    return { ...window, subjects };
+  }
+
+  async windowForItem(
+    id: string,
+    signal: AbortSignal,
+  ): Promise<[number, number] | null> {
+    const hash = new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(id)),
+    );
+    const index = await this.json<Record<string, [number, number]>>(
+      `windows/index-${hash[0].toString(16).padStart(2, "0")}.json`,
+      signal,
+    );
+    return Object.hasOwn(index, id) ? index[id] : null;
   }
 
   async load(
@@ -127,12 +151,11 @@ export class RecordSource {
   ): Promise<TableRows[T] | null> {
     const parquet = this.manifest.tables[table]?.parquet;
     if (parquet)
-      return readParquetRecord<TableRows[T]>(
-        `${this.base}/${table}`,
-        parquet,
-        id,
-        signal,
-      );
+      return readParquetRecord<TableRows[T]>(this.base, parquet, id, signal, {
+        table,
+        key: this.manifest.tables[table]!.key,
+        ...this.manifest,
+      });
     const index = await this.index(table, signal);
     if (!Object.hasOwn(index, id)) return null;
     const page = await this.json<Record<string, TableRows[T]>>(
@@ -147,17 +170,25 @@ export class RecordSource {
   async asset(
     link: AssetLink,
     signal: AbortSignal,
-  ): Promise<{ url: string; image: Blob | null }> {
+  ): Promise<{ url: string; blob: Blob | null }> {
     const asset = await this.get("assets", link.asset_id, signal);
     if (!asset) throw new Error(`Missing attachment ${link.path}.`);
+    if (asset.data instanceof Uint8Array) {
+      return {
+        url: "",
+        blob: new Blob([new Uint8Array(asset.data)], { type: link.media_type }),
+      };
+    }
+    if (!asset.data_url)
+      throw new Error(`Missing attachment bytes for ${link.path}.`);
     const url = `${this.base}/assets/${encodeURIComponent(asset.data_url)}`;
-    if (!link.media_type.startsWith("image/")) return { url, image: null };
+    if (!link.media_type.startsWith("image/")) return { url, blob: null };
     const response = await this.request(url, { signal });
     if (!response.ok)
       throw new Error(`Could not load attachment (${response.status}).`);
     return {
       url,
-      image: new Blob([await response.arrayBuffer()], {
+      blob: new Blob([await response.arrayBuffer()], {
         type: link.media_type,
       }),
     };

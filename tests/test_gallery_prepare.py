@@ -32,6 +32,28 @@ requires_torch = unittest.skipUnless(importlib.util.find_spec("torch"),
 def fixture(root, slug="binary"):
     tables, web = root / "tables", root / "website"
     overrides = write_fixture(tables, slug)
+    # Preparation now exports canonical rows for every fixture, including the
+    # older chart fixtures that predate response IDs and declared grade scales.
+    bank = tables / slug
+    meta = pd.read_parquet(bank / "benchmarks.parquet")
+    meta["response_type"] = "continuous" if slug == "continuous" else "binary"
+    meta["response_scale"] = json.dumps(
+        {"kind": "interval", "min": 0, "max": 1} if slug == "continuous" else
+        {"kind": "discrete", "values": [0, 1]})
+    meta.to_parquet(bank / "benchmarks.parquet", index=False)
+    items = pd.read_parquet(bank / "items.parquet")
+    items["grading_criterion"] = items["reference_answer"].map(
+        lambda value: json.dumps({"reference_answer": value, "rule": "Released grade"}))
+    items["asset_manifest"] = None
+    items.to_parquet(bank / "items.parquet", index=False)
+    for name in ("responses", "traces"):
+        path = bank / f"{name}.parquet"
+        if path.exists():
+            rows = pd.read_parquet(path)
+            rows["response_id"] = [f"r{i}" for i in range(len(rows))]
+            if "interactors" not in rows:
+                rows["interactors"] = None
+            rows.to_parquet(path, index=False)
     subjects_path = tables / slug / "subjects.parquet"
     subjects = pd.read_parquet(subjects_path)
     subjects["normalized_name"] = subjects["display_name"]

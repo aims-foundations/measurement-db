@@ -2,8 +2,8 @@
 
 Python exports the original table rows and lookup indexes. TypeScript decides
 how to display them, using the website's existing typography, heatmap colors,
-and detail-panel styles. No PNG, legacy chart bundle, or color-to-grade decoding
-is required by this viewer.
+and detail-panel styles. Every published benchmark uses this viewer. No PNG, legacy chart bundle, or
+color-to-grade decoding is used by its response matrix.
 
 | Module                                                                    | Responsibility                                                    |
 | ------------------------------------------------------------------------- | ----------------------------------------------------------------- |
@@ -16,7 +16,7 @@ is required by this viewer.
 | `catalog.ts`                                                              | Page-card metadata from the same manifest                         |
 | `components/benchmark-records/use-records.ts`                             | Loading states, cancellation, and attachment cleanup              |
 | `index.tsx`, `record-gallery.tsx`                                         | Loading boundary and view composition                             |
-| `model-browser.tsx`, `loaded-gallery.tsx`                                 | Search the full registry and load a bounded page of models        |
+| `window-browser.tsx`, `loaded-gallery.tsx`                                | Navigate bounded item pages and search the full model registry    |
 | `heatmap.tsx`, `heatmap-canvas.tsx`, `paint-heatmap.ts`                   | Layout, pointer/keyboard interaction, visible canvas tiles        |
 | `matrix-table.tsx`, `view-controls.tsx`, `legend.tsx`                     | Accessible table alternative, controls, declared grade legend     |
 | `cell-details.tsx`, `answer-panel.tsx`, `rich-text.tsx`, `attachment.tsx` | Item, grading rule, reference, Markdown/math, answers, media      |
@@ -33,8 +33,8 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
   Actual-size mode draws only visible columns. Small canvas tiles avoid creating
   one full-resolution image of the entire matrix. Hover does not repaint it.
 - Filters use observation conditions, interactors, and trial. Subject metadata
-  remains attached to the model. Registry axes remain visible in the unfiltered
-  view, including unobserved models and items.
+  remains attached to the model. All models remain searchable. Item pages include unobserved items, so the
+  complete item registry remains reachable even without released responses.
 - Mean-grade ordering and margins require a common, explicitly ordered scale.
   Means use graded observations in the selected view. Unordered and mixed scales
   have no cross-item mean. Mixed and unbounded scales use neutral overview colors;
@@ -58,14 +58,17 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
 - `raw-item-content.tsx` escapes and displays the original string without JSON
   reserialization, trimming, truncation, Markdown, or math processing. The large
   raw text DOM is mounted only when expanded. A missing text component is explicit.
-- Legacy matrix pages use `source-item-content.tsx` to read one exact item from
-  pinned Parquet through existing byte-range indexes. This avoids treating image
-  markup appended by the old exporter as original content. That path projects only
-  content and the asset manifest; it does not load the full item table.
+- `source-item-content.tsx` remains only in the retired legacy viewer. Published
+  benchmark pages read exact original items through the canonical record source.
 - The same source record drives custom and raw views. Images follow the released
   multimedia order, and remaining attachments are paginated and opened on demand.
-  Source-specific answer and comparison mappings for the three canonical viewers
-  also live in their corresponding benchmark modules.
+  Source-specific answer and comparison mappings also live in their corresponding
+  benchmark modules.
+- `rich-text.tsx` renders explicit LaTeX with KaTeX and accessible MathML. Inline
+  and fenced code bypass math normalization; common bare commands such as
+  `\boxed{A}` retain balanced arguments. `code-block.tsx` preserves indentation
+  and labels declared languages. Benchmark adapters handle source-specific code
+  wrappers (CRUXEval), whole Python programs (KernelBench), and source files (Aider).
 - `components/structured-content.tsx` remains shared by metadata and answers.
   Formatting does not change item, model, observation, or response identities.
 - Existing Rasch summaries and subject abilities can be supplied separately.
@@ -95,34 +98,40 @@ do not commit a local manifest without a corresponding deployment preparation.
 
 ## Normal website preparation
 
-`content/curated/canonical-record-benchmarks.json` selects the migrated benchmarks:
-AEGIS, ReAL-PoCQI, and MMLU. CI's existing preparation job exports their records
-from the same hash-verified source tables used by the rest of the catalog.
-`scripts/ci/check_gallery_records.py` compares every exported field and every
-lazy trace position to its source, including null grades and subject-page coverage.
-Validation reports ship beside the records as `records-validation.json`.
+CI prepares canonical records for every published benchmark; there is no migration
+allowlist or legacy matrix fallback. The existing catalog, search, and cards retain
+their design. `NEXT_PUBLIC_GALLERY_RECORDS_ONLY=1` is available for isolated local
+experiments with a subset of exported records.
 
-The records, indexes, and lightweight manifests are included in the existing
-hashed artifacts. The normal Vercel build restores those artifacts; it does not
-regenerate data. The full catalog, search, cards, and other benchmark pages keep
-their existing data and presentation. A new manifest switches only that detail
-page to the canonical viewer. The temporary directory is not the production
-catalog. For isolated local experiments, `NEXT_PUBLIC_GALLERY_RECORDS_ONLY=1`
-restricts the catalog to the prepared entries.
+`record_windows.py` groups unchanged observations by item using a disk-backed
+sort. Each window holds at most 256 items, 4,096 observations, and 2 MiB of expanded
+JSON, using the same limits for every benchmark. Items with more attempts span
+explicitly labeled partial pages. Filters and means describe the current page.
+Reciprocal comparison links are disabled for partial items because uniqueness
+cannot be established from an incomplete set of attempts. Full published Rasch
+fits remain separately labeled. Items without observations still have pages.
 
-Above 200,000 responses, the viewer searches the full subject registry and loads
-up to ten models at a time. Every task, repetition, and condition for those models
-is retained. Page filters and means are explicitly scoped to those models;
-published Rasch summaries still describe the full benchmark. This bounds MMLU's
-initial load without sampling its subjects or items. A single model with millions
-of observations will need further partitioning before that benchmark is migrated.
+`record_parquet.py` indexes exact original items, traces, and attachments. Their
+content stays in pinned Parquet and loads on selection through the authenticated
+source route. `record_packs.py` packs independently compressed JSON pages into
+static byte ranges, avoiding hundreds of thousands of deployment files. The
+browser verifies each range checksum before decoding it. No HF credentials reach
+the client. Source reads stop before downloading or decompressing more than
+16 MiB for one selected record; oversized source pages offer the original pinned
+Parquet table for download. Values are never silently truncated. UI changes leave
+these record bundles unchanged.
 
-Prompts, references, answers, and attachments load on selection. CI leaves traces
-in pinned Parquet and indexes only their IDs and byte locations. The existing
-server route authenticates HF access; the worker downloads just the required
-pages and returns the complete original row. The standalone exporter also accepts
-`--parquet-base <public-source-base>` for range-accessible source files. Omit it
-to export self-contained JSON traces. Never expose HF credentials to the client.
+`scripts/ci/check_gallery_records.py` verifies every source lookup position and
+compares full-record checksums, counts, and item coverage for all observation
+windows. The native grades, contexts, trials, identities, and source fields are
+preserved. `canonical_gallery.py` packages these verified records. The legacy
+chart and analysis preparation has an independent cache identity, allowing the
+existing fitted results and catalog artifacts to be reused when only canonical
+record preparation changes.
+
+The standalone exporter accepts `--parquet-base <pinned-source-base>` for lazy
+source records and bounded item windows. Without it, small local demonstrations
+can still export self-contained JSON records and attachment files.
 
 Offline tests: `pytest tests/test_gallery_new.py`, `pnpm --dir website gallery:test`,
 and the canonical Parquet fixture read in `.github/workflows/website.yml`.
