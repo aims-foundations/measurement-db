@@ -161,6 +161,14 @@
     ]
   },
   {
+    "name": "Microsoft DeBERTa v3 Large",
+    "provider": "Microsoft",
+    "releaseDate": "2021-11-18",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "Microsoft Turing-NLG 7B",
     "provider": "Microsoft",
     "releaseDate": "2022-01-28",
@@ -176,6 +184,14 @@
     "benchmarks": [
       "helm_bold",
       "helm_real_toxicity_prompts"
+    ]
+  },
+  {
+    "name": "Foldseek",
+    "provider": "Steinegger Lab",
+    "releaseDate": "2022-02-07",
+    "benchmarks": [
+      "care_enzymes"
     ]
   },
   {
@@ -214,6 +230,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -333,13 +351,16 @@
       "biggen",
       "bird_sql",
       "bridging_gap",
+      "care_enzymes",
       "chatgpt_drift",
       "clasheval",
+      "complexbench",
       "cruxeval",
       "decodingtrust",
       "donotanswer",
       "doris_mae",
       "egoschema",
+      "embodied_agent_interface",
       "emoji_attack",
       "evouna",
       "find_interp",
@@ -359,12 +380,20 @@
       "infibench",
       "jailbreakbench",
       "legalbench",
+      "lingoly",
+      "livebench",
+      "llm_survey_simulation",
+      "mtbench",
       "naep_llm_students",
+      "nyu_ctf_bench",
+      "planbench",
       "preference_dissection",
       "prism",
       "qatch",
       "rakuda",
       "statqa",
+      "sustainable_food",
+      "synthpai",
       "tengu",
       "tulu_human_eval",
       "ultrafeedback",
@@ -409,7 +438,8 @@
     "provider": "EleutherAI",
     "releaseDate": "2023-02-13",
     "benchmarks": [
-      "monkey_power_laws"
+      "monkey_power_laws",
+      "rewardbench"
     ]
   },
   {
@@ -418,6 +448,7 @@
     "releaseDate": "2023-02-13",
     "benchmarks": [
       "monkey_power_laws",
+      "rewardbench",
       "ultrafeedback"
     ]
   },
@@ -442,7 +473,8 @@
     "provider": "EleutherAI",
     "releaseDate": "2023-02-13",
     "benchmarks": [
-      "monkey_power_laws"
+      "monkey_power_laws",
+      "rewardbench"
     ]
   },
   {
@@ -458,7 +490,8 @@
     "provider": "EleutherAI",
     "releaseDate": "2023-02-13",
     "benchmarks": [
-      "monkey_power_laws"
+      "monkey_power_laws",
+      "rewardbench"
     ]
   },
   {
@@ -479,6 +512,15 @@
     ]
   },
   {
+    "name": "Fudan MOSS",
+    "provider": "Fudan University",
+    "releaseDate": "2023-02-20",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
+    ]
+  },
+  {
     "name": "Meta LLaMA",
     "provider": "Meta",
     "releaseDate": "2023-02-24",
@@ -487,12 +529,48 @@
     ]
   },
   {
+    "name": "Meta LLaMA 13B",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Meta LLaMA 30B",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "lawbench",
+      "rewardbench"
+    ]
+  },
+  {
     "name": "Meta LLaMA 65B",
     "provider": "Meta",
     "releaseDate": "2023-02-24",
     "benchmarks": [
       "helm_cleva",
+      "lawbench",
       "legalbench"
+    ]
+  },
+  {
+    "name": "Meta LLaMA 7B",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "lawbench",
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Meta Llama 1 13B",
+    "provider": "Meta",
+    "releaseDate": "2023-02-24",
+    "benchmarks": [
+      "lawbench",
+      "mtbench"
     ]
   },
   {
@@ -501,6 +579,7 @@
     "releaseDate": "2023-03-01",
     "benchmarks": [
       "harmbench",
+      "lawbench",
       "live_agent_risk"
     ]
   },
@@ -538,7 +617,8 @@
     "provider": "Stanford",
     "releaseDate": "2023-03-13",
     "benchmarks": [
-      "beavertails"
+      "beavertails",
+      "mtbench"
     ]
   },
   {
@@ -549,6 +629,7 @@
       "alpacaeval",
       "beavertails",
       "decodingtrust",
+      "lawbench",
       "pku_saferlhf",
       "ultrafeedback"
     ]
@@ -559,7 +640,8 @@
     "releaseDate": "2023-03-14",
     "benchmarks": [
       "alpacaeval",
-      "donotanswer"
+      "donotanswer",
+      "erbench"
     ]
   },
   {
@@ -567,7 +649,8 @@
     "provider": "Anthropic",
     "releaseDate": "2023-03-14",
     "benchmarks": [
-      "legalbench"
+      "legalbench",
+      "mtbench"
     ]
   },
   {
@@ -577,6 +660,7 @@
     "benchmarks": [
       "alpacaeval",
       "legalbench",
+      "mtbench",
       "prism"
     ]
   },
@@ -602,10 +686,12 @@
       "bird_sql",
       "bridging_gap",
       "chatgpt_drift",
+      "complexbench",
       "cruxeval",
       "decodingtrust",
       "donotanswer",
       "egoschema",
+      "embodied_agent_interface",
       "evouna",
       "financebench",
       "find_interp",
@@ -626,20 +712,39 @@
       "infibench",
       "intercode",
       "jailbreakbench",
+      "lawbench",
       "legalbench",
+      "lingoly",
+      "livebench",
+      "llm4ir",
+      "mj_bench",
       "mmdocrag",
+      "mtbench",
       "nester",
+      "nyu_ctf_bench",
+      "planbench",
       "preference_dissection",
       "prism",
       "rakuda",
       "sib200",
       "statqa",
+      "synthpai",
       "tengu",
       "ultrafeedback",
       "vhelm",
+      "visual_riddles",
       "wildvision",
+      "wonderbread",
       "workbench_revisited",
       "xstest"
+    ]
+  },
+  {
+    "name": "Zhipu ChatGLM 6B",
+    "provider": "Zhipu",
+    "releaseDate": "2023-03-14",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -649,6 +754,8 @@
     "benchmarks": [
       "alpacaeval",
       "legalbench",
+      "llm_uncertainty_bench",
+      "mtbench",
       "ultrafeedback"
     ]
   },
@@ -660,6 +767,8 @@
       "alpacaeval",
       "helm_cleva",
       "jailbreakbench",
+      "lawbench",
+      "mtbench",
       "preference_dissection"
     ]
   },
@@ -673,7 +782,35 @@
       "beavertails",
       "decodingtrust",
       "donotanswer",
+      "lawbench",
+      "lexeval",
+      "livebench",
+      "mtbench",
       "preference_dissection"
+    ]
+  },
+  {
+    "name": "OpenAssistant LLaMA 30B",
+    "provider": "Openassistant",
+    "releaseDate": "2023-04",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
+    "name": "RWKV-4 14B",
+    "provider": "Rwkv",
+    "releaseDate": "2023-04-01",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
+    "name": "BAIR Koala 13B",
+    "provider": "Bair",
+    "releaseDate": "2023-04-03",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -681,7 +818,40 @@
     "provider": "Community",
     "releaseDate": "2023-04-03",
     "benchmarks": [
-      "alpacaeval"
+      "alpacaeval",
+      "mtbench"
+    ]
+  },
+  {
+    "name": "Databricks Dolly 12B",
+    "provider": "Databricks",
+    "releaseDate": "2023-04-12",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
+    "name": "ImageReward",
+    "provider": "Community",
+    "releaseDate": "2023-04-12",
+    "benchmarks": [
+      "mj_bench"
+    ]
+  },
+  {
+    "name": "OpenAssistant Pythia 12B",
+    "provider": "Openassistant",
+    "releaseDate": "2023-04-15",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
+    "name": "Stability AI StableLM 7B",
+    "provider": "Stability AI",
+    "releaseDate": "2023-04-19",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -691,6 +861,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -701,6 +873,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -709,7 +883,16 @@
     "provider": "Microsoft",
     "releaseDate": "2023-04-24",
     "benchmarks": [
+      "lawbench",
       "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Nomic GPT4All 13B",
+    "provider": "Nomic",
+    "releaseDate": "2023-04-24",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -720,6 +903,7 @@
       "alpacaeval",
       "decodingtrust",
       "legalbench",
+      "llm_uncertainty_bench",
       "prism"
     ]
   },
@@ -732,11 +916,20 @@
     ]
   },
   {
+    "name": "LMSYS FastChat-T5 3B",
+    "provider": "LMSYS",
+    "releaseDate": "2023-04-27",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
     "name": "Microsoft WizardLM 13B",
     "provider": "Microsoft",
     "releaseDate": "2023-05",
     "benchmarks": [
       "alpacaeval",
+      "mtbench",
       "ultrafeedback"
     ]
   },
@@ -747,6 +940,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -755,7 +950,10 @@
     "provider": "MosaicML",
     "releaseDate": "2023-05-05",
     "benchmarks": [
-      "decodingtrust"
+      "decodingtrust",
+      "lawbench",
+      "llm_uncertainty_bench",
+      "mtbench"
     ]
   },
   {
@@ -773,6 +971,14 @@
     "benchmarks": [
       "intercode",
       "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Google PaLM 2",
+    "provider": "Google",
+    "releaseDate": "2023-05-10",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -796,7 +1002,8 @@
     "provider": "Salesforce",
     "releaseDate": "2023-05-11",
     "benchmarks": [
-      "harmbench"
+      "harmbench",
+      "visual_riddles"
     ]
   },
   {
@@ -806,6 +1013,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -816,7 +1025,42 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "LaWGPT 7B beta1.0",
+    "provider": "Nanjing University",
+    "releaseDate": "2023-05-13",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "IDEA Ziya-LLaMA 7B",
+    "provider": "Idea",
+    "releaseDate": "2023-05-16",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "LexiLaw 6B",
+    "provider": "Tsinghua University",
+    "releaseDate": "2023-05-16",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
+    ]
+  },
+  {
+    "name": "IDEA Ziya-LLaMA 13B",
+    "provider": "Idea",
+    "releaseDate": "2023-05-17",
+    "benchmarks": [
+      "lawbench"
     ]
   },
   {
@@ -826,7 +1070,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenLM Research OpenLLaMA 3B",
+    "provider": "Openlm Research",
+    "releaseDate": "2023-05-22",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -834,7 +1088,8 @@
     "provider": "Community",
     "releaseDate": "2023-05-23",
     "benchmarks": [
-      "alpacaeval"
+      "alpacaeval",
+      "mtbench"
     ]
   },
   {
@@ -842,7 +1097,16 @@
     "provider": "Community",
     "releaseDate": "2023-05-23",
     "benchmarks": [
-      "alpacaeval"
+      "alpacaeval",
+      "mtbench"
+    ]
+  },
+  {
+    "name": "Lawyer-LLaMA 13B",
+    "provider": "Peking University",
+    "releaseDate": "2023-05-24",
+    "benchmarks": [
+      "lawbench"
     ]
   },
   {
@@ -852,7 +1116,34 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "HanFei 7B",
+    "provider": "SIAT",
+    "releaseDate": "2023-05-30",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
+    ]
+  },
+  {
+    "name": "LaWGPT 7B beta1.1",
+    "provider": "Nanjing University",
+    "releaseDate": "2023-05-30",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "H2O.ai h2oGPT 13B",
+    "provider": "H2O.Ai",
+    "releaseDate": "2023-06",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -860,7 +1151,24 @@
     "provider": "Nous Research",
     "releaseDate": "2023-06-03",
     "benchmarks": [
-      "alpacaeval"
+      "alpacaeval",
+      "mtbench"
+    ]
+  },
+  {
+    "name": "Microsoft WizardLM 30B",
+    "provider": "Microsoft",
+    "releaseDate": "2023-06-06",
+    "benchmarks": [
+      "mtbench"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 30B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-06-07",
+    "benchmarks": [
+      "mtbench"
     ]
   },
   {
@@ -880,6 +1188,14 @@
     ]
   },
   {
+    "name": "TigerBot 7B",
+    "provider": "Tigerresearch",
+    "releaseDate": "2023-06-07",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
     "name": "Writer Palmyra X",
     "provider": "Writer",
     "releaseDate": "2023-06-11",
@@ -889,11 +1205,21 @@
     ]
   },
   {
+    "name": "Baichuan 7B",
+    "provider": "Baichuan",
+    "releaseDate": "2023-06-15",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
     "name": "LMSYS Vicuna 33B",
     "provider": "LMSYS",
     "releaseDate": "2023-06-22",
     "benchmarks": [
       "alpacaeval",
+      "lawbench",
+      "mtbench",
       "ultrafeedback"
     ]
   },
@@ -902,6 +1228,7 @@
     "provider": "MosaicML",
     "releaseDate": "2023-06-22",
     "benchmarks": [
+      "mtbench",
       "ultrafeedback"
     ]
   },
@@ -910,7 +1237,8 @@
     "provider": "Zhipu",
     "releaseDate": "2023-06-25",
     "benchmarks": [
-      "donotanswer"
+      "donotanswer",
+      "lawbench"
     ]
   },
   {
@@ -920,6 +1248,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -930,6 +1260,47 @@
     "benchmarks": [
       "alpacaeval",
       "ultrafeedback"
+    ]
+  },
+  {
+    "name": "ChatLaw 13B",
+    "provider": "Peking University",
+    "releaseDate": "2023-06-28",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "ChatLaw 33B",
+    "provider": "Peking University",
+    "releaseDate": "2023-06-28",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "Shanghai AI Lab InternLM 7B",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2023-07-06",
+    "benchmarks": [
+      "lawbench",
+      "llm_uncertainty_bench"
+    ]
+  },
+  {
+    "name": "Baichuan 13B",
+    "provider": "Baichuan",
+    "releaseDate": "2023-07-08",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "PKU Beaver 7B v1.0",
+    "provider": "Pku-Alignment",
+    "releaseDate": "2023-07-10",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -945,17 +1316,29 @@
     ]
   },
   {
+    "name": "GoGPT 7B",
+    "provider": "Golaxy",
+    "releaseDate": "2023-07-17",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
     "name": "Meta Llama 2 13B",
     "provider": "Meta",
     "releaseDate": "2023-07-18",
     "benchmarks": [
       "biggen",
       "find_interp",
+      "lawbench",
       "legalbench",
+      "llm_uncertainty_bench",
       "mmlupro",
+      "mtbench",
       "preference_dissection",
       "prism",
       "statqa",
+      "synthpai",
       "ultrafeedback"
     ]
   },
@@ -968,10 +1351,15 @@
       "bird_sql",
       "financebench",
       "find_interp",
+      "lawbench",
       "legalbench",
+      "lingoly",
+      "llm_uncertainty_bench",
       "mmlupro",
+      "mtbench",
       "preference_dissection",
       "prism",
+      "synthpai",
       "ultrafeedback"
     ]
   },
@@ -985,12 +1373,49 @@
       "decodingtrust",
       "donotanswer",
       "jailbreakbench",
+      "lawbench",
       "legalbench",
+      "livebench",
+      "llm_uncertainty_bench",
       "mmlupro",
+      "mtbench",
       "preference_dissection",
       "prism",
       "statqa",
+      "synthpai",
       "ultrafeedback"
+    ]
+  },
+  {
+    "name": "StableBeluga2 70B",
+    "provider": "Stability AI",
+    "releaseDate": "2023-07-20",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "Llama2-Chinese 7B",
+    "provider": "FlagAlpha",
+    "releaseDate": "2023-07-23",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "Llama2-Chinese 13B",
+    "provider": "FlagAlpha",
+    "releaseDate": "2023-07-24",
+    "benchmarks": [
+      "lawbench"
+    ]
+  },
+  {
+    "name": "BELLE-Llama2 13B",
+    "provider": "LianjiaTech",
+    "releaseDate": "2023-07-27",
+    "benchmarks": [
+      "lawbench"
     ]
   },
   {
@@ -998,6 +1423,7 @@
     "provider": "Community",
     "releaseDate": "2023-07-31",
     "benchmarks": [
+      "lawbench",
       "pku_saferlhf"
     ]
   },
@@ -1006,7 +1432,18 @@
     "provider": "Alibaba",
     "releaseDate": "2023-08-03",
     "benchmarks": [
-      "ceval"
+      "ceval",
+      "complexbench",
+      "lawbench",
+      "llm_uncertainty_bench"
+    ]
+  },
+  {
+    "name": "YuLan-Chat-2 13B",
+    "provider": "Renmin University",
+    "releaseDate": "2023-08-04",
+    "benchmarks": [
+      "lawbench"
     ]
   },
   {
@@ -1018,12 +1455,30 @@
     ]
   },
   {
+    "name": "XVERSE 13B",
+    "provider": "Xverse",
+    "releaseDate": "2023-08-07",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
+    ]
+  },
+  {
     "name": "Microsoft WizardLM 70B",
     "provider": "Microsoft",
     "releaseDate": "2023-08-09",
     "benchmarks": [
       "alpacaeval",
       "ultrafeedback"
+    ]
+  },
+  {
+    "name": "Wisdom-Interrogatory 7B",
+    "provider": "Zhejiang University",
+    "releaseDate": "2023-08-21",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
     ]
   },
   {
@@ -1041,6 +1496,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1051,6 +1508,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1069,6 +1528,15 @@
     "benchmarks": [
       "bird_sql",
       "cruxeval"
+    ]
+  },
+  {
+    "name": "Fuzi-Mingcha 6B",
+    "provider": "Shandong University",
+    "releaseDate": "2023-08-31",
+    "benchmarks": [
+      "lawbench",
+      "lexeval"
     ]
   },
   {
@@ -1091,11 +1559,20 @@
     ]
   },
   {
+    "name": "Baichuan 2 13B",
+    "provider": "Baichuan",
+    "releaseDate": "2023-09-06",
+    "benchmarks": [
+      "complexbench"
+    ]
+  },
+  {
     "name": "Alibaba Qwen 14B",
     "provider": "Alibaba",
     "releaseDate": "2023-09-25",
     "benchmarks": [
-      "alpacaeval"
+      "alpacaeval",
+      "llm_uncertainty_bench"
     ]
   },
   {
@@ -1106,7 +1583,10 @@
       "ai2d_test",
       "hallusionbench",
       "harmbench",
-      "mmmu_dev_val"
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "sugarcrepe"
     ]
   },
   {
@@ -1116,7 +1596,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "UltraRM 13B",
+    "provider": "OpenBMB",
+    "releaseDate": "2023-09-26",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -1142,11 +1632,15 @@
       "helm_xstest",
       "ikp",
       "legalbench",
+      "livebench",
+      "llm_uncertainty_bench",
       "mmdocrag",
       "mmlupro",
       "naep_llm_students",
       "preference_dissection",
-      "prism"
+      "prism",
+      "rewardbench",
+      "synthpai"
     ]
   },
   {
@@ -1172,6 +1666,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1182,7 +1678,10 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
-      "mmmu_dev_val"
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "visual_riddles"
     ]
   },
   {
@@ -1192,6 +1691,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "wildvision"
     ]
@@ -1203,8 +1704,10 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
+      "livebench",
       "preference_dissection",
-      "prism"
+      "prism",
+      "rewardbench"
     ]
   },
   {
@@ -1214,6 +1717,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1232,7 +1737,25 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Baidu ERNIE 4.0",
+    "provider": "Baidu",
+    "releaseDate": "2023-10-17",
+    "benchmarks": [
+      "complexbench"
+    ]
+  },
+  {
+    "name": "Zhipu ChatGLM3 6B",
+    "provider": "Zhipu",
+    "releaseDate": "2023-10-27",
+    "benchmarks": [
+      "complexbench"
     ]
   },
   {
@@ -1250,6 +1773,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1268,10 +1793,13 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
+      "embodied_agent_interface",
       "helm_airbench",
       "legalbench",
+      "llm_uncertainty_bench",
       "mmlupro",
-      "preference_dissection"
+      "preference_dissection",
+      "synthpai"
     ]
   },
   {
@@ -1281,6 +1809,8 @@
     "benchmarks": [
       "biggen",
       "legalbench",
+      "livebench",
+      "llm_uncertainty_bench",
       "mmlupro",
       "preference_dissection"
     ]
@@ -1308,6 +1838,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1316,6 +1848,7 @@
     "provider": "Alibaba",
     "releaseDate": "2023-11-10",
     "benchmarks": [
+      "cmmlu",
       "ikp",
       "mmdocrag"
     ]
@@ -1327,6 +1860,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1337,7 +1872,24 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
-      "preference_dissection"
+      "preference_dissection",
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 2 7B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-11-13",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 2 13B",
+    "provider": "AllenAI",
+    "releaseDate": "2023-11-17",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -1347,6 +1899,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1357,7 +1911,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "EPFL Meditron 7B",
+    "provider": "Epfl",
+    "releaseDate": "2023-11-27",
+    "benchmarks": [
+      "perumedqa"
     ]
   },
   {
@@ -1367,8 +1931,34 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Berkeley Starling 7B",
+    "provider": "Berkeley",
+    "releaseDate": "2023-11-28",
+    "benchmarks": [
+      "livebench"
+    ]
+  },
+  {
+    "name": "Berkeley Starling RM 7B",
+    "provider": "Berkeley",
+    "releaseDate": "2023-11-28",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Pika",
+    "provider": "Pika Labs",
+    "releaseDate": "2023-11-28",
+    "benchmarks": [
+      "care_enzymes"
     ]
   },
   {
@@ -1376,6 +1966,8 @@
     "provider": "DeepSeek",
     "releaseDate": "2023-11-29",
     "benchmarks": [
+      "llm4ir",
+      "llms_lean_formalization",
       "mmlupro"
     ]
   },
@@ -1390,7 +1982,32 @@
       "helm_bbq",
       "helm_harmbench",
       "helm_simple_safety_tests",
-      "helm_xstest"
+      "helm_xstest",
+      "llm_uncertainty_bench"
+    ]
+  },
+  {
+    "name": "DeepSeek LLM 7B",
+    "provider": "DeepSeek",
+    "releaseDate": "2023-11-29",
+    "benchmarks": [
+      "llm_uncertainty_bench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen 1.8B",
+    "provider": "Alibaba",
+    "releaseDate": "2023-11-30",
+    "benchmarks": [
+      "llm_uncertainty_bench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2023-11-30",
+    "benchmarks": [
+      "llm_uncertainty_bench"
     ]
   },
   {
@@ -1418,6 +2035,16 @@
     ]
   },
   {
+    "name": "Google Gemini",
+    "provider": "Google",
+    "releaseDate": "2023-12-06",
+    "benchmarks": [
+      "erbench",
+      "kris_bench",
+      "llms_lean_formalization"
+    ]
+  },
+  {
     "name": "Google Gemini 1.0 Pro",
     "provider": "Google",
     "releaseDate": "2023-12-06",
@@ -1425,10 +2052,15 @@
       "ai2d_test",
       "biggen",
       "bird_sql",
+      "embodied_agent_interface",
       "hallusionbench",
       "helm_airbench",
       "helm_thaiexam",
-      "mmmu_dev_val"
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "synthpai",
+      "wonderbread"
     ]
   },
   {
@@ -1438,7 +2070,9 @@
     "benchmarks": [
       "afrimedqa",
       "alpacaeval",
-      "harmbench"
+      "harmbench",
+      "planbench",
+      "refgrader"
     ]
   },
   {
@@ -1450,12 +2084,22 @@
     ]
   },
   {
+    "name": "Stability AI StableLM Zephyr 3B",
+    "provider": "Stability AI",
+    "releaseDate": "2023-12-07",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "LLaVA InternLM 7B",
     "provider": "LLaVA",
     "releaseDate": "2023-12-11",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1479,6 +2123,7 @@
       "biggen",
       "bird_sql",
       "cruxeval",
+      "embodied_agent_interface",
       "helm_afr",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -1489,11 +2134,15 @@
       "helm_xstest",
       "ikp",
       "legalbench",
+      "lingoly",
+      "livebench",
       "mmdocrag",
       "mmlupro",
       "moe_cap",
       "multi_moe",
-      "subjective_qa"
+      "rewardbench",
+      "subjective_qa",
+      "synthpai"
     ]
   },
   {
@@ -1503,8 +2152,12 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
-      "wildvision"
+      "visual_riddles",
+      "wildvision",
+      "wonderbread"
     ]
   },
   {
@@ -1516,12 +2169,22 @@
     ]
   },
   {
+    "name": "Upstage SOLAR 10.7B",
+    "provider": "Upstage",
+    "releaseDate": "2023-12-13",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "ShareGPT4V 13B",
     "provider": "Unknown",
     "releaseDate": "2023-12-14",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1532,6 +2195,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1550,6 +2215,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1568,6 +2235,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1578,7 +2247,43 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Stability AI Stable Code 3B",
+    "provider": "Stability AI",
+    "releaseDate": "2024-01-16",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Zhipu GLM-4",
+    "provider": "Zhipu",
+    "releaseDate": "2024-01-16",
+    "benchmarks": [
+      "complexbench"
+    ]
+  },
+  {
+    "name": "Shanghai AI Lab InternLM2 20B",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-01-17",
+    "benchmarks": [
+      "complexbench",
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Shanghai AI Lab InternLM2 7B",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-01-17",
+    "benchmarks": [
+      "complexbench",
+      "rewardbench"
     ]
   },
   {
@@ -1598,6 +2303,14 @@
     ]
   },
   {
+    "name": "Stability AI StableLM 2 1.6B",
+    "provider": "Stability AI",
+    "releaseDate": "2024-01-19",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "01.AI Yi-VL",
     "provider": "01.AI",
     "releaseDate": "2024-01-23",
@@ -1612,6 +2325,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1622,6 +2337,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1632,6 +2349,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1642,6 +2361,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1652,6 +2373,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock"
@@ -1664,6 +2387,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1683,6 +2408,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1725,6 +2452,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1735,6 +2464,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1745,6 +2476,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1755,7 +2488,10 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
-      "mmmu_dev_val"
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "visual_riddles"
     ]
   },
   {
@@ -1765,7 +2501,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Shanghai AI Lab InternLM2 1.8B",
+    "provider": "Shanghai AI Lab",
+    "releaseDate": "2024-01-31",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -1777,12 +2523,30 @@
     ]
   },
   {
+    "name": "AllenAI OLMo 7B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-02-01",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "OpenBMB MiniCPM 2B",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-02-01",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "OpenBMB MiniCPM-V",
     "provider": "OpenBMB",
     "releaseDate": "2024-02-01",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "wildvision"
     ]
@@ -1794,6 +2558,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1806,13 +2572,41 @@
     ]
   },
   {
+    "name": "Alibaba Qwen1.5 0.5B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 1.8B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "livebench",
+      "rewardbench"
+    ]
+  },
+  {
     "name": "Alibaba Qwen1.5 14B",
     "provider": "Alibaba",
     "releaseDate": "2024-02-04",
     "benchmarks": [
       "alpacaeval",
       "biggen",
-      "mmlupro"
+      "complexbench",
+      "mmlupro",
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen1.5 4B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-02-04",
+    "benchmarks": [
+      "livebench",
+      "rewardbench"
     ]
   },
   {
@@ -1822,6 +2616,8 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
+      "complexbench",
+      "embodied_agent_interface",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -1829,7 +2625,9 @@
       "helm_simple_safety_tests",
       "helm_thaiexam",
       "helm_xstest",
-      "mmlupro"
+      "livebench",
+      "mmlupro",
+      "rewardbench"
     ]
   },
   {
@@ -1839,8 +2637,12 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
+      "complexbench",
+      "embodied_agent_interface",
       "helm_thaiexam",
-      "mmlupro"
+      "livebench",
+      "mmlupro",
+      "rewardbench"
     ]
   },
   {
@@ -1850,6 +2652,7 @@
     "benchmarks": [
       "atmossci_bench",
       "jetts",
+      "liveaopsbench",
       "proofaug"
     ]
   },
@@ -1860,7 +2663,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "CLIPZyme",
+    "provider": "Other",
+    "releaseDate": "2024-02-09",
+    "benchmarks": [
+      "care_enzymes"
     ]
   },
   {
@@ -1870,6 +2683,7 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
       "mmmu_dev_val"
     ]
   },
@@ -1880,6 +2694,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -1890,6 +2706,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "wildvision"
     ]
@@ -1899,7 +2717,8 @@
     "provider": "Biomistral",
     "releaseDate": "2024-02-15",
     "benchmarks": [
-      "afrimedqa"
+      "afrimedqa",
+      "perumedqa"
     ]
   },
   {
@@ -1921,6 +2740,9 @@
       "helm_thaiexam",
       "helm_xstest",
       "image2struct",
+      "lingoly",
+      "livebench",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -1931,13 +2753,20 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "mmbench_v11",
       "mmdocrag",
       "mmlupro",
       "mmmu_dev_val",
+      "planbench",
       "rakuda",
+      "rewardbench",
+      "sustainable_food",
+      "synthpai",
       "tengu",
       "theagentcompany",
-      "vhelm"
+      "tumlu",
+      "vhelm",
+      "visual_riddles"
     ]
   },
   {
@@ -1963,9 +2792,11 @@
     "benchmarks": [
       "alpacaeval",
       "biggen",
+      "embodied_agent_interface",
       "helm_afr",
       "infibench",
-      "monkey_power_laws"
+      "monkey_power_laws",
+      "rewardbench"
     ]
   },
   {
@@ -1976,9 +2807,14 @@
       "afrimedqa",
       "alpacaeval",
       "biggen",
+      "embodied_agent_interface",
       "infibench",
+      "lingoly",
+      "livebench",
       "mmlupro",
-      "monkey_power_laws"
+      "monkey_power_laws",
+      "rewardbench",
+      "synthpai"
     ]
   },
   {
@@ -2004,7 +2840,9 @@
     "provider": "Mistral",
     "releaseDate": "2024-02-26",
     "benchmarks": [
-      "infibench"
+      "infibench",
+      "livebench",
+      "mtbbench"
     ]
   },
   {
@@ -2013,6 +2851,14 @@
     "releaseDate": "2024-02-26",
     "benchmarks": [
       "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "HuggingFace Zephyr 7B Gemma",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-03-01",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2034,6 +2880,7 @@
       "bertaqa",
       "biggen",
       "bird_sql",
+      "embodied_agent_interface",
       "hallusionbench",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -2045,8 +2892,13 @@
       "ikp",
       "indeterminacy",
       "infibench",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
+      "nyu_ctf_bench",
       "rakuda",
+      "synthpai",
       "tengu",
       "vhelm",
       "wildvision"
@@ -2066,6 +2918,8 @@
       "biggen",
       "bird_sql",
       "clasheval",
+      "complexbench",
+      "embodied_agent_interface",
       "goodai_ltm_benchmark",
       "hallusionbench",
       "helm_airbench",
@@ -2077,8 +2931,15 @@
       "helm_xstest",
       "image2struct",
       "infibench",
+      "lingoly",
+      "livebench",
+      "mathvista_mini",
+      "mj_bench",
+      "mmbench_v11",
       "mmmu_dev_val",
+      "planbench",
       "rakuda",
+      "synthpai",
       "tengu",
       "vhelm",
       "wildvision"
@@ -2107,11 +2968,16 @@
       "helm_xstest",
       "image2struct",
       "infibench",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "rakuda",
+      "synthpai",
       "tengu",
       "vhelm",
-      "wildvision"
+      "wildvision",
+      "wonderbread"
     ]
   },
   {
@@ -2119,6 +2985,7 @@
     "provider": "Anthropic",
     "releaseDate": "2024-03-04",
     "benchmarks": [
+      "llms_lean_formalization",
       "mmlupro"
     ]
   },
@@ -2137,7 +3004,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "01.AI Yi 9B",
+    "provider": "01.AI",
+    "releaseDate": "2024-03-06",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2147,6 +3024,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2157,6 +3036,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "wildvision"
     ]
@@ -2176,7 +3057,24 @@
       "helm_simple_safety_tests",
       "helm_thaiexam",
       "helm_xstest",
+      "livebench",
       "mmlupro"
+    ]
+  },
+  {
+    "name": "Berkeley Starling RM 34B",
+    "provider": "Berkeley",
+    "releaseDate": "2024-03-20",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Matter 0.1 7B",
+    "provider": "0-Hero",
+    "releaseDate": "2024-03-21",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2186,6 +3084,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2209,7 +3109,8 @@
     "provider": "Alibaba",
     "releaseDate": "2024-03-28",
     "benchmarks": [
-      "moe_cap"
+      "moe_cap",
+      "rewardbench"
     ]
   },
   {
@@ -2218,6 +3119,30 @@
     "releaseDate": "2024-04",
     "benchmarks": [
       "helm_thaiexam"
+    ]
+  },
+  {
+    "name": "Bagel 34B",
+    "provider": "Community",
+    "releaseDate": "2024-04-01",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Eurus 7B",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-04-02",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "Eurus RM 7B",
+    "provider": "OpenBMB",
+    "releaseDate": "2024-04-02",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2241,7 +3166,9 @@
       "helm_simple_safety_tests",
       "helm_thaiexam",
       "helm_xstest",
-      "ikp"
+      "ikp",
+      "lingoly",
+      "livebench"
     ]
   },
   {
@@ -2261,12 +3188,22 @@
     ]
   },
   {
+    "name": "Stability AI StableLM 2 12B",
+    "provider": "Stability AI",
+    "releaseDate": "2024-04-08",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "InternLM-XComposer2 1.8B",
     "provider": "Shanghai AI Lab",
     "releaseDate": "2024-04-09",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2278,6 +3215,7 @@
       "agc_bench",
       "alpacaeval",
       "babilong",
+      "embodied_agent_interface",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -2286,8 +3224,18 @@
       "helm_thaiexam",
       "helm_xstest",
       "ikp",
+      "livebench",
       "moe_cap",
-      "subjective_qa"
+      "subjective_qa",
+      "synthpai"
+    ]
+  },
+  {
+    "name": "HuggingFace StarChat2 15B",
+    "provider": "Hugging Face",
+    "releaseDate": "2024-04-12",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2297,6 +3245,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2307,6 +3257,9 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mj_bench",
+      "mmbench_v11",
       "mmmu_dev_val",
       "wildvision"
     ]
@@ -2318,6 +3271,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2339,6 +3294,7 @@
       "alpacaeval",
       "appworld",
       "biggen",
+      "complexbench",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -2348,9 +3304,13 @@
       "helm_xstest",
       "icpc2_code_selector",
       "ikp",
+      "lingoly",
+      "livebench",
       "mmlupro",
       "monkey_power_laws",
+      "planbench",
       "subjective_qa",
+      "synthpai",
       "worldcentralbanks"
     ]
   },
@@ -2366,6 +3326,7 @@
       "biggen",
       "causal_axioms",
       "clasheval",
+      "complexbench",
       "hallusionbench",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -2375,11 +3336,18 @@
       "helm_thaiexam",
       "helm_xstest",
       "ikp",
+      "lingoly",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmlupro",
       "mmmu_dev_val",
       "monkey_power_laws",
       "ood_prediction",
-      "statqa"
+      "perumedqa",
+      "rewardbench",
+      "statqa",
+      "synthpai"
     ]
   },
   {
@@ -2389,7 +3357,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "PKU Beaver 7B v2.0",
+    "provider": "Pku-Alignment",
+    "releaseDate": "2024-04-19",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2397,7 +3375,8 @@
     "provider": "Saama",
     "releaseDate": "2024-04-20",
     "benchmarks": [
-      "afrimedqa"
+      "afrimedqa",
+      "perumedqa"
     ]
   },
   {
@@ -2407,6 +3386,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2417,6 +3398,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2426,6 +3409,7 @@
     "releaseDate": "2024-04-23",
     "benchmarks": [
       "afrimedqa",
+      "livebench",
       "llmail_inject"
     ]
   },
@@ -2439,7 +3423,16 @@
       "biggen",
       "dbpa",
       "ikp",
+      "livebench",
       "mmlupro"
+    ]
+  },
+  {
+    "name": "Microsoft Phi-3 Small",
+    "provider": "Microsoft",
+    "releaseDate": "2024-04-23",
+    "benchmarks": [
+      "livebench"
     ]
   },
   {
@@ -2447,7 +3440,8 @@
     "provider": "Saama",
     "releaseDate": "2024-04-24",
     "benchmarks": [
-      "afrimedqa"
+      "afrimedqa",
+      "perumedqa"
     ]
   },
   {
@@ -2455,7 +3449,8 @@
     "provider": "Alibaba",
     "releaseDate": "2024-04-25",
     "benchmarks": [
-      "mmlupro"
+      "mmlupro",
+      "synthpai"
     ]
   },
   {
@@ -2465,6 +3460,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2483,6 +3480,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2493,6 +3492,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2503,6 +3504,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2513,7 +3516,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Prometheus 2 8x7B",
+    "provider": "Community",
+    "releaseDate": "2024-05-02",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2523,6 +3536,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2533,6 +3548,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2543,6 +3560,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2553,6 +3572,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2571,6 +3592,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2592,12 +3615,14 @@
       "biggen",
       "bridging_gap",
       "clasheval",
+      "classroom_ai",
       "corebench",
       "das_med_hallucination",
       "disco",
       "dqvis",
       "eduguardbench",
       "edumath",
+      "embodied_agent_interface",
       "engdesign",
       "fgbench",
       "goodai_ltm_benchmark",
@@ -2616,8 +3641,15 @@
       "image2struct",
       "infibench",
       "kernelbench",
+      "lambda_fp_course",
+      "lingoly",
       "live_agent_risk",
+      "livebench",
+      "llm4ir",
+      "llm_bp_tag",
+      "llm_survey_simulation",
       "matharena",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -2628,25 +3660,33 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "mj_bench",
+      "mmbench_v11",
       "mmdocrag",
       "mmlupro",
       "mmmu_dev_val",
+      "mtbbench",
       "multimodal_stem_ai",
       "nester",
+      "nyu_ctf_bench",
       "phyblock",
+      "planbench",
       "psychosis_bench",
       "radar",
       "rakuda",
       "real_webagents",
       "researchcodebench",
+      "rewardbench",
       "safeagentbench",
       "scale_mrt",
       "statqa",
       "subjective_qa",
+      "sustainable_food",
       "swe_smith",
       "taubench",
       "tengu",
       "theagentcompany",
+      "tumlu",
       "vhelm",
       "visualwebarena",
       "vl_rewardbench",
@@ -2663,6 +3703,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2683,11 +3725,17 @@
       "helm_simple_safety_tests",
       "helm_thaiexam",
       "helm_xstest",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmlupro",
       "mmmu_dev_val",
       "phyblock",
+      "planbench",
       "rakuda",
+      "rewardbench",
       "tengu",
+      "tumlu",
       "vhelm"
     ]
   },
@@ -2706,6 +3754,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2716,6 +3766,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2726,6 +3778,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2736,6 +3790,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2770,6 +3826,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2780,6 +3838,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2790,6 +3850,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2800,6 +3862,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2810,6 +3874,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2820,6 +3886,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2838,6 +3906,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2848,6 +3918,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2863,7 +3935,16 @@
       "helm_harmbench",
       "helm_simple_safety_tests",
       "helm_thaiexam",
-      "helm_xstest"
+      "helm_xstest",
+      "livebench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen2 7B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-06-07",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -2873,6 +3954,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2883,6 +3966,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2895,12 +3980,38 @@
     ]
   },
   {
+    "name": "AllenAI Tulu 2 8B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-06-13",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 2.5 13B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-06-13",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "AllenAI Tulu 2.5 70B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-06-13",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "LLaVA-NeXT-Interleave Qwen 7B",
     "provider": "LLaVA",
     "releaseDate": "2024-06-16",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2923,6 +4034,7 @@
       "alignment_faking",
       "alpacaeval",
       "corebench",
+      "embodied_agent_interface",
       "hallusionbench",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -2936,7 +4048,9 @@
       "indeterminacy",
       "kernelbench",
       "live_agent_risk",
+      "livebench",
       "matharena",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -2947,18 +4061,23 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "mmbench_v11",
       "mmdocrag",
       "mmlupro",
       "mmmu_dev_val",
+      "nyu_ctf_bench",
       "phyblock",
+      "planbench",
       "rakuda",
       "real_webagents",
       "researchcodebench",
       "scale_mrt",
+      "sustainable_food",
       "swe_smith",
       "taubench",
       "tengu",
       "theagentcompany",
+      "tumlu",
       "vhelm",
       "vl_rewardbench"
     ]
@@ -2970,6 +4089,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2980,6 +4101,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -2990,6 +4113,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3018,7 +4143,10 @@
       "atmossci_bench",
       "helm_afr",
       "icpc2_code_selector",
-      "ikp"
+      "ikp",
+      "livebench",
+      "rewardbench",
+      "tumlu"
     ]
   },
   {
@@ -3030,7 +4158,9 @@
       "babilong",
       "dbpa",
       "helm_afr",
-      "judgetuning"
+      "judgetuning",
+      "livebench",
+      "tumlu"
     ]
   },
   {
@@ -3042,12 +4172,22 @@
     ]
   },
   {
+    "name": "Harmonic Aristotle",
+    "provider": "Harmonic",
+    "releaseDate": "2024-07",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
     "name": "InternLM-XComposer2.5",
     "provider": "Shanghai AI Lab",
     "releaseDate": "2024-07-02",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3058,6 +4198,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3068,6 +4210,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3078,6 +4222,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3088,6 +4234,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3098,6 +4246,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3108,6 +4258,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3118,6 +4270,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "vl_rewardbench"
     ]
@@ -3129,6 +4283,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3139,6 +4295,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3157,6 +4315,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3183,6 +4343,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3231,6 +4393,8 @@
       "alpacaeval",
       "atmossci_bench",
       "babilong",
+      "classroom_ai",
+      "cmmlu",
       "corebench",
       "cseo_bench",
       "faithcot",
@@ -3248,8 +4412,12 @@
       "indeterminacy",
       "ineqmath",
       "judgetuning",
+      "lambda_fp_course",
       "live_agent_risk",
+      "livebench",
+      "llm_survey_simulation",
       "llmail_inject",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -3260,13 +4428,17 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "mmbench_v11",
       "mmdocrag",
       "mmlupro",
       "mmmu_dev_val",
       "nester",
       "phyblock",
+      "planbench",
       "rakuda",
+      "reliancescope",
       "researchcodebench",
+      "rewardbench",
       "scale_mrt",
       "sgrades",
       "tengu",
@@ -3281,6 +4453,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3300,7 +4474,9 @@
       "helm_thaiexam",
       "helm_xstest",
       "icpc2_code_selector",
-      "kernelbench"
+      "kernelbench",
+      "planbench",
+      "rewardbench"
     ]
   },
   {
@@ -3324,7 +4500,10 @@
       "kernelbench",
       "live_agent_risk",
       "mmlupro",
-      "theagentcompany"
+      "rewardbench",
+      "sustainable_food",
+      "theagentcompany",
+      "tumlu"
     ]
   },
   {
@@ -3352,10 +4531,14 @@
       "hivmedqa",
       "ikp",
       "jetts",
+      "liveaopsbench",
       "mmdocrag",
       "mmlupro",
+      "mtbbench",
       "real_webagents",
-      "revolve"
+      "revolve",
+      "rewardbench",
+      "tumlu"
     ]
   },
   {
@@ -3365,6 +4548,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3375,6 +4560,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3384,7 +4571,9 @@
     "releaseDate": "2024-07-24",
     "benchmarks": [
       "alpacaeval",
+      "embodied_agent_interface",
       "helm_airbench",
+      "livebench",
       "putnam_axiom"
     ]
   },
@@ -3393,7 +4582,9 @@
     "provider": "Google",
     "releaseDate": "2024-07-31",
     "benchmarks": [
-      "ikp"
+      "ikp",
+      "livebench",
+      "rewardbench"
     ]
   },
   {
@@ -3437,6 +4628,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3447,6 +4640,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3457,6 +4652,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3467,6 +4664,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3477,6 +4676,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3487,6 +4688,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3513,6 +4716,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3523,6 +4728,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3533,6 +4740,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3543,6 +4752,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "researchcodebench"
     ]
@@ -3563,6 +4774,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3581,6 +4794,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "vl_rewardbench"
     ]
@@ -3600,6 +4815,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3610,6 +4827,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3620,6 +4839,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3630,6 +4851,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3640,6 +4863,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3651,6 +4876,8 @@
       "ai2d_test",
       "disco",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "vl_rewardbench"
     ]
@@ -3662,6 +4889,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3672,6 +4901,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3704,12 +4935,22 @@
     ]
   },
   {
+    "name": "Reflection 70B",
+    "provider": "Hyperwrite",
+    "releaseDate": "2024-09-05",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "Tencent POINTS Yi 1.5 9B",
     "provider": "Tencent",
     "releaseDate": "2024-09-07",
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3720,6 +4961,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3730,6 +4973,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3739,6 +4984,7 @@
     "releaseDate": "2024-09-12",
     "benchmarks": [
       "corebench",
+      "embodied_agent_interface",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -3746,7 +4992,9 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "icpc2_code_selector",
+      "livebench",
       "multimodal_stem_ai",
+      "planbench",
       "real_webagents"
     ]
   },
@@ -3757,6 +5005,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3767,6 +5017,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3794,7 +5046,8 @@
       "appworld",
       "atmossci_bench",
       "jetts",
-      "mmdocrag"
+      "mmdocrag",
+      "mtbbench"
     ]
   },
   {
@@ -3818,6 +5071,7 @@
       "igakuqa119",
       "ikp",
       "jetts",
+      "livebench",
       "mmdocrag",
       "putnam_axiom",
       "theagentcompany",
@@ -3837,8 +5091,11 @@
       "helm_airbench",
       "ikp",
       "jetts",
+      "lambda_fp_course",
       "mmdocrag",
-      "naep_llm_students"
+      "mtbbench",
+      "naep_llm_students",
+      "tumlu"
     ]
   },
   {
@@ -3846,7 +5103,8 @@
     "provider": "Alibaba",
     "releaseDate": "2024-09-19",
     "benchmarks": [
-      "atmossci_bench"
+      "atmossci_bench",
+      "liveaopsbench"
     ]
   },
   {
@@ -3854,7 +5112,8 @@
     "provider": "Alibaba",
     "releaseDate": "2024-09-19",
     "benchmarks": [
-      "atmossci_bench"
+      "atmossci_bench",
+      "liveaopsbench"
     ]
   },
   {
@@ -3864,6 +5123,7 @@
     "benchmarks": [
       "atmossci_bench",
       "jetts",
+      "liveaopsbench",
       "naep_llm_students"
     ]
   },
@@ -3874,6 +5134,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3884,6 +5146,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3894,6 +5158,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3904,6 +5170,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3914,6 +5182,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3925,6 +5195,8 @@
       "agc_bench",
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3946,7 +5218,9 @@
       "agc_bench",
       "icpc2_code_selector",
       "ikp",
-      "mmdocrag"
+      "liveaopsbench",
+      "mmdocrag",
+      "rewardbench"
     ]
   },
   {
@@ -3957,7 +5231,10 @@
       "ai2d_test",
       "disco",
       "hallusionbench",
-      "mmmu_dev_val"
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "mtbbench"
     ]
   },
   {
@@ -3975,6 +5252,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -3983,6 +5262,8 @@
     "provider": "Google",
     "releaseDate": "2024-10-03",
     "benchmarks": [
+      "lambda_fp_course",
+      "livebench",
       "phyblock"
     ]
   },
@@ -3993,6 +5274,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4016,7 +5299,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "NVIDIA Llama 3.1 Nemotron 70B",
+    "provider": "NVIDIA",
+    "releaseDate": "2024-10-15",
+    "benchmarks": [
+      "livebench"
     ]
   },
   {
@@ -4052,6 +5345,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4062,6 +5357,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4072,7 +5369,33 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "OpenCompass CompassJudger-1 1.5B",
+    "provider": "OpenCompass",
+    "releaseDate": "2024-10-21",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "OpenCompass CompassJudger-1 14B",
+    "provider": "OpenCompass",
+    "releaseDate": "2024-10-21",
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
+    "name": "OpenCompass CompassJudger-1 7B",
+    "provider": "OpenCompass",
+    "releaseDate": "2024-10-21",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -4082,6 +5405,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4093,11 +5418,14 @@
       "cseo_bench",
       "helm_afr",
       "ikp",
+      "livebench",
+      "llm_survey_simulation",
       "mmlupro",
       "phyblock",
       "researchcodebench",
       "scale_mrt",
-      "scigym"
+      "scigym",
+      "tumlu"
     ]
   },
   {
@@ -4123,6 +5451,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4133,6 +5463,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4143,6 +5475,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4175,6 +5509,7 @@
     "provider": "Google",
     "releaseDate": "2024-11",
     "benchmarks": [
+      "livebench",
       "naep_llm_students"
     ]
   },
@@ -4185,6 +5520,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4194,6 +5531,7 @@
     "releaseDate": "2024-11-12",
     "benchmarks": [
       "atmossci_bench",
+      "livebench",
       "researchcodebench"
     ]
   },
@@ -4212,6 +5550,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4222,6 +5562,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4240,6 +5582,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4250,6 +5594,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4284,6 +5630,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4296,7 +5644,10 @@
       "atmossci_bench",
       "icpc2_code_selector",
       "ikp",
+      "liveaopsbench",
+      "livebench",
       "matharena",
+      "planbench",
       "sciarena"
     ]
   },
@@ -4307,6 +5658,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4317,6 +5670,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4344,6 +5699,7 @@
     "benchmarks": [
       "agc_bench",
       "ikp",
+      "livebench",
       "researchcodebench"
     ]
   },
@@ -4354,6 +5710,7 @@
     "benchmarks": [
       "atmossci_bench",
       "corebench",
+      "embodied_agent_interface",
       "engdesign",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -4364,7 +5721,9 @@
       "icpc2_code_selector",
       "ikp",
       "kernelbench",
+      "livebench",
       "phyblock",
+      "planbench",
       "real_webagents",
       "researchcodebench"
     ]
@@ -4376,6 +5735,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4386,6 +5747,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "ocrbench_v2",
@@ -4399,6 +5762,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4409,6 +5774,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock"
@@ -4421,6 +5788,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "phyblock"
     ]
@@ -4432,6 +5801,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock"
@@ -4444,9 +5815,19 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock"
+    ]
+  },
+  {
+    "name": "Google Gemini Experimental 1206",
+    "provider": "Google",
+    "releaseDate": "2024-12-06",
+    "benchmarks": [
+      "livebench"
     ]
   },
   {
@@ -4461,6 +5842,7 @@
       "hivmedqa",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
       "mathconstraint",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
@@ -4473,11 +5855,20 @@
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
       "mmdocrag",
+      "mtbbench",
       "naturalreasoning",
       "real_webagents",
       "reasoning_gym",
       "researchcodebench",
       "theagentcompany"
+    ]
+  },
+  {
+    "name": "AllenAI SmolTulu 1.7B",
+    "provider": "AllenAI",
+    "releaseDate": "2024-12-11",
+    "benchmarks": [
+      "rewardbench"
     ]
   },
   {
@@ -4495,7 +5886,10 @@
       "helm_airbench",
       "icpc2_code_selector",
       "ikp",
+      "lambda_fp_course",
+      "livebench",
       "matharena",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -4506,9 +5900,11 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock",
+      "planbench",
       "rakuda",
       "researchcodebench",
       "taubench",
@@ -4524,6 +5920,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4533,6 +5931,8 @@
     "releaseDate": "2024-12-12",
     "benchmarks": [
       "ikp",
+      "liveaopsbench",
+      "livebench",
       "rakuda",
       "tengu"
     ]
@@ -4552,6 +5952,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4562,6 +5964,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4572,6 +5976,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4582,6 +5988,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4599,6 +6007,7 @@
     "releaseDate": "2024-12-20",
     "benchmarks": [
       "aider",
+      "csedb",
       "cseo_bench",
       "das_med_hallucination",
       "engdesign",
@@ -4634,6 +6043,7 @@
       "helm_xstest",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -4657,6 +6067,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4669,6 +6081,14 @@
     ]
   },
   {
+    "name": "Alibaba QVQ 72B",
+    "provider": "Alibaba",
+    "releaseDate": "2024-12-25",
+    "benchmarks": [
+      "mathvista_mini"
+    ]
+  },
+  {
     "name": "DeepSeek V3",
     "provider": "DeepSeek",
     "releaseDate": "2024-12-26",
@@ -4676,6 +6096,7 @@
       "agc_bench",
       "agi_elo",
       "aider",
+      "cmmlu",
       "das_med_hallucination",
       "eduguardbench",
       "ehrflowbench",
@@ -4691,6 +6112,8 @@
       "ikp",
       "indeterminacy",
       "kernelbench",
+      "livebench",
+      "llm_survey_simulation",
       "matharena",
       "mmdocrag",
       "rakuda",
@@ -4699,6 +6122,7 @@
       "sciarena",
       "taubench",
       "tengu",
+      "tumlu",
       "worldcentralbanks"
     ]
   },
@@ -4709,7 +6133,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "URSA 8B",
+    "provider": "Unknown",
+    "releaseDate": "2025-01-08",
+    "benchmarks": [
+      "mathvista_mini"
     ]
   },
   {
@@ -4719,8 +6153,18 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "MiniMax Text-01",
+    "provider": "MiniMax",
+    "releaseDate": "2025-01-15",
+    "benchmarks": [
+      "cmmlu"
     ]
   },
   {
@@ -4738,6 +6182,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4749,10 +6195,13 @@
       "agi_elo",
       "algotune",
       "cellverse",
+      "cmmlu",
+      "csedb",
       "das_med_hallucination",
       "eduguardbench",
       "ehrflowbench",
       "engdesign",
+      "frontieror",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -4762,6 +6211,7 @@
       "icpc2_code_selector",
       "ikp",
       "kernelbench",
+      "livebench",
       "matharena",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
@@ -4775,6 +6225,7 @@
       "medhelm_race_based_med",
       "mlrbench",
       "mmdocrag",
+      "planbench",
       "researchcodebench",
       "scale_mrt",
       "sciarena"
@@ -4788,7 +6239,16 @@
       "atmossci_bench",
       "eduguardbench",
       "ikp",
+      "livebench",
       "mmdocrag"
+    ]
+  },
+  {
+    "name": "DeepSeek R1 Distill Llama 8B",
+    "provider": "DeepSeek",
+    "releaseDate": "2025-01-20",
+    "benchmarks": [
+      "liveaopsbench"
     ]
   },
   {
@@ -4797,7 +6257,8 @@
     "releaseDate": "2025-01-20",
     "benchmarks": [
       "agi_elo",
-      "icpc2_code_selector"
+      "icpc2_code_selector",
+      "liveaopsbench"
     ]
   },
   {
@@ -4806,6 +6267,8 @@
     "releaseDate": "2025-01-20",
     "benchmarks": [
       "ikp",
+      "liveaopsbench",
+      "livebench",
       "mmdocrag"
     ]
   },
@@ -4815,7 +6278,8 @@
     "releaseDate": "2025-01-20",
     "benchmarks": [
       "agi_elo",
-      "icpc2_code_selector"
+      "icpc2_code_selector",
+      "liveaopsbench"
     ]
   },
   {
@@ -4825,6 +6289,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4835,6 +6301,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4845,6 +6313,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4863,6 +6333,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "phyblock",
       "sketchjudge"
@@ -4875,6 +6347,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "sketchjudge"
@@ -4887,6 +6361,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock",
@@ -4900,6 +6376,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val"
     ]
@@ -4943,7 +6421,10 @@
       "hallusionbench",
       "helm_airbench",
       "icpc2_code_selector",
+      "livebench",
       "matharena",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "phyblock"
@@ -4956,6 +6437,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -4987,6 +6470,7 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "ikp",
+      "livebench",
       "matharena",
       "mmdocrag",
       "real_webagents",
@@ -5017,6 +6501,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5027,6 +6513,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5037,6 +6525,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5047,6 +6537,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5057,6 +6549,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5067,6 +6561,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5077,6 +6573,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5087,6 +6585,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5097,6 +6597,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5110,6 +6612,7 @@
       "agi_elo",
       "ai2d_test",
       "chartmuseum",
+      "csedb",
       "das_med_hallucination",
       "eduguardbench",
       "engdesign",
@@ -5122,6 +6625,8 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "ikp",
+      "lambda_fp_course",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -5133,8 +6638,10 @@
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
       "mlrbench",
+      "mmbench_v11",
       "mmmu_dev_val",
       "multimodal_stem_ai",
+      "nyu_ctf_bench",
       "os_harm",
       "phyblock",
       "real_webagents",
@@ -5158,6 +6665,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5175,6 +6684,8 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "icpc2_code_selector",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5185,6 +6696,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5214,7 +6727,11 @@
       "babilong",
       "hallusionbench",
       "ikp",
-      "mmmu_dev_val"
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
+      "mmmu_dev_val",
+      "mtbbench"
     ]
   },
   {
@@ -5234,11 +6751,16 @@
       "agi_elo",
       "ai2d_test",
       "babilong",
+      "cmmlu",
       "hallusionbench",
       "hivmedqa",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
+      "mtbbench",
       "real_webagents",
       "reasoning_gym",
       "sketchjudge"
@@ -5255,6 +6777,9 @@
       "hallusionbench",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val",
       "sketchjudge"
     ]
@@ -5277,6 +6802,7 @@
     "releaseDate": "2025-03-13",
     "benchmarks": [
       "ikp",
+      "livebench",
       "researchcodebench"
     ]
   },
@@ -5298,6 +6824,22 @@
     ]
   },
   {
+    "name": "Taichu-VLR 3B",
+    "provider": "Unknown",
+    "releaseDate": "2025-03-22",
+    "benchmarks": [
+      "mathvista_mini"
+    ]
+  },
+  {
+    "name": "Taichu-VLR 7B",
+    "provider": "Unknown",
+    "releaseDate": "2025-03-22",
+    "benchmarks": [
+      "mathvista_mini"
+    ]
+  },
+  {
     "name": "Alibaba Qwen2.5-VL 32B",
     "provider": "Alibaba",
     "releaseDate": "2025-03-24",
@@ -5314,6 +6856,7 @@
       "ai2d_test",
       "algotune",
       "benger",
+      "csedb",
       "das_med_hallucination",
       "edu_circuit_hw",
       "engdesign",
@@ -5327,7 +6870,9 @@
       "hivmedqa",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
       "matharena",
+      "mathvista_mini",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -5339,6 +6884,7 @@
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
       "mlrbench",
+      "mmbench_v11",
       "mmdocrag",
       "mmmu_dev_val",
       "os_harm",
@@ -5360,6 +6906,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5387,6 +6935,7 @@
       "agc_bench",
       "agi_elo",
       "benger",
+      "frontieror",
       "helm_airbench",
       "helm_anthropic_redteam",
       "helm_bbq",
@@ -5395,8 +6944,10 @@
       "helm_xstest",
       "icpc2_code_selector",
       "ikp",
+      "livebench",
       "matharena",
       "mmdocrag",
+      "perfcodebench",
       "psychosis_bench",
       "real_webagents",
       "reasoning_gym",
@@ -5420,6 +6971,7 @@
       "icpc2_code_selector",
       "ikp",
       "mmdocrag",
+      "perfcodebench",
       "reasoning_gym",
       "researchcodebench",
       "sciarena",
@@ -5433,7 +6985,32 @@
     "provider": "Hidream",
     "releaseDate": "2025-04-07",
     "benchmarks": [
-      "finegrain_t2i"
+      "finegrain_t2i",
+      "kris_bench"
+    ]
+  },
+  {
+    "name": "VLAA-Thinker 3B",
+    "provider": "Unknown",
+    "releaseDate": "2025-04-10",
+    "benchmarks": [
+      "mathvista_mini"
+    ]
+  },
+  {
+    "name": "VLAA-Thinker 7B",
+    "provider": "Unknown",
+    "releaseDate": "2025-04-10",
+    "benchmarks": [
+      "mathvista_mini"
+    ]
+  },
+  {
+    "name": "VLM-R1",
+    "provider": "Unknown",
+    "releaseDate": "2025-04-10",
+    "benchmarks": [
+      "mathvista_mini"
     ]
   },
   {
@@ -5449,7 +7026,8 @@
     "provider": "OpenGVLab",
     "releaseDate": "2025-04-11",
     "benchmarks": [
-      "mmdocrag"
+      "mmdocrag",
+      "mtbbench"
     ]
   },
   {
@@ -5457,7 +7035,8 @@
     "provider": "OpenGVLab",
     "releaseDate": "2025-04-11",
     "benchmarks": [
-      "mmdocrag"
+      "mmdocrag",
+      "mtbbench"
     ]
   },
   {
@@ -5494,8 +7073,10 @@
       "helm_xstest",
       "icpc2_code_selector",
       "ikp",
+      "kmmlu",
       "live_agent_risk",
       "mmdocrag",
+      "nyu_ctf_bench",
       "os_harm",
       "real_webagents",
       "researchcodebench",
@@ -5524,6 +7105,7 @@
       "helm_xstest",
       "icpc2_code_selector",
       "ikp",
+      "kmmlu",
       "mmdocrag",
       "researchcodebench",
       "scale_mrt",
@@ -5624,6 +7206,7 @@
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
       "mlrbench",
+      "mtbbench",
       "os_harm",
       "psychosis_bench",
       "researchcodebench",
@@ -5734,6 +7317,7 @@
     "releaseDate": "2025-04-29",
     "benchmarks": [
       "atmossci_bench",
+      "csedb",
       "eduguardbench",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -5755,7 +7339,9 @@
     "benchmarks": [
       "ikp",
       "matharena",
+      "matharena_platform",
       "mmdocrag",
+      "reliancescope",
       "software_world_models"
     ]
   },
@@ -5767,6 +7353,7 @@
       "eduguardbench",
       "ikp",
       "mmdocrag",
+      "mtbbench",
       "sciarena"
     ]
   },
@@ -5776,6 +7363,7 @@
     "releaseDate": "2025-04-29",
     "benchmarks": [
       "matharena",
+      "matharena_platform",
       "mmdocrag"
     ]
   },
@@ -5786,7 +7374,9 @@
     "benchmarks": [
       "eduguardbench",
       "ikp",
-      "mmdocrag"
+      "mmdocrag",
+      "mtbbench",
+      "reliancescope"
     ]
   },
   {
@@ -5890,6 +7480,14 @@
     ]
   },
   {
+    "name": "Microsoft MediPhi",
+    "provider": "Microsoft",
+    "releaseDate": "2025-05-15",
+    "benchmarks": [
+      "perumedqa"
+    ]
+  },
+  {
     "name": "Stanford Marin 8B",
     "provider": "Stanford",
     "releaseDate": "2025-05-19",
@@ -5923,7 +7521,16 @@
     "provider": "Google",
     "releaseDate": "2025-05-20",
     "benchmarks": [
-      "hivmedqa"
+      "hivmedqa",
+      "perumedqa"
+    ]
+  },
+  {
+    "name": "Google MedGemma 4B",
+    "provider": "Google",
+    "releaseDate": "2025-05-20",
+    "benchmarks": [
+      "perumedqa"
     ]
   },
   {
@@ -5951,6 +7558,7 @@
     "benchmarks": [
       "agc_bench",
       "alignment_faking",
+      "auditing_sabotage_bench",
       "das_med_hallucination",
       "helm_airbench",
       "helm_anthropic_redteam",
@@ -5982,6 +7590,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -5990,7 +7600,8 @@
     "provider": "Black Forest Labs",
     "releaseDate": "2025-05-29",
     "benchmarks": [
-      "finegrain_t2i"
+      "finegrain_t2i",
+      "kris_bench"
     ]
   },
   {
@@ -6000,6 +7611,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -6134,7 +7747,8 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "ikp",
-      "matharena"
+      "matharena",
+      "perfcodebench"
     ]
   },
   {
@@ -6159,6 +7773,14 @@
     "releaseDate": "2025-07-22",
     "benchmarks": [
       "algotune"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3-Coder Plus",
+    "provider": "Alibaba",
+    "releaseDate": "2025-07-22",
+    "benchmarks": [
+      "frontieror"
     ]
   },
   {
@@ -6270,6 +7892,7 @@
       "medhelm_medhallu",
       "medhelm_pubmed_qa",
       "medhelm_race_based_med",
+      "perfcodebench",
       "psychosis_bench",
       "real_webagents",
       "sketchjudge",
@@ -6303,6 +7926,7 @@
     "releaseDate": "2025-08-07",
     "benchmarks": [
       "algotune",
+      "auditing_sabotage_bench",
       "helm_anthropic_redteam",
       "helm_bbq",
       "helm_harmbench",
@@ -6310,6 +7934,7 @@
       "helm_xstest",
       "ikp",
       "live_agent_risk",
+      "llm_survey_simulation",
       "medhelm_ehr_sql",
       "medhelm_head_qa",
       "medhelm_med_mcqa",
@@ -6468,6 +8093,7 @@
       "agc_bench",
       "algotune",
       "arcagi",
+      "auditing_sabotage_bench",
       "dtap_bench",
       "edu_circuit_hw",
       "helm_anthropic_redteam",
@@ -6476,6 +8102,7 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "ikp",
+      "perfcodebench",
       "real_webagents",
       "tau2_bench"
     ]
@@ -6489,6 +8116,7 @@
       "dataclawbench",
       "ikp",
       "matharena",
+      "matharena_platform",
       "real_webagents",
       "theagentcompany"
     ]
@@ -6551,6 +8179,7 @@
       "agc_bench",
       "arcagi",
       "ceobench",
+      "coffeebench",
       "helm_anthropic_redteam",
       "helm_bbq",
       "helm_harmbench",
@@ -6583,6 +8212,7 @@
     "releaseDate": "2025-11-12",
     "benchmarks": [
       "agc_bench",
+      "auditing_sabotage_bench",
       "dtap_bench",
       "edu_circuit_hw",
       "helm_anthropic_redteam",
@@ -6592,14 +8222,6 @@
       "helm_xstest",
       "ikp",
       "workbench_revisited"
-    ]
-  },
-  {
-    "name": "xAI Grok 4.1",
-    "provider": "xAI",
-    "releaseDate": "2025-11-17",
-    "benchmarks": [
-      "researchclawbench"
     ]
   },
   {
@@ -6625,8 +8247,10 @@
       "helm_simple_safety_tests",
       "helm_xstest",
       "matharena",
+      "matharena_platform",
       "openbiorq",
       "rakuda",
+      "reliancescope",
       "tau2_bench",
       "tengu"
     ]
@@ -6644,7 +8268,8 @@
     "provider": "xAI",
     "releaseDate": "2025-11-19",
     "benchmarks": [
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -6655,7 +8280,9 @@
       "agc_bench",
       "algotune",
       "arcagi",
+      "auditing_sabotage_bench",
       "ikp",
+      "perfcodebench",
       "tau2_bench"
     ]
   },
@@ -6681,6 +8308,14 @@
     "releaseDate": "2025-11-26",
     "benchmarks": [
       "ikp"
+    ]
+  },
+  {
+    "name": "OctoMed 7B",
+    "provider": "Community",
+    "releaseDate": "2025-11-28",
+    "benchmarks": [
+      "perumedqa"
     ]
   },
   {
@@ -6729,10 +8364,12 @@
     "releaseDate": "2025-12-11",
     "benchmarks": [
       "algotune",
+      "auditing_sabotage_bench",
       "dtap_bench",
       "ikp",
       "legal_rag_bench",
       "matharena",
+      "matharena_platform",
       "software_world_models",
       "tau2_bench",
       "workbench_revisited"
@@ -6792,13 +8429,16 @@
     "provider": "Google",
     "releaseDate": "2025-12-17",
     "benchmarks": [
+      "auditing_sabotage_bench",
       "babilong",
       "benger",
       "ceobench",
       "dpai",
       "ikp",
       "matharena",
+      "matharena_platform",
       "rakuda",
+      "reliancescope",
       "tau2_bench",
       "tengu"
     ]
@@ -6818,6 +8458,14 @@
     "benchmarks": [
       "agc_bench",
       "ikp"
+    ]
+  },
+  {
+    "name": "Google MedGemma 1.5 4B",
+    "provider": "Google",
+    "releaseDate": "2026-01-13",
+    "benchmarks": [
+      "perumedqa"
     ]
   },
   {
@@ -6854,7 +8502,7 @@
       "healthadminbench",
       "ikp",
       "matharena",
-      "researchclawbench"
+      "matharena_platform"
     ]
   },
   {
@@ -6863,7 +8511,8 @@
     "releaseDate": "2026-01-29",
     "benchmarks": [
       "ikp",
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -6875,16 +8524,27 @@
       "agentic_review_perturbation",
       "algotune",
       "arcagi",
+      "auditing_sabotage_bench",
       "benger",
       "dataclawbench",
       "dtap_bench",
+      "frontieror",
       "healthadminbench",
       "ikp",
       "matharena",
+      "matharena_platform",
       "mypcbench",
       "naturebench",
       "researchclawbench",
       "robust_reasoning_benchmark"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.3 Codex",
+    "provider": "OpenAI",
+    "releaseDate": "2026-02-05",
+    "benchmarks": [
+      "frontieror"
     ]
   },
   {
@@ -6912,6 +8572,7 @@
       "dataclawbench",
       "ikp",
       "matharena",
+      "matharena_platform",
       "openbiorq",
       "tau2_bench"
     ]
@@ -6948,8 +8609,8 @@
     "benchmarks": [
       "ikp",
       "matharena",
+      "matharena_platform",
       "openbiorq",
-      "researchclawbench",
       "software_world_models"
     ]
   },
@@ -6970,6 +8631,7 @@
       "agc_bench",
       "benger",
       "ceobench",
+      "coffeebench",
       "ikp",
       "mathconstraint",
       "mypcbench",
@@ -6984,6 +8646,7 @@
     "benchmarks": [
       "arcagi",
       "ceobench",
+      "frontieror",
       "ikp",
       "mathconstraint"
     ]
@@ -6994,17 +8657,22 @@
     "releaseDate": "2026-02-19",
     "benchmarks": [
       "algotune",
+      "auditing_sabotage_bench",
       "benger",
+      "coffeebench",
       "dataclawbench",
       "dpai",
+      "frontieror",
       "healthadminbench",
       "ikp",
       "legal_rag_bench",
       "live_agent_risk",
       "matharena",
+      "matharena_platform",
       "mathconstraint",
       "mmlupro",
-      "researchclawbench",
+      "perfcodebench",
+      "real_pocqi",
       "robust_reasoning_benchmark",
       "workbench_revisited"
     ]
@@ -7024,7 +8692,8 @@
     "releaseDate": "2026-02-24",
     "benchmarks": [
       "ikp",
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -7034,6 +8703,7 @@
     "benchmarks": [
       "ikp",
       "matharena",
+      "matharena_platform",
       "mypcbench"
     ]
   },
@@ -7063,11 +8733,20 @@
     ]
   },
   {
+    "name": "Alibaba Qwen3.5 2B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-03-02",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
     "name": "Alibaba Qwen3.5 4B",
     "provider": "Alibaba",
     "releaseDate": "2026-03-02",
     "benchmarks": [
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -7077,6 +8756,7 @@
     "benchmarks": [
       "ikp",
       "matharena",
+      "matharena_platform",
       "mypcbench"
     ]
   },
@@ -7088,7 +8768,8 @@
       "autoresearchbench",
       "benger",
       "ikp",
-      "mathconstraint"
+      "mathconstraint",
+      "perfcodebench"
     ]
   },
   {
@@ -7106,17 +8787,22 @@
     "benchmarks": [
       "agc_bench",
       "algotune",
+      "auditing_sabotage_bench",
       "benger",
       "dataclawbench",
       "dtap_bench",
+      "exploitgym",
       "healthadminbench",
       "ikp",
       "live_agent_risk",
       "matharena",
+      "matharena_platform",
       "naturebench",
+      "perfcodebench",
       "researchclawbench",
       "robust_reasoning_benchmark",
       "software_world_models",
+      "weavebench",
       "workbench_revisited"
     ]
   },
@@ -7126,7 +8812,8 @@
     "releaseDate": "2026-03-05",
     "benchmarks": [
       "ikp",
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -7134,7 +8821,8 @@
     "provider": "NVIDIA",
     "releaseDate": "2026-03-10",
     "benchmarks": [
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -7204,8 +8892,7 @@
     "provider": "Xiaomi",
     "releaseDate": "2026-03-18",
     "benchmarks": [
-      "ikp",
-      "researchclawbench"
+      "ikp"
     ]
   },
   {
@@ -7232,7 +8919,8 @@
     "releaseDate": "2026-04-02",
     "benchmarks": [
       "agc_bench",
-      "ikp"
+      "ikp",
+      "perfcodebench"
     ]
   },
   {
@@ -7241,7 +8929,8 @@
     "releaseDate": "2026-04-02",
     "benchmarks": [
       "agc_bench",
-      "ikp"
+      "ikp",
+      "perfcodebench"
     ]
   },
   {
@@ -7249,7 +8938,8 @@
     "provider": "Unknown",
     "releaseDate": "2026-04-06",
     "benchmarks": [
-      "matharena"
+      "matharena",
+      "matharena_platform"
     ]
   },
   {
@@ -7259,11 +8949,22 @@
     "benchmarks": [
       "agc_bench",
       "ceobench",
+      "coffeebench",
+      "exploitgym",
       "ikp",
       "matharena",
+      "matharena_platform",
       "naturebench",
       "openbiorq",
       "researchclawbench"
+    ]
+  },
+  {
+    "name": "Alibaba Qwen3.6 35B",
+    "provider": "Alibaba",
+    "releaseDate": "2026-04-16",
+    "benchmarks": [
+      "matharena_platform"
     ]
   },
   {
@@ -7282,22 +8983,18 @@
       "agc_bench",
       "benger",
       "ceobench",
+      "coffeebench",
+      "exploitgym",
       "ikp",
       "live_agent_risk",
       "matharena",
+      "matharena_platform",
       "mathconstraint",
       "naturebench",
       "openbiorq",
       "researchclawbench",
-      "software_world_models"
-    ]
-  },
-  {
-    "name": "xAI Grok 4.3",
-    "provider": "xAI",
-    "releaseDate": "2026-04-17",
-    "benchmarks": [
-      "researchclawbench"
+      "software_world_models",
+      "weavebench"
     ]
   },
   {
@@ -7307,11 +9004,14 @@
     "benchmarks": [
       "agc_bench",
       "ceobench",
+      "coffeebench",
       "ikp",
       "live_agent_risk",
       "matharena",
+      "matharena_platform",
       "mathconstraint",
       "naturebench",
+      "perfcodebench",
       "researchclawbench",
       "workbench_revisited"
     ]
@@ -7331,15 +9031,20 @@
     "benchmarks": [
       "agc_bench",
       "ceobench",
+      "coffeebench",
+      "exploitgym",
       "ikp",
       "live_agent_risk",
       "matharena",
+      "matharena_platform",
       "mathconstraint",
       "mypcbench",
       "naturebench",
       "openbiorq",
+      "real_pocqi",
       "researchclawbench",
       "software_world_models",
+      "weavebench",
       "workbench_revisited"
     ]
   },
@@ -7357,8 +9062,7 @@
     "provider": "Xiaomi",
     "releaseDate": "2026-04-23",
     "benchmarks": [
-      "ikp",
-      "researchclawbench"
+      "ikp"
     ]
   },
   {
@@ -7385,7 +9089,9 @@
       "benger",
       "ikp",
       "matharena",
-      "mathconstraint"
+      "matharena_platform",
+      "mathconstraint",
+      "perfcodebench"
     ]
   },
   {
@@ -7397,8 +9103,10 @@
       "ceobench",
       "ikp",
       "matharena",
+      "matharena_platform",
       "mathconstraint",
       "naturebench",
+      "perfcodebench",
       "researchclawbench",
       "workbench_revisited"
     ]
@@ -7412,12 +9120,21 @@
     ]
   },
   {
+    "name": "AlephProver",
+    "provider": "Unknown",
+    "releaseDate": "2026-05-14",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
     "name": "Google Gemini 3.5 Flash",
     "provider": "Google",
     "releaseDate": "2026-05-19",
     "benchmarks": [
       "ceobench",
       "matharena",
+      "matharena_platform",
       "naturebench",
       "researchclawbench",
       "workbench_revisited"
@@ -7442,6 +9159,8 @@
       "arcagi",
       "ceobench",
       "ikp",
+      "matharena_platform",
+      "real_pocqi",
       "researchclawbench",
       "workbench_revisited"
     ]
@@ -7451,7 +9170,8 @@
     "provider": "StepFun",
     "releaseDate": "2026-05-28",
     "benchmarks": [
-      "ikp"
+      "ikp",
+      "matharena_platform"
     ]
   },
   {
@@ -7487,7 +9207,9 @@
     "releaseDate": "2026-06-09",
     "benchmarks": [
       "ceobench",
+      "frontieror",
       "ikp",
+      "matharena_platform",
       "workbench_revisited"
     ]
   },
@@ -7505,8 +9227,43 @@
     "releaseDate": "2026-06-16",
     "benchmarks": [
       "ceobench",
+      "frontieror",
       "ikp",
+      "matharena_platform",
       "naturebench",
+      "researchclawbench"
+    ]
+  },
+  {
+    "name": "Qwen3.5-2B ArxivMath SFT",
+    "provider": "Community",
+    "releaseDate": "2026-06-17",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
+    "name": "Qwen3.5-2B ArxivMath+BrokenArxiv SFT",
+    "provider": "Community",
+    "releaseDate": "2026-06-17",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
+    "name": "Qwen3.5-2B BrokenArxiv SFT",
+    "provider": "Community",
+    "releaseDate": "2026-06-17",
+    "benchmarks": [
+      "matharena_platform"
+    ]
+  },
+  {
+    "name": "OpenAI GPT-5.6 Sol",
+    "provider": "OpenAI",
+    "releaseDate": "2026-06-26",
+    "benchmarks": [
+      "exploitgym",
       "researchclawbench"
     ]
   },
@@ -7537,30 +9294,6 @@
     ]
   },
   {
-    "name": "Agent: ARIS Codex",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
-    "name": "Agent: Claude Code",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
-    "name": "Agent: Codex CLI",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
     "name": "Agent: ColaCare",
     "provider": "(agent scaffold)",
     "releaseDate": null,
@@ -7574,14 +9307,6 @@
     "releaseDate": null,
     "benchmarks": [
       "confagents"
-    ]
-  },
-  {
-    "name": "Agent: EvoScientist",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
     ]
   },
   {
@@ -7601,35 +9326,11 @@
     ]
   },
   {
-    "name": "Agent: Nanobot",
+    "name": "Agent: blast",
     "provider": "(agent scaffold)",
     "releaseDate": null,
     "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
-    "name": "Agent: Open Science",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
-    "name": "Agent: OpenClaw",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
-    ]
-  },
-  {
-    "name": "Agent: ResearchClaw",
-    "provider": "(agent scaffold)",
-    "releaseDate": null,
-    "benchmarks": [
-      "researchclawbench"
+      "care_enzymes"
     ]
   },
   {
@@ -7647,7 +9348,17 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "Agent: creep",
+    "provider": "(agent scaffold)",
+    "releaseDate": null,
+    "benchmarks": [
+      "care_enzymes"
     ]
   },
   {
@@ -7707,12 +9418,30 @@
     ]
   },
   {
+    "name": "CLEAN",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "care_enzymes"
+    ]
+  },
+  {
+    "name": "CatBoost",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "tabarena"
+    ]
+  },
+  {
     "name": "JT-VL",
     "provider": "Unknown",
     "releaseDate": null,
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -7722,6 +9451,14 @@
     "releaseDate": null,
     "benchmarks": [
       "real_webagents"
+    ]
+  },
+  {
+    "name": "LightGBM",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "tabarena"
     ]
   },
   {
@@ -7739,6 +9476,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -7748,6 +9487,14 @@
     "releaseDate": null,
     "benchmarks": [
       "real_webagents"
+    ]
+  },
+  {
+    "name": "Similarity",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "care_enzymes"
     ]
   },
   {
@@ -7844,6 +9591,14 @@
     "releaseDate": null,
     "benchmarks": [
       "real_webagents"
+    ]
+  },
+  {
+    "name": "XGBoost",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "tabarena"
     ]
   },
   {
@@ -8320,6 +10075,14 @@
     ]
   },
   {
+    "name": "my_model/",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "rewardbench"
+    ]
+  },
+  {
     "name": "nano-medium-a",
     "provider": "Unknown",
     "releaseDate": null,
@@ -8350,6 +10113,8 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
     ]
   },
@@ -8360,7 +10125,34 @@
     "benchmarks": [
       "ai2d_test",
       "hallusionbench",
+      "mathvista_mini",
+      "mmbench_v11",
       "mmmu_dev_val"
+    ]
+  },
+  {
+    "name": "random",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "bedd_basalt",
+      "care_enzymes"
+    ]
+  },
+  {
+    "name": "rlhf-lmdeploy",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "cmmlu"
+    ]
+  },
+  {
+    "name": "sft-s2-lmdeploy",
+    "provider": "Unknown",
+    "releaseDate": null,
+    "benchmarks": [
+      "cmmlu"
     ]
   }
 ]
