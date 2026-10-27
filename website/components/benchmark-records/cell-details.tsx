@@ -13,7 +13,7 @@ import { type Presentation } from "@/lib/benchmark-records/presentation";
 import type { Observation, ResponseScale } from "@/lib/benchmark-records/types";
 import { Pagination } from "./pagination";
 import { useRecord } from "./use-records";
-import { RichText, SourceText } from "./rich-text";
+import { SourceText } from "./rich-text";
 import { AnswerPanel } from "./answer-panel";
 import { Attachment } from "./attachment";
 import { CONTROL } from "./view-controls";
@@ -29,16 +29,22 @@ function Metadata({
   title: string;
   value: Record<string, unknown>;
 }) {
+  const [open, setOpen] = useState(false);
   return (
-    <details className="my-3 rounded border border-[var(--line)] bg-white p-3 text-xs">
+    <details
+      onToggle={(event) => setOpen(event.currentTarget.open)}
+      className="my-3 rounded border border-[var(--line)] bg-white p-3 text-xs"
+    >
       <summary className="cursor-pointer">{title}</summary>
-      <div
-        className="mt-4 max-h-80 overflow-auto break-words"
-        aria-label={title}
-      >
-        <StructuredContent value={metadataFields(value)} />
-        <SourceText text={JSON.stringify(value, null, 2)} label={title} />
-      </div>
+      {open && (
+        <div
+          className="mt-4 max-h-80 overflow-auto break-words"
+          aria-label={title}
+        >
+          <StructuredContent value={metadataFields(value)} />
+          <SourceText text={JSON.stringify(value, null, 2)} label={title} />
+        </div>
+      )}
     </details>
   );
 }
@@ -64,17 +70,9 @@ export function CellDetails({
 }) {
   const item = useRecord(source, "items", selection.itemId);
   const [attempt, setAttempt] = useState(0);
-  if (item.status === "loading")
-    return (
-      <p role="status" className="py-6 text-sm">
-        Loading item…
-      </p>
-    );
-  if (item.status === "error")
-    return <SourceError source={source} table="items" message={item.message} />;
-  if (!item.value) return <p role="alert">The selected item is unavailable.</p>;
-  const prepared = prepareItem(item.value, scale),
-    observation = observations[attempt];
+  const value = item.status === "ready" ? item.value : null;
+  const prepared = value ? prepareItem(value, scale) : undefined;
+  const observation = observations[attempt];
   const opponent = observation && pairs.get(observation.response_id);
   const opponentName = model.subjects.find(
     (s) => s.subject_id === opponent?.subject_id,
@@ -105,22 +103,47 @@ export function CellDetails({
             Item
           </h4>
           <div aria-label="Item content">
-            <ItemContent
-              key={selection.itemId}
-              benchmark={source.manifest.benchmark.benchmark_id}
-              text={item.value.content}
-              assets={prepared.attachments}
-              renderAsset={(link) => <Attachment source={source} link={link} />}
-            />
+            {item.status === "loading" ? (
+              <p role="status">Loading item…</p>
+            ) : item.status === "error" ? (
+              <SourceError
+                source={source}
+                table="items"
+                message={item.message}
+                paged={item.paged}
+                onRetry={item.retry}
+              />
+            ) : value && prepared ? (
+              <ItemContent
+                key={selection.itemId}
+                benchmark={source.manifest.benchmark.benchmark_id}
+                text={value.content}
+                assets={prepared.attachments}
+                renderAsset={(link) => (
+                  <Attachment source={source} link={link} />
+                )}
+              />
+            ) : (
+              <p>The selected item is unavailable.</p>
+            )}
           </div>
-          {prepared.criterion.reference_answer != null && (
+          {prepared?.criterion.reference_answer != null && (
             <div className="mt-4">
               <h4 className="mb-2 text-xs font-medium text-[var(--muted)]">
                 Reference answer
               </h4>
-              <div className="text-[var(--palo-alto)]">
-                <RichText text={prepared.criterion.reference_answer} />
+              <div
+                aria-label="Reference answer"
+                className="max-h-[32rem] overflow-auto break-words"
+              >
+                <StructuredContent
+                  value={prepared.criterion.reference_answer}
+                />
               </div>
+              <SourceText
+                text={prepared.criterion.reference_answer}
+                label="Reference answer"
+              />
             </div>
           )}
         </section>
@@ -136,12 +159,14 @@ export function CellDetails({
                   style={{
                     background: gradeColor(
                       observation.response,
-                      prepared.scale,
+                      prepared?.scale ?? scale,
                     ),
                   }}
                 />
                 <span className="min-w-0 break-words">
-                  {gradeLabel(observation.response, prepared.scale)}
+                  {prepared
+                    ? gradeLabel(observation.response, prepared.scale)
+                    : (observation.response ?? "Ungraded")}
                 </span>
               </p>
               <p className="mt-2 text-xs text-[var(--muted)]">
@@ -159,7 +184,7 @@ export function CellDetails({
                 : "No recorded observation."}
             </p>
           )}
-          {prepared.criterion.rule && (
+          {prepared?.criterion.rule && (
             <section className="mt-4" aria-label="Grading rule">
               <h5 className="mb-1 text-xs font-medium text-[var(--muted)]">
                 Grading rule
@@ -173,7 +198,7 @@ export function CellDetails({
               <SourceText text={prepared.criterion.rule} label="Grading rule" />
             </section>
           )}
-          <Metadata title="Item metadata" value={item.value} />
+          {value && <Metadata title="Item metadata" value={value} />}
           {selection.subject && (
             <Metadata title="Model metadata" value={selection.subject} />
           )}

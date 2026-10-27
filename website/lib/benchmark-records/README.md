@@ -149,3 +149,42 @@ The initial check used 6,106 sampled items from all 270 tables available at HF
 revision `54074453da7b9911be0f48e4c560be547bc84d21`. This is structural coverage,
 not a claim to have manually reviewed every item or reconstructed every prompt.
 Future registrations without a module retain the raw-text fallback.
+
+## Oversized source pages
+
+The original Parquet reader budgets **16 MiB of downloaded plus decompressed
+page bytes per lookup**, not 16 MiB of answer text. A small answer can share a
+large dictionary or data page. Keep that guard: removing it can allocate hundreds
+of megabytes for one click, especially problematic on phones.
+
+`scripts/render_website/record_previews.py` prepares an optional exact-record
+cache only for rows whose original page reads exceed that budget. Records are
+independently gzipped in 64 MiB packs on Hugging Face, outside the Vercel build.
+The browser reads two small byte ranges (one ID bucket and one record), verifies
+their SHA256 and sizes, and decompresses them in a worker. Each read is capped at
+4 MiB compressed and expanded. Records larger than 2 MiB expose their long text
+fields in complete, ordered parts of at most 32,768 Unicode characters; no text
+is dropped. Conversation lists and long text also paginate DOM rendering.
+
+The lightweight `content/generated/record-previews.json` pins the immutable HF
+artifact revision and the exact canonical source URL. A stale source pin is
+ignored. IDs absent from this optional cache use the normal Parquet lookup.
+Item and answer loading are independent, and failed lookups have a retry button.
+The cache does not cover binary attachments or invent missing released answers.
+
+Prepare and publish only when source data changes, using the same local tables
+as the canonical gallery exporter (requires pyarrow, fastparquet, huggingface_hub):
+
+```bash
+python -m scripts.render_website.prepare_record_previews \
+  --tables /path/to/pinned-tables --output /path/to/new-record-cache \
+  --publish-branch preview/record-loading-YYYYMMDD
+```
+
+Omit `--publish-branch` for local preparation and verification. Completed tables
+can be resumed only with the same source hash. Publication checks the local source
+against the canonical HF file hash, uploads to the explicit preview branch,
+verifies uploaded file hashes, then writes the frontend manifest. Commit that
+small manifest with the frontend change. Ordinary presentation deployments reuse
+it and do not rerun Python or upload the packs. If table bytes change, prepare a
+new output directory; do not reuse a cache from a different source snapshot.

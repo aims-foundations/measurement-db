@@ -3,6 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { withBase } from "@/lib/base-path";
 import { RecordSource } from "@/lib/benchmark-records/client";
+import {
+  PagedRecordError,
+  readPreviewPart,
+  type PagedRecord,
+} from "@/lib/benchmark-records/record-preview";
 import { prepareMatrix, type MatrixModel } from "@/lib/benchmark-records/model";
 import type {
   AssetLink,
@@ -14,12 +19,13 @@ import type {
 
 export type LoadState<T> =
   | { status: "loading" }
-  | { status: "error"; message: string }
+  | { status: "error"; message: string; paged?: PagedRecord }
   | { status: "ready"; value: T };
 
 const failure = (error: unknown): LoadState<never> => ({
   status: "error",
   message: error instanceof Error ? error.message : String(error),
+  ...(error instanceof PagedRecordError ? { paged: error.record } : {}),
 });
 
 /** Item-ID lookup shares the same cancellation rules as other record requests. */
@@ -112,7 +118,8 @@ export function useRecord<T extends TableName>(
   source: RecordSource,
   table: T,
   id: string | null,
-): LoadState<TableRows[T] | null> {
+): LoadState<TableRows[T] | null> & { retry: () => void } {
+  const [attempt, setAttempt] = useState(0);
   const [result, setResult] = useState<{
     source: RecordSource;
     table: T;
@@ -133,10 +140,18 @@ export function useRecord<T extends TableName>(
       },
     );
     return () => controller.abort();
-  }, [source, table, id]);
-  return result?.source === source && result.table === table && result.id === id
-    ? result.state
-    : { status: "loading" };
+  }, [source, table, id, attempt]);
+  const state: LoadState<TableRows[T] | null> =
+    result?.source === source && result.table === table && result.id === id
+      ? result.state
+      : { status: "loading" };
+  return {
+    ...state,
+    retry: () => {
+      setResult(undefined);
+      setAttempt((value) => value + 1);
+    },
+  };
 }
 
 export function useAttachment(
@@ -189,6 +204,44 @@ export function useAttachment(
     };
   }, [source, stableLink]);
   return result?.source === source && result.link === stableLink
+    ? result.state
+    : { status: "loading" };
+}
+
+/** Text parts use the same cancellation and stale-selection protection as records. */
+export function usePreviewPart(
+  record: PagedRecord,
+  field: string,
+  page: number,
+): LoadState<string> {
+  const [result, setResult] = useState<{
+    record: PagedRecord;
+    field: string;
+    page: number;
+    state: LoadState<string>;
+  }>();
+  useEffect(() => {
+    const controller = new AbortController();
+    readPreviewPart(
+      record.base,
+      record.preview,
+      record.fields[field][page],
+      controller.signal,
+    ).then(
+      (value) => {
+        if (!controller.signal.aborted)
+          setResult({ record, field, page, state: { status: "ready", value } });
+      },
+      (error) => {
+        if (!controller.signal.aborted)
+          setResult({ record, field, page, state: failure(error) });
+      },
+    );
+    return () => controller.abort();
+  }, [record, field, page]);
+  return result?.record === record &&
+    result.field === field &&
+    result.page === page
     ? result.state
     : { status: "loading" };
 }

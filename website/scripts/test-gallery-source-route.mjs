@@ -13,10 +13,19 @@ const catalog = {
     tables: { items: { size: 1000 } },
   },
 };
-const js = stripTypeScriptTypes(code).replace(
-  'import sources from "@/content/generated/gallery-sources.json";',
-  `const sources = ${JSON.stringify(catalog)};`,
+const helper = stripTypeScriptTypes(
+  await fs.readFile(
+    new URL("../lib/server/huggingface-range.ts", import.meta.url),
+    "utf8",
+  ),
 );
+const helperUrl = `data:text/javascript;base64,${Buffer.from(helper).toString("base64")}`;
+const js = stripTypeScriptTypes(code)
+  .replace('"@/lib/server/huggingface-range"', JSON.stringify(helperUrl))
+  .replace(
+    'import sources from "@/content/generated/gallery-sources.json";',
+    `const sources = ${JSON.stringify(catalog)};`,
+  );
 const { GET } = await import(
   `data:text/javascript;base64,${Buffer.from(js).toString("base64")}`
 );

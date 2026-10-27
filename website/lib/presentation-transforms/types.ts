@@ -16,6 +16,7 @@ export type AnswerScore = { label: string; score: number };
 export type Presentation = {
   item?: ItemTransform;
   answerPath?: string[];
+  answerNotice?: string;
   answerScores?: (text: string) => AnswerScore[] | undefined;
   pairing?: { subjectFeature: string; contextFields: string[] };
 };

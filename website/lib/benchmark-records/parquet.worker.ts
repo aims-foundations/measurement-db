@@ -6,6 +6,11 @@ import {
 import { compressors } from "hyparquet-compressors";
 import { readJson, type JsonTransport } from "./json";
 import { budgetSource } from "./source-budget";
+import {
+  readPreviewRecord,
+  PagedRecordError,
+  type RecordPreview,
+} from "./record-preview";
 
 type PageIndex = {
   footer: string;
@@ -28,10 +33,24 @@ self.onmessage = async ({
     id: string;
     table?: string;
     key?: string;
+    preview?: RecordPreview;
+    previewBase?: string;
   } & JsonTransport
 >) => {
   try {
     const { base, parquet, id, table, key = "response_id" } = data;
+    if (data.preview && data.previewBase) {
+      const value = await readPreviewRecord(
+        data.previewBase,
+        data.preview,
+        id,
+        key,
+      );
+      if (value) {
+        self.postMessage({ value });
+        return;
+      }
+    }
     const indexJson = <T>(path: string) =>
       table
         ? readJson<T>(base, `${table}/${path}`, {
@@ -96,6 +115,7 @@ self.onmessage = async ({
     self.postMessage({ value });
   } catch (error) {
     self.postMessage({
+      ...(error instanceof PagedRecordError ? { paged: error.record } : {}),
       error: error instanceof Error ? error.message : String(error),
     });
   }

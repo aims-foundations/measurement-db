@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { TextPages } from "./text-pages";
 
 /** React escapes the original string. Never parse, trim, truncate, or reserialize it. */
 export function RawItemContent({
@@ -15,12 +16,20 @@ export function RawItemContent({
     text === null ? (
       <p className="text-sm text-[var(--muted)]">No text component released.</p>
     ) : (
-      <pre
+      <div
         aria-label="Original item"
         className="max-h-80 overflow-auto whitespace-pre-wrap break-words rounded bg-black/5 p-3 text-xs leading-relaxed"
       >
-        {text}
-      </pre>
+        {text.length > 65536 ? (
+          <TextPages text={text}>
+            {(part) => (
+              <pre className="whitespace-pre-wrap break-words">{part}</pre>
+            )}
+          </TextPages>
+        ) : (
+          <pre className="whitespace-pre-wrap break-words">{text}</pre>
+        )}
+      </div>
     );
   if (!collapsed) return content;
   return (

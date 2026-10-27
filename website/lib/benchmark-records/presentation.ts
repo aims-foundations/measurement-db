@@ -13,7 +13,11 @@ export function displayText(
         return source;
       value = (value as Record<string, unknown>)[key];
     }
-    return typeof value === "string" ? value : source;
+    return typeof value === "string"
+      ? value
+      : value !== null && typeof value === "object"
+        ? JSON.stringify(value)
+        : source;
   } catch {
     return source;
   }
