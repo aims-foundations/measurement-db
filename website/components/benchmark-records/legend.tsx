@@ -16,7 +16,7 @@ export function Legend({ scale }: { scale: ResponseScale }) {
           label: gradeLabel(value, scale),
         }))
       : scale.kind === "mixed"
-        ? [{ color: MIXED, label: "Graded · task-specific scale" }]
+        ? [{ color: MIXED, label: "Graded · item-specific scale" }]
         : bounds(scale)
             .filter((v): v is number => v !== null)
             .map((value) => ({

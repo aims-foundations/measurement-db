@@ -19,7 +19,7 @@ is required by this viewer.
 | `model-browser.tsx`, `loaded-gallery.tsx`                                 | Search the full registry and load a bounded page of models        |
 | `heatmap.tsx`, `heatmap-canvas.tsx`, `paint-heatmap.ts`                   | Layout, pointer/keyboard interaction, visible canvas tiles        |
 | `matrix-table.tsx`, `view-controls.tsx`, `legend.tsx`                     | Accessible table alternative, controls, declared grade legend     |
-| `cell-details.tsx`, `answer-panel.tsx`, `rich-text.tsx`, `attachment.tsx` | Task, grading rule, reference, Markdown/math, answers, media      |
+| `cell-details.tsx`, `answer-panel.tsx`, `rich-text.tsx`, `attachment.tsx` | Item, grading rule, reference, Markdown/math, answers, media      |
 
 Data modules do not import React or access the DOM. Rendering components do not
 issue HTTP requests. Layout and styling changes do not require rerunning Python.
@@ -34,7 +34,7 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
   one full-resolution image of the entire matrix. Hover does not repaint it.
 - Filters use observation conditions, interactors, and trial. Subject metadata
   remains attached to the model. Registry axes remain visible in the unfiltered
-  view, including unobserved models and tasks.
+  view, including unobserved models and items.
 - Mean-grade ordering and margins require a common, explicitly ordered scale.
   Means use graded observations in the selected view. Unordered and mixed scales
   have no cross-item mean. Mixed and unbounded scales use neutral overview colors;
@@ -47,8 +47,10 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
   comparison identifiers. For example, ReAL-PoCQI's source row identifies a
   rating, while its slot identifies the perspective. Unknown payloads remain
   readable as text/JSON. The full original prompt and trace are always available.
-- Both viewers use `lib/task-content.ts` and `components/task-content.tsx` to
-  present structured tasks as labeled fields, lists, and conversation messages.
+- Both viewers use `lib/item-content.ts` and `components/item-content.tsx` to
+  present items with explicit question formats. `components/structured-content.tsx`
+  shares labeled fields, lists, and conversation messages across items, answers,
+  and metadata; nested JSON is decoded for display and original records remain available.
   MMLU's explicit format shows the evaluated question and answer choices first,
   with instructions, demonstrations, and request details in disclosures.
   Ambiguous question boundaries fall back to displaying every source field.

@@ -1,5 +1,7 @@
 "use client";
 
+import { InlineMath } from "./inline-math";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
@@ -42,7 +44,7 @@ export type FacetedData = {
 type Props = {
   data: FacetedData;
   onPick: (p: JoinedPick) => void;
-  /** subject_id -> fitted Rasch ability. A leading θ column when present, the
+  /** subject_id -> fitted Rasch ability. A θ column beside the observed score when present, the
    *  same as the joined view. */
   theta?: Record<string, number> | null;
   /** What 1 and 0 MEAN when they are not pass/fail — see JoinedMatrix. */
@@ -188,9 +190,9 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
             // thing that decides which panels a row can fill — truncating it
             // away leaves two visually identical rows with no way to tell which
             // is which.
-            const grid = `${theta ? "40px " : ""}300px ${band.panels
+            const grid = `300px ${band.panels
               .map((p) => `minmax(60px, ${p.colIds.length}fr)`)
-              .join(" ")} 56px`;
+              .join(" ")} ${theta ? "40px " : ""}56px`;
             const heading = bandHeading(
               `${data.bandDim}=${band.key}`,
               data.bandLabels,
@@ -212,14 +214,6 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                   className="grid items-end gap-x-2.5 pb-1"
                   style={{ gridTemplateColumns: grid }}
                 >
-                  {theta ? (
-                    <div
-                      className="text-right text-[0.6875rem] text-[var(--muted)]"
-                      title="Fitted ability (theta), per subject"
-                    >
-                      θ
-                    </div>
-                  ) : null}
                   <div />
                   {band.panels.map((p) => (
                     <div
@@ -231,6 +225,14 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                       {p.label}
                     </div>
                   ))}
+                  {theta ? (
+                    <div
+                      className="text-right text-[0.6875rem] text-[var(--muted)]"
+                      title="Fitted ability (theta), per subject"
+                    >
+                      <InlineMath tex="\theta" />
+                    </div>
+                  ) : null}
                   <div />
                 </div>
 
@@ -240,13 +242,6 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                     className="grid items-center gap-x-2.5 py-[1.5px]"
                     style={{ gridTemplateColumns: grid }}
                   >
-                    {theta ? (
-                      <div className="text-right text-[0.6875rem] tabular-nums text-[var(--muted)]">
-                        {theta[row.sid] != null
-                          ? theta[row.sid].toFixed(2)
-                          : ""}
-                      </div>
-                    ) : null}
                     <div
                       title={row.name}
                       className="truncate text-right text-[0.6875rem] text-[var(--ink)]"
@@ -295,6 +290,13 @@ export function FacetedMatrix({ data, onPick, theta, binaryLabels }: Props) {
                         />
                       );
                     })}
+                    {theta ? (
+                      <div className="text-right text-[0.6875rem] tabular-nums text-[var(--muted)]">
+                        {theta[row.sid] != null
+                          ? theta[row.sid].toFixed(2)
+                          : ""}
+                      </div>
+                    ) : null}
                     <div className="text-[0.6875rem] tabular-nums text-[var(--muted)]">
                       {row.n ? `${Math.round((100 * row.pass) / row.n)}%` : ""}
                     </div>

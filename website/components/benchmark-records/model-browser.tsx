@@ -9,7 +9,7 @@ import { Pagination } from "./pagination";
 import { useSubjects } from "./use-records";
 import { CONTROL } from "./view-controls";
 
-/** Bound browser memory by models; every task and attempt remains available. */
+/** Bound browser memory by models; every item and attempt remains available. */
 export function ModelBrowser({
   entry,
   irt,

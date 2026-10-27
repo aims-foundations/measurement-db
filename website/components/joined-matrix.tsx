@@ -1,5 +1,7 @@
 "use client";
 
+import { InlineMath } from "./inline-math";
+
 import { useEffect, useMemo, useRef, useState } from "react";
 
 // Draw the joined_matrix layout supplied with the page.
@@ -152,7 +154,7 @@ type Props = {
   rows: string[];
   onPick: (p: JoinedPick) => void;
   /** subject_id -> fitted Rasch ability, from the benchmark's IRT fit. When
-   *  present it becomes a leading θ column, mirroring the score column on the
+   *  present it becomes a θ column next to the score column on the
    *  right. Null for graded benchmarks, which are not fitted. */
   theta?: Record<string, number> | null;
   /** What 1 and 0 MEAN on this benchmark, when they are not pass/fail.
@@ -558,8 +560,7 @@ export function JoinedMatrix({
 
   // Blocks are sized by item count, so the widths stay honest: a 50-item block
   // is visibly narrower than a 114-item one.
-  // θ leads the row when the benchmark has a Rasch fit, so the row reads
-  // ability → responses → observed score, left to right.
+  // Fitted ability and observed score sit together after the response columns.
   //
   // BLOCK_MIN is a floor, not a width. While the blocks fit, `fr` divides the
   // available space and nothing scrolls — the normal case, and the one that
@@ -570,11 +571,9 @@ export function JoinedMatrix({
   // read at all. The figure's own width is unchanged either way, so a wide
   // benchmark scrolls rather than making every page wider.
   const BLOCK_MIN = 60; // px — roughly what a block heading needs to be legible
-  const grid = `${theta && !pairwise ? "40px " : ""}${
-    pairwise ? "268px" : "170px"
-  } ${data.blocks
+  const grid = `${pairwise ? "268px" : "170px"} ${data.blocks
     .map((b) => `minmax(${BLOCK_MIN}px, ${b.colIds.length}fr)`)
-    .join(" ")} 60px`;
+    .join(" ")} ${theta && !pairwise ? "40px " : ""}60px`;
 
   const zOfBlock = new Map<string, (number | null)[]>();
   for (const block of data.blocks) {
@@ -679,14 +678,6 @@ export function JoinedMatrix({
             className="sticky top-0 z-10 grid items-center gap-x-2.5 border-b border-[var(--line)] bg-white pt-4"
             style={{ gridTemplateColumns: grid }}
           >
-            {theta ? (
-              <div
-                className="pb-1 text-right text-[0.6875rem] text-[var(--muted)]"
-                title="Fitted ability (theta), per subject"
-              >
-                θ
-              </div>
-            ) : null}
             <div />
             {data.blocks.map((b) => {
               const [head, gloss] = blockLabel(
@@ -730,6 +721,14 @@ export function JoinedMatrix({
                 </div>
               );
             })}
+            {theta && !pairwise ? (
+              <div
+                className="pb-1 text-right text-[0.6875rem] text-[var(--muted)]"
+                title="Fitted ability (theta), per subject"
+              >
+                <InlineMath tex="\theta" />
+              </div>
+            ) : null}
             <div />
           </div>
 
@@ -781,15 +780,6 @@ export function JoinedMatrix({
                   className="grid items-center gap-x-2.5 py-[1.5px]"
                   style={{ gridTemplateColumns: grid }}
                 >
-                  {/* θ is per SUBJECT, not per row: a benchmark whose rows are
-                      (subject × condition) repeats the same ability down the
-                      band, which is exactly what the fit says — one ability,
-                      several conditions. */}
-                  {theta && !pairwise ? (
-                    <div className="text-right text-[0.6875rem] tabular-nums text-[var(--muted)]">
-                      {theta[row.sid] != null ? theta[row.sid].toFixed(2) : ""}
-                    </div>
-                  ) : null}
                   {/* The label column is a fixed 170px, so a name carrying a
                       variant bracket clips — `title` keeps the full text
                       reachable on hover rather than silently losing the part
@@ -865,6 +855,15 @@ export function JoinedMatrix({
                       />
                     );
                   })}
+                  {/* θ is per SUBJECT, not per row: a benchmark whose rows are
+                      (subject × condition) repeats the same ability down the
+                      band, which is exactly what the fit says — one ability,
+                      several conditions. */}
+                  {theta && !pairwise ? (
+                    <div className="text-right text-[0.6875rem] tabular-nums text-[var(--muted)]">
+                      {theta[row.sid] != null ? theta[row.sid].toFixed(2) : ""}
+                    </div>
+                  ) : null}
                   <div className="text-[0.6875rem] tabular-nums text-[var(--muted)]">
                     {rowScore(row)}
                   </div>

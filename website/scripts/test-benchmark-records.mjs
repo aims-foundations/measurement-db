@@ -32,8 +32,85 @@ const { RecordSource } = (
   await loadModule("client", { parquet: parquetModule })
 ).exports;
 const { recordCard } = (await loadModule("catalog")).exports;
-const { prepareTaskContent } = (await loadModule("../task-content")).exports;
+const structuredModule = await loadModule("../structured-content");
+const { structuredValue, metadataFields } = structuredModule.exports;
+const { prepareItemContent } = (
+  await loadModule("../item-content", {
+    "./structured-content": structuredModule,
+  })
+).exports;
 const signal = () => new AbortController().signal;
+
+test("MMLU answer scores preserve the native choice order and exact values", async () => {
+  const { answerScores } = (await loadModule("presentation")).exports;
+  const source = JSON.stringify({
+    source_record: {
+      choices: [" A", " B", " C", " D"],
+      predictions: [-3.21, -4.005, -1.8, -7],
+    },
+  });
+  assert.deepEqual(answerScores(source, "mmlu"), [
+    { label: "A", score: -3.21 },
+    { label: "B", score: -4.005 },
+    { label: "C", score: -1.8 },
+    { label: "D", score: -7 },
+  ]);
+  assert.equal(answerScores(source), undefined);
+  for (const value of [
+    null,
+    "invalid",
+    JSON.stringify({
+      source_record: { choices: ["A", "B"], predictions: [1, 2] },
+    }),
+  ])
+    assert.equal(answerScores(value, "mmlu"), undefined);
+});
+
+test("structured display decodes nested JSON without coercing IDs or losing false and null", () => {
+  const value = {
+    id: "000123",
+    enabled: false,
+    score: 0,
+    missing: null,
+    extra: ["x"],
+  };
+  assert.deepEqual(
+    structuredValue(JSON.stringify(JSON.stringify(value))),
+    value,
+  );
+  for (const text of [
+    "000123",
+    "123",
+    "false",
+    "null",
+    "{malformed",
+    "Plain **Markdown**",
+  ])
+    assert.equal(structuredValue(text), text);
+  assert.equal(structuredValue(false), false);
+  assert.equal(structuredValue(null), null);
+});
+
+test("metadata fields retain ownership and preserve ambiguous field lists intact", () => {
+  const source = {
+    content: "query=a;b=c",
+    test_condition: "split=test;seed=0",
+    interactors: "opponent=model-a",
+    subject_features_extra: "flag=false;empty=",
+    item_features: "note=sentence; with a semicolon",
+  };
+  const before = structuredClone(source);
+  assert.deepEqual(metadataFields(source), {
+    ...source,
+    test_condition: { split: "test", seed: "0" },
+    interactors: { opponent: "model-a" },
+    subject_features_extra: { flag: "false", empty: "" },
+  });
+  assert.deepEqual(source, before);
+  assert.deepEqual(metadataFields({ test_condition: "key=one;key=two" }), {
+    test_condition: "key=one;key=two",
+  });
+});
 
 test("MMLU shows the evaluated question and retains examples and request details", () => {
   const context =
@@ -46,7 +123,7 @@ test("MMLU shows the evaluated question and retains examples and request details
     request_protocol: "Score each continuation.",
     extra_metadata: { seed: 0 },
   };
-  const result = prepareTaskContent(JSON.stringify(source), "mmlu");
+  const result = prepareItemContent(JSON.stringify(source), "mmlu");
   assert.deepEqual(result.value, source);
   assert.deepEqual(result.multipleChoice, {
     question: "Read this passage.\n\nWhich statement follows?",
@@ -63,7 +140,7 @@ test("MMLU shows the evaluated question and retains examples and request details
     },
   });
   assert.equal(
-    prepareTaskContent(JSON.stringify(source)).multipleChoice,
+    prepareItemContent(JSON.stringify(source)).multipleChoice,
     undefined,
   );
 });
@@ -73,7 +150,7 @@ test("MMLU supports prompts without demonstrations and Windows line endings", ()
     prompt: "Question?\r\nA. One\r\nB. Two\r\nC. Three\r\nD. Four\r\nAnswer:",
     candidate_continuations: ["A", "B", "C", "D"],
   };
-  const result = prepareTaskContent(JSON.stringify(source), "mmlu");
+  const result = prepareItemContent(JSON.stringify(source), "mmlu");
   assert.equal(result.multipleChoice.question, "Question?");
   assert.equal(result.multipleChoice.context, "");
   assert.deepEqual(
@@ -89,7 +166,7 @@ test("ambiguous or incomplete questions keep all fields instead of guessing", ()
     "Question?\nA. One\nB. Two\nC. Three\nD. Four\nAnswer: A",
   ]) {
     const source = { prompt, candidate_continuations: ["A", "B", "C", "D"] };
-    assert.deepEqual(prepareTaskContent(JSON.stringify(source), "mmlu"), {
+    assert.deepEqual(prepareItemContent(JSON.stringify(source), "mmlu"), {
       value: source,
     });
   }
@@ -103,7 +180,7 @@ test("general structured tasks preserve messages, nesting, and empty or false va
     options: ["Yes", "No"],
     environment: { count: 0, enabled: false, missing: null, empty: "" },
   };
-  assert.deepEqual(prepareTaskContent(JSON.stringify(source)), {
+  assert.deepEqual(prepareItemContent(JSON.stringify(source)), {
     value: source,
   });
   for (const text of [
@@ -111,7 +188,7 @@ test("general structured tasks preserve messages, nesting, and empty or false va
     "{'prompt': 'Unparsed dictionary'}",
     '{"prompt":',
   ])
-    assert.deepEqual(prepareTaskContent(text), { value: text });
+    assert.deepEqual(prepareItemContent(text), { value: text });
 });
 
 function records() {

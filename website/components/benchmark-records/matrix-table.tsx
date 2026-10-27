@@ -22,7 +22,7 @@ export function MatrixTable({
     <div
       className="max-h-[38rem] overflow-auto rounded-lg border border-[var(--line)]"
       tabIndex={0}
-      aria-label="Model by task matrix"
+      aria-label="Model by item matrix"
     >
       <table className="w-full border-separate border-spacing-0 text-xs">
         <thead>
@@ -31,7 +31,7 @@ export function MatrixTable({
               scope="col"
               className="sticky top-0 z-20 min-w-48 border-b border-[var(--line)] bg-[var(--paper)] p-3 text-left"
             >
-              Model / task
+              Model / item
             </th>
             {items.map((id, i) => (
               <th
@@ -44,7 +44,7 @@ export function MatrixTable({
                   title={id}
                   onClick={() => onSelect({ subject: null, itemId: id })}
                 >
-                  Task {itemOffset + i + 1}
+                  Item {itemOffset + i + 1}
                 </button>
               </th>
             ))}
@@ -80,7 +80,7 @@ export function MatrixTable({
                     {attempts.length ? (
                       <button
                         className={`w-full whitespace-nowrap rounded px-3 py-2 hover:ring-1 hover:ring-[var(--palo-alto)] ${ungraded ? "bg-black/5 text-[var(--muted)]" : "bg-[var(--palo-alto)]/10"}`}
-                        aria-label={`${subject.display_name}, task ${itemOffset + i + 1}: ${label}`}
+                        aria-label={`${subject.display_name}, item ${itemOffset + i + 1}: ${label}`}
                         onClick={() => onSelect({ subject, itemId: id })}
                       >
                         {attempts.length === 1 && (

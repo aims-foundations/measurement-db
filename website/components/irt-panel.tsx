@@ -1,6 +1,5 @@
 import type { BenchmarkIrt } from "@/content/benchmark-irt";
-import katex from "katex";
-import "katex/dist/katex.min.css";
+import { InlineMath } from "./inline-math";
 
 /* ============================================================
    IrtPanel — the Rasch fit summary below the response matrix and
@@ -42,11 +41,9 @@ export function IrtPanel({ irt }: { irt: BenchmarkIrt }) {
       <div className="min-w-0">
         <div className="text-xs font-medium text-[var(--ink)]">
           Rasch analysis{" "}
-          <span
+          <InlineMath
             className="font-normal text-[var(--muted)]"
-            dangerouslySetInnerHTML={{
-              __html: katex.renderToString(formula, { trust: false }),
-            }}
+            tex={formula}
           />
         </div>
         <p className="mt-0.5 text-[0.6875rem] leading-snug text-[var(--muted)]">
@@ -61,8 +58,9 @@ export function IrtPanel({ irt }: { irt: BenchmarkIrt }) {
         {irt.separatedSubjects ? (
           <p className="mt-0.5 text-[0.6875rem] leading-snug text-[var(--muted)]">
             {irt.separatedSubjects} of {irt.nSubjects} subjects answered every
-            item alike, so {irt.separatedSubjects === 1 ? "its" : "their"} θ is
-            unbounded and sits pegged to the column edge.
+            item alike, so {irt.separatedSubjects === 1 ? "its" : "their"}{" "}
+            <InlineMath tex="\theta" /> is unbounded and sits pegged to the
+            column edge.
           </p>
         ) : null}
       </div>
