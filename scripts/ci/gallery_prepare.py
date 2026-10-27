@@ -24,11 +24,17 @@ import time
 
 from . import gallery_artifacts as artifacts
 from . import gallery_cache as cache
-from .gallery_packs import pack_lookups
+from .legacy_gallery import FIT_OPTIONS, timeline_counts
 
 ROOT = Path(__file__).resolve().parents[2]
-FIT_OPTIONS = {"test_size": 0.2, "seed": 1, "lr": 0.05, "max_iter": 4000,
-               "tol": 1e-7, "eval_every": 4000}
+
+def legacy_identity(root: Path = ROOT) -> str:
+    paths = [p for folder in ("scripts/render_website", "scripts/analyze_measurements")
+             for p in (root / folder).rglob("*.py")
+             if not p.name.startswith("record_") and p.name != "generate_benchmark_gallery_new.py"]
+    paths += [root / "scripts/ci" / name for name in
+              ("legacy_gallery.py", "gallery_artifacts.py", "gallery_packs.py")]
+    return artifacts.digest({str(p.relative_to(root)): artifacts.file_digest(p) for p in sorted(paths)})
 
 
 def git(*args: str) -> str:
@@ -39,12 +45,13 @@ def generator_identity(root: Path = ROOT) -> dict:
     paths = [p for folder in ("scripts/render_website", "scripts/analyze_measurements")
              for p in (root / folder).rglob("*.py")]
     paths += [root / "scripts/ci" / name for name in
-              ("gallery_prepare.py", "gallery_artifacts.py", "gallery_packs.py", "canonical_gallery.py", "check_gallery_records.py", "gallery-requirements.txt")]
+              ("gallery_prepare.py", "gallery_artifacts.py", "gallery_cache.py", "gallery_packs.py", "legacy_gallery.py", "canonical_gallery.py", "check_gallery_records.py", "gallery-requirements.txt")]
     libraries = {name: importlib.metadata.version(name) for name in
                  ("numpy", "pandas", "pyarrow", "fastparquet", "cramjam", "scikit-learn",
                   "scipy", "torch", "PyYAML")}
     return {"code": artifacts.digest({str(p.relative_to(root)): artifacts.file_digest(p)
                                       for p in sorted(paths)}),
+            "legacy_code": legacy_identity(root),
             "libraries": libraries, "python": platform.python_version(),
             "fit": FIT_OPTIONS, "device": "cpu"}
 
@@ -125,19 +132,8 @@ def benchmark_inputs(slug: str, source: dict, generator: dict, web: Path) -> dic
             "override": override, "assets": assets,
             "affiliations": benchmark_affiliations, "institutions": institutions,
             "dynamic_items": slug in load("dynamic-item-benchmarks.json"),
-            "canonical_records": (web / "content/curated/canonical-record-benchmarks.json").exists()
-            and slug in load("canonical-record-benchmarks.json")}
+            "canonical_records": True}
 
-
-def timeline_counts(path: Path) -> dict:
-    import pandas as pd
-
-    subjects = pd.read_parquet(path, columns=["normalized_name", "provider", "release_date"])
-    named = subjects[subjects.normalized_name.fillna("").str.strip().ne("")]
-    return {name: {field: dict(Counter(v for v in group[field]
-                                     if isinstance(v, str) and v.strip()))
-                   for field in ("provider", "release_date")}
-            for name, group in named.groupby("normalized_name")}
 
 
 def combine_timelines(summaries: dict) -> list[dict]:
@@ -159,78 +155,28 @@ def combine_timelines(summaries: dict) -> list[dict]:
 
 
 def render_bundle(slug: str, source: dict, tables: Path, web: Path, output: Path) -> dict:
-    """Render only local, hash-verified tables; never mutate a shared catalog."""
-    import pandas as pd
-    from scripts.render_website import generate_benchmark_gallery as gallery
-    from scripts.render_website.generate_chart_marginals import build_marginals
-    from scripts.analyze_measurements import benchmark_saturation as saturation
-    from scripts.analyze_measurements import fit_rasch_models as rasch
+    from .legacy_gallery import render_legacy_bundle
+    result = render_legacy_bundle(slug, source, tables, web, output, asset_root=ROOT, fit_options=FIT_OPTIONS)
+    add_records(slug, source, tables, result["data"], web)
+    return result
 
-    gallery.LOCAL_DATA_DIR, gallery.LOCAL_SOURCES = tables, {slug: source}
-    gallery.HF_REVISION = source["revision"]
-    gallery.source_revision.cache_clear()
-    gallery.source_tables.cache_clear()
-    # The historical fitter imports the gallery by its standalone module name.
-    rasch.gallery, rasch.fetch = gallery, gallery.fetch
-    timings = {}
 
-    def stage(name, function):
-        started = time.monotonic()
-        result = function()
-        timings[name] = round(time.monotonic() - started, 3)
-        print(f"{slug}: {name}: {timings[name]:.3f}s", flush=True)
-        return result
+def add_records(slug: str, source: dict, tables: Path, data: Path, web: Path) -> None:
+    from .canonical_gallery import prepare
+    import pyarrow.parquet as pq
 
-    dynamic = set(json.loads((web / "content/curated/dynamic-item-benchmarks.json").read_text()))
-    detail = stage("gallery", lambda: gallery.build_website_data(
-        [slug], tables, web, dynamic_items=dynamic))[slug]
-    data = web / "public/benchmark-data" / slug
-    verdict = stage("saturation", lambda: saturation.web_payload(
-        saturation.analyze_folders([tables / slug]))[slug])
-    card = gallery.card_for(slug, gallery.read_meta(slug, tables, False),
-                            gallery.load_overrides(web).get(slug, {}),
-                            gallery.load_affiliations(web), verdict)
-    if card is None:
-        raise ValueError(f"{slug}: selected benchmark produced no public card")
-    if card["image"] and not (ROOT / "website/public" / card["image"].lstrip("/")).is_file():
-        card["image"] = None
-    for institution in card["institutions"] or []:
-        if institution["logo"] and not (ROOT / "website/public" / institution["logo"].lstrip("/")).is_file():
-            institution["logo"] = None
-    has_responses = "responses.parquet" in source["tables"]
-    marginals = stage("marginals", lambda: build_marginals([slug], tables) if has_responses else
-                      {"slugs": {slug: {"binary": False}}, "models": {}, "marginals": []})
-    timeline = stage("timeline", lambda: timeline_counts(tables / slug / "subjects.parquet"))
-
-    def fit():
-        if not has_responses:
-            return None, "responses.parquet unavailable"
-        try:
-            frame = rasch.binary_frame(rasch.load_responses(slug, tables, False))
-        except rasch.NotBinary as exc:
-            return None, str(exc)
-        result = rasch.fit(frame, **FIT_OPTIONS, device="cpu")
-        fit_dir = output / "fit"
-        summary = rasch.write_outputs(slug, frame, result, rasch.subject_names(slug, tables, False),
-                                     fit_dir, curves=False, write_responses=False)
-        theta = pd.read_csv(fit_dir / "subjects.csv", dtype={"subject_id": str})
-        summary.pop("slug")
-        summary.update(source={"repo": artifacts.SOURCE_REPO, "revision": source["revision"]},
-                       fit=FIT_OPTIONS, theta={r.subject_id: round(float(r.theta), 4)
-                                               for r in theta.itertuples()})
-        with gzip.open(data / "irt.json.gz", "wt", encoding="utf-8") as stream:
-            json.dump(rasch.item_difficulties(fit_dir), stream, separators=(",", ":"), allow_nan=False)
-        return summary, None
-
-    irt, skipped = stage("rasch", fit)
-    source_descriptor = stage("packing", lambda: pack_lookups(data))
-    summary = {"card": card, "detail": detail, "saturation": verdict, "marginals": marginals,
-               "timeline": timeline, "irt": irt, "irt_skip_reason": skipped}
-    summary["source"] = source_descriptor
-    from .canonical_gallery import prepare as prepare_records
-    summary["records"] = stage("canonical records", lambda: prepare_records(slug, source, tables, data, web))
+    shutil.rmtree(data / "records", ignore_errors=True)
+    summary = json.loads((data / "summary.json").read_text())
+    summary["records"] = prepare(slug, source, tables, data, web)
+    # The authenticated source route serves every canonical table, including
+    # non-image attachments that the old chart viewer never requested.
+    for filename, info in source["tables"].items():
+        name = Path(filename).stem
+        summary["source"]["tables"].setdefault(name, {
+            "size": info["size"], "columns": pq.read_schema(tables / slug / filename).names,
+        })
+    (data / "source.json.gz").write_bytes(gzip.compress(artifacts.encoded(summary["source"]), mtime=0))
     artifacts.write_json(data / "summary.json", summary)
-    return {"data": data, "timings": timings}
 
 
 def prepare_one(task: dict) -> tuple[str, dict, dict, dict]:
@@ -277,7 +223,18 @@ def prepare_one(task: dict) -> tuple[str, dict, dict, dict]:
         shutil.copytree(ROOT / "website/content/curated", web / "content/curated")
         # Public assets affect card rendering; their paths remain relative to the
         # final application. No generated data is read from another worker.
-        result = render_bundle(slug, task["source"], tables, web, root)
+        reusable = cache.lookup_legacy(slug, inputs)
+        if reusable:
+            archive = root / "legacy.tar"
+            if not cache.restore(reusable, archive):
+                raise ValueError("Reusable chart bundle disappeared; retry preparation")
+            data = root / "legacy"
+            artifacts.unpack(archive, data, reusable, {"slug": slug, "key": reusable["key"]})
+            add_records(slug, task["source"], tables, data, web)
+            result = {"data": data, "timings": {"legacy_reused": True}}
+            print(f"{slug}: reused existing charts and analysis; refreshed canonical records", flush=True)
+        else:
+            result = render_bundle(slug, task["source"], tables, web, root)
         archive = root / "bundle.tar"
         meta = artifacts.pack(result["data"], archive, {"slug": slug, "key": key})
         relative = f"benchmarks/{slug}/{key}/{meta['sha256']}.tar"
@@ -379,9 +336,9 @@ def prepare(report_path: Path, candidate: Path, workers: int) -> None:
         for slug, entry, summary, timing in pool.map(prepare_one, sorted(tasks, key=lambda t: t["slug"])):
             entries[slug], summaries[slug], timings[slug] = entry, summary, timing
     with TemporaryDirectory(prefix="gallery-catalog-") as temporary:
-        requested = json.loads((ROOT / "website/content/curated/canonical-record-benchmarks.json").read_text())
+        requested = summaries.keys()
         if missing := set(requested) - {slug for slug, summary in summaries.items() if summary.get("records")}:
-            raise ValueError(f"Canonical gallery selection is missing source data: {sorted(missing)}")
+            raise ValueError(f"Canonical records are missing for published benchmarks: {sorted(missing)}")
         generated = Path(temporary) / "generated"
         assemble(summaries, generated)
         archive = Path(temporary) / "catalog.tar"

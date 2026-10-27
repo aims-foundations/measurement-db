@@ -20,6 +20,7 @@ import { CONTROL } from "./view-controls";
 import { ItemContent } from "../item-content";
 import { StructuredContent } from "../structured-content";
 import { metadataFields } from "@/lib/structured-content";
+import { SourceError } from "./source-error";
 
 function Metadata({
   title,
@@ -70,11 +71,7 @@ export function CellDetails({
       </p>
     );
   if (item.status === "error")
-    return (
-      <p role="alert" className="py-6 text-sm">
-        {item.message}
-      </p>
-    );
+    return <SourceError source={source} table="items" message={item.message} />;
   if (!item.value) return <p role="alert">The selected item is unavailable.</p>;
   const prepared = prepareItem(item.value, scale),
     observation = observations[attempt];
@@ -143,16 +140,23 @@ export function CellDetails({
                     ),
                   }}
                 />
-                {gradeLabel(observation.response, prepared.scale)}
+                <span className="min-w-0 break-words">
+                  {gradeLabel(observation.response, prepared.scale)}
+                </span>
               </p>
               <p className="mt-2 text-xs text-[var(--muted)]">
                 Trial {observation.trial} · Attempt {attempt + 1} of{" "}
                 {observations.length}
+                {model.partialItemIds?.includes(selection.itemId)
+                  ? " on this page"
+                  : ""}
               </p>
             </>
           ) : (
             <p className="text-sm text-[var(--muted)]">
-              No recorded observation.
+              {model.partialItemIds?.includes(selection.itemId)
+                ? "No observation on this page."
+                : "No recorded observation."}
             </p>
           )}
           {prepared.criterion.rule && (

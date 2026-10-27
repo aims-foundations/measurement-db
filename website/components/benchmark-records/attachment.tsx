@@ -1,6 +1,7 @@
 import type { RecordSource } from "@/lib/benchmark-records/client";
 import type { AssetLink } from "@/lib/benchmark-records/types";
 import { useAttachment } from "./use-records";
+import { SourceError } from "./source-error";
 
 export function Attachment({
   source,
@@ -18,9 +19,7 @@ export function Attachment({
     );
   if (asset.status === "error")
     return (
-      <p role="alert" className="text-xs">
-        {asset.message}
-      </p>
+      <SourceError source={source} table="assets" message={asset.message} />
     );
   return (
     <div className="my-4">

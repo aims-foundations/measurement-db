@@ -5,8 +5,6 @@ import { notFound } from "next/navigation";
 import { ActionLink } from "@/components/action-link";
 import { BenchmarkCreditPanel } from "@/components/benchmark-credit-panel";
 import { SaturationTag } from "@/components/saturation-tag";
-import { BenchmarkMatrix } from "@/components/matrix-viewer";
-import { MatrixLegend } from "@/components/matrix-legend";
 import { BenchmarkRecords } from "@/components/benchmark-records";
 import {
   getGalleryRecords,
@@ -196,15 +194,9 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
               {records ? (
                 <BenchmarkRecords key={detail.slug} entry={records} irt={irt} />
               ) : (
-                <>
-                  <BenchmarkMatrix
-                    key={detail.slug}
-                    slug={detail.slug}
-                    name={benchmark.name}
-                    irt={irt}
-                  />
-                  <MatrixLegend detail={storedDetail!} />
-                </>
+                <p className="text-sm text-[var(--muted)]">
+                  Benchmark records are not available in this build.
+                </p>
               )}
             </figure>
           </ScrollReveal>

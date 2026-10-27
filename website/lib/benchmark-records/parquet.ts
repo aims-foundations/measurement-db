@@ -1,10 +1,12 @@
 /** A worker keeps Parquet decompression off the rendering thread. */
 import { withBase } from "../base-path";
+import type { JsonTransport } from "./json";
 export function readParquetRecord<T>(
   base: string,
   parquet: { url: string; bytes: number },
   id: string,
   signal: AbortSignal,
+  options?: JsonTransport & { table: string; key: string },
 ): Promise<T | null> {
   signal.throwIfAborted();
   return new Promise((resolve, reject) => {
@@ -43,6 +45,7 @@ export function readParquetRecord<T>(
       base: new URL(base, location.href).href,
       parquet: { ...parquet, url: new URL(url, location.href).href },
       id,
+      ...options,
     });
   });
 }

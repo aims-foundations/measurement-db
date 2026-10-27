@@ -1,8 +1,10 @@
 """The new gallery transports canonical records without inventing display data."""
 
 import hashlib
+import gzip
 import json
 import sys
+import shutil
 from pathlib import Path
 
 import pyarrow as pa
@@ -13,6 +15,7 @@ import yaml
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from scripts.render_website import generate_benchmark_gallery_new as gallery
 from scripts.ci.check_gallery_records import check
+from scripts.render_website.record_windows import export_windows
 
 
 def fixture(root, *, kind="binary"):
@@ -215,10 +218,10 @@ def test_subject_page_index_and_lazy_trace_positions_cover_every_source_row(tmp_
     assert report["responses"]["grades"]["null"] == 2
     assert report["traces"] == {"rows": 48, "exact_source_positions": True}
     assert not list((output / "0/traces").glob("[0-9]*.json"))
-    page = output / "0/responses/0.json"
-    rows = json.loads(page.read_text())
-    rows["r0-1"]["response"] = 1
-    page.write_text(json.dumps(rows))
+    page = output / "0/windows/0.json.gz"
+    rows = json.loads(gzip.decompress(page.read_bytes()))
+    rows["observations"][0]["response"] = 1
+    page.write_bytes(gzip.compress(json.dumps(rows).encode()))
     with pytest.raises(ValueError, match="changed source fields"):
         check(source / "formatted_tables", output / "0")
 
@@ -234,17 +237,47 @@ def test_ci_preparation_packages_verified_records_and_server_authenticated_trace
     web = tmp_path / "website"
     config = web / "content/curated"
     config.mkdir(parents=True)
-    (config / "canonical-record-benchmarks.json").write_text('["binary"]')
     bundle = tmp_path / "bundle"
     bundle.mkdir()
     entry = prepare("binary", {"revision": "a" * 40}, tables, bundle, web)
     assert entry["base"] == "/benchmark-data/binary/records"
-    assert entry["manifest"]["compressed"]
+    assert entry["manifest"]["pack"]
     assert entry["manifest"]["tables"]["traces"]["parquet"]["url"] == "/api/gallery-source/binary/traces"
     assert json.loads((bundle / "records/manifest.json").read_text()) == entry["manifest"]
-    rows = json.loads(gzip.decompress((bundle / "records/responses/0.json.gz").read_bytes()))
-    assert list(rows.values()) == data["responses"]
+    index = json.loads((bundle / "records/pack-index.json").read_text())
+    number, offset, length, _, _ = index["entries"]["windows/0.json"]
+    packed = (bundle / "records" / index["packs"][number]["file"]).read_bytes()
+    rows = json.loads(gzip.decompress(packed[offset:offset + length]))["observations"]
+    assert sorted(rows, key=lambda r: r["response_id"]) == sorted(data["responses"], key=lambda r: r["response_id"])
     assert json.loads((bundle / "records-validation.json").read_text())["responses"]["grades"]["null"] == 2
+
+
+def test_windows_bound_rows_and_utf8_bytes_without_losing_attempts_or_unobserved_items(tmp_path):
+    source, data = fixture(tmp_path, kind="pairwise")
+    output = tmp_path / "windows"
+    descriptor = export_windows(source / "formatted_tables", output, max_rows=7, max_items=3, max_bytes=1700)
+    actual, items, partial = [], set(), set()
+    for page in range(descriptor["pages"]):
+        raw = gzip.decompress((output / f"{page}.json.gz").read_bytes())
+        assert len(raw) <= 1700
+        window = json.loads(raw)
+        assert len(window["observations"]) <= 7
+        assert len(window["itemIds"]) <= 3
+        actual.extend(window["observations"])
+        items.update(window["itemIds"])
+        partial.update(window["partialItemIds"])
+    assert sorted(actual, key=lambda r: r["response_id"]) == sorted(data["responses"], key=lambda r: r["response_id"])
+    assert items == {r["item_id"] for r in data["items"]}
+    assert partial == {"i0"}
+    # A single model with many attempts follows the same limits.
+    for row in data["responses"]:
+        row["subject_id"] = "s0"
+        row["test_condition"] = "context=" + "数学" * 70
+    pq.write_table(pa.Table.from_pylist(data["responses"]), source / "formatted_tables/responses.parquet")
+    second = tmp_path / "unicode-windows"
+    descriptor = export_windows(source / "formatted_tables", second, max_rows=100, max_bytes=1700)
+    assert descriptor["pages"] > 10
+    assert all(len(gzip.decompress(p.read_bytes())) <= 1700 for p in second.glob('[0-9]*.json.gz'))
 
 
 if __name__ == "__main__":
@@ -259,3 +292,20 @@ if __name__ == "__main__":
         str(i): pq.read_table(source / "formatted_tables/traces.parquet").to_pylist()
         for i, source in enumerate(sources) if (source / "formatted_tables/traces.parquet").exists()
     })
+    from scripts.render_website.record_packs import pack_records
+    expected = {}
+    for i, source in enumerate(sources):
+        expected[str(i)] = {}
+        for name in ("items", "traces", "assets"):
+            path = source / "formatted_tables" / f"{name}.parquet"
+            if path.exists():
+                rows = pq.read_table(path).to_pylist()
+                if name == "assets":
+                    rows = [{**row, "data": list(row["data"])} for row in rows]
+                expected[str(i)][name] = rows
+        directory = root / "packed" / str(i)
+        shutil.copytree(root / "lazy" / str(i), directory)
+        manifest = json.loads((directory / "manifest.json").read_text())
+        manifest["pack"] = pack_records(directory)
+        gallery.write_json(directory / "manifest.json", manifest)
+    gallery.write_json(root / "expected-records.json", expected)

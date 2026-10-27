@@ -66,7 +66,9 @@ export function HeatmapCanvas({
     itemId = view.itemIds[col];
   const attempts = view.cells.get(subject?.subject_id)?.get(itemId) ?? [];
   const value = !attempts.length
-    ? "No recorded observation"
+    ? view.partialItemIds?.includes(itemId)
+      ? "No observation on this page"
+      : "No recorded observation"
     : attempts.length > 1
       ? `${attempts.length} attempts`
       : scale.kind === "mixed"

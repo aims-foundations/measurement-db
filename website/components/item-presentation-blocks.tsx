@@ -2,6 +2,7 @@ import type { ComponentType, ReactNode } from "react";
 import type { Block } from "@/lib/presentation-transforms/types";
 import { fieldLabel } from "@/lib/structured-content";
 import { StructuredContent } from "./structured-content";
+import { CodeBlock } from "./code-block";
 
 export function ItemPresentationBlocks({
   blocks,
@@ -36,10 +37,12 @@ export function ItemPresentationBlocks({
           <section key={index} className="min-w-0" aria-label={block.title}>
             {block.title && (
               <h5 className="mb-2 text-xs font-medium text-[var(--muted)]">
-                {fieldLabel(block.title)}
+                {block.kind === "code" ? block.title : fieldLabel(block.title)}
               </h5>
             )}
-            {block.kind === "text" ? (
+            {block.kind === "code" ? (
+              <CodeBlock text={block.text} language={block.language} />
+            ) : block.kind === "text" ? (
               <Text text={block.text} />
             ) : block.kind === "source" ? (
               <pre className="overflow-auto whitespace-pre-wrap break-words text-xs leading-relaxed">

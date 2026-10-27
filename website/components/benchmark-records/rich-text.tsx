@@ -5,6 +5,7 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkBreaks from "remark-breaks";
 import rehypeKatex from "rehype-katex";
+import { MarkdownCodeBlock } from "../code-block";
 
 /** Keep JSON as code; render authored Markdown and explicit math without executing HTML. */
 export function RichText({ text }: { text: string }) {
@@ -31,6 +32,7 @@ export function RichText({ text }: { text: string }) {
         ]}
         rehypePlugins={[[rehypeKatex, { strict: "ignore", trust: false }]]}
         components={{
+          pre: MarkdownCodeBlock,
           a: (props) => (
             <a
               {...props}

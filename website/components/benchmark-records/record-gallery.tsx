@@ -50,7 +50,7 @@ export function RecordGallery({
     filters: {},
     query: "",
     order: comparable(scale) ? "grade" : "recorded",
-    display: "heatmap",
+    display: model.subjects.length ? "heatmap" : "table",
     actual: false,
   });
   const [rowPage, setRowPage] = useState(0),
@@ -88,7 +88,7 @@ export function RecordGallery({
     irt &&
     metadata.response_type === "binary" &&
     irt.nTrain + irt.nTest === source.manifest.tables.responses?.rows &&
-    irt.nItems === model.itemIds.length &&
+    irt.nItems === source.manifest.tables.items?.rows &&
     irt.nSubjects === source.manifest.tables.subjects?.rows &&
     model.subjects.every((subject) =>
       Object.hasOwn(irt.theta, subject.subject_id),
@@ -101,6 +101,14 @@ export function RecordGallery({
         Hover for model and item; click a cell for details. Arrow keys move
         between cells; Enter opens the selected cell.
       </p>
+      {Boolean(model.partialItemIds?.length) && (
+        <p className="mb-3 text-xs text-[var(--muted)]">
+          This item has more attempts than fit on one page. Continue to adjacent
+          pages for the remaining attempts. Counts and empty cells refer to this
+          page; comparison partners are shown only when the complete item is
+          loaded.
+        </p>
+      )}
       <ViewControls
         dimensions={contexts.dimensions}
         settings={settings}

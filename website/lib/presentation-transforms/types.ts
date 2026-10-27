@@ -1,5 +1,6 @@
 /** Temporary display documents, never written back to benchmark data. */
 export type Block =
+  | { kind: "code"; text: string; language?: string; title?: string }
   | { kind: "text" | "source"; text: string; title?: string }
   | { kind: "fields"; value: unknown; title?: string }
   | {

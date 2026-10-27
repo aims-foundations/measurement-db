@@ -1,6 +1,13 @@
 import assert from "node:assert/strict";
 import "./load-typescript.mjs";
 import test from "node:test";
+import { createRequire } from "node:module";
+
+test("math markup and its stylesheet use the same KaTeX version", () => {
+  const require = createRequire(import.meta.url);
+  const markdown = createRequire(require.resolve("rehype-katex"));
+  assert.equal(require("katex").version, markdown("katex").version);
+});
 
 async function loadModule(name) {
   const url = new URL(`../lib/benchmark-records/${name}.ts`, import.meta.url)
@@ -454,9 +461,9 @@ test("attachments retain bytes and declared media type", async () => {
     signal(),
   );
   assert.equal(result.url, "/records/assets/0.bin");
-  assert.equal(result.image.type, "image/png");
+  assert.equal(result.blob.type, "image/png");
   assert.deepEqual(
-    new Uint8Array(await result.image.arrayBuffer()),
+    new Uint8Array(await result.blob.arrayBuffer()),
     new Uint8Array([1, 2, 3]),
   );
 });
@@ -831,4 +838,152 @@ test("sectioned context keeps simulator roles, camera data, and unfamiliar field
   const orb = prepareItemContent(JSON.stringify(capture), "stanford_orb");
   assert.equal(orb[0].value, capture.capture);
   assert.deepEqual(orb.at(-1).blocks[0].value, capture.cameras);
+});
+
+test("item windows load only the selected page and preserve complete axes and partial-item labels", async () => {
+  const calls = [];
+  const pages = {
+    "subjects/0.json": { s: { subject_id: "s", display_name: "Single model" } },
+    "windows/8.json": {
+      itemIds: ["i"],
+      observations: [],
+      partialItemIds: ["i"],
+    },
+  };
+  const source = new RecordSource(
+    "/records",
+    { tables: { subjects: { pages: 1 } }, windows: { pages: 1000 } },
+    async (url) => {
+      calls.push(url);
+      const value = pages[url.slice("/records/".length)];
+      assert.ok(value, `Unexpected download: ${url}`);
+      return new Response(JSON.stringify(value));
+    },
+  );
+  const result = await source.window(8, signal());
+  assert.deepEqual(result.itemIds, ["i"]);
+  assert.deepEqual(result.partialItemIds, ["i"]);
+  assert.equal(result.subjects.length, 1);
+  assert.deepEqual(
+    new Set(calls),
+    new Set(["/records/subjects/0.json", "/records/windows/8.json"]),
+  );
+});
+
+test("partial items cannot create a false reciprocal comparison", async () => {
+  const { prepareComparisons } = (await loadModule("comparisons")).exports;
+  const model = prepareMatrix({
+    subjects: [
+      { subject_id: "a", display_name: "A" },
+      { subject_id: "b", display_name: "B" },
+    ],
+    itemIds: ["i"],
+    partialItemIds: ["i"],
+    observations: [
+      {
+        response_id: "a",
+        subject_id: "a",
+        item_id: "i",
+        trial: 1,
+        test_condition: null,
+        interactors: "opponent=b",
+        response: 1,
+      },
+      {
+        response_id: "b",
+        subject_id: "b",
+        item_id: "i",
+        trial: 1,
+        test_condition: null,
+        interactors: "opponent=a",
+        response: 0,
+      },
+    ],
+  });
+  assert.equal(prepareComparisons(model, {}).size, 0);
+  assert.equal(
+    prepareComparisons({ ...model, partialItemIds: [] }, {}).size,
+    2,
+  );
+});
+
+test("math remains math while fenced and tagged Python retain source whitespace", () => {
+  const python = "def f(x):\n    return '$x$'\n";
+  assert.equal(
+    normalizeMath("~~~python\n" + python + "~~~\nThen $x^2$."),
+    "~~~python\n" + python + "~~~\nThen $$x^2$$.",
+  );
+  assert.equal(normalizeMath("```python\n" + python), "```python\n" + python);
+  assert.equal(
+    normalizeMath(String.raw`Use \(\frac{1}{2}\) and \[x^2\].`),
+    "Use $$\\frac{1}{2}$$ and \n$$\nx^2\n$$\n.",
+  );
+  const blocks = prepareItemContent(
+    "Instructions\n[PYTHON]" + python + "[/PYTHON]\nMore",
+    "cruxeval",
+  );
+  assert.equal(blocks[1].kind, "code");
+  assert.equal(blocks[1].text, python);
+  assert.equal(blocks[1].language, "python");
+  assert.equal(prepareItemContent(python, "kernelbench")[0].text, python);
+  const files = prepareItemContent(
+    JSON.stringify({
+      instructions: "Implement this.",
+      initial_files: { "main.py": python },
+      extra: false,
+    }),
+    "aider",
+  );
+  assert.equal(files[1].text, python);
+  assert.equal(files[1].language, "python");
+  assert.deepEqual(files[2].value, { extra: false });
+});
+
+test("bare balanced math commands render without changing commands inside longer code fences", () => {
+  assert.equal(
+    normalizeMath(String.raw`Use \boxed{A} or \frac{1}{\sqrt{2}}.`),
+    String.raw`Use $$\boxed{A}$$ or $$\frac{1}{\sqrt{2}}$$.`,
+  );
+  assert.equal(
+    normalizeMath(String.raw`Incomplete \frac{1} and \boxed{a`),
+    String.raw`Incomplete \frac{1} and \boxed{a`,
+  );
+  assert.equal(
+    normalizeMath("````python\n```\n$literal$\n\\boxed{A}\n````\n$x$"),
+    "````python\n```\n$literal$\n\\boxed{A}\n````\n$$x$$",
+  );
+  assert.equal(
+    normalizeMath("``$code$ ` still code`` and $x$"),
+    "``$code$ ` still code`` and $$x$$",
+  );
+});
+
+test("source page limits reject large downloads and decompression before allocation", async () => {
+  const { budgetSource } = (await loadModule("source-budget")).exports;
+  let reads = 0,
+    decodes = 0;
+  const source = budgetSource(
+    {
+      byteLength: 10000,
+      slice(start, end) {
+        reads++;
+        return new ArrayBuffer(end - start);
+      },
+    },
+    {
+      GZIP(input, length) {
+        decodes++;
+        return new Uint8Array(length);
+      },
+    },
+    100,
+  );
+  assert.equal(source.file.slice(0, 30).byteLength, 30);
+  assert.throws(
+    () => source.compressors.GZIP(new Uint8Array(1), 1000),
+    /preview limit/,
+  );
+  assert.equal(decodes, 0);
+  assert.throws(() => source.file.slice(0, 10000), /preview limit/);
+  assert.equal(reads, 1);
 });

@@ -21,6 +21,7 @@ export function prepareComparisons(
       aliases.set(name, [...(aliases.get(name) ?? []), subject.subject_id]);
   }
   const identity = (record: Observation) => {
+    if (model.partialItemIds?.includes(record.item_id)) return null;
     if (!record.interactors) return null;
     const partners = parseFields(record.interactors);
     const ids = aliases.get(partners.opponent);
