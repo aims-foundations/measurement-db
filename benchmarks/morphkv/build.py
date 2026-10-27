@@ -78,7 +78,7 @@ class MorphKV(BenchmarkBuild):
 
         # 5. Keep literal run identities and complete source records for every observation.
         subjects = records[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(harness=parameters['labels']['harness'], source_run=key) for key in subjects.subject_key]
         observations['response_key'] = observations.record_key + '/' + observations.kind + '/' + observations.block_id
         observations['test_condition'] = 'source_file=' + observations.source_file

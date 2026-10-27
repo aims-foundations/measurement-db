@@ -61,7 +61,6 @@ build:
       missing: missing_candidate
       success: ok
       default_solution: solution.cpp
-      subject_prefix: 'PerfCodeBench / '
       harness: PerfCodeBench
       settings_status: historical_generation_settings_not_logged
       metric: correct_and_runnable

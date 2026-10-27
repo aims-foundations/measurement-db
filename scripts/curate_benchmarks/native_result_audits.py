@@ -1,6 +1,7 @@
 """Check complete native results independently of the pandas builders."""
 
 import json
+from functools import lru_cache
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -10,6 +11,23 @@ import yaml
 from measurement_db.scripts.curate_benchmarks.batch3_audits import (
     _actual, _check, _digest, _features,
 )
+
+
+@lru_cache(maxsize=1)
+def _subject_registry():
+    path = Path(__file__).resolve().parents[1] / "build_measurement_tables/map_model_registry.json"
+    return json.loads(path.read_text())
+
+
+def _subject_field_is_expected(row, field):
+    """Check exact registry attribution; unreported execution fields stay null."""
+    value = row[field] if isinstance(row, dict) else getattr(row, field)
+    registry_fields = {"normalized_name": "model", "provider": "company", "release_date": "release_date"}
+    expected = None
+    if field in registry_fields:
+        label = row["display_name"] if isinstance(row, dict) else row.display_name
+        expected = _subject_registry().get(label, {}).get(registry_fields[field])
+    return bool(pd.isna(value)) if expected is None else value == expected
 
 
 def _agc_source_records(directory, metadata):
@@ -4010,9 +4028,9 @@ def _auditing_sabotage(directory, tables, metadata, source_records=None):
         key = features["model_identifier"], features["regime"]
         note = ambiguous["note"] if key == (ambiguous["model"], ambiguous["regime"]) else parameters["subject"]["default_identity_note"]
         _check(features, dict(model_identifier=key[0], regime=key[1], identity_note=note), "Audit native configuration label and identity qualification")
-        _check(row.display_name, f"{key[0]} [{key[1]}]", "Audit native model label is not silently remapped")
+        _check(row.display_name, key[0], "Audit native model label is not silently remapped")
         _check(row.harness, parameters["subject"]["harness"], "Audit published harness label")
-        _check(all(pd.isna(getattr(row, name)) for name in ["provider", "normalized_name", "harness_version", "reasoning_effort", "access_date"]),
+        _check(all(_subject_field_is_expected(row, name) for name in ["provider", "normalized_name", "harness_version", "reasoning_effort", "access_date"]),
                True, "Audit no guessed historical model identity or runtime settings")
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in expected_subjects}), "Audit complete distinct model/regime conditions")
@@ -4999,7 +5017,7 @@ def _bedd(directory, tables, metadata, source_records=None):
     models = {}
     for subject in tables['subjects'].itertuples():
         model = _features(subject.subject_features_extra)['source_agent']
-        _check(subject.display_name, metadata['build']['parameters']['options']['subject_prefix']+model, 'BEDD literal native agent label')
+        _check(subject.display_name, model, 'BEDD literal native agent label')
         _check(subject.harness, 'MineRL BASALT', 'BEDD known harness without guessed model checkpoint')
         models[subject.subject_id] = model
     _check(Counter(models.values()), Counter({row['episode']['agent_name']: 1 for row in native.values()}), 'BEDD exactly the recorded AI agents')
@@ -6758,7 +6776,7 @@ def _classroom_ai(directory, tables, metadata, source_records=None):
         _check(row.harness, 'ClassroomAI', 'Classroom AI harness')
         _check(features['historical_config'], 'not_recorded', 'Classroom AI unknown historical requests')
         for field in ['normalized_name','release_date','access_date','harness_version','reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'Classroom AI no inferred historical or fine-tune configuration: '+field)
+            _check(_subject_field_is_expected(row, field), True, 'Classroom AI no inferred historical or fine-tune configuration: '+field)
         subjects[row.subject_id] = label
     _check(Counter(subjects.values()), Counter({row['subject']:1 for row in source['native'].values()}),
         'Classroom AI exact source subject coverage')
@@ -6863,12 +6881,12 @@ def _cmmlu(directory, tables, metadata, source_records=None):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         label = features['source_model_label']
-        _check(row.display_name, 'CMMLU / '+label, 'CMMLU exact reported system, including backend suffix')
+        _check(row.display_name, label, 'CMMLU exact reported system, including backend suffix')
         _check(row.harness, 'OpenCompass', 'CMMLU source harness')
         _check(features['historical_config'], 'not_recorded', 'CMMLU unknown historical configuration')
         _check(features['model_identifier_status'], 'upstream_filename_only', 'CMMLU no inferred checkpoint identity')
         for field in ['normalized_name','release_date','access_date','harness_version','reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'CMMLU no invented subject configuration: '+field)
+            _check(_subject_field_is_expected(row, field), True, 'CMMLU no invented subject configuration: '+field)
         subjects[row.subject_id] = label, features['prompt_condition']
     _check(Counter(label for label, _ in subjects.values()),
         Counter({row['subject']:1 for row in source['native'].values()}), 'CMMLU complete reported system coverage')
@@ -6928,7 +6946,11 @@ def _coffee_source_records(directory, metadata):
     namespace = {'Item': lambda item_id, name, description, **kwargs: SimpleNamespace(
                      id=item_id, name=name, description=description, **kwargs),
                  'AgentEndowment': SimpleNamespace, '__builtins__': {'list': list, 'tuple': tuple}}
-    exec(compile(ast.Module(body=functions, type_ignores=[]), '<pure CoffeeBench reference formatting>', 'exec'), namespace)
+    # The source uses deferred type annotations; preserve that behavior when
+    # compiling just its pure formatting functions on Python 3.11 as well.
+    import __future__
+    exec(compile(ast.Module(body=functions, type_ignores=[]), '<pure CoffeeBench reference formatting>',
+                 'exec', flags=__future__.annotations.compiler_flag), namespace)
     assignments = {node.targets[0].id: node.value for node in module.body
                    if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)}
     prompt, score, initial = (ast.literal_eval(assignments[name]) for name in
@@ -6972,11 +6994,11 @@ def _coffee(directory, tables, metadata, source_records=None):
     for row in tables['subjects'].itertuples():
         extra = _features(row.subject_features_extra)
         model = extra['recorded_model_id']
-        _check(row.display_name, 'CoffeeBench / '+model, 'CoffeeBench reported system label')
+        _check(row.display_name, model, 'CoffeeBench reported system label')
         _check(row.harness, 'CoffeeBench', 'CoffeeBench named source harness')
         _check(extra['historical_inference_settings'], 'not_recorded', 'CoffeeBench unknown historical settings stay unknown')
         for field in ['normalized_name', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'CoffeeBench no inferred configuration: '+field)
+            _check(_subject_field_is_expected(row, field), True, 'CoffeeBench no inferred configuration: '+field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({r['index']['focal_model_id']:1 for r in records.values()}),
            'CoffeeBench exactly the seven evaluated systems')
@@ -7051,11 +7073,11 @@ def _complex(directory, tables, metadata, source_records=None):
     for subject in tables["subjects"].itertuples():
         extra = _features(subject.subject_features_extra)
         model = extra["recorded_model_label"]
-        _check(subject.display_name, "ComplexBench / " + model, "ComplexBench native model label")
+        _check(subject.display_name, model, "ComplexBench native model label")
         _check(subject.harness, "ComplexBench", "ComplexBench source harness")
         _check(extra["historical_inference_settings"], "not_recorded", "ComplexBench historical settings unknown")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(subject, field)), True, "ComplexBench no guessed model setting: " + field)
+            _check(_subject_field_is_expected(subject, field), True, "ComplexBench no guessed model setting: " + field)
         subjects[subject.subject_id] = model
     _check(Counter(subjects.values()), Counter({record["model"]: 1 for record in records.values()}),
            "ComplexBench exactly the released model labels")
@@ -7178,7 +7200,7 @@ def _csedb(directory, tables, metadata, source_records=None):
             historical_request_settings="not_recorded"), "CSEDB explicit prompt variant and unknown historical settings")
         _check(row.harness, "CSEDB", "CSEDB harness")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "CSEDB no guessed setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "CSEDB no guessed setting: " + field)
         subjects[row.subject_id] = subject
     _check(Counter(subjects.values()), Counter({record["subject"]: 1 for record in records.values()}),
            "CSEDB exact released model configurations")
@@ -9635,7 +9657,7 @@ def _ehrflow(directory, tables, metadata, source=None):
         _check((row.trial, row.test_condition, pd.isna(row.interactors)),
             (1, metadata["build"]["parameters"]["test_condition"]["value"], True), "EHR one published final attempt")
         subject = subjects[row.subject_id]
-        _check(subject["display_name"], run["label"] + " (" + run["modelId"] + ")", "EHR published framework/model identity")
+        _check(subject["display_name"], (run["label"] + " (" + run["modelId"] + ")" if run["modelId"].startswith("variant=") else run["modelId"]), "EHR published model or unresolved framework identity")
         _check(subject["harness"], run["label"], "EHR framework identity")
         identity = dict(variant=run["modelId"].removeprefix("variant=")) if run["modelId"].startswith("variant=") else dict(model_identifier=run["modelId"])
         _check(_features(subject["subject_features_extra"]), dict(**identity,
@@ -12713,10 +12735,10 @@ def _kmmlu(directory, tables, metadata, source=None):
         expected.update(source_model_label=label,
             prompt_condition=label.rsplit("-", 1)[-1] if label.endswith(("-0shot", "-5shot")) else "not_recorded")
         _check(features, expected, "KMMLU only recorded model and explicit prompt-condition labels")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "KMMLU unaltered source configuration label")
+        _check(row.display_name, label, "KMMLU unaltered source configuration label")
         _check(row.harness, parameters["subject_features"]["harness"], "KMMLU actual source harness")
         for column in ["harness_version", "reasoning_effort", "release_date", "access_date", "provider", "normalized_name"]:
-            _check(pd.isna(getattr(row, column)), True, "KMMLU no guessed " + column)
+            _check(_subject_field_is_expected(row, column), True, "KMMLU no guessed " + column)
         subjects[row.subject_id] = label
     _check(Counter(subjects.values()), Counter({key:1 for key in configurations}), "KMMLU complete distinct source configurations")
     for row in tables["items"].itertuples():
@@ -12828,10 +12850,10 @@ def _kormedmcqa(directory, tables, metadata, source=None):
         _check(label in configurations, True, "KorMedMCQA source-supported configuration label")
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=label), "KorMedMCQA no guessed inference settings")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, "KorMedMCQA unchanged export model label")
+        _check(row.display_name, label, "KorMedMCQA unchanged export model label")
         _check(row.harness, parameters["subject_features"]["harness"], "KorMedMCQA source harness")
         for column in ["harness_version", "reasoning_effort", "release_date", "access_date", "provider", "normalized_name"]:
-            _check(pd.isna(getattr(row, column)), True, "KorMedMCQA no invented " + column)
+            _check(_subject_field_is_expected(row, column), True, "KorMedMCQA no invented " + column)
         subjects[row.subject_id] = label
     _check(Counter(subjects.values()), Counter({key:1 for key in configurations}), "KorMedMCQA all seven source configurations")
     for row in tables["items"].itertuples():
@@ -12981,10 +13003,10 @@ def _kris(directory, tables, metadata, source=None):
         model = features["source_model"]
         expected = {key:value for key,value in settings["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model=model), "KRIS no guessed model settings")
-        _check(row["display_name"], settings["labels"]["subject_prefix"] + model, "KRIS original archive model label")
+        _check(row["display_name"], model, "KRIS original archive model label")
         _check(row["harness"], settings["subject_features"]["harness"], "KRIS source harness")
         for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
-            _check(pd.isna(row[field]), True, "KRIS unknown historical " + field)
+            _check(_subject_field_is_expected(row, field), True, "KRIS unknown historical " + field)
         mapped_subjects[identifier] = model
     _check(Counter(mapped_subjects.values()), Counter({model:1 for model in models}), "KRIS one identity per released model")
     seen, checked_items, identities = Counter(), {}, {}
@@ -13145,10 +13167,10 @@ def _lambda_fp_course(directory, tables, metadata, source=None):
         subject = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=subject), "Lambda source-supported inference attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + subject, "Lambda original model label")
+        _check(row.display_name, subject, "Lambda original model label")
         _check(row.harness, parameters["subject_features"]["harness"], "Lambda recorded harness")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, "Lambda unrecorded setting remains unknown: " + field)
+            _check(_subject_field_is_expected(row, field), True, "Lambda unrecorded setting remains unknown: " + field)
         subjects[row.subject_id] = subject
     _check(Counter(subjects.values()), Counter({row["subject"]:1 for row in native.values()}), "Lambda all model configurations")
     for row in tables["items"].itertuples():
@@ -13301,10 +13323,10 @@ def _check_recorded_prompt_results(tables, metadata, source, benchmark_name):
         label = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=label), f"{benchmark_name} source-supported subject attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + label, f"{benchmark_name} literal source model label")
+        _check(row.display_name, label, f"{benchmark_name} literal source model label")
         _check(row.harness, parameters["subject_features"]["harness"], f"{benchmark_name} recorded harness")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, f"{benchmark_name} unrecorded subject setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, f"{benchmark_name} unrecorded subject setting: " + field)
         subjects[row.subject_id] = label
     _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), f"{benchmark_name} all original model labels")
     for row in tables["items"].itertuples():
@@ -13549,10 +13571,10 @@ def _lingoly(directory, tables, metadata, source=None):
         model = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=model), "LINGOLY source-supported subject attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LINGOLY original model label")
+        _check(row.display_name, model, "LINGOLY original model label")
         _check(row.harness, parameters["subject_features"]["harness"], "LINGOLY released harness label")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, "LINGOLY unrecorded subject setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "LINGOLY unrecorded subject setting: " + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LINGOLY all attributable models")
     verifier = metadata["grading"]["verifiers"]["exact_match"]
@@ -13647,10 +13669,10 @@ def _liveaops(directory, tables, metadata, source=None):
         model = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=model), "LiveAoPS recorded model attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LiveAoPS literal source model label")
+        _check(row.display_name, model, "LiveAoPS literal source model label")
         _check(row.harness, parameters["subject_features"]["harness"], "LiveAoPS source release label")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, "LiveAoPS unrecorded setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "LiveAoPS unrecorded setting: " + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({row["model"]:1 for row in native.values()}), "LiveAoPS every released model")
     aliases = {str(value["question"]["idx"]):value for value in definitions.values()}
@@ -13665,7 +13687,7 @@ def _liveaops(directory, tables, metadata, source=None):
         _check((judge["class"], json.loads(judge["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
                "LiveAoPS source-reported verifier")
         for field in ["item_features", "asset_manifest"]:
-            _check(pd.isna(getattr(row, field)), True, "LiveAoPS no invented item attributes/assets")
+            _check(_subject_field_is_expected(row, field), True, "LiveAoPS no invented item attributes/assets")
         items[row.item_id] = original["identity"]
     _check(Counter(items.values()), Counter({key:1 for key in definitions}), "LiveAoPS complete question/reference definitions")
     _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LiveAoPS one complete source record per observation")
@@ -13755,10 +13777,10 @@ def _livebench(directory, tables, metadata, source=None):
         model = features["source_model_label"]
         expected = {key:value for key,value in parameters["subject_features"].items() if key != "harness"}
         _check(features, dict(**expected, source_model_label=model), "LiveBench recorded model attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + model, "LiveBench literal model label")
+        _check(row.display_name, model, "LiveBench literal model label")
         _check(row.harness, parameters["subject_features"]["harness"], "LiveBench released judgment harness")
         for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row, field)), True, "LiveBench unrecorded model setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "LiveBench unrecorded model setting: " + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({value["model"]:1 for value in native.values()}), "LiveBench all literal models")
     questions = {value["question_id"]:value["question"] for value in native.values()}
@@ -13776,7 +13798,7 @@ def _livebench(directory, tables, metadata, source=None):
         _check((judge["class"], json.loads(judge["spec"])), ("judge", metadata["grading"]["verifiers"]["reported"]),
                "LiveBench source-reported verifier")
         for field in ["item_features", "asset_manifest"]:
-            _check(pd.isna(getattr(row, field)), True, "LiveBench no invented item attributes/assets")
+            _check(_subject_field_is_expected(row, field), True, "LiveBench no invented item attributes/assets")
         items[row.item_id] = row.raw_item_id
     _check(Counter(items.values()), Counter({key:1 for key in questions}), "LiveBench complete released question coverage")
     _check(Counter(tables["traces"].response_id), Counter(tables["responses"].response_id), "LiveBench one trace per grading event")
@@ -13954,11 +13976,11 @@ def _llm4ir(directory, tables, metadata, source=None):
         task, label = features["source_task"], features["source_model_label"]
         expected = {k:v for k,v in parameters["subject_features"].items() if k != "harness"}
         _check(features, dict(**expected, source_task=task, source_model_label=label), "LLM4IR source-specific model attributes")
-        _check(row.display_name, parameters["labels"]["subject_prefix"]+task+"/"+label, "LLM4IR literal task-specific labels")
+        _check(row.display_name, label, "LLM4IR literal task-specific labels")
         _check(row.harness, parameters["subject_features"]["harness"], "LLM4IR original study harness")
         for field in ["provider", "normalized_name", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-            _check(pd.isna(getattr(row,field)), True, "LLM4IR no guessed endpoint or inference setting: "+field)
-        subjects[row.subject_id] = task+"/"+label
+            _check(_subject_field_is_expected(row, field), True, "LLM4IR no guessed endpoint or inference setting: "+field)
+        subjects[row.subject_id] = task + "/" + label
     _check(Counter(subjects.values()), Counter({r["subject"]:1 for r in native.values()}), "LLM4IR complete model coverage")
     targets = {r["item"]:r for r in native.values()}
     for row in tables["items"].itertuples():
@@ -14084,7 +14106,7 @@ def _llm_bp_tag(directory,tables,metadata,source=None):
     _check(_features(subject.subject_features_extra),{k:v for k,v in parameters['subject_features'].items() if k!='harness'},
         'LLM-BP no invented historical request settings')
     for field in ['provider','normalized_name','harness_version','reasoning_effort','release_date','access_date']:
-        _check(pd.isna(getattr(subject,field)),True,'LLM-BP unknown endpoint setting: '+field)
+        _check(_subject_field_is_expected(subject, field),True,'LLM-BP unknown endpoint setting: '+field)
     targets={row['raw_item_id']:row for row in source['targets']}
     _check(len(tables['items']),len(targets),'LLM-BP complete canonical input/grading definitions')
     items={}
@@ -14224,10 +14246,10 @@ def _llm_survey(directory,tables,metadata,source=None):
         features=_features(row.subject_features_extra);model=features['source_model_label']
         expected={k:v for k,v in parameters['subject_features'].items() if k!='harness'}
         _check(features,dict(**expected,source_model_label=model,documented_model_identifier=parameters['models'][model]),'Survey source model configuration')
-        _check(row.display_name,parameters['labels']['subject_prefix']+model,'Survey literal model label')
+        _check(row.display_name,model,'Survey literal model label')
         _check(row.harness,parameters['subject_features']['harness'],'Survey simulation harness')
         for field in ['provider','normalized_name','harness_version','reasoning_effort','release_date','access_date']:
-            _check(pd.isna(getattr(row,field)),True,'Survey no guessed historical model setting: '+field)
+            _check(_subject_field_is_expected(row, field),True,'Survey no guessed historical model setting: '+field)
         subjects[row.subject_id]=model
     _check(Counter(subjects.values()),Counter({r['model']:1 for r in native.values()}),'Survey complete model coverage')
     for row in tables['items'].itertuples():
@@ -14345,9 +14367,9 @@ def _llm_uncertainty(directory,tables,metadata,source=None):
             option_token_strings=json.dumps(native['generate_logits_chat.py']['options_alt'] if variant=='outputs_chat_v1' and 'Yi' in model else native['generate_logits.py']['options']))
         _check(features,{key:str(value) for key,value in expected.items() if value is not None},'Uncertainty exact documented model/prompt settings')
         _check(row.harness,parameters['subject_features']['harness'],'Uncertainty harness identity')
-        _check(row.display_name,parameters['labels']['subject_prefix']+':'.join(key),'Uncertainty literal model label')
+        _check(row.display_name,key[0],'Uncertainty literal model label')
         for field in ['provider','normalized_name','harness_version','release_date','access_date','reasoning_effort']:
-            _check(pd.isna(getattr(row,field)),True,'Uncertainty no guessed historical setting: '+field)
+            _check(_subject_field_is_expected(row, field),True,'Uncertainty no guessed historical setting: '+field)
         subjects[row.subject_id]=key
     _check(Counter(subjects.values()),Counter({(v['model'],v['variant'],v['method']):1 for v in files.values()}),'Uncertainty all native model configurations')
     prompt_cache={}
@@ -14446,10 +14468,10 @@ def _lean_historical(directory, tables, metadata, source=None):
         expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
         expected.update(source_model_label=key[0], policy=key[1], recorded_round=str(key[2]))
         _check(features, expected, "Lean literal model, policy and grading-round identity")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + ":".join(map(str, key)), "Lean source-labelled subject")
+        _check(row.display_name, key[0], "Lean source-labelled subject")
         _check(row.harness, parameters["subject_features"]["harness"], "Lean historical pipeline")
         for field in ["provider", "normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "Lean no guessed historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "Lean no guessed historical setting: " + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source["subjects"]}), "Lean complete distinct recorded configurations")
     for row in tables["items"].itertuples():
@@ -14572,10 +14594,10 @@ def _lohi(directory, tables, metadata, source=None):
         expected = {name: value for name, value in parameters["subject_features"].items() if name != "harness"}
         expected.update(zip(["source_model_label", "training_task", "training_dataset", "training_fold"], key))
         _check(features, expected, "Lo-Hi method and fitted training configuration")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + ":".join(key), "Lo-Hi source-labelled model")
+        _check(row.display_name, key[0], "Lo-Hi source-labelled model")
         _check(row.harness, parameters["subject_features"]["harness"], "Lo-Hi native harness")
         for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "Lo-Hi no invented historical model setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "Lo-Hi no invented historical model setting: " + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source["subjects"]}), "Lo-Hi all trained source configurations")
     for row in tables["items"].itertuples():
@@ -14682,10 +14704,10 @@ def _matharena_platform(directory, tables, metadata, source=None):
         expected = {k: v for k, v in parameters['subject_features'].items() if k != 'harness'}
         expected.update(source_model_label=key[0], source_model_config=key[1])
         _check(features, expected, 'MathArena literal published configuration')
-        _check(row.display_name, parameters['labels']['subject_prefix'] + key[0], 'MathArena original model label')
+        _check(row.display_name, key[0], 'MathArena original model label')
         _check(row.harness, 'MathArena', 'MathArena published harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MathArena no invented model setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MathArena no invented model setting: ' + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['subjects']}), 'MathArena complete source configurations')
 
@@ -14749,7 +14771,7 @@ def _matharena_platform(directory, tables, metadata, source=None):
         _check(items[row.item_id], expected_by_occurrence[filename, index], 'MathArena original request/reference/rubric association')
         _check(None if pd.isna(row.response) else float(row.response), None if native['correct'] is None else float(native['correct']), 'MathArena unchanged native grade')
         for field in ['test_condition', 'interactors']:
-            _check(pd.isna(getattr(row, field)), True, 'MathArena no invented occasion setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MathArena no invented occasion setting: ' + field)
         key = row.subject_id, row.item_id
         trials[key] += 1
         _check(row.trial, trials[key], 'MathArena retained original occurrence order')
@@ -14853,10 +14875,10 @@ def _mathvista(directory, tables, metadata, source=None):
         model = features['source_model_label']
         expected = {key: value for key, value in parameters['subject_features'].items() if key != 'harness'}
         _check(features, dict(expected, source_model_label=model), 'MathVista literal published model configuration scope')
-        _check(row.display_name, parameters['labels']['subject_prefix'] + model, 'MathVista original model label')
+        _check(row.display_name, model, 'MathVista original model label')
         _check(row.harness, 'VLMEvalKit', 'MathVista source harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MathVista no invented setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MathVista no invented setting: ' + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MathVista all source model labels')
     assets = tables['assets'].set_index('asset_id').to_dict('index')
@@ -15024,10 +15046,10 @@ def _medagentboard(directory, tables, metadata, source=None):
                         recorded_configuration=source['configurations'][key])
         expected.pop('harness')
         _check(_features(row.subject_features_extra), canonicalize_features(expected), 'Exact original subject configuration')
-        _check(row.display_name, 'MedAgentBoard / ' + key, 'Literal source-labelled subject')
+        _check(row.display_name, key, 'Literal source-labelled subject')
         _check(row.harness, 'MedAgentBoard', 'Native harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented historical setting: ' + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'All native source configurations')
     assets = tables['assets'].set_index('asset_id').to_dict('index')
@@ -15079,7 +15101,7 @@ def _medagentboard(directory, tables, metadata, source=None):
         occurrences[pair] += 1
         _check(row.trial, occurrences[pair], 'Original occurrence numbering')
         for field in ['test_condition', 'interactors']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented response setting')
+            _check(_subject_field_is_expected(row, field), True, 'No invented response setting')
         seen[key] += 1
     expected = source.get('selected', source['observations'])
     _check(seen, Counter({key: 1 for key in expected}), 'Every original observation exactly once')
@@ -15175,10 +15197,10 @@ def _medarabiq(directory, tables, metadata, source=None):
                         recorded_configuration=source['configurations'][key])
         expected.pop('harness')
         _check(features, canonicalize_features(expected), 'Complete recorded model and run configuration')
-        _check(row.display_name, 'QIMMA / ' + key[0], 'Literal recorded model label')
+        _check(row.display_name, key[0], 'Literal recorded model label')
         _check(row.harness, 'QIMMA_LightEval', 'Recorded evaluation harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented historical attribute: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented historical attribute: ' + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'All 81 recorded configurations exactly once')
     for row in tables['items'].itertuples():
@@ -15213,7 +15235,7 @@ def _medarabiq(directory, tables, metadata, source=None):
         occurrences[pair] += 1
         _check(row.trial, occurrences[pair], 'Repeated source positions remain separate ordered occurrences')
         for field in ['test_condition', 'interactors']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented response setting')
+            _check(_subject_field_is_expected(row, field), True, 'No invented response setting')
         seen[key] += 1
     expected = source.get('selected', source['observations'])
     _check(seen, Counter({key: 1 for key in expected}), 'Every recorded source row exactly once')
@@ -15475,10 +15497,10 @@ def _medwatermark(directory, tables, metadata, source=None):
             source_generation_file=key[0], variant=key[1])
         expected.pop('harness')
         _check(features, canonicalize_features(expected), 'Recorded source model/experiment/variant configuration')
-        _check(row.display_name, ' / '.join(config[x] for x in ['model', 'experiment', 'dataset', 'variant']), 'Literal source configuration label')
+        _check(row.display_name, parameters['models'][config['model']], 'Literal source configuration label')
         _check(row.harness, 'fact-eval-wllm', 'Native harness attribution')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented historical subject attribute: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented historical subject attribute: ' + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'Exactly one subject per recorded configuration')
     for row in tables['items'].itertuples():
@@ -15514,7 +15536,7 @@ def _medwatermark(directory, tables, metadata, source=None):
         occurrences[pair] += 1
         _check(row.trial, occurrences[pair], 'Source occurrences and reused-generation grading events remain traceable')
         for field in ['test_condition', 'interactors']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented response setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented response setting: ' + field)
         seen[key] += 1
     _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'Every original rating and otherwise-ungraded generation exactly once')
     return source['counts']
@@ -15649,10 +15671,10 @@ def _mergebench(directory, tables, metadata, source=None):
             source_merge_configuration=configuration, source_result_file=source_file)
         expected.pop('harness')
         _check(features, canonicalize_features(expected), 'Original merged configuration and explicitly declared context')
-        _check(row.display_name, 'MergeBench / ' + base_model + ' / ' + configuration, 'Merged model is not a bare base model or merging algorithm')
+        _check(row.display_name, base_model + ' / ' + configuration, 'Merged model is not a bare base model or merging algorithm')
         _check(row.harness, 'safety-eval-fork', 'Declared source harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented historical model attribute: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented historical model attribute: ' + field)
         subjects[row.subject_id] = source_file
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'Exactly the original merged configurations')
     for row in tables['items'].itertuples():
@@ -15692,7 +15714,7 @@ def _mergebench(directory, tables, metadata, source=None):
         occurrences[pair] += 1
         _check(row.trial, occurrences[pair], 'Repeated native task positions remain separate occurrences')
         for field in ['test_condition', 'interactors']:
-            _check(pd.isna(getattr(row, field)), True, 'No invented response setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'No invented response setting: ' + field)
         seen[key] += 1
     _check(seen, Counter({key: 1 for key in source.get('selected', source['observations'])}), 'All recorded safety assessments exactly once')
     return source['counts']
@@ -15775,7 +15797,7 @@ def _mind2web(directory, tables, metadata, source=None):
     _check(_features(subject.subject_features_extra),
            {key:value for key,value in parameters["subject_features"].items() if key != "harness"}, "Mind2Web source configuration")
     for field in ["normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"]:
-        _check(pd.isna(getattr(subject, field)), True, "Mind2Web unknown setting: " + field)
+        _check(_subject_field_is_expected(subject, field), True, "Mind2Web unknown setting: " + field)
     items = {}
     for item in tables["items"].itertuples():
         sample, content = item.raw_item_id, json.loads(item.content)
@@ -16009,11 +16031,11 @@ def _mj_bench(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         config = tuple(features[key] for key in ['source_model', 'input_mode', 'response_style', 'declared_scale'])
         _check(config in configurations, True, 'MJ original model/input/rating configuration')
-        _check(row.display_name, 'MJ-Bench / '+' / '.join(config), 'MJ literal released subject label')
+        _check(row.display_name, config[0], 'MJ literal released subject label')
         _check(row.harness, 'MJ-Bench', 'MJ source harness')
         _check(features, dict(source_model=config[0], input_mode=config[1], response_style=config[2], declared_scale=config[3], historical_inference_settings='not_recorded', historical_model_revision='not_recorded'), 'MJ complete source configuration')
         for name in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row,name)), True, 'MJ no invented model setting')
+            _check(_subject_field_is_expected(row, name), True, 'MJ no invented model setting')
         subjects[row.subject_id] = config
     _check(Counter(subjects.values()), Counter({key: 1 for key in configurations}), 'MJ every released configuration once')
     _check(Counter(tables['responses'].response_id), Counter(tables['traces'].response_id), 'MJ complete trace coverage')
@@ -16260,9 +16282,9 @@ def _mlip_arena(directory, tables, metadata, source=None):
         config = (features['task_family'], features['native_model'])
         _check(features, dict(native_model=config[1], task_family=config[0], **{k:v for k,v in parameters['subject_features'].items() if k != 'harness'}), 'MLIP recorded configuration and explicit unknowns')
         _check(row.harness, 'MLIP Arena', 'MLIP source harness')
-        _check(row.display_name, 'MLIP Arena / '+config[1]+' / '+config[0], 'MLIP literal source label')
+        _check(row.display_name, config[1], 'MLIP literal source label')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row,field)), True, 'MLIP no invented configuration')
+            _check(_subject_field_is_expected(row, field), True, 'MLIP no invented configuration')
         subjects[row.subject_id] = config
     _check(Counter(subjects.values()), Counter({(v['family'],v['model']):1 for v in source['events'].values()}), 'MLIP full configuration coverage')
     _check(Counter(tables['responses'].response_id), Counter(tables['traces'].response_id), 'MLIP one complete trace per assessment')
@@ -16459,10 +16481,10 @@ def _mmbench(directory, tables, metadata, source=None):
         model = features['source_model_label']
         expected = {key: value for key, value in parameters['subject_features'].items() if key != 'harness'}
         _check(features, dict(expected, source_model_label=model), 'MMBench literal published model configuration')
-        _check(row.display_name, parameters['labels']['subject_prefix'] + model, 'MMBench original model label')
+        _check(row.display_name, model, 'MMBench original model label')
         _check(row.harness, 'VLMEvalKit', 'MMBench recorded harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MMBench no invented configuration: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MMBench no invented configuration: ' + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MMBench all source model labels')
     assets = tables['assets'].set_index('asset_id').to_dict('index')
@@ -16619,9 +16641,9 @@ def _mmoral(directory, tables, metadata, source=None):
         kind = 'ensemble' if policy.startswith('optg/predictions/') else 'voter'
         _check(features, dict(parameters['subject_features'], source_export=policy, policy_kind=kind),
                'MMOral literal policy identity and configuration limitations')
-        _check(row.display_name, 'MMOral / OPTG / ' + policy.removeprefix('optg/'), 'MMOral original policy label')
+        _check(row.display_name, policy.removeprefix('optg/'), 'MMOral original policy label')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MMOral no invented model configuration: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MMOral no invented model configuration: ' + field)
         subjects[row.subject_id] = policy
     _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source['observations']}), 'MMOral every named policy retained')
     assets = tables['assets'].set_index('asset_id').to_dict('index')
@@ -17112,11 +17134,11 @@ def _nanobaselib(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         key = features['modification'], features['source_method']
         _check(key in source['subjects'], True, 'NanoBaseLib original modification/method configuration')
-        _check(row.display_name, 'NanoBaseLib / ' + key[0] + ' / ' + key[1], 'NanoBaseLib literal method name')
+        _check(row.display_name, key[1], 'NanoBaseLib literal method name')
         _check(features, dict(metadata['build']['parameters']['subject_features'], modification=key[0], source_method=key[1]),
                'NanoBaseLib complete method provenance')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'NanoBaseLib no inferred model metadata: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'NanoBaseLib no inferred model metadata: ' + field)
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['subjects']}), 'NanoBaseLib all recorded method configurations')
     for row in tables['items'].itertuples():
@@ -17798,10 +17820,10 @@ def _realtimeqa(directory, tables, metadata, source=None):
         mode = "generation" if token.endswith("_gen") else "multiple_choice"
         expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
         _check(features, dict(**expected, source_model_token=token, answer_mode=mode), "RealTime QA literal configuration")
-        _check(row.display_name, "RealTime QA / " + token, "RealTime QA literal model token")
+        _check(row.display_name, token, "RealTime QA literal model token")
         _check(row.harness, parameters["subject_features"]["harness"], "RealTime QA source harness")
         for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
-            _check(pd.isna(getattr(row, field)), True, "RealTime QA no invented historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "RealTime QA no invented historical setting: " + field)
         subjects[row.subject_id] = token
     _check(Counter(subjects.values()), Counter({value["model"]: 1 for value in native.values()}), "RealTime QA all configurations")
     for row in tables["items"].itertuples():
@@ -17980,11 +18002,11 @@ def _rewardbench(directory, tables, metadata, source=None):
         expected = {key: value for key, value in parameters["subject_features"].items() if key != "harness"}
         expected.update(native_configuration=config, scoring=original["scoring"])
         _check(features, canonicalize_features(expected), "RewardBench complete native model configuration")
-        _check(row.display_name, "RewardBench / " + config["model"] + " / " + original["scoring"],
+        _check(row.display_name, config["model"],
                "RewardBench literal model identity without aggregate aliases")
         _check(row.harness, parameters["subject_features"]["harness"], "RewardBench recorded harness")
         for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
-            _check(pd.isna(getattr(row, field)), True, "RewardBench no guessed historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "RewardBench no guessed historical setting: " + field)
         subjects[row.subject_id] = signature
     _check(Counter(subjects.values()), Counter({key: 1 for key in source["configurations"]}),
            "RewardBench all distinct native configurations")
@@ -18188,10 +18210,10 @@ def _refgrader(directory, tables, metadata, source=None):
         expected = {k: v for k, v in parameters["subject_features"].items() if k != "harness"}
         expected.update(source_model_configuration=subject[0], workflow=subject[1], sampling_mode=subject[2])
         _check(features, expected, "RefGrader configuration without invented effective API settings")
-        _check(row.display_name, "RefGrader / " + ":".join(subject), "RefGrader literal configuration labels")
+        _check(row.display_name, subject[0], "RefGrader literal configuration labels")
         _check(row.harness, "RefGrader", "RefGrader source harness")
         for field in ("normalized_name", "provider", "harness_version", "reasoning_effort", "release_date", "access_date"):
-            _check(pd.isna(getattr(row, field)), True, "RefGrader no unrecorded historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "RefGrader no unrecorded historical setting: " + field)
         subjects[row.subject_id] = subject
     _check(Counter(subjects.values()), Counter({key: 1 for key in source["configurations"]}), "RefGrader complete configurations")
     for row in tables["items"].itertuples():
@@ -18246,10 +18268,13 @@ def _reliancescope_sources(directory, metadata):
 
     raw = directory / 'raw'
     report = '\n'.join(page.extract_text() or '' for page in PdfReader(raw / 'reports/evaluation.pdf').pages)
-    system = '<Role>' + report.split('<Role>', 1)[1].split('</LEARNING  INSTRUCTION>', 1)[0] + '</LEARNING  INSTRUCTION>'
-    three = report.split('3-shot  examples', 1)[1].split('6-shot  examples', 1)[0].strip()
-    nine = report.split('9-shot  examples', 1)[1].split('User  prompt', 1)[0].strip()
-    _check((three.count('<Example  '), nine.count('<Example  ')), (3, 9), 'RelianceScope complete documented demonstrations')
+    # PDF extraction may separate words with spaces or line breaks. Preserve
+    # the captured prompt text while tolerating whitespace in section markers.
+    system = re.search(r'<Role>.*?</LEARNING\s+INSTRUCTION>', report, re.DOTALL).group(0)
+    three = re.search(r'3-shot\s+examples\s+(.*?)6-shot\s+examples', report, re.DOTALL).group(1).strip()
+    nine = re.search(r'9-shot\s+examples\s+(.*?)User\s+prompt', report, re.DOTALL).group(1).strip()
+    _check((len(re.findall(r'<Example\s+', three)), len(re.findall(r'<Example\s+', nine))),
+           (3, 9), 'RelianceScope complete documented demonstrations')
     context = {'zeroshot': None, '3shot': three, '9shot': nine, '9shot+cot': nine}
     models = {'qwen3:8b': ('qwen3:8b', '0.6'), 'qwen3:30b': ('qwen3:30b', '0.6'),
               'gpt-4o-mini': ('gpt-4o-mini-2024-07-18', '1.0'),
@@ -18349,7 +18374,7 @@ def _reliancescope(directory, tables, metadata, source=None):
         model, temperature = source['configurations'][key]
         _check(features, dict(prompting_strategy=strategy, reported_model_identifier=model, reported_temperature=temperature),
                'RelianceScope report-declared subject settings')
-        _check((row.display_name, row.harness), (model + ' / ' + strategy, 'RelianceScope'), 'RelianceScope configuration labels')
+        _check((row.display_name, row.harness), (model, 'RelianceScope'), 'RelianceScope configuration labels')
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({key: 1 for key in source['configurations']}), 'RelianceScope complete configurations')
     for row in tables['items'].itertuples():
@@ -18502,10 +18527,10 @@ def _researchclawbench(directory, tables, metadata, source=None):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         key = features['recorded_agent'], features['recorded_model'], features['recorded_model_display']
-        _check(row.display_name, key[0], 'ResearchClawBench literal recorded agent name')
+        _check(row.display_name, key[1] or key[0], 'ResearchClawBench recorded model identity')
         _check(features, dict(recorded_agent=key[0], recorded_model=key[1], recorded_model_display=key[2], historical_settings='not_recorded'),
                'ResearchClawBench recorded model settings')
-        _check(row.harness, 'ResearchClawBench', 'ResearchClawBench declared measurement harness')
+        _check(row.harness, key[0], 'ResearchClawBench recorded agent harness')
         subjects[row.subject_id] = key
     _check(Counter(subjects.values()), Counter({(r['agent_name'], r['model'], r['model_display']):1 for r in source['index'].values()}),
            'ResearchClawBench each literal agent/model configuration once')
@@ -20451,7 +20476,7 @@ def _summeval(directory, tables, metadata, source=None):
         model = record['model_id']
         subject = subjects[row.subject_id]
         _check((subject['display_name'], subject['harness'], pd.isna(subject['harness_version'])),
-            ('SummEval ' + model + ' - ' + parameters['model_names'][model], labels['harness'], True), 'SummEval literal source model identity')
+            (parameters['model_names'][model], labels['harness'], True), 'SummEval literal source model identity')
         _check(_features(subject['subject_features_extra']), dict(source_model_alias=model,
             source_model_name=parameters['model_names'][model], model_paper=parameters['model_papers'][model],
             source_title=parameters['model_titles'][model], model_type=parameters['model_types'][model],
@@ -22080,11 +22105,11 @@ def _embodied_agent_interface(directory, tables, metadata, source=None):
     for subject in tables["subjects"].itertuples():
         extra = _features(subject.subject_features_extra)
         model = extra["recorded_model_label"]
-        _check(subject.display_name, "Embodied Agent Interface / " + model, "EAI literal source model label")
+        _check(subject.display_name, model, "EAI literal source model label")
         _check(subject.harness, "Embodied Agent Interface", "EAI recorded harness")
         _check(extra["historical_inference_settings"], "not_recorded", "EAI no inferred request settings")
         for name in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(subject, name)), True, "EAI unknown setting remains null: " + name)
+            _check(_subject_field_is_expected(subject, name), True, "EAI unknown setting remains null: " + name)
         subjects[subject.subject_id] = model
     _check(Counter(subjects.values()), Counter({model: 1 for model, _ in records.values()}),
            "EAI exactly the original subjects, without alias repair")
@@ -22176,12 +22201,12 @@ def _swe_together(directory, tables, metadata, source=None):
     for row in tables["subjects"].itertuples():
         extra = _features(row.subject_features_extra)
         model = extra["recorded_model_label"]
-        _check(row.display_name, "SWE-Together / " + model, "SWE-Together literal model label")
+        _check(row.display_name, model, "SWE-Together literal model label")
         _check(row.harness, "opencode", "SWE-Together published harness")
         _check(extra, dict(recorded_model_label=model, result_snapshot=snapshot,
                            historical_inference_settings="not_recorded"), "SWE-Together snapshot and unknown settings")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "SWE-Together no inferred setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "SWE-Together no inferred setting: " + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({key[1]: 1 for key in records}), "SWE-Together exact recorded models")
     items = {}
@@ -22278,13 +22303,13 @@ def _frontieror(directory, tables, metadata, source=None):
         kinds = {record["kind"] for (_, name), record in records.items() if name == model}
         _check(len(kinds), 1, "FrontierOR one native evaluation kind per model label")
         kind = kinds.pop()
-        _check(row.display_name, "FrontierOR / " + model, "FrontierOR literal model/configuration label")
+        _check(row.display_name, model, "FrontierOR literal model/configuration label")
         harness = "FrontierOR one-shot" if kind == "model" else "FrontierOR " + model.split(" + ")[-1] + " self-evolution"
         _check(row.harness, harness, "FrontierOR distinct recorded evolution harness")
         _check(extra, dict(recorded_model_label=model, evaluation_kind=kind, result_snapshot=labels["snapshot"],
                            historical_inference_settings="not_recorded"), "FrontierOR recorded settings and snapshot")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "FrontierOR unknown historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "FrontierOR unknown historical setting: " + field)
         models[row.subject_id] = model
     _check(Counter(models.values()), Counter({key[1]: 1 for key in records}), "FrontierOR exact native configurations")
     items = {}
@@ -22395,12 +22420,12 @@ def _planbench(directory, tables, metadata, source=None):
             recorded_parameters={key: header[key] for key in ["additional_task_info", "tempertures"] if key in header},
             settings_status="only_native_recorded_settings")
         subject = subjects[row.subject_id]
-        _check(subject["display_name"], "PlanBench / " + engine + " / " + variant, "PlanBench literal model and configuration label")
+        _check(subject["display_name"], engine, "PlanBench literal model and configuration label")
         _check(subject["harness"], "PlanBench", "PlanBench original evaluation harness")
         _check(_features(subject["subject_features_extra"]), {key: str(value).strip() for key, value in expected_features.items()},
                "PlanBench native model and prompting settings")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(subject[field]), True, "PlanBench no inferred historical setting: " + field)
+            _check(_subject_field_is_expected(subject, field), True, "PlanBench no inferred historical setting: " + field)
         if messages is not None:
             first_user = next(index for index, message in enumerate(messages) if message["role"] == "user")
             _check(all(message["role"] == "system" for message in messages[:first_user]), True,
@@ -22496,9 +22521,9 @@ def _weavebench(directory, tables, metadata, source=None):
         model = features["recorded_model_label"]
         _check(features, dict(recorded_model_label=model, settings_status="historical_inference_settings_not_recorded"),
                "WeaveBench literal model label without inferred historical settings")
-        _check(row.display_name, "WeaveBench / " + model + " / " + row.harness, "WeaveBench separate native model/runtime configurations")
+        _check(row.display_name, model, "WeaveBench separate native model/runtime configurations")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "WeaveBench unknown historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "WeaveBench unknown historical setting: " + field)
         subject_map[row.subject_id] = model, row.harness
     expected_pairs = {(row["source_record"]["model"], row["source_record"]["harness"]) for row in native.values()}
     _check(Counter(subject_map.values()), Counter({key: 1 for key in expected_pairs}), "WeaveBench all native model/runtime pairs")
@@ -22608,9 +22633,9 @@ def _mtbench(directory, tables, metadata, source=None):
         _check(labels, {features["internal_model_label"]}, "MT-Bench preserve differing filename and internal model labels")
         _check(features, dict(recorded_model_label=model, internal_model_label=next(iter(labels)),
             settings_status="historical_generation_settings_not_recorded"), "MT-Bench explicit limits of historical settings")
-        _check(row.display_name, "MT-Bench / " + model, "MT-Bench literal published model identity")
+        _check(row.display_name, model, "MT-Bench literal published model identity")
         for field in ["normalized_name", "release_date", "access_date", "harness", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "MT-Bench unknown historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "MT-Bench unknown historical setting: " + field)
         subject_map[row.subject_id] = model
     _check(Counter(subject_map.values()), Counter({key[0]: 1 for key in native}), "MT-Bench all published model labels")
     items = tables["items"].set_index("item_id").to_dict("index")
@@ -22784,14 +22809,14 @@ def _nyu_ctf(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         submission = features["submission_id"]
         original = source["summaries"][submission]["record"]["metadata"]
-        _check(row.display_name, "NYU CTF / " + submission, "NYU CTF preserve submission identity")
+        _check(row.display_name, original["model"], "NYU CTF preserve submission identity")
         _check(row.harness, original["agent"], "NYU CTF original agent configuration")
         configuration = ast.literal_eval(features.pop("recorded_configuration"))
         _check(configuration, source["configurations"].get(submission, {}), "NYU CTF original settings without inferred defaults")
         _check(features, dict(submission_id=submission, recorded_model_label=original["model"], submission_date=original["date"],
             assessment_protocol=original["comment"]), "NYU CTF original model label and submission metadata")
         for name in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, name)), True, "NYU CTF no invented historical setting: " + name)
+            _check(_subject_field_is_expected(row, name), True, "NYU CTF no invented historical setting: " + name)
         subject_map[row.subject_id] = submission
     _check(Counter(subject_map.values()), Counter({key: 1 for key in source["summaries"]}), "NYU CTF all submitted configurations separately")
     actual_assets = tables["assets"].set_index("asset_id").to_dict("index")
@@ -22916,12 +22941,12 @@ def _perfcodebench(directory, tables, metadata, source=None):
     for row in tables["subjects"].itertuples():
         features = _features(row.subject_features_extra)
         model = features["recorded_model_label"]
-        _check(row.display_name, "PerfCodeBench / " + model, "PerfCodeBench no invented model alias")
+        _check(row.display_name, model, "PerfCodeBench no invented model alias")
         _check(row.harness, "PerfCodeBench", "PerfCodeBench original harness")
         _check(features, dict(recorded_model_label=model, settings_status="historical_generation_settings_not_logged"),
             "PerfCodeBench no current defaults assigned to historical generations")
         for field in ["normalized_name", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "PerfCodeBench unknown historical setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "PerfCodeBench unknown historical setting: " + field)
         subjects[row.subject_id] = model
     _check(Counter(subjects.values()), Counter({key[0]: 1 for key in source["native"]}), "PerfCodeBench every evaluated model exactly once")
     items = tables["items"].set_index("item_id").to_dict("index")
@@ -23023,10 +23048,10 @@ def _osworld(directory, tables, metadata, source=None):
         configuration = json.loads(features["recorded_configuration"])
         _check(set(features), {"source_archive", "recorded_configuration", "configuration_scope"}, "OSWorld limited recorded subject metadata")
         _check(features["configuration_scope"], parameters["labels"]["configuration_scope"], "OSWorld archival configuration scope")
-        _check(row.display_name, parameters["labels"]["subject_prefix"] + archive.removesuffix(".zip"), "OSWorld original archive identity")
+        _check(row.display_name, archive.removesuffix(".zip"), "OSWorld original archive identity")
         _check(row.harness, "OSWorld", "OSWorld recorded harness family")
         for field in ["normalized_name", "provider", "release_date", "access_date", "harness_version", "reasoning_effort"]:
-            _check(pd.isna(getattr(row, field)), True, "OSWorld no invented historical model setting: " + field)
+            _check(_subject_field_is_expected(row, field), True, "OSWorld no invented historical model setting: " + field)
         subjects[row.subject_id] = archive, configuration
         configurations[archive, json.dumps(configuration, sort_keys=True)] += 1
     expected_configurations = {(key[0], json.dumps(original["configuration"], sort_keys=True)) for key, original in source["native"].items()}
@@ -23179,9 +23204,9 @@ def _tabarena(directory, tables, metadata, source=None):
         _check(attributes['openml_task_id'], str(original['record']['tid']), 'TabArena task-specific fitted model')
         _check((attributes['outer_fold'], attributes['outer_repeat']), (str(fold), str(repeat)), 'TabArena original model split')
         _check(attributes['default_config'], original['record']['framework'], 'TabArena original default model')
-        _check(row.display_name, parameters['labels']['subject_prefix'] + key[0] + ' / ' + key[1], 'TabArena literal model identity')
+        _check(row.display_name, key[0], 'TabArena literal model identity')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'TabArena no invented historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'TabArena no invented historical setting: ' + field)
         subjects[row.subject_id] = key
         subject_seen[key] += 1
     _check(subject_seen, Counter({key: 1 for key in source['configurations']}), 'TabArena every fitted model exactly once')
@@ -23321,12 +23346,12 @@ def _exploitgym(directory, tables, metadata, source=None):
         fields = _features(row.subject_features_extra)
         submission = fields['submission']
         original = submissions[submission]['record']
-        _check(row.display_name, 'ExploitGym / ' + submission, 'ExploitGym literal source agent identity')
+        _check(row.display_name, (original['models'][0] if len(original['models']) == 1 else submission), 'ExploitGym recorded model or composite system identity')
         _check(row.harness, original['name'], 'ExploitGym original agent harness')
         _check(json.loads(fields['model_identifiers']), original['models'], 'ExploitGym exact model identifiers')
         _check(fields['benchmark_revision'], original['benchmark_commit'], 'ExploitGym original benchmark revision')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'ExploitGym no invented historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'ExploitGym no invented historical setting: ' + field)
         subjects[row.subject_id] = submission
         subject_seen[submission] += 1
     _check(subject_seen, Counter({key: 1 for key in submissions}), 'ExploitGym every source agent exactly once')
@@ -23473,10 +23498,10 @@ def _erbench(directory, tables, metadata, source=None):
     subjects, subject_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_model']
-        _check(row.display_name, 'ERBench / ' + model, 'ERBench literal original model folder')
+        _check(row.display_name, model, 'ERBench literal original model folder')
         _check(row.harness, 'ERBench', 'ERBench named original harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'ERBench no invented configuration: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'ERBench no invented configuration: ' + field)
         subjects[row.subject_id] = model
         subject_seen[model] += 1
     _check(subject_seen, Counter({model: 1 for model in source['subjects']}), 'ERBench every source model exactly once')
@@ -23591,12 +23616,12 @@ def _perumedqa(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         model = features['source_model']
         declared = source['subjects'][model]
-        _check(row.display_name, 'PeruMedQA / ' + model, 'PeruMedQA literal recorded model identity')
+        _check(row.display_name, model, 'PeruMedQA literal recorded model identity')
         _check(row.harness, 'PeruMedQA', 'PeruMedQA source harness')
         _check(features['declared_model'], declared['identifier'], 'PeruMedQA model identifier from original generation code')
         _check(json.loads(features['inference_sources']), sorted(declared['scripts']), 'PeruMedQA original generation code paths')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'PeruMedQA no inferred historical configuration: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'PeruMedQA no inferred historical configuration: ' + field)
         subjects[row.subject_id] = model
         subject_seen[model] += 1
     _check(subject_seen, Counter({model: 1 for model in source['subjects']}), 'PeruMedQA all original models exactly once')
@@ -23729,10 +23754,10 @@ def _morphkv(directory, tables, metadata, source=None):
     subjects, subject_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_run']
-        _check(row.display_name, 'MorphKV / ' + model, 'MorphKV literal original run identity')
+        _check(row.display_name, model, 'MorphKV literal original run identity')
         _check(row.harness, 'MorphKV/LongGenBench', 'MorphKV source evaluation harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MorphKV no guessed historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MorphKV no guessed historical setting: ' + field)
         subjects[row.subject_id] = model
         subject_seen[model] += 1
     _check(subject_seen, Counter({model: 1 for model in source['models']}), 'MorphKV every released configuration exactly once')
@@ -23840,10 +23865,10 @@ def _morqa(directory, tables, metadata, source=None):
     subjects, model_seen = {}, Counter()
     for row in tables['subjects'].itertuples():
         model = _features(row.subject_features_extra)['source_evaluator']
-        _check(row.display_name, 'MORQA / ' + model, 'MORQA literal evaluator identity')
+        _check(row.display_name, model, 'MORQA literal evaluator identity')
         _check(row.harness, 'MORQA multireference evaluation', 'MORQA source evaluation condition')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MORQA no inferred historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MORQA no inferred historical setting: ' + field)
         subjects[row.subject_id] = model
         model_seen[model] += 1
     _check(model_seen, Counter({key: 1 for key in source['models']}), 'MORQA all released evaluators exactly once')
@@ -23948,11 +23973,11 @@ def _mtbbench(directory, tables, metadata, source=None):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         model = features['source_model'], features['system_prompt']
-        _check(row.display_name, 'MTBBench / ' + model[0], 'MTBBench literal released model label')
+        _check(row.display_name, model[0], 'MTBBench literal released model label')
         _check(row.harness, 'MTBBench sequential clinical decisions', 'MTBBench recorded harness')
         _check(features, dict(source_model=model[0], system_prompt=model[1]), 'MTBBench complete system protocol')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'MTBBench no guessed historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'MTBBench no guessed historical setting: ' + field)
         subjects[row.subject_id] = model
         seen_models[model] += 1
     _check(seen_models, Counter({key: 1 for key in source['models']}), 'MTBBench distinct model and recorded protocol')
@@ -24049,10 +24074,10 @@ def _real_pocqi(directory, tables, metadata, source=None):
         features = _features(row.subject_features_extra)
         provider = features['source_provider']
         _check(features, dict(source_provider=provider), 'Real-POCQi original provider identity')
-        _check(row.display_name, 'Real-POCQi / ' + provider, 'Real-POCQi literal source label')
+        _check(row.display_name, provider, 'Real-POCQi literal source label')
         _check(row.harness, 'Real-POCQi physician pairwise evaluation', 'Real-POCQi original evaluation design')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'Real-POCQi no guessed setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'Real-POCQi no guessed setting: ' + field)
         subjects[row.subject_id] = provider
         seen_models[provider] += 1
     _check(seen_models, Counter({key: 1 for key in source['models']}), 'Real-POCQi all literal evaluated systems')
@@ -24146,10 +24171,10 @@ def _visual_riddles(directory, tables, metadata, source=None):
         model = features['source_model'], features['source_type']
         _check(features, dict(source_model=model[0], source_type=model[1],
             input_pipeline=metadata['build']['parameters']['pipelines'][model[1]]), 'Visual Riddles correct evaluated pipeline')
-        _check(row.display_name, 'Visual Riddles / ' + ' / '.join(model), 'Visual Riddles literal model and pipeline label')
+        _check(row.display_name, model[0], 'Visual Riddles literal model and pipeline label')
         _check(row.harness, 'Visual Riddles open-ended human-rated evaluation', 'Visual Riddles original evaluation design')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'Visual Riddles no inferred setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'Visual Riddles no inferred setting: ' + field)
         subjects[row.subject_id] = model
         seen_models[model] += 1
     _check(seen_models, Counter({key: 1 for key in source['models']}), 'Visual Riddles all separate evaluated pipelines')
@@ -24274,10 +24299,10 @@ def _sustainable_food(directory, tables, metadata, source=None):
         if model == 'openai/o1-preview-2024-09-12': options['max_tokens'] = 32768
         _check(features, dict(source_model=model, declared_request_options=json.dumps(options, sort_keys=True)),
             'Sustainable Food only original model ID and declared request options')
-        _check(row.display_name, 'Sustainable Food / ' + model, 'Sustainable Food exact dated model identifier')
+        _check(row.display_name, model, 'Sustainable Food exact dated model identifier')
         _check(row.harness, 'HELM RemoteService recipe preference prediction', 'Sustainable Food original harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'Sustainable Food no inferred setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'Sustainable Food no inferred setting: ' + field)
         subjects[row.subject_id] = model
         seen_models[model] += 1
     _check(seen_models, Counter({key: 1 for key in source['models']}), 'Sustainable Food every source model')
@@ -24416,10 +24441,10 @@ def _synthpai(directory, tables, metadata, source=None):
         model = features['source_model']
         _check(features, dict(source_model=model, configuration_sha256=source['configurations'][model]['digest']),
             'SynthPAI original model/configuration identity')
-        _check(row.display_name, 'SynthPAI / ' + model, 'SynthPAI literal original model label')
+        _check(row.display_name, model, 'SynthPAI literal original model label')
         _check(row.harness, 'SynthPAI personal attribute inference', 'SynthPAI recorded harness')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'SynthPAI no inferred setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'SynthPAI no inferred setting: ' + field)
         subjects[row.subject_id] = model
         seen_models[model] += 1
     _check(seen_models, Counter({key[1]: 1 for key in source['native']}), 'SynthPAI exactly the measured models')
@@ -24513,11 +24538,11 @@ def _sugarcrepe(directory, tables, metadata, source=None):
     source = _sugarcrepe_sources(directory) if source is None else source
     _check(len(tables['subjects']), 1, 'SugarCrepe one literal released model label')
     subject = tables['subjects'].iloc[0]
-    _check(subject.display_name, 'SugarCrepe / GPT-4V', 'SugarCrepe no guessed API model identifier')
+    _check(subject.display_name, 'GPT-4V', 'SugarCrepe no guessed API model identifier')
     _check(subject.harness, 'SugarCrepe two-caption image matching', 'SugarCrepe recorded evaluation task')
     _check(_features(subject.subject_features_extra), dict(source_model='GPT-4V'), 'SugarCrepe literal upstream model')
     for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-        _check(pd.isna(subject[field]), True, 'SugarCrepe no guessed setting: ' + field)
+        _check(_subject_field_is_expected(subject, field), True, 'SugarCrepe no guessed setting: ' + field)
     assets = tables['assets'].set_index('asset_id').to_dict('index')
     _check(len(assets), len(tables['assets']), 'SugarCrepe unique image assets')
     asset_digests = {key: dict(size=len(row['data']), sha256=hashlib.sha256(bytes(row['data'])).hexdigest()) for key, row in assets.items()}
@@ -24636,10 +24661,10 @@ def _pxplore(directory, tables, metadata, source=None):
         model = features['source_run']
         expected = source['models'][model]
         _check(features, dict(source_run=model, method=expected['method'], input_mode=expected['mode']), 'Pxplore literal run and input configuration')
-        _check(row.display_name, 'Pxplore / ' + model, 'Pxplore no guessed source model/checkpoint')
+        _check(row.display_name, model, 'Pxplore no guessed source model/checkpoint')
         _check(row.harness, 'Pxplore learner-state alignment', 'Pxplore original evaluation protocol')
         for field in ['normalized_name', 'provider', 'release_date', 'access_date', 'harness_version', 'reasoning_effort']:
-            _check(pd.isna(getattr(row, field)), True, 'Pxplore no guessed historical setting: ' + field)
+            _check(_subject_field_is_expected(row, field), True, 'Pxplore no guessed historical setting: ' + field)
         subjects[row.subject_id] = model
         seen_models[model] += 1
     _check(seen_models, Counter({model: 1 for model in source['models']}), 'Pxplore all distinct policy configurations')
@@ -24777,9 +24802,9 @@ def _programbench(directory, tables, metadata, source=None):
         _check(features, dict(source_run=key[0], configuration_sha256=key[1], model_alias=original['model_alias'], provider=original['provider']),
             'ProgramBench complete recorded model/configuration identity')
         _check((row.display_name,row.harness,row.harness_version),
-            (original['display'],metadata['build']['parameters']['labels']['harness'],original['mini_version']),
+            (original['model_alias'],metadata['build']['parameters']['labels']['harness'],original['mini_version']),
             'ProgramBench original model label, provider and scaffold version')
-        _check(pd.isna(row.provider) and pd.isna(row.normalized_name), True, 'ProgramBench no guessed canonical model mapping')
+        _check(all(_subject_field_is_expected(row, field) for field in ['provider', 'normalized_name', 'release_date']), True, 'ProgramBench exact registered model mapping')
         _check(None if pd.isna(row.reasoning_effort) else row.reasoning_effort, original['reasoning_effort'],
             'ProgramBench original reasoning setting without inferred defaults')
         subjects[row.subject_id] = key
@@ -30197,7 +30222,7 @@ def _rclicks(directory, tables, metadata):
     for row in tables['subjects'].itertuples():
         features = _features(row.subject_features_extra)
         name = features['native_identifier']
-        _check((row.display_name, features), ('RClicks ' + name,
+        _check((row.display_name, features), (name,
             dict(native_identifier=name, algorithm=parameters['models'][name])), 'RClicks original algorithm identity')
         subjects[row.subject_id] = name
     _check(Counter(subjects.values()), Counter({key[2]: 1 for key in native}), 'RClicks complete recorded algorithms')
@@ -30481,7 +30506,7 @@ def _tumlu(directory, tables, metadata):
         features = _features(subject.subject_features_extra)
         model, variant = features['source_model'], features['prompting_variant']
         _check((model, variant) in source_subjects, True, 'TUMLU observed model and prompting mode')
-        _check(subject.display_name, model + ' [' + variant + ']', 'TUMLU unnormalized model identifier')
+        _check(subject.display_name, model, 'TUMLU original model identifier')
         _check(subject.harness, labels['harness'], 'TUMLU harness provenance')
         _check(features, dict(source_model=model, prompting_variant=variant,
             prompting=parameters['prompting_variants'][variant], historical_configuration=labels['historical_configuration']), 'TUMLU subject configuration')
@@ -30729,7 +30754,7 @@ def _wonderbread(directory, tables, metadata):
         _check(trace['source_records'], original['native'], 'WONDERBREAD complete native output and source grade')
         _check(set(trace), {'source_file', 'source_rows', 'source_records'}, 'WONDERBREAD explicit source provenance')
         _check(response.response, original['grade'], 'WONDERBREAD native per-observation grade')
-        _check(subjects[response.subject_id], ('WONDERBREAD ' + original['features']['native_model'], original['features']),
+        _check(subjects[response.subject_id], (original['features']['declared_backend'], original['features']),
                'WONDERBREAD original model and ablation association')
         _check(item['content'], original['content'], 'WONDERBREAD complete original task context')
         _check(item['raw_item_id'] in aliases[original['content'], original['reference'], protocol], True, 'WONDERBREAD source item alias')

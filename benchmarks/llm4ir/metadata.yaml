@@ -54,8 +54,6 @@ build:
       summary_outputs: data/Task3_IR_Summarization/Processed_code_summaries.csv
       summary_scores: data/Task3_IR_Summarization/Codesummary_scores.csv
       summary_cosine: data/Task3_IR_Summarization/CodeSummary_embeddings_and_similarity.csv
-    labels:
-      subject_prefix: 'LLM4IR / '
     subject_features:
       harness: LLM4IR released assessments
       model_identifier_status: literal_task_specific_source_label

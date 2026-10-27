@@ -61,7 +61,6 @@ build:
       sd-scripts-multiresolution-compa: sd-scripts-multiresolution-compat
     labels:
       snapshot: metrics-sha256:47c1db5553bd85b2404c3d1ba0b95ecb85a87f1d02feffe39661701095b67fb5
-      subject_prefix: 'SWE-Together / '
       condition: opencode;published_replicate_slot;historical_request_settings_unavailable
 grading:
   rule: 'Apply the published success threshold to each released replicate score: judge score >= 0.85. Preserve the

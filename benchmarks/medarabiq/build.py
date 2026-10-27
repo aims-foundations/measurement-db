@@ -100,7 +100,7 @@ class MedArabiQ(BenchmarkBuild):
             response_scale=protocols[row.protocol]['response_scale']) for row in items.itertuples()]
         items['verifier'] = [ExactMatcher(spec=json.dumps(protocols[key], sort_keys=True)) for key in items.protocol]
         subjects = attempts[['subject_key', 'model', 'run', 'source_configuration']].drop_duplicates('subject_key').copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.model
+        subjects['raw_label'] = subjects.model
         subjects['features'] = [dict(**parameters['subject_features'], source_model_label=row.model,
             source_run=row.run, recorded_configuration=row.source_configuration) for row in subjects.itertuples()]
         return {'subjects': subjects[['subject_key', 'raw_label', 'features']],

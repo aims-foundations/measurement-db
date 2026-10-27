@@ -64,7 +64,7 @@ class VisualRiddles(BenchmarkBuild):
         # 4. Separate literal model/pipeline configurations without guessing historical settings.
         subjects = responses[['model_name', 'type']].drop_duplicates().reset_index(drop=True)
         subjects['subject_key'] = subjects.index
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.model_name + ' / ' + subjects.type
+        subjects['raw_label'] = subjects.model_name
         subjects['features'] = [dict(source_model=row.model_name, source_type=row.type,
             input_pipeline=parameters['pipelines'][row.type], harness=parameters['labels']['harness']) for row in subjects.itertuples()]
         responses = responses.merge(subjects[['model_name', 'type', 'subject_key']],

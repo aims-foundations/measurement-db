@@ -59,7 +59,7 @@ class EmbodiedAgentInterface(BenchmarkBuild):
 
         # 3. Keep literal model labels and full prompts; describe the intended grader.
         subjects = answers[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness=self.name, recorded_model_label=model,
             historical_inference_settings=labels["settings_status"]) for model in subjects.subject_key]
         items = tasks.rename(columns={"identifier": "item_key"}).copy()

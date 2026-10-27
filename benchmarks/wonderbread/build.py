@@ -217,7 +217,7 @@ class Wonderbread(BenchmarkBuild):
 
         # 5. Preserve complete native output records and explicit model settings.
         subjects = attempts[['subject_key', 'model', 'family', 'configuration', 'modality']].drop_duplicates('subject_key').copy()
-        subjects['raw_label'] = 'WONDERBREAD ' + subjects.model
+        subjects['raw_label'] = subjects.apply(lambda row: p["models"][row.model + "/" + row.modality], axis=1)
         subjects['features'] = [dict(native_model=row.model, task_family=row.family,
             configuration=quote(row.configuration, safe=' _-,+'), declared_backend=p['models'][row.model + '/' + row.modality],
             harness='WONDERBREAD', harness_version=p['labels']['harness_revision']) for row in subjects.itertuples()]

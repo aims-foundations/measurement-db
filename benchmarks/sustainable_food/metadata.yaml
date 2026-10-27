@@ -53,7 +53,6 @@ build:
       pairs: release/recipe-rating-prediction/pairs_metadata.csv
       outputs: release/recipe-rating-prediction/collected_outputs.csv
     labels:
-      subject_prefix: 'Sustainable Food / '
       harness: HELM RemoteService recipe preference prediction
     parsers:
       openai/o1-preview-2024-09-12: o1_initial

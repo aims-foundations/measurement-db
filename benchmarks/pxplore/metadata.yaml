@@ -82,7 +82,6 @@ build:
       left_only: omitted
       right_only: added_or_rewritten
     labels:
-      subject_prefix: 'Pxplore / '
       harness: Pxplore learner-state alignment
 sources:
   upstream:

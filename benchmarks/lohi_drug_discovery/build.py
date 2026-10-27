@@ -63,7 +63,7 @@ class LoHiDrugDiscovery(BenchmarkBuild):
         configuration = ["model", "task", "dataset", "fold"]
         subjects = attempts[configuration].drop_duplicates().copy()
         subjects["subject_key"] = subjects[configuration].agg(":".join, axis=1)
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=row.model,
             training_task=row.task, training_dataset=row.dataset, training_fold=row.fold) for row in subjects.itertuples()]
         attempts = attempts.merge(subjects[configuration + ["subject_key"]], on=configuration, validate="many_to_one")

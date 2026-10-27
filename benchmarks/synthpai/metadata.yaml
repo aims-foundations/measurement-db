@@ -95,7 +95,6 @@ build:
       gpt-3.5-turbo-16k-0613: results/predicted/EVAL/gpt-3.5-turbo-16k-0613/10/gpt3.5_predict.txt
       gpt-4: results/predicted/EVAL/gpt-4/10/gpt4_predict.txt
     labels:
-      subject_prefix: 'SynthPAI / '
       harness: SynthPAI personal attribute inference
 sources:
   upstream:

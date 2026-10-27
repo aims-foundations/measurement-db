@@ -61,7 +61,6 @@ build:
       brokenarxiv_0826: brokenarxiv
       usamo_2026: usamo
     labels:
-      subject_prefix: 'MathArena Platform / '
       recorded_input: released_user_message
       fallback_input: released_problem_and_formal_statement
     subject_features:

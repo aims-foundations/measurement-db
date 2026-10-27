@@ -89,7 +89,7 @@ class BEDD(BenchmarkBuild):
 
         # 4. Keep world/task inputs separate from human grading and comparison context.
         subjects = observations[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["options"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness="MineRL BASALT", source_agent=name) for name in subjects.subject_key]
         key_columns = ["task", "seed", "metric", "question_index", "worker_id", "opponent_episode", "position"]
         observations["item_key"] = observations[key_columns].astype(str).agg(":".join, axis=1)

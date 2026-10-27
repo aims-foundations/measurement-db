@@ -98,7 +98,7 @@ class LawBench(BenchmarkBuild):
 
         # 3. Retain source model labels without guessing historical configurations.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=name) for name in subjects.subject_key]
 
         # 4. Distinct recorded prompts, references and grading conditions are items.

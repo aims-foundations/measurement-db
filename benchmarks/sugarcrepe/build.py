@@ -72,7 +72,7 @@ class SugarCrepe(BenchmarkBuild):
 
         # 5. Preserve literal model identity, native answers, source keys and attribution.
         subjects = pd.DataFrame([dict(subject_key=parameters['labels']['model'],
-            raw_label=parameters['labels']['subject_prefix'] + parameters['labels']['model'],
+            raw_label=parameters['labels']['model'],
             features=dict(source_model=parameters['labels']['model'], harness=parameters['labels']['harness']))])
         responses['subject_key'] = parameters['labels']['model']
         responses['item_key'] = responses.response_key

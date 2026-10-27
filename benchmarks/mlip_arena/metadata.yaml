@@ -48,8 +48,6 @@ build:
       historical_model_revision: not_recorded
       historical_hardware: not_recorded
       historical_execution_revision: not_recorded
-    labels:
-      subject_prefix: 'MLIP Arena / '
 grading:
   verifiers:
     native:

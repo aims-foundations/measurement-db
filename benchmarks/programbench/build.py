@@ -76,7 +76,7 @@ class ProgramBench(BenchmarkBuild):
         calls['policy_sha256'] = calls.policy.map(lambda value: hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest())
         calls['subject_key'] = calls.source_run + ':' + calls.policy_sha256
         subjects = calls.drop_duplicates('subject_key').copy()
-        subjects['raw_label'] = subjects.display_name + ' / ' + subjects.source_run + ' / ' + subjects.policy_sha256.str[:12]
+        subjects['raw_label'] = subjects.config.map(lambda value: value["model"]["model_name"])
         subjects['features'] = [dict(source_run=row.source_run, configuration_sha256=row.policy_sha256,
             model_alias=row.config['model']['model_name'], provider=row.provider,
             harness=parameters['labels']['harness'], harness_version=row.mini_version,

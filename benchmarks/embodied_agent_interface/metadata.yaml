@@ -46,7 +46,6 @@ build:
       archive: outputs/helm_output.zip
       members: helm_output/behavior/goal_interpretation/*_outputs.json
     labels:
-      subject_prefix: 'Embodied Agent Interface / '
       simulator: behavior
       module: goal_interpretation
       settings_status: not_recorded

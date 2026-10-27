@@ -60,7 +60,6 @@ build:
       results_root: leaderboard_submissions-69def02a79e8b1d890e1e0d5c11106a9f40e11e1
       bank: test_dataset.json
     labels:
-      subject_prefix: 'NYU CTF / '
       condition: published_submission_assessment
       default_media_type: application/octet-stream
     formats:

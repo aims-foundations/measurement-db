@@ -37,8 +37,9 @@ class ResearchClawBench(BenchmarkBuild):
         configurations = responses[['agent_name', 'model', 'model_display']].drop_duplicates()
         configurations['subject_key'] = configurations.apply(lambda row: json.dumps(row.to_list()), axis=1)
         responses = responses.merge(configurations, on=['agent_name', 'model', 'model_display'], validate='many_to_one')
-        subjects = configurations.rename(columns={'agent_name': 'raw_label'}).copy()
-        subjects['features'] = [dict(harness=labels['harness'], recorded_agent=row.raw_label, recorded_model=row.model,
+        subjects = configurations.copy()
+        subjects['raw_label'] = subjects.model.where(subjects.model.notna() & subjects.model.ne(''), subjects.agent_name)
+        subjects['features'] = [dict(harness=row.agent_name, recorded_agent=row.agent_name, recorded_model=row.model,
             recorded_model_display=row.model_display, historical_settings=labels['historical_settings'])
             for row in subjects.itertuples()]
 

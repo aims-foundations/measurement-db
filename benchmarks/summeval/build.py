@@ -57,7 +57,7 @@ class SummEval(BenchmarkBuild):
             ('model_paper', 'model_papers'), ('source_title', 'model_titles'), ('model_type', 'model_types')]
             }).rename_axis('subject_key').reset_index()
         subjects = subjects.loc[subjects.subject_key.isin(ratings.model_id)].copy()
-        subjects['raw_label'] = 'SummEval ' + subjects.subject_key + ' - ' + subjects.model_name
+        subjects['raw_label'] = subjects.model_name
         subjects['features'] = [dict(harness=labels['harness'], source_model_alias=row.subject_key,
             source_model_name=row.model_name, model_paper=row.model_paper, source_title=row.source_title,
             model_type=row.model_type, configuration_status=labels['configuration_status']) for row in subjects.itertuples()]

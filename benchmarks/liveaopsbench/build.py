@@ -48,7 +48,7 @@ class LiveAoPSBench(BenchmarkBuild):
 
         # 3. Keep literal model labels and distinct question/reference definitions.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=model)
                                 for model in subjects.subject_key]
         keys = ["question", "answer"]
