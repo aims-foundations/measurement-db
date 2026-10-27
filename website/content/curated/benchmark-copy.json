@@ -1,0 +1,899 @@
+{
+  "abstract_reason": {
+    "description": "Tests symbolic reasoning by changing symbols and number systems to distinguish learned rules from memorized patterns."
+  },
+  "adaptivestep": {
+    "name": "AdaptiveStep (Candidates)",
+    "description": "Assesses individual math and code solutions from candidate pools used to study how reward models select answers."
+  },
+  "advprompter": {
+    "description": "Tests whether adversarial prompts make a model produce unsafe responses, with and without a decoding defense."
+  },
+  "aegis": {
+    "name": "AEGIS 2.0",
+    "description": "Assesses the safety of model responses using human and model annotations of harmful content."
+  },
+  "afrieval": {
+    "name": "MasakhaNER 1.0 & 2.0",
+    "description": "Tests recognition of named entities, such as people and places, in African-language sentences."
+  },
+  "afrimedqa": {
+    "description": "Tests medical knowledge through multiple-choice questions grounded in African healthcare."
+  },
+  "agc_bench": {
+    "description": "Assesses creativity across tasks involving metaphors, humor, wordplay, analogies, and creative writing."
+  },
+  "agentdojo": {
+    "description": "Tests whether tool-using agents complete user tasks while resisting instructions injected into external content."
+  },
+  "agentic_review_perturbation": {
+    "name": "Agentic Review (Perturbations)",
+    "description": "Tests whether AI reviewers detect deliberately introduced errors in scientific papers."
+  },
+  "agi_elo": {
+    "description": "Tests multiple-choice knowledge using MMLU questions from a study of model ability and question difficulty."
+  },
+  "ai2d_test": {
+    "name": "AI2D",
+    "description": "Tests whether models can interpret science diagrams to answer multiple-choice questions."
+  },
+  "aider": {
+    "name": "Aider (C++ Prompting)",
+    "description": "Tests how prompting strategies affect coding agents' solutions to C++ programming tasks."
+  },
+  "algotune": {
+    "description": "Tests whether coding agents can write correct numerical programs that match or beat a reference implementation's runtime."
+  },
+  "alignment_faking": {
+    "description": "Assesses whether models conceal conflicting objectives during alignment training."
+  },
+  "alpacaeval": {
+    "name": "AlpacaEval 2.0",
+    "description": "Compares instruction-following answers with a fixed reference model using weighted judge preferences."
+  },
+  "alpha_sql": {
+    "description": "Tests translation of natural-language database questions into SQL using a tree-search system."
+  },
+  "annotating_errors_wcf": {
+    "name": "Written Corrective Feedback",
+    "description": "Assesses how well models identify and explain errors in English learners' writing."
+  },
+  "appworld": {
+    "description": "Tests whether agents can write and execute code to complete tasks across interconnected applications."
+  },
+  "arcagi": {
+    "description": "Tests whether models infer a visual transformation from example grids and apply it to a new grid."
+  },
+  "atmossci_bench": {
+    "description": "Tests atmospheric-science knowledge with multiple-choice questions and open-ended problems."
+  },
+  "auditing_sabotage_bench": {
+    "description": "Tests whether AI auditors can identify deliberate sabotage in machine-learning code and research papers."
+  },
+  "autoresearchbench": {
+    "description": "Tests whether agents can identify specific scientific papers and find relevant research literature."
+  },
+  "averimatec": {
+    "description": "Tests verification of claims that combine images and text."
+  },
+  "babilong": {
+    "description": "Tests whether models can find relevant facts and reason over them within long passages of distracting text."
+  },
+  "bbq": {
+    "description": "Tests social bias in question answering with both ambiguous contexts and contexts that resolve the answer."
+  },
+  "beavertails": {
+    "description": "Assesses the safety of model answers to prompts designed to elicit harmful responses."
+  },
+  "bedd_basalt": {
+    "name": "BEDD (MineRL BASALT)",
+    "description": "Assesses Minecraft agents through human judgments of videos showing open-ended tasks."
+  },
+  "benger": {
+    "description": "Tests German legal reasoning through court-decision and case-analysis tasks."
+  },
+  "bertaqa": {
+    "description": "Tests knowledge of Basque culture and global topics using parallel English and Basque trivia questions."
+  },
+  "biggen": {
+    "description": "Assesses model answers across varied generation tasks using task-specific scoring rubrics."
+  },
+  "bird_sql": {
+    "description": "Tests translation of natural-language questions into SQL over databases."
+  },
+  "brace": {
+    "name": "BRACE (Audio Captions)",
+    "description": "Tests whether an audio-caption scoring method prefers the caption that correctly describes a recording."
+  },
+  "braveguard": {
+    "name": "BraveGuard",
+    "description": "Assesses a guard model’s detection of harmful behavior in computer-use agent trajectories."
+  },
+  "bridging_gap": {
+    "name": "Bridging the Gap",
+    "description": "Tests African-language question answering across reading, commonsense, and clinical knowledge tasks."
+  },
+  "care_enzymes": {
+    "name": "CARE",
+    "description": "Tests enzyme classification and retrieval of enzymes for a given chemical reaction."
+  },
+  "causal_axioms": {
+    "name": "Causal Axioms",
+    "description": "Tests whether models can infer conditional independence in chains of cause-and-effect relationships."
+  },
+  "cellverse": {
+    "description": "Tests identification of cell types from gene-expression data presented as text."
+  },
+  "ceobench": {
+    "description": "Tests whether language-model agents can manage a simulated startup."
+  },
+  "ceval": {
+    "description": "Tests knowledge across academic and professional subjects through Chinese multiple-choice questions."
+  },
+  "chartmuseum": {
+    "description": "Tests whether models can interpret charts to answer questions."
+  },
+  "chatgpt_drift": {
+    "name": "ChatGPT Drift",
+    "description": "Compares model responses across eight tasks to examine changes between successive model snapshots."
+  },
+  "chipbench": {
+    "description": "Assesses chip-design methods using circuit placement and synthesis measurements."
+  },
+  "clasheval": {
+    "description": "Tests how models answer factual questions when retrieved context conflicts with their existing knowledge."
+  },
+  "classroom_ai": {
+    "description": "Assesses whether models can write educational explanations at an appropriate reading level."
+  },
+  "cmmlu": {
+    "description": "Tests knowledge across academic subjects through Chinese multiple-choice questions."
+  },
+  "coffeebench": {
+    "description": "Measures the net income of agents running a coffee-roasting business in a simulated economy."
+  },
+  "complexbench": {
+    "description": "Examines how models follow Chinese instructions with multiple interacting requirements; saved answers have no released grades."
+  },
+  "confagents": {
+    "description": "Tests medical-agent systems on multiple-choice diagnosis questions."
+  },
+  "corebench": {
+    "description": "Tests whether agents can reproduce scientific code and answer questions about its results."
+  },
+  "critic_discernment_game": {
+    "description": "Tests mathematical problem solving before and after training through a critic-discernment game."
+  },
+  "crow": {
+    "description": "Tests model behavior under adversarial instructions using keyword-based attack-success judgments."
+  },
+  "cruxeval": {
+    "description": "Tests whether models can predict a Python function's output or infer an input that produces a given output."
+  },
+  "csedb": {
+    "description": "Assesses model answers to clinical questions, including repeated attempts and prompt-optimization experiments."
+  },
+  "cseo_bench": {
+    "description": "Measures how changes to a prompt affect a target document's citation rank in conversational search."
+  },
+  "das_med_hallucination": {
+    "description": "Assesses medical responses to adversarial prompts using a multi-agent hallucination detector."
+  },
+  "data_juicer2": {
+    "description": "Measures data-processing speed across deduplication, CPU/GPU operations, and cloud-scale workloads."
+  },
+  "dataclawbench": {
+    "description": "Tests agents on exploratory financial data analysis, including finding and interpreting evidence in datasets."
+  },
+  "dave": {
+    "description": "Tests whether models can connect sounds with events in videos recorded from a person's viewpoint."
+  },
+  "dbpa": {
+    "name": "DBPA",
+    "description": "Compares distributions of model outputs under changes to prompts, alignment settings, and personas."
+  },
+  "decodingtrust": {
+    "description": "Assesses model trustworthiness across six evaluation perspectives, preserving ungraded outputs where judgments are unavailable."
+  },
+  "decompile_bench": {
+    "name": "Decompile-Bench",
+    "description": "Measures how closely decompiled C/C++ functions resemble their original source code."
+  },
+  "devbench": {
+    "description": "Tests word learning, visual vocabulary, and grammatical understanding using developmental evaluation tasks."
+  },
+  "disco": {
+    "name": "DIS-CO (MovieTection)",
+    "description": "Tests whether models can identify a movie from a frame or a description of that frame."
+  },
+  "donotanswer": {
+    "description": "Tests whether models respond safely to requests they should decline, using harmfulness and response-type annotations."
+  },
+  "doris_mae": {
+    "description": "Assesses whether scientific-paper abstracts satisfy a researcher's stated requirements."
+  },
+  "dpai": {
+    "description": "Tests software agents on enterprise Java and Spring development tasks."
+  },
+  "dqvis": {
+    "name": "DQVis",
+    "description": "Assesses whether generated questions and biomedical visualization specifications make sense together, using expert reviews."
+  },
+  "dtap_bench": {
+    "description": "Tests whether agents complete legitimate tasks while resisting attacks on their workflows."
+  },
+  "edu_circuit_hw": {
+    "description": "Tests recognition and transcription of handwritten circuit-analysis homework."
+  },
+  "eduguardbench": {
+    "description": "Tests the safety of models acting as teachers when faced with adversarial teaching questions."
+  },
+  "edumath": {
+    "description": "Assesses the quality of mathematical word problems generated by language models."
+  },
+  "egoschema": {
+    "name": "EgoSchema",
+    "description": "Tests understanding of everyday activities in long videos through caption-based question answering."
+  },
+  "ehrflowbench": {
+    "description": "Tests whether agents can complete clinical review tasks using electronic health records."
+  },
+  "elicitation_game": {
+    "name": "Elicitation Game",
+    "description": "Tests how prompting interventions affect answers to questions about hazardous knowledge."
+  },
+  "embodied_agent_interface": {
+    "description": "Examines how models translate household task instructions into symbolic goals; released outputs have no historical grades."
+  },
+  "emoji_attack": {
+    "name": "Emoji Attack",
+    "description": "Assesses model responses to jailbreak prompts using recorded attack-success judgments."
+  },
+  "engdesign": {
+    "description": "Tests engineering designs through simulation, including single attempts and iterative refinement."
+  },
+  "engibench": {
+    "description": "Assesses generated engineering designs by how closely they approach an optimization target."
+  },
+  "enginemt_qa": {
+    "name": "EngineMT-QA",
+    "description": "Tests understanding of aero-engine sensor sequences through multiple-choice questions."
+  },
+  "erbench": {
+    "description": "Tests factual question answering with binary questions across seven domain and task groups."
+  },
+  "evouna": {
+    "description": "Assesses the correctness of open-domain question answers using human judgments."
+  },
+  "exploitgym": {
+    "description": "Tests whether security agents can achieve specified exploitation goals under different mitigation settings."
+  },
+  "faithcot": {
+    "name": "FaithCoT-Bench",
+    "description": "Assesses whether a model's stated reasoning faithfully supports its answer, using human annotations and correctness judgments."
+  },
+  "felm": {
+    "name": "FELM",
+    "description": "Assesses factual errors in individual segments of model-generated answers across five domains."
+  },
+  "fetv": {
+    "description": "Assesses text-to-video generation using human quality ratings and automatic text-video alignment measures."
+  },
+  "fewshot_ttt_bbh": {
+    "name": "Few-Shot TTT (BBH)",
+    "description": "Tests reasoning on a small BIG-Bench Hard sample under prompting and test-time training interventions."
+  },
+  "fgbench": {
+    "description": "Tests reasoning about molecular properties through questions about chemical functional groups."
+  },
+  "financebench": {
+    "description": "Tests whether models can answer questions about company financial filings, with and without supporting documents."
+  },
+  "find_interp": {
+    "description": "Tests whether agents can infer the behavior of numeric, string, and synthetic-neuron functions."
+  },
+  "finegrain_t2i": {
+    "name": "FineGRAIN (T2I)",
+    "description": "Assesses text-to-image generation across prompts designed to expose specific visual failure modes."
+  },
+  "frontieror": {
+    "description": "Tests translation of operations-research problems into executable optimization programs with feasible solutions."
+  },
+  "genai_learning": {
+    "description": "Studies student learning with a mathematics tutor using practice and exam grades, alongside standalone model answers."
+  },
+  "ghosts_math": {
+    "description": "Assesses answers to natural-language mathematics questions using human ratings."
+  },
+  "goodai_ltm_benchmark": {
+    "name": "GoodAI LTM",
+    "description": "Tests whether conversational agents remember and use information across extended interactions."
+  },
+  "haiid": {
+    "description": "Studies how advice changes human judgments across five classification tasks."
+  },
+  "hallusionbench": {
+    "description": "Tests whether models reason correctly about images without relying on misleading visual or language cues."
+  },
+  "harmbench": {
+    "description": "Tests whether adversarial prompts elicit harmful responses from text and multimodal models."
+  },
+  "healthadminbench": {
+    "description": "Tests computer-use agents on healthcare-administration workflows."
+  },
+  "helm_afr": {
+    "name": "HELM African QA",
+    "description": "Tests clinical knowledge and commonsense reasoning in eleven African languages."
+  },
+  "helm_airbench": {
+    "description": "Tests the safety of model replies against risks identified in government regulations and company policies."
+  },
+  "helm_anthropic_redteam": {
+    "name": "Anthropic Red Team (HELM)",
+    "description": "Tests whether models respond safely to adversarial prompts drawn from human red-teaming conversations."
+  },
+  "helm_bbq": {
+    "name": "BBQ (HELM)",
+    "description": "Tests social bias in answers to questions with ambiguous and disambiguated contexts, using HELM evaluations."
+  },
+  "helm_bold": {
+    "name": "BOLD (HELM)",
+    "description": "Measures toxicity in open-ended model completions of prompts about different social groups."
+  },
+  "helm_cleva": {
+    "name": "CLEVA (HELM)",
+    "description": "Assesses Chinese language capabilities across multiple task types."
+  },
+  "helm_harmbench": {
+    "name": "HarmBench (HELM)",
+    "description": "Tests whether models refuse harmful requests, using HELM's recorded safety judgments."
+  },
+  "helm_real_toxicity_prompts": {
+    "name": "RealToxicityPrompts (HELM)",
+    "description": "Measures how often models produce toxic continuations of sentence fragments."
+  },
+  "helm_simple_safety_tests": {
+    "name": "SimpleSafetyTests (HELM)",
+    "description": "Tests safe responses to direct requests involving severe harms, including violence and self-harm."
+  },
+  "helm_thaiexam": {
+    "name": "Thai Exam (HELM)",
+    "description": "Tests knowledge and reasoning through Thai standardized examination questions."
+  },
+  "helm_xstest": {
+    "name": "XSTest (HELM)",
+    "description": "Tests whether models distinguish harmless prompts that sound dangerous from genuinely unsafe requests."
+  },
+  "hivmedqa": {
+    "description": "Assesses answers to HIV-related medical questions using clinical quality ratings."
+  },
+  "icpc2_code_selector": {
+    "description": "Tests selection of primary-care codes for clinical expressions in Brazilian Portuguese, including when to abstain."
+  },
+  "igakuqa": {
+    "description": "Tests medical knowledge through Japanese medical licensing examination questions."
+  },
+  "igakuqa119": {
+    "description": "Tests medical knowledge on the 119th Japanese Medical Licensing Examination."
+  },
+  "ikp": {
+    "description": "Tests factual recall across increasingly obscure topics, distinguishing correct answers, errors, and refusals."
+  },
+  "image2struct": {
+    "description": "Tests reconstruction of LaTeX documents and musical scores from images."
+  },
+  "imgedit": {
+    "name": "ImgEdit-Bench",
+    "description": "Assesses whether models can edit an image according to a written instruction."
+  },
+  "indeterminacy": {
+    "description": "Examines how model judgments vary across tasks, input orders, and single-choice versus response-set formats."
+  },
+  "ineqmath": {
+    "description": "Examines mathematical inequality reasoning through bound estimation and relation prediction; individual grades are unavailable."
+  },
+  "infibench": {
+    "description": "Tests programming knowledge and problem solving through programming questions."
+  },
+  "interchangeable_token_embeddings": {
+    "name": "LTL Alpha-Renaming",
+    "description": "Tests symbolic trace prediction for temporal-logic formulas under changes to token names."
+  },
+  "intercode": {
+    "description": "Tests interactive problem solving in SQL, Bash, Python, and capture-the-flag environments."
+  },
+  "jailbreakbench": {
+    "description": "Tests whether jailbreak prompts make target models produce prohibited responses."
+  },
+  "jetts": {
+    "name": "JETTS (Response Pool)",
+    "description": "Assesses candidate answers across math, coding, and instruction-following tasks."
+  },
+  "judgetuning": {
+    "name": "JudgeTuning",
+    "description": "Tests whether model judges agree with human preferences between pairs of answers."
+  },
+  "katakomba": {
+    "description": "Measures the performance of offline reinforcement-learning agents across NetHack character configurations."
+  },
+  "kernelbench": {
+    "description": "Tests whether models can generate correct GPU kernels for PyTorch workloads."
+  },
+  "kmmlu": {
+    "description": "Tests knowledge across academic and professional subjects through Korean multiple-choice questions."
+  },
+  "kormedmcqa": {
+    "description": "Tests medical knowledge through Korean healthcare licensing examination questions."
+  },
+  "kris_bench": {
+    "description": "Assesses knowledge-guided image editing for consistency, instruction following, visual quality, and plausibility."
+  },
+  "lambda_fp_course": {
+    "name": "Functional Programming (OCaml)",
+    "description": "Tests code generation, program repair, and conceptual understanding in an OCaml course."
+  },
+  "lawbench": {
+    "description": "Tests Chinese legal knowledge and reasoning across legal language tasks."
+  },
+  "legal_rag_bench": {
+    "description": "Tests retrieval-assisted answers to Victorian criminal-law questions for correctness, grounding, and retrieval accuracy."
+  },
+  "legalbench": {
+    "description": "Tests legal reasoning across five tasks, using recorded HELM evaluations."
+  },
+  "lexeval": {
+    "description": "Tests Chinese legal language understanding and generation across 23 tasks."
+  },
+  "lingoly": {
+    "description": "Tests linguistic reasoning through questions that require inferring language patterns from examples."
+  },
+  "live_agent_risk": {
+    "description": "Tests strategic decision-making by agents playing multiplayer Risk."
+  },
+  "liveaopsbench": {
+    "description": "Tests mathematical problem solving on Olympiad-style questions."
+  },
+  "livebench": {
+    "description": "Tests model capabilities across six task categories using evaluations from successive releases."
+  },
+  "llm4ir": {
+    "name": "LLM4IR (LaMIR)",
+    "description": "Tests understanding of compiler intermediate representations through reconstruction, decompilation, and execution reasoning."
+  },
+  "llm_bp_tag": {
+    "name": "LLM-BP (Node Classification)",
+    "description": "Tests classification of graph nodes using their associated text."
+  },
+  "llm_survey_simulation": {
+    "name": "LLM Survey Simulation",
+    "description": "Examines how models simulate human answers to education and public-opinion survey questions."
+  },
+  "llm_uncertainty_bench": {
+    "description": "Examines model uncertainty through answer-option probabilities across multiple-choice tasks and prompting strategies."
+  },
+  "llmail_inject": {
+    "description": "Tests whether defended email agents resist malicious instructions embedded in incoming messages."
+  },
+  "llms_lean_formalization": {
+    "name": "LLMs-Lean (miniF2F & miniCTX)",
+    "description": "Tests formal theorem proving in Lean using miniF2F and miniCTX problems."
+  },
+  "lohi_drug_discovery": {
+    "name": "Lo-Hi Drug Discovery",
+    "description": "Assesses molecular-property predictions for drug discovery under two task settings, using native ranking evaluations."
+  },
+  "matharena": {
+    "description": "Tests mathematical problem solving through final-answer correctness and proof-quality judgments."
+  },
+  "matharena_platform": {
+    "description": "Tests mathematical research reasoning, formal proofs, and competition problem solving across four task suites."
+  },
+  "mathconstraint": {
+    "description": "Tests whether models can determine if combinatorial constraints are satisfiable, with and without a solver."
+  },
+  "mathvista_mini": {
+    "name": "MathVista (testmini)",
+    "description": "Tests mathematical reasoning using visual inputs such as diagrams, charts, and images."
+  },
+  "medagentboard": {
+    "description": "Assesses medical agents on question answering, patient-friendly summaries, health-record prediction, and clinical workflows."
+  },
+  "medhelm_ehr_sql": {
+    "name": "EHRSQL (MedHELM)",
+    "description": "Tests translation of clinical questions into executable SQL over electronic health records."
+  },
+  "medhelm_head_qa": {
+    "name": "HEAD-QA (MedHELM)",
+    "description": "Tests medical and healthcare knowledge through Spanish specialization examination questions."
+  },
+  "medhelm_med_mcqa": {
+    "name": "MedMCQA (MedHELM)",
+    "description": "Tests medical knowledge through Indian postgraduate medical entrance examination questions."
+  },
+  "medhelm_med_qa": {
+    "name": "MedQA (MedHELM)",
+    "description": "Tests clinical knowledge through US medical licensing examination questions."
+  },
+  "medhelm_medbullets": {
+    "name": "Medbullets (MedHELM)",
+    "description": "Tests clinical reasoning through USMLE-style patient vignettes."
+  },
+  "medhelm_medcalc_bench": {
+    "name": "MedCalc-Bench (MedHELM)",
+    "description": "Tests clinical calculations, such as risk scores and medication doses, from patient notes."
+  },
+  "medhelm_medec": {
+    "name": "MEDEC (MedHELM)",
+    "description": "Tests whether models can detect medical errors in clinical notes."
+  },
+  "medhelm_medhallu": {
+    "name": "MedHallu (MedHELM)",
+    "description": "Tests whether models can distinguish hallucinated medical answers from faithful ones."
+  },
+  "medhelm_pubmed_qa": {
+    "name": "PubMedQA (MedHELM)",
+    "description": "Tests biomedical question answering from research abstracts using yes, no, or maybe responses."
+  },
+  "medhelm_race_based_med": {
+    "name": "RaceBasedMed (MedHELM)",
+    "description": "Tests detection of harmful race-based reasoning in medical answers."
+  },
+  "medwatermark_fws": {
+    "description": "Assesses the quality of watermarked medical answers and records watermark-detection statistics."
+  },
+  "mergebench": {
+    "description": "Assesses merged language models on harmful requests, jailbreaks, and excessive refusal."
+  },
+  "mind2web": {
+    "name": "Mind2Web (Candidate Ranking)",
+    "description": "Tests ranking of webpage elements as candidates for the next action in a web task."
+  },
+  "mj_bench": {
+    "name": "MJ-Bench",
+    "description": "Assesses multimodal judges' preferences and biases when evaluating images."
+  },
+  "mlip_arena": {
+    "description": "Assesses machine-learned interatomic potentials across physics-based molecular simulation tasks."
+  },
+  "mlrbench": {
+    "description": "Assesses agents' research ideas and proposals for machine-learning tasks using review rubrics."
+  },
+  "mmbench_v11": {
+    "name": "MMBench v1.1",
+    "description": "Tests multimodal understanding through English image-based questions."
+  },
+  "mmdocrag": {
+    "description": "Assesses answers that combine retrieved document text and images, including citation quality and factuality."
+  },
+  "mmedbench": {
+    "name": "MMedBench (Rationales)",
+    "description": "Examines medical answer explanations across six languages; the released examples have no saved grades."
+  },
+  "mmlu": {
+    "description": "Tests academic and professional knowledge through multiple-choice questions across 57 subjects."
+  },
+  "mmlupro": {
+    "description": "Tests knowledge and reasoning through multiple-choice questions across fourteen academic domains."
+  },
+  "mmmu_dev_val": {
+    "name": "MMMU (Dev & Validation)",
+    "description": "Tests college-level knowledge and reasoning through multimodal questions across 30 subjects."
+  },
+  "mmoral_bench": {
+    "name": "MMOral-Bench",
+    "description": "Tests interpretation of dental radiographs through open and multiple-choice questions."
+  },
+  "mochi": {
+    "description": "Tests whether vision models can identify the different object among images showing multiple viewpoints."
+  },
+  "moe_cap": {
+    "description": "Tests how serving configurations affect mixture-of-experts models' answers on knowledge, math, and chat tasks."
+  },
+  "monkey_power_laws": {
+    "name": "Large Language Monkeys",
+    "description": "Studies how repeated sampling affects problem solving by recording individual generated solutions and their correctness."
+  },
+  "morphkv": {
+    "name": "MorphKV (LongGenBench)",
+    "description": "Tests whether long-form generations satisfy constraints under different attention-cache strategies."
+  },
+  "morqa": {
+    "name": "MORQA",
+    "description": "Assesses model judges' ratings of medical answers in English and Chinese against expert annotations."
+  },
+  "mtbbench": {
+    "description": "Tests sequential oncology decisions using pathology images, genomic profiles, and clinical histories."
+  },
+  "mtbench": {
+    "description": "Assesses conversational quality across two-turn exchanges using model-judge ratings."
+  },
+  "multi_moe": {
+    "description": "Assesses mixture-of-experts serving configurations on knowledge, truthfulness, and two-turn conversations."
+  },
+  "multimodal_stem_ai": {
+    "name": "Multimodal STEM Assessments",
+    "description": "Tests answers to university STEM assessment questions that combine text and images."
+  },
+  "mypcbench": {
+    "description": "Assesses computer-use agents on desktop tasks through a small showcase of recorded trajectories."
+  },
+  "naep_llm_students": {
+    "description": "Examines how models answer school assessment questions when acting as students."
+  },
+  "nanobaselib": {
+    "name": "NanoBaseLib",
+    "description": "Tests detection of chemical modifications at individual RNA sites."
+  },
+  "naturalreasoning": {
+    "description": "Collects synthetic reasoning questions and model answers for training; it is not a scored evaluation set."
+  },
+  "naturebench": {
+    "description": "Tests whether coding agents can match published machine-learning results on scientific tasks."
+  },
+  "nester": {
+    "description": "Assesses generated Python programs for correctness, explainability, factuality, and consistency using human judgments."
+  },
+  "nis3d": {
+    "description": "Measures how accurately models segment cell nuclei in 3D microscopy images."
+  },
+  "nyu_ctf_bench": {
+    "description": "Tests whether security agents can recover flags in capture-the-flag challenges."
+  },
+  "oasst": {
+    "name": "OpenAssistant (OASST1)",
+    "description": "Assesses assistant replies using human preference rankings in conversations."
+  },
+  "ocrbench_v2": {
+    "description": "Tests visual text recognition, localization, document parsing, and reasoning in English and Chinese."
+  },
+  "ood_prediction": {
+    "description": "Examines model correctness when prompts shift from familiar settings to out-of-distribution conditions."
+  },
+  "openbiorq": {
+    "description": "Tests tool-using agents on open biomedical research questions using question-specific grading checklists."
+  },
+  "os_harm": {
+    "description": "Assesses safety and task completion when agents interact with a computer environment."
+  },
+  "perfcodebench": {
+    "description": "Tests whether generated replacements for systems code remain runnable and correct during optimization."
+  },
+  "perumedqa": {
+    "description": "Tests medical knowledge through Spanish questions from Peruvian residency examinations."
+  },
+  "phyblock": {
+    "description": "Tests whether models can plan the assembly of 3D block structures from visual inputs."
+  },
+  "pku_saferlhf": {
+    "description": "Assesses the safety of model responses using human annotations."
+  },
+  "planbench": {
+    "description": "Tests whether models can produce valid sequences of actions to achieve goals in classical planning tasks."
+  },
+  "preference_dissection": {
+    "description": "Examines which of two answers a model judge prefers for the same prompt."
+  },
+  "prism": {
+    "name": "PRISM",
+    "description": "Assesses model replies through human ratings and choices in open-ended conversations."
+  },
+  "prm800k": {
+    "description": "Assesses individual reasoning steps in mathematical solutions using human process ratings."
+  },
+  "programbench": {
+    "description": "Tests whether coding agents can recreate a program's behavior from its compiled executable and documentation."
+  },
+  "proofaug": {
+    "description": "Tests formal theorem proving on miniF2F problems using an Isabelle-based proof-augmentation workflow."
+  },
+  "proteininvbench": {
+    "description": "Tests prediction of protein sequences from backbone structures."
+  },
+  "prox": {
+    "name": "ProX (Math Evaluations)",
+    "description": "Assesses mathematical problem solving at intermediate language-model pretraining checkpoints."
+  },
+  "psychosis_bench": {
+    "name": "Psychosis-Bench",
+    "description": "Assesses whether models reinforce delusions, enable harm, or intervene safely during scripted conversations."
+  },
+  "putnam_axiom": {
+    "description": "Assesses model solutions to Putnam mathematics problems using human reasoning-quality rubrics."
+  },
+  "pxplore": {
+    "description": "Assesses whether an agent's next-lesson recommendations match a learner's current needs."
+  },
+  "qatch": {
+    "description": "Tests question answering and semantic parsing over tables."
+  },
+  "radar": {
+    "description": "Examines a coding agent's reasoning over imperfect tables through a released example."
+  },
+  "rakuda": {
+    "description": "Assesses answers to open-ended Japanese questions using model-judge ratings."
+  },
+  "rclicks": {
+    "name": "RClicks",
+    "description": "Tests prediction of where people click on objects in images during interactive segmentation."
+  },
+  "real_pocqi": {
+    "description": "Compares clinical AI answers to real point-of-care questions using blinded physician judgments."
+  },
+  "real_webagents": {
+    "name": "REAL",
+    "description": "Tests whether web agents complete user tasks on controlled replicas of real websites."
+  },
+  "realtimeqa": {
+    "name": "RealTimeQA",
+    "description": "Tests knowledge of recent news through weekly multiple-choice and free-response questions."
+  },
+  "reasoning_gym": {
+    "name": "Reasoning Gym",
+    "description": "Tests reasoning on procedurally generated tasks with algorithmic rewards, including partial credit."
+  },
+  "refgrader": {
+    "description": "Tests model workflows that grade Olympiad mathematical proofs with reference solutions."
+  },
+  "reliancescope": {
+    "description": "Tests recognition of help-seeking and use of chatbot responses in student interactions."
+  },
+  "researchclawbench": {
+    "description": "Assesses autonomous scientific research using task-specific rubrics weighted by experts."
+  },
+  "researchcodebench": {
+    "description": "Tests whether coding agents can implement missing research code from a paper and its surrounding source files."
+  },
+  "revolve": {
+    "description": "Tests whether iterative answer optimization improves responses to science and machine-learning questions."
+  },
+  "rewardbench": {
+    "description": "Tests whether reward models prefer better answers across paired-response tasks."
+  },
+  "risebench": {
+    "description": "Tests image editing that requires temporal, causal, spatial, or logical reasoning."
+  },
+  "robust_reasoning_benchmark": {
+    "name": "Robust Reasoning",
+    "description": "Tests mathematical reasoning and text reconstruction when prompts undergo controlled transformations."
+  },
+  "safeagentbench": {
+    "name": "SafeAgentBench (TRIDENT)",
+    "description": "Tests whether systems reject unsafe instructions; this release measures refusal rather than embodied task completion."
+  },
+  "scale_mrt": {
+    "name": "Scale Monitor Red Teaming",
+    "description": "Assesses whether monitor models flag suspicious behavior in agent trajectories."
+  },
+  "sciarena": {
+    "description": "Compares answers grounded in scientific literature using human preferences."
+  },
+  "scigym": {
+    "description": "Tests whether agents can reconstruct systems-biology models by designing and interpreting simulated experiments."
+  },
+  "sgrades": {
+    "description": "Tests assessment of student responses using model predictions and available reference judgments."
+  },
+  "sib200": {
+    "description": "Tests topic classification across 205 languages."
+  },
+  "sketchjudge": {
+    "description": "Tests whether multimodal models grade hand-drawn STEM answers in agreement with expert judgments."
+  },
+  "software_world_models": {
+    "name": "Software World Models",
+    "description": "Tests whether coding models can predict if a software test will pass, fail, or raise an error."
+  },
+  "stanford_orb": {
+    "description": "Assesses reconstruction of 3D objects and their appearance from real-world images."
+  },
+  "statqa": {
+    "description": "Tests selection of statistical methods and relevant columns for analysis of tabular data."
+  },
+  "subjective_qa": {
+    "description": "Tests classification of subjective qualities in earnings-call questions and answers against human labels."
+  },
+  "sugarcrepe": {
+    "description": "Tests whether models distinguish an image's correct caption from a plausible caption with a changed object, attribute, or relation."
+  },
+  "summeval": {
+    "description": "Assesses generated news summaries using human ratings across four quality dimensions."
+  },
+  "sustainable_food": {
+    "name": "Recipe Preference Prediction",
+    "description": "Tests whether models can predict which of two recipes has the higher user rating."
+  },
+  "svrpbench": {
+    "description": "Assesses vehicle-routing solutions under uncertainty, including cost, feasibility, runtime, and robustness."
+  },
+  "swe_smith": {
+    "name": "SWE-smith",
+    "description": "Collects coding-agent attempts on synthetic software tasks, with recorded outcomes and training conversations."
+  },
+  "swebench_live": {
+    "name": "SWE-bench Live",
+    "description": "Tests whether coding agents can resolve real repository issues, using project tests to assess their changes."
+  },
+  "swepolybench": {
+    "description": "Tests whether coding agents can resolve repository issues across programming languages."
+  },
+  "synthpai": {
+    "description": "Tests how accurately models infer personal attributes from synthetic social-media profiles."
+  },
+  "tabarena": {
+    "description": "Tests classification and regression on tabular data using individual test-row predictions."
+  },
+  "tau2_bench": {
+    "description": "Tests customer-service agents in conversations where both the agent and the user can act on the environment."
+  },
+  "taubench": {
+    "description": "Tests whether customer-service agents can follow policies and use tools while conversing with simulated users."
+  },
+  "tengu": {
+    "description": "Assesses answers to Japanese tasks using task-specific rubrics and model-judge ratings."
+  },
+  "tensortrust": {
+    "description": "Tests whether models enforce access rules when faced with adversarial user inputs."
+  },
+  "theagentcompany": {
+    "description": "Tests whether agents can complete everyday workplace tasks in a simulated company."
+  },
+  "threeeed": {
+    "description": "Tests locating objects in outdoor 3D scenes from language descriptions, images, and LiDAR data."
+  },
+  "truthfulqa_mc": {
+    "description": "Tests whether models favor truthful answers over plausible misconceptions in multiple-choice questions."
+  },
+  "tulu_human_eval": {
+    "description": "Assesses whether instruction-following answers are acceptable to human reviewers."
+  },
+  "tumlu": {
+    "description": "Tests knowledge through multiple-choice questions in Turkic languages."
+  },
+  "ultrafeedback": {
+    "description": "Assesses model answers using GPT-4 feedback across four quality dimensions."
+  },
+  "vhelm": {
+    "description": "Assesses vision-language models on tasks that combine images and text."
+  },
+  "visit_bench": {
+    "description": "Assesses instruction following on visual tasks using human and model judgments."
+  },
+  "visual_riddles": {
+    "description": "Tests visual reasoning and world knowledge through open-ended questions about images."
+  },
+  "visualwebarena": {
+    "description": "Tests whether agents can complete web tasks that require understanding visual information."
+  },
+  "vl_rewardbench": {
+    "description": "Tests whether vision-language judges prefer the better response to an image-based question."
+  },
+  "weavebench": {
+    "description": "Showcases selected computer-use agent trajectories with task instructions, screenshots, and grading evidence."
+  },
+  "wikihow_agent": {
+    "description": "Tests task completion through teacher-learner agent conversations based on WikiHow tutorials."
+  },
+  "wildvision": {
+    "description": "Compares answers to image-based user requests against a fixed reference answer using model-judge preferences."
+  },
+  "wmt_mqm": {
+    "name": "WMT MQM",
+    "description": "Assesses machine translations using expert annotations of error types and severity."
+  },
+  "wonderbread": {
+    "description": "Tests understanding and documentation of computer workflows from demonstrations, action traces, and screenshots."
+  },
+  "workarena": {
+    "description": "Assesses agents' completion of enterprise workflows in ServiceNow using human judgments."
+  },
+  "workbench_revisited": {
+    "description": "Tests whether tool-using agents complete workplace tasks by checking the resulting application state."
+  },
+  "worldcentralbanks": {
+    "name": "WorldCentralBanks",
+    "description": "Tests classification of monetary-policy stance, time orientation, and certainty in central-bank statements."
+  },
+  "xstest": {
+    "description": "Tests whether models answer harmless requests while refusing genuinely unsafe ones."
+  }
+}

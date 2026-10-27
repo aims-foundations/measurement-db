@@ -59,6 +59,8 @@ export function buildBenchmarkSearchData(slugs?: readonly string[]): {
         scaleType,
         searchText: [
           benchmark.name,
+          detail?.name,
+          benchmark.slug,
           benchmark.description,
           detail?.description,
           categoryText,

@@ -92,7 +92,7 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
         eyebrow={category?.label ?? "Benchmark"}
         eyebrowAccent={accent}
         title={benchmark.name}
-        description={detail.description ?? benchmark.description}
+        description={benchmark.description}
         aside={
           attribution ? (
             <BenchmarkCreditPanel
@@ -179,6 +179,25 @@ export default async function BenchmarkDetailPage({ params }: DetailPageProps) {
             dozen sentences, and at the 48ch reading measure they broke into a
             ragged ten-line column beside empty space. */}
         <div className="rd-container">
+          {detail.description &&
+          detail.description !== benchmark.description ? (
+            <details className="mb-6 rounded-lg border border-black/15 bg-white/70 px-4 sm:px-6">
+              <summary className="cursor-pointer py-4 text-sm font-medium focus-visible:outline-offset-4">
+                About this data
+              </summary>
+              <div className="max-w-4xl space-y-3 pb-5 text-sm leading-relaxed text-[var(--muted)]">
+                {detail.name !== benchmark.name ? (
+                  <p>
+                    <span className="font-medium text-[var(--ink)]">
+                      Dataset name:{" "}
+                    </span>
+                    {detail.name}
+                  </p>
+                ) : null}
+                <p className="whitespace-pre-line">{detail.description}</p>
+              </div>
+            </details>
+          ) : null}
           {detail.note ? (
             <ScrollReveal>
               <p className="rd-prose-wide whitespace-pre-line text-sm font-light opacity-70">
