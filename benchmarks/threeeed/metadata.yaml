@@ -47,6 +47,16 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      3EED released baseline [final_6384/eval/Val_drone/10-22-10-38]: 3EED released baseline
+      3EED released baseline [final_6384/eval/Val_quad/10-22-10-38]: 3EED released baseline
+      3EED released baseline [final_6384/eval/Val_waymo/10-22-10-39]: 3EED released baseline
+      3EED released baseline [final_6384]: 3EED released baseline
+    subject_label_evidence:
+      source: Captured config.json and source_run; metadata checkpoint_scope does not establish a shared weight
+        artifact.
+      scope: Remove filesystem paths from the display label while retaining every run/configuration. No shared
+        canonical checkpoint is asserted.
     layout:
       predictions_archive: dataset/baseline_ckpt_pred.zip
       inputs_archive: dataset/3eed_dataset.zip

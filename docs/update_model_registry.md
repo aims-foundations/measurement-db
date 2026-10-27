@@ -10,6 +10,26 @@ model. That mapping lives in
 
 Here's what you should know when new benchmarks are added to the gallery: The item-counting is mechanical; the only part needing judgment is mapping new, never-seen subject strings to a model.
 
+Canonical subject tables resolve this registry **during the benchmark build**.
+For a benchmark-specific routing alias or decorated run name, put a reviewed
+`subject_labels` mapping in that benchmark's `metadata.yaml`; the shared
+`add_subject()` method applies it before registry lookup and retains the original
+label in subject features. Put globally equivalent spellings in the registry.
+Keep harnesses and recorded run settings separate from the underlying model name.
+
+After either correction, rebuild the affected benchmark tables and review their
+characterization hashes before publishing and regenerating the website data.
+Subject identities include registry metadata, so linked response and trace IDs
+must be rebuilt together. Regenerating a display report alone does not update
+published Parquet tables. Unknown checkpoints, composite agents, human participants,
+and specialized methods can legitimately remain outside the model registry;
+an isolated graph node is a reason to inspect its source, not evidence of a bad name.
+
+The [2026-10-27 benchmark audit](audits/disconnected-subjects-20261027.csv)
+records all 53 unlinked benchmarks, the corrections, and reasons for retaining
+unresolved identities. [Alias evidence](audits/subject-registry-aliases-20261027.csv)
+records the source of each registry addition.
+
 ## Files
 
 | File | Role |

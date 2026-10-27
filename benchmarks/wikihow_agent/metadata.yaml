@@ -42,6 +42,19 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      deepseek-llm: deepseek-llm-7b
+      gemma: gemma-7b
+      llama3: Llama-3-8B
+      olmo2: OLMo-2-7B
+      openchat: OpenChat-7B
+      qwen2: Qwen2-7B
+      phi4: phi-4
+    subject_label_evidence:
+      source: https://arxiv.org/html/2507.05528v2#S5 and appendix A identify the seven open model families and
+        sizes used by the released configurations.
+      scope: Use paper-supported model families and sizes. Preserve complete teacher/learner/evaluator configurations;
+        exact historical checkpoint hashes remain unknown.
     layout:
       conversations: conversations/T-*_corrected.json
       configurations: protocol/conf/*.yaml

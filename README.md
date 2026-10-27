@@ -100,6 +100,15 @@ patterns, and verbatim prompt text inside `metadata.yaml`. The shared builder
 validates their structure and exposes them as `self.build_parameters`, including
 when importing fresh runs with `--source`. ResearchCodeBench provides an example.
 
+For a source-specific model alias, `build.parameters.subject_labels` maps the
+original label to a reviewed model identifier. `add_subject()` applies this before
+the model-registry lookup and retains the original label as `source_display_name`.
+Recorded settings are still looked up by the original label. Keep agent harnesses,
+versions, and run settings in subject features; naming two runs after the same model
+does not merge their configurations. Use the shared model registry for alternate
+spellings that have the same meaning across benchmarks. Leave uncertain model
+identities unmapped instead of guessing from a filename or a current default.
+
 Each public builder explicitly selects its inputs in a short hook:
 
 ```python

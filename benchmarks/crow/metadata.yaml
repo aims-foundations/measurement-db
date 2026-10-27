@@ -47,6 +47,45 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      CROW / CodeLLaMA-13B-Instruct / result export af87fd662146: CodeLLaMA-13B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export cceac44143ed: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export e57def765a81: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export e9d7e8159408: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export d0255621e84f: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 67b45a40b7ef: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 20b326c4ce14: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export ccb571b5b6ed: CodeLLaMA-7B-Instruct
+      CROW / LLaMA2-7B-Chat / result export 524c2faeac46: LLaMA2-7B-Chat
+      CROW / LLaMA2-13B-Chat / result export edfdaa61fd82: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export 27cc88b33a9f: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export 4dfb55076a21: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export 4be971c30a18: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export 71e92ebdf3a1: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export 98450fc40af0: LLaMA2-13B-Chat
+      CROW / LLaMA2-13B-Chat / result export d6b0762a40d7: LLaMA2-13B-Chat
+      CROW / CodeLLaMA-13B-Instruct / result export 4ccdbe39d1a7: CodeLLaMA-13B-Instruct
+      CROW / CodeLLaMA-13B-Instruct / result export ffac2a82cedc: CodeLLaMA-13B-Instruct
+      CROW / CodeLLaMA-13B-Instruct / result export 093566cad97c: CodeLLaMA-13B-Instruct
+      CROW / CodeLLaMA-13B-Instruct / result export b7444f83e009: CodeLLaMA-13B-Instruct
+      CROW / CodeLLaMA-13b-Instruct / result export eb6f202f4c84: CodeLLaMA-13b-Instruct
+      CROW / CodeLLaMA-13b-Instruct / result export 0a480a4affa6: CodeLLaMA-13b-Instruct
+      CROW / CodeLLaMA-13b-Instruct / result export bd2f8a8daccf: CodeLLaMA-13b-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export e49c0c45ba9e: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 9aae09d54645: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 04747c69ee77: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 4a8e66ae54d1: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 235f98e862cc: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 089bd3a5bbfe: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 576851a7f471: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export d6a8266d2020: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export b3fb90f91227: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export 7efc4ce22023: CodeLLaMA-7B-Instruct
+      CROW / CodeLLaMA-7B-Instruct / result export e15e678bc204: CodeLLaMA-7B-Instruct
+    subject_label_evidence:
+      source: CROW native model field; reported_model and export_sha256 already preserve every released export.
+      scope: Remove the benchmark prefix and export hash; retain unknown checkpoint/defense status and each export
+        as a separate subject.
     layout:
       results: history/*/attack/DPA/eval_result/**/*.json
       filename: ^eval_ASR_(?P<filename_asr>[\d.]+)_(?P<model>.+)_(?P<task>[a-z0-9]+)_(?P<trigger>[a-z-]+)\.json$

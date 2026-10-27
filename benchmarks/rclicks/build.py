@@ -98,7 +98,7 @@ class RClicks(BenchmarkBuild):
             response_scale=metrics[row.metric]['response_scale']) for row in items.itertuples()]
         items['verifier'] = [ExactMatcher(spec=json.dumps(metrics[name]['implementation'], sort_keys=True)) for name in items.metric]
         subjects = pd.DataFrame({'subject_key': sorted(records.model_name.unique())})
-        subjects['raw_label'] = subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key.map(parameters['models'])
         subjects['features'] = subjects.subject_key.map(lambda name: dict(native_identifier=name, algorithm=parameters['models'][name]))
         responses = long[['response_key', 'subject_key', 'item_key', 'response']].assign(test_condition=parameters['labels']['condition'])
 

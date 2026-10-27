@@ -47,6 +47,92 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      anthropic_claude-haiku-4.5: claude-haiku-4-5
+      anthropic_claude-haiku-4.5_gcs: claude-haiku-4-5
+      anthropic_claude-haiku-4.5_gcs_gen: claude-haiku-4-5
+      anthropic_claude-haiku-4.5_gen: claude-haiku-4-5
+      anthropic_claude-sonnet-4.5: claude-sonnet-4-5
+      anthropic_claude-sonnet-4.5_gcs: claude-sonnet-4-5
+      anthropic_claude-sonnet-4.5_gcs_gen: claude-sonnet-4-5
+      anthropic_claude-sonnet-4.5_gen: claude-sonnet-4-5
+      google_gemini-2.5-pro: gemini-2.5-pro
+      google_gemini-2.5-pro_gcs: gemini-2.5-pro
+      google_gemini-2.5-pro_gcs_gen: gemini-2.5-pro
+      google_gemini-2.5-pro_gen: gemini-2.5-pro
+      google_gemini-3-pro-preview: gemini-3-pro-preview
+      google_gemini-3-pro-preview_gcs: gemini-3-pro-preview
+      google_gemini-3-pro-preview_gcs_gen: gemini-3-pro-preview
+      google_gemini-3-pro-preview_gen: gemini-3-pro-preview
+      meta-llama_llama-4-maverick: llama-4-maverick
+      meta-llama_llama-4-maverick_gcs: llama-4-maverick
+      meta-llama_llama-4-maverick_gcs_gen: llama-4-maverick
+      meta-llama_llama-4-maverick_gen: llama-4-maverick
+      meta-llama_llama-4-scout: llama-4-scout
+      meta-llama_llama-4-scout_gcs: llama-4-scout
+      meta-llama_llama-4-scout_gcs_gen: llama-4-scout
+      meta-llama_llama-4-scout_gen: llama-4-scout
+      openai_gpt-4.1: gpt-4.1
+      openai_gpt-4.1_gcs: gpt-4.1
+      openai_gpt-5.2: gpt-5.2
+      openai_gpt-5.2_gcs: gpt-5.2
+      openai_gpt-4.1_gcs_gen: gpt-4.1
+      openai_gpt-4.1_gen: gpt-4.1
+      openai_gpt-5.2_gcs_gen: gpt-5.2
+      openai_gpt-5.2_gen: gpt-5.2
+      anthropic_claude-opus-4.6: claude-opus-4-6
+      anthropic_claude-opus-4.6_gcs: claude-opus-4-6
+      anthropic_claude-opus-4.6_gcs_gen: claude-opus-4-6
+      anthropic_claude-opus-4.6_gen: claude-opus-4-6
+      anthropic_claude-sonnet-4.6: claude-sonnet-4-6
+      anthropic_claude-sonnet-4.6_gcs: claude-sonnet-4-6
+      anthropic_claude-sonnet-4.6_gcs_gen: claude-sonnet-4-6
+      anthropic_claude-sonnet-4.6_gen: claude-sonnet-4-6
+      google_gemini-3.1-pro-preview: gemini-3.1-pro-preview
+      google_gemini-3.1-pro-preview_gcs: gemini-3.1-pro-preview
+      google_gemini-3.1-pro-preview_gcs_gen: gemini-3.1-pro-preview
+      google_gemini-3.1-pro-preview_gen: gemini-3.1-pro-preview
+      openai_gpt-5.3-chat: gpt-5.3-chat
+      openai_gpt-5.3-chat_gcs: gpt-5.3-chat
+      openai_gpt-5.4: gpt-5.4
+      openai_gpt-5.4_gcs: gpt-5.4
+      openai_gpt-5.3-chat_gcs_gen: gpt-5.3-chat
+      openai_gpt-5.3-chat_gen: gpt-5.3-chat
+      openai_gpt-5.4_gcs_gen: gpt-5.4
+      openai_gpt-5.4_gen: gpt-5.4
+      anthropic_claude-fable-5: claude-fable-5
+      anthropic_claude-fable-5_gcs: claude-fable-5
+      anthropic_claude-fable-5_gcs_gen: claude-fable-5
+      anthropic_claude-fable-5_gen: claude-fable-5
+      anthropic_claude-opus-5: claude-opus-5
+      anthropic_claude-opus-5_gcs: claude-opus-5
+      anthropic_claude-opus-5_gcs_gen: claude-opus-5
+      anthropic_claude-opus-5_gen: claude-opus-5
+      google_gemini-3.6-flash: gemini-3.6-flash
+      google_gemini-3.6-flash_gcs: gemini-3.6-flash
+      google_gemini-3.6-flash_gcs_gen: gemini-3.6-flash
+      google_gemini-3.6-flash_gen: gemini-3.6-flash
+      google_gemini-3.7-flash: gemini-3.7-flash
+      google_gemini-3.7-flash_gcs: gemini-3.7-flash
+      google_gemini-3.7-flash_gcs_gen: gemini-3.7-flash
+      google_gemini-3.7-flash_gen: gemini-3.7-flash
+      openai_gpt-5.5: gpt-5.5
+      openai_gpt-5.5_gcs: gpt-5.5
+      openai_gpt-5.6-sol: gpt-5.6-sol
+      openai_gpt-5.6-sol_gcs: gpt-5.6-sol
+      qwen_qwen3.8-2.4t-a95b: qwen3.8-2.4t-a95b
+      qwen_qwen3.8-2.4t-a95b_gcs: qwen3.8-2.4t-a95b
+      openai_gpt-5.5_gcs_gen: gpt-5.5
+      openai_gpt-5.5_gen: gpt-5.5
+      openai_gpt-5.6-sol_gcs_gen: gpt-5.6-sol
+      openai_gpt-5.6-sol_gen: gpt-5.6-sol
+      qwen_qwen3.8-2.4t-a95b_gcs_gen: qwen3.8-2.4t-a95b
+      qwen_qwen3.8-2.4t-a95b_gen: qwen3.8-2.4t-a95b
+    subject_label_evidence:
+      source: Literal provider-qualified model tokens in the pinned RealTimeQA answer files; _gcs and _gen denote
+        source retrieval/answer variants.
+      scope: Retain source_model_token, answer_mode and historical-configuration caveats. Do not assign a specific
+        GPT-3/T5/RAG checkpoint to legacy shorthand.
     layout:
       release: upstream
     patterns:

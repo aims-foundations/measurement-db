@@ -38,6 +38,12 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      GPT-2 (zero shot): gpt2
+    subject_label_evidence:
+      source: Summeval released model_name/model_paper table.
+      scope: Retain source_model_name, source_model_alias and configuration status; zero-shot wording is configuration
+        provenance.
     layout:
       annotations: model_annotations.aligned.jsonl
     archives:

@@ -129,7 +129,9 @@ class SWEbenchLive(BenchmarkBuild):
         # 7. Register source configurations and task definitions with their grading protocol.
         subjects = attempts[['subject_key', 'run']].drop_duplicates().copy()
         subjects['raw_label'] = subjects.run.str.removeprefix('submissions/').str.removeprefix('website/')
-        subjects['features'] = [dict(source_submission=row.run, harness=labels['harness'],
+        subjects['features'] = [dict(source_submission=row.run,
+            harness=parameters['subject_harnesses'].get(row.raw_label, labels['harness']),
+            reasoning_effort=parameters['subject_reasoning_efforts'].get(row.raw_label),
             configuration_scope=labels['configuration_scope'],
             source_readme=parameters['layout']['release'] + '/' + row.run + '/README.md'
                 if (release / row.run / 'README.md').is_file() else None)
