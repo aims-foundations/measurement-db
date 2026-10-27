@@ -9,6 +9,31 @@ test("math markup and its stylesheet use the same KaTeX version", () => {
   assert.equal(require("katex").version, markdown("katex").version);
 });
 
+test("mixed coding items preserve code indentation and unknown source fields", async () => {
+  const code =
+    "from pydantic import BaseModel\n\nclass Result(BaseModel):\n    score: float\n";
+  for (const [benchmark, field] of [
+    ["engdesign", "output_structure"],
+    ["judgetuning", "instruction"],
+  ]) {
+    const { default: presentation } = await import(
+      `../lib/presentation-transforms/benchmarks/${benchmark}.ts`
+    );
+    const source = { [field]: code, extra: { retained: false } };
+    const blocks = presentation.item(JSON.stringify(source));
+    assert.equal(blocks[0].kind, "code");
+    assert.equal(blocks[0].language, "python");
+    assert.equal(blocks[0].text, code);
+    assert.deepEqual(blocks[1].value, source.extra);
+  }
+  const { default: judge } =
+    await import("../lib/presentation-transforms/benchmarks/judgetuning.ts");
+  assert.equal(
+    judge.item('{"instruction":"Explain this result."}')[0].kind,
+    "fields",
+  );
+});
+
 async function loadModule(name) {
   const url = new URL(`../lib/benchmark-records/${name}.ts`, import.meta.url)
     .href;
