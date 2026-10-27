@@ -285,6 +285,30 @@ response-table order within each canonical subject, item, condition, and
 interactor combination. Supply `trial` explicitly when the source records it.
 Trace rows link through `response_key` and preserve the complete text.
 
+Use the source's model identifier as a subject's `raw_label` when it is known,
+for example `claude-haiku-4-5`. Keep the agent framework in `features.harness`
+and its version, reasoning settings, prompt configuration, and training
+checkpoint in the corresponding subject features. A benchmark name, task name,
+or export filename should not be prepended to the model identifier. The model
+registry matches this identifier exactly; decorating it prevents cross-benchmark
+model associations. Temporary `subject_key` values may still contain whatever
+source coordinates are needed to join the input tables.
+
+Do not substitute a base model for a fine-tuned checkpoint or guess a model from
+an agent name. Preserve the released system/checkpoint label when the underlying
+model is unknown, and retain known model components and identity limitations in
+its features. A derived model can keep its study-specific name. Different
+configurations of one model must retain different features and subject IDs even
+when they share a `normalized_name`. When fixing subject identities, rebuild
+their referencing responses and traces together and refresh characterizations;
+editing the displayed label in a published table is insufficient.
+
+The [subject identity review](docs/subject-identity-review.csv) records the
+decision and validation scope for each benchmark in the October 2026 pass.
+Its [summary](docs/subject-identity-review.json) distinguishes full published-table
+migrations from fresh author-source rebuilds and lists withheld datasets whose
+fingerprints still require regeneration before release.
+
 Other columns use the corresponding `add_subject`, `add_item`, and `add_response`
 arguments, including `ExactMatcher`/`Judge` verifier objects. Missing DataFrame
 cells become `None`; grading-scale and finite-value checks still apply. Item

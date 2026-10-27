@@ -96,7 +96,7 @@ class AuditingSabotageBench(BenchmarkBuild):
         subjects = subjects.merge(pd.DataFrame([self.build_parameters["ambiguous_subject"]]),
                                   on=["model", "regime"], how="left", validate="one_to_one")
         subjects["note"] = subjects.note.fillna(self.build_parameters["subject"]["default_identity_note"])
-        subjects["raw_label"] = subjects.subject_key
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(harness=self.build_parameters["subject"]["harness"], model_identifier=row.model,
             regime=row.regime, identity_note=row.note) for row in subjects.itertuples()]
         items["raw_item_id"] = items.item_key

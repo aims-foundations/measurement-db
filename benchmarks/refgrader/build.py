@@ -138,7 +138,7 @@ class RefGrader(BenchmarkBuild):
         attempts["sampling_mode"] = attempts.sample_index.eq(0).map({True: "initial", False: "additional"})
         attempts["subject_key"] = attempts.model_config + ":" + attempts.workflow + ":" + attempts.sampling_mode
         subjects = attempts.drop_duplicates("subject_key").copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.model_config
         subjects["features"] = [dict(**parameters["subject_features"], source_model_configuration=row.model_config,
             workflow=row.workflow, sampling_mode=row.sampling_mode) for row in subjects.itertuples()]
         attempts["response_key"] = (attempts.source_file + "#" + attempts.source_row.astype(str) + "#" + attempts.model_config

@@ -55,7 +55,6 @@ build:
       '5': E
     labels:
       ungraded_marker: FAILED
-      subject_prefix: 'KorMedMCQA / '
       input_scope: Original question and choices. Historical surrounding prompt and demonstrations were not recorded.
     subject_features:
       harness: Korean LLM Benchmark Suite

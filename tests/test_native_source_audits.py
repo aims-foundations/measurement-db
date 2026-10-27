@@ -3601,7 +3601,7 @@ class EmbodiedArchiveAuditTests(unittest.TestCase):
         with ZipFile(raw / "answers.zip", "w") as archive:
             archive.writestr(member, json.dumps(records, ensure_ascii=False))
             archive.writestr("__MACOSX/" + member, b"not JSON: macOS resource metadata")
-        subjects = [dict(subject_id="model-a", display_name="Embodied Agent Interface / model-a",
+        subjects = [dict(subject_id="model-a", display_name="model-a",
             harness="Embodied Agent Interface",
             subject_features_extra="recorded_model_label=model-a;historical_inference_settings=not_recorded",
             normalized_name=None, release_date=None, access_date=None, harness_version=None, reasoning_effort=None)]
@@ -3964,8 +3964,8 @@ class WeaveBenchAuditTests(unittest.TestCase):
         self.metadata = yaml.safe_load((folder / "metadata.yaml").read_text())
         (self.directory / "metadata.yaml").write_text(yaml.safe_dump(self.metadata))
         paths = self.metadata["build"]["parameters"]["paths"]
-        rows = [dict(task_id="task-a", model="model-a", harness="codex", score=.8),
-                dict(task_id="task-b", model="model-a", harness="openclaw", score=.7999999999999),
+        rows = [dict(task_id="task-a", model="gpt-4o", harness="codex", score=.8),
+                dict(task_id="task-b", model="gpt-4o", harness="openclaw", score=.7999999999999),
                 dict(task_id="task-c", model="model-b", harness="codex", score=None),
                 dict(task_id="task-d", model="model-b", harness="codex", score=0.)]
         for i, row in enumerate(rows):
@@ -3998,6 +3998,29 @@ class WeaveBenchAuditTests(unittest.TestCase):
         self.assertEqual(_weavebench(self.directory, self.tables, self.metadata), dict(source_responses=4,
             source_items=4, source_subjects=3, source_models=2, source_traces=4, source_screenshots=4,
             source_trace_entries=8, source_action_steps=4, source_passes=1, source_ungraded=1))
+
+    def test_model_identity_links_across_harnesses_without_merging_configurations(self):
+        subjects = self.tables["subjects"]
+        known = subjects.loc[subjects.display_name.eq("gpt-4o")]
+        self.assertEqual(len(known), 2)
+        self.assertEqual(set(known.normalized_name), {"OpenAI GPT-4o"})
+        self.assertEqual(set(known.provider), {"OpenAI"})
+        self.assertEqual(set(known.harness), {"codex", "openclaw"})
+        self.assertEqual(known.subject_id.nunique(), 2)
+        unknown = subjects.loc[subjects.display_name.eq("model-b")]
+        self.assertTrue(unknown.normalized_name.isna().all())
+        self.assertTrue(unknown.provider.isna().all())
+        self.assertTrue(self.tables["responses"].subject_id.isin(subjects.subject_id).all())
+        self.assertEqual(set(self.tables["traces"].response_id), set(self.tables["responses"].response_id))
+
+    def test_audit_rejects_incorrect_registry_attribution(self):
+        from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench
+        for column in ["normalized_name", "release_date"]:
+            with self.subTest(column=column):
+                tables = {name: frame.copy(deep=True) for name, frame in self.tables.items()}
+                tables["subjects"].loc[0, column] = "incorrect attribution"
+                with self.assertRaises(ValueError):
+                    _weavebench(self.directory, tables, self.metadata)
 
     def test_scores_configuration_linkage_checks_screenshots_and_selection_policy(self):
         from measurement_db.scripts.curate_benchmarks.native_result_audits import _weavebench

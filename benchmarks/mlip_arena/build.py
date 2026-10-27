@@ -237,7 +237,7 @@ class MLIPArena(BenchmarkBuild):
         observations['item_key'] = [hashlib.sha256(json.dumps([row.family, row.task_name, row.stimulus, row.metric, row.reference],
             sort_keys=True, allow_nan=False).encode()).hexdigest() for row in observations.itertuples()]
         subjects = observations[['subject_key', 'model', 'family']].drop_duplicates('subject_key')
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.model + ' / ' + subjects.family
+        subjects['raw_label'] = subjects.model
         subjects['features'] = [dict(parameters['subject_features'], native_model=model, task_family=family)
             for model, family in zip(subjects.model, subjects.family)]
         items = observations.drop_duplicates('item_key').copy()

@@ -76,7 +76,7 @@ class LLMSurveySimulation(BenchmarkBuild):
         # 4. Retain base questions, explicit mixed scales and source model labels.
         subjects = pd.DataFrame.from_dict(parameters["models"], orient="index", columns=["documented_identifier"])
         subjects = subjects.rename_axis("subject_key").reset_index()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=row.subject_key,
             documented_model_identifier=row.documented_identifier) for row in subjects.itertuples()]
         items["raw_item_id"] = items.item_key

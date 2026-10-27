@@ -47,7 +47,7 @@ class SweTogether(BenchmarkBuild):
 
         # 3. Keep literal model labels, complete instructions, context and grading criteria.
         subjects = records[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness="opencode", recorded_model_label=model,
             result_snapshot=labels["snapshot"], historical_inference_settings="not_recorded")
             for model in subjects.subject_key]

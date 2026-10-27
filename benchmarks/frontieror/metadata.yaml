@@ -65,7 +65,6 @@ build:
       solution_schema: task_bank/tasks/{paper_id}/solution_schema.json
       checker: task_bank/tasks/{paper_id}/feasibility_check.py
     labels:
-      subject_prefix: 'FrontierOR / '
       snapshot: results-sha256:da1faa368edd45fd97f77d21fcafe2ab7fd28ff009e77aaec38349d3a2f9e6fe
       task_revision: 9f5cd5436f7f4e013dfa81aebea77a1cc98628b8
       one_shot_harness: FrontierOR one-shot

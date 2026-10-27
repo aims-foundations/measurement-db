@@ -63,8 +63,6 @@ build:
       grading: parse_str_list_score
     duplicate_results:
       temp.json: gemini-1.5-pro_lingoly.json
-    labels:
-      subject_prefix: 'LINGOLY / '
     subject_features:
       harness: LINGOLY released predictions
       historical_configuration: numeric_settings_not_recorded

@@ -57,7 +57,6 @@ build:
       aggregates: results/eval-set
       task_banks: history/*/data/filtered-00000-of-00001.parquet
     labels:
-      subject_prefix: 'RewardBench / '
       association: unique_complete_historical_bank_match
     subject_features:
       harness: RewardBench core evaluation

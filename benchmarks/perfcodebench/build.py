@@ -89,7 +89,7 @@ class PerfCodeBench(BenchmarkBuild):
 
         # 4. Define literal model identities and task-specific grading, keeping reference code out of the prompt.
         subjects = observations[["model"]].drop_duplicates().rename(columns={"model": "subject_key"})
-        subjects["raw_label"] = settings["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = subjects.subject_key.map(lambda model: dict(recorded_model_label=model,
             harness=settings["labels"]["harness"], settings_status=settings["labels"]["settings_status"]))
         items = tasks.rename(columns={"task_id": "item_key"}).copy()

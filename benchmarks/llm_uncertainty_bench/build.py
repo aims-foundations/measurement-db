@@ -69,7 +69,7 @@ class LLMUncertaintyBench(BenchmarkBuild):
         # 3. Separate recorded model/prompt formats without guessing historical revisions.
         subjects = paths[["model", "variant", "method"]].drop_duplicates().sort_values(["model", "variant", "method"])
         subjects["subject_key"] = subjects.model + ":" + subjects.variant + ":" + subjects.method
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=row.model,
             input_variant=row.variant, prompt_method=row.method, input_format=parameters["variants"][row.variant],
             chat_template=json.dumps(formatting["falcon_chat"]) if row.variant == "outputs_chat_v1" and "falcon" in row.model else None,

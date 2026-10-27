@@ -64,7 +64,6 @@ build:
       Qwen_200_4000_max_greedy: Released configuration label
       Qwen_4000_h2o: Released configuration label
     labels:
-      subject_prefix: 'MorphKV / '
       harness: MorphKV/LongGenBench
       benchmark: LongGenBench
     block_patterns:

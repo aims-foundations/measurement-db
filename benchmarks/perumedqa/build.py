@@ -47,7 +47,7 @@ class PeruMedQA(BenchmarkBuild):
 
         # 3. Retain source identities and identify the fine-tuned model's year pools.
         subjects = records[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(harness='PeruMedQA', source_model=row.subject_key,
             declared_model=parameters['model_identifiers'][row.subject_key],
             inference_sources=parameters['inference_sources'][row.subject_key]) for row in subjects.itertuples(index=False)]

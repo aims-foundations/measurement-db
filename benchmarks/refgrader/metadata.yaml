@@ -88,7 +88,6 @@ build:
       FLEXIBLE_ORGANIZED: code/prompts/graders/relative_grader_organized.MD
       EXPLICIT_ERROR_ANALYSIS: code/prompts/graders/relative_grader_with_explicit_error_analysis.MD
     labels:
-      subject_prefix: 'RefGrader / '
       input_header: '
 
 

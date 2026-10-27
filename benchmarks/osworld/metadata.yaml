@@ -117,7 +117,6 @@ build:
       runtime.log: Original unmodified execution log.
       instruction.txt: Original run-specific instruction when released.
     labels:
-      subject_prefix: 'OSWorld / '
       harness: OSWorld
       configuration_scope: Separate published archive exports. Only explicitly recorded allowlisted inference settings
         are known.

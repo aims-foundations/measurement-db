@@ -2,19 +2,19 @@ format_version: 1
 tables:
   traces:
     rows: 10360
-    logical_sha256: 404392f0b7861f5e5e8df66dd97a93b054aec5a8d94091a40132db3770146774
+    logical_sha256: 4af0a7ebdf8983e30f295dfcbcb8762850e99b7960f03c43199ced618d11064c
   subjects:
     rows: 14
-    logical_sha256: cbbd2051470ca299e94348851e740a4e762a38a3a7a2363dd171b220c999309e
+    logical_sha256: 82e3ed0a8ebc8a6abb379ce8cfbc19593521eff150ae4ff0ae2392b67550acdc
   responses:
     rows: 10360
-    logical_sha256: 8c71c309769f4a5990a177f21dcdc9d832114d4a288258764d5434b797c86553
+    logical_sha256: 8436e74d6b4373b55b68128e2f30b65e1ef585d90068b5a1b0f378f82af48f17
   items:
     rows: 734
     logical_sha256: 1f0fe2a8eafbce5648bc3c47881c201ec63815113ba14b1fc55980531b8e2cf4
   benchmarks:
     rows: 1
-    logical_sha256: 97ce0a5895660f8007bff9bc6156774c31af38795a70c573edbef81312c85428
+    logical_sha256: 609f6644dbd1669bb443158586fa4f76e65ef8c9daa4993cece1525cd552e5d7
 source_claims:
   source_responses:
     kind: count

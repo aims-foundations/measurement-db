@@ -94,7 +94,7 @@ class MORQA(BenchmarkBuild):
         observations['response_key'] = observations.record_key + '/' + observations.subject_key
         observations['test_condition'] = 'source_file=' + observations.source_file
         subjects = observations[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(harness=parameters['labels']['harness'], source_evaluator=key) for key in subjects.subject_key]
         traces = observations[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(source_file=row.source_file, source_row=row.source_row,

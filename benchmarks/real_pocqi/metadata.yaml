@@ -61,7 +61,6 @@ build:
       answers: answers.parquet
       ratings: ratings.parquet
     labels:
-      subject_prefix: 'Real-POCQi / '
       harness: Real-POCQi physician pairwise evaluation
     axes:
       accuracy: Factual accuracy

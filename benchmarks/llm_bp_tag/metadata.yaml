@@ -65,7 +65,7 @@ build:
       max_chars: '10000'
     subject:
       key: 4o
-      label: LLM-BP / gpt-4o / node classification
+      label: gpt-4o
     subject_features:
       harness: LLM-BP run_gpt.py
       model_identifier: gpt-4o

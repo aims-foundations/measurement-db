@@ -58,7 +58,7 @@ class MTBench(BenchmarkBuild):
         # 3. Preserve literal model labels and the actual stimulus at each turn, excluding the answer being scored.
         records["internal_model"] = records.answer_record.map(lambda x: x["model_id"])
         subjects = records[["model", "internal_model"]].drop_duplicates().rename(columns={"model": "subject_key"})
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(recorded_model_label=row.subject_key, internal_model_label=row.internal_model,
             settings_status=labels["settings_status"]) for row in subjects.itertuples()]
         records["item_key"] = records.question_id.astype(str) + "_turn" + records.turn.astype(str)

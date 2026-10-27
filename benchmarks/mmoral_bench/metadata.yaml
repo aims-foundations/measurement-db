@@ -86,7 +86,6 @@ build:
     labels:
       image_media_type: image/jpeg
       input_scope: original benchmark task definition, historical policy prompt and transformed images are not reconstructed
-      subject_prefix: 'MMOral / OPTG / '
 grading:
   verifiers:
     closed:

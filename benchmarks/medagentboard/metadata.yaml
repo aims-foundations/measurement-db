@@ -107,7 +107,6 @@ build:
       harness: MedAgentBoard
       historical_configuration: only_explicit_recorded_settings_are_asserted
     labels:
-      subject_prefix: 'MedAgentBoard / '
       workflow_code_method: Single LLM
 grading:
   verifiers:

@@ -75,7 +75,7 @@ class TUMLU(BenchmarkBuild):
 
         # 4. Keep original model identifiers and distinguish prompting conditions.
         subjects = responses[['subject_key', 'model', 'variant']].drop_duplicates().copy()
-        subjects['raw_label'] = subjects.model + ' [' + subjects.variant + ']'
+        subjects['raw_label'] = subjects.model
         subjects['features'] = [dict(harness=labels['harness'], source_model=row.model,
             prompting_variant=row.variant, prompting=parameters['prompting_variants'][row.variant],
             historical_configuration=labels['historical_configuration']) for row in subjects.itertuples()]

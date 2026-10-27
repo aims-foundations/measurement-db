@@ -51,7 +51,6 @@ build:
       gene_id: Released gene identifier
       coverage: Recorded read coverage
     labels:
-      subject_prefix: 'NanoBaseLib / '
       condition_prefix: modification=
       input_scope: released_site_annotations_only
       grade_status: no_native_per_site_grade

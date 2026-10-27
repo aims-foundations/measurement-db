@@ -59,7 +59,6 @@ build:
       filename_escape: _x([0-9a-f]{2,6})_
     labels:
       workspace: 'Your workspace is: `<workspace>`'
-      harness: ResearchClawBench
       historical_settings: not_recorded
       input_scope: published_template_and_pinned_task_assets
       default_media_type: application/octet-stream

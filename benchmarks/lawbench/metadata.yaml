@@ -77,7 +77,6 @@ build:
       proces: 0.1.7
       nltk: 3.9.1
     labels:
-      subject_prefix: 'LawBench / '
       input_scope: Complete saved prompt text including demonstrations and any recorded template.
     subject_features:
       harness: LawBench released predictions

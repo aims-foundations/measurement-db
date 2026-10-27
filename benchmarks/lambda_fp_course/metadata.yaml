@@ -54,7 +54,6 @@ build:
       repair_syntax: benchmarks/Repair/Syntax_Error_meta.csv
       repair_type: benchmarks/Repair/Type_Error_meta.csv
     labels:
-      subject_prefix: 'Lambda FP Course / '
       input_scope: Saved task and documented original diagnostic. Historical system prompt version not established.
     prompt_parts:
       type_prefix: '**Error Type in the following code: **Type Error

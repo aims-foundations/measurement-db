@@ -70,7 +70,6 @@ build:
     labels:
       positive_first: positive-first
       model: GPT-4V
-      subject_prefix: 'SugarCrepe / '
       harness: SugarCrepe two-caption image matching
     prompt:
       template: "Which caption best describes the image?\n(1) {caption1}\n (2) {caption2}\nOutput (1) or (2)."

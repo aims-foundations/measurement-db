@@ -87,7 +87,7 @@ class LexEval(BenchmarkBuild):
 
         # 3. Retain literal model labels without guessing historical settings.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=model)
                                 for model in subjects.subject_key]
 

@@ -88,8 +88,6 @@ build:
       PNG: image/png
       MPO: image/jpeg
       WEBP: image/webp
-    labels:
-      subject_prefix: 'MMBench V1.1 / '
     subject_features:
       harness: VLMEvalKit
       configuration_scope: literal_released_model_label

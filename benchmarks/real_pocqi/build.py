@@ -70,7 +70,7 @@ class RealPOCQi(BenchmarkBuild):
         if responses.answers_row.isna().any() or responses.opponent_answer_row.isna().any():
             raise ValueError('A rated system or opponent has no released answer')
         subjects = responses[['subject_key']].drop_duplicates()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(source_provider=key, harness=parameters['labels']['harness']) for key in subjects.subject_key]
         responses['test_condition'] = [json.dumps(dict(source_row=int(row.ratings_row), axis=row.axis,
             render_mode=row.render_mode, slot=row.slot), sort_keys=True) for row in responses.itertuples()]

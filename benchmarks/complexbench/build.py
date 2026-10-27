@@ -47,7 +47,7 @@ class ComplexBench(BenchmarkBuild):
         # 3. Retain the complete rubric separately from the instruction presented
         # to the model. The hybrid grader is described, never run by this builder.
         subjects = records[["model"]].drop_duplicates().rename(columns={"model": "subject_key"})
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness=self.name, recorded_model_label=model,
             historical_inference_settings="not_recorded") for model in subjects.subject_key]
         items = tasks.rename(columns={"main_id": "item_key", "instruction": "content"}).copy()

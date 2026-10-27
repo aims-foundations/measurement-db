@@ -65,7 +65,6 @@ build:
       ffd8ff: image/jpeg
       '52494646': image/webp
     labels:
-      subject_prefix: 'KRIS-Bench / '
       input_scope: Original released image bytes and the instruction recorded by the judge. The surrounding generation
         prompt and exact historical image encoding are not recorded.
     subject_features:

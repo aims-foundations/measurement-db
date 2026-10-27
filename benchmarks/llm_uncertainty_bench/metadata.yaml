@@ -127,7 +127,6 @@ build:
       outputs_chat_v1: model_chat_template
       outputs_chat_v2: plain
     labels:
-      subject_prefix: 'LLM-Uncertainty / '
       input_scope: documented_prompt_before_chat_serialization_and_tokenization
     subject_features:
       harness: LLM-Uncertainty-Bench

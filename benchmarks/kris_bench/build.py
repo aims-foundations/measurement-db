@@ -110,7 +110,7 @@ class KrisBench(BenchmarkBuild):
         items['verifier'] = [Judge(judged_by='llm', spec=json.dumps(dict(self.grading['verifiers'][row.judge], metric=row.metric), sort_keys=True))
             for row in items.itertuples()]
         subjects = responses[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(**parameters['subject_features'], source_model=model) for model in subjects.subject_key]
 
         # 5. Preserve complete native records and exact output-image associations.

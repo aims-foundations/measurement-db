@@ -54,7 +54,7 @@ class FrontierOR(BenchmarkBuild):
         subjects.loc[subjects.kind.eq("model"), "harness"] = labels["one_shot_harness"]
         if subjects.subject_key.duplicated().any() or subjects.harness.isna().any():
             raise ValueError("An unrecognized FrontierOR subject configuration needs review")
-        subjects["raw_label"] = labels["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(harness=row.harness, recorded_model_label=row.subject_key,
             evaluation_kind=row.kind, result_snapshot=labels["snapshot"], historical_inference_settings="not_recorded")
             for row in subjects.itertuples()]

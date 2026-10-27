@@ -66,7 +66,7 @@ class SustainableFood(BenchmarkBuild):
         responses['response'] = responses.parsed_choice.eq(responses.gold).astype(float).where(responses.parsed_choice.notna())
         responses['test_condition'] = 'source_file=' + layout['outputs']
         subjects = responses[['subject_key']].drop_duplicates()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(source_model=model, declared_request_options=parameters['request_options'][model],
             harness=parameters['labels']['harness']) for model in subjects.subject_key]
 

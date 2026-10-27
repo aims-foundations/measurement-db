@@ -58,7 +58,6 @@ build:
       records: trajectories/data/
       screenshots: trajectories/shots/{task_id}/{shot}
     labels:
-      subject_prefix: 'WeaveBench / '
       selection: author_selected_best_hybrid_rollout_per_task
       settings_status: historical_inference_settings_not_recorded
 grading:

@@ -51,7 +51,7 @@ class LLMsLeanFormalization(BenchmarkBuild):
         rounds = records.explode(["responses", "verification", "verify_time", "round"], ignore_index=True)
         rounds["subject_key"] = rounds.model + ":" + rounds.policy + ":" + rounds["round"].astype(str)
         subjects = rounds[["subject_key", "model", "policy", "round"]].drop_duplicates()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.model
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=row.model,
             policy=row.policy, recorded_round=row.round) for row in subjects.itertuples()]
         rounds["response"] = rounds.verification.eq("Pass").astype(float)

@@ -76,7 +76,7 @@ class MTBBench(BenchmarkBuild):
         # 4. Distinguish the recorded model and system protocol without guessing settings.
         subjects = responses[['model', 'system_prompt']].drop_duplicates().reset_index(drop=True)
         subjects['subject_key'] = subjects.index
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.model
+        subjects['raw_label'] = subjects.model
         subjects['features'] = [dict(source_model=row.model, system_prompt=row.system_prompt,
             harness=parameters['labels']['harness']) for row in subjects.itertuples()]
         responses = responses.merge(subjects[['model', 'system_prompt', 'subject_key']],

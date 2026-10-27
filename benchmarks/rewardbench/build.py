@@ -82,7 +82,7 @@ class RewardBench(BenchmarkBuild):
             frame["subject_key"] = source_file
             frame["scoring"] = scoring
             configurations.append(dict(subject_key=source_file,
-                raw_label=parameters["labels"]["subject_prefix"] + native["model"] + " / " + scoring,
+                raw_label=native["model"],
                 features=dict(**parameters["subject_features"], native_configuration=configuration, scoring=scoring)))
             attempts.append(frame)
         attempts = pd.concat(attempts, ignore_index=True)
