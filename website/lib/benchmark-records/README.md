@@ -43,18 +43,31 @@ issue HTTP requests. Layout and styling changes do not require rerunning Python.
   reciprocal opponents with matching item, trial, and comparison context.
   Trial counters alone never pair repeated comparisons. Ambiguous or unmatched
   observations remain individually accessible.
-- `presentation.ts` contains explicit mappings for nested source text and release
-  comparison identifiers. For example, ReAL-PoCQI's source row identifies a
-  rating, while its slot identifies the perspective. Unknown payloads remain
-  readable as text/JSON. The full original prompt and trace are always available.
-- Both viewers use `lib/item-content.ts` and `components/item-content.tsx` to
-  present items with explicit question formats. `components/structured-content.tsx`
-  shares labeled fields, lists, and conversation messages across items, answers,
-  and metadata; nested JSON is decoded for display and original records remain available.
-  MMLU's explicit format shows the evaluated question and answer choices first,
-  with instructions, demonstrations, and request details in disclosures.
-  Ambiguous question boundaries fall back to displaying every source field.
-  Original task text remains accessible; this formatting never changes exports.
+- Every benchmark page uses `components/item-content.tsx`: a customized view
+  followed by a closed **Original item** section containing the exact source text.
+  An unregistered or failed customization shows the original text directly.
+- Temporary transformations live only in `lib/presentation-transforms/benchmarks/`.
+  Each published benchmark has a separate module. Most select a shared formatter
+  that preserves all fields; specialized parsing (such as MMLU) stays in its own file.
+  `registry.ts` is the explicit registration list. Remove an entry and its module
+  to revert that benchmark to raw text; no data regeneration is necessary.
+- `shared.ts` supplies ordinary text/Markdown, labeled structured fields, variable
+  answer choices, and ordered multimedia blocks. These are display documents,
+  not a new persisted data schema. Unknown fields remain visible. There are no
+  benchmark-name branches in the shared React components or Python exporter.
+- `raw-item-content.tsx` escapes and displays the original string without JSON
+  reserialization, trimming, truncation, Markdown, or math processing. The large
+  raw text DOM is mounted only when expanded. A missing text component is explicit.
+- Legacy matrix pages use `source-item-content.tsx` to read one exact item from
+  pinned Parquet through existing byte-range indexes. This avoids treating image
+  markup appended by the old exporter as original content. That path projects only
+  content and the asset manifest; it does not load the full item table.
+- The same source record drives custom and raw views. Images follow the released
+  multimedia order, and remaining attachments are paginated and opened on demand.
+  Source-specific answer and comparison mappings for the three canonical viewers
+  also live in their corresponding benchmark modules.
+- `components/structured-content.tsx` remains shared by metadata and answers.
+  Formatting does not change item, model, observation, or response identities.
 - Existing Rasch summaries and subject abilities can be supplied separately.
   They describe the published full-benchmark analysis, not a refit of the current
   filters; incompatible counts/subject IDs prevent displaying them.
@@ -113,3 +126,17 @@ to export self-contained JSON traces. Never expose HF credentials to the client.
 
 Offline tests: `pytest tests/test_gallery_new.py`, `pnpm --dir website gallery:test`,
 and the canonical Parquet fixture read in `.github/workflows/website.yml`.
+
+## Presentation validation
+
+`pnpm --dir website gallery:test` checks fallback behavior, catalog registration,
+MMLU parsing, variable choice counts, media order, and retained unknown fields.
+The hybrid worker fixtures check exact raw item text for static and dynamic data,
+including Unicode, embedded images, and exporter-appended images.
+
+`node website/scripts/check-item-presentations.mjs /path/to/samples` exercises
+all registered transformations against an inventory plus per-benchmark item samples.
+The initial check used 6,106 sampled items from all 270 tables available at HF
+revision `54074453da7b9911be0f48e4c560be547bc84d21`. This is structural coverage,
+not a claim to have manually reviewed every item or reconstructed every prompt.
+Future registrations without a module retain the raw-text fallback.

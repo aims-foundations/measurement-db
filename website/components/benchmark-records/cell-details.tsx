@@ -9,10 +9,7 @@ import {
 } from "@/lib/benchmark-records/model";
 import { gradeLabel } from "@/lib/benchmark-records/scale";
 import { gradeColor } from "@/lib/benchmark-records/colors";
-import {
-  displayText,
-  type Presentation,
-} from "@/lib/benchmark-records/presentation";
+import { type Presentation } from "@/lib/benchmark-records/presentation";
 import type { Observation, ResponseScale } from "@/lib/benchmark-records/types";
 import { Pagination } from "./pagination";
 import { useRecord } from "./use-records";
@@ -110,28 +107,15 @@ export function CellDetails({
           <h4 className="mb-4 border-b border-[var(--line)] pb-3 text-xs font-semibold uppercase tracking-wide text-[var(--muted)]">
             Item
           </h4>
-          <div
-            className="max-h-[28rem] overflow-auto"
-            aria-label="Item content"
-          >
+          <div aria-label="Item content">
             <ItemContent
-              format={presentation.itemFormat}
-              text={
-                displayText(item.value.content, presentation.promptPath) ??
-                "No text component released."
-              }
+              key={selection.itemId}
+              benchmark={source.manifest.benchmark.benchmark_id}
+              text={item.value.content}
+              assets={prepared.attachments}
+              renderAsset={(link) => <Attachment source={source} link={link} />}
             />
           </div>
-          {item.value.content && (
-            <SourceText text={item.value.content} label="Item" />
-          )}
-          {prepared.attachments.map((link, i) => (
-            <Attachment
-              key={`${link.asset_id}-${i}`}
-              source={source}
-              link={link}
-            />
-          ))}
           {prepared.criterion.reference_answer != null && (
             <div className="mt-4">
               <h4 className="mb-2 text-xs font-medium text-[var(--muted)]">

@@ -75,6 +75,13 @@ async function read(slug, kind, key) {
   return result.value;
 }
 for (const slug of ["binary", "normalized"]) {
+  for (const [id, original] of Object.entries(expected[slug].raw_items)) {
+    assert.deepEqual(
+      await read(slug, "item-record", id),
+      original,
+      "Original item content must retain embedded image bytes and exclude appended display markup",
+    );
+  }
   for (const [id, item] of Object.entries(expected[slug].items)) {
     const before = requests.length;
     const actual = await read(slug, "item", id);
