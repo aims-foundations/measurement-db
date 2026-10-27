@@ -34,6 +34,15 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      UnifiedQA-T5-11B (RACE prompt): UnifiedQA-T5-11B
+      UnifiedQA-T5-11B (question-only prompt): UnifiedQA-T5-11B
+      UnifiedQA-T5-11B (ARC prompt): UnifiedQA-T5-11B
+    subject_label_evidence:
+      source: BBQ released UnifiedQA result filenames and build.parameters.formats; original prompt identities
+        remain in source_model/input_format.
+      scope: Prompt variants share the model label but retain distinct subject features. RACE fine-tuned encoders
+        remain distinct from their pretrained bases.
     paths:
       release: release/bea11bd97d79217245b5871acd247b9d6eb24598
     models:

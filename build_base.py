@@ -395,7 +395,9 @@ class BenchmarkBuild(ABC):
 
         Call this only from ``build_subject_item_response_rows()``. Subject
         features and the access date are identity-bearing, so they must already
-        be final at this commit boundary.
+        be final at this commit boundary. Optional metadata ``subject_labels``
+        translates reviewed source aliases before registry lookup, preserving
+        each original alias in the subject's provenance.
         """
 
         if self._active_benchmark_id is None:
@@ -403,9 +405,20 @@ class BenchmarkBuild(ABC):
                 f"{self.slug}: add_subject() may only be called from "
                 "build_subject_item_response_rows() while main() is running"
             )
+        features = self.subject_settings(raw_label, features or {})
+        label = self.build_parameters.get("subject_labels", {}).get(raw_label, raw_label)
+        if not isinstance(label, str) or not label.strip():
+            raise BuildContractError(f"{self.slug}: subject label must be a non-empty string")
+        if label != raw_label:
+            # Preserve distinct recorded runs when their model names converge.
+            if features.get("source_display_name", raw_label) != raw_label:
+                raise BuildContractError(
+                    f"{self.slug}: subject_labels conflicts with recorded source_display_name"
+                )
+            features = {**features, "source_display_name": raw_label}
         return _tables.resolve_subject(
-            raw_label,
-            features=self.subject_settings(raw_label, features or {}),
+            label,
+            features=features,
             access_date=access_date,
         )
 

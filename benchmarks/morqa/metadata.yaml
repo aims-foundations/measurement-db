@@ -45,6 +45,15 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      gpt-4o_##__ratings_prompt: gpt-4o
+      gemini-1.5-pro_##__ratings_prompt: gemini-1.5-pro
+      deepseekv3_##__ratings_prompt: deepseek-v3
+      promethesus7bv2_##__ratings_prompt: prometheus-2-7b
+    subject_label_evidence:
+      source: Released evaluator keys and pinned MORQA evaluation code; the ratings_prompt suffix identifies the
+        rating protocol.
+      scope: Preserve source_evaluator and the complete native rating record.
     result_files:
       en/iiyi/test: release/morqa-experiments-20250928/en/iiyi/iiyi_test-multiref-baselines.json
       en/iiyi/valid: release/morqa-experiments-20250928/en/iiyi/iiyi_valid-multiref-baselines.json

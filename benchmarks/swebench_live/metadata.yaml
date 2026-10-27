@@ -47,6 +47,157 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      lite/20250725-openhands-Qwen3-Coder-480B-A35B: Qwen3-Coder-480B-A35B-Instruct
+      lite/20251221-MITIBM-agent-seedoss36b: Seed-OSS-36B-Instruct
+      lite/Slai-Agent/gpt-5.5-xhigh: gpt-5.5
+      lite/agav/gpt-5.5: gpt-5.5
+      lite/aiwork-code/20260909-opus-4-8-xhigh: claude-opus-4-8
+      lite/ami-agent/20260623-v0.7.0-claude-opus-4-6: claude-opus-4-6
+      lite/sapient-slingshot-agent/v2.6.0/20260629-claude-4.5: claude-sonnet-4-5
+      lite/sapient-slingshot-agent/v3.1.0/20260817-opus-4-6: claude-opus-4-6
+      lite/sapient-slingshot-agent/v3.3.0/20260831-gpt-5.6-sol: gpt-5.6-sol
+      lite/sweagent/20250501-sweagent-claude37: claude-3-7-sonnet
+      lite/sweagent/20250501-sweagent-gpt41: gpt-4.1
+      multilang/all_languages/claudecode/claude-4-5-sonnet: claude-sonnet-4-5
+      multilang/all_languages/claudecode/deepseek-v3.1-terminus: deepseek-v3.1-terminus
+      multilang/all_languages/claudecode/deepseek-v4-pro: deepseek-v4-pro
+      multilang/all_languages/claudecode/gpt-5-2-medium: gpt-5.2
+      multilang/all_languages/claudecode/gpt-5.5-medium: gpt-5.5
+      multilang/all_languages/openhands/deepseek-v4-pro: deepseek-v4-pro
+      multilang/all_languages/openhands/gpt-5.5-medium: gpt-5.5
+      multilang/all_languages/sweagent/claude-4-5-sonnet: claude-sonnet-4-5
+      multilang/all_languages/sweagent/deepseek-v3.1-terminus: deepseek-v3.1-terminus
+      multilang/all_languages/sweagent/deepseek-v4-pro: deepseek-v4-pro
+      multilang/all_languages/sweagent/gemini-3-flash: gemini-3-flash
+      multilang/all_languages/sweagent/gpt-5.2-medium: gpt-5.2
+      multilang/all_languages/sweagent/gpt-5.5-medium: gpt-5.5
+      multilang/cs/20260223-brokk-gpt52-flash3: Brokk (GPT-5.2 + Gemini 3 Flash)
+      multilang/cs/20260225-brokk-sonnet45-flash3: Brokk (Claude Sonnet 4.5 + Gemini 3 Flash)
+      multilang/go/ami-agent/20260716-v0.7.0-claude-opus-4-6: claude-opus-4-6
+      multilang/go/ami-agent/20260723-v0.7.0-claude-sonnet-4-6: claude-sonnet-4-6
+      multilang/go/ami-agent/20260729-v0.7.0-claude-haiku-4-5: claude-haiku-4-5
+      multilang/go/ami-agent/20260729-v0.7.0-gemini-3.1-pro-preview: gemini-3.1-pro-preview
+      multilang/go/ami-agent/20260729-v0.7.0-gemini-3.6-flash: gemini-3.6-flash
+      multilang/java/ami-agent/20260817-v0.7.2-claude-opus-4-6: claude-opus-4-6
+      multilang/java/brokk-agent/20260218-brokk-gpt52-flash3: Brokk (GPT-5.2 + Gemini 3 Flash)
+      multilang/java/brokk-agent/20260218-brokk-sonnet4.5-flash3: Brokk (Claude Sonnet 4.5 + Gemini 3 Flash)
+      multilang/java/slingshot-agent/20260707-sapient-slingshot-gpt-5.5: gpt-5.5
+      multilang/java/slingshot-agent/20260812-sapient-slingshot-gpt-5.5: gpt-5.5
+      multilang/java/slingshot-agent/20260901-sapient-slingshot-gpt-5.6-sol: gpt-5.6-sol
+      multilang/js_ts/ami-agent/20260710-v0.7.0-claude-opus-4-6/js: claude-opus-4-6
+      multilang/js_ts/ami-agent/20260710-v0.7.0-claude-opus-4-6/ts: claude-opus-4-6
+      multilang/js_ts/slingshot-agent/20260623-slingshot-claude4.5/js: claude-sonnet-4-5
+      multilang/js_ts/slingshot-agent/20260623-slingshot-claude4.5/ts: claude-sonnet-4-5
+      multilang/js_ts/slingshot-agent/20260629-sapient-slingshot-gpt-5.5/js: gpt-5.5
+      multilang/js_ts/slingshot-agent/20260629-sapient-slingshot-gpt-5.5/ts: gpt-5.5
+      multilang/js_ts/slingshot-agent/20260730-sapient-slingshot-gpt-5.5/js: gpt-5.5
+      multilang/js_ts/slingshot-agent/20260730-sapient-slingshot-gpt-5.5/ts: gpt-5.5
+      multilang/rust/ami-agent/20260625-v0.7.0-claude-opus-4-6: claude-opus-4-6
+      windows/Slai-Agent/gpt-5.5-xhigh: gpt-5.5
+      windows/win-agent/claude-sonnet-4-5: claude-sonnet-4-5
+      windows/win-agent/deepseek-v3.1-terminus: deepseek-v3.1-terminus
+      windows/win-agent/deepseek-v4-pro: deepseek-v4-pro
+      windows/win-agent/gemini-3-flash: gemini-3-flash
+      windows/win-agent/gpt-5.2-medium: gpt-5.2
+      windows/win-agent/gpt-5.5-medium: gpt-5.5
+      Agentless + Claude 3.7 Sonnet|2025-05-01: claude-3-7-sonnet
+      Agentless + DeepSeek V3|2025-05-01: deepseek-v3
+      Agentless + GPT 4.1|2025-05-01: gpt-4.1
+      Agentless + GPT 4o|2025-05-01: gpt-4o
+      OpenHands + Claude 3.7 Sonnet|2025-05-01: claude-3-7-sonnet
+      OpenHands + DeepSeek V3|2025-05-01: deepseek-v3
+      OpenHands + GPT 4.1|2025-05-01: gpt-4.1
+      OpenHands + GPT 4o|2025-05-01: gpt-4o
+      SWE-agent + Claude-4.5-Sonnet|2025-12-01: claude-sonnet-4-5
+      SWE-agent + DeepSeek V3|2025-05-01: deepseek-v3
+      SWE-agent + GPT 4o|2025-05-01: gpt-4o
+      SWE-agent + GPT5-Thinking (Medium)|2025-11-01: gpt-5
+    subject_harnesses:
+      lite/20250725-openhands-Qwen3-Coder-480B-A35B: OpenHands
+      lite/20251221-MITIBM-agent-seedoss36b: MIT-IBM agent
+      lite/Slai-Agent/gpt-5.5-xhigh: Slai-Agent
+      lite/agav/gpt-5.5: agav
+      lite/aiwork-code/20260909-opus-4-8-xhigh: AiWork.Code
+      lite/ami-agent/20260623-v0.7.0-claude-opus-4-6: AMI Agent
+      lite/sapient-slingshot-agent/v2.6.0/20260629-claude-4.5: Sapient Slingshot
+      lite/sapient-slingshot-agent/v3.1.0/20260817-opus-4-6: Sapient Slingshot
+      lite/sapient-slingshot-agent/v3.3.0/20260831-gpt-5.6-sol: Sapient Slingshot
+      lite/sweagent/20250501-sweagent-claude37: SWE-agent
+      lite/sweagent/20250501-sweagent-gpt41: SWE-agent
+      multilang/all_languages/claudecode/claude-4-5-sonnet: Claude Code
+      multilang/all_languages/claudecode/deepseek-v3.1-terminus: Claude Code
+      multilang/all_languages/claudecode/deepseek-v4-pro: Claude Code
+      multilang/all_languages/claudecode/gpt-5-2-medium: Claude Code
+      multilang/all_languages/claudecode/gpt-5.5-medium: Claude Code
+      multilang/all_languages/openhands/deepseek-v4-pro: OpenHands
+      multilang/all_languages/openhands/gpt-5.5-medium: OpenHands
+      multilang/all_languages/sweagent/claude-4-5-sonnet: SWE-agent
+      multilang/all_languages/sweagent/deepseek-v3.1-terminus: SWE-agent
+      multilang/all_languages/sweagent/deepseek-v4-pro: SWE-agent
+      multilang/all_languages/sweagent/gemini-3-flash: SWE-agent
+      multilang/all_languages/sweagent/gpt-5.2-medium: SWE-agent
+      multilang/all_languages/sweagent/gpt-5.5-medium: SWE-agent
+      multilang/cs/20260223-brokk-gpt52-flash3: Brokk
+      multilang/cs/20260225-brokk-sonnet45-flash3: Brokk
+      multilang/go/ami-agent/20260716-v0.7.0-claude-opus-4-6: AMI Agent
+      multilang/go/ami-agent/20260723-v0.7.0-claude-sonnet-4-6: AMI Agent
+      multilang/go/ami-agent/20260729-v0.7.0-claude-haiku-4-5: AMI Agent
+      multilang/go/ami-agent/20260729-v0.7.0-gemini-3.1-pro-preview: AMI Agent
+      multilang/go/ami-agent/20260729-v0.7.0-gemini-3.6-flash: AMI Agent
+      multilang/java/ami-agent/20260817-v0.7.2-claude-opus-4-6: AMI Agent
+      multilang/java/brokk-agent/20260218-brokk-gpt52-flash3: Brokk
+      multilang/java/brokk-agent/20260218-brokk-sonnet4.5-flash3: Brokk
+      multilang/java/slingshot-agent/20260707-sapient-slingshot-gpt-5.5: Sapient Slingshot
+      multilang/java/slingshot-agent/20260812-sapient-slingshot-gpt-5.5: Sapient Slingshot
+      multilang/java/slingshot-agent/20260901-sapient-slingshot-gpt-5.6-sol: Sapient Slingshot
+      multilang/js_ts/ami-agent/20260710-v0.7.0-claude-opus-4-6/js: AMI Agent
+      multilang/js_ts/ami-agent/20260710-v0.7.0-claude-opus-4-6/ts: AMI Agent
+      multilang/js_ts/slingshot-agent/20260623-slingshot-claude4.5/js: Sapient Slingshot
+      multilang/js_ts/slingshot-agent/20260623-slingshot-claude4.5/ts: Sapient Slingshot
+      multilang/js_ts/slingshot-agent/20260629-sapient-slingshot-gpt-5.5/js: Sapient Slingshot
+      multilang/js_ts/slingshot-agent/20260629-sapient-slingshot-gpt-5.5/ts: Sapient Slingshot
+      multilang/js_ts/slingshot-agent/20260730-sapient-slingshot-gpt-5.5/js: Sapient Slingshot
+      multilang/js_ts/slingshot-agent/20260730-sapient-slingshot-gpt-5.5/ts: Sapient Slingshot
+      multilang/rust/ami-agent/20260625-v0.7.0-claude-opus-4-6: AMI Agent
+      windows/Slai-Agent/gpt-5.5-xhigh: Slai-Agent
+      windows/win-agent/claude-sonnet-4-5: WinAgent
+      windows/win-agent/deepseek-v3.1-terminus: WinAgent
+      windows/win-agent/deepseek-v4-pro: WinAgent
+      windows/win-agent/gemini-3-flash: WinAgent
+      windows/win-agent/gpt-5.2-medium: WinAgent
+      windows/win-agent/gpt-5.5-medium: WinAgent
+      Agentless + Claude 3.7 Sonnet|2025-05-01: Agentless
+      Agentless + DeepSeek V3|2025-05-01: Agentless
+      Agentless + GPT 4.1|2025-05-01: Agentless
+      Agentless + GPT 4o|2025-05-01: Agentless
+      OpenHands + Claude 3.7 Sonnet|2025-05-01: OpenHands
+      OpenHands + DeepSeek V3|2025-05-01: OpenHands
+      OpenHands + GPT 4.1|2025-05-01: OpenHands
+      OpenHands + GPT 4o|2025-05-01: OpenHands
+      SWE-agent + Claude-4.5-Sonnet|2025-12-01: SWE-agent
+      SWE-agent + DeepSeek V3|2025-05-01: SWE-agent
+      SWE-agent + GPT 4o|2025-05-01: SWE-agent
+      SWE-agent + GPT5-Thinking (Medium)|2025-11-01: SWE-agent
+    subject_reasoning_efforts:
+      lite/Slai-Agent/gpt-5.5-xhigh: xhigh
+      lite/aiwork-code/20260909-opus-4-8-xhigh: xhigh
+      multilang/all_languages/claudecode/gpt-5-2-medium: medium
+      multilang/all_languages/claudecode/gpt-5.5-medium: medium
+      multilang/all_languages/openhands/gpt-5.5-medium: medium
+      multilang/all_languages/sweagent/gpt-5.2-medium: medium
+      multilang/all_languages/sweagent/gpt-5.5-medium: medium
+      windows/Slai-Agent/gpt-5.5-xhigh: xhigh
+      windows/win-agent/gpt-5.2-medium: medium
+      windows/win-agent/gpt-5.5-medium: medium
+      SWE-agent + GPT5-Thinking (Medium)|2025-11-01: medium
+    subject_label_evidence:
+      source: 'SWE-bench-Live/submission@69a925feb3a3f9694b5332062d410c8f9d28f7b3: literal submission names and
+        per-submission README model declarations. README files resolve the abbreviated Slingshot Claude 4.5 labels
+        to Sonnet.'
+      scope: Separate model, agent harness and explicit reasoning effort from the submission path. Preserve every
+        source_submission and original label. Brokk uses two different models in planning/editing roles, so keep
+        a composite subject without assigning a single canonical model.
     layout:
       release: release
       reports: website/reports-0605.jsonl

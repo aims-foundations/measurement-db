@@ -1,0 +1,169 @@
+alias,normalized_name,provider,evidence
+Aeala/GPT4-x-AlpacaDente-30b,GPT4-X-Alpacadente 30B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Aeala/GPT4-x-AlpacaDente2-30b,GPT4-X-Alpacadente2 30B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Aeala/GPT4-x-Alpasta-13b,GPT4-X-Alpasta 13B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+BioMistral/BioMistral-7B,BioMistral 7B,Biomistral,MedWatermark recorded HF identifier and existing identical unqualified registry alias
+CalderaAI/13B-BlueMethod,CalderaAI 13B BlueMethod,Calderaai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CalderaAI/13B-Legerdemain-L2,CalderaAI 13B Legerdemain,Calderaai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CalderaAI/13B-Ouroboros,CalderaAI 13B Ouroboros,Calderaai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CalderaAI/30B-Lazarus,CalderaAI 30B Lazarus,Calderaai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CobraMamba/mamba-gpt-3b,CobraMamba Mamba-GPT 3B,Cobramamba,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CobraMamba/mamba-gpt-3b-v2,CobraMamba Mamba-GPT 3B,Cobramamba,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+CobraMamba/mamba-gpt-3b-v3,CobraMamba Mamba-GPT 3B,Cobramamba,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Corianas/111m,Corianas 111M,Corianas,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Corianas/Quokka_1.3b,Corianas Quokka 1.3B,Corianas,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Corianas/Quokka_2.7b,Corianas Quokka 2.7B,Corianas,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Corianas/Quokka_590m,Corianas Quokka 590M,Corianas,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Corianas/gpt-j-6B-Dolly,EleutherAI GPT-J 6B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/gpt-j-6B,EleutherAI GPT-J 6B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/gpt-neo-1.3B,EleutherAI GPT-Neo 1.3B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/gpt-neo-125m,EleutherAI GPT-Neo 125M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/gpt-neo-2.7B,EleutherAI GPT-Neo 2.7B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/gpt-neox-20b,EleutherAI GPT-NeoX 20B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/polyglot-ko-12.8b,EleutherAI Polyglot-Ko 12.8B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-1.3b,EleutherAI Pythia 1.4B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-1.4b-deduped,EleutherAI Pythia 1.4B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-12b,EleutherAI Pythia 12B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-12b-deduped,EleutherAI Pythia 12B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-160m,EleutherAI Pythia 160M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-160m-deduped,EleutherAI Pythia 160M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-1b-deduped,EleutherAI Pythia 1B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-2.7b,EleutherAI Pythia 2.8B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-2.8b-deduped,EleutherAI Pythia 2.8B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-410m-deduped,EleutherAI Pythia 410M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-6.7b,EleutherAI Pythia 6.9B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-6.9b-deduped,EleutherAI Pythia 6.9B,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-70m,EleutherAI Pythia 70M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+EleutherAI/pythia-70m-deduped,EleutherAI Pythia 70M,EleutherAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+GeorgiaTechResearchInstitute/galpaca-30b,GALPACA 30B,Georgia Tech Research Institute,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+GeorgiaTechResearchInstitute/starcoder-gpteacher-code-instruct,StarCoder GPTeacher Code Instruct,Georgia Tech Research Institute,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+HiTZ/alpaca-lora-65b-en-pt-es-ca,Meta LLaMA 65B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+HuggingFaceH4/starchat-beta,HuggingFace StarChat Beta,Hugging Face,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+LLMs/AlpacaGPT4-7B-elina,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+LLMs/WizardLM-13B-V1.0,Meta LLaMA 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lajonbot/Llama-2-13b-hf-instruct-pl-lora_unload,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lajonbot/Llama-2-7b-chat-hf-instruct-pl-lora_unload,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lajonbot/tableBeluga-7B-instruct-pl-lora_unload,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lajonbot/vicuna-13b-v1.3-PL-lora_unload,LMSYS Vicuna 13B,LMSYS,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lajonbot/vicuna-7b-v1.5-PL-lora_unload,LMSYS Vicuna 7B,LMSYS,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lazycuber/Janemalion-6B,Janemalion 6B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Lazycuber/pyg-instruct-wizardlm,Pyg-Instruct-WizardLM,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/FinOPT-Franklin,MayaPH FinOPT Franklin,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/FinOPT-Lincoln,MayaPH FinOPT Lincoln,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/FinOPT-Washington,MayaPH FinOPT Washington,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/GodziLLa-30B,MayaPH GodziLLa 30B,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/GodziLLa-30B-plus,MayaPH GodziLLa 30B Plus,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+MayaPH/GodziLLa2-70B,MayaPH GodziLLa2 70B,Mayaph,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Neko-Institute-of-Science/metharme-7b,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Neko-Institute-of-Science/pygmalion-7b,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+NousResearch/Nous-Hermes-13b,Nous Research Nous-Hermes 13B,Nous Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+NousResearch/Nous-Hermes-Llama2-13b,Nous Research Nous-Hermes Llama 2 13B,Nous Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+NousResearch/Nous-Hermes-llama-2-7b,Nous Research Nous-Hermes Llama 2 7B,Nous Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+NousResearch/Redmond-Puffin-13B,Nous Research Redmond Puffin 13B,Nous Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OLMo-2-7B,AllenAI OLMo 2 7B,AllenAI,WikiHowAgent paper v2 section 5 and appendix A
+OpenBuddy/openbuddy-llama-65b-v8-bf16,Meta LLaMA 65B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OpenBuddy/openbuddy-llama2-13b-v8.1-fp16,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OpenBuddyEA/openbuddy-llama-30b-v7.1-bf16,Meta LLaMA 30B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OptimalScale/robin-13b-v2-delta,Meta LLaMA 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OptimalScale/robin-65b-v2-delta,Meta LLaMA 65B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+OptimalScale/robin-7b-v2-delta,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+PygmalionAI/metharme-1.3b,PygmalionAI Metharme 1.3B,PygmalionAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+PygmalionAI/pygmalion-1.3b,PygmalionAI Pygmalion 1.3B,PygmalionAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+PygmalionAI/pygmalion-2.7b,PygmalionAI Pygmalion 2.7B,PygmalionAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+PygmalionAI/pygmalion-350m,PygmalionAI Pygmalion 350M,PygmalionAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+PygmalionAI/pygmalion-6b,PygmalionAI Pygmalion 6B,PygmalionAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Qwen/Qwen2.5-Coder-32B-Instruct,Alibaba Qwen2.5-Coder 32B,Alibaba,Alpha-SQL captured mcts_model_kwargs.model
+Rachneet/gpt2-xl-alpaca,OpenAI GPT-2 XL,OpenAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Seed-OSS-36B-Instruct,ByteDance Seed-OSS 36B,ByteDance,Pinned SWE-bench Live MITIBM README; https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct
+Tap-M/Luna-AI-Llama2-Uncensored,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+TigerResearch/tigerbot-7b-sft,TigerBot 7B,Tigerresearch,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+Tincando/fiction_story_generator,OpenAI GPT-2,OpenAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+TinyPixel/llama2-7b-instruct,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+UnifiedQA-T5-11B,UnifiedQA T5 11B,Unknown,BBQ released model label explicitly identifies UnifiedQA T5 11B
+VMware/open-llama-0.7T-7B-open-instruct-v1.1,OpenLM Research OpenLLaMA 7B,Openlm Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+WizardLM/WizardCoder-15B-V1.0,Microsoft WizardCoder 15B,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+WizardLM/WizardLM-13B-V1.1,Microsoft WizardLM 13B,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+WizardLM/WizardLM-13B-V1.2,Microsoft WizardLM 13B,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+WizardLM/WizardLM-70B-V1.0,Microsoft WizardLM 70B,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+abhiramtirumala/DialoGPT-sarcastic-medium,Microsoft DialoGPT Medium,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+acrastt/RedPajama-INCITE-Chat-Instruct-3B-V1,Together RedPajama-INCITE 3B,Together,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+acrastt/Vicuna-3B,LMSYS Vicuna 3B,LMSYS,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+augtoma/qCammel-13,qCammel 13B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+augtoma/qCammel-70-x,qCammel 70B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+beomi/KoAlpaca-Polyglot-5.8B,KoAlpaca Polyglot 5.8B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+beomi/llama-2-ko-7b,Llama-2-Ko 7B,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+bigcode/gpt_bigcode-santacoder,BigCode SantaCoder,Bigcode,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+bigcode/tiny_starcoder_py,BigCode Tiny StarCoder,Bigcode,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+camel-ai/CAMEL-13B-Combined-Data,CAMEL 13B,Camel-Ai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+camel-ai/CAMEL-13B-Role-Playing-Data,CAMEL 13B,Camel-Ai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+camel-ai/CAMEL-33B-Combined-Data,CAMEL 33B,Camel-Ai,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+chat-bison@001,Google PaLM 2 Bison,Google,Tensor Trust PALM_CHAT_BISON_001 enum; version-specific chat endpoint
+claude-3-7-sonnet,Anthropic Claude 3.7 Sonnet,Anthropic,SWE-bench Live pinned source README model label; alias of claude-3-7-sonnet-20250219
+clibrain/Llama-2-7b-ft-instruct-es,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+databricks/dolly-v2-12b,Databricks Dolly v2 12B,Databricks,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+databricks/dolly-v2-3b,Databricks Dolly v2 3B,Databricks,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+databricks/dolly-v2-7b,Databricks Dolly v2 7B,Databricks,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+deepnight-research/llama-2-70B-inst,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+deepseek-llm-7b,DeepSeek LLM 7B,DeepSeek,WikiHowAgent paper v2 section 5 and appendix A
+edor/Hermes-Platypus2-mini-7B,Edor Hermes-Platypus2 7B,Edor,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+edor/Stable-Platypus2-mini-7B,Edor Stable-Platypus2 7B,Edor,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+epfl-llm/meditron-7b,EPFL Meditron 7B,Epfl,MedWatermark recorded HF identifier and existing identical unqualified registry alias
+garage-bAInd/Camel-Platypus2-13B,Platypus 2 13B,Garage-Baind,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+gemini-3.6-flash,Google Gemini 3.6 Flash,Google,ProgramBench pinned submission.yaml system.model/provider
+gemini-3.7-flash,Google Gemini 3.7 Flash,Google,ProgramBench pinned submission.yaml system.model/provider
+golaxy/gogpt-3b-bloom,GoGPT 3B,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+golaxy/gogpt-7b,GoGPT 7B,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+golaxy/gogpt-7b-bloom,GoGPT 7B,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+golaxy/gogpt2-7b,GoGPT2 7B,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+golaxy/goims,Golaxy GoIMS,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+golaxy/gowizardlm,Golaxy GoWizardLM,Golaxy,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+gpt-5.3-chat,OpenAI GPT-5.3 Chat,OpenAI,RealTimeQA literal provider-qualified source model token
+illuin/test-custom-llama,test-custom-llama,Community,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jarradh/llama2_70b_chat_uncensored,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jlevin/guanaco-13b-llama-2,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jlevin/guanaco-unchained-llama-2-7b,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+johnsnowlabs/JSL-MedLlama-3-8B-v2.0,Meta Llama 3 8B,Meta,MedWatermark recorded HF identifier and existing identical unqualified registry alias
+jordiclive/Llama-2-70b-oasst-1-200,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jordiclive/gpt4all-alpaca-oa-codealpaca-lora-13b,Meta LLaMA 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jphme/orca_mini_v2_ger_7b,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+jxhong/CAlign-alpaca-7b,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+kevinpro/Vicuna-13B-CoT,LMSYS Vicuna 13B,LMSYS,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+keyfan/vicuna-chinese-replication-v1.1,LMSYS Vicuna,LMSYS,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+kfkas/Llama-2-ko-7b-Chat,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+layoric/llama-2-13b-code-alpaca,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+lgaalves/gpt2-dolly,OpenAI GPT-2,OpenAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+lilloukas/GPlatty-30B,Meta LLaMA 30B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+lilloukas/Platypus-30B,Meta LLaMA 30B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+liuxiang886/llama2-70B-qlora-gpt4,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+lvkaokao/llama2-7b-hf-instruction-lora,Meta Llama 2 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+mosaicml/mpt-30b-chat,MosaicML MPT 30B,MosaicML,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+mosaicml/mpt-30b-instruct,MosaicML MPT 30B,MosaicML,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+mosaicml/mpt-7b-chat,MosaicML MPT 7B,MosaicML,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+mosaicml/mpt-7b-instruct,MosaicML MPT 7B,MosaicML,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+mosaicml/mpt-7b-storywriter,MosaicML MPT 7B,MosaicML,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+muse-spark-1.1,Meta Muse Spark 1.1,Meta,ProgramBench pinned submission.yaml system.model/provider
+muse-spark-1.2,Meta Muse Spark 1.2,Meta,ProgramBench pinned submission.yaml system.model/provider
+muse-spark-1.3,Meta Muse Spark 1.3,Meta,ProgramBench pinned submission.yaml system.model/provider
+notstoic/PygmalionCoT-7b,Meta LLaMA 7B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+nova-2-lite,Amazon Nova 2 Lite,Amazon,KorMedMCQA source export MODEL_NAME; preserve MODEL_VERSION suffix
+pythainlp/wangchanglm-7.5B-sft-en-sharded,PyThaiNLP WangChanGLM 7.5B,Pythainlp,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+pythainlp/wangchanglm-7.5B-sft-enth,PyThaiNLP WangChanGLM 7.5B,Pythainlp,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+quantumaikr/KoreanLM-hf,KoreanLM,Quantumai Kr,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+quantumaikr/QuantumLM-70B-hf,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+quantumaikr/llama-2-70b-fb16-guanaco-1k,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+quantumaikr/open_llama_7b_hf,OpenLM Research OpenLLaMA 7B,Openlm Research,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+qwen3.8-2.4t-a95b,Alibaba Qwen3.8 2.4T A95B,Alibaba,RealTimeQA literal provider-qualified source model token
+shareAI/bimoGPT-llama2-13b,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+shareAI/llama2-13b-Chinese-chat,Meta Llama 2 13B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+shibing624/chinese-alpaca-plus-13b-hf,Chinese-Alpaca-Plus 13B,Unknown,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+shibing624/chinese-alpaca-plus-7b-hf,Chinese-Alpaca-Plus 7B,Unknown,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+shibing624/chinese-llama-plus-13b-hf,Chinese-LLaMA-Plus 13B,Unknown,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+upstage/Llama-2-70b-instruct,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+upstage/Llama-2-70b-instruct-v2,Meta Llama 2 70B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+upstage/llama-30b-instruct,Meta LLaMA 30B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+upstage/llama-30b-instruct-2048,Meta LLaMA 30B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+upstage/llama-65b-instruct,Meta LLaMA 65B,Meta,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+vicgalle/alpaca-7b,Stanford Alpaca 7B,Stanford,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+vicgalle/gpt2-alpaca,OpenAI GPT-2,OpenAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+vicgalle/gpt2-alpaca-gpt4,OpenAI GPT-2,OpenAI,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
+victor123/WizardLM-13B-1.0,Microsoft WizardLM 13B,Microsoft,MMLU/TruthfulQA source configuration.model_name; existing owner__model registry alias
