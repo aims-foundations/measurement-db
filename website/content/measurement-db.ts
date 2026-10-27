@@ -13,6 +13,12 @@ import modelTimelineRowsRaw from "@/content/generated/model-timeline.json";
 import { hiddenBenchmarkSet } from "@/content/curated/hidden-benchmarks";
 import { galleryRecords } from "@/content/gallery-records";
 import { recordCard } from "@/lib/benchmark-records/catalog";
+import benchmarkCopyJson from "@/content/curated/benchmark-copy.json";
+
+// Editorial titles and summaries are independent of the pinned measurement
+// snapshot. All catalog consumers share this copy, including charts and search.
+const benchmarkCopy: Record<string, { name?: string; description: string }> =
+  benchmarkCopyJson;
 
 // The single point where hidden benchmarks leave the site: every card
 // consumer below (shelves, coverage totals, detail-page params, chart shelf
@@ -36,7 +42,9 @@ const recordCards = new Map(
 const publicCards = [
   ...benchmarkCardsRaw.map((card) => recordCards.get(card.slug) ?? card),
   ...[...recordCards.values()].filter((card) => !originalCards.has(card.slug)),
-].filter((card) => !hiddenBenchmarkSet.has(card.slug));
+]
+  .filter((card) => !hiddenBenchmarkSet.has(card.slug))
+  .map((card) => ({ ...card, ...benchmarkCopy[card.slug] }));
 
 // Validate shared metadata against the complete catalog, even when a preview
 // selects a smaller set of benchmark pages.

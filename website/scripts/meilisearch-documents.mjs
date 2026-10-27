@@ -157,6 +157,7 @@ export function buildSearchDocuments() {
   const cards = readJson("content/generated/benchmark-cards.json");
   const details = readJson("content/generated/benchmark-details.json");
   const hiddenSlugs = readJson("content/curated/hidden-benchmarks.json");
+  const copy = readJson("content/curated/benchmark-copy.json");
 
   assert(Array.isArray(cards), "benchmark-cards.json must contain an array");
   assert(
@@ -170,7 +171,9 @@ export function buildSearchDocuments() {
   unique(hiddenSlugs, "hidden benchmark slug");
 
   const hidden = new Set(hiddenSlugs);
-  const visibleCards = cards.filter((card) => !hidden.has(card.slug));
+  const visibleCards = cards
+    .filter((card) => !hidden.has(card.slug))
+    .map((card) => ({ ...card, ...copy[card.slug] }));
   unique(
     visibleCards.map((card) => card.slug),
     "visible benchmark slug",
@@ -224,7 +227,7 @@ export function buildSearchDocuments() {
       scaleType: type,
       scaleLabel: detail.scaleLabel,
       institutionNames: institutions,
-      searchTerms: "benchmark evaluation performance results scores use case",
+      searchTerms: `${detail.name} ${card.slug} benchmark evaluation performance results scores use case`,
     });
 
     for (let index = 0; index < detail.matrixRows.length; index += 1) {
@@ -254,7 +257,7 @@ export function buildSearchDocuments() {
         categories,
         categoryText: categoryText(categories),
         releaseYear: year,
-        searchTerms: "model benchmark performance result score evaluation",
+        searchTerms: `${detail.name} ${card.slug} model benchmark performance result score evaluation`,
       });
     }
   }

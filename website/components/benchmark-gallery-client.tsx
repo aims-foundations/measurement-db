@@ -294,7 +294,7 @@ function BenchmarkCard({
           </Link>
         </h4>
 
-        <p className="mt-1.5 line-clamp-1 text-[0.8125rem] leading-5 text-[var(--muted)]">
+        <p className="mt-1.5 text-[0.8125rem] leading-5 text-[var(--muted)]">
           {benchmark.description}
         </p>
 
