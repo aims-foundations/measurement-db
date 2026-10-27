@@ -33,6 +33,9 @@ import {
 import { FacetedMatrix, type FacetedData } from "./faceted-matrix";
 import { SessionStrip, type SessionData } from "./session-strip";
 import { MatrixColumnStrip, MatrixGutter } from "./matrix-gutter";
+import { SourceItemContent } from "./source-item-content";
+import { StructuredContent } from "./structured-content";
+import { InlineMath } from "./inline-math";
 
 /* ============================================================
    MatrixViewer — interactive response-matrix heatmap.
@@ -497,40 +500,6 @@ function SourceImage({ src, alt }: { src: string; alt: string }) {
   );
 }
 
-/** What an item's trailing aside is, which decides the box it gets. */
-type AsideKind = "preview" | "meta";
-
-const ASIDE_HEADINGS: Record<AsideKind, string> = {
-  preview: "Rendered preview · not shown to the model",
-  meta: "Curation metadata · not shown to the model",
-};
-
-/** Split an item's content into [prompt, aside, kind] on a `<!--preview: …-->`
- *  or `<!--meta: …-->` marker.
- *
- *  Some benchmarks carry material the subject was NOT shown. arc_agi_3 appends
- *  a picture of its grid purely so a human can read the item (`preview`);
- *  agents_last_exam appends the task-card fields and the identifiers that make
- *  the run reproducible, which the curation guide asks it to carry (`meta`).
- *  Either one rendered in the prompt's box reads as part of the prompt, and a
- *  heading saying otherwise is easy to skim past, so the marker lets the panel
- *  put it in a box of its own. Content with no marker is returned unchanged
- *  with a null aside, which is most benchmarks. */
-function splitAside(content: string): [string, string | null, AsideKind] {
-  for (const kind of ["preview", "meta"] as AsideKind[]) {
-    const at = content.indexOf(`<!--${kind}`);
-    if (at < 0) continue;
-    const end = content.indexOf("-->", at);
-    if (end < 0) continue;
-    return [
-      content.slice(0, at).trimEnd(),
-      content.slice(end + 3).trim() || null,
-      kind,
-    ];
-  }
-  return [content, null, "preview"];
-}
-
 /** True when the text reads as an authored markdown document (ATX headings
  *  or fenced code blocks) rather than a plain-text prompt — such documents
  *  use single newlines as source wrapping, so remark-breaks must not turn
@@ -629,7 +598,7 @@ function OmitWhen({
   return omit ? null : <>{children}</>;
 }
 
-/** Flanks the matrix with its two numeric columns, or renders it untouched when
+/** Places the two numeric columns beside the matrix, or omits them when
  *  there is no fit to show. The `head` pad matches the gutters' heading line so
  *  row 0 of a gutter starts level with row 0 of the image. */
 const GUTTER_HEAD = 18; // px — MatrixGutter's h-3.5 heading + mb-1
@@ -638,15 +607,15 @@ function GutterRow({
   show,
   gap,
   head,
-  left,
-  right,
+  ability,
+  score,
   children,
 }: {
   show: boolean;
   gap: number;
   head: number;
-  left: React.ReactNode;
-  right: React.ReactNode;
+  ability: React.ReactNode;
+  score: React.ReactNode;
   children: React.ReactNode;
 }) {
   if (!show) return <>{children}</>;
@@ -656,11 +625,11 @@ function GutterRow({
   const BORDER = 1;
   return (
     <div className="flex items-start justify-center" style={{ gap }}>
-      <div style={{ paddingTop: BORDER }}>{left}</div>
       <div className="min-w-0" style={{ paddingTop: head }}>
         {children}
       </div>
-      <div style={{ paddingTop: BORDER }}>{right}</div>
+      <div style={{ paddingTop: BORDER }}>{ability}</div>
+      <div style={{ paddingTop: BORDER }}>{score}</div>
     </div>
   );
 }
@@ -861,16 +830,16 @@ export function MatrixViewer({
   // in JS off the outer frame — CSS aspect-ratio + min constraints transfer
   // across axes and overflow.
   //
-  // When the Rasch fit is available the matrix is flanked by two numeric
-  // columns (θ left, observed accuracy right), so they come out of the same
+  // When the Rasch fit is available two numeric columns sit to the right
+  // (θ and observed accuracy), so they come out of the same
   // width budget — the image is sized against what is LEFT of the frame, not
   // the whole frame, or the three together overflow the card.
   const MAX_H = 600;
   const CELL_MAX = 16;
   const MIN_ROW = 4;
   const BAND_MIN = 24; // matrices with 1-2 subjects render a visible band, not a hairline
-  const GUTTER_L = 48; // θ
-  const GUTTER_R = 42; // accuracy
+  const THETA_WIDTH = 48; // θ
+  const SCORE_WIDTH = 42; // accuracy
   const GUTTER_GAP = 6;
   const [panelW, setPanelW] = useState<number | null>(null);
   useEffect(() => {
@@ -889,7 +858,7 @@ export function MatrixViewer({
   const theta = irt?.theta ?? null;
   const showGutters =
     !!theta && !actual && !missing && effRowIds != null && nSubjects > 0;
-  const gutterW = showGutters ? GUTTER_L + GUTTER_R + 2 * GUTTER_GAP : 0;
+  const gutterW = showGutters ? THETA_WIDTH + SCORE_WIDTH + 2 * GUTTER_GAP : 0;
   const availW = Math.max(0, (panelW ?? 0) - gutterW);
 
   // Both gutters are indexed by the SELECTED slice's row axis, so switching
@@ -1259,10 +1228,6 @@ export function MatrixViewer({
           </filter>
         </svg>
       ) : null}
-      {/* The Rasch summary heads the section: it describes the whole matrix
-          below it, in either rendering. Absent for graded benchmarks. */}
-      {irt ? <IrtPanel irt={irt} /> : null}
-
       {/* Joined matrix first: every response at once, nothing to choose but
           trial. The per-condition matrix and its dropdowns follow, collapsed. */}
       {hasJoined && rowKind === "session" ? (
@@ -1312,13 +1277,13 @@ export function MatrixViewer({
             {actual ? "Full resolution. Scroll to inspect." : "Fit to width."}{" "}
             Hover for subject &amp; item; click a cell for details.
           </p>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             {/* Condition dropdowns — left of "Actual size" */}
             {conditions
               ? conditions.dims.map((dim) => (
                   <label
                     key={dim}
-                    className="flex items-center gap-1 text-xs text-[var(--muted)]"
+                    className="flex min-w-0 max-w-full items-center gap-1 text-xs text-[var(--muted)]"
                   >
                     <span className="sr-only sm:not-sr-only">
                       {titleCase(dim)}
@@ -1327,7 +1292,7 @@ export function MatrixViewer({
                       value={sel[dim] ?? ""}
                       onChange={(ev) => selectCondition(dim, ev.target.value)}
                       aria-label={titleCase(dim)}
-                      className="rounded-md border border-[var(--line)] bg-white px-2 py-1 text-xs font-medium text-[var(--ink)] transition-colors hover:border-[var(--muted)]"
+                      className="min-w-0 max-w-full rounded-md border border-[var(--line)] bg-white px-2 py-1 text-xs font-medium text-[var(--ink)] transition-colors hover:border-[var(--muted)]"
                     >
                       {conditions.values[dim].map((v) => (
                         <option key={v} value={v}>
@@ -1355,7 +1320,7 @@ export function MatrixViewer({
             {conditions ? listDims(conditions.dims) : "condition"}.
           </div>
         ) : (
-          /* Frame: θ gutter + matrix + accuracy gutter + bottom strip (item) */
+          /* Frame: matrix + θ and accuracy columns + item difficulty strip */
           <div
             ref={frameRef}
             className="relative"
@@ -1366,23 +1331,23 @@ export function MatrixViewer({
               show={showGutters}
               gap={GUTTER_GAP}
               head={GUTTER_HEAD}
-              left={
+              ability={
                 <MatrixGutter
                   values={thetaByRow}
-                  width={GUTTER_L}
+                  width={THETA_WIDTH}
                   height={fitH}
                   scale="diverging"
                   format={(v) => v.toFixed(2)}
                   side="left"
-                  title="θ"
+                  title={<InlineMath tex="\theta" />}
                   label="Fitted ability (theta), per subject"
                   hoverRow={hover?.row ?? null}
                 />
               }
-              right={
+              score={
                 <MatrixGutter
                   values={accByRow}
-                  width={GUTTER_R}
+                  width={SCORE_WIDTH}
                   height={fitH}
                   scale="fill"
                   format={(v) => pctText(v)}
@@ -1518,11 +1483,11 @@ export function MatrixViewer({
 
           {/* Compact metadata strip: subject · score · cell value · condition */}
           <div className="mb-4 flex flex-wrap items-center gap-x-6 gap-y-2 rounded bg-white px-3 py-2.5">
-            <div className="flex items-baseline gap-1.5">
+            <div className="flex min-w-0 flex-wrap items-baseline gap-1.5">
               <span className="text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
                 Subject
               </span>
-              <span className="font-mono text-sm text-[var(--ink)]">
+              <span className="break-all font-mono text-sm text-[var(--ink)]">
                 {pinned.subject}
               </span>
               {!categorical && pinned.subjectScore !== null ? (
@@ -1545,11 +1510,11 @@ export function MatrixViewer({
               </span>
             </div>
             {conditions ? (
-              <div className="flex items-baseline gap-1.5">
+              <div className="flex min-w-0 flex-wrap items-baseline gap-1.5">
                 <span className="text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
                   Condition
                 </span>
-                <span className="text-xs text-[var(--ink)]">
+                <span className="min-w-0 break-words text-xs text-[var(--ink)]">
                   {conditions.dims.map((d) => `${d}=${sel[d]}`).join(" · ")}
                 </span>
               </div>
@@ -1594,36 +1559,33 @@ export function MatrixViewer({
                 </span>
               ) : null}
             </p>
-            {pinned.item?.content ? (
-              (() => {
-                const [prompt, aside, kind] = splitAside(pinned.item.content);
-                return (
-                  <>
-                    <div className="max-h-[32rem] overflow-auto break-words rounded bg-white p-4 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                      <MathText text={prompt} />
-                    </div>
-                    {/* Separate box, separate heading: the aside is a reading
-                        aid or a curation record, and sharing the prompt's box is
-                        what makes readers take it for something the model was
-                        shown. */}
-                    {aside ? (
-                      <div className="mt-2 max-h-[24rem] overflow-auto rounded border border-dashed border-[var(--line)] bg-[var(--fog-light)] p-4">
-                        <p className="mb-2 text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
-                          {ASIDE_HEADINGS[kind]}
-                        </p>
-                        <div className="break-words text-[0.8125rem] leading-6 text-[var(--ink)]">
-                          <MathText text={aside} />
-                        </div>
-                      </div>
-                    ) : null}
-                  </>
-                );
-              })()
+            {pinned.itemId ? (
+              <div className="rounded bg-white p-4">
+                <SourceItemContent
+                  key={`${slug}:${pinned.itemId}`}
+                  base={dataUrl}
+                  itemId={pinned.itemId}
+                  benchmark={slug}
+                  Text={MathText}
+                  renderAsset={(link) =>
+                    ["input", "input_image"].includes(link.role) &&
+                    link.media_type.startsWith("image/") ? (
+                      <SourceImage
+                        src={`/benchmark-data/${slug}/image/asset/${encodeURIComponent(link.asset_id)}?type=${encodeURIComponent(link.media_type)}`}
+                        alt={link.path}
+                      />
+                    ) : (
+                      <p className="text-xs text-[var(--muted)]">
+                        Preview unavailable for {link.path} ({link.media_type},{" "}
+                        {link.role}).
+                      </p>
+                    )
+                  }
+                />
+              </div>
             ) : (
-              <p className="rounded bg-white p-4 text-[0.8125rem] text-[var(--muted)]">
-                {itemId && !Object.hasOwn(items, itemId) && !dataError
-                  ? "Loading item…"
-                  : "Prompt not available for this item."}
+              <p className="text-sm text-[var(--muted)]">
+                No item identifier is available.
               </p>
             )}
             {pinned.item?.answer ? (
@@ -1646,7 +1608,7 @@ export function MatrixViewer({
               className={`mt-4 grid gap-4 ${answerPanes.length > 1 ? "lg:grid-cols-2" : ""}`}
             >
               {answerPanes.map((pane) => (
-                <div key={pane.key}>
+                <div key={pane.key} className="min-w-0">
                   <p className="mb-1 flex items-baseline gap-2 text-[0.6875rem] uppercase tracking-wide text-[var(--muted)]">
                     {pane.heading}
                     {pane.name ? (
@@ -1661,7 +1623,7 @@ export function MatrixViewer({
                     </p>
                   ) : pane.state === "answer" ? (
                     <div className="max-h-[32rem] overflow-auto break-words rounded bg-white p-4 text-[0.8125rem] leading-6 text-[var(--ink)]">
-                      <MathText text={pane.text as string} />
+                      <StructuredContent value={pane.text} Text={MathText} />
                     </div>
                   ) : (
                     <p className="rounded bg-white p-4 text-[0.8125rem] text-[var(--muted)]">
@@ -1672,6 +1634,11 @@ export function MatrixViewer({
               ))}
             </div>
           ) : null}
+        </div>
+      ) : null}
+      {irt ? (
+        <div className="mt-6 border-t border-[var(--line)] pt-6">
+          <IrtPanel irt={irt} />
         </div>
       ) : null}
     </div>

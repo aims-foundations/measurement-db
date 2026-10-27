@@ -1,5 +1,9 @@
 # Benchmark gallery
 
+For the canonical-record viewer, see
+[`website/lib/benchmark-records/README.md`](../../website/lib/benchmark-records/README.md).
+Python exports records; TypeScript prepares and renders them.
+
 PR validation reads canonical tables from `aims-foundations/measurement-db`.
 Parallel workers prepare reusable static bundles; accepted releases are stored
 under `v2/` in `aims-foundations/measurement-db-gallery`. Deployment restores

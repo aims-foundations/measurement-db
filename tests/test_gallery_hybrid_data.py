@@ -47,6 +47,7 @@ def fixture(root):
             sizes[slug] = gallery.write_website_lookups(slug, cache, output, True)
         key = [*gallery.KEY, *(["interactors"] if "interactors" in traces[0] else [])]
         expected[slug] = {
+            "raw_items": {row["item_id"]: {"content": row.get("content"), "asset_manifest": row.get("asset_manifest")} for row in items},
             "items": {row["item_id"]: gallery.static_item(slug, row) for row in items},
             "answers": [{"key": [row[c] for c in key], "value": {"trace": gallery.truncate_trace(row["trace"])}} for row in traces],
             "image": base64.b64encode(png).decode(),

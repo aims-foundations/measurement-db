@@ -199,7 +199,7 @@ jobs:
         env:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.url }}
         run: |
-          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/view.json.gz; do
+          for path in /measurement-db /measurement-db/schema-definition /measurement-db/researchcodebench /measurement-db/benchmark-data/researchcodebench/records/manifest.json; do
             pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
               -- --fail --silent --show-error --max-time 120 --output /dev/null
           done
@@ -208,6 +208,24 @@ jobs:
             --retry 6 --retry-delay 30 --retry-max-time 600 --range 0-99 \
             --output /dev/null --write-out '%{http_code}')
           [[ "$status" = 307 || "$status" = 206 ]]
+          node - <<'JS'
+          const assert = require('node:assert/strict');
+          const records = require('./website/content/generated/gallery-records.json');
+          const sources = require('./website/content/generated/gallery-sources.json');
+          assert.deepEqual(Object.keys(records).sort(), Object.keys(sources).sort());
+          for (const entry of Object.values(records)) {
+            assert.ok(entry.manifest.windows && entry.manifest.pack);
+            assert.ok(entry.manifest.windows.maxRows <= 4096);
+            assert.ok(entry.manifest.windows.maxBytes <= 2 * 1024 * 1024);
+          }
+          console.log(`Every published benchmark uses canonical records (${Object.keys(records).length}).`);
+          JS
+          for slug in aegis real_pocqi mmlu kernelbench monkey_power_laws; do
+            for path in "/measurement-db/$slug" "/measurement-db/benchmark-data/$slug/records/manifest.json" "/measurement-db/benchmark-data/$slug/records/pack-index.json" "/measurement-db/benchmark-data/$slug/records-validation.json"; do
+              pnpm dlx vercel@62.2.0 curl "$path" --deployment "$DEPLOYMENT_URL" \
+                -- --fail --silent --show-error --max-time 120 --output /dev/null
+            done
+          done
       - name: Sync production search indexes
         if: env.DEPLOY_ENV == 'production' && steps.search.outputs.enabled == 'true'
         run: pnpm --dir website search:sync

@@ -15,6 +15,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "search:check": "node scripts/index-meilisearch.mjs --dry-run",
     "search:sync": "node scripts/index-meilisearch.mjs",
+    "gallery:prepare": "node --experimental-strip-types scripts/prepare-gallery-records.mts",
+    "gallery:test": "node --test scripts/test-benchmark-records.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
@@ -22,7 +24,7 @@
     "@phosphor-icons/react": "^2.1.10",
     "hyparquet": "1.31.2",
     "hyparquet-compressors": "1.1.2",
-    "katex": "^0.18.1",
+    "katex": "0.16.47",
     "meilisearch": "^0.60.0",
     "motion": "^12.38.0",
     "next": "16.2.1",

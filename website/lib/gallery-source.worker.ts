@@ -24,6 +24,7 @@ async function readRow(
   source: Source,
   table: string,
   position: RowPosition,
+  columns?: string[],
 ) {
   const index = await lookup<PageIndex>(
     base,
@@ -58,7 +59,7 @@ async function readRow(
     metadata,
     compressors,
     utf8: false,
-    columns: info.columns,
+    columns: columns ?? info.columns,
     rowStart: position[1],
     rowEnd: position[1] + 1,
     pageLocationsByGroup,
@@ -80,10 +81,15 @@ function itemContent(row: Record<string, unknown>): Item {
   };
 }
 
-async function sourceItem(base: string, source: Source, id: string) {
+async function sourceItem(
+  base: string,
+  source: Source,
+  id: string,
+  columns?: string[],
+) {
   const position = await lookup<RowPosition>(base, "item-rows", id);
   if (!position) throw new Error("Could not locate the requested item.");
-  return readRow(base, source, "items", position);
+  return readRow(base, source, "items", position, columns);
 }
 
 async function loadItem(
@@ -159,7 +165,17 @@ self.onmessage = async ({
     const { base, kind, key } = data;
     const source = await gallerySource(base);
     let value: unknown;
-    if (kind === "item") value = await loadItem(base, source, String(key));
+    if (kind === "item-record") {
+      const columns = ["content", "asset_manifest"].filter((column) =>
+        source.tables.items.columns.includes(column),
+      );
+      const row = await sourceItem(base, source, String(key), columns);
+      value = {
+        content: row.content ?? null,
+        asset_manifest: row.asset_manifest ?? null,
+      };
+    } else if (kind === "item")
+      value = await loadItem(base, source, String(key));
     else if (kind === "image")
       value = await loadImage(base, source, String(key));
     else {
