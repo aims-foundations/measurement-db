@@ -37,6 +37,7 @@ jobs:
           from pathlib import Path
           assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==os.environ['GITHUB_SHA']
           assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=no'],text=True).strip()
+          assert not Path('website/node_modules').is_symlink(), 'Install dependencies inside this preview worktree before building'
           evidence=Path(os.environ['PREVIEW_EVIDENCE'])
           release=json.loads((evidence/'hf-preview.json').read_text())
           prepared=json.loads((evidence/'gallery/assembled.json').read_text())
