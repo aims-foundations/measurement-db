@@ -2,7 +2,6 @@ import type { RecordSource } from "@/lib/benchmark-records/client";
 import type { Observation } from "@/lib/benchmark-records/types";
 import {
   displayText,
-  answerScores,
   type Presentation,
 } from "@/lib/benchmark-records/presentation";
 import { useRecord } from "./use-records";
@@ -25,7 +24,7 @@ export function AnswerPanel({
   const answer = useRecord(source, "traces", observation.response_id);
   const scores =
     answer.status === "ready"
-      ? answerScores(answer.value?.trace ?? null, presentation.answerFormat)
+      ? presentation.answerScores?.(answer.value?.trace ?? "")
       : undefined;
   return (
     <section

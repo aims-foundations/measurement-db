@@ -1,60 +1,85 @@
-import type { ComponentType } from "react";
+"use client";
+
+import { useMemo, type ComponentType, type ReactNode } from "react";
 import { prepareItemContent } from "@/lib/item-content";
+import type { Block } from "@/lib/presentation-transforms/types";
+import type { AssetLink } from "@/lib/benchmark-records/types";
 import { RichText } from "./benchmark-records/rich-text";
-import { StructuredContent } from "./structured-content";
+import { ItemPresentationBlocks } from "./item-presentation-blocks";
+import { ItemAttachments } from "./item-attachments";
+import { RawItemContent } from "./raw-item-content";
 
-type TextRenderer = ComponentType<{ text: string }>;
+function mediaPaths(blocks: Block[]): string[] {
+  return blocks.flatMap((block) =>
+    block.kind === "media"
+      ? [JSON.stringify([block.path, block.mediaType])]
+      : block.kind === "details"
+        ? mediaPaths(block.blocks)
+        : [],
+  );
+}
 
+/** The same custom-first/raw-second panel is used by every benchmark viewer. */
 export function ItemContent({
   text,
-  format,
+  benchmark,
+  assets = [],
+  renderAsset,
   Text = RichText,
 }: {
-  text: string;
-  format?: "mmlu";
-  Text?: TextRenderer;
+  text: string | null;
+  benchmark: string;
+  assets?: AssetLink[];
+  renderAsset?: (link: AssetLink) => ReactNode;
+  Text?: ComponentType<{ text: string }>;
 }) {
-  const document = prepareItemContent(text, format);
-  const choice = document.multipleChoice;
-  if (!choice) return <StructuredContent value={document.value} Text={Text} />;
+  const blocks = useMemo(
+    () => (text === null ? null : prepareItemContent(text, benchmark)),
+    [text, benchmark],
+  );
+  const referenced = new Set(mediaPaths(blocks ?? []));
+  const asset =
+    renderAsset ??
+    ((link: AssetLink) => (
+      <p className="text-xs">
+        {link.path} · {link.media_type} · {link.role}
+      </p>
+    ));
   return (
-    <div className="space-y-4">
-      <div aria-label="Question">
-        <Text text={choice.question} />
-      </div>
-      <ol aria-label="Answer choices" className="space-y-2">
-        {choice.choices.map(({ label, text }) => (
-          <li
-            key={label}
-            className="flex min-w-0 gap-3 rounded border border-[var(--line)] px-3 py-2"
-          >
-            <span className="shrink-0 text-sm font-semibold">{label}.</span>
-            <div className="min-w-0">
-              <Text text={text} />
-            </div>
-          </li>
-        ))}
-      </ol>
-      {choice.context && (
-        <details className="border-t border-[var(--line)] pt-3">
-          <summary className="cursor-pointer text-xs font-medium">
-            Instructions and example questions
-          </summary>
-          <div className="mt-3">
-            <Text text={choice.context} />
-          </div>
-        </details>
+    <div className="min-w-0">
+      {blocks?.length ? (
+        <div
+          aria-label="Formatted item"
+          className="max-h-[32rem] overflow-auto break-words"
+        >
+          <ItemPresentationBlocks
+            blocks={blocks}
+            Text={Text}
+            media={(path, type) => {
+              const link = assets.find(
+                (entry) => entry.path === path && entry.media_type === type,
+              );
+              return link ? (
+                asset(link)
+              ) : (
+                <p className="text-xs">
+                  {path} ({type}) · Attachment unavailable
+                </p>
+              );
+            }}
+          />
+        </div>
+      ) : (
+        <RawItemContent text={text} />
       )}
-      {Object.keys(choice.details).length > 0 && (
-        <details className="border-t border-[var(--line)] pt-3">
-          <summary className="cursor-pointer text-xs font-medium">
-            Request details
-          </summary>
-          <div className="mt-3">
-            <StructuredContent value={choice.details} Text={Text} />
-          </div>
-        </details>
-      )}
+      <ItemAttachments
+        assets={assets.filter(
+          (link) =>
+            !referenced.has(JSON.stringify([link.path, link.media_type])),
+        )}
+        renderAsset={asset}
+      />
+      {Boolean(blocks?.length) && <RawItemContent text={text} collapsed />}
     </div>
   );
 }

@@ -1,22 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
-import { stripTypeScriptTypes } from "node:module";
+import "./load-typescript.mjs";
 import test from "node:test";
 
-async function loadModule(name, dependencies = {}) {
-  let code = stripTypeScriptTypes(
-    await readFile(
-      new URL(`../lib/benchmark-records/${name}.ts`, import.meta.url),
-      "utf8",
-    ),
-    { mode: "transform" },
-  );
-  for (const [name, module] of Object.entries(dependencies))
-    code = code.replaceAll(
-      JSON.stringify(name.startsWith(".") ? name : `./${name}`),
-      JSON.stringify(module.url),
-    );
-  const url = `data:text/javascript;base64,${Buffer.from(code).toString("base64")}`;
+async function loadModule(name) {
+  const url = new URL(`../lib/benchmark-records/${name}.ts`, import.meta.url)
+    .href;
   return { url, exports: await import(url) };
 }
 const scaleModule = await loadModule("scale");
@@ -42,20 +30,23 @@ const { prepareItemContent } = (
 const signal = () => new AbortController().signal;
 
 test("MMLU answer scores preserve the native choice order and exact values", async () => {
-  const { answerScores } = (await loadModule("presentation")).exports;
+  const { answerScores } =
+    await import("../lib/presentation-transforms/benchmarks/mmlu.ts");
   const source = JSON.stringify({
     source_record: {
       choices: [" A", " B", " C", " D"],
       predictions: [-3.21, -4.005, -1.8, -7],
     },
   });
-  assert.deepEqual(answerScores(source, "mmlu"), [
+  assert.deepEqual(answerScores(source), [
     { label: "A", score: -3.21 },
     { label: "B", score: -4.005 },
     { label: "C", score: -1.8 },
     { label: "D", score: -7 },
   ]);
-  assert.equal(answerScores(source), undefined);
+  const { presentationFor: lookup } = (await loadModule("presentation"))
+    .exports;
+  assert.equal(lookup("unregistered").answerScores, undefined);
   for (const value of [
     null,
     "invalid",
@@ -63,7 +54,7 @@ test("MMLU answer scores preserve the native choice order and exact values", asy
       source_record: { choices: ["A", "B"], predictions: [1, 2] },
     }),
   ])
-    assert.equal(answerScores(value, "mmlu"), undefined);
+    assert.equal(answerScores(value), undefined);
 });
 
 test("structured display decodes nested JSON without coercing IDs or losing false and null", () => {
@@ -124,24 +115,24 @@ test("MMLU shows the evaluated question and retains examples and request details
     extra_metadata: { seed: 0 },
   };
   const result = prepareItemContent(JSON.stringify(source), "mmlu");
-  assert.deepEqual(result.value, source);
-  assert.deepEqual(result.multipleChoice, {
-    question: "Read this passage.\n\nWhich statement follows?",
-    choices: [
-      { label: "A", text: "First\ncontinued" },
-      { label: "B", text: "Second" },
-      { label: "C", text: "Third" },
-      { label: "D", text: "Fourth" },
-    ],
-    context,
-    details: {
-      request_protocol: source.request_protocol,
-      extra_metadata: { seed: 0 },
-    },
+  assert.equal(
+    result[0].text,
+    "Read this passage.\n\nWhich statement follows?",
+  );
+  assert.deepEqual(result[1].choices, [
+    { label: "A", text: "First\ncontinued" },
+    { label: "B", text: "Second" },
+    { label: "C", text: "Third" },
+    { label: "D", text: "Fourth" },
+  ]);
+  assert.equal(result[2].blocks[0].text, context);
+  assert.deepEqual(result[3].blocks[0].value, {
+    request_protocol: source.request_protocol,
+    extra_metadata: { seed: 0 },
   });
   assert.equal(
-    prepareItemContent(JSON.stringify(source)).multipleChoice,
-    undefined,
+    prepareItemContent(JSON.stringify(source), "unregistered"),
+    null,
   );
 });
 
@@ -151,10 +142,13 @@ test("MMLU supports prompts without demonstrations and Windows line endings", ()
     candidate_continuations: ["A", "B", "C", "D"],
   };
   const result = prepareItemContent(JSON.stringify(source), "mmlu");
-  assert.equal(result.multipleChoice.question, "Question?");
-  assert.equal(result.multipleChoice.context, "");
+  assert.equal(result[0].text, "Question?");
+  assert.equal(
+    result.some((block) => block.kind === "details"),
+    false,
+  );
   assert.deepEqual(
-    result.multipleChoice.choices.map((c) => c.text),
+    result[1].choices.map((c) => c.text),
     ["One", "Two", "Three", "Four"],
   );
 });
@@ -166,9 +160,9 @@ test("ambiguous or incomplete questions keep all fields instead of guessing", ()
     "Question?\nA. One\nB. Two\nC. Three\nD. Four\nAnswer: A",
   ]) {
     const source = { prompt, candidate_continuations: ["A", "B", "C", "D"] };
-    assert.deepEqual(prepareItemContent(JSON.stringify(source), "mmlu"), {
-      value: source,
-    });
+    assert.deepEqual(prepareItemContent(JSON.stringify(source), "mmlu"), [
+      { kind: "fields", value: source },
+    ]);
   }
 });
 
@@ -180,15 +174,17 @@ test("general structured tasks preserve messages, nesting, and empty or false va
     options: ["Yes", "No"],
     environment: { count: 0, enabled: false, missing: null, empty: "" },
   };
-  assert.deepEqual(prepareItemContent(JSON.stringify(source)), {
-    value: source,
-  });
+  assert.deepEqual(prepareItemContent(JSON.stringify(source), "tau2_bench"), [
+    { kind: "fields", value: source },
+  ]);
   for (const text of [
     "# Question\n\nText",
     "{'prompt': 'Unparsed dictionary'}",
     '{"prompt":',
   ])
-    assert.deepEqual(prepareItemContent(text), { value: text });
+    assert.deepEqual(prepareItemContent(text, "tau2_bench"), [
+      { kind: "text", text },
+    ]);
 });
 
 function records() {
@@ -708,4 +704,131 @@ test("an undeclared value is never relabeled as the nearest category", () => {
     }),
     "2",
   );
+});
+
+test("unregistered, removed, or failed customizations fall back to the original text", async () => {
+  const { presentations } =
+    await import("../lib/presentation-transforms/index.ts");
+  const text = '  {"prompt":"<script>never execute</script>","empty":""}\n';
+  assert.equal(prepareItemContent(text, "new-benchmark"), null);
+  const saved = presentations.aegis;
+  try {
+    delete presentations.aegis;
+    assert.equal(prepareItemContent(text, "aegis"), null);
+    presentations.aegis = {
+      item: () => {
+        throw new Error("Incompatible source");
+      },
+    };
+    assert.equal(prepareItemContent(text, "aegis"), null);
+  } finally {
+    presentations.aegis = saved;
+  }
+});
+
+test("registered benchmark modules cover the published catalog", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const { presentations } =
+    await import("../lib/presentation-transforms/index.ts");
+  const cards = JSON.parse(
+    await readFile(
+      new URL("../content/generated/benchmark-cards.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  for (const card of cards)
+    assert.equal(typeof presentations[card.slug]?.item, "function", card.slug);
+});
+
+test("question options and continuation lists retain variable counts and extra fields", () => {
+  for (const size of [1, 4, 10, 13]) {
+    const options = Array.from({ length: size }, (_, i) => `Option ${i}`);
+    const question = {
+      question: "Question?",
+      options,
+      extra: { enabled: false },
+    };
+    const blocks = prepareItemContent(JSON.stringify(question), "mmlupro");
+    assert.deepEqual(
+      blocks[1].choices.map((c) => c.text),
+      options,
+    );
+    assert.deepEqual(blocks[2].value, { extra: { enabled: false } });
+    const bundle = {
+      prompt: "Full prompt including examples",
+      candidate_continuations: options,
+      request_protocol: "Score independently",
+    };
+    const continuations = prepareItemContent(
+      JSON.stringify(bundle),
+      "truthfulqa_mc",
+    );
+    assert.equal(continuations[0].text, bundle.prompt);
+    assert.deepEqual(
+      continuations[1].choices.map((c) => c.text),
+      options,
+    );
+    assert.deepEqual(continuations[2].value, {
+      request_protocol: bundle.request_protocol,
+    });
+  }
+});
+
+test("multimedia formatting preserves block order and unknown fields", () => {
+  const source = {
+    multimedia_elements: [
+      { content_type: "text/plain", text: "A)", extra: 0 },
+      { content_type: "image/png", location: "a.png", source: "released" },
+      { content_type: "text/plain", text: "B)" },
+      { content_type: "image/png", location: "b.png" },
+    ],
+    metadata: { original: true },
+  };
+  const blocks = prepareItemContent(JSON.stringify(source), "agc_bench");
+  assert.deepEqual(
+    blocks.map((b) => b.kind),
+    ["text", "fields", "media", "fields", "text", "media", "fields"],
+  );
+  assert.deepEqual(
+    blocks.filter((b) => b.kind === "media").map((b) => b.path),
+    ["a.png", "b.png"],
+  );
+  assert.deepEqual(blocks.at(-1).value, { metadata: source.metadata });
+  const unusual = {
+    multimedia_elements: [{ content_type: "unknown", missing: true }],
+  };
+  assert.deepEqual(prepareItemContent(JSON.stringify(unusual), "wildvision"), [
+    { kind: "fields", value: unusual },
+  ]);
+});
+
+test("sectioned context keeps simulator roles, camera data, and unfamiliar fields", () => {
+  const source = {
+    task: { user_scenario: { instructions: "Ask for help" } },
+    environment_info: { policy: "Original policy", enabled: false },
+    user_guidelines: "Simulate the user",
+    future_field: [0, null],
+  };
+  const blocks = prepareItemContent(JSON.stringify(source), "tau2_bench");
+  assert.deepEqual(blocks[0].value, source.task);
+  assert.deepEqual(blocks[1].blocks[0].value, source.environment_info);
+  assert.equal(blocks[2].blocks[0].value, source.user_guidelines);
+  assert.deepEqual(blocks[3].value, { future_field: source.future_field });
+  const capture = {
+    capture: "scene",
+    cameras: {
+      train: [
+        {
+          matrix: [
+            [0, 1],
+            [1, 0],
+          ],
+        },
+      ],
+    },
+    input_scope: "Released capture context",
+  };
+  const orb = prepareItemContent(JSON.stringify(capture), "stanford_orb");
+  assert.equal(orb[0].value, capture.capture);
+  assert.deepEqual(orb.at(-1).blocks[0].value, capture.cameras);
 });
