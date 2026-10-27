@@ -63,6 +63,7 @@ jobs:
         run: |
           python tests/test_gallery_new.py "$RUNNER_TEMP/record-fixture"
           node website/scripts/test-record-parquet.mjs "$RUNNER_TEMP/record-fixture"
+      - run: pnpm --dir website network:test
       - name: Check browser source reads against canonical tables
         run: |
           python tests/test_gallery_hybrid_data.py --export "$RUNNER_TEMP/gallery-fixture"
