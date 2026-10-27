@@ -193,7 +193,7 @@
     "description": "Compares distributions of model outputs under changes to prompts, alignment settings, and personas."
   },
   "decodingtrust": {
-    "description": "Assesses model trustworthiness across six evaluation perspectives, preserving ungraded outputs where judgments are unavailable."
+    "description": "Tests model responses for toxicity, social bias, privacy leakage, and robustness to unfamiliar or adversarial inputs."
   },
   "decompile_bench": {
     "name": "Decompile-Bench",
@@ -454,7 +454,7 @@
     "description": "Tests mathematical problem solving on Olympiad-style questions."
   },
   "livebench": {
-    "description": "Tests model capabilities across six task categories using evaluations from successive releases."
+    "description": "Tests reasoning, coding, mathematics, data analysis, language understanding, and instruction following."
   },
   "llm4ir": {
     "name": "LLM4IR (LaMIR)",
@@ -850,7 +850,7 @@
     "description": "Tests knowledge through multiple-choice questions in Turkic languages."
   },
   "ultrafeedback": {
-    "description": "Assesses model answers using GPT-4 feedback across four quality dimensions."
+    "description": "Assesses instruction following, honesty, truthfulness, and helpfulness in model answers using GPT-4 feedback."
   },
   "vhelm": {
     "description": "Assesses vision-language models on tasks that combine images and text."
