@@ -50,7 +50,6 @@ build:
       jieba: 0.42.1
       rouge: 1.0.1
     labels:
-      subject_prefix: 'LexEval / '
       input_scope: Released input field with original suffix, without unsaved instructions, demonstrations or context
         truncation
     subject_features:

@@ -55,7 +55,6 @@ build:
     paths:
       results: llm_planning_analysis/results/**/*.json
     labels:
-      subject_prefix: 'PlanBench / '
       harness: PlanBench
       settings_status: only_native_recorded_settings
 grading:

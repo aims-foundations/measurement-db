@@ -98,7 +98,7 @@ class MedWatermarkFWS(BenchmarkBuild):
         observations = pd.concat([ratings, ungraded], ignore_index=True)
         observations = observations.astype(object).where(observations.notna(), None)
         subjects = generations[["subject_key", "source_file", "model", "experiment", "dataset", "variant"]].drop_duplicates().copy()
-        subjects["raw_label"] = subjects.model + " / " + subjects.experiment + " / " + subjects.dataset + " / " + subjects.variant
+        subjects["raw_label"] = subjects.model.map(parameters["models"])
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=row.model,
             declared_model_identifier=parameters["models"][row.model], experiment=row.experiment,
             source_generation_file=row.source_file, variant=row.variant) for row in subjects.itertuples()]

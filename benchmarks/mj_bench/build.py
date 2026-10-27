@@ -224,8 +224,7 @@ class MJBench(BenchmarkBuild):
 
         # 4. Keep model configurations, full image bytes and grading definitions.
         subjects = observations[['subject_key', 'model', 'mode', 'style', 'scale']].drop_duplicates('subject_key').copy()
-        subjects['raw_label'] = [parameters['labels']['subject_prefix'] + ' / '.join([row.model, row.mode, row.style, row.scale])
-            for row in subjects.itertuples()]
+        subjects['raw_label'] = subjects.model
         subjects['features'] = [dict(**parameters['subject_features'], source_model=row.model,
             input_mode=row.mode, response_style=row.style, declared_scale=row.scale) for row in subjects.itertuples()]
         items = observations.drop_duplicates('item_key').copy()

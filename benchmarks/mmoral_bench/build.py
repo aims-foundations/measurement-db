@@ -117,7 +117,7 @@ class MMOralBench(BenchmarkBuild):
 
         # 5. Keep policy labels and full recorded choices without inventing model configurations.
         subjects = responses[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = labels['subject_prefix'] + subjects.subject_key.str.removeprefix(layout['policy_prefix'])
+        subjects['raw_label'] = subjects.subject_key.str.removeprefix(layout['policy_prefix'])
         subjects['features'] = [dict(**parameters['subject_features'], source_export=value,
             policy_kind='ensemble' if value.startswith(layout['ensemble_prefix']) else 'voter')
             for value in subjects.subject_key]

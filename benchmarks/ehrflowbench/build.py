@@ -58,8 +58,8 @@ class EHRFlowBench(BenchmarkBuild):
             for _ in questions.index]
         questions["features"] = questions[["dataset", "paper_id"]].to_dict("records")
         runs["subject_key"] = runs.id
-        runs["raw_label"] = runs.label + " (" + runs.modelId + ")"
         variant = runs.modelId.str.startswith("variant=")
+        runs["raw_label"] = runs.modelId.where(~variant, runs.label + " (" + runs.modelId + ")")
         runs["model_identifier"] = runs.modelId.mask(variant, None)
         runs["variant"] = runs.modelId.str.removeprefix("variant=").where(variant, None)
         settings = runs[["label", "model_identifier", "variant"]].rename(columns={"label": "harness"})

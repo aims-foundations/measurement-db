@@ -98,7 +98,7 @@ class RealTimeQA(BenchmarkBuild):
         # 4. Keep literal model configurations and mode-specific task/grading definitions.
         attempts["subject_key"] = attempts.model_token
         subjects = attempts[["subject_key", "mode"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_token=row.subject_key,
             answer_mode=row.mode) for row in subjects.itertuples()]
         attempts["content"] = [json.dumps(dict(question_date=row.question_date,

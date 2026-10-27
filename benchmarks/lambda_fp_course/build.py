@@ -103,7 +103,7 @@ class LambdaFPCourse(BenchmarkBuild):
 
         # 4. Preserve grading-specific item identities and source model labels.
         subjects = attempts[["subject_key"]].drop_duplicates().copy()
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=name) for name in subjects.subject_key]
         items["raw_item_id"] = items.item_key
         items["features"] = [dict(subtask=row.subtask, source_task=row.source_task,

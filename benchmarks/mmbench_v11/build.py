@@ -183,7 +183,7 @@ class MMBenchV11(BenchmarkBuild):
 
         # 6. Emit linked tables with complete native cells, source aliases and grading evidence.
         subjects = responses[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(**parameters['subject_features'], source_model_label=value) for value in subjects.subject_key]
         traces = responses[['response_key']].copy()
         traces['trace'] = [json.dumps(dict(export_hash=row.export_hash, prediction_record=row.native_record,

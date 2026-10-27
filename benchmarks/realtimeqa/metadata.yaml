@@ -57,7 +57,6 @@ build:
     question_aliases:
       20220613_qa: backnumber/2022/20220610_qa.jsonl
     labels:
-      subject_prefix: 'RealTime QA / '
       condition: released_weekly_prediction
     subject_features:
       harness: RealTime QA released weekly baseline

@@ -116,7 +116,7 @@ class CARE(BenchmarkBuild):
         subjects = observations[["subject_key", "task", "method", "training_split", "collection", "input_mode"]].drop_duplicates()
         if subjects.subject_key.duplicated().any():
             raise ValueError("Conflicting CARE subject configuration")
-        subjects["raw_label"] = "CARE/" + subjects.subject_key
+        subjects["raw_label"] = subjects.method
         subjects["features"] = [dict(harness=parameters["harness"]["name"],
             harness_version=release.name if row.collection == "paper" else historical.name, source_method=row.method,
             source_task=row.task, training_split=row.training_split, collection=row.collection,

@@ -56,7 +56,6 @@ build:
       bank: 01.Datasets/combined_exam_dataset.csv
       summary: 02.LLMs_x20_Results/All_Models_Results_2026-01-21.csv
     labels:
-      subject_prefix: 'PeruMedQA / '
       language: es
       fine_tuned_model: medgemma4B_TF
       held_out_year: '2025'

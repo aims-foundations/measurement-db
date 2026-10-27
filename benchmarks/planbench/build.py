@@ -63,7 +63,7 @@ class PlanBench(BenchmarkBuild):
             settings_status=config["labels"]["settings_status"]) for row in records.itertuples()]
         records["subject_key"] = records.features.map(lambda value: json.dumps(value, sort_keys=True, ensure_ascii=False))
         subjects = records.drop_duplicates("subject_key")[["subject_key", "engine", "variant", "features"]].copy()
-        subjects["raw_label"] = config["labels"]["subject_prefix"] + subjects.engine + " / " + subjects.variant
+        subjects["raw_label"] = subjects.engine
 
         # 4. Use the original query or initial user message, never later feedback.
         records["content"] = records["query"]

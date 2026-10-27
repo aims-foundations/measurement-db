@@ -141,7 +141,7 @@ class TabArena(BenchmarkBuild):
 
         # 5. Keep fitted configurations distinct and retain full native outputs.
         subjects = configurations.copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.method + ' / ' + subjects.dataset
+        subjects['raw_label'] = subjects.method
         subjects['features'] = [dict(method=row.method, training_dataset=row.dataset, openml_task_id=int(row.tid),
             default_config=row.framework, outer_fold=fold, outer_repeat=repeat,
             recorded_configuration=row.configuration.replace(';', r'\u003b').replace('=', r'\u003d'),

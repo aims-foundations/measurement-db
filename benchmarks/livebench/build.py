@@ -62,7 +62,7 @@ class LiveBench(BenchmarkBuild):
 
         # 3. Preserve literal model labels and the complete source grading definitions.
         subjects = attempts[["model"]].drop_duplicates().rename(columns={"model": "subject_key"})
-        subjects["raw_label"] = parameters["labels"]["subject_prefix"] + subjects.subject_key
+        subjects["raw_label"] = subjects.subject_key
         subjects["features"] = [dict(**parameters["subject_features"], source_model_label=model)
                                 for model in subjects.subject_key]
         items["item_key"] = items["raw_item_id"] = items.question_id

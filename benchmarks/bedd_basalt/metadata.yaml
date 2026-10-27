@@ -47,7 +47,6 @@ build:
       first: Human1
       second: Human2
     options:
-      subject_prefix: BASALT/
       video_path_pattern: ^agent_videos/(?P<subject_key>[^/]+)/(?P<task>[^/]+)/seed_(?P<seed>[0-9]+)\.mp4$
     task_goals:
       FindCave: The player should search for a cave, and terminate the episode when it is inside one.

@@ -1,0 +1,40 @@
+{
+  "changed_benchmarks": 68,
+  "published_changed_benchmarks": 65,
+  "reviewed_published_subject_rows": 22746,
+  "affected_subject_rows": 3095,
+  "changed_subject_ids": 3088,
+  "normalized_names_before": 781,
+  "normalized_names_after": 901,
+  "normalized_rows_before": 9421,
+  "normalized_rows_after": 11045,
+  "within_benchmark_configuration_collisions": 0,
+  "review_date": "2026-10-27",
+  "base_commit": "0bfa8aa",
+  "published_reference_revision": "54074453da7b9911be0f48e4c560be547bc84d21",
+  "standard_benchmarks_reviewed": 290,
+  "separate_study_pilots": [
+    "agentarch",
+    "onlycodes",
+    "tool_architecture"
+  ],
+  "published_benchmarks_reviewed": 270,
+  "observations_in_migrated_benchmarks": 19352542,
+  "withheld_changed": [
+    "medarabiq",
+    "osworld",
+    "swe_together"
+  ],
+  "fresh_author_source_rebuilds": [
+    "coffeebench",
+    "llm4ir",
+    "reliancescope"
+  ],
+  "limits": [
+    "Registry links use the existing exact alias table; no new aliases or model-version claims were introduced.",
+    "Model/method labels may match while harnesses, prompts or fitted configurations retain distinct subject IDs.",
+    "Most full-table checks are deterministic migrations of pinned published data, not fresh upstream rebuilds.",
+    "Withheld benchmarks have source changes only; their old table fingerprints must be refreshed before release.",
+    "No data upload or website deployment was performed."
+  ]
+}

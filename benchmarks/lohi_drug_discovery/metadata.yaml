@@ -48,7 +48,6 @@ build:
       prefix: lohi_neurips2023-1686b016e360537ce4eb9e5996de6254be64fb3f/
       prediction_pattern: predictions/(?P<task>hi|lo)/(?P<dataset>[^/]+)/(?P<model>[^/]+)/(?P<partition>train|test)_(?P<fold>[123])\.csv
     labels:
-      subject_prefix: 'Lo-Hi / '
       input_scope: released_SMILES_before_model_featurization
       grade_status: no_native_per_molecule_grade
     subject_features:

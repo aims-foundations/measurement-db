@@ -63,7 +63,7 @@ class ERBench(BenchmarkBuild):
 
         # 4. Keep literal source identities and conditions, then translate native grades.
         subjects = records[['subject_key']].drop_duplicates().copy()
-        subjects['raw_label'] = parameters['labels']['subject_prefix'] + subjects.subject_key
+        subjects['raw_label'] = subjects.subject_key
         subjects['features'] = [dict(harness='ERBench', source_model=row.subject_key) for row in subjects.itertuples(index=False)]
         records['response_key'] = records.source_file + '/' + records.source_row.astype(str)
         records['response'] = records.model_answer.eq(records.gold_answer).astype(float)

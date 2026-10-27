@@ -84,7 +84,6 @@ build:
       declared_task_settings: 'Published defaults: max_new_tokens 512 | top_p 1.0 | temperature 1.0 for XSTest and
         0.0 otherwise | execution settings unrecorded'
     labels:
-      subject_prefix: 'MergeBench / '
       safe_protocol: xstest_safe
       unsafe_protocol: xstest_unsafe
       context_prefix: '

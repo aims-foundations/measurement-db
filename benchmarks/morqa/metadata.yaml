@@ -75,7 +75,6 @@ build:
       deepseekv3_##__ratings_prompt: deepseek-v3
       promethesus7bv2_##__ratings_prompt: prometheus-2-7b
     labels:
-      subject_prefix: 'MORQA / '
       harness: MORQA multireference evaluation
     id_fields:
       iiyi: encounter_id

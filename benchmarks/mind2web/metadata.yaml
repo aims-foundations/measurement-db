@@ -76,7 +76,7 @@ build:
         absent from the captured official input release.
     subject:
       key: mind2web_released_candidate_ranker
-      label: Mind2Web / fine-tuned DeBERTa-v3-base candidate ranker
+      label: Mind2Web fine-tuned DeBERTa-v3-base candidate ranker
     subject_features:
       harness: Mind2Web candidate generation
       base_model: microsoft/deberta-v3-base

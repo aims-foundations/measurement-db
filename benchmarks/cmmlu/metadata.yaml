@@ -46,7 +46,6 @@ build:
     labels:
       category_prefix: cmmlu-
       cot_instruction: 请在回答之前一步步思考.
-      subject_prefix: 'CMMLU / '
       grade_status: reconstructed_with_pinned_reference_protocol
     subject_protocol:
       harness: OpenCompass
