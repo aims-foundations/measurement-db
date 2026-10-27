@@ -13,6 +13,7 @@ Presentation changes do not require rebuilding Parquet tables or publishing HF.
 - `explorer.tsx`: shared filters, selected identity, and network / matrix views.
 - `sidebar.tsx`: search, filters, identity details, and connection lists.
 - `canvas.tsx`: graph rendering and selection.
+- `labels.ts`: measured label placement and contrast over dense neighborhoods.
 - `matrix.tsx`: bounded detail grid, ordering, paging, and keyboard navigation.
 - `matrix-overview.tsx`: sparse canvas overview and detail-window navigation.
 - `view-tabs.tsx`: shared accessible keyboard navigation between views.

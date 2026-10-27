@@ -10,6 +10,7 @@ import {
 import type Sigma from "sigma";
 import type { CoverageNetwork } from "@/lib/coverage-network/model";
 import { NODE_COLORS, nodeRadius } from "@/lib/coverage-network/appearance";
+import { createNetworkLabels } from "./labels";
 import styles from "./network.module.css";
 
 export type NetworkControls = {
@@ -63,8 +64,13 @@ export function CoverageCanvas({
               size: 0.55,
               color: "rgba(64, 97, 88, 0.3)",
             });
+          const labels = createNetworkLabels();
+          class BenchmarkProgram extends NodeSquareProgram {
+            drawLabel = labels.draw;
+          }
           instance = new Sigma(graph, container.current, {
-            nodeProgramClasses: { square: NodeSquareProgram },
+            defaultDrawNodeLabel: labels.draw,
+            nodeProgramClasses: { square: BenchmarkProgram },
             labelFont: getComputedStyle(container.current).fontFamily,
             labelSize: 12,
             labelColor: { color: "#263b38" },
@@ -77,6 +83,7 @@ export function CoverageCanvas({
             zIndex: true,
             hideEdgesOnMove: true,
           });
+          instance.on("beforeRender", labels.reset);
           instance.on("clickNode", ({ node }) => onSelect(node));
           instance.on("clickStage", () => onSelect(null));
           instance.on("enterNode", ({ node }) => {
