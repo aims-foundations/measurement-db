@@ -1,11 +1,11 @@
-import type { NodeLabelDrawingFunction } from "sigma/rendering";
+import type { drawDiscNodeLabel } from "sigma/rendering";
 
 type Box = { x: number; y: number; width: number; height: number };
 
 /** Sigma chooses candidates; measured text bounds keep neighboring labels apart. */
 export function createNetworkLabels() {
   const boxes: Box[] = [];
-  const draw: NodeLabelDrawingFunction = (context, node, settings) => {
+  const draw: typeof drawDiscNodeLabel = (context, node, settings) => {
     if (!node.label) return;
     const size = settings.labelSize;
     context.font = `${settings.labelWeight} ${size}px ${settings.labelFont}`;
