@@ -58,6 +58,7 @@ jobs:
           cache-dependency-path: website/pnpm-lock.yaml
       - run: pnpm --dir website install --frozen-lockfile
       - run: pnpm --dir website gallery:test
+      - run: pnpm --dir website network:test
       - name: Check browser source reads against canonical tables
         run: |
           python tests/test_gallery_hybrid_data.py --export "$RUNNER_TEMP/gallery-fixture"

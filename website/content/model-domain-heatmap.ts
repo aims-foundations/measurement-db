@@ -19,7 +19,7 @@ import {
 // Minimum binary responses behind a cell before we publish its mean. A model
 // measured on a handful of a domain's items yields a noisy accuracy that
 // would read as signal; below this the cell stays empty rather than shown.
-const MIN_CELL_N = 30;
+export const MIN_CELL_N = 30;
 
 const domainsBySlug = new Map(benchmarks.map((b) => [b.slug, b.categories]));
 

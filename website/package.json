@@ -17,11 +17,14 @@
     "search:sync": "node scripts/index-meilisearch.mjs",
     "gallery:prepare": "node --experimental-strip-types scripts/prepare-gallery-records.mts",
     "gallery:test": "node --test scripts/test-benchmark-records.mjs",
+    "network:test": "node --test scripts/test-coverage-network.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
+    "graphology": "0.26.0",
+    "graphology-layout-forceatlas2": "0.10.1",
     "hyparquet": "1.31.2",
     "hyparquet-compressors": "1.1.2",
     "katex": "^0.18.1",
@@ -34,7 +37,8 @@
     "rehype-katex": "^7.0.1",
     "remark-breaks": "^4.0.0",
     "remark-gfm": "^4.0.1",
-    "remark-math": "^6.0.0"
+    "remark-math": "^6.0.0",
+    "sigma": "3.0.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
