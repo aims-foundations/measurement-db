@@ -45,6 +45,124 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      'WMT 2020 en-de: eTranslation.737': eTranslation.737
+      'WMT 2020 en-de: Human-A.0': Human-A.0
+      'WMT 2020 en-de: Human-B.0': Human-B.0
+      'WMT 2020 en-de: Human-P.0': Human-P.0
+      'WMT 2020 en-de: Huoshan_Translate.832': Huoshan_Translate.832
+      'WMT 2020 en-de: Online-A.1574': Online-A.1574
+      'WMT 2020 en-de: Online-B.1590': Online-B.1590
+      'WMT 2020 en-de: OPPO.1535': OPPO.1535
+      'WMT 2020 en-de: Tencent_Translation.1520': Tencent_Translation.1520
+      'WMT 2020 en-de: Tohoku-AIP-NTT.890': Tohoku-AIP-NTT.890
+      'WMT 2020 zh-en: DeepMind.381': DeepMind.381
+      'WMT 2020 zh-en: DiDi_NLP.401': DiDi_NLP.401
+      'WMT 2020 zh-en: Human-A.0': Human-A.0
+      'WMT 2020 zh-en: Human-B.0': Human-B.0
+      'WMT 2020 zh-en: Huoshan_Translate.919': Huoshan_Translate.919
+      'WMT 2020 zh-en: Online-B.1605': Online-B.1605
+      'WMT 2020 zh-en: OPPO.1422': OPPO.1422
+      'WMT 2020 zh-en: Tencent_Translation.1249': Tencent_Translation.1249
+      'WMT 2020 zh-en: THUNLP.1498': THUNLP.1498
+      'WMT 2020 zh-en: WeChat_AI.1525': WeChat_AI.1525
+      'WMT 2021 en-de: hyp.Facebook-AI': hyp.Facebook-AI
+      'WMT 2021 en-de: hyp.HuaweiTSC': hyp.HuaweiTSC
+      'WMT 2021 en-de: hyp.Nemo': hyp.Nemo
+      'WMT 2021 en-de: hyp.Online-W': hyp.Online-W
+      'WMT 2021 en-de: hyp.UEdin': hyp.UEdin
+      'WMT 2021 en-de: hyp.VolcTrans-GLAT': hyp.VolcTrans-GLAT
+      'WMT 2021 en-de: hyp.eTranslation': hyp.eTranslation
+      'WMT 2021 en-de: hyp.metricsystem1': hyp.metricsystem1
+      'WMT 2021 en-de: hyp.metricsystem2': hyp.metricsystem2
+      'WMT 2021 en-de: hyp.metricsystem3': hyp.metricsystem3
+      'WMT 2021 en-de: hyp.metricsystem4': hyp.metricsystem4
+      'WMT 2021 en-de: hyp.metricsystem5': hyp.metricsystem5
+      'WMT 2021 en-de: ref.A': ref.A
+      'WMT 2021 en-de: ref.B': ref.B
+      'WMT 2021 en-de: ref.C': ref.C
+      'WMT 2021 en-de: ref.D': ref.D
+      'WMT 2021 en-de: hyp.VolcTrans-AT': hyp.VolcTrans-AT
+      'WMT 2021 zh-en: hyp.Borderline': hyp.Borderline
+      'WMT 2021 zh-en: hyp.DIDI-NLP': hyp.DIDI-NLP
+      'WMT 2021 zh-en: hyp.Facebook-AI': hyp.Facebook-AI
+      'WMT 2021 zh-en: hyp.IIE-MT': hyp.IIE-MT
+      'WMT 2021 zh-en: hyp.MiSS': hyp.MiSS
+      'WMT 2021 zh-en: hyp.NiuTrans': hyp.NiuTrans
+      'WMT 2021 zh-en: hyp.Online-W': hyp.Online-W
+      'WMT 2021 zh-en: hyp.SMU': hyp.SMU
+      'WMT 2021 zh-en: hyp.metricsystem1': hyp.metricsystem1
+      'WMT 2021 zh-en: hyp.metricsystem2': hyp.metricsystem2
+      'WMT 2021 zh-en: hyp.metricsystem3': hyp.metricsystem3
+      'WMT 2021 zh-en: hyp.metricsystem4': hyp.metricsystem4
+      'WMT 2021 zh-en: hyp.metricsystem5': hyp.metricsystem5
+      'WMT 2021 zh-en: ref.A': ref.A
+      'WMT 2021 zh-en: ref.B': ref.B
+      'WMT 2022 en-de: Online-B': Online-B
+      'WMT 2022 en-de: bleurt_bestmbr': bleurt_bestmbr
+      'WMT 2022 en-de: M2M100_1.2B-B4': M2M100_1.2B-B4
+      'WMT 2022 en-de: Online-G': Online-G
+      'WMT 2022 en-de: PROMT': PROMT
+      'WMT 2022 en-de: Online-W': Online-W
+      'WMT 2022 en-de: OpenNMT': OpenNMT
+      'WMT 2022 en-de: Lan-Bridge': Lan-Bridge
+      'WMT 2022 en-de: refA': refA
+      'WMT 2022 en-de: Online-A': Online-A
+      'WMT 2022 en-de: refB': refB
+      'WMT 2022 en-de: QUARTZ_TuneReranking': QUARTZ_TuneReranking
+      'WMT 2022 en-de: Online-Y': Online-Y
+      'WMT 2022 en-de: bleu_bestmbr': bleu_bestmbr
+      'WMT 2022 en-de: comet_bestmbr': comet_bestmbr
+      'WMT 2022 en-de: JDExploreAcademy': JDExploreAcademy
+      'WMT 2022 en-ru: JDExploreAcademy': JDExploreAcademy
+      'WMT 2022 en-ru: comet_bestmbr': comet_bestmbr
+      'WMT 2022 en-ru: bleu_bestmbr': bleu_bestmbr
+      'WMT 2022 en-ru: SRPOL': SRPOL
+      'WMT 2022 en-ru: Online-G': Online-G
+      'WMT 2022 en-ru: refA': refA
+      'WMT 2022 en-ru: eTranslation': eTranslation
+      'WMT 2022 en-ru: Online-B': Online-B
+      'WMT 2022 en-ru: Online-A': Online-A
+      'WMT 2022 en-ru: Online-Y': Online-Y
+      'WMT 2022 en-ru: M2M100_1.2B-B4': M2M100_1.2B-B4
+      'WMT 2022 en-ru: PROMT': PROMT
+      'WMT 2022 en-ru: QUARTZ_TuneReranking': QUARTZ_TuneReranking
+      'WMT 2022 en-ru: HuaweiTSC': HuaweiTSC
+      'WMT 2022 en-ru: Online-W': Online-W
+      'WMT 2022 en-ru: Lan-Bridge': Lan-Bridge
+      'WMT 2022 en-zh: AISP-SJTU': AISP-SJTU
+      'WMT 2022 en-zh: DLUT': DLUT
+      'WMT 2022 en-zh: HuaweiTSC': HuaweiTSC
+      'WMT 2022 en-zh: JDExploreAcademy': JDExploreAcademy
+      'WMT 2022 en-zh: Lan-Bridge': Lan-Bridge
+      'WMT 2022 en-zh: LanguageX': LanguageX
+      'WMT 2022 en-zh: Manifold': Manifold
+      'WMT 2022 en-zh: Online-A': Online-A
+      'WMT 2022 en-zh: Online-B': Online-B
+      'WMT 2022 en-zh: Online-G': Online-G
+      'WMT 2022 en-zh: Online-W': Online-W
+      'WMT 2022 en-zh: Online-Y': Online-Y
+      'WMT 2022 en-zh: refB': refB
+      'WMT 2022 zh-en: Lan-Bridge.en': Lan-Bridge.en
+      'WMT 2022 zh-en: JDExploreAcademy.en': JDExploreAcademy.en
+      'WMT 2022 zh-en: M2M100_1.2B-B4.en': M2M100_1.2B-B4.en
+      'WMT 2022 zh-en: Online-Y.en': Online-Y.en
+      'WMT 2022 zh-en: AISP-SJTU.en': AISP-SJTU.en
+      'WMT 2022 zh-en: comet_bestmbr.en': comet_bestmbr.en
+      'WMT 2022 zh-en: refA.en': refA.en
+      'WMT 2022 zh-en: Online-W.en': Online-W.en
+      'WMT 2022 zh-en: LanguageX.en': LanguageX.en
+      'WMT 2022 zh-en: HuaweiTSC.en': HuaweiTSC.en
+      'WMT 2022 zh-en: Online-B.en': Online-B.en
+      'WMT 2022 zh-en: bleu_bestmbr.en': bleu_bestmbr.en
+      'WMT 2022 zh-en: Online-A.en': Online-A.en
+      'WMT 2022 zh-en: bleurt_bestmbr.en': bleurt_bestmbr.en
+      'WMT 2022 zh-en: Online-G.en': Online-G.en
+      'WMT 2022 zh-en: refB.en': refB.en
+    subject_label_evidence:
+      source: WMT original system field; campaign, language_pair, source_file and source_system_label remain recorded.
+      scope: Remove campaign/language decoration. Anonymous systems and human translations are not mapped to guessed
+        AI models.
     campaigns:
       newstest2020/ende/mqm_newstest2020_ende.tsv: '2020'
       newstest2020/zhen/mqm_newstest2020_zhen.tsv: '2020'

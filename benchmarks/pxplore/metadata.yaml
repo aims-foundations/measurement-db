@@ -55,6 +55,15 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      prompt_4o: gpt-4o
+      prompt_4omini: gpt-4o-mini
+      steering_4o: gpt-4o
+      steering_4omini: gpt-4o-mini
+    subject_label_evidence:
+      source: Literal released prompt_4o, prompt_4omini, steering_4o and steering_4omini run identifiers.
+      scope: Retain method, input_mode and source_run; fine-tuned Llama/Qwen and unrecorded checkpoint identities
+        remain unresolved.
     layout:
       release: release
       evaluations: model/data/eval

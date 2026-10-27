@@ -45,6 +45,27 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      GPT-4 (caption-conditioned): gpt-4
+      gpt4v_response: gpt-4-vision-preview
+      llava13b_output: LLaVA 13B (version unspecified)
+      mPLUG-Owl prediction: mPLUG-Owl
+      panda_gpt_13b_output: PandaGPT 13B
+      LlamaAdapter-v2 prediction: LLaMA-Adapter v2
+      instruct_blip_output: InstructBLIP (size unspecified)
+      MiniGPT-4 prediction: MiniGPT-4
+      visual_gpt_davinci003_output: Visual ChatGPT (text-davinci-003)
+      mmgpt_output: MMGPT (checkpoint unspecified)
+      Octopus V2 prediction: Octopus V2
+      Lynx(8B) predictions: Lynx 8B
+      idefics9b_prediction: IDEFICS 9B
+      lynx(7B)_v2 prediction: Lynx 7B v2
+      llava-a1-predictions: LLaVA a1 (checkpoint unspecified)
+    subject_label_evidence:
+      source: Released A_model/B_model labels; metadata labels.reference_model and input_scope distinguish caption-conditioned
+        GPT-4 from GPT-4V.
+      scope: Remove output-file wording and separate input conditions. Do not infer missing VLM checkpoint sizes
+        or merge undocumented Lynx test versions.
     layout:
       dataset: dataset/test/metadata.csv
       human: release/visit_bench_human_preferences.csv

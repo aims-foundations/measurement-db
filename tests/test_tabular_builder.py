@@ -1,6 +1,7 @@
 """Table inputs retain the row builder's identities, traces, and validation."""
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -108,6 +109,56 @@ def test_explicit_trials_and_omitted_traces(fixture):
     builder.main_from_args(["--source", str(source), "--output", str(output)])
     assert pd.read_parquet(output / "responses.parquet").trial.tolist() == [2, 4, 6, 8, 10]
     assert not (output / "traces.parquet").exists()
+
+
+def test_subject_aliases_preserve_runs_settings_and_observations(fixture):
+    builder, source, output = fixture
+    aliases = ["export-a", "export-b"]
+    builder.inputs["subjects"]["raw_label"] = aliases
+    settings = {label: {"harness": "recorded-agent", "reasoning_effort": "high"}
+                for label in aliases}
+    (source / "subject_settings.json").write_text(json.dumps(settings))
+    builder.main_from_args(["--source", str(source), "--output", str(output)])
+    before = {p.stem: pd.read_parquet(p) for p in output.glob("*.parquet")}
+
+    builder.build_parameters["subject_labels"] = dict.fromkeys(aliases, "gpt-4o")
+    reload()
+    after_output = output.parent / "normalized"
+    builder.main_from_args(["--source", str(source), "--output", str(after_output)])
+    after = {p.stem: pd.read_parquet(p) for p in after_output.glob("*.parquet")}
+    subjects = after["subjects"]
+    assert len(subjects) == subjects.subject_id.nunique() == 2
+    assert subjects.normalized_name.tolist() == ["OpenAI GPT-4o"] * 2
+    assert subjects.harness.tolist() == ["recorded-agent"] * 2
+    assert subjects.reasoning_effort.tolist() == ["high"] * 2
+    assert set(subjects.subject_features_extra) == {
+        f"source_display_name={label}" for label in aliases}
+    subject_ids = dict(zip(before["subjects"].subject_id, subjects.subject_id))
+    response_ids = dict(zip(before["responses"].response_id, after["responses"].response_id))
+    assert len(set(response_ids.values())) == len(response_ids)
+    for name, frame in before.items():
+        if name == "subjects":
+            continue
+        expected = frame.copy()
+        if "subject_id" in expected:
+            expected["subject_id"] = expected.subject_id.map(subject_ids)
+        if "response_id" in expected:
+            expected["response_id"] = expected.response_id.map(response_ids)
+        pd.testing.assert_frame_equal(expected, after[name])
+    validate_dataset(after, expected_benchmark_id="fixture")
+
+
+@pytest.mark.parametrize("target,features,message", [
+    (" ", None, "non-empty string"),
+    ("gpt-4o", {"source_display_name": "different-run"}, "conflicts"),
+])
+def test_invalid_subject_label_mapping_fails_before_writing(fixture, target, features, message):
+    builder, source, output = fixture
+    builder.build_parameters["subject_labels"] = {"fixture-model": target}
+    builder.inputs["subjects"]["features"] = [features, features]
+    with pytest.raises(BuildContractError, match=message):
+        builder.main_from_args(["--source", str(source), "--output", str(output)])
+    assert not list(output.glob("*.parquet"))
 
 
 def test_legacy_null_reference_identity_is_preserved_without_an_output_column(fixture):

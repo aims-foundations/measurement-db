@@ -8,13 +8,13 @@ tables:
     logical_sha256: 00233af7a53ef83c213df23e2f0e7a122971dcae3c3823c01a93ef41ac0113ac
   responses:
     rows: 4879368
-    logical_sha256: fe5c2d7a781f571f606c48f7b188f20b518aec6e800c1e424c75ff5a140ba21c
+    logical_sha256: f79bc0cf6ce2f20bfc7b449cb2e4b121aefeefc06d1a46cf14e251de93ab5c86
   subjects:
     rows: 113
-    logical_sha256: bd1aa987902a05549814a1fa21910fdc63160d5cd86ceb63ae9e09d7a1b1fc40
+    logical_sha256: 68e0c4ef33a19c3c6a440469da870636f529b0a5f9f8bc30c04d9a866e0ac600
   traces:
     rows: 4879368
-    logical_sha256: 753ae9097c0ccdd4e65a8d599d180c5fc9c55129000304a124bc4d638747c3cd
+    logical_sha256: 715c467c1a108624d6c9c483122b8d2920dba0967a8b82eea07717bd7d8f59c6
 source_claims:
   source_author_restored_annotations:
     kind: count

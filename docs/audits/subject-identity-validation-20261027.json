@@ -1,0 +1,60 @@
+{
+  "audited_benchmarks": 53,
+  "affected_benchmarks": 23,
+  "affected_outside_audit": [
+    "theagentcompany"
+  ],
+  "changed_subjects": 828,
+  "new_registry_aliases": 168,
+  "normalized_names_before": 901,
+  "normalized_names_after": 983,
+  "newly_mapped_benchmarks": 19,
+  "still_unmapped_benchmarks": 34,
+  "newly_mapped_subject_rows": 674,
+  "configuration_collisions": 0,
+  "scope": "Subject-registration replay from preview revision 9a8a4e098dd39b02f02104f08362f99c6b8cb250; not a published release",
+  "source_base_commit": "635a74e2955d970b48837cee1a109a9ef96845c3",
+  "source_preview_revision": "9a8a4e098dd39b02f02104f08362f99c6b8cb250",
+  "observation_rows_checked": 8917732,
+  "test_results": {
+    "pytest_passed": 44,
+    "pytest_subtests_passed": 335,
+    "fresh_source_builds": [
+      {
+        "benchmark": "kormedmcqa",
+        "status": "passed",
+        "subject_rows": 7,
+        "response_rows": 21391
+      },
+      {
+        "benchmark": "morqa",
+        "status": "passed",
+        "subject_rows": 4,
+        "response_rows": 17136
+      },
+      {
+        "benchmark": "morphkv",
+        "status": "passed",
+        "subject_rows": 11,
+        "response_rows": 4105
+      }
+    ],
+    "fresh_source_build_all_tables_match": true
+  },
+  "projected_graph": {
+    "benchmarks": 270,
+    "models_before": 901,
+    "models_after": 983,
+    "links_before": 3849,
+    "links_after": 4139,
+    "isolated_benchmarks_before": 53,
+    "isolated_benchmarks_after": 34,
+    "audited_benchmarks_joining_main_component": 18,
+    "new_separate_component": "bbq and UnifiedQA T5 11B"
+  },
+  "publication_status": "Source changes only. No HF data or website deployment performed by this audit.",
+  "validation_method": "Replayed the shared subject registration on the pinned preview and checked that configurations remain distinct. Verified existing subject/response/trace hashes and response IDs, derived new linked IDs, and hashed rows with only identity columns changed. No measurements were regraded. Three fresh builds from cached native sources match every table. Other affected benchmarks were verified by this identity-only reconstruction, not full source rebuilds.",
+  "outside_audit_note": "The shared Qwen/Qwen2.5-Coder-32B-Instruct alias also resolves an existing TheAgentCompany subject; its linked table hashes were included.",
+  "total_subject_rows_before": 22746,
+  "total_subject_rows_after": 22746
+}

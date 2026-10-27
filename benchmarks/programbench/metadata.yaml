@@ -51,6 +51,33 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      gemini-3-1-pro-preview-genai: gemini-3.1-pro-preview
+      gemini-3-flash-preview-genai: gemini-3-flash-preview
+      gpt-5-4-genai-responses: gpt-5.4
+      gpt-5-4-mini-genai-responses: gpt-5.4-mini
+      gpt-5-mini-genai: gpt-5-mini
+      claude-4-5-haiku-genai: claude-haiku-4-5
+      claude-4-7-opus-genai: claude-opus-4-7
+      claude-4-6-sonnet-genai: claude-sonnet-4-6
+      claude-4-6-opus-genai: claude-opus-4-6
+      gpt-5-5-genai-responses: gpt-5.5
+      openai/fireworks-glm-5p2: glm-5.2
+      anthropic/claude-4-8-opus-genai: claude-opus-4-8
+      gemini-3-5-flash-fair: gemini-3.5-flash
+      gpt-5-6-sol-genai-responses: gpt-5.6-sol
+      gemini-3-6-flash-genai: gemini-3.6-flash
+      claude-5-opus-genai: claude-opus-5
+      gemini-3-7-flash-genai: gemini-3.7-flash
+      muse-spark-1.1-contributor: muse-spark-1.1
+      muse-spark-1.2: muse-spark-1.2
+      openai/rift: muse-spark-1.3
+      muse-spark-1.3-internal: muse-spark-1.3
+    subject_label_evidence:
+      source: 'registry.tar.gz at c19e570f64719c8326ccdcc7af803447cb89d1a6: submissions/*/submission.yaml system.model
+        and system.provider, matched to captured trajectory info.config.model.model_name.'
+      scope: Preserve routing alias, source run, reasoning effort, harness version and configuration hash; labels
+        do not merge configurations.
     layout:
       registry: registry.tar.gz
     runs:

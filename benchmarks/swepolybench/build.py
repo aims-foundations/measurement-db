@@ -85,7 +85,8 @@ class SWEPolyBench(BenchmarkBuild):
 
         # 6. Register each literal source configuration and grading-aware task.
         subjects = submissions.loc[submissions.run.isin(attempts.run), ['run', 'name']].rename(columns={'run': 'subject_key', 'name': 'raw_label'})
-        subjects['features'] = [dict(source_submission=row.subject_key, harness=labels['harness'],
+        subjects['features'] = [dict(source_submission=row.subject_key,
+            harness=parameters['subject_harnesses'].get(row.raw_label, labels['harness']),
             configuration_scope=labels['configuration_scope'], source_readme=parameters['layout']['release'] + '/' + row.subject_key + '/README.md')
             for row in subjects.itertuples()]
         item_columns = ['bank', 'instance_id', 'repo', 'base_commit', 'language', 'problem_statement', 'patch', 'task_source_file']

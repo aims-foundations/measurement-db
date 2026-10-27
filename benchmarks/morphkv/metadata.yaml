@@ -48,6 +48,20 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      Llama_1000_snapkv: Llama-3.1-8B-Instruct
+      Llama_200_4000_max_greedy: Llama-3.1-8B-Instruct
+      Llama_4000_h2o: Llama-3.1-8B-Instruct
+      Mistral_1000_snapkv: Mistral-7B-Instruct-v0.2
+      Mistral_200_4000_max_greedy: Mistral-7B-Instruct-v0.2
+      Mistral_4000_h2o: Mistral-7B-Instruct-v0.2
+      Qwen_1000_snapkv: Qwen2.5-7B-Instruct
+      Qwen_200_4000_max_greedy: Qwen2.5-7B-Instruct
+      Qwen_4000_h2o: Qwen2.5-7B-Instruct
+    subject_label_evidence:
+      source: https://arxiv.org/html/2503.00979v2#S4 and section 5.2; pinned model2path.json confirms model identifiers.
+      scope: Map the nine paper configurations; preserve cache configuration in source_run. Do not identify the
+        two extra ungraded Qwen30B exports from filename similarity.
     paths:
       results: LongGenBench/Evalution/paper_results
       bank: LongGenBench/Dataset/Dataset_short.json

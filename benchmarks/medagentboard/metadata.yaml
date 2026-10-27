@@ -39,6 +39,62 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      laysummary/PLABA/summary/AgentSimp: deepseek-v3
+      laysummary/PLABA/summary/SingleLLM_basic: deepseek-v3
+      laysummary/PLABA/summary/SingleLLM_few_shot: deepseek-v3
+      laysummary/PLABA/summary/SingleLLM_optimized: deepseek-v3
+      laysummary/cochrane/summary/AgentSimp: deepseek-v3
+      laysummary/cochrane/summary/SingleLLM_basic: deepseek-v3
+      laysummary/cochrane/summary/SingleLLM_few_shot: deepseek-v3
+      laysummary/cochrane/summary/SingleLLM_optimized: deepseek-v3
+      laysummary/elife/summary/AgentSimp: deepseek-v3
+      laysummary/elife/summary/SingleLLM_basic: deepseek-v3
+      laysummary/elife/summary/SingleLLM_few_shot: deepseek-v3
+      laysummary/elife/summary/SingleLLM_optimized: deepseek-v3
+      laysummary/med_easi/summary/AgentSimp: deepseek-v3
+      laysummary/med_easi/summary/SingleLLM_basic: deepseek-v3
+      laysummary/med_easi/summary/SingleLLM_few_shot: deepseek-v3
+      laysummary/med_easi/summary/SingleLLM_optimized: deepseek-v3
+      laysummary/plos_genetics/summary/AgentSimp: deepseek-v3
+      laysummary/plos_genetics/summary/SingleLLM_basic: deepseek-v3
+      laysummary/plos_genetics/summary/SingleLLM_few_shot: deepseek-v3
+      laysummary/plos_genetics/summary/SingleLLM_optimized: deepseek-v3
+      medqa/MedQA/multiple_choice/SingleLLM_cot: deepseek-v3
+      medqa/MedQA/multiple_choice/SingleLLM_cot_sc: deepseek-v3
+      medqa/MedQA/multiple_choice/SingleLLM_few_shot: deepseek-v3
+      medqa/MedQA/multiple_choice/SingleLLM_self_consistency: deepseek-v3
+      medqa/MedQA/multiple_choice/SingleLLM_zero_shot: deepseek-v3
+      medqa/PathVQA/multiple_choice/SingleLLM_cot: qwen-vl-max
+      medqa/PathVQA/multiple_choice/SingleLLM_cot_sc: qwen-vl-max
+      medqa/PathVQA/multiple_choice/SingleLLM_few_shot: qwen-vl-max
+      medqa/PathVQA/multiple_choice/SingleLLM_self_consistency: qwen-vl-max
+      medqa/PathVQA/multiple_choice/SingleLLM_zero_shot: qwen-vl-max
+      medqa/PubMedQA/free-form/SingleLLM_cot: deepseek-v3
+      medqa/PubMedQA/free-form/SingleLLM_cot_sc: deepseek-v3
+      medqa/PubMedQA/free-form/SingleLLM_few_shot: deepseek-v3
+      medqa/PubMedQA/free-form/SingleLLM_self_consistency: deepseek-v3
+      medqa/PubMedQA/free-form/SingleLLM_zero_shot: deepseek-v3
+      medqa/PubMedQA/multiple_choice/SingleLLM_cot: deepseek-v3
+      medqa/PubMedQA/multiple_choice/SingleLLM_cot_sc: deepseek-v3
+      medqa/PubMedQA/multiple_choice/SingleLLM_few_shot: deepseek-v3
+      medqa/PubMedQA/multiple_choice/SingleLLM_self_consistency: deepseek-v3
+      medqa/PubMedQA/multiple_choice/SingleLLM_zero_shot: deepseek-v3
+      medqa/VQA-RAD/free-form/SingleLLM_cot: qwen-vl-max
+      medqa/VQA-RAD/free-form/SingleLLM_cot_sc: qwen-vl-max
+      medqa/VQA-RAD/free-form/SingleLLM_few_shot: qwen-vl-max
+      medqa/VQA-RAD/free-form/SingleLLM_self_consistency: qwen-vl-max
+      medqa/VQA-RAD/free-form/SingleLLM_zero_shot: qwen-vl-max
+      medqa/VQA-RAD/multiple_choice/SingleLLM_cot: qwen-vl-max
+      medqa/VQA-RAD/multiple_choice/SingleLLM_cot_sc: qwen-vl-max
+      medqa/VQA-RAD/multiple_choice/SingleLLM_few_shot: qwen-vl-max
+      medqa/VQA-RAD/multiple_choice/SingleLLM_self_consistency: qwen-vl-max
+      medqa/VQA-RAD/multiple_choice/SingleLLM_zero_shot: qwen-vl-max
+    subject_label_evidence:
+      source: Per-record metadata/case_history model fields in the captured native logs; build.py preserves them
+        as recorded_configuration.
+      scope: Use the model only where a record identifies it; preserve source_configuration and full recorded configuration.
+        Do not guess models for heterogeneous agent teams or workflows.
     layout:
       archive: MedAgentBoard_full_log.zip
       prefix: MedAgentBoard/

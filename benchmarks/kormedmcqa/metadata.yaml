@@ -44,6 +44,17 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      claude-haiku-4-5-2025-12-11: claude-haiku-4-5
+      claude-sonnet-4-2025-12-11: claude-sonnet-4
+      claude-sonnet-4-5-2025-12-11: claude-sonnet-4-5
+      gpt-4o-2025-12-11: gpt-4o
+      gpt-5.1-2025-12-11: gpt-5.1
+      nova-2-lite-2025-12-11: nova-2-lite
+    subject_label_evidence:
+      source: Captured benchmarks/kormedmcqa_main.py writes MODEL_NAME-MODEL_VERSION.csv; source revision 106ed712b5b88f0e531d5fa503bfed76ac31396e.
+      scope: Separate known model names from the export version. The suffix is not asserted to be an API snapshot
+        or access date; qwen3-next remains unresolved.
     paths:
       tasks: tasks/*/test-*.parquet
       results: results/*.csv

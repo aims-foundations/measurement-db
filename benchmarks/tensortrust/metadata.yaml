@@ -46,6 +46,13 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      GPT_35_TURBO_0613: gpt-3.5-turbo-0613
+      CLAUDE_INSTANT_1_2: claude-instant-1.2
+      PALM_CHAT_BISON_001: chat-bison@001
+    subject_label_evidence:
+      source: Tensor Trust released llm_choice enum values encode the recorded provider model/version.
+      scope: Keep recorded_model_choice; do not infer request settings.
     records:
       attack: raw-data/v2/raw_dump_attacks.jsonl.bz2
       defense: raw-data/v2/raw_dump_defenses.jsonl.bz2

@@ -41,6 +41,23 @@ benchmark:
 build:
   contract_version: 2
   parameters:
+    subject_labels:
+      Prometheus-v1.2 + GPT-5: gpt-5
+      Atlassian Rovo Dev (2025-12-08): Atlassian Rovo Dev
+      Kodah: gpt-5-mini
+      HMigBot: claude-opus-4-8
+    subject_harnesses:
+      iSWE-Agent: iSWE-Agent
+      Prometheus-v1.2 + GPT-5: Prometheus
+      Atlassian Rovo Dev (2025-12-08): Atlassian Rovo Dev
+      Kodah: Kodah
+      HMigBot: HMigBot
+    subject_label_evidence:
+      source: 'amazon-science/SWE-PolyBench@e7062f4a848ca7775bc1c1313f7aa419bd6a3ec1: submission metadata names
+        and README files for 20260430_kodah_gpt-5-mini and 20260623_migbot_claude-opus-4-8.'
+      scope: Separate the declared underlying model from its agent harness. Keep iSWE-Agent and Rovo Dev as agent
+        identities because their captured READMEs do not identify one underlying model. Preserve original submissions
+        and labels.
     layout:
       release: release
     labels:

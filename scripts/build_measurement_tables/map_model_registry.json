@@ -27332,5 +27332,999 @@
   "company": "Alibaba",
   "release_date": "2025-04-29",
   "release_date_url": "https://qwenlm.github.io/blog/qwen3/"
+ },
+ "Aeala/GPT4-x-AlpacaDente-30b": {
+  "model": "GPT4-X-Alpacadente 30B",
+  "company": "Community",
+  "release_date": "2023-04-27",
+  "release_date_url": "https://huggingface.co/Aeala/GPT4-x-AlpacaDente-30b/commits/main"
+ },
+ "Aeala/GPT4-x-AlpacaDente2-30b": {
+  "model": "GPT4-X-Alpacadente2 30B",
+  "company": "Community",
+  "release_date": "2023-05-04",
+  "release_date_url": "https://huggingface.co/Aeala/GPT4-x-AlpacaDente2-30b/commits/main"
+ },
+ "Aeala/GPT4-x-Alpasta-13b": {
+  "model": "GPT4-X-Alpasta 13B",
+  "company": "Community",
+  "release_date": "2023-05-06",
+  "release_date_url": "https://huggingface.co/Aeala/GPT4-x-Alpasta-13b/commits/main"
+ },
+ "CalderaAI/13B-BlueMethod": {
+  "model": "CalderaAI 13B BlueMethod",
+  "company": "Calderaai",
+  "release_date": "2023-07-07",
+  "release_date_url": "https://huggingface.co/CalderaAI/13B-BlueMethod"
+ },
+ "CalderaAI/13B-Legerdemain-L2": {
+  "model": "CalderaAI 13B Legerdemain",
+  "company": "Calderaai",
+  "release_date": "2023-08-03",
+  "release_date_url": "https://huggingface.co/CalderaAI/13B-Legerdemain-L2"
+ },
+ "CalderaAI/13B-Ouroboros": {
+  "model": "CalderaAI 13B Ouroboros",
+  "company": "Calderaai",
+  "release_date": "2023-07-20",
+  "release_date_url": "https://huggingface.co/CalderaAI/13B-Ouroboros"
+ },
+ "CalderaAI/30B-Lazarus": {
+  "model": "CalderaAI 30B Lazarus",
+  "company": "Calderaai",
+  "release_date": "2023-05-25",
+  "release_date_url": "https://huggingface.co/CalderaAI/30B-Lazarus"
+ },
+ "CobraMamba/mamba-gpt-3b": {
+  "model": "CobraMamba Mamba-GPT 3B",
+  "company": "Cobramamba",
+  "release_date": "2023-06-12",
+  "release_date_url": "https://huggingface.co/CobraMamba/mamba-gpt-3b"
+ },
+ "CobraMamba/mamba-gpt-3b-v2": {
+  "model": "CobraMamba Mamba-GPT 3B",
+  "company": "Cobramamba",
+  "release_date": "2023-06-12",
+  "release_date_url": "https://huggingface.co/CobraMamba/mamba-gpt-3b"
+ },
+ "CobraMamba/mamba-gpt-3b-v3": {
+  "model": "CobraMamba Mamba-GPT 3B",
+  "company": "Cobramamba",
+  "release_date": "2023-06-12",
+  "release_date_url": "https://huggingface.co/CobraMamba/mamba-gpt-3b"
+ },
+ "Corianas/111m": {
+  "model": "Corianas 111M",
+  "company": "Corianas",
+  "release_date": "2023-03-29",
+  "release_date_url": "https://huggingface.co/Corianas/111m"
+ },
+ "Corianas/Quokka_1.3b": {
+  "model": "Corianas Quokka 1.3B",
+  "company": "Corianas",
+  "release_date": "2023-04-07",
+  "release_date_url": "https://huggingface.co/Corianas/Quokka_1.3b"
+ },
+ "Corianas/Quokka_2.7b": {
+  "model": "Corianas Quokka 2.7B",
+  "company": "Corianas",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://huggingface.co/Corianas/Quokka_2.7b"
+ },
+ "Corianas/Quokka_590m": {
+  "model": "Corianas Quokka 590M",
+  "company": "Corianas",
+  "release_date": "2023-04-07",
+  "release_date_url": "https://huggingface.co/Corianas/Quokka_590m/commits/main"
+ },
+ "Corianas/gpt-j-6B-Dolly": {
+  "model": "EleutherAI GPT-J 6B",
+  "company": "EleutherAI",
+  "release_date": "2021-06-04",
+  "release_date_url": "https://arankomatsuzaki.wordpress.com/2021/06/04/gpt-j/"
+ },
+ "EleutherAI/gpt-j-6B": {
+  "model": "EleutherAI GPT-J 6B",
+  "company": "EleutherAI",
+  "release_date": "2021-06-04",
+  "release_date_url": "https://arankomatsuzaki.wordpress.com/2021/06/04/gpt-j/"
+ },
+ "EleutherAI/gpt-neo-1.3B": {
+  "model": "EleutherAI GPT-Neo 1.3B",
+  "company": "EleutherAI",
+  "release_date": "2021-03-21",
+  "release_date_url": "https://www.eleuther.ai/artifacts/gpt-neo"
+ },
+ "EleutherAI/gpt-neo-125m": {
+  "model": "EleutherAI GPT-Neo 125M",
+  "company": "EleutherAI",
+  "release_date": "2021-03-21",
+  "release_date_url": "https://www.eleuther.ai/artifacts/gpt-neo"
+ },
+ "EleutherAI/gpt-neo-2.7B": {
+  "model": "EleutherAI GPT-Neo 2.7B",
+  "company": "EleutherAI",
+  "release_date": "2021-03-21",
+  "release_date_url": "https://www.eleuther.ai/artifacts/gpt-neo"
+ },
+ "EleutherAI/gpt-neox-20b": {
+  "model": "EleutherAI GPT-NeoX 20B",
+  "company": "EleutherAI",
+  "release_date": "2022-02-02",
+  "release_date_url": "https://blog.eleuther.ai/announcing-20b/"
+ },
+ "EleutherAI/polyglot-ko-12.8b": {
+  "model": "EleutherAI Polyglot-Ko 12.8B",
+  "company": "EleutherAI",
+  "release_date": "2022-10-14",
+  "release_date_url": "https://huggingface.co/EleutherAI/polyglot-ko-12.8b/commits/main"
+ },
+ "EleutherAI/pythia-1.3b": {
+  "model": "EleutherAI Pythia 1.4B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-1.4b-deduped": {
+  "model": "EleutherAI Pythia 1.4B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-12b": {
+  "model": "EleutherAI Pythia 12B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-12b-deduped": {
+  "model": "EleutherAI Pythia 12B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-160m": {
+  "model": "EleutherAI Pythia 160M",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-160m-deduped": {
+  "model": "EleutherAI Pythia 160M",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-1b-deduped": {
+  "model": "EleutherAI Pythia 1B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-2.7b": {
+  "model": "EleutherAI Pythia 2.8B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-2.8b-deduped": {
+  "model": "EleutherAI Pythia 2.8B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-410m-deduped": {
+  "model": "EleutherAI Pythia 410M",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://www.eleuther.ai/releases"
+ },
+ "EleutherAI/pythia-6.7b": {
+  "model": "EleutherAI Pythia 6.9B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://huggingface.co/EleutherAI/pythia-6.9b/commits/main"
+ },
+ "EleutherAI/pythia-6.9b-deduped": {
+  "model": "EleutherAI Pythia 6.9B",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://huggingface.co/EleutherAI/pythia-6.9b/commits/main"
+ },
+ "EleutherAI/pythia-70m": {
+  "model": "EleutherAI Pythia 70M",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://huggingface.co/EleutherAI/pythia-70m/commits/main"
+ },
+ "EleutherAI/pythia-70m-deduped": {
+  "model": "EleutherAI Pythia 70M",
+  "company": "EleutherAI",
+  "release_date": "2023-02-13",
+  "release_date_url": "https://huggingface.co/EleutherAI/pythia-70m/commits/main"
+ },
+ "GeorgiaTechResearchInstitute/galpaca-30b": {
+  "model": "GALPACA 30B",
+  "company": "Georgia Tech Research Institute",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://huggingface.co/GeorgiaTechResearchInstitute/galpaca-30b/commits/main"
+ },
+ "GeorgiaTechResearchInstitute/starcoder-gpteacher-code-instruct": {
+  "model": "StarCoder GPTeacher Code Instruct",
+  "company": "Georgia Tech Research Institute",
+  "release_date": "2023-05-05",
+  "release_date_url": "https://huggingface.co/GeorgiaTechResearchInstitute/starcoder-gpteacher-code-instruct"
+ },
+ "HiTZ/alpaca-lora-65b-en-pt-es-ca": {
+  "model": "Meta LLaMA 65B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "HuggingFaceH4/starchat-beta": {
+  "model": "HuggingFace StarChat Beta",
+  "company": "Hugging Face",
+  "release_date": "2023-06-07",
+  "release_date_url": "https://huggingface.co/HuggingFaceH4/starchat-beta/commit/4d8424c69643590f193cc97dc7eebff66500ebc6"
+ },
+ "LLMs/AlpacaGPT4-7B-elina": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "LLMs/WizardLM-13B-V1.0": {
+  "model": "Meta LLaMA 13B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "Lajonbot/Llama-2-13b-hf-instruct-pl-lora_unload": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "Lajonbot/Llama-2-7b-chat-hf-instruct-pl-lora_unload": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "Lajonbot/tableBeluga-7B-instruct-pl-lora_unload": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "Lajonbot/vicuna-13b-v1.3-PL-lora_unload": {
+  "model": "LMSYS Vicuna 13B",
+  "company": "LMSYS",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://www.lmsys.org/blog/2023-03-30-vicuna/"
+ },
+ "Lajonbot/vicuna-7b-v1.5-PL-lora_unload": {
+  "model": "LMSYS Vicuna 7B",
+  "company": "LMSYS",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://lmsys.org/blog/2023-03-30-vicuna/"
+ },
+ "Lazycuber/Janemalion-6B": {
+  "model": "Janemalion 6B",
+  "company": "Community",
+  "release_date": "2023-06-20",
+  "release_date_url": "https://huggingface.co/Lazycuber/Janemalion-6B/commits/main"
+ },
+ "Lazycuber/pyg-instruct-wizardlm": {
+  "model": "Pyg-Instruct-WizardLM",
+  "company": "Community",
+  "release_date": "2023-06-11",
+  "release_date_url": "https://huggingface.co/Lazycuber/pyg-instruct-wizardlm/commits/main"
+ },
+ "MayaPH/FinOPT-Franklin": {
+  "model": "MayaPH FinOPT Franklin",
+  "company": "Mayaph",
+  "release_date": "2023-05-26",
+  "release_date_url": "https://huggingface.co/MayaPH/FinOPT-Franklin/commits/main"
+ },
+ "MayaPH/FinOPT-Lincoln": {
+  "model": "MayaPH FinOPT Lincoln",
+  "company": "Mayaph",
+  "release_date": "2023-05-26",
+  "release_date_url": "https://huggingface.co/MayaPH/FinOPT-Lincoln/commits/main"
+ },
+ "MayaPH/FinOPT-Washington": {
+  "model": "MayaPH FinOPT Washington",
+  "company": "Mayaph",
+  "release_date": "2023-05-26",
+  "release_date_url": "https://huggingface.co/MayaPH/FinOPT-Washington/commits/main"
+ },
+ "MayaPH/GodziLLa-30B": {
+  "model": "MayaPH GodziLLa 30B",
+  "company": "Mayaph",
+  "release_date": "2023-07-08",
+  "release_date_url": "https://huggingface.co/api/models/MayaPH/GodziLLa-30B"
+ },
+ "MayaPH/GodziLLa-30B-plus": {
+  "model": "MayaPH GodziLLa 30B Plus",
+  "company": "Mayaph",
+  "release_date": "2023-08",
+  "release_date_url": "https://huggingface.co/datasets/open-llm-leaderboard-old/results/tree/453f34e19a4c093d606ed02075ef55a0c956fa09/MayaPH"
+ },
+ "MayaPH/GodziLLa2-70B": {
+  "model": "MayaPH GodziLLa2 70B",
+  "company": "Mayaph",
+  "release_date": "2023-08-10",
+  "release_date_url": "https://huggingface.co/api/models/MayaPH/GodziLLa2-70B"
+ },
+ "Neko-Institute-of-Science/metharme-7b": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "Neko-Institute-of-Science/pygmalion-7b": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "NousResearch/Nous-Hermes-13b": {
+  "model": "Nous Research Nous-Hermes 13B",
+  "company": "Nous Research",
+  "release_date": "2023-06-03",
+  "release_date_url": "https://huggingface.co/NousResearch/Nous-Hermes-13b"
+ },
+ "NousResearch/Nous-Hermes-Llama2-13b": {
+  "model": "Nous Research Nous-Hermes Llama 2 13B",
+  "company": "Nous Research",
+  "release_date": "2023-07-21",
+  "release_date_url": "https://x.com/NousResearch/status/1682458324804009987"
+ },
+ "NousResearch/Nous-Hermes-llama-2-7b": {
+  "model": "Nous Research Nous-Hermes Llama 2 7B",
+  "company": "Nous Research",
+  "release_date": "2023-07-27",
+  "release_date_url": "https://x.com/NousResearch/status/1684291840395321344"
+ },
+ "NousResearch/Redmond-Puffin-13B": {
+  "model": "Nous Research Redmond Puffin 13B",
+  "company": "Nous Research",
+  "release_date": "2023-07-20",
+  "release_date_url": "https://huggingface.co/NousResearch/Redmond-Puffin-13B"
+ },
+ "OpenBuddyEA/openbuddy-llama-30b-v7.1-bf16": {
+  "model": "Meta LLaMA 30B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "OpenBuddy/openbuddy-llama-65b-v8-bf16": {
+  "model": "Meta LLaMA 65B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "OpenBuddy/openbuddy-llama2-13b-v8.1-fp16": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "OptimalScale/robin-13b-v2-delta": {
+  "model": "Meta LLaMA 13B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "OptimalScale/robin-65b-v2-delta": {
+  "model": "Meta LLaMA 65B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "OptimalScale/robin-7b-v2-delta": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "PygmalionAI/metharme-1.3b": {
+  "model": "PygmalionAI Metharme 1.3B",
+  "company": "PygmalionAI",
+  "release_date": "2023-06-02",
+  "release_date_url": "https://huggingface.co/PygmalionAI/metharme-1.3b/commits/main"
+ },
+ "PygmalionAI/pygmalion-1.3b": {
+  "model": "PygmalionAI Pygmalion 1.3B",
+  "company": "PygmalionAI",
+  "release_date": "2022-12-25",
+  "release_date_url": "https://huggingface.co/PygmalionAI/pygmalion-1.3b/commits/main"
+ },
+ "PygmalionAI/pygmalion-2.7b": {
+  "model": "PygmalionAI Pygmalion 2.7B",
+  "company": "PygmalionAI",
+  "release_date": "2023-01-05",
+  "release_date_url": "https://huggingface.co/PygmalionAI/pygmalion-2.7b/commits/main"
+ },
+ "PygmalionAI/pygmalion-350m": {
+  "model": "PygmalionAI Pygmalion 350M",
+  "company": "PygmalionAI",
+  "release_date": "2022-12-20",
+  "release_date_url": "https://huggingface.co/PygmalionAI/pygmalion-350m/commits/main"
+ },
+ "PygmalionAI/pygmalion-6b": {
+  "model": "PygmalionAI Pygmalion 6B",
+  "company": "PygmalionAI",
+  "release_date": "2023-01-07",
+  "release_date_url": "https://huggingface.co/PygmalionAI/pygmalion-6b/commits/main"
+ },
+ "Rachneet/gpt2-xl-alpaca": {
+  "model": "OpenAI GPT-2 XL",
+  "company": "OpenAI",
+  "release_date": "2019-11-05",
+  "release_date_url": "https://openai.com/index/gpt-2-1-5b-release/"
+ },
+ "Tap-M/Luna-AI-Llama2-Uncensored": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "TigerResearch/tigerbot-7b-sft": {
+  "model": "TigerBot 7B",
+  "company": "Tigerresearch",
+  "release_date": "2023-06-07",
+  "release_date_url": "https://36kr.com/p/2289883328435973"
+ },
+ "Tincando/fiction_story_generator": {
+  "model": "OpenAI GPT-2",
+  "company": "OpenAI",
+  "release_date": "2019-02-14",
+  "release_date_url": "https://openai.com/index/better-language-models/"
+ },
+ "TinyPixel/llama2-7b-instruct": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "VMware/open-llama-0.7T-7B-open-instruct-v1.1": {
+  "model": "OpenLM Research OpenLLaMA 7B",
+  "company": "Openlm Research",
+  "release_date": "2023-05-03",
+  "release_date_url": "https://simonwillison.net/2023/May/3/openllama/"
+ },
+ "WizardLM/WizardCoder-15B-V1.0": {
+  "model": "Microsoft WizardCoder 15B",
+  "company": "Microsoft",
+  "release_date": "2023-06-14",
+  "release_date_url": "https://arxiv.org/abs/2306.08568v1"
+ },
+ "WizardLM/WizardLM-13B-V1.1": {
+  "model": "Microsoft WizardLM 13B",
+  "company": "Microsoft",
+  "release_date": "2023-05",
+  "release_date_url": "https://huggingface.co/WizardLMTeam/WizardLM-13B-V1.0"
+ },
+ "WizardLM/WizardLM-13B-V1.2": {
+  "model": "Microsoft WizardLM 13B",
+  "company": "Microsoft",
+  "release_date": "2023-05",
+  "release_date_url": "https://huggingface.co/WizardLMTeam/WizardLM-13B-V1.0"
+ },
+ "WizardLM/WizardLM-70B-V1.0": {
+  "model": "Microsoft WizardLM 70B",
+  "company": "Microsoft",
+  "release_date": "2023-08-09",
+  "release_date_url": "https://github.com/nlpxucan/WizardLM"
+ },
+ "abhiramtirumala/DialoGPT-sarcastic-medium": {
+  "model": "Microsoft DialoGPT Medium",
+  "company": "Microsoft",
+  "release_date": "2019-11-01",
+  "release_date_url": "https://arxiv.org/abs/1911.00536"
+ },
+ "acrastt/RedPajama-INCITE-Chat-Instruct-3B-V1": {
+  "model": "Together RedPajama-INCITE 3B",
+  "company": "Together",
+  "release_date": "2023-05-05",
+  "release_date_url": "https://www.together.ai/blog/redpajama-models-v1"
+ },
+ "acrastt/Vicuna-3B": {
+  "model": "LMSYS Vicuna 3B",
+  "company": "LMSYS",
+  "release_date": "2023-08-16",
+  "release_date_url": "https://huggingface.co/acrastt/Vicuna-3B/commits/main"
+ },
+ "augtoma/qCammel-13": {
+  "model": "qCammel 13B",
+  "company": "Community",
+  "release_date": "2023-07-24",
+  "release_date_url": "https://huggingface.co/augtoma/qCammel-13/commits/main"
+ },
+ "augtoma/qCammel-70-x": {
+  "model": "qCammel 70B",
+  "company": "Community",
+  "release_date": "2023-07-23",
+  "release_date_url": "https://huggingface.co/augtoma/qCammel-70-x/commits/main"
+ },
+ "beomi/KoAlpaca-Polyglot-5.8B": {
+  "model": "KoAlpaca Polyglot 5.8B",
+  "company": "Community",
+  "release_date": "2023-03-16",
+  "release_date_url": "https://huggingface.co/beomi/KoAlpaca-Polyglot-5.8B/commits/main"
+ },
+ "beomi/llama-2-ko-7b": {
+  "model": "Llama-2-Ko 7B",
+  "company": "Community",
+  "release_date": "2023-07-20",
+  "release_date_url": "https://huggingface.co/beomi/llama-2-ko-7b/commits/main"
+ },
+ "bigcode/gpt_bigcode-santacoder": {
+  "model": "BigCode SantaCoder",
+  "company": "Bigcode",
+  "release_date": "2022-12-22",
+  "release_date_url": "https://www.bigcode-project.org/docs/about/timeline/"
+ },
+ "bigcode/tiny_starcoder_py": {
+  "model": "BigCode Tiny StarCoder",
+  "company": "Bigcode",
+  "release_date": "2023-05-15",
+  "release_date_url": "https://huggingface.co/bigcode/tiny_starcoder_py"
+ },
+ "camel-ai/CAMEL-13B-Combined-Data": {
+  "model": "CAMEL 13B",
+  "company": "Camel-Ai",
+  "release_date": "2023-06-02",
+  "release_date_url": "https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data"
+ },
+ "camel-ai/CAMEL-13B-Role-Playing-Data": {
+  "model": "CAMEL 13B",
+  "company": "Camel-Ai",
+  "release_date": "2023-06-02",
+  "release_date_url": "https://huggingface.co/camel-ai/CAMEL-13B-Combined-Data"
+ },
+ "camel-ai/CAMEL-33B-Combined-Data": {
+  "model": "CAMEL 33B",
+  "company": "Camel-Ai",
+  "release_date": "2023-06-17",
+  "release_date_url": "https://huggingface.co/camel-ai/CAMEL-33B-Combined-Data"
+ },
+ "clibrain/Llama-2-7b-ft-instruct-es": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "databricks/dolly-v2-12b": {
+  "model": "Databricks Dolly v2 12B",
+  "company": "Databricks",
+  "release_date": "2023-04-12",
+  "release_date_url": "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm"
+ },
+ "databricks/dolly-v2-3b": {
+  "model": "Databricks Dolly v2 3B",
+  "company": "Databricks",
+  "release_date": "2023-04-12",
+  "release_date_url": "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm"
+ },
+ "databricks/dolly-v2-7b": {
+  "model": "Databricks Dolly v2 7B",
+  "company": "Databricks",
+  "release_date": "2023-04-12",
+  "release_date_url": "https://www.databricks.com/blog/2023/04/12/dolly-first-open-commercially-viable-instruction-tuned-llm"
+ },
+ "deepnight-research/llama-2-70B-inst": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "edor/Hermes-Platypus2-mini-7B": {
+  "model": "Edor Hermes-Platypus2 7B",
+  "company": "Edor",
+  "release_date": "2023-08-16",
+  "release_date_url": "https://huggingface.co/edor/Platypus2-mini-7B"
+ },
+ "edor/Stable-Platypus2-mini-7B": {
+  "model": "Edor Stable-Platypus2 7B",
+  "company": "Edor",
+  "release_date": "2023-08-16",
+  "release_date_url": "https://huggingface.co/edor/Platypus2-mini-7B"
+ },
+ "garage-bAInd/Camel-Platypus2-13B": {
+  "model": "Platypus 2 13B",
+  "company": "Garage-Baind",
+  "release_date": "2023-08-05",
+  "release_date_url": "https://huggingface.co/garage-bAInd/Camel-Platypus2-13B/commits/main"
+ },
+ "golaxy/gogpt-3b-bloom": {
+  "model": "GoGPT 3B",
+  "company": "Golaxy",
+  "release_date": "2023-05-26",
+  "release_date_url": "https://huggingface.co/golaxy/gogpt-3b-bloom/commits/main"
+ },
+ "golaxy/gogpt-7b": {
+  "model": "GoGPT 7B",
+  "company": "Golaxy",
+  "release_date": "2023-07-17",
+  "release_date_url": "https://huggingface.co/golaxy/gogpt-7b/commits/main"
+ },
+ "golaxy/gogpt-7b-bloom": {
+  "model": "GoGPT 7B",
+  "company": "Golaxy",
+  "release_date": "2023-07-17",
+  "release_date_url": "https://huggingface.co/golaxy/gogpt-7b/commits/main"
+ },
+ "golaxy/gogpt2-7b": {
+  "model": "GoGPT2 7B",
+  "company": "Golaxy",
+  "release_date": "2023-07-21",
+  "release_date_url": "https://huggingface.co/golaxy/gogpt2-7b/commits/main"
+ },
+ "golaxy/goims": {
+  "model": "Golaxy GoIMS",
+  "company": "Golaxy",
+  "release_date": "2023-08-04",
+  "release_date_url": "https://huggingface.co/golaxy/goims/commits/main"
+ },
+ "golaxy/gowizardlm": {
+  "model": "Golaxy GoWizardLM",
+  "company": "Golaxy",
+  "release_date": "2023-07-31",
+  "release_date_url": "https://huggingface.co/golaxy/gowizardlm/commits/main"
+ },
+ "illuin/test-custom-llama": {
+  "model": "test-custom-llama",
+  "company": "Community"
+ },
+ "jarradh/llama2_70b_chat_uncensored": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "jlevin/guanaco-13b-llama-2": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "jlevin/guanaco-unchained-llama-2-7b": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "jordiclive/Llama-2-70b-oasst-1-200": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "jordiclive/gpt4all-alpaca-oa-codealpaca-lora-13b": {
+  "model": "Meta LLaMA 13B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "jphme/orca_mini_v2_ger_7b": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "jxhong/CAlign-alpaca-7b": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "kevinpro/Vicuna-13B-CoT": {
+  "model": "LMSYS Vicuna 13B",
+  "company": "LMSYS",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://www.lmsys.org/blog/2023-03-30-vicuna/"
+ },
+ "keyfan/vicuna-chinese-replication-v1.1": {
+  "model": "LMSYS Vicuna",
+  "company": "LMSYS",
+  "release_date": "2023-03-30",
+  "release_date_url": "https://www.lmsys.org/blog/2023-03-30-vicuna/"
+ },
+ "kfkas/Llama-2-ko-7b-Chat": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "layoric/llama-2-13b-code-alpaca": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "lgaalves/gpt2-dolly": {
+  "model": "OpenAI GPT-2",
+  "company": "OpenAI",
+  "release_date": "2019-02-14",
+  "release_date_url": "https://openai.com/index/better-language-models/"
+ },
+ "lilloukas/GPlatty-30B": {
+  "model": "Meta LLaMA 30B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "lilloukas/Platypus-30B": {
+  "model": "Meta LLaMA 30B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "liuxiang886/llama2-70B-qlora-gpt4": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "lvkaokao/llama2-7b-hf-instruction-lora": {
+  "model": "Meta Llama 2 7B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "mosaicml/mpt-30b-chat": {
+  "model": "MosaicML MPT 30B",
+  "company": "MosaicML",
+  "release_date": "2023-06-22",
+  "release_date_url": "https://businesswire.com/news/home/20230622195151/en/MosaicML-Releases-Open-Source-MPT-30B-LLMs-Trained-on-H100s-to-Power-Generative-AI-Applications"
+ },
+ "mosaicml/mpt-30b-instruct": {
+  "model": "MosaicML MPT 30B",
+  "company": "MosaicML",
+  "release_date": "2023-06-22",
+  "release_date_url": "https://businesswire.com/news/home/20230622195151/en/MosaicML-Releases-Open-Source-MPT-30B-LLMs-Trained-on-H100s-to-Power-Generative-AI-Applications"
+ },
+ "mosaicml/mpt-7b-chat": {
+  "model": "MosaicML MPT 7B",
+  "company": "MosaicML",
+  "release_date": "2023-05-05",
+  "release_date_url": "https://www.databricks.com/blog/mpt-7b"
+ },
+ "mosaicml/mpt-7b-instruct": {
+  "model": "MosaicML MPT 7B",
+  "company": "MosaicML",
+  "release_date": "2023-05-05",
+  "release_date_url": "https://www.databricks.com/blog/mpt-7b"
+ },
+ "mosaicml/mpt-7b-storywriter": {
+  "model": "MosaicML MPT 7B",
+  "company": "MosaicML",
+  "release_date": "2023-05-05",
+  "release_date_url": "https://www.databricks.com/blog/mpt-7b"
+ },
+ "notstoic/PygmalionCoT-7b": {
+  "model": "Meta LLaMA 7B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "pythainlp/wangchanglm-7.5B-sft-en-sharded": {
+  "model": "PyThaiNLP WangChanGLM 7.5B",
+  "company": "Pythainlp",
+  "release_date": "2023-04-29",
+  "release_date_url": "https://pythainlp.org/2023-04-29-WangChanGLM/"
+ },
+ "pythainlp/wangchanglm-7.5B-sft-enth": {
+  "model": "PyThaiNLP WangChanGLM 7.5B",
+  "company": "Pythainlp",
+  "release_date": "2023-04-29",
+  "release_date_url": "https://pythainlp.org/2023-04-29-WangChanGLM/"
+ },
+ "quantumaikr/KoreanLM-hf": {
+  "model": "KoreanLM",
+  "company": "Quantumai Kr",
+  "release_date": "2023-05-04",
+  "release_date_url": "https://huggingface.co/quantumaikr/KoreanLM-hf/commits/main"
+ },
+ "quantumaikr/QuantumLM-70B-hf": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "quantumaikr/llama-2-70b-fb16-guanaco-1k": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "quantumaikr/open_llama_7b_hf": {
+  "model": "OpenLM Research OpenLLaMA 7B",
+  "company": "Openlm Research",
+  "release_date": "2023-05-03",
+  "release_date_url": "https://simonwillison.net/2023/May/3/openllama/"
+ },
+ "shareAI/bimoGPT-llama2-13b": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "shareAI/llama2-13b-Chinese-chat": {
+  "model": "Meta Llama 2 13B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "shibing624/chinese-alpaca-plus-13b-hf": {
+  "model": "Chinese-Alpaca-Plus 13B",
+  "company": "Unknown",
+  "release_date": "2023-05-10",
+  "release_date_url": "https://github.com/ymcui/Chinese-LLaMA-Alpaca/releases/tag/v3.1"
+ },
+ "shibing624/chinese-alpaca-plus-7b-hf": {
+  "model": "Chinese-Alpaca-Plus 7B",
+  "company": "Unknown",
+  "release_date": "2023-04-28",
+  "release_date_url": "https://github.com/ymcui/Chinese-LLaMA-Alpaca/releases/tag/v3.0"
+ },
+ "shibing624/chinese-llama-plus-13b-hf": {
+  "model": "Chinese-LLaMA-Plus 13B",
+  "company": "Unknown",
+  "release_date": "2023-05-10",
+  "release_date_url": "https://github.com/ymcui/Chinese-LLaMA-Alpaca/releases/tag/v3.1"
+ },
+ "upstage/Llama-2-70b-instruct": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "upstage/Llama-2-70b-instruct-v2": {
+  "model": "Meta Llama 2 70B",
+  "company": "Meta",
+  "release_date": "2023-07-18",
+  "release_date_url": "https://about.fb.com/news/2023/07/llama-2/"
+ },
+ "upstage/llama-30b-instruct": {
+  "model": "Meta LLaMA 30B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "upstage/llama-30b-instruct-2048": {
+  "model": "Meta LLaMA 30B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "upstage/llama-65b-instruct": {
+  "model": "Meta LLaMA 65B",
+  "company": "Meta",
+  "release_date": "2023-02-24",
+  "release_date_url": "https://ai.meta.com/blog/large-language-model-llama-meta-ai/"
+ },
+ "vicgalle/alpaca-7b": {
+  "model": "Stanford Alpaca 7B",
+  "company": "Stanford",
+  "release_date": "2023-03-13",
+  "release_date_url": "https://crfm.stanford.edu/2023/03/13/alpaca.html"
+ },
+ "vicgalle/gpt2-alpaca": {
+  "model": "OpenAI GPT-2",
+  "company": "OpenAI",
+  "release_date": "2019-02-14",
+  "release_date_url": "https://openai.com/index/better-language-models/"
+ },
+ "vicgalle/gpt2-alpaca-gpt4": {
+  "model": "OpenAI GPT-2",
+  "company": "OpenAI",
+  "release_date": "2019-02-14",
+  "release_date_url": "https://openai.com/index/better-language-models/"
+ },
+ "victor123/WizardLM-13B-1.0": {
+  "model": "Microsoft WizardLM 13B",
+  "company": "Microsoft",
+  "release_date": "2023-05",
+  "release_date_url": "https://huggingface.co/WizardLMTeam/WizardLM-13B-V1.0"
+ },
+ "Qwen/Qwen2.5-Coder-32B-Instruct": {
+  "model": "Alibaba Qwen2.5-Coder 32B",
+  "company": "Alibaba",
+  "release_date": "2024-11-12",
+  "release_date_url": "https://qwenlm.github.io/blog/qwen2.5-coder-family/"
+ },
+ "BioMistral/BioMistral-7B": {
+  "model": "BioMistral 7B",
+  "company": "Biomistral",
+  "release_date": "2024-02-15",
+  "release_date_url": "https://arxiv.org/abs/2402.10373"
+ },
+ "johnsnowlabs/JSL-MedLlama-3-8B-v2.0": {
+  "model": "Meta Llama 3 8B",
+  "company": "Meta",
+  "release_date": "2024-04-18",
+  "release_date_url": "https://ai.meta.com/blog/meta-llama-3/"
+ },
+ "epfl-llm/meditron-7b": {
+  "model": "EPFL Meditron 7B",
+  "company": "Epfl",
+  "release_date": "2023-11-27",
+  "release_date_url": "https://arxiv.org/abs/2311.16079"
+ },
+ "gemini-3.6-flash": {
+  "model": "Google Gemini 3.6 Flash",
+  "company": "Google",
+  "release_date": "2026-07-21",
+  "release_date_url": "https://blog.google/innovation-and-ai/models-and-research/gemini-models/gemini-3-6-flash-3-5-flash-lite-3-5-flash-cyber/"
+ },
+ "gemini-3.7-flash": {
+  "model": "Google Gemini 3.7 Flash",
+  "company": "Google"
+ },
+ "muse-spark-1.1": {
+  "model": "Meta Muse Spark 1.1",
+  "company": "Meta",
+  "release_date": "2026-07-09",
+  "release_date_url": "https://ai.meta.com/blog/introducing-muse-spark-meta-model-api/"
+ },
+ "muse-spark-1.2": {
+  "model": "Meta Muse Spark 1.2",
+  "company": "Meta"
+ },
+ "muse-spark-1.3": {
+  "model": "Meta Muse Spark 1.3",
+  "company": "Meta"
+ },
+ "deepseek-llm-7b": {
+  "model": "DeepSeek LLM 7B",
+  "company": "DeepSeek",
+  "release_date": "2023-11-29",
+  "release_date_url": "https://github.com/deepseek-ai/DeepSeek-LLM"
+ },
+ "OLMo-2-7B": {
+  "model": "AllenAI OLMo 2 7B",
+  "company": "AllenAI",
+  "release_date": "2024-11-26",
+  "release_date_url": "https://allenai.org/blog/olmo2"
+ },
+ "nova-2-lite": {
+  "model": "Amazon Nova 2 Lite",
+  "company": "Amazon",
+  "release_date": "2025-12-02",
+  "release_date_url": "https://www.aboutamazon.com/news/aws/aws-agentic-ai-amazon-bedrock-nova-models"
+ },
+ "UnifiedQA-T5-11B": {
+  "model": "UnifiedQA T5 11B",
+  "company": "Unknown"
+ },
+ "chat-bison@001": {
+  "model": "Google PaLM 2 Bison",
+  "company": "Google",
+  "release_date": "2023-05-10",
+  "release_date_url": "https://blog.google/technology/ai/google-palm-2-ai-large-language-model/"
+ },
+ "gpt-5.3-chat": {
+  "model": "OpenAI GPT-5.3 Chat",
+  "company": "OpenAI"
+ },
+ "qwen3.8-2.4t-a95b": {
+  "model": "Alibaba Qwen3.8 2.4T A95B",
+  "company": "Alibaba"
+ },
+ "Seed-OSS-36B-Instruct": {
+  "model": "ByteDance Seed-OSS 36B",
+  "company": "ByteDance",
+  "release_date": "2025-08-20",
+  "release_date_url": "https://huggingface.co/ByteDance-Seed/Seed-OSS-36B-Instruct"
+ },
+ "claude-3-7-sonnet": {
+  "model": "Anthropic Claude 3.7 Sonnet",
+  "company": "Anthropic",
+  "release_date": "2025-02-24",
+  "release_date_url": "https://www.anthropic.com/news/claude-3-7-sonnet"
  }
 }
