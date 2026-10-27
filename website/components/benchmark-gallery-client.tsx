@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { BenchmarkSearchClient } from "@/components/benchmark-search-client";
+import { CatalogResults } from "@/components/catalog-results";
 import { withBase } from "@/lib/base-path";
 import type { LocalBenchmarkSearchDocument } from "@/lib/search-types";
 import {
@@ -317,15 +318,6 @@ function BenchmarkCard({
         </div>
       </div>
     </article>
-  );
-}
-
-function YearHeader({ label, count }: { label: string; count: number }) {
-  return (
-    <div className="mb-5 flex items-baseline gap-3 border-b border-[var(--line)] pb-3">
-      <h3 className="type-h3 text-[1.25rem] text-[var(--ink)]">{label}</h3>
-      <span className="font-mono text-sm text-[var(--muted)]">{count}</span>
-    </div>
   );
 }
 
@@ -1223,29 +1215,20 @@ export function BenchmarkGalleryClient({
         <p className="py-12 text-center text-sm text-[var(--muted)]">
           No {searchScopeLabel} match the current filters.
         </p>
-      ) : grouped ? (
-        <div className="space-y-14">
-          {groups.map(({ key, label, items: groupItems }) => (
-            <section key={key} aria-label={label}>
-              <YearHeader label={label} count={groupItems.length} />
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {groupItems.map((b) => (
-                  <BenchmarkCard
-                    key={b.slug}
-                    benchmark={b}
-                    color={colorFor(b)}
-                  />
-                ))}
-              </div>
-            </section>
-          ))}
-        </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {sorted.map((b) => (
-            <BenchmarkCard key={b.slug} benchmark={b} color={colorFor(b)} />
-          ))}
-        </div>
+        <CatalogResults
+          key={JSON.stringify([
+            sortChoice,
+            searchQuery,
+            filtered.map((b) => b.slug),
+          ])}
+          groups={
+            grouped ? groups : [{ key: "all", label: null, items: sorted }]
+          }
+          renderItem={(b) => (
+            <BenchmarkCard benchmark={b} color={colorFor(b)} />
+          )}
+        />
       )}
     </div>
   );
